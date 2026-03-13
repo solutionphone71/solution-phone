@@ -625,31 +625,29 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 // INIT
 // ═══════════════════════════════════════════════════════════════
 function recalcAchatsSmart() {
-  // Recalculer les achats smartphones espèces dans le Z caisse depuis la liste phones
-  // Remettre à 0 d'abord
-  caisse.forEach(c => c.achatSmart = 0);
-  // Recalculer depuis tous les phones en espèces
-  phones.forEach(p => {
-    if (p.mode === 'ESPECES' && p.dateAchat) {
-      const entry = caisse.find(c => c.date === p.dateAchat);
-      if (entry) {
-        entry.achatSmart = (entry.achatSmart || 0) + (p.achat || 0);
+  try {
+    caisse.forEach(c => c.achatSmart = 0);
+    phones.forEach(p => {
+      if (p.mode === 'ESPECES' && p.dateAchat) {
+        const entry = caisse.find(c => c.date === p.dateAchat);
+        if (entry) entry.achatSmart = (entry.achatSmart || 0) + (p.achat || 0);
       }
-    }
-  });
-  save();
+    });
+  } catch(e) { console.log('recalc error:', e); }
 }
 
 function initApp() {
-  recalcAchatsSmart();
-  const now = new Date();
-  const opts = {weekday:'long',year:'numeric',month:'long',day:'numeric'};
-  const ds = now.toLocaleDateString('fr-FR',opts);
-  document.getElementById('topbar-date').textContent = ds;
-  document.getElementById('dash-date-sub').textContent = ds.charAt(0).toUpperCase()+ds.slice(1);
-  document.getElementById('caisse-mois-title').textContent =
-    now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
-  renderDashboard();
+  try { recalcAchatsSmart(); } catch(e) {}
+  try {
+    const now = new Date();
+    const opts = {weekday:'long',year:'numeric',month:'long',day:'numeric'};
+    const ds = now.toLocaleDateString('fr-FR',opts);
+    document.getElementById('topbar-date').textContent = ds;
+    document.getElementById('dash-date-sub').textContent = ds.charAt(0).toUpperCase()+ds.slice(1);
+    document.getElementById('caisse-mois-title').textContent =
+      now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+  } catch(e) {}
+  try { renderDashboard(); } catch(e) { console.log('render error:',e); }
 }
 
 // ═══════════════════════════════════════════════════════════════
