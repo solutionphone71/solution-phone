@@ -1692,8 +1692,8 @@ function showNotif(msg, type='success') {
   n.textContent = msg;
   n.className = 'notif show '+type;
   setTimeout(()=>n.classLis
-    <script>
-// Afficher le bandeau d'installation sur iPhone si pas encore installé
+<script>
+// PWA - Installation iPhone/Android
 function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
@@ -1707,25 +1707,12 @@ window.addEventListener('load', () => {
       if (banner) banner.style.display = 'flex';
     }, 3000);
   }
-
-  // PWA install prompt pour Android/Chrome
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     const banner = document.getElementById('install-banner');
-    if (banner) {
-      banner.style.display = 'flex';
-      banner.querySelector('div div:first-child').textContent = '📱 Installer Solution Phone';
-      banner.querySelector('div div:last-child').textContent = 'Cliquez pour installer l'application';
-      banner.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => {
-          banner.style.display = 'none';
-          deferredPrompt = null;
-        });
-      });
-    }
+    if (banner) banner.style.display = 'flex';
   });
 });
 </script>
