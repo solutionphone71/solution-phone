@@ -1691,28 +1691,22 @@ function showNotif(msg, type='success') {
   const n = document.getElementById('notif');
   n.textContent = msg;
   n.className = 'notif show '+type;
-  setTimeout(()=>n.classLis
+  setTimeout(()=>n.classList.remove('show'), 3000);
 <script>
-// PWA - Installation iPhone/Android
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-function isInStandaloneMode() {
-  return ('standalone' in window.navigator) && window.navigator.standalone;
-}
+// PWA
+function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+function isInStandaloneMode() { return ('standalone' in window.navigator) && window.navigator.standalone; }
 window.addEventListener('load', () => {
   if (isIOS() && !isInStandaloneMode()) {
     setTimeout(() => {
-      const banner = document.getElementById('install-banner');
-      if (banner) banner.style.display = 'flex';
+      const b = document.getElementById('install-banner');
+      if (b) b.style.display = 'flex';
     }, 3000);
   }
-  let deferredPrompt;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
-    deferredPrompt = e;
-    const banner = document.getElementById('install-banner');
-    if (banner) banner.style.display = 'flex';
+    const b = document.getElementById('install-banner');
+    if (b) b.style.display = 'flex';
   });
 });
 </script>
