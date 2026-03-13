@@ -1089,7 +1089,7 @@ function renderCaisse() {
     <div class="caisse-mode"><div class="caisse-mode-icon">🏦</div><div class="caisse-mode-label">Dépôts Espèces</div><div class="caisse-mode-value">${caisse.reduce((s,c)=>s+(c.depotEsp||0),0).toFixed(0)} €</div></div>
     <div class="caisse-mode"><div class="caisse-mode-icon">📝</div><div class="caisse-mode-label">Dépôts Chèques</div><div class="caisse-mode-value">${caisse.reduce((s,c)=>s+(c.depotCheque||0),0).toFixed(0)} €</div></div>
     <div class="caisse-mode"><div class="caisse-mode-icon">📱</div><div class="caisse-mode-label">Achats Smart. Esp.</div><div class="caisse-mode-value" style="color:#ff6b6b">-${caisse.reduce((s,c)=>s+(c.achatSmart||0),0).toFixed(0)} €</div></div>
-    <div class="caisse-mode"><div class="caisse-mode-icon">♻️</div><div class="caisse-mode-label">Bonus QualiRépar</div><div class="caisse-mode-value" style="color:#22c55e">${caisse.reduce((s,c)=>s+(c.quali||0),0).toFixed(0)} €</div></div>\`;
+    <div class="caisse-mode"><div class="caisse-mode-icon">♻️</div><div class="caisse-mode-label">Bonus QualiRépar</div><div class="caisse-mode-value" style="color:#22c55e">${caisse.reduce((s,c)=>s+(c.quali||0),0).toFixed(0)} €</div></div>`;
 
   document.getElementById('caisse-table').innerHTML = caisse.map(c=>{
     const ht = (c.ttc/1.20).toFixed(2);
