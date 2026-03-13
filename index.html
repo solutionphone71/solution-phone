@@ -199,6 +199,15 @@ tr:hover td{background:rgba(192,0,0,0.04);}
 <script>emailjs.init("vSpx7OHQTgKezV-Q-");</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <!-- PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Solution Phone">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e53e3e">
+  <link rel="manifest" href="manifest.json">
+  <!-- Icône iPhone -->
+  <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
 
@@ -1129,7 +1138,44 @@ function printEtiquette() {
     </style></head>
     <body>${content}
     <script>window.onload=function(){window.print();}<\/script>
-    </body></html>`);
+    <script>
+// Afficher le bandeau d'installation sur iPhone si pas encore installé
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+window.addEventListener('load', () => {
+  if (isIOS() && !isInStandaloneMode()) {
+    setTimeout(() => {
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'flex';
+    }, 3000);
+  }
+
+  // PWA install prompt pour Android/Chrome
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.querySelector('div div:first-child').textContent = '📱 Installer Solution Phone';
+      banner.querySelector('div div:last-child').textContent = 'Cliquez pour installer l'application';
+      banner.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          banner.style.display = 'none';
+          deferredPrompt = null;
+        });
+      });
+    }
+  });
+});
+</script>
+</body></html>`);
   w.document.close();
 }
 
