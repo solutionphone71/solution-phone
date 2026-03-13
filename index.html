@@ -211,6 +211,7 @@ tr:hover td{background:rgba(192,0,0,0.04);}
       <div class="nav-item" onclick="showPage('smartphones')"><span class="nav-icon">📱</span><span>Smartphones</span></div>
       <div class="nav-item" onclick="showPage('factures')"><span class="nav-icon">🧾</span><span>Factures</span></div>
       <div class="nav-item" onclick="showPage('caisse')"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
+      <div class="nav-item" onclick="showPage('police')"><span class="nav-icon">👮</span><span>Livre de Police</span></div>
     </div>
 
     <!-- CONTENT -->
@@ -257,7 +258,7 @@ tr:hover td{background:rgba(192,0,0,0.04);}
         <div class="card">
           <div class="card-header"><div class="card-title">Z de Caisse — Ce mois</div></div>
           <table>
-            <thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Virement</th><th>QualiRépar</th></tr></thead>
+            <thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead>
             <tbody id="dash-caisse"></tbody>
           </table>
         </div>
@@ -296,21 +297,47 @@ tr:hover td{background:rgba(192,0,0,0.04);}
         </div>
       </div>
 
+      <!-- LIVRE DE POLICE -->
+      <div class="page" id="page-police">
+        <div class="page-title">Livre de Police</div>
+        <div class="page-sub">Registre légal des achats de matériel d'occasion</div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Registre des achats</div>
+            <button class="btn btn-sm btn-secondary" onclick="exportPoliceCSV()">📥 Export CSV</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>N° Police</th><th>Date</th><th>Vendeur</th><th>N° CI</th><th>Appareil</th><th>IMEI</th><th>Couleur</th><th>Prix achat</th><th>Actions</th></tr></thead>
+              <tbody id="police-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Z DE CAISSE -->
       <div class="page" id="page-caisse">
         <div class="page-title">Z de Caisse</div>
         <div class="page-sub" id="caisse-mois-title">Mars 2026</div>
 
+        <div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">Report mois précédent</div>
+            <div id="report-display" style="font-family:sans-serif;font-size:28px;font-weight:700;color:var(--text);"></div>
+          </div>
+          <button class="btn btn-secondary" onclick="cloturerMois()" style="border-color:var(--warning);color:var(--warning);">🔒 Clôturer le mois</button>
+        </div>
         <div class="caisse-grid" id="caisse-totaux"></div>
 
         <div class="card">
           <div class="card-header">
             <div class="card-title">Saisie journalière</div>
             <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-caisse')">➕ Ajouter journée</button>
+          <button class="btn btn-sm btn-secondary" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
           </div>
           <div style="overflow-x:auto;">
             <table>
-              <thead><tr><th>Date</th><th>TTC</th><th>HT</th><th>TVA</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>Dépôt Esp.</th><th>Dépôt Chèque</th><th>Achat Smart. Esp.</th><th>QualiRépar</th></tr></thead>
+              <thead><tr><th>Date</th><th>TTC</th><th>HT</th><th>TVA</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>Dépôt Esp.</th><th>Dépôt Chèque</th><th>Achat Smart. Esp.</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead>
               <tbody id="caisse-table"></tbody>
             </table>
           </div>
@@ -368,7 +395,34 @@ tr:hover td{background:rgba(192,0,0,0.04);}
           <label>Date achat</label>
           <input type="date" id="p-date-achat">
         </div>
+        <div class="form-group">
+          <label>Couleur</label>
+          <input type="text" id="p-couleur" placeholder="ex: Noir">
+        </div>
       </div>
+
+      <div style="margin-top:20px;padding:14px 16px;background:var(--dark3);border-radius:8px;border-left:3px solid var(--red);">
+        <div style="font-size:12px;color:var(--red);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">👤 Informations vendeur (Livre de police)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nom du vendeur *</label>
+            <input type="text" id="p-vendeur-nom" placeholder="ex: DUPONT Jean">
+          </div>
+          <div class="form-group">
+            <label>Adresse</label>
+            <input type="text" id="p-vendeur-adresse" placeholder="ex: 12 rue de la Paix">
+          </div>
+          <div class="form-group">
+            <label>N° Carte d'identité</label>
+            <input type="text" id="p-vendeur-ci" placeholder="ex: 123456789">
+          </div>
+          <div class="form-group">
+            <label>Délivrée le</label>
+            <input type="date" id="p-vendeur-ci-date">
+          </div>
+        </div>
+      </div>
+
       <div style="margin-top:16px;padding:12px 16px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--text-muted);">
         💡 Marge calculée automatiquement — TVA sur marge incluse
       </div>
@@ -527,13 +581,160 @@ if (localStorage.getItem('sp_data_version') !== DATA_VERSION) {
   localStorage.removeItem('sp_caisse');
   localStorage.setItem('sp_data_version', DATA_VERSION);
 }
-let phones, factures, caisse;
-try {
-  phones   = JSON.parse(localStorage.getItem('sp_phones')   || '[]');
-  factures = JSON.parse(localStorage.getItem('sp_factures') || '[]');
-  caisse   = JSON.parse(localStorage.getItem('sp_caisse')   || '[]');
-} catch(e) {
-  phones = []; factures = []; caisse = [];
+// ===== SUPABASE CONFIG =====
+const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
+const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
+
+async function supaFetch(table, method='GET', body=null, query='') {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}${query}`, {
+    method,
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method==='POST' ? 'return=representation' : (method==='PATCH'||method==='DELETE' ? 'return=representation' : '')
+    },
+    body: body ? JSON.stringify(body) : null
+  });
+  if (!res.ok) { const e = await res.text(); console.error('Supabase error:', e); return null; }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+let phones = [], factures = [], caisse = [], reportsMois = {'2026-02': 891.20};
+let supabaseReady = false;
+
+async function loadFromSupabase() {
+  try {
+    showNotif('⏳ Chargement des données...', 'info');
+    const [p, f, c, r] = await Promise.all([
+      supaFetch('phones', 'GET', null, '?order=id.asc'),
+      supaFetch('factures', 'GET', null, '?order=id.asc'),
+      supaFetch('caisse', 'GET', null, '?order=date.asc'),
+      supaFetch('reports_mois', 'GET', null, '')
+    ]);
+    if (p) phones = p.map(x => ({
+      id: x.id, modele: x.modele, stockage: x.stockage, grade: x.grade,
+      batterie: x.batterie, imei: x.imei, achat: Number(x.achat), vente: Number(x.vente),
+      mode: x.mode, dateAchat: x.date_achat, couleur: x.couleur||'', etat: x.etat,
+      dateVente: x.date_vente, numPolice: x.num_police,
+      vendeurNom: x.vendeur_nom||'', vendeurAdresse: x.vendeur_adresse||'',
+      vendeurCI: x.vendeur_ci||'', vendeurCIDate: x.vendeur_ci_date||'',
+      factureId: x.facture_id
+    }));
+    if (f) factures = f.map(x => ({
+      id: x.id, numero: x.numero, date: x.date, phoneId: x.phone_id,
+      clientNom: x.client_nom, clientAdresse: x.client_adresse,
+      ttc: Number(x.montant_ttc), ht: Number(x.montant_ht), tva: Number(x.tva)
+    }));
+    if (c) caisse = c.map(x => ({
+      date: x.date, ttc: Number(x.ttc), cb: Number(x.cb), especes: Number(x.especes),
+      cheque: Number(x.cheque), virement: Number(x.virement), quali: Number(x.quali),
+      depotEsp: Number(x.depot_esp), depotCheque: Number(x.depot_cheque),
+      achatSmart: Number(x.achat_smart)
+    }));
+    if (r) r.forEach(x => { reportsMois[x.mois] = Number(x.montant); });
+    supabaseReady = true;
+    showNotif('✅ Données chargées !', 'success');
+  } catch(e) {
+    console.error('Erreur chargement:', e);
+    showNotif('⚠️ Erreur connexion - mode local', 'error');
+  }
+}
+
+let phones_local = [], factures_local = [], caisse_local = [];
+
+// Données chargées depuis Supabase au démarrage
+
+function getReportMoisPrecedent(moisAnnee) {
+  // moisAnnee = "2026-03" → cherche report de "2026-02"
+  const [annee, mois] = moisAnnee.split('-').map(Number);
+  const moisPrec = mois === 1 ? 12 : mois - 1;
+  const anneePrec = mois === 1 ? annee - 1 : annee;
+  const key = anneePrec + '-' + String(moisPrec).padStart(2,'0');
+  return reportsMois[key] || 0;
+}
+
+function getMoisActuel() {
+  // Détecter le mois des données caisse actuelles
+  if (caisse.length === 0) {
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+  return caisse[0].date.substring(0,7);
+}
+
+function calculerCaisseFinale() {
+  const mois = getMoisActuel();
+  const report = getReportMoisPrecedent(mois);
+  let cc = report;
+  return caisse.map(c => {
+    cc = cc + (c.especes||0) - (c.depotEsp||0) - (c.achatSmart||0);
+    return cc;
+  });
+}
+
+function cloturerMois() {
+  if (caisse.length === 0) { showNotif('Aucune donnée à clôturer','error'); return; }
+  const mois = getMoisActuel();
+  const finales = calculerCaisseFinale();
+  const caisseFin = finales[finales.length - 1];
+  
+  // Sauvegarder le report
+  reportsMois[mois] = caisseFin;
+  localStorage.setItem('sp_reports', JSON.stringify(reportsMois));
+  
+  // Vider la caisse pour le nouveau mois
+  caisse = [];
+  save();
+  renderCaisse();
+  showNotif('✅ Mois clôturé ! Report : '+caisseFin.toFixed(2)+' €','success');
+}
+
+async function savePhone(phone) {
+  if (!supabaseReady) return;
+  const data = {
+    modele: phone.modele, stockage: phone.stockage, grade: phone.grade,
+    batterie: phone.batterie, imei: phone.imei, achat: phone.achat, vente: phone.vente,
+    mode: phone.mode, date_achat: phone.dateAchat, couleur: phone.couleur,
+    etat: phone.etat, date_vente: phone.dateVente, num_police: phone.numPolice,
+    vendeur_nom: phone.vendeurNom, vendeur_adresse: phone.vendeurAdresse,
+    vendeur_ci: phone.vendeurCI, vendeur_ci_date: phone.vendeurCIDate||null
+  };
+  if (phone.id && typeof phone.id === 'number' && phone.id > 0) {
+    await supaFetch('phones', 'PATCH', data, `?id=eq.${phone.id}`);
+  } else {
+    const res = await supaFetch('phones', 'POST', data);
+    if (res && res[0]) phone.id = res[0].id;
+  }
+}
+
+async function saveCaisseRow(row) {
+  if (!supabaseReady) return;
+  const data = {
+    date: row.date, ttc: row.ttc, cb: row.cb, especes: row.especes,
+    cheque: row.cheque, virement: row.virement, quali: row.quali,
+    depot_esp: row.depotEsp, depot_cheque: row.depotCheque, achat_smart: row.achatSmart
+  };
+  // Check si existe
+  const existing = caisse.filter(c => c.date === row.date);
+  if (existing.length > 1) {
+    await supaFetch('caisse', 'PATCH', data, `?date=eq.${row.date}`);
+  } else {
+    const r = await supaFetch('caisse', 'POST', data);
+    if (!r) await supaFetch('caisse', 'PATCH', data, `?date=eq.${row.date}`);
+  }
+}
+
+async function saveFacture(fac) {
+  if (!supabaseReady) return;
+  const data = {
+    numero: fac.numero, date: fac.date, phone_id: fac.phoneId,
+    client_nom: fac.clientNom, client_adresse: fac.clientAdresse,
+    montant_ttc: fac.ttc, montant_ht: fac.ht, tva: fac.tva
+  };
+  const res = await supaFetch('factures', 'POST', data);
+  if (res && res[0]) fac.id = res[0].id;
 }
 
 function save() {
@@ -554,14 +755,14 @@ if (phones.length === 0) {
   caisse = [
     {date:'2026-03-02',ttc:1295,cb:756,especes:214,cheque:0,virement:0,quali:325,depotEsp:0,depotCheque:0,achatSmart:0},
     {date:'2026-03-03',ttc:1195,cb:930,especes:40,cheque:0,virement:0,quali:225,depotEsp:0,depotCheque:0,achatSmart:0},
-    {date:'2026-03-04',ttc:2284.5,cb:1479.5,especes:280,cheque:0,virement:1150,quali:525,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-04',ttc:2284.5,cb:1479.5,especes:280,cheque:0,virement:0,quali:525,depotEsp:1150,depotCheque:0,achatSmart:0},
     {date:'2026-03-05',ttc:1922,cb:857,especes:615,cheque:0,virement:0,quali:450,depotEsp:0,depotCheque:0,achatSmart:0},
     {date:'2026-03-06',ttc:1643,cb:823,especes:470,cheque:0,virement:0,quali:350,depotEsp:0,depotCheque:0,achatSmart:0},
     {date:'2026-03-07',ttc:2700,cb:1920,especes:280,cheque:0,virement:0,quali:500,depotEsp:0,depotCheque:0,achatSmart:0},
-    {date:'2026-03-09',ttc:1734,cb:1214,especes:245,cheque:0,virement:1780,quali:275,depotEsp:0,depotCheque:35,achatSmart:0},
+    {date:'2026-03-09',ttc:1734,cb:1214,especes:245,cheque:0,virement:0,quali:275,depotEsp:1780,depotCheque:35,achatSmart:0},
     {date:'2026-03-10',ttc:3035.1,cb:2200.1,especes:310,cheque:50,virement:0,quali:475,depotEsp:0,depotCheque:0,achatSmart:0},
-    {date:'2026-03-11',ttc:2147.8,cb:1457.8,especes:215,cheque:0,virement:130,quali:475,depotEsp:0,depotCheque:130,achatSmart:0},
-    {date:'2026-03-12',ttc:3003,cb:2143,especes:265,cheque:145,virement:0,quali:450,depotEsp:0,depotCheque:350,achatSmart:350},
+    {date:'2026-03-11',ttc:2147.8,cb:1457.8,especes:215,cheque:0,virement:0,quali:475,depotEsp:0,depotCheque:130,achatSmart:0},
+    {date:'2026-03-12',ttc:3003,cb:2143,especes:265,cheque:145,virement:0,quali:450,depotEsp:0,depotCheque:0,achatSmart:350},
   ];
   save();
 }
@@ -606,6 +807,7 @@ function showPage(id) {
   if(id==='smartphones') renderPhones();
   if(id==='factures') renderFactures();
   if(id==='caisse') renderCaisse();
+  if(id==='police') renderPolice();
 }
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -705,6 +907,12 @@ function addPhone() {
     imei: document.getElementById('p-imei').value.trim(),
     mode: document.getElementById('p-mode').value,
     dateAchat: document.getElementById('p-date-achat').value,
+    couleur: document.getElementById('p-couleur').value.trim(),
+    vendeurNom: document.getElementById('p-vendeur-nom').value.trim(),
+    vendeurAdresse: document.getElementById('p-vendeur-adresse').value.trim(),
+    vendeurCI: document.getElementById('p-vendeur-ci').value.trim(),
+    vendeurCIDate: document.getElementById('p-vendeur-ci-date').value,
+    numPolice: phones.length + 1,
     dateVente: null, etat: 'DISPONIBLE'
   };
   phones.unshift(phone);
@@ -714,7 +922,7 @@ function addPhone() {
   renderPhones();
   showNotif('✅ '+modele+' ajouté au stock !','success');
   // Reset form
-  ['p-modele','p-achat','p-vente','p-batterie','p-imei'].forEach(id=>document.getElementById(id).value='');
+  ['p-modele','p-achat','p-vente','p-batterie','p-imei','p-couleur','p-vendeur-nom','p-vendeur-adresse','p-vendeur-ci','p-vendeur-ci-date'].forEach(id=>document.getElementById(id).value='');
 }
 
 function renderPhones() {
@@ -733,7 +941,8 @@ function renderPhones() {
       <td><span class="badge ${p.etat==='VENDU'?'badge-red':'badge-green'}">${p.etat}</span></td>
       <td>
         <button class="btn btn-sm btn-secondary btn-icon" onclick="showEtiquette(${p.id})" title="Étiquette">🏷️</button>
-        <button class="btn btn-sm btn-secondary btn-icon" onclick="marquerVendu(${p.id})" title="Marquer vendu" ${p.etat==='VENDU'?'disabled':''}>✅</button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="printCertificat(${p.id})" title="Certificat d'achat">📄</button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="${p.etat==='VENDU'?'marquerDisponible('+p.id+')':'marquerVendu('+p.id+')'}" title="${p.etat==='VENDU'?'Remettre en stock':'Marquer vendu'}">${p.etat==='VENDU'?'↩️':'✅'}</button>
         <button class="btn btn-sm btn-secondary btn-icon" onclick="deletePhone(${p.id})" title="Supprimer">🗑️</button>
       </td>
     </tr>`;
@@ -752,11 +961,22 @@ function updateAchatSmartCaisse(phone) {
   }
 }
 
+function marquerDisponible(id) {
+  const p = phones.find(x=>x.id===id);
+  if (!p) return;
+  p.etat = 'DISPONIBLE';
+  p.dateVente = null;
+  savePhone(p);
+  save(); renderPhones(); renderDashboard();
+  showNotif('↩️ '+p.modele+' remis en stock','success');
+}
+
 function marquerVendu(id) {
   const p = phones.find(x=>x.id===id);
   if (!p || p.etat==='VENDU') return;
   p.etat = 'VENDU';
   p.dateVente = new Date().toISOString().split('T')[0];
+  savePhone(p);
   save(); renderPhones(); renderDashboard();
   showNotif('✅ '+p.modele+' marqué comme vendu','success');
 }
@@ -1038,6 +1258,24 @@ function renderFactures() {
 // ═══════════════════════════════════════════════════════════════
 // Z DE CAISSE
 // ═══════════════════════════════════════════════════════════════
+function exportCaisseCSV() {
+  let cc = 891.20;
+  const headers = ['Date','TTC','HT','TVA','Bonus QualiRepar','Cheque','CB','Especes','Virement','Depot Especes','Depot Cheque','Achats Smartphones Esp','Caisse Finale'];
+  const rows = caisse.map(c => {
+    const ht = (c.ttc/1.20).toFixed(2);
+    const tva = (c.ttc-c.ttc/1.20).toFixed(2);
+    cc = cc + (c.especes||0) - (c.depotEsp||0) - (c.achatSmart||0);
+    return [formatDate(c.date),c.ttc,ht,tva,c.quali||0,c.cheque||0,c.cb||0,c.especes||0,c.virement||0,c.depotEsp||0,c.depotCheque||0,c.achatSmart||0,cc.toFixed(2)].join(';');
+  });
+  const csv = [headers.join(';'),...rows].join('
+');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='Z_Caisse_Mars_2026.csv'; a.click();
+  showNotif('📥 Export CSV téléchargé !','success');
+}
+
 function updateCaisseCalc() {
   const ttc = parseFloat(document.getElementById('c-ttc').value)||0;
   const ht = ttc/1.20;
@@ -1071,6 +1309,90 @@ function addCaisse() {
   ['c-ttc','c-cb','c-especes','c-cheque','c-virement','c-quali','c-depot-esp','c-depot-cheque','c-ht','c-tva'].forEach(id=>document.getElementById(id).value='');
 }
 
+function renderPolice() {
+  document.getElementById('police-table').innerHTML = phones.map(p => `
+    <tr>
+      <td><b>#${p.numPolice||'—'}</b></td>
+      <td>${formatDate(p.dateAchat)}</td>
+      <td>${p.vendeurNom||'—'}</td>
+      <td>${p.vendeurCI||'—'}</td>
+      <td>${p.modele} ${p.stockage?p.stockage+'Go':''}</td>
+      <td style="font-size:12px">${p.imei||'—'}</td>
+      <td>${p.couleur||'—'}</td>
+      <td><b>${p.achat} €</b></td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="printCertificat(${p.id})">📄 Certificat</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="9" style="color:var(--text-dim);text-align:center;padding:24px;">Aucun achat enregistré</td></tr>';
+}
+
+function exportPoliceCSV() {
+  const headers = ['N° Police','Date achat','Nom vendeur','Adresse','N° CI','CI délivrée le','Marque/Modèle','Couleur','IMEI','Prix achat','Mode paiement'];
+  const rows = phones.map(p => [
+    p.numPolice||'', formatDate(p.dateAchat), p.vendeurNom||'', p.vendeurAdresse||'',
+    p.vendeurCI||'', formatDate(p.vendeurCIDate), p.modele, p.couleur||'',
+    p.imei||'', p.achat, p.mode
+  ].join(';'));
+  const csv = [headers.join(';'),...rows].join('
+');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='Livre_Police_'+new Date().getFullYear()+'.csv'; a.click();
+  showNotif('📥 Livre de police exporté !','success');
+}
+
+function printCertificat(id) {
+  const p = phones.find(x=>x.id===id);
+  if (!p) return;
+  const w = window.open('','_blank','width=650,height=850');
+  w.document.write(`<!DOCTYPE html><html><head><title>Certificat achat ${p.modele}</title>
+  <style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;padding:40px;color:#1a1a1a;font-size:13px;}
+  @media print{body{padding:20px;}}
+  .border-box{border:1px solid #1a1a1a;padding:30px;min-height:90vh;}
+  h1{font-size:16px;font-weight:bold;text-align:center;margin-bottom:30px;text-transform:uppercase;border-bottom:1px solid #000;padding-bottom:12px;}
+  .line{border-bottom:1px dotted #555;margin-bottom:16px;padding-bottom:4px;display:flex;align-items:flex-end;gap:8px;}
+  .line-label{white-space:nowrap;font-size:13px;}
+  .line-value{flex:1;border-bottom:1px dotted #333;min-height:20px;padding-left:4px;font-weight:600;}
+  .section-title{font-weight:bold;margin:20px 0 12px;}
+  .mention{margin-top:30px;font-size:12px;line-height:1.6;font-style:italic;}
+  .signatures{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:50px;}
+  .sig-box{border-top:1px solid #000;padding-top:8px;font-size:12px;}
+  .date-line{margin-top:30px;}
+  </style></head><body>
+  <div class="border-box">
+    <h1>Certificat de vente d'un smartphone ou d'une tablette</h1>
+    
+    <div class="line"><span class="line-label">Je soussigné(e)</span><span class="line-value">${p.vendeurNom||''}</span></div>
+    <div class="line"><span class="line-label">Carte d'identité n°</span><span class="line-value">${p.vendeurCI||''}</span><span class="line-label">délivrée le</span><span class="line-value">${formatDate(p.vendeurCIDate)}</span></div>
+    <div class="line"><span class="line-label">Demeurant au</span><span class="line-value">${p.vendeurAdresse||''}</span></div>
+    
+    <div class="line" style="margin-top:16px"><span class="line-label">Déclare avoir vendu le</span><span class="line-value">${formatDate(p.dateAchat)}</span><span class="line-label">à</span><span class="line-value">Solution Phone — 21 Rue Gambetta 71000 Mâcon</span></div>
+
+    <div class="section-title">Description de l'appareil :</div>
+    <div class="line"><span class="line-label">Marque :</span><span class="line-value">${p.modele.split(' ')[0]||''}</span></div>
+    <div class="line"><span class="line-label">Modèle :</span><span class="line-value">${p.modele||''}</span></div>
+    <div class="line"><span class="line-label">Couleur :</span><span class="line-value">${p.couleur||''}</span></div>
+    <div class="line"><span class="line-label">Numéro IMEI :</span><span class="line-value">${p.imei||''}</span></div>
+    <div class="line"><span class="line-label">Prix de vente :</span><span class="line-value">${p.achat} €</span></div>
+    <div class="line"><span class="line-label">Date facture d'achat : le</span><span class="line-value">${formatDate(p.dateAchat)}</span></div>
+
+    <div class="mention">Je certifie sur l'honneur que ce produit est en règle avec les douanes françaises, que toutes les taxes ont été acquittées et qu'il n'est ni déclaré perdu ou volé.</div>
+
+    <div class="date-line"><div class="line"><span class="line-label">Fait à</span><span class="line-value">Mâcon</span><span class="line-label">le</span><span class="line-value">${formatDate(p.dateAchat)}</span></div></div>
+
+    <div class="signatures">
+      <div class="sig-box">Nom et signature du vendeur<br><br><br><br></div>
+      <div class="sig-box" style="text-align:right">Nom et signature de l'acheteur<br><br><br><br></div>
+    </div>
+  </div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
 function renderCaisse() {
   const totalTTC = caisse.reduce((s,c)=>s+c.ttc,0);
   const totalCB = caisse.reduce((s,c)=>s+(c.cb||0),0);
@@ -1091,7 +1413,15 @@ function renderCaisse() {
     <div class="caisse-mode"><div class="caisse-mode-icon">📱</div><div class="caisse-mode-label">Achats Smart. Esp.</div><div class="caisse-mode-value" style="color:#ff6b6b">-${caisse.reduce((s,c)=>s+(c.achatSmart||0),0).toFixed(0)} €</div></div>
     <div class="caisse-mode"><div class="caisse-mode-icon">♻️</div><div class="caisse-mode-label">Bonus QualiRépar</div><div class="caisse-mode-value" style="color:#22c55e">${caisse.reduce((s,c)=>s+(c.quali||0),0).toFixed(0)} €</div></div>`;
 
-  document.getElementById('caisse-table').innerHTML = caisse.map(c=>{
+  const caisseFinales = calculerCaisseFinale();
+  const moisCourant = getMoisActuel();
+  const reportCourant = getReportMoisPrecedent(moisCourant);
+
+  // Afficher le report
+  const reportEl = document.getElementById('report-display');
+  if (reportEl) reportEl.textContent = reportCourant.toFixed(2) + ' €';
+
+  document.getElementById('caisse-table').innerHTML = caisse.map((c, idx)=>{
     const ht = (c.ttc/1.20).toFixed(2);
     const tva = (c.ttc-c.ttc/1.20).toFixed(2);
     return `<tr>
@@ -1107,6 +1437,7 @@ function renderCaisse() {
       <td>${(c.depotCheque||0)>0?(c.depotCheque||0).toFixed(2)+' €':'—'}</td>
       <td>${(c.achatSmart||0)>0?'-'+(c.achatSmart||0).toFixed(2)+' €':'—'}</td>
       <td>${(c.quali||0)>0?(c.quali||0).toFixed(2)+' €':'—'}</td>
+      <td><b>${caisseFinales[idx].toFixed(2)} €</b></td>
     </tr>`;
   }).join('') || '<tr><td colspan="9" style="color:var(--text-dim);text-align:center;padding:24px;">Aucune saisie ce mois</td></tr>';
 }
