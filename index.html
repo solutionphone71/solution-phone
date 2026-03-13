@@ -1138,43 +1138,6 @@ function printEtiquette() {
     </style></head>
     <body>${content}
     <script>window.onload=function(){window.print();}<\/script>
-    <script>
-// Afficher le bandeau d'installation sur iPhone si pas encore installé
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-function isInStandaloneMode() {
-  return ('standalone' in window.navigator) && window.navigator.standalone;
-}
-window.addEventListener('load', () => {
-  if (isIOS() && !isInStandaloneMode()) {
-    setTimeout(() => {
-      const banner = document.getElementById('install-banner');
-      if (banner) banner.style.display = 'flex';
-    }, 3000);
-  }
-
-  // PWA install prompt pour Android/Chrome
-  let deferredPrompt;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const banner = document.getElementById('install-banner');
-    if (banner) {
-      banner.style.display = 'flex';
-      banner.querySelector('div div:first-child').textContent = '📱 Installer Solution Phone';
-      banner.querySelector('div div:last-child').textContent = 'Cliquez pour installer l'application';
-      banner.addEventListener('click', () => {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => {
-          banner.style.display = 'none';
-          deferredPrompt = null;
-        });
-      });
-    }
-  });
-});
-</script>
 </body></html>`);
   w.document.close();
 }
@@ -1332,7 +1295,7 @@ function imprimerFacture(id) {
   <div class="footer-red">
     <div class="footer-coords">
       📞 03 85 33 06 89 · 📱 07 83 92 18 84<br>
-      ✉ SOLUTION.PHONE71@GMAIL.COM<br>
+      ✉ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="84d7cbc8d1d0cdcbcaaad4cccbcac1b3b5c4c3c9c5cdc8aac7cbc9">[email&#160;protected]</a><br>
       🌐 WWW.SOLUTION-PHONE.FR<br>
       📍 21 RUE GAMBETTA 71000 MÂCON
     </div>
@@ -1728,12 +1691,42 @@ function showNotif(msg, type='success') {
   const n = document.getElementById('notif');
   n.textContent = msg;
   n.className = 'notif show '+type;
-  setTimeout(()=>n.classList.remove('show'), 3500);
+  setTimeout(()=>n.classLis
+    <script>
+// Afficher le bandeau d'installation sur iPhone si pas encore installé
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && window.navigator.standalone;
+}
+window.addEventListener('load', () => {
+  if (isIOS() && !isInStandaloneMode()) {
+    setTimeout(() => {
+      const banner = document.getElementById('install-banner');
+      if (banner) banner.style.display = 'flex';
+    }, 3000);
+  }
 
-// Fermer modal en cliquant en dehors
-document.querySelectorAll('.modal-overlay').forEach(o=>{
-  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+  // PWA install prompt pour Android/Chrome
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const banner = document.getElementById('install-banner');
+    if (banner) {
+      banner.style.display = 'flex';
+      banner.querySelector('div div:first-child').textContent = '📱 Installer Solution Phone';
+      banner.querySelector('div div:last-child').textContent = 'Cliquez pour installer l'application';
+      banner.addEventListener('click', () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          banner.style.display = 'none';
+          deferredPrompt = null;
+        });
+      });
+    }
+  });
 });
 </script>
 </body>
