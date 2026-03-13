@@ -1103,8 +1103,10 @@ function renderCaisse() {
       <td>${(c.especes||0).toFixed(2)} €</td>
       <td>${(c.cheque||0).toFixed(2)} €</td>
       <td>${(c.virement||0).toFixed(2)} €</td>
-      <td>${(c.quali||0)>0?(c.quali||0).toFixed(2)+" €":"—"}</td>
-      <td>${c.quali>0?c.quali.toFixed(2)+' €':'—'}</td>
+      <td>${(c.depotEsp||0)>0?(c.depotEsp||0).toFixed(2)+' €':'—'}</td>
+      <td>${(c.depotCheque||0)>0?(c.depotCheque||0).toFixed(2)+' €':'—'}</td>
+      <td>${(c.achatSmart||0)>0?'-'+(c.achatSmart||0).toFixed(2)+' €':'—'}</td>
+      <td>${(c.quali||0)>0?(c.quali||0).toFixed(2)+' €':'—'}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="9" style="color:var(--text-dim);text-align:center;padding:24px;">Aucune saisie ce mois</td></tr>';
 }
