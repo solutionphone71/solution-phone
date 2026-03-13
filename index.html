@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solution Phone — Gestion Magasin</title>
+
+<style>
+:root {
+  --red: #C00000;
+  --red-dark: #8B0000;
+  --red-light: #ff1a1a;
+  --dark: #0f0f0f;
+  --dark2: #1a1a1a;
+  --dark3: #242424;
+  --card: #1e1e1e;
+  --border: #2e2e2e;
+  --text: #f0f0f0;
+  --text-muted: #888;
+  --text-dim: #555;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --white: #ffffff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;text-align:center;}
+.login-logo{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:32px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:4px;}
+.login-sub{font-size:12px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:36px;}
+.login-box input{width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;color:var(--text);font-size:15px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;margin-bottom:12px;outline:none;transition:.2s;}
+.login-box input:focus{border-color:var(--red);}
+.btn-login{width:100%;background:var(--red);border:none;border-radius:8px;padding:14px;color:white;font-size:16px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;letter-spacing:2px;cursor:pointer;transition:.2s;margin-top:8px;}
+.btn-login:hover{background:var(--red-dark);}
+.login-error{color:#ff6b6b;font-size:13px;margin-top:12px;display:none;}
+
+/* ── LAYOUT ── */
+#app{display:none;height:100vh;display:none;flex-direction:column;}
+.topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.topbar-logo{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:24px;font-weight:800;color:var(--red);letter-spacing:2px;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.topbar-date{font-size:13px;color:var(--text-muted);}
+.btn-logout{background:var(--dark3);border:1px solid var(--border);border-radius:6px;padding:7px 14px;color:var(--text-muted);font-size:13px;cursor:pointer;transition:.2s;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+.main-layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:220px;background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.nav-section{padding:20px 12px 8px;font-size:10px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 16px;margin:2px 8px;border-radius:8px;cursor:pointer;transition:.15s;font-size:14px;color:var(--text-muted);}
+.nav-item:hover{background:var(--dark3);color:var(--text);}
+.nav-item.active{background:var(--red);color:white;}
+.nav-icon{font-size:18px;width:22px;text-align:center;}
+
+.content{flex:1;overflow-y:auto;padding:28px;}
+
+/* ── CARDS ── */
+.page{display:none;}
+.page.active{display:block;}
+.page-title{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:32px;font-weight:700;margin-bottom:6px;letter-spacing:1px;}
+.page-sub{font-size:14px;color:var(--text-muted);margin-bottom:28px;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--red);}
+.stat-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;}
+.stat-value{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:36px;font-weight:700;color:var(--text);}
+.stat-suffix{font-size:18px;color:var(--text-muted);}
+.stat-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:36px;opacity:0.15;}
+
+/* ── TABLES ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;}
+table{width:100%;border-collapse:collapse;}
+th{padding:11px 16px;text-align:left;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid var(--border);background:var(--dark3);}
+td{padding:12px 16px;font-size:14px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(192,0,0,0.04);}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:rgba(34,197,94,0.15);color:#22c55e;}
+.badge-red{background:rgba(192,0,0,0.15);color:#ff6b6b;}
+.badge-blue{background:rgba(59,130,246,0.15);color:#60a5fa;}
+.badge-yellow{background:rgba(245,158,11,0.15);color:#fbbf24;}
+
+/* ── FORMS ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.form-group input,.form-group select,.form-group textarea{background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;outline:none;transition:.2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--red);}
+.form-group select option{background:var(--dark3);}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
+.btn-primary{background:var(--red);color:white;}
+.btn-primary:hover{background:var(--red-dark);}
+.btn-secondary{background:var(--dark3);border:1px solid var(--border);color:var(--text);}
+.btn-secondary:hover{border-color:var(--red);color:var(--red);}
+.btn-sm{padding:7px 14px;font-size:13px;}
+.btn-icon{padding:8px;border-radius:6px;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:1px;}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:4px;}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end;}
+
+/* ── ÉTIQUETTE ── */
+.etiquette-preview{width:340px;background:white;border-radius:8px;overflow:hidden;margin:0 auto;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.etiq-header{background:#C00000;padding:10px 16px;text-align:center;}
+.etiq-header-text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:20px;font-weight:800;color:white;letter-spacing:3px;}
+.etiq-header-sub{font-size:9px;color:rgba(255,255,255,0.8);letter-spacing:2px;}
+.etiq-body{padding:12px 16px;}
+.etiq-modele{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:700;color:#1A3A5C;text-align:center;margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:8px;}
+.etiq-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.etiq-cell{background:#f5f5f5;border-radius:4px;padding:6px 10px;}
+.etiq-cell-label{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:1px;}
+.etiq-cell-value{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#1A3A5C;}
+.etiq-prix .etiq-cell-value{color:#C00000;font-size:22px;}
+.etiq-imei{background:#f0f0f0;border-radius:4px;padding:6px 10px;font-size:11px;color:#555;}
+.etiq-footer{background:#C00000;padding:6px 16px;text-align:center;}
+.etiq-footer-text{font-size:9px;color:rgba(255,255,255,0.9);font-style:italic;}
+
+/* ── FACTURE PREVIEW ── */
+.facture-preview{background:white;color:#1a1a1a;border-radius:8px;padding:24px;max-width:500px;margin:0 auto;font-size:13px;}
+.fact-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.fact-title{font-size:28px;font-weight:800;color:#1a1a1a;}
+.fact-subtitle{font-size:12px;color:#555;}
+.fact-logo-box{background:#C00000;color:white;padding:12px 20px;border-radius:6px;text-align:center;}
+.fact-logo-text{font-size:16px;font-weight:800;letter-spacing:2px;}
+.fact-logo-sub{font-size:8px;letter-spacing:1px;opacity:0.8;}
+.fact-info{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.fact-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;}
+.fact-value{font-size:13px;font-weight:600;color:#1a1a1a;}
+.fact-table{width:100%;border-collapse:collapse;margin:16px 0;}
+.fact-table th{background:#1a1a1a;color:white;padding:8px 12px;font-size:11px;text-align:left;}
+.fact-table td{padding:10px 12px;border-bottom:1px solid #eee;font-size:13px;}
+.fact-total-row{display:flex;justify-content:flex-end;gap:16px;align-items:center;padding:12px 0;border-top:2px solid #1a1a1a;margin-top:8px;}
+.fact-total-label{font-size:14px;font-weight:700;}
+.fact-total-value{font-size:20px;font-weight:800;color:#C00000;}
+.fact-footer{background:#C00000;color:white;padding:10px 16px;border-radius:6px;margin-top:16px;font-size:9px;}
+
+/* ── Z CAISSE ── */
+.caisse-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;}
+.caisse-mode{background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;}
+.caisse-mode-icon{font-size:24px;margin-bottom:8px;}
+.caisse-mode-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.caisse-mode-value{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:24px;font-weight:700;color:var(--text);}
+
+/* ── NOTIFICATIONS ── */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;z-index:9999;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px;}
+.notif.show{transform:translateY(0);opacity:1;}
+.notif.success{border-color:var(--success);}
+.notif.error{border-color:#ff6b6b;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{width:60px;}
+  .nav-item span{display:none;}
+  .nav-section{display:none;}
+  .content{padding:16px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+@media print{
+  body *{visibility:hidden;}
+  .print-zone,.print-zone *{visibility:visible;}
+  .print-zone{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">SOLUTION PHONE</div>
+    <div class="login-sub">Gestion Magasin</div>
+    <input type="text" id="login-user" placeholder="Identifiant" autocomplete="off">
+    <input type="password" id="login-pass" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">CONNEXION</button>
+    <div class="login-error" id="login-error">Identifiant ou mot de passe incorrect</div>
+    <div style="margin-top:16px;font-size:11px;color:var(--text-dim)">Identifiant : <b style="color:var(--text-muted)">admin</b> — Mot de passe : <b style="color:var(--text-muted)">solution2026</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">📱 SOLUTION PHONE</div>
+    <div class="topbar-right">
+      <div class="topbar-date" id="topbar-date"></div>
+      <button class="btn-logout" onclick="doLogout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-section">Menu</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span><span>Tableau de bord</span></div>
+      <div class="nav-item" onclick="showPage('smartphones')"><span class="nav-icon">📱</span><span>Smartphones</span></div>
+      <div class="nav-item" onclick="showPage('factures')"><span class="nav-icon">🧾</span><span>Factures</span></div>
+      <div class="nav-item" onclick="showPage('caisse')"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">Tableau de bord</div>
+        <div class="page-sub" id="dash-date-sub">Aujourd'hui</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Stock disponible</div>
+            <div class="stat-value" id="stat-stock">0 <span class="stat-suffix">tel.</span></div>
+            <div class="stat-icon">📱</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">CA du mois</div>
+            <div class="stat-value" id="stat-ca">0 <span class="stat-suffix">€</span></div>
+            <div class="stat-icon">💶</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Marge du mois</div>
+            <div class="stat-value" id="stat-marge">0 <span class="stat-suffix">€</span></div>
+            <div class="stat-icon">📈</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Factures ce mois</div>
+            <div class="stat-value" id="stat-factures">0</div>
+            <div class="stat-icon">🧾</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Derniers smartphones ajoutés</div>
+            <button class="btn btn-sm btn-primary" onclick="showPage('smartphones')">Voir tout</button>
+          </div>
+          <table>
+            <thead><tr><th>Modèle</th><th>Prix vente</th><th>Grade</th><th>État</th></tr></thead>
+            <tbody id="dash-recent"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Z de Caisse — Ce mois</div></div>
+          <table>
+            <thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Virement</th><th>QualiRépar</th></tr></thead>
+            <tbody id="dash-caisse"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SMARTPHONES -->
+      <div class="page" id="page-smartphones">
+        <div class="page-title">Smartphones reconditionnés</div>
+        <div class="page-sub">Gestion du stock et génération d'étiquettes</div>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="openModal('modal-add-phone')">➕ Ajouter un smartphone</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Stock smartphones</div></div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>#</th><th>Modèle</th><th>Stockage</th><th>Grade</th><th>Batterie</th><th>Prix achat</th><th>Prix vente</th><th>Marge</th><th>État</th><th>Actions</th></tr></thead>
+              <tbody id="phones-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FACTURES -->
+      <div class="page" id="page-factures">
+        <div class="page-title">Factures</div>
+        <div class="page-sub">Génération et historique des factures clients</div>
+        <button class="btn btn-primary" onclick="openModal('modal-new-facture')" style="margin-bottom:20px;">➕ Nouvelle facture</button>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Historique factures</div></div>
+          <table>
+            <thead><tr><th>N° Facture</th><th>Date</th><th>Client</th><th>Modèle</th><th>Montant TTC</th><th>Actions</th></tr></thead>
+            <tbody id="factures-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Z DE CAISSE -->
+      <div class="page" id="page-caisse">
+        <div class="page-title">Z de Caisse</div>
+        <div class="page-sub" id="caisse-mois-title">Mars 2026</div>
+
+        <div class="caisse-grid" id="caisse-totaux"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Saisie journalière</div>
+            <button class="btn btn-sm btn-primary" onclick="openModal('modal-add-caisse')">➕ Ajouter journée</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>Date</th><th>TTC</th><th>HT</th><th>TVA</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>Dépôt Esp.</th><th>Dépôt Chèque</th><th>Achat Smart. Esp.</th><th>QualiRépar</th></tr></thead>
+              <tbody id="caisse-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-layout -->
+</div><!-- /app -->
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Ajouter smartphone -->
+<div class="modal-overlay" id="modal-add-phone">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📱 Ajouter un smartphone</div>
+      <button class="modal-close" onclick="closeModal('modal-add-phone')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Modèle *</label>
+          <input type="text" id="p-modele" placeholder="ex: iPhone 15 Pro Max">
+        </div>
+        <div class="form-group">
+          <label>Stockage (Go)</label>
+          <select id="p-stockage"><option>64</option><option selected>128</option><option>256</option><option>512</option></select>
+        </div>
+        <div class="form-group">
+          <label>Grade</label>
+          <select id="p-grade"><option>Excellent</option><option>Bon</option><option>Correct</option></select>
+        </div>
+        <div class="form-group">
+          <label>Batterie (%)</label>
+          <input type="number" id="p-batterie" placeholder="ex: 89" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label>IMEI</label>
+          <input type="text" id="p-imei" placeholder="15 chiffres">
+        </div>
+        <div class="form-group">
+          <label>Prix achat (€) *</label>
+          <input type="number" id="p-achat" placeholder="ex: 350">
+        </div>
+        <div class="form-group">
+          <label>Prix vente (€) *</label>
+          <input type="number" id="p-vente" placeholder="ex: 530">
+        </div>
+        <div class="form-group">
+          <label>Mode achat</label>
+          <select id="p-mode"><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option></select>
+        </div>
+        <div class="form-group">
+          <label>Date achat</label>
+          <input type="date" id="p-date-achat">
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--text-muted);">
+        💡 Marge calculée automatiquement — TVA sur marge incluse
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-phone')">Annuler</button>
+      <button class="btn btn-primary" onclick="addPhone()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Étiquette -->
+<div class="modal-overlay" id="modal-etiquette">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">🏷️ Étiquette Brother</div>
+      <button class="modal-close" onclick="closeModal('modal-etiquette')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="etiquette-container"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-etiquette')">Fermer</button>
+      <button class="btn btn-primary" onclick="printEtiquette()">🖨️ Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nouvelle facture -->
+<div class="modal-overlay" id="modal-new-facture">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🧾 Nouvelle facture</div>
+      <button class="modal-close" onclick="closeModal('modal-new-facture')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Smartphone vendu *</label>
+          <select id="f-phone" onchange="updateFacturePreview()"></select>
+        </div>
+        <div class="form-group">
+          <label>Date de vente</label>
+          <input type="date" id="f-date" onchange="updateFacturePreview()">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Nom client *</label>
+          <input type="text" id="f-client" placeholder="ex: Jean DUPONT" oninput="updateFacturePreview()">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Adresse client</label>
+          <input type="text" id="f-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateFacturePreview()">
+        </div>
+        <div class="form-group">
+          <label>Code postal</label>
+          <input type="text" id="f-cp" placeholder="ex: 71000" oninput="updateFacturePreview()">
+        </div>
+        <div class="form-group">
+          <label>Ville</label>
+          <input type="text" id="f-ville" placeholder="ex: Mâcon" oninput="updateFacturePreview()">
+        </div>
+        <div class="form-group">
+          <label>Mode règlement</label>
+          <select id="f-mode" onchange="updateFacturePreview()"><option>ESPECES</option><option>CB</option><option>VIREMENT</option><option>CHEQUE</option></select>
+        </div>
+      </div>
+      <div style="margin-top:20px;">
+        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Aperçu facture</div>
+        <div id="facture-preview-container"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-new-facture')">Annuler</button>
+      <button class="btn btn-primary" onclick="genererFacture()">🖨️ Générer & Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ajouter journée caisse -->
+<div class="modal-overlay" id="modal-add-caisse">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💰 Saisie journée caisse</div>
+      <button class="modal-close" onclick="closeModal('modal-add-caisse')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="c-date">
+        </div>
+        <div class="form-group">
+          <label>Total TTC (€) *</label>
+          <input type="number" id="c-ttc" placeholder="ex: 1295" oninput="updateCaisseCalc()">
+        </div>
+        <div class="form-group">
+          <label>HT (calculé auto)</label>
+          <input type="text" id="c-ht" readonly style="color:var(--text-muted);">
+        </div>
+        <div class="form-group">
+          <label>TVA (calculé auto)</label>
+          <input type="text" id="c-tva" readonly style="color:var(--text-muted);">
+        </div>
+        <div class="form-group">
+          <label>Dont CB (€)</label>
+          <input type="number" id="c-cb" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Dont Espèces (€)</label>
+          <input type="number" id="c-especes" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Dont Chèque (€)</label>
+          <input type="number" id="c-cheque" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Dont Virement (€)</label>
+          <input type="number" id="c-virement" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Dépôt espèces banque (€)</label>
+          <input type="number" id="c-depot-esp" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Dépôt chèque banque (€)</label>
+          <input type="number" id="c-depot-cheque" placeholder="0">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Bonus QualiRépar (€)</label>
+          <input type="number" id="c-quali" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-caisse')">Annuler</button>
+      <button class="btn btn-primary" onclick="addCaisse()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Zone impression étiquette -->
+<div class="print-zone" id="print-zone" style="display:none;"></div>
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DONNÉES
+// ═══════════════════════════════════════════════════════════════
+const CREDS = { user: 'admin', pass: 'solution2026' };
+
+// Version données - incrémenter pour forcer reset
+const DATA_VERSION = 'v2';
+if (localStorage.getItem('sp_data_version') !== DATA_VERSION) {
+  localStorage.removeItem('sp_phones');
+  localStorage.removeItem('sp_factures');
+  localStorage.removeItem('sp_caisse');
+  localStorage.setItem('sp_data_version', DATA_VERSION);
+}
+let phones, factures, caisse;
+try {
+  phones   = JSON.parse(localStorage.getItem('sp_phones')   || '[]');
+  factures = JSON.parse(localStorage.getItem('sp_factures') || '[]');
+  caisse   = JSON.parse(localStorage.getItem('sp_caisse')   || '[]');
+} catch(e) {
+  phones = []; factures = []; caisse = [];
+}
+
+function save() {
+  try {
+    localStorage.setItem('sp_phones', JSON.stringify(phones));
+    localStorage.setItem('sp_factures', JSON.stringify(factures));
+    localStorage.setItem('sp_caisse', JSON.stringify(caisse));
+  } catch(e) { console.log('Storage error:', e); }
+}
+
+// ── Données de démo ──────────────────────────────────────────
+if (phones.length === 0) {
+  phones = [{
+    id: 1, modele: 'iPhone 15', stockage: 128, grade: 'Excellent',
+    batterie: 92, imei: '', achat: 350, vente: 530,
+    mode: 'ESPECES', dateAchat: '2026-03-12', dateVente: '2026-03-13', etat: 'VENDU'
+  }];
+  caisse = [
+    {date:'2026-03-02',ttc:1295,cb:756,especes:214,cheque:0,virement:0,quali:325,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-03',ttc:1195,cb:930,especes:40,cheque:0,virement:0,quali:225,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-04',ttc:2284.5,cb:1479.5,especes:280,cheque:0,virement:1150,quali:525,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-05',ttc:1922,cb:857,especes:615,cheque:0,virement:0,quali:450,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-06',ttc:1643,cb:823,especes:470,cheque:0,virement:0,quali:350,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-07',ttc:2700,cb:1920,especes:280,cheque:0,virement:0,quali:500,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-09',ttc:1734,cb:1214,especes:245,cheque:0,virement:1780,quali:275,depotEsp:0,depotCheque:35,achatSmart:0},
+    {date:'2026-03-10',ttc:3035.1,cb:2200.1,especes:310,cheque:50,virement:0,quali:475,depotEsp:0,depotCheque:0,achatSmart:0},
+    {date:'2026-03-11',ttc:2147.8,cb:1457.8,especes:215,cheque:0,virement:130,quali:475,depotEsp:0,depotCheque:130,achatSmart:0},
+    {date:'2026-03-12',ttc:3003,cb:2143,especes:265,cheque:145,virement:0,quali:450,depotEsp:0,depotCheque:350,achatSmart:350},
+  ];
+  save();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (u === CREDS.user && p === CREDS.pass) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+function doLogout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes(id))n.classList.add('active');
+  });
+  if(id==='dashboard') renderDashboard();
+  if(id==='smartphones') renderPhones();
+  if(id==='factures') renderFactures();
+  if(id==='caisse') renderCaisse();
+}
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if(id==='modal-new-facture') initFactureModal();
+  if(id==='modal-add-caisse') {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('c-date').value = today;
+  }
+  if(id==='modal-add-phone') {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('p-date-achat').value = today;
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+function recalcAchatsSmart() {
+  // Recalculer les achats smartphones espèces dans le Z caisse depuis la liste phones
+  // Remettre à 0 d'abord
+  caisse.forEach(c => c.achatSmart = 0);
+  // Recalculer depuis tous les phones en espèces
+  phones.forEach(p => {
+    if (p.mode === 'ESPECES' && p.dateAchat) {
+      const entry = caisse.find(c => c.date === p.dateAchat);
+      if (entry) {
+        entry.achatSmart = (entry.achatSmart || 0) + (p.achat || 0);
+      }
+    }
+  });
+  save();
+}
+
+function initApp() {
+  recalcAchatsSmart();
+  const now = new Date();
+  const opts = {weekday:'long',year:'numeric',month:'long',day:'numeric'};
+  const ds = now.toLocaleDateString('fr-FR',opts);
+  document.getElementById('topbar-date').textContent = ds;
+  document.getElementById('dash-date-sub').textContent = ds.charAt(0).toUpperCase()+ds.slice(1);
+  document.getElementById('caisse-mois-title').textContent =
+    now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const dispo = phones.filter(p=>p.etat==='DISPONIBLE').length;
+  const vendus = phones.filter(p=>p.etat==='VENDU');
+  const ca = vendus.reduce((s,p)=>s+(p.vente||0),0);
+  const marge = vendus.reduce((s,p)=>s+((p.vente||0)-(p.achat||0)),0);
+  document.getElementById('stat-stock').innerHTML = dispo+'<span class="stat-suffix"> tel.</span>';
+  document.getElementById('stat-ca').innerHTML = ca.toFixed(0)+'<span class="stat-suffix"> €</span>';
+  document.getElementById('stat-marge').innerHTML = marge.toFixed(0)+'<span class="stat-suffix"> €</span>';
+  document.getElementById('stat-factures').textContent = factures.length;
+
+  // Derniers phones
+  const recent = [...phones].reverse().slice(0,5);
+  document.getElementById('dash-recent').innerHTML = recent.map(p=>`
+    <tr>
+      <td><b>${p.modele}</b></td>
+      <td>${p.vente?p.vente+' €':'—'}</td>
+      <td>${p.grade||'—'}</td>
+      <td><span class="badge ${p.etat==='VENDU'?'badge-red':'badge-green'}">${p.etat}</span></td>
+    </tr>`).join('') || '<tr><td colspan="4" style="color:var(--text-dim);text-align:center;padding:20px;">Aucun smartphone enregistré</td></tr>';
+
+  // Caisse récente
+  const recentCaisse = [...caisse].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,7);
+  document.getElementById('dash-caisse').innerHTML = recentCaisse.map(c=>`
+    <tr>
+      <td>${formatDate(c.date)}</td>
+      <td><b>${c.ttc.toFixed(2)} €</b></td>
+      <td>${(c.cb||0).toFixed(2)} €</td>
+      <td>${(c.especes||0).toFixed(2)} €</td>
+      <td>${(c.virement||0).toFixed(2)} €</td>
+      <td>${(c.quali||0)>0?(c.quali||0).toFixed(2)+" €":"—"}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="color:var(--text-dim);text-align:center;padding:20px;">Aucune saisie ce mois</td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SMARTPHONES
+// ═══════════════════════════════════════════════════════════════
+function addPhone() {
+  const modele = document.getElementById('p-modele').value.trim();
+  const achat = parseFloat(document.getElementById('p-achat').value)||0;
+  const vente = parseFloat(document.getElementById('p-vente').value)||0;
+  if (!modele) { showNotif('⚠️ Saisissez le modèle du smartphone','error'); return; }
+  if (!achat || !vente) { showNotif('⚠️ Saisissez les prix achat et vente','error'); return; }
+
+  const phone = {
+    id: Date.now(),
+    modele, achat, vente,
+    stockage: document.getElementById('p-stockage').value,
+    grade: document.getElementById('p-grade').value,
+    batterie: parseInt(document.getElementById('p-batterie').value)||null,
+    imei: document.getElementById('p-imei').value.trim(),
+    mode: document.getElementById('p-mode').value,
+    dateAchat: document.getElementById('p-date-achat').value,
+    dateVente: null, etat: 'DISPONIBLE'
+  };
+  phones.unshift(phone);
+  save();
+  updateAchatSmartCaisse(phone);
+  closeModal('modal-add-phone');
+  renderPhones();
+  showNotif('✅ '+modele+' ajouté au stock !','success');
+  // Reset form
+  ['p-modele','p-achat','p-vente','p-batterie','p-imei'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderPhones() {
+  document.getElementById('phones-table').innerHTML = phones.map(p=>{
+    const marge = (p.vente||0)-(p.achat||0);
+    const margeCls = marge>100?'badge-green':marge>50?'badge-yellow':'badge-red';
+    return `<tr>
+      <td style="color:var(--text-dim)">#${p.id}</td>
+      <td><b>${p.modele}</b></td>
+      <td>${p.stockage||'—'} Go</td>
+      <td>${p.grade||'—'}</td>
+      <td>${p.batterie?p.batterie+'%':'—'}</td>
+      <td>${p.achat} €</td>
+      <td>${p.vente?p.vente+' €':'—'}</td>
+      <td><span class="badge ${margeCls}">${marge.toFixed(0)} €</span></td>
+      <td><span class="badge ${p.etat==='VENDU'?'badge-red':'badge-green'}">${p.etat}</span></td>
+      <td>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="showEtiquette(${p.id})" title="Étiquette">🏷️</button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="marquerVendu(${p.id})" title="Marquer vendu" ${p.etat==='VENDU'?'disabled':''}>✅</button>
+        <button class="btn btn-sm btn-secondary btn-icon" onclick="deletePhone(${p.id})" title="Supprimer">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="color:var(--text-dim);text-align:center;padding:24px;">Aucun smartphone — Cliquez sur "Ajouter"</td></tr>';
+}
+
+function updateAchatSmartCaisse(phone) {
+  // Mettre à jour achatSmart dans la journée d'achat
+  if (phone.mode === 'ESPECES' && phone.dateAchat) {
+    const entry = caisse.find(c => c.date === phone.dateAchat);
+    if (entry) {
+      entry.achatSmart = (entry.achatSmart||0) + (phone.achat||0);
+      save();
+      renderCaisse();
+    }
+  }
+}
+
+function marquerVendu(id) {
+  const p = phones.find(x=>x.id===id);
+  if (!p || p.etat==='VENDU') return;
+  p.etat = 'VENDU';
+  p.dateVente = new Date().toISOString().split('T')[0];
+  save(); renderPhones(); renderDashboard();
+  showNotif('✅ '+p.modele+' marqué comme vendu','success');
+}
+
+function deletePhone(id) {
+  if (!confirm('Supprimer ce smartphone ?')) return;
+  phones = phones.filter(p=>p.id!==id);
+  save(); renderPhones();
+  showNotif('🗑️ Smartphone supprimé','success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ÉTIQUETTE
+// ═══════════════════════════════════════════════════════════════
+let currentEtiquettePhone = null;
+
+function showEtiquette(id) {
+  const p = phones.find(x=>x.id===id);
+  if (!p) return;
+  currentEtiquettePhone = p;
+  document.getElementById('etiquette-container').innerHTML = buildEtiquetteHTML(p);
+  openModal('modal-etiquette');
+}
+
+function buildEtiquetteHTML(p) {
+  const marge = (p.vente||0)-(p.achat||0);
+  const tva = (marge/1.2)*0.2;
+  return `
+  <div class="etiquette-preview" id="etiquette-print">
+    <div class="etiq-header">
+      <div class="etiq-header-text">SOLUTION PHONE</div>
+      <div class="etiq-header-sub">RÉPARATION SMARTPHONE · TABLETTE · PC</div>
+    </div>
+    <div class="etiq-body">
+      <div class="etiq-modele">${p.modele.toUpperCase()}</div>
+      <div class="etiq-grid">
+        <div class="etiq-cell">
+          <div class="etiq-cell-label">Stockage</div>
+          <div class="etiq-cell-value">${p.stockage||'—'} Go</div>
+        </div>
+        <div class="etiq-cell">
+          <div class="etiq-cell-label">Grade</div>
+          <div class="etiq-cell-value">${p.grade||'—'}</div>
+        </div>
+        <div class="etiq-cell">
+          <div class="etiq-cell-label">Batterie</div>
+          <div class="etiq-cell-value">${p.batterie?p.batterie+'%':'—'}</div>
+        </div>
+        <div class="etiq-cell etiq-prix">
+          <div class="etiq-cell-label">Prix</div>
+          <div class="etiq-cell-value">${p.vente?p.vente+' €':'—'}</div>
+        </div>
+      </div>
+      <div class="etiq-imei">IMEI : ${p.imei||'_ _ _ _ _ _ _ _ _ _ _ _ _ _ _'}</div>
+    </div>
+    <div class="etiq-footer">
+      <div class="etiq-footer-text">Téléphone occasion — Garantie 6 mois — 21 Rue Gambetta 71000 Mâcon</div>
+    </div>
+  </div>`;
+}
+
+function printEtiquette() {
+  const content = document.getElementById('etiquette-print').outerHTML;
+  const w = window.open('','_blank','width=400,height=350');
+  w.document.write(`
+    <html><head><title>Étiquette ${currentEtiquettePhone.modele}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f0f0f0;}
+    @page{size:90mm 29mm;margin:0;}
+    @media print{body{background:white;}@page{size:90mm 29mm;margin:0;}}
+    .etiquette-preview{width:340px;background:white;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
+    .etiq-header{background:#C00000;padding:6px 12px;text-align:center;}
+    .etiq-header-text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:16px;font-weight:800;color:white;letter-spacing:3px;}
+    .etiq-header-sub{font-size:7px;color:rgba(255,255,255,0.8);letter-spacing:2px;}
+    .etiq-body{padding:6px 12px;}
+    .etiq-modele{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:18px;font-weight:700;color:#1A3A5C;text-align:center;margin-bottom:6px;border-bottom:1px solid #eee;padding-bottom:4px;}
+    .etiq-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px;}
+    .etiq-cell{background:#f5f5f5;border-radius:3px;padding:4px 8px;}
+    .etiq-cell-label{font-size:7px;color:#888;text-transform:uppercase;letter-spacing:1px;}
+    .etiq-cell-value{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:700;color:#1A3A5C;}
+    .etiq-prix .etiq-cell-value{color:#C00000;font-size:16px;}
+    .etiq-imei{background:#f0f0f0;border-radius:3px;padding:4px 8px;font-size:9px;color:#555;}
+    .etiq-footer{background:#C00000;padding:4px 12px;text-align:center;}
+    .etiq-footer-text{font-size:7px;color:rgba(255,255,255,0.9);font-style:italic;}
+    </style></head>
+    <body>${content}
+    <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`);
+  w.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FACTURES
+// ═══════════════════════════════════════════════════════════════
+function initFactureModal() {
+  const sel = document.getElementById('f-phone');
+  sel.innerHTML = '<option value="">-- Choisir un smartphone --</option>' +
+    phones.map(p=>`<option value="${p.id}">${p.modele} — ${p.vente||'?'} €</option>`).join('');
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('facture-preview-container').innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px;">Sélectionnez un smartphone pour voir l\'aperçu</div>';
+}
+
+function updateFacturePreview() {
+  const phoneId = parseInt(document.getElementById('f-phone').value);
+  const p = phones.find(x=>x.id===phoneId);
+  if (!p) return;
+  const client = document.getElementById('f-client').value||'Client';
+  const adresse = document.getElementById('f-adresse').value||'';
+  const cp = document.getElementById('f-cp').value||'';
+  const ville = document.getElementById('f-ville').value||'';
+  const date = document.getElementById('f-date').value;
+  const mode = document.getElementById('f-mode').value;
+  const marge = (p.vente||0)-(p.achat||0);
+  const tva = ((marge/1.2)*0.2).toFixed(2);
+  const numF = 'FAC-2026-'+String(factures.length+1).padStart(3,'0');
+
+  document.getElementById('facture-preview-container').innerHTML = `
+  <div class="facture-preview">
+    <div class="fact-header">
+      <div>
+        <div class="fact-title">FACTURE</div>
+        <div class="fact-subtitle">TÉLÉPHONE D'OCCASION</div>
+      </div>
+      <div class="fact-logo-box">
+        <div class="fact-logo-text">SOLUTION PHONE</div>
+        <div class="fact-logo-sub">RÉPARATION SMARTPHONE</div>
+      </div>
+    </div>
+    <div class="fact-info">
+      <div><div class="fact-label">Facturé à</div><div class="fact-value">${client}</div><div style="font-size:12px;color:#555">${adresse}${cp?' — '+cp:''} ${ville}</div></div>
+      <div>
+        <div class="fact-label">Facture #</div><div class="fact-value">${numF}</div>
+        <div class="fact-label" style="margin-top:6px">Date</div><div class="fact-value">${formatDate(date)}</div>
+        <div class="fact-label" style="margin-top:6px">Règlement</div><div class="fact-value">${mode}</div>
+      </div>
+    </div>
+    <table class="fact-table">
+      <thead><tr><th>#</th><th>Description</th><th>Prix</th><th>Qt.</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td style="color:#2E75B6;font-weight:600">${p.modele}</td><td>${p.vente} €</td><td>1</td><td>${p.vente} €</td></tr>
+      </tbody>
+    </table>
+    <div class="fact-total-row">
+      <div class="fact-total-label">Total TTC :</div>
+      <div class="fact-total-value">${p.vente} €</div>
+    </div>
+    <div style="font-size:10px;color:#888;margin-top:4px;text-align:right">dont TVA sur marge : ${tva} €</div>
+    <div class="fact-footer">
+      SIRET : 801044785 00021 · Aux termes de l'article 297A du CGI, TVA sur marge. Garantie 6 mois.
+    </div>
+  </div>`;
+}
+
+function genererFacture() {
+  const phoneId = parseInt(document.getElementById('f-phone').value);
+  const p = phones.find(x=>x.id===phoneId);
+  const client = document.getElementById('f-client').value.trim();
+  if (!p) { showNotif('⚠️ Sélectionnez un smartphone','error'); return; }
+  if (!client) { showNotif('⚠️ Saisissez le nom du client','error'); return; }
+
+  const numF = 'FAC-2026-'+String(factures.length+1).padStart(3,'0');
+  const date = document.getElementById('f-date').value;
+  const facture = {
+    id: Date.now(), num: numF, date, client,
+    adresse: document.getElementById('f-adresse').value,
+    cp: document.getElementById('f-cp').value,
+    ville: document.getElementById('f-ville').value,
+    mode: document.getElementById('f-mode').value,
+    phoneId, montant: p.vente
+  };
+  factures.push(facture);
+  marquerVendu(phoneId);
+  save();
+  closeModal('modal-new-facture');
+  renderFactures();
+  showNotif('✅ Facture '+numF+' générée !','success');
+
+  // Imprimer
+  setTimeout(()=>{ imprimerFacture(facture.id); }, 500);
+}
+
+function imprimerFacture(id) {
+  const f = factures.find(x=>x.id===id);
+  const p = phones.find(x=>x.id===f.phoneId);
+  if (!f||!p) return;
+  const marge = (p.vente||0)-(p.achat||0);
+  const tva = ((marge/1.2)*0.2).toFixed(2);
+  const w = window.open('','_blank','width=650,height=850');
+  w.document.write(`<html><head><title>Facture ${f.num}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+  *{margin:0;padding:0;box-sizing:border-box;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:white;color:#1a1a1a;padding:40px;}
+  @media print{body{padding:20px;}}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+  .title{font-size:42px;font-weight:800;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;letter-spacing:2px;}
+  .subtitle{font-size:14px;color:#555;margin-top:4px;}
+  .logo-box{background:#C00000;color:white;padding:16px 24px;border-radius:8px;text-align:center;}
+  .logo-text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:3px;}
+  .logo-sub{font-size:9px;letter-spacing:2px;opacity:0.8;margin-top:2px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;padding:20px;background:#f9f9f9;border-radius:8px;}
+  .info-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px;}
+  .info-value{font-size:15px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;margin:20px 0;}
+  th{background:#1a1a1a;color:white;padding:12px 16px;text-align:left;font-size:12px;}
+  td{padding:14px 16px;border-bottom:1px solid #eee;font-size:14px;}
+  .total-section{display:flex;justify-content:flex-end;align-items:center;gap:20px;padding:16px 0;border-top:2px solid #1a1a1a;}
+  .total-label{font-size:16px;font-weight:700;}
+  .total-value{font-size:28px;font-weight:800;color:#C00000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;}
+  .footer-red{background:#C00000;color:white;padding:14px 20px;border-radius:8px;margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .footer-coords{font-size:11px;line-height:1.8;}
+  .footer-garanties{font-size:11px;line-height:1.8;font-style:italic;opacity:0.9;}
+  .mentions{margin-top:12px;font-size:10px;color:#888;}
+  </style></head><body>
+  <div class="header">
+    <div><div class="title">FACTURE</div><div class="subtitle">TÉLÉPHONE D'OCCASION</div></div>
+    <div class="logo-box"><div class="logo-text">SOLUTION PHONE</div><div class="logo-sub">RÉPARATION SMARTPHONE · TABLETTE · PC</div></div>
+  </div>
+  <div class="info-grid">
+    <div>
+      <div class="info-label">Facturé à</div>
+      <div class="info-value">${f.client}</div>
+      <div style="font-size:13px;color:#555;margin-top:4px">${f.adresse||''}</div>
+      <div style="font-size:13px;color:#555">${f.cp||''} ${f.ville||''}</div>
+    </div>
+    <div>
+      <div class="info-label">Facture #</div><div class="info-value">${f.num}</div>
+      <div class="info-label" style="margin-top:10px">Date</div><div class="info-value">${formatDate(f.date)}</div>
+      <div class="info-label" style="margin-top:10px">Mode de règlement</div><div class="info-value">${f.mode}</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Description</th><th>Prix unitaire</th><th>Qt.</th><th>Total TTC</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td style="color:#2E75B6;font-weight:600">${p.modele}</td><td>${p.vente} €</td><td>1</td><td>${p.vente} €</td></tr>
+    </tbody>
+  </table>
+  <div class="total-section">
+    <div class="total-label">Total TTC :</div>
+    <div class="total-value">${p.vente} €</div>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#888;margin-top:4px">dont TVA sur marge : ${tva} €</div>
+  <div class="footer-red">
+    <div class="footer-coords">
+      📞 03 85 33 06 89 · 📱 07 83 92 18 84<br>
+      ✉ SOLUTION.PHONE71@GMAIL.COM<br>
+      🌐 WWW.SOLUTION-PHONE.FR<br>
+      📍 21 RUE GAMBETTA 71000 MÂCON
+    </div>
+    <div class="footer-garanties">
+      Réparation garantie 3 mois sauf casse et oxydation<br>
+      Téléphone neuf garantie 24 mois<br>
+      Téléphone occasion garantie 6 mois
+    </div>
+  </div>
+  <div class="mentions">SIRET : 801044785 00021 · No TVA intra : FR801044785 · Aux termes de l'article 297A du CGI, ces articles sont soumis à la TVA sur marge.</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+function renderFactures() {
+  document.getElementById('factures-table').innerHTML = factures.map(f=>{
+    const p = phones.find(x=>x.id===f.phoneId);
+    return `<tr>
+      <td><b>${f.num}</b></td>
+      <td>${formatDate(f.date)}</td>
+      <td>${f.client}</td>
+      <td>${p?p.modele:'—'}</td>
+      <td><b>${f.montant} €</b></td>
+      <td>
+        <button class="btn btn-sm btn-secondary" onclick="imprimerFacture(${f.id})">🖨️ Réimprimer</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--text-dim);text-align:center;padding:24px;">Aucune facture — Créez votre première facture</td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Z DE CAISSE
+// ═══════════════════════════════════════════════════════════════
+function updateCaisseCalc() {
+  const ttc = parseFloat(document.getElementById('c-ttc').value)||0;
+  const ht = ttc/1.20;
+  const tva = ttc-ht;
+  document.getElementById('c-ht').value = ht.toFixed(2)+' €';
+  document.getElementById('c-tva').value = tva.toFixed(2)+' €';
+}
+
+function addCaisse() {
+  const date = document.getElementById('c-date').value;
+  const ttc = parseFloat(document.getElementById('c-ttc').value)||0;
+  if (!date || !ttc) { showNotif('⚠️ Date et TTC obligatoires','error'); return; }
+
+  const entry = {
+    date, ttc,
+    cb: parseFloat(document.getElementById('c-cb').value)||0,
+    especes: parseFloat(document.getElementById('c-especes').value)||0,
+    cheque: parseFloat(document.getElementById('c-cheque').value)||0,
+    virement: parseFloat(document.getElementById('c-virement').value)||0,
+    quali: parseFloat(document.getElementById('c-quali').value)||0,
+    depotEsp: parseFloat(document.getElementById('c-depot-esp').value)||0,
+    depotCheque: parseFloat(document.getElementById('c-depot-cheque').value)||0,
+    achatSmart: 0,
+  };
+  caisse.push(entry);
+  caisse.sort((a,b)=>a.date.localeCompare(b.date));
+  save();
+  closeModal('modal-add-caisse');
+  renderCaisse();
+  showNotif('✅ Journée du '+formatDate(date)+' enregistrée','success');
+  ['c-ttc','c-cb','c-especes','c-cheque','c-virement','c-quali','c-depot-esp','c-depot-cheque','c-ht','c-tva'].forEach(id=>document.getElementById(id).value='');
+}
+
+function renderCaisse() {
+  const totalTTC = caisse.reduce((s,c)=>s+c.ttc,0);
+  const totalCB = caisse.reduce((s,c)=>s+(c.cb||0),0);
+  const totalEsp = caisse.reduce((s,c)=>s+(c.especes||0),0);
+  const totalVir = caisse.reduce((s,c)=>s+(c.virement||0),0);
+  const totalHT = totalTTC/1.20;
+  const totalTVA = totalTTC-totalHT;
+
+  document.getElementById('caisse-totaux').innerHTML = `
+    <div class="caisse-mode"><div class="caisse-mode-icon">💶</div><div class="caisse-mode-label">Total TTC</div><div class="caisse-mode-value">${totalTTC.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">📊</div><div class="caisse-mode-label">Total HT</div><div class="caisse-mode-value">${totalHT.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">🏦</div><div class="caisse-mode-label">TVA collectée</div><div class="caisse-mode-value">${totalTVA.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">💳</div><div class="caisse-mode-label">CB</div><div class="caisse-mode-value">${totalCB.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">💵</div><div class="caisse-mode-label">Espèces</div><div class="caisse-mode-value">${totalEsp.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">🏧</div><div class="caisse-mode-label">Virement</div><div class="caisse-mode-value">${totalVir.toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">🏦</div><div class="caisse-mode-label">Dépôts Espèces</div><div class="caisse-mode-value">${caisse.reduce((s,c)=>s+(c.depotEsp||0),0).toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">📝</div><div class="caisse-mode-label">Dépôts Chèques</div><div class="caisse-mode-value">${caisse.reduce((s,c)=>s+(c.depotCheque||0),0).toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">📱</div><div class="caisse-mode-label">Achats Smart. Esp.</div><div class="caisse-mode-value" style="color:#ff6b6b">-${caisse.reduce((s,c)=>s+(c.achatSmart||0),0).toFixed(0)} €</div></div>
+    <div class="caisse-mode"><div class="caisse-mode-icon">♻️</div><div class="caisse-mode-label">Bonus QualiRépar</div><div class="caisse-mode-value" style="color:#22c55e">${caisse.reduce((s,c)=>s+(c.quali||0),0).toFixed(0)} €</div></div>\`;
+
+  document.getElementById('caisse-table').innerHTML = caisse.map(c=>{
+    const ht = (c.ttc/1.20).toFixed(2);
+    const tva = (c.ttc-c.ttc/1.20).toFixed(2);
+    return `<tr>
+      <td><b>${formatDate(c.date)}</b></td>
+      <td><b>${c.ttc.toFixed(2)} €</b></td>
+      <td style="color:var(--text-muted)">${ht} €</td>
+      <td style="color:var(--text-muted)">${tva} €</td>
+      <td>${(c.cb||0).toFixed(2)} €</td>
+      <td>${(c.especes||0).toFixed(2)} €</td>
+      <td>${(c.cheque||0).toFixed(2)} €</td>
+      <td>${(c.virement||0).toFixed(2)} €</td>
+      <td>${(c.quali||0)>0?(c.quali||0).toFixed(2)+" €":"—"}</td>
+      <td>${c.quali>0?c.quali.toFixed(2)+' €':'—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="color:var(--text-dim);text-align:center;padding:24px;">Aucune saisie ce mois</td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function formatDate(d) {
+  if (!d) return '—';
+  const [y,m,j] = d.split('-');
+  return `${j}/${m}/${y}`;
+}
+
+function showNotif(msg, type='success') {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.className = 'notif show '+type;
+  setTimeout(()=>n.classList.remove('show'), 3500);
+}
+
+// Fermer modal en cliquant en dehors
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
