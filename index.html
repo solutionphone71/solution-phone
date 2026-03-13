@@ -195,6 +195,8 @@ tr:hover td{background:rgba(192,0,0,0.04);}
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -632,6 +634,11 @@ if (localStorage.getItem('sp_data_version') !== DATA_VERSION) {
   localStorage.removeItem('sp_caisse');
   localStorage.setItem('sp_data_version', DATA_VERSION);
 }
+// ===== EMAILJS CONFIG =====
+emailjs.init('vSpx7OHQTgKezV-Q-');
+const EMAILJS_SERVICE = 'service_gfapq4j';
+const EMAILJS_TEMPLATE = '9825f2j';
+
 // ===== SUPABASE CONFIG =====
 const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
 const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
@@ -696,6 +703,8 @@ async function loadFromSupabase() {
 let phones_local = [], factures_local = [], caisse_local = [];
 
 // Données chargées depuis Supabase au démarrage
+// Init EmailJS
+emailjs.init('vSpx7OHQTgKezV-Q-');
 
 function getReportMoisPrecedent(moisAnnee) {
   // moisAnnee = "2026-03" → cherche report de "2026-02"
@@ -1325,6 +1334,70 @@ function exportCaisseCSV() {
   const a = document.createElement('a');
   a.href=url; a.download='Z_Caisse_Mars_2026.csv'; a.click();
   showNotif('📥 Export CSV téléchargé !','success');
+}
+
+function envoyerFactureEmail() {
+  const zone = document.getElementById('email-client-zone');
+  zone.style.display = zone.style.display === 'none' ? 'block' : 'none';
+}
+
+function confirmerEnvoiEmail() {
+  const email = document.getElementById('email-client').value.trim();
+  if (!email || !email.includes('@')) {
+    showNotif('⚠️ Email invalide', 'error'); return;
+  }
+  
+  const phoneId = parseInt(document.getElementById('facture-phone-select').value);
+  const phone = phones.find(p => p.id === phoneId);
+  if (!phone) { showNotif('⚠️ Sélectionnez un smartphone', 'error'); return; }
+  
+  const num = factures.length + 1;
+  const numero = 'FAC-2026-' + String(num).padStart(3, '0');
+  
+  envoyerEmail(email, {
+    client_nom: document.getElementById('facture-client-nom').value || 'Client',
+    numero_facture: numero,
+    appareil: phone.modele + (phone.stockage ? ' ' + phone.stockage + 'Go' : ''),
+    date_facture: new Date().toLocaleDateString('fr-FR'),
+    montant: phone.vente
+  });
+}
+
+function envoyerFactureEmailId(factureId) {
+  const f = factures.find(x => x.id === factureId);
+  if (!f) return;
+  const email = prompt('Email du client :');
+  if (!email || !email.includes('@')) { showNotif('⚠️ Email invalide', 'error'); return; }
+  
+  const phone = phones.find(p => p.id === f.phoneId);
+  envoyerEmail(email, {
+    client_nom: f.clientNom || 'Client',
+    numero_facture: f.numero,
+    appareil: phone ? phone.modele : '—',
+    date_facture: formatDate(f.date),
+    montant: f.ttc
+  });
+}
+
+function envoyerEmail(toEmail, params) {
+  showNotif('📧 Envoi en cours...', 'info');
+  
+  emailjs.send('service_gfapq4j', 'template_9825f2j', {
+    to_email: toEmail,
+    client_nom: params.client_nom,
+    numero_facture: params.numero_facture,
+    appareil: params.appareil,
+    date_facture: params.date_facture,
+    montant: params.montant,
+    name: 'Solution Phone',
+    email: 'solution.phone71@gmail.com'
+  }).then(() => {
+    showNotif('✅ Email envoyé à ' + toEmail, 'success');
+    document.getElementById('email-client-zone').style.display = 'none';
+  }).catch(err => {
+    console.error('EmailJS error:', err);
+    showNotif('❌ Erreur envoi email', 'error');
+  });
 }
 
 function updateCaisseCalc() {
