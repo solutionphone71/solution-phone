@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_120025 -->
+<!-- v20260314_120958 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -899,7 +899,7 @@ function importPhonilabCSV(input) {
   var file = input.files[0];
   if (!file) return;
   var reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = function(e) {
     var text = e.target.result;
     // Détecter le séparateur (virgule ou point-virgule)
     var sep = text.indexOf(';') >= 0 ? ';' : ',';
@@ -1111,17 +1111,18 @@ async function importClientsPhonilab(input) {
     
     // Sauvegarder dans Supabase par batch de 100
     if(supabaseReady && newClients.length > 0) {
-      showNotif('Sauvegarde dans Supabase...','info');
+      showNotif('Sauvegarde en cours...','info');
+      var batches = [];
       var batchSize = 100;
-      var saved = 0;
       for(var b = 0; b < newClients.length; b += batchSize) {
         var batch = newClients.slice(b, b+batchSize).map(function(c){
           return {nom:c.nom,tel:c.tel,email:c.email,adresse:c.adresse,notes:c.notes,date_creation:c.dateCreation};
         });
-        await supaFetch('clients','POST',batch);
-        saved += batch.length;
+        batches.push(supaFetch('clients','POST',batch));
       }
-      showNotif('Import Phonilab : ' + imported + ' clients sauvegardés dans Supabase ✅', 'success');
+      Promise.all(batches).then(function(){
+        showNotif('Import : ' + imported + ' clients sauvegardés ✅', 'success');
+      });
     } else {
       showNotif('Import Phonilab : ' + imported + ' clients importés, ' + skipped + ' existants ignorés ✅', 'success');
     }
