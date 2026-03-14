@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_213454 -->
+<!-- v20260314_213749 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -2723,6 +2723,7 @@ function renderDashboard(){
   document.getElementById('dash-phones').innerHTML=recent.map(function(p){return'<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucun smartphone</td></tr>';
   var fin=calcFinales();var rc=caisse.slice(-5).reverse();
   document.getElementById('dash-caisse').innerHTML=rc.map(function(c){var i=caisse.indexOf(c);return'<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(2)+' €':'—')+'</td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucune saisie</td></tr>';
+}
 }
 </script>
 </body>
