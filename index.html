@@ -109,6 +109,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de Police</span></div>
     <div class="nav-item" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
+    <div class="nav-item" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
   </div>
   <div class="main">
 
@@ -230,7 +231,72 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-reparations">
+    <div class="page" id="page-depenses">
+      <div class="page-title">Suivi des Dépenses</div>
+      <div class="page-sub">Charges et dépenses du magasin</div>
+
+      <div class="dash-grid" id="depenses-totaux"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">➕ Ajouter une dépense</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group"><label>Date *</label><input type="date" id="d-date"></div>
+            <div class="form-group"><label>Catégorie *</label>
+              <select id="d-categorie">
+                <option value="Loyer">🏠 Loyer</option>
+                <option value="Fournitures">🔧 Fournitures / Pièces</option>
+                <option value="Salaires">👥 Salaires</option>
+                <option value="Electricite">💡 Électricité / Eau / Gaz</option>
+                <option value="Telephone">📞 Téléphone / Internet</option>
+                <option value="Assurance">🛡️ Assurance</option>
+                <option value="Transport">🚗 Transport / Carburant</option>
+                <option value="Publicite">📢 Publicité / Marketing</option>
+                <option value="Logiciels">💻 Logiciels / Abonnements</option>
+                <option value="Autre">📦 Autre</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Description</label><input type="text" id="d-description" placeholder="ex: Loyer mars 2026"></div>
+            <div class="form-group"><label>Montant TTC (€) *</label><input type="number" id="d-montant" step="0.01" placeholder="ex: 850"></div>
+            <div class="form-group"><label>Mode paiement</label>
+              <select id="d-mode">
+                <option value="Virement">Virement</option>
+                <option value="CB">CB</option>
+                <option value="Especes">Espèces</option>
+                <option value="Cheque">Chèque</option>
+                <option value="Prelevement">Prélèvement auto</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="addDepense()">✅ Enregistrer</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📊 Répartition par catégorie</div></div>
+          <canvas id="chart-depenses" height="250"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header">
+          <div class="card-title">📋 Historique des dépenses</div>
+          <div style="display:flex;gap:8px;">
+            <select id="d-filtre-mois" onchange="renderDepenses()" style="padding:6px 10px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+              <option value="">Tous les mois</option>
+              <option value="2026-03">Mars 2026</option>
+              <option value="2026-02">Février 2026</option>
+              <option value="2026-01">Janvier 2026</option>
+            </select>
+            <button class="btn btn-sm" onclick="exportDepensesCSV()">📥 Export CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>Date</th><th>Catégorie</th><th>Description</th><th>Montant</th><th>Mode</th><th>Actions</th></tr></thead>
+          <tbody id="depenses-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-reparations">
       <div class="page-title">Factures de Réparation</div>
       <div class="page-sub">Créer et gérer les factures de réparation</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
@@ -500,6 +566,7 @@ function showPage(id,el){
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
   if(id==='reparations')renderReparations();
+  if(id==='depenses'){renderDepenses();}
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -865,6 +932,86 @@ function exportPoliceCSV(){
 }
 
 var reparations = [];
+var depenses = [];
+var chartDep = null;
+
+function addDepense() {
+  var date = document.getElementById('d-date').value;
+  var montant = parseFloat(document.getElementById('d-montant').value);
+  if (!date || !montant) { showNotif('Date et montant requis', 'error'); return; }
+  var dep = {
+    id: Date.now(),
+    date: date,
+    categorie: document.getElementById('d-categorie').value,
+    description: document.getElementById('d-description').value.trim(),
+    montant: montant,
+    mode: document.getElementById('d-mode').value
+  };
+  depenses.push(dep);
+  depenses.sort(function(a,b){return b.date.localeCompare(a.date);});
+  // Sauvegarder dans Supabase si dispo
+  if (supabaseReady) {
+    supaFetch('depenses','POST',{date:dep.date,categorie:dep.categorie,description:dep.description,montant:dep.montant,mode:dep.mode});
+  }
+  ['d-description','d-montant'].forEach(function(id){document.getElementById(id).value='';});
+  renderDepenses();
+  showNotif('Dépense enregistrée !','success');
+}
+
+function deleteDepense(id) {
+  if(!confirm('Supprimer cette dépense ?')) return;
+  depenses = depenses.filter(function(d){return d.id!==id;});
+  renderDepenses();
+  showNotif('Supprimé','success');
+}
+
+function renderDepenses() {
+  var filtre = document.getElementById('d-filtre-mois') ? document.getElementById('d-filtre-mois').value : '';
+  var filtered = filtre ? depenses.filter(function(d){return d.date.startsWith(filtre);}) : depenses;
+  
+  var total = filtered.reduce(function(s,d){return s+d.montant;},0);
+  var parCat = {};
+  filtered.forEach(function(d){parCat[d.categorie]=(parCat[d.categorie]||0)+d.montant;});
+  
+  // Totaux
+  var ca = caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
+  var benefice = ca - total;
+  document.getElementById('depenses-totaux').innerHTML =
+    '<div class="dash-card"><div class="dash-label">Total dépenses</div><div class="dash-value" style="color:var(--red);">'+total.toFixed(2)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(2)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">Bénéfice brut</div><div class="dash-value" style="color:'+(benefice>=0?'var(--green)':'var(--red)')+'">'+benefice.toFixed(2)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">Nb dépenses</div><div class="dash-value">'+filtered.length+'</div></div>';
+
+  // Tableau
+  var cats = {'Loyer':'🏠','Fournitures':'🔧','Salaires':'👥','Electricite':'💡','Telephone':'📞','Assurance':'🛡️','Transport':'🚗','Publicite':'📢','Logiciels':'💻','Autre':'📦'};
+  document.getElementById('depenses-table').innerHTML = filtered.map(function(d){
+    return '<tr><td>'+fmtDate(d.date)+'</td><td>'+(cats[d.categorie]||'📦')+' '+d.categorie+'</td><td>'+(d.description||'—')+'</td><td style="color:var(--red);font-weight:700;">'+d.montant.toFixed(2)+' €</td><td>'+d.mode+'</td><td><button class="btn btn-sm" onclick="deleteDepense('+d.id+')">🗑️</button></td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune dépense</td></tr>';
+
+  // Graphique camembert
+  var labels = Object.keys(parCat);
+  var values = Object.values(parCat);
+  var colors = ['#e53e3e','#48bb78','#4299e1','#ed8936','#9f7aea','#f687b3','#68d391','#fc8181','#63b3ed','#fbd38d'];
+  if (chartDep) chartDep.destroy();
+  if (labels.length > 0) {
+    chartDep = new Chart(document.getElementById('chart-depenses'), {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.slice(0,labels.length), borderWidth: 0 }] },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#a0aec0' } } } }
+    });
+  }
+}
+
+function exportDepensesCSV() {
+  var headers = ['Date','Categorie','Description','Montant','Mode'];
+  var rows = depenses.map(function(d){return[fmtDate(d.date),d.categorie,d.description||'',d.montant,d.mode].join(';');});
+  var csv = [headers.join(';')].concat(rows).join('\n');
+  var blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='Depenses.csv'; a.click();
+  showNotif('Export téléchargé !','success');
+}
 
 function updateRepPreview() {
   var client = document.getElementById('r-client-nom').value || 'Client';
