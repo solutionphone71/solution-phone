@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_222132 -->
+<!-- v20260314_225056 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -899,7 +899,10 @@ async function supaFetch(table, method, body, query) {
     });
     var text = await res.text();
     return text ? JSON.parse(text) : null;
-  } catch(e) { console.error(e); return null; }
+  } catch(e) { 
+    console.error('SUPABASE ERROR:', e.message || e);
+    showNotif('Erreur Supabase: ' + (e.message||'connexion'), 'error');
+    return null; }
 }
 
 var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':891.20};
@@ -929,6 +932,11 @@ function initRealtime() {
 async function loadFromSupabase() {
   try {
     showNotif('Chargement...','info');
+    // Test de connexion
+    var ping = await supaFetch('phones','GET',null,'?limit=1');
+    if(ping === null) {
+      throw new Error('Connexion Supabase impossible');
+    }
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
       supaFetch('factures','GET',null,'?order=id.asc'),
