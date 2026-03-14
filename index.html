@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_113654 -->
+<!-- v20260314_120025 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -113,6 +113,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
     <div class="nav-item" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan Annuel</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
+    <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
   </div>
   <div class="main">
 
@@ -234,7 +235,31 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-devis">
+    <div class="page" id="page-clients">
+      <div class="page-title">Clients</div>
+      <div class="page-sub">Carnet clients et historique</div>
+
+      <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <input type="text" id="client-search" placeholder="🔍 Rechercher un client..." oninput="renderClients()"
+          style="padding:9px 14px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
+        <button class="btn btn-primary" onclick="openModal('modal-add-client')">➕ Ajouter client</button>
+        <button class="btn" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-clients-import').click()">📂 Importer depuis Phonilab</button>
+        <input type="file" id="phonilab-clients-import" accept=".csv" style="display:none" onchange="importClientsPhonilab(this)">
+        <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:18px;">
+        <div class="card" style="max-height:600px;overflow-y:auto;">
+          <div class="card-header"><div class="card-title">👥 Liste clients</div></div>
+          <div id="clients-liste"></div>
+        </div>
+        <div class="card" id="client-detail-card" style="display:none;">
+          <div id="client-detail-content"></div>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-devis">
       <div class="page-title">Devis</div>
       <div class="page-sub">Créer des devis pour vos clients</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
@@ -543,6 +568,25 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-add-client">
+  <div class="modal">
+    <div class="modal-title">➕ Nouveau client</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Jean Dupont"></div>
+      <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="cl-email" placeholder="ex: client@gmail.com"></div>
+      <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div>
+    </div>
+    <div class="form-group" style="margin-top:10px;"><label>Notes</label>
+      <textarea id="cl-notes" placeholder="Notes sur ce client..." style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="addClient()">✅ Enregistrer</button>
+      <button class="btn" onclick="closeModal('modal-add-client')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-edit-phone">
   <div class="modal">
     <div class="modal-title">✏️ Modifier le smartphone</div>
@@ -705,6 +749,9 @@ async function loadFromSupabase() {
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
+    // Charger clients
+    var cl = await supaFetch('clients','GET',null,'?order=nom.asc&limit=10000');
+    if(cl) clients = cl.map(function(x){return{id:x.id,nom:x.nom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation};});
     supabaseReady=true;
     initRealtime();
     showNotif('Données chargées !','success');
@@ -753,6 +800,7 @@ function showPage(id,el){
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
   if(id==='devis')renderDevis();
+  if(id==='clients')renderClients();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -851,7 +899,7 @@ function importPhonilabCSV(input) {
   var file = input.files[0];
   if (!file) return;
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     var text = e.target.result;
     // Détecter le séparateur (virgule ou point-virgule)
     var sep = text.indexOf(';') >= 0 ? ';' : ',';
@@ -983,6 +1031,238 @@ function previewPhoto(input) {
     };
     reader.readAsDataURL(input.files[0]);
   }
+}
+
+// ===== CLIENTS =====
+var clients = [];
+var selectedClientId = null;
+
+async function importClientsPhonilab(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split('\n').filter(function(l){return l.trim();});
+    if (lines.length < 2) { showNotif('Fichier vide', 'error'); return; }
+    
+    var sep = ';';
+    var headers = lines[0].split(sep).map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
+    
+    // Index colonnes
+    var iPrenom = headers.findIndex(function(h){return h==='prénom'||h==='prenom';});
+    var iNom = headers.findIndex(function(h){return h==='nom';});
+    var iEmail = headers.findIndex(function(h){return h==='email';});
+    var iTel = headers.findIndex(function(h){return h.includes('mobile')||h.includes('téléphone');});
+    var iAdresse = headers.findIndex(function(h){return h==='adresse';});
+    var iCP = headers.findIndex(function(h){return h.includes('postal');});
+    var iVille = headers.findIndex(function(h){return h==='ville';});
+    
+    var imported = 0;
+    var skipped = 0;
+    var newClients = [];
+    
+    for (var i = 1; i < lines.length; i++) {
+      var cols = lines[i].split(sep).map(function(c){return c.replace(/"/g,'').trim();});
+      if (cols.length < 2) continue;
+      
+      var prenom = iPrenom >= 0 ? cols[iPrenom] : '';
+      var nom = iNom >= 0 ? cols[iNom] : '';
+      var nomComplet = (prenom + ' ' + nom).trim();
+      if (!nomComplet) continue;
+      
+      // Vérifier si client existe déjà
+      var existe = clients.find(function(c){
+        return c.nom.toLowerCase() === nomComplet.toLowerCase();
+      });
+      if (existe) { skipped++; continue; }
+      
+      var tel = iTel >= 0 ? cols[iTel] : '';
+      // Formater le téléphone
+      if (tel && !tel.startsWith('0') && !tel.startsWith('+')) {
+        tel = '0' + tel;
+      }
+      
+      var adresse = iAdresse >= 0 ? cols[iAdresse] : '';
+      var cp = iCP >= 0 ? cols[iCP] : '';
+      var ville = iVille >= 0 ? cols[iVille] : '';
+      var adresseComplete = [adresse, cp, ville].filter(Boolean).join(' ');
+      
+      var email = iEmail >= 0 ? cols[iEmail] : '';
+      
+      var newClient = {
+        id: Date.now() + i,
+        nom: nomComplet,
+        tel: tel,
+        email: email,
+        adresse: adresseComplete,
+        notes: 'Importé depuis Phonilab',
+        dateCreation: new Date().toISOString().split('T')[0]
+      };
+      clients.push(newClient);
+      newClients.push(newClient);
+      imported++;
+    }
+    
+    clients.sort(function(a,b){return a.nom.localeCompare(b.nom);});
+    renderClients();
+    var countEl = document.getElementById('clients-count');
+    if (countEl) countEl.textContent = clients.length + ' clients au total';
+    
+    // Sauvegarder dans Supabase par batch de 100
+    if(supabaseReady && newClients.length > 0) {
+      showNotif('Sauvegarde dans Supabase...','info');
+      var batchSize = 100;
+      var saved = 0;
+      for(var b = 0; b < newClients.length; b += batchSize) {
+        var batch = newClients.slice(b, b+batchSize).map(function(c){
+          return {nom:c.nom,tel:c.tel,email:c.email,adresse:c.adresse,notes:c.notes,date_creation:c.dateCreation};
+        });
+        await supaFetch('clients','POST',batch);
+        saved += batch.length;
+      }
+      showNotif('Import Phonilab : ' + imported + ' clients sauvegardés dans Supabase ✅', 'success');
+    } else {
+      showNotif('Import Phonilab : ' + imported + ' clients importés, ' + skipped + ' existants ignorés ✅', 'success');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+async function addClient() {
+  var nom = document.getElementById('cl-nom').value.trim();
+  if(!nom){showNotif('Nom requis','error');return;}
+  var client = {
+    id: Date.now(),
+    nom: nom,
+    tel: document.getElementById('cl-tel').value.trim(),
+    email: document.getElementById('cl-email').value.trim(),
+    adresse: document.getElementById('cl-adresse').value.trim(),
+    notes: document.getElementById('cl-notes').value.trim(),
+    dateCreation: new Date().toISOString().split('T')[0]
+  };
+  clients.push(client);
+  clients.sort(function(a,b){return a.nom.localeCompare(b.nom);});
+  // Sauvegarder dans Supabase
+  if(supabaseReady){
+    var res = await supaFetch('clients','POST',{nom:client.nom,tel:client.tel,email:client.email,adresse:client.adresse,notes:client.notes,date_creation:client.dateCreation});
+    if(res&&res[0]) client.id = res[0].id;
+  }
+  ['cl-nom','cl-tel','cl-email','cl-adresse','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
+  closeModal('modal-add-client');
+  renderClients();
+  showNotif('Client '+nom+' ajouté !','success');
+}
+
+function deleteClient(id) {
+  if(!confirm('Supprimer ce client ?')) return;
+  clients = clients.filter(function(c){return c.id!==id;});
+  if(supabaseReady) supaFetch('clients','DELETE',null,'?id=eq.'+id);
+  document.getElementById('client-detail-card').style.display='none';
+  renderClients();
+  showNotif('Client supprimé','success');
+}
+
+function showClientDetail(id) {
+  selectedClientId = id;
+  var c = clients.find(function(x){return x.id===id;});
+  if(!c) return;
+
+  // Historique factures
+  var facClient = factures.filter(function(f){
+    return f.clientNom && f.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+  });
+  // Historique réparations
+  var repClient = reparations.filter(function(r){
+    return r.clientNom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+  });
+  // Historique devis
+  var devClient = devisList.filter(function(d){
+    return d.clientNom && d.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+  });
+
+  var totalCA = facClient.reduce(function(s,f){return s+f.ttc;},0) +
+                repClient.reduce(function(s,r){return s+r.prix;},0);
+
+  var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
+    '<div>' +
+    '<div style="font-size:22px;font-weight:800;">'+c.nom+'</div>' +
+    (c.tel?'<div style="color:var(--text-muted);font-size:14px;">📞 '+c.tel+'</div>':'') +
+    (c.email?'<div style="color:var(--text-muted);font-size:14px;">✉️ '+c.email+'</div>':'') +
+    (c.adresse?'<div style="color:var(--text-muted);font-size:14px;">📍 '+c.adresse+'</div>':'') +
+    '</div>' +
+    '<div style="display:flex;gap:8px;">' +
+    '<button class="btn btn-sm btn-primary" onclick="envoyerEmailClient('+id+')">📧 Email</button>' +
+    '<button class="btn btn-sm" onclick="deleteClient('+id+')">🗑️</button>' +
+    '</div>' +
+    '</div>' +
+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">' +
+    '<div class="caisse-card"><div class="caisse-label">CA total</div><div class="caisse-value" style="color:var(--green)">'+totalCA.toFixed(2)+' €</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Factures</div><div class="caisse-value">'+facClient.length+'</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Réparations</div><div class="caisse-value">'+repClient.length+'</div></div>' +
+    '</div>' +
+
+    (c.notes?'<div style="padding:10px;background:var(--dark3);border-radius:8px;font-size:13px;margin-bottom:16px;color:var(--text-muted);">📝 '+c.notes+'</div>':'') +
+
+    // Factures
+    (facClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">🧾 Factures</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Appareil</th><th>Montant</th><th></th></tr></thead><tbody>' +
+    facClient.map(function(f){
+      var p=phones.find(function(x){return x.id===f.phoneId;});
+      return '<tr><td><b>'+f.numero+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button></td></tr>';
+    }).join('') + '</tbody></table>' : '') +
+
+    // Réparations
+    (repClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">🔧 Réparations</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Réparation</th><th>Montant</th><th></th></tr></thead><tbody>' +
+    repClient.map(function(r){
+      return '<tr><td><b>'+r.numero+'</b></td><td>'+fmtDate(r.date)+'</td><td>'+r.description+'</td><td><b>'+r.prix.toFixed(2)+' €</b></td><td><button class="btn btn-sm" onclick="reprintRep('+r.id+')">🖨️</button></td></tr>';
+    }).join('') + '</tbody></table>' : '') +
+
+    // Devis
+    (devClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">📝 Devis</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Prestation</th><th>Montant</th></tr></thead><tbody>' +
+    devClient.map(function(d){
+      return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+d.prestation+'</td><td><b>'+d.prix.toFixed(2)+' €</b></td></tr>';
+    }).join('') + '</tbody></table>' : '');
+
+  document.getElementById('client-detail-content').innerHTML = html;
+  document.getElementById('client-detail-card').style.display = 'block';
+
+  // Marquer actif
+  document.querySelectorAll('.client-item').forEach(function(el){el.classList.remove('active');});
+  var item = document.getElementById('client-item-'+id);
+  if(item) item.classList.add('active');
+}
+
+async function envoyerEmailClient(id) {
+  var c = clients.find(function(x){return x.id===id;});
+  if(!c||!c.email){showNotif('Pas d'email pour ce client','error');return;}
+  showNotif('Email envoyé à '+c.email,'success');
+}
+
+function renderClients() {
+  var countEl = document.getElementById('clients-count');
+  if (countEl) countEl.textContent = clients.length + ' client(s)';
+  var search = (document.getElementById('client-search')?document.getElementById('client-search').value:'').toLowerCase();
+  var filtered = search ? clients.filter(function(c){return c.nom.toLowerCase().includes(search)||(c.tel||'').includes(search)||(c.email||'').toLowerCase().includes(search);}) : clients;
+
+  if(filtered.length === 0) {
+    document.getElementById('clients-liste').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim)">Aucun client</div>';
+    return;
+  }
+
+  document.getElementById('clients-liste').innerHTML = filtered.map(function(c){
+    var nbFac = factures.filter(function(f){return f.clientNom&&f.clientNom.toLowerCase().includes(c.nom.toLowerCase());}).length;
+    var nbRep = reparations.filter(function(r){return r.clientNom&&r.clientNom.toLowerCase().includes(c.nom.toLowerCase());}).length;
+    return '<div id="client-item-'+c.id+'" class="client-item" onclick="showClientDetail('+c.id+')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s;" onmouseover="this.style.background='var(--dark3)'" onmouseout="this.style.background=''">' +
+      '<div style="font-weight:700;">'+c.nom+'</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);">'+(c.tel||'')+(c.tel&&c.email?' · ':'')+( c.email||'')+'</div>' +
+      '<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">'+nbFac+' facture(s) · '+nbRep+' réparation(s)</div>' +
+      '</div>';
+  }).join('');
 }
 
 function editPhone(id) {
