@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_134252 -->
+<!-- v20260314_141348 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -791,7 +791,7 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||''};});
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
         renderPhones(); renderDashboard();
       }
     } catch(e) { console.log('Sync error:', e); }
@@ -809,7 +809,7 @@ async function loadFromSupabase() {
       supaFetch('reports_mois','GET',null,'')
     ]);
     var p=results[0], f=results[1], c=results[2], r=results[3];
-    if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||''};});
+    if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
@@ -824,7 +824,7 @@ async function loadFromSupabase() {
 
 async function savePhone(phone) {
   if(!supabaseReady) return;
-  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null};
+  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
   if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
   else{var res=await supaFetch('phones','POST',data);if(res&&res[0]){phone.supaId=res[0].id;phone.id=res[0].id;}}
 }
@@ -1175,8 +1175,8 @@ async function importClientsPhonilab(input) {
     var headers = lines[0].split(sep).map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
     
     // Index colonnes
-    var iPrenom = headers.findIndex(function(h){return h==='prénom'||h==='prenom';});
-    var iNom = headers.findIndex(function(h){return h==='nom';});
+    var iPrenom = headers.findIndex(function(h){return h==='prénom'||h==='prenom'||h.includes('prenom')||h.includes('prénom');});
+    var iNom = headers.findIndex(function(h){return h==='nom'||h==='name'||h==='lastname';});
     var iEmail = headers.findIndex(function(h){return h==='email';});
     var iTel = headers.findIndex(function(h){return h.includes('mobile')||h.includes('téléphone');});
     var iAdresse = headers.findIndex(function(h){return h==='adresse';});
@@ -1194,6 +1194,8 @@ async function importClientsPhonilab(input) {
       var prenom = iPrenom >= 0 ? cols[iPrenom] : '';
       var nom = iNom >= 0 ? cols[iNom] : '';
       var nomComplet = (prenom + ' ' + nom).trim();
+      // Si prénom vide, essayer d inverser
+      if (!prenom && nom) nomComplet = nom;
       if (!nomComplet) continue;
       
       // Vérifier si client existe déjà
@@ -1469,7 +1471,7 @@ function addPhone(){
   if(!modele){showNotif('Modèle requis','error');return;}
   if(!achat||achat<=0){showNotif('Prix achat invalide','error');return;}
   if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
-  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null};
+  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){var entry=caisse.find(function(c){return c.date===phone.dateAchat;});if(entry){entry.achatSmart=(entry.achatSmart||0)+achat;saveCaisseRow(entry);}}
   phones.push(phone);savePhone(phone);
   ['p-modele','p-achat','p-vente','p-batterie','p-imei','p-couleur','p-vendeur-nom','p-vendeur-adresse','p-vendeur-ci','p-vendeur-ci-date','p-photo'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
