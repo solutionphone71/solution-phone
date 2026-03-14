@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_213749 -->
+<!-- v20260314_214638 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -939,6 +939,11 @@ async function loadFromSupabase() {
     supabaseReady=true;
     initRealtime();
     showNotif('Données chargées !','success');
+    // Forcer le rendu de toutes les pages
+    renderDashboard();
+    renderPhones();
+    renderFactures();
+    renderCaisse();
   } catch(e){console.error(e);showNotif('Mode local actif','error');}
 }
 
