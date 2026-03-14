@@ -107,6 +107,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('stats',this)"><span class="nav-icon">📊</span><span>Statistiques</span></div>
     <div class="nav-item" onclick="showPage('caisse',this)"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de Police</span></div>
+    <div class="nav-item" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
   </div>
   <div class="main">
 
@@ -227,7 +228,32 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-  </div>
+    <div class="page" id="page-comptable">
+      <div class="page-title">Récapitulatif Comptable</div>
+      <div class="page-sub">Tableau mensuel pour votre comptable</div>
+
+      <!-- Sélecteur de mois -->
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div class="form-group" style="flex:0">
+            <label>Mois</label>
+            <select id="compta-mois" onchange="renderComptable()" style="width:160px;">
+              <option value="2026-03">Mars 2026</option>
+              <option value="2026-02">Février 2026</option>
+              <option value="2026-01">Janvier 2026</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="printComptable()">🖨️ Imprimer</button>
+            <button class="btn btn-sm" onclick="exportComptableCSV()">📥 Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="comptable-content"></div>
+    </div>
+
+</div>
 </div>
 </div>
 
@@ -422,6 +448,7 @@ function showPage(id,el){
   if(id==='caisse')renderCaisse();
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
+  if(id==='comptable')renderComptable();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -765,6 +792,153 @@ function exportPoliceCSV(){
   var csv=[h.join(';')].concat(rows).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='Livre_Police.csv';a.click();
   showNotif('Export Police téléchargé !','success');
+}
+
+function renderComptable() {
+  var mois = document.getElementById('compta-mois').value;
+  var data = caisse.filter(function(c) { return c.date.startsWith(mois); });
+  
+  // Totaux CA
+  var totalTTC = data.reduce(function(s,c){return s+(c.ttc||0);},0);
+  var totalHT = totalTTC / 1.2;
+  var totalTVA = totalTTC - totalHT;
+  var totalQuali = data.reduce(function(s,c){return s+(c.quali||0);},0);
+  
+  // Totaux paiements
+  var totalCB = data.reduce(function(s,c){return s+(c.cb||0);},0);
+  var totalEsp = data.reduce(function(s,c){return s+(c.especes||0);},0);
+  var totalCheque = data.reduce(function(s,c){return s+(c.cheque||0);},0);
+  var totalVir = data.reduce(function(s,c){return s+(c.virement||0);},0);
+  var totalDepotEsp = data.reduce(function(s,c){return s+(c.depotEsp||0);},0);
+  var totalDepotCheque = data.reduce(function(s,c){return s+(c.depotCheque||0);},0);
+  var totalAchatSmart = data.reduce(function(s,c){return s+(c.achatSmart||0);},0);
+  
+  // Caisse finale
+  var finales = calcFinales();
+  var caisseFin = finales.length > 0 ? finales[finales.length-1] : 0;
+  var caisseDebut = getReport(mois);
+  
+  // Smartphones du mois
+  var phonesVendus = phones.filter(function(p){return p.etat==='VENDU' && p.dateVente && p.dateVente.startsWith(mois);});
+  var phonesAchetes = phones.filter(function(p){return p.dateAchat && p.dateAchat.startsWith(mois);});
+  var margeSmartphones = phonesVendus.reduce(function(s,p){return s+(p.vente-p.achat);},0);
+  
+  // Nom du mois
+  var moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
+  var parts = mois.split('-');
+  var moisLabel = moisNoms[parts[1]] + ' ' + parts[0];
+
+  var html = '<div id="compta-print-zone">' +
+    '<div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
+    '<div>' +
+    '<div style="font-size:22px;font-weight:800;color:var(--red);">SOLUTION PHONE</div>' +
+    '<div style="font-size:13px;color:var(--text-muted);">21 Rue Gambetta · 71000 Mâcon</div>' +
+    '<div style="font-size:13px;color:var(--text-muted);">SIRET : 801044785 00021</div>' +
+    '</div>' +
+    '<div style="text-align:right;">' +
+    '<div style="font-size:18px;font-weight:700;">RÉCAPITULATIF MENSUEL</div>' +
+    '<div style="font-size:24px;font-weight:800;color:var(--red);">' + moisLabel + '</div>' +
+    '</div>' +
+    '</div>' +
+
+    // Section CA
+    '<div style="margin-bottom:20px;">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💰 Chiffre d'Affaires</div>' +
+    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
+    '<tr><td>CA Total TTC</td><td style="text-align:right;font-size:18px;font-weight:800;color:var(--red);">' + totalTTC.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>CA HT (TVA sur marge)</td><td style="text-align:right;font-weight:700;">' + totalHT.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>TVA collectée</td><td style="text-align:right;">' + totalTVA.toFixed(2) + ' €</td></tr>' +
+    '<tr><td style="color:var(--green);">Bonus QualiRépar</td><td style="text-align:right;color:var(--green);font-weight:700;">+ ' + totalQuali.toFixed(2) + ' €</td></tr>' +
+    '<tr style="background:rgba(72,187,120,0.1)"><td style="font-weight:700">CA + QualiRépar</td><td style="text-align:right;font-weight:800;font-size:16px;color:var(--green);">' + (totalTTC + totalQuali).toFixed(2) + ' €</td></tr>' +
+    '</tbody></table>' +
+    '</div>' +
+
+    // Section Paiements
+    '<div style="margin-bottom:20px;">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💳 Répartition des paiements</div>' +
+    '<table><thead><tr><th>Mode</th><th style="text-align:right">Montant</th><th style="text-align:right">%</th></tr></thead><tbody>' +
+    '<tr><td>💳 CB</td><td style="text-align:right;">' + totalCB.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalCB/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
+    '<tr><td>💵 Espèces</td><td style="text-align:right;">' + totalEsp.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalEsp/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
+    '<tr><td>📄 Chèque</td><td style="text-align:right;">' + totalCheque.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalCheque/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
+    '<tr><td>🏦 Virement</td><td style="text-align:right;">' + totalVir.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalVir/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
+    '</tbody></table>' +
+    '</div>' +
+
+    // Section Caisse
+    '<div style="margin-bottom:20px;">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">🏪 Suivi de caisse</div>' +
+    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
+    '<tr><td>Report début de mois</td><td style="text-align:right;">' + caisseDebut.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>+ Espèces encaissées</td><td style="text-align:right;">+ ' + totalEsp.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>- Dépôts espèces en banque</td><td style="text-align:right;color:var(--red);">- ' + totalDepotEsp.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>- Achats smartphones espèces</td><td style="text-align:right;color:var(--red);">- ' + totalAchatSmart.toFixed(2) + ' €</td></tr>' +
+    '<tr style="background:rgba(229,62,62,0.1)"><td style="font-weight:700">Caisse finale</td><td style="text-align:right;font-weight:800;font-size:16px;color:var(--red);">' + caisseFin.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>Chèques à déposer</td><td style="text-align:right;">' + (totalCheque - totalDepotCheque).toFixed(2) + ' €</td></tr>' +
+    '</tbody></table>' +
+    '</div>' +
+
+    // Section Smartphones
+    '<div style="margin-bottom:20px;">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📱 Smartphones</div>' +
+    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Valeur</th></tr></thead><tbody>' +
+    '<tr><td>Smartphones achetés</td><td style="text-align:right;">' + phonesAchetes.length + ' tél. · ' + totalAchatSmart.toFixed(2) + ' €</td></tr>' +
+    '<tr><td>Smartphones vendus</td><td style="text-align:right;">' + phonesVendus.length + ' tél.</td></tr>' +
+    '<tr style="background:rgba(72,187,120,0.1)"><td style="font-weight:700;color:var(--green);">Marge smartphones</td><td style="text-align:right;font-weight:800;color:var(--green);">' + margeSmartphones.toFixed(2) + ' €</td></tr>' +
+    '</tbody></table>' +
+    '</div>' +
+
+    // Détail journalier
+    '<div>' +
+    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
+    '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
+    data.map(function(c,i) {
+      var fin = finales[caisse.indexOf(c)] || 0;
+      return '<tr><td>' + fmtDate(c.date) + '</td><td><b>' + c.ttc.toFixed(2) + ' €</b></td><td>' + (c.cb||0).toFixed(2) + ' €</td><td>' + (c.especes||0).toFixed(2) + ' €</td><td>' + (c.cheque||0).toFixed(2) + ' €</td><td>' + (c.virement||0).toFixed(2) + ' €</td><td>' + ((c.quali||0)>0?'<span style="color:var(--green)">'+(c.quali).toFixed(2)+' €</span>':'—') + '</td><td><b>' + fin.toFixed(2) + ' €</b></td></tr>';
+    }).join('') +
+    '</tbody></table></div>' +
+    '</div>' +
+
+    '<div style="margin-top:20px;padding:12px;background:var(--dark3);border-radius:8px;font-size:12px;color:var(--text-muted);text-align:center;">Document généré le ' + new Date().toLocaleDateString('fr-FR') + ' · Solution Phone · TVA sur marge Art. 297 CGI</div>' +
+    '</div>' +
+    '</div>';
+
+  document.getElementById('comptable-content').innerHTML = html;
+}
+
+function printComptable() {
+  var content = document.getElementById('compta-print-zone');
+  if (!content) return;
+  var w = window.open('', '_blank', 'width=900,height=1000');
+  w.document.write('<!DOCTYPE html><html><head><title>Récap Comptable</title>' +
+    '<style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;font-size:13px;}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:16px;}' +
+    'th{background:#f5f5f5;padding:8px;text-align:left;font-size:11px;text-transform:uppercase;border-bottom:2px solid #ddd;}' +
+    'td{padding:8px;border-bottom:1px solid #eee;}' +
+    '.red{color:#e53e3e;}.green{color:#48bb78;}' +
+    '@media print{body{padding:15px;}@page{margin:1cm;}}' +
+    '</style></head><body>' +
+    content.innerHTML +
+    '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+function exportComptableCSV() {
+  var mois = document.getElementById('compta-mois').value;
+  var data = caisse.filter(function(c){return c.date.startsWith(mois);});
+  var headers = ['Date','TTC','HT','TVA','CB','Especes','Cheque','Virement','Depot Esp','Depot Cheque','Achats Smart','QualiRepar','Caisse Finale'];
+  var cc = getReport(mois);
+  var rows = data.map(function(c){
+    var ht=(c.ttc/1.2).toFixed(2);var tva=(c.ttc-c.ttc/1.2).toFixed(2);
+    cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));
+    return[fmtDate(c.date),c.ttc,ht,tva,c.cb||0,c.especes||0,c.cheque||0,c.virement||0,c.depotEsp||0,c.depotCheque||0,c.achatSmart||0,c.quali||0,cc.toFixed(2)].join(';');
+  });
+  var csv=[headers.join(';')].concat(rows).join('
+');
+  var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');
+  a.href=url;a.download='Recap_Comptable_'+mois+'.csv';a.click();
+  showNotif('Export comptable téléchargé !','success');
 }
 
 function renderDashboard(){
