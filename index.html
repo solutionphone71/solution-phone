@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_230036 -->
+<!-- v20260314_230349 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -885,7 +885,9 @@ var SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
 
 async function supaFetch(table, method, body, query) {
   try {
-    var res = await fetch(SUPA_URL + '/rest/v1/' + table + (query||''), {
+    var sep = (query||'').includes('?') ? '&' : '?';
+    var url = SUPA_URL + '/rest/v1/' + table + (query||'') + sep + 'apikey=' + SUPA_KEY;
+    var res = await fetch(url, {
       method: method||'GET',
       mode: 'cors',
       headers: {
