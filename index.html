@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_125509 -->
+<!-- v20260314_132739 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -2163,11 +2163,16 @@ function renderDashboard(){
     }
   }
   var dispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var ca=caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
-  var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  document.getElementById('dash-cards').innerHTML= +
+  var caTotal=caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
+  var quali=caisse.reduce(function(s,c){return s+(c.quali||0);},0);
+  var moisCourant=getMoisActuel();
+  var caSmdocument.getElementById('dash-cards').innerHTML=
     '<div class="dash-card"><div class="dash-label">Stock disponible</div><div class="dash-value">'+dispo+' tél.</div></div>'+
-    '<div class="dash-card"><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(0)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">CA Réparations</div><div class="dash-value">'+caReparations.toFixed(0)+' €</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">dont QualiRépar : '+quali.toFixed(0)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">CA Vente Smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartphones.toFixed(0)+' €</div><div style="font-size:12px;color:var(--green);margin-top:4px;">Marge : '+mg.toFixed(0)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">CA Total du mois</div><div class="dash-value" style="color:var(--red)"><b>'+caTotal.toFixed(0)+' €</b></div></div>'+
+    '<div class="dash-card"><div class="dash-label">Factures</div><div class="dash-value">'+factures.length+'</div></div>';
+  "><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(0)+' €</div></div>'+
     '<div class="dash-card"><div class="dash-label">Marge smartphones</div><div class="dash-value" style="color:var(--green)">'+mg.toFixed(0)+' €</div></div>'+
     '<div class="dash-card"><div class="dash-label">Factures</div><div class="dash-value">'+factures.length+'</div></div>';
   var recent=phones.slice(-5).reverse();
