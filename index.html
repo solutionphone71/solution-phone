@@ -111,6 +111,8 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
     <div class="nav-item" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
+    <div class="nav-item" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan Annuel</span></div>
+    <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
   </div>
   <div class="main">
 
@@ -232,7 +234,84 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-comparaison">
+    <div class="page" id="page-devis">
+      <div class="page-title">Devis</div>
+      <div class="page-sub">Créer des devis pour vos clients</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group"><label>Client *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
+            <div class="form-group"><label>Appareil</label><input type="text" id="dv-appareil" placeholder="ex: iPhone 13" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Prestation *</label><input type="text" id="dv-prestation" placeholder="ex: Remplacement écran" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Prix TTC (€) *</label><input type="number" id="dv-prix" step="0.01" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Validité</label>
+              <select id="dv-validite">
+                <option value="15 jours">15 jours</option>
+                <option value="30 jours">30 jours</option>
+                <option value="3 mois">3 mois</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" onclick="genererDevis()">📝 Générer le devis</button>
+              <button class="btn" onclick="convertirDevisEnFacture()">🧾 → Facture répa</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="devis-preview-card" style="display:none;">
+          <div class="card-header"><div class="card-title">Aperçu</div>
+            <button class="btn btn-primary btn-sm" onclick="imprimerDevis()">🖨️ Imprimer</button>
+          </div>
+          <div id="devis-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">📋 Historique devis</div></div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Prestation</th><th>Montant</th><th>Validité</th><th>Actions</th></tr></thead>
+          <tbody id="devis-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-bilan">
+      <div class="page-title">Bilan Annuel</div>
+      <div class="page-sub">Vue d'ensemble de l'année</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:0;">
+          <label>Année</label>
+          <select id="bilan-annee" onchange="renderBilan()" style="width:120px;">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="printBilan()">🖨️ Imprimer</button>
+      </div>
+
+      <div class="dash-grid" id="bilan-cards"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📈 CA mensuel</div></div>
+          <canvas id="chart-bilan-ca" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">💰 CA + QualiRépar cumulé</div></div>
+          <canvas id="chart-bilan-cumul" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 Détail mensuel</div></div>
+        <div style="overflow-x:auto;">
+          <table id="bilan-table"></table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-comparaison">
       <div class="page-title">Comparaison Mensuelle</div>
       <div class="page-sub">Évolution de votre activité mois par mois</div>
 
@@ -421,11 +500,33 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div class="form-group"><label>IMEI</label><input type="text" id="p-imei" placeholder="15 chiffres"></div>
       <div class="form-group"><label>Prix achat (€) *</label><input type="number" id="p-achat" placeholder="300" oninput="updateMarge()"></div>
       <div class="form-group"><label>Prix vente (€) *</label><input type="number" id="p-vente" placeholder="450" oninput="updateMarge()"></div>
-      <div class="form-group"><label>Mode achat</label><select id="p-mode"><option value="ESPECES">Espèces</option><option value="CHEQUE">Chèque</option><option value="VIREMENT">Virement</option></select></div>
+      <div class="form-group"><label>Type achat</label>
+        <select id="p-type-achat" onchange="toggleFournisseur()">
+          <option value="PARTICULIER">👤 Particulier</option>
+          <option value="FOURNISSEUR">🏢 Fournisseur</option>
+        </select>
+      </div>
+      <div class="form-group" id="p-fournisseur-group" style="display:none;">
+        <label>Fournisseur</label>
+        <select id="p-fournisseur">
+          <option value="Wegacell">Wegacell</option>
+          <option value="Mobilax">Mobilax</option>
+          <option value="Utopya">Utopya</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Mode paiement</label>
+        <select id="p-mode">
+          <option value="ESPECES">Espèces</option>
+          <option value="CHEQUE">Chèque</option>
+          <option value="VIREMENT">Virement</option>
+          <option value="CB">CB</option>
+        </select>
+      </div>
       <div class="form-group"><label>Date achat</label><input type="date" id="p-date-achat"></div>
       <div class="form-group"><label>Couleur</label><input type="text" id="p-couleur" placeholder="ex: Noir"></div>
     </div>
-    <div style="margin-top:16px;padding:12px;background:var(--dark3);border-radius:8px;border-left:3px solid var(--red);">
+    <div style="margin-top:16px;padding:12px;background:var(--dark3);border-radius:8px;border-left:3px solid var(--red);" id="p-vendeur-section">
       <div style="font-size:11px;color:var(--red);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">👤 Informations vendeur (Livre de police)</div>
       <div class="form-grid">
         <div class="form-group"><label>Nom du vendeur</label><input type="text" id="p-vendeur-nom" placeholder="ex: DUPONT Jean"></div>
@@ -604,6 +705,8 @@ function showPage(id,el){
   if(id==='reparations')renderReparations();
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
+  if(id==='bilan')renderBilan();
+  if(id==='devis')renderDevis();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -812,6 +915,19 @@ function exportCaisseCSV(){
   showNotif('Export téléchargé !','success');
 }
 
+function toggleFournisseur() {
+  var type = document.getElementById('p-type-achat').value;
+  var fournisseurGroup = document.getElementById('p-fournisseur-group');
+  var vendeurSection = document.getElementById('p-vendeur-section');
+  if (type === 'FOURNISSEUR') {
+    fournisseurGroup.style.display = 'block';
+    if (vendeurSection) vendeurSection.style.display = 'none';
+  } else {
+    fournisseurGroup.style.display = 'none';
+    if (vendeurSection) vendeurSection.style.display = 'block';
+  }
+}
+
 function previewPhoto(input) {
   if(input.files && input.files[0]) {
     var reader = new FileReader();
@@ -970,6 +1086,182 @@ function exportPoliceCSV(){
 
 var reparations = [];
 var depenses = [];
+var chartBilanCA = null, chartBilanCumul = null;
+var devisList = [];
+
+// ===== BILAN ANNUEL =====
+function renderBilan() {
+  var annee = document.getElementById('bilan-annee').value;
+  var moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
+  var moisAll = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  
+  var totCA=0, totQuali=0, totJours=0;
+  var dataCA=[], dataQuali=[], dataCumul=[];
+  var cumul = 0;
+  var tableRows = '';
+
+  moisAll.forEach(function(m) {
+    var key = annee+'-'+m;
+    var rows = caisse.filter(function(c){return c.date.startsWith(key);});
+    var ca = rows.reduce(function(s,c){return s+(c.ttc||0);},0);
+    var quali = rows.reduce(function(s,c){return s+(c.quali||0);},0);
+    var jours = rows.length;
+    totCA += ca; totQuali += quali; totJours += jours;
+    cumul += ca + quali;
+    dataCA.push(ca.toFixed(2));
+    dataQuali.push(quali.toFixed(2));
+    dataCumul.push(cumul.toFixed(2));
+    if (ca > 0 || jours > 0) {
+      tableRows += '<tr><td><b>'+moisNoms[m]+'</b></td><td><b>'+ca.toFixed(2)+' €</b></td><td>'+(ca/1.2).toFixed(2)+' €</td><td>'+(ca-ca/1.2).toFixed(2)+' €</td><td style="color:var(--green)">'+quali.toFixed(2)+' €</td><td>'+(ca+quali).toFixed(2)+' €</td><td>'+jours+'</td><td>'+(jours>0?(ca/jours).toFixed(2):0)+' €</td></tr>';
+    }
+  });
+
+  document.getElementById('bilan-cards').innerHTML =
+    '<div class="dash-card"><div class="dash-label">CA TTC '+annee+'</div><div class="dash-value">'+totCA.toFixed(0)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">CA HT</div><div class="dash-value">'+(totCA/1.2).toFixed(0)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">TVA collectée</div><div class="dash-value">'+(totCA-totCA/1.2).toFixed(0)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">QualiRépar total</div><div class="dash-value" style="color:var(--green)">'+totQuali.toFixed(0)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">CA + QualiRépar</div><div class="dash-value" style="color:var(--green)">'+(totCA+totQuali).toFixed(0)+' €</div></div>' +
+    '<div class="dash-card"><div class="dash-label">Jours travaillés</div><div class="dash-value">'+totJours+'</div></div>';
+
+  var labels = moisAll.map(function(m){return moisNoms[m].substring(0,3);});
+  var gc='rgba(255,255,255,0.06)',tx='#a0aec0';
+  var opts={responsive:true,plugins:{legend:{labels:{color:tx}}},scales:{x:{ticks:{color:tx},grid:{color:gc}},y:{ticks:{color:tx},grid:{color:gc}}}};
+
+  if(chartBilanCA) chartBilanCA.destroy();
+  chartBilanCA = new Chart(document.getElementById('chart-bilan-ca'),{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'CA TTC',data:dataCA,backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1},
+      {label:'QualiRépar',data:dataQuali,backgroundColor:'rgba(72,187,120,0.7)',borderColor:'#48bb78',borderWidth:1}
+    ]},
+    options:opts
+  });
+
+  if(chartBilanCumul) chartBilanCumul.destroy();
+  chartBilanCumul = new Chart(document.getElementById('chart-bilan-cumul'),{
+    type:'line',
+    data:{labels:labels,datasets:[{
+      label:'CA cumulé (€)',data:dataCumul,
+      borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,0.1)',fill:true,tension:0.4
+    }]},
+    options:opts
+  });
+
+  document.getElementById('bilan-table').innerHTML =
+    '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>TVA</th><th>QualiRépar</th><th>Total</th><th>Jours</th><th>Moy/jour</th></tr></thead>' +
+    '<tbody>' + tableRows + '</tbody>';
+}
+
+function printBilan() {
+  var zone = document.getElementById('page-bilan');
+  var w = window.open('','_blank','width=900,height=1000');
+  w.document.write('<!DOCTYPE html><html><head><title>Bilan Annuel</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;font-size:13px;}table{width:100%;border-collapse:collapse;}th{background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;font-size:11px;text-transform:uppercase;}td{padding:8px;border-bottom:1px solid #eee;}@media print{body{padding:15px;}}</style></head><body>' +
+    '<h1 style="color:#e53e3e;font-size:24px;">SOLUTION PHONE — Bilan ' + document.getElementById('bilan-annee').value + '</h1>' +
+    '<p style="color:#666;margin-bottom:20px;">21 Rue Gambetta · 71000 Mâcon · SIRET : 801044785 00021</p>' +
+    document.getElementById('bilan-table').outerHTML +
+    '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+// ===== DEVIS =====
+function updateDevisPreview() {
+  var client = document.getElementById('dv-client').value||'Client';
+  var appareil = document.getElementById('dv-appareil').value;
+  var prestation = document.getElementById('dv-prestation').value;
+  var prix = parseFloat(document.getElementById('dv-prix').value)||0;
+  var adresse = document.getElementById('dv-adresse').value;
+  var validite = document.getElementById('dv-validite').value;
+  if(!prestation||!prix){document.getElementById('devis-preview-card').style.display='none';return;}
+  var num = 'DEV-2026-'+String(devisList.length+1).padStart(3,'0');
+  var date = new Date().toISOString().split('T')[0];
+  var tva = (prix/1.2*0.2).toFixed(2);
+  document.getElementById('devis-preview-content').innerHTML =
+    '<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;">' +
+    '<div style="font-size:18px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div>' +
+    '<div style="font-size:11px;color:#666;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89 · SIRET : 801044785 00021</div>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:12px;">' +
+    '<div><b>DEVIS '+num+'</b><div style="font-size:12px;color:#666;">Date : '+fmtDate(date)+'</div><div style="font-size:12px;color:#e53e3e;">Valable '+validite+'</div></div>' +
+    '<div style="text-align:right"><b>'+client+'</b><div style="font-size:12px;color:#666;">'+adresse+'</div></div>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">' +
+    '<tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Prestation</th><th style="padding:6px;text-align:right">TTC</th></tr>' +
+    '<tr><td style="padding:8px"><b>'+prestation+'</b>'+(appareil?'<br><span style="font-size:11px;color:#666;">Appareil : '+appareil+'</span>':'')+'</td>' +
+    '<td style="padding:8px;text-align:right;font-weight:700">'+prix.toFixed(2)+' €</td></tr>' +
+    '</table>' +
+    '<div style="border-top:2px solid #000;padding-top:8px;text-align:right;">' +
+    '<div style="font-size:11px;color:#666;">TVA 20% : '+tva+' €</div>' +
+    '<div style="font-size:18px;font-weight:800;color:#e53e3e;">Total TTC : '+prix.toFixed(2)+' €</div>' +
+    '</div>' +
+    '<div style="font-size:10px;color:#888;margin-top:10px;padding-top:6px;border-top:1px solid #eee;">Ce devis est valable '+validite+' à compter du '+fmtDate(date)+'. Solution Phone · solution.phone71@gmail.com</div>';
+  document.getElementById('devis-preview-card').style.display='block';
+}
+
+function genererDevis() {
+  var client=document.getElementById('dv-client').value.trim();
+  var prestation=document.getElementById('dv-prestation').value.trim();
+  var prix=parseFloat(document.getElementById('dv-prix').value);
+  if(!client||!prestation||!prix){showNotif('Client, prestation et prix requis','error');return;}
+  var num='DEV-2026-'+String(devisList.length+1).padStart(3,'0');
+  var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
+    clientNom:client,clientAdresse:document.getElementById('dv-adresse').value.trim(),
+    clientEmail:document.getElementById('dv-email').value.trim(),
+    appareil:document.getElementById('dv-appareil').value.trim(),
+    prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
+  devisList.push(dv);
+  renderDevis();
+  imprimerDevis();
+  ['dv-client','dv-adresse','dv-email','dv-appareil','dv-prestation','dv-prix'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('devis-preview-card').style.display='none';
+  showNotif('Devis '+num+' créé !','success');
+}
+
+function imprimerDevis() {
+  var c=document.getElementById('devis-preview-content').innerHTML;
+  if(!c)return;
+  var w=window.open('','_blank','width=600,height=800');
+  w.document.write('<!DOCTYPE html><html><head><title>Devis</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:0 auto;}@media print{body{padding:20px;}}</style></head><body>'+c+'<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+function convertirDevisEnFacture() {
+  var prestation=document.getElementById('dv-prestation').value.trim();
+  var prix=parseFloat(document.getElementById('dv-prix').value);
+  if(!prestation||!prix){showNotif('Remplissez le devis d'abord','error');return;}
+  // Copier dans la page réparations
+  showPage('reparations',null);
+  document.getElementById('r-client-nom').value=document.getElementById('dv-client').value;
+  document.getElementById('r-client-adresse').value=document.getElementById('dv-adresse').value;
+  document.getElementById('r-client-email').value=document.getElementById('dv-email').value;
+  document.getElementById('r-appareil').value=document.getElementById('dv-appareil').value;
+  document.getElementById('r-description').value=prestation;
+  document.getElementById('r-prix').value=prix;
+  updateRepPreview();
+  showNotif('Devis converti en facture réparation !','success');
+}
+
+function renderDevis() {
+  document.getElementById('devis-table').innerHTML=devisList.map(function(d){
+    return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+d.clientNom+'</td><td>'+d.prestation+'</td><td><b>'+d.prix.toFixed(2)+' €</b></td><td>'+d.validite+'</td>' +
+    '<td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintDevis('+d.id+')">🖨️</button></td></tr>';
+  }).join('')||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun devis</td></tr>';
+}
+
+function reprintDevis(id) {
+  var d=devisList.find(function(x){return x.id===id;});if(!d)return;
+  var tva=(d.prix/1.2*0.2).toFixed(2);
+  var c='<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;"><div style="font-size:22px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div><div style="font-size:12px;color:#666;">21 Rue Gambetta · 71000 Mâcon · SIRET : 801044785 00021</div></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:14px;"><div><b>DEVIS '+d.numero+'</b><div>'+fmtDate(d.date)+'</div><div style="color:#e53e3e;">Valable '+d.validite+'</div></div><div style="text-align:right"><b>'+d.clientNom+'</b><div>'+(d.clientAdresse||'')+'</div></div></div>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Prestation</th><th style="padding:8px;text-align:right">TTC</th></tr>'+
+    '<tr><td style="padding:10px"><b>'+d.prestation+'</b>'+(d.appareil?'<br><span style="font-size:11px;color:#888">Appareil : '+d.appareil+'</span>':'')+'</td><td style="padding:10px;text-align:right;font-weight:700">'+d.prix.toFixed(2)+' €</td></tr></table>'+
+    '<div style="border-top:2px solid #000;padding-top:10px;margin-top:10px;text-align:right;"><div>TVA 20% : '+tva+' €</div><div style="font-size:20px;font-weight:800;color:#e53e3e;">Total TTC : '+d.prix.toFixed(2)+' €</div></div>'+
+    '<div style="font-size:11px;color:#888;margin-top:10px;">Valable '+d.validite+' · Solution Phone · solution.phone71@gmail.com</div>';
+  var w=window.open('','_blank','width=600,height=800');
+  w.document.write('<!DOCTYPE html><html><head><title>Devis '+d.numero+'</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:0 auto;}@media print{body{padding:20px;}}</style></head><body>'+c+'<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
 var chartCompCA = null, chartCompQuali = null, chartCompPay = null, chartCompJours = null;
 
 function getDataParMois() {
