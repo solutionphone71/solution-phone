@@ -108,6 +108,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('caisse',this)"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de Police</span></div>
     <div class="nav-item" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
+    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
   </div>
   <div class="main">
 
@@ -228,7 +229,55 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-comptable">
+    <div class="page" id="page-reparations">
+      <div class="page-title">Factures de Réparation</div>
+      <div class="page-sub">Créer et gérer les factures de réparation</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔧 Nouvelle facture réparation</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group"><label>Client *</label><input type="text" id="r-client-nom" placeholder="ex: Jean Dupont" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Adresse client</label><input type="text" id="r-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Email client</label><input type="email" id="r-client-email" placeholder="ex: client@gmail.com"></div>
+            <div class="form-group"><label>Appareil *</label><input type="text" id="r-appareil" placeholder="ex: iPhone 13 Pro" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>IMEI / N° Série</label><input type="text" id="r-imei" placeholder="ex: 354612..." oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Description réparation *</label><input type="text" id="r-description" placeholder="ex: Remplacement écran" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Prix TTC (€) *</label><input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Mode règlement</label>
+              <select id="r-mode" onchange="updateRepPreview()">
+                <option value="CB">CB</option>
+                <option value="ESPECES">Espèces</option>
+                <option value="CHEQUE">Chèque</option>
+                <option value="VIREMENT">Virement</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Garantie</label>
+              <select id="r-garantie">
+                <option value="3 mois">3 mois</option>
+                <option value="6 mois">6 mois</option>
+                <option value="1 an">1 an</option>
+                <option value="Aucune">Aucune</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="genererFactureRep()">🧾 Générer la facture</button>
+          </div>
+        </div>
+        <div class="card" id="rep-preview-card" style="display:none;">
+          <div class="card-header"><div class="card-title">Aperçu</div>
+            <button class="btn btn-primary btn-sm" onclick="imprimerFactureRep()">🖨️ Imprimer</button></div>
+          <div id="rep-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 Historique réparations</div></div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Appareil</th><th>Réparation</th><th>TTC</th><th>Actions</th></tr></thead>
+          <tbody id="reparations-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-comptable">
       <div class="page-title">Récapitulatif Comptable</div>
       <div class="page-sub">Tableau mensuel pour votre comptable</div>
 
@@ -449,6 +498,7 @@ function showPage(id,el){
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
+  if(id==='reparations')renderReparations();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -792,6 +842,123 @@ function exportPoliceCSV(){
   var csv=[h.join(';')].concat(rows).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='Livre_Police.csv';a.click();
   showNotif('Export Police téléchargé !','success');
+}
+
+var reparations = [];
+
+function updateRepPreview() {
+  var client = document.getElementById('r-client-nom').value || 'Client';
+  var appareil = document.getElementById('r-appareil').value;
+  var description = document.getElementById('r-description').value;
+  var prix = parseFloat(document.getElementById('r-prix').value) || 0;
+  var imei = document.getElementById('r-imei').value;
+  var adresse = document.getElementById('r-client-adresse').value;
+  var mode = document.getElementById('r-mode').value;
+  var garantie = document.getElementById('r-garantie').value;
+  if (!appareil || !description || !prix) { document.getElementById('rep-preview-card').style.display='none'; return; }
+  var num = 'REP-2026-' + String(reparations.length + 1).padStart(3, '0');
+  var date = new Date().toISOString().split('T')[0];
+  var tva = (prix / 1.2 * 0.2).toFixed(2);
+  document.getElementById('rep-preview-content').innerHTML =
+    '<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;">' +
+    '<div style="font-size:18px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div>' +
+    '<div style="font-size:11px;color:#666;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>' +
+    '<div style="font-size:11px;color:#666;">SIRET : 801044785 00021</div>' +
+    '</div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:10px;">' +
+    '<div><b>FACTURE RÉPARATION ' + num + '</b><div style="font-size:12px;color:#666;">' + fmtDate(date) + '</div></div>' +
+    '<div style="text-align:right"><b>' + client + '</b><div style="font-size:12px;color:#666;">' + adresse + '</div></div>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">' +
+    '<tr style="background:#f5f5f5"><th style="padding:6px;text-align:left">Désignation</th><th style="padding:6px;text-align:right">TTC</th></tr>' +
+    '<tr><td style="padding:8px"><b>' + description + '</b><br>' +
+    '<span style="font-size:11px;color:#666;">Appareil : ' + appareil + (imei ? ' · IMEI : ' + imei : '') + '</span><br>' +
+    '<span style="font-size:11px;color:#666;">Garantie : ' + garantie + '</span></td>' +
+    '<td style="padding:8px;text-align:right;font-weight:700">' + prix.toFixed(2) + ' €</td></tr>' +
+    '</table>' +
+    '<div style="border-top:2px solid #000;padding-top:8px;text-align:right;">' +
+    '<div style="font-size:11px;color:#666;">TVA 20% : ' + tva + ' €</div>' +
+    '<div style="font-size:18px;font-weight:800;color:#e53e3e;">Total TTC : ' + prix.toFixed(2) + ' €</div>' +
+    '<div style="font-size:11px;color:#666;">Règlement : ' + mode + '</div>' +
+    '</div>' +
+    '<div style="font-size:10px;color:#888;margin-top:8px;border-top:1px solid #eee;padding-top:6px;">Solution Phone · 21 Rue Gambetta 71000 Mâcon · solution.phone71@gmail.com</div>';
+  document.getElementById('rep-preview-card').style.display = 'block';
+}
+
+function genererFactureRep() {
+  var client = document.getElementById('r-client-nom').value.trim();
+  var appareil = document.getElementById('r-appareil').value.trim();
+  var description = document.getElementById('r-description').value.trim();
+  var prix = parseFloat(document.getElementById('r-prix').value);
+  if (!client || !appareil || !description || !prix) { showNotif('Remplissez tous les champs obligatoires *', 'error'); return; }
+  var num = 'REP-2026-' + String(reparations.length + 1).padStart(3, '0');
+  var date = new Date().toISOString().split('T')[0];
+  var rep = {
+    id: Date.now(), numero: num, date: date,
+    clientNom: client,
+    clientAdresse: document.getElementById('r-client-adresse').value.trim(),
+    clientEmail: document.getElementById('r-client-email').value.trim(),
+    appareil: appareil,
+    imei: document.getElementById('r-imei').value.trim(),
+    description: description,
+    prix: prix,
+    mode: document.getElementById('r-mode').value,
+    garantie: document.getElementById('r-garantie').value
+  };
+  reparations.push(rep);
+  renderReparations();
+  imprimerFactureRep();
+  ['r-client-nom','r-client-adresse','r-client-email','r-appareil','r-imei','r-description','r-prix'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('rep-preview-card').style.display = 'none';
+  showNotif('Facture ' + num + ' créée !', 'success');
+}
+
+function imprimerFactureRep() {
+  var c = document.getElementById('rep-preview-content').innerHTML;
+  if (!c) return;
+  var w = window.open('', '_blank', 'width=600,height=800');
+  w.document.write('<!DOCTYPE html><html><head><title>Facture Réparation</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:0 auto;}@media print{body{padding:20px;}}</style></head><body>' + c + '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+function reprintRep(id) {
+  var r = reparations.find(function(x){ return x.id === id; });
+  if (!r) return;
+  var tva = (r.prix / 1.2 * 0.2).toFixed(2);
+  var c = '<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;"><div style="font-size:22px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div><div style="font-size:12px;color:#666;">21 Rue Gambetta · 71000 Mâcon · SIRET : 801044785 00021</div></div>' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:14px;"><div><b>FACTURE RÉPARATION ' + r.numero + '</b><div>' + fmtDate(r.date) + '</div></div><div style="text-align:right"><b>' + r.clientNom + '</b><div>' + (r.clientAdresse||'') + '</div></div></div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;"><tr style="background:#f5f5f5"><th style="padding:8px;text-align:left">Désignation</th><th style="padding:8px;text-align:right">TTC</th></tr>' +
+    '<tr><td style="padding:10px"><b>' + r.description + '</b><br><span style="font-size:11px;color:#888">Appareil : ' + r.appareil + (r.imei ? ' · IMEI : ' + r.imei : '') + '</span><br><span style="font-size:11px;color:#888">Garantie : ' + r.garantie + '</span></td>' +
+    '<td style="padding:10px;text-align:right;font-weight:700">' + r.prix.toFixed(2) + ' €</td></tr></table>' +
+    '<div style="border-top:2px solid #000;padding-top:10px;margin-top:10px;text-align:right;"><div>TVA 20% : ' + tva + ' €</div><div style="font-size:20px;font-weight:800;color:#e53e3e;">Total TTC : ' + r.prix.toFixed(2) + ' €</div><div>Règlement : ' + r.mode + '</div></div>' +
+    '<div style="font-size:11px;color:#888;margin-top:10px;">Solution Phone · 21 Rue Gambetta 71000 Mâcon</div>';
+  var w = window.open('', '_blank', 'width=600,height=800');
+  w.document.write('<!DOCTYPE html><html><head><title>Facture ' + r.numero + '</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:0 auto;}@media print{body{padding:20px;}}</style></head><body>' + c + '<script>window.onload=function(){window.print();}<\/script></body></html>');
+  w.document.close();
+}
+
+async function envoyerEmailRep(id) {
+  var r = reparations.find(function(x){ return x.id === id; });
+  if (!r) return;
+  var email = r.clientEmail || '';
+  if (!email) { email = prompt('Email du client :'); if (!email) return; r.clientEmail = email; }
+  showNotif('Envoi en cours...', 'info');
+  try {
+    await emailjs.send('service_gfapq4j', '9825f2j', {
+      client_nom: r.clientNom, numero_facture: r.numero,
+      appareil: r.appareil + ' - ' + r.description,
+      date_facture: fmtDate(r.date), montant: r.prix,
+      email: email, name: 'Solution Phone'
+    });
+    showNotif('Email envoyé à ' + email, 'success');
+  } catch(e) { showNotif('Erreur envoi email', 'error'); }
+}
+
+function renderReparations() {
+  document.getElementById('reparations-table').innerHTML = reparations.map(function(r) {
+    return '<tr><td><b>' + r.numero + '</b></td><td>' + fmtDate(r.date) + '</td><td>' + r.clientNom + '</td><td>' + r.appareil + '</td><td>' + r.description + '</td><td><b>' + r.prix.toFixed(2) + ' €</b></td>' +
+      '<td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintRep(' + r.id + ')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmailRep(' + r.id + ')">📧</button></td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune réparation</td></tr>';
 }
 
 function renderComptable() {
