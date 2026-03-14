@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_121516 -->
+<!-- v20260314_122107 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -882,7 +882,7 @@ function renderCaisse(){
   var el=document.getElementById('report-display');if(el)el.textContent=rep.toFixed(2)+' €';
   var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
   caisse.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb;tot.esp+=c.especes;tot.ch+=c.cheque;tot.vir+=c.virement;tot.quali+=c.quali;tot.dEsp+=c.depotEsp;tot.dCh+=c.depotCheque;tot.aS+=c.achatSmart;});
-  document.getElementById('caisse-totaux').innerHTML=
+  document.getElementById('caisse-totaux').innerHTML= +
     '<div class="caisse-card"><div class="caisse-label">CA TTC</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CA HT</div><div class="caisse-value">'+(tot.ttc/1.2).toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CB</div><div class="caisse-value">'+tot.cb.toFixed(2)+' €</div></div>'+
@@ -1471,7 +1471,7 @@ function renderStats(){
   var tCh=caisse.reduce(function(s,c){return s+(c.cheque||0);},0);
   var tVir=caisse.reduce(function(s,c){return s+(c.virement||0);},0);
   var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  document.getElementById('stats-cards').innerHTML=
+  document.getElementById('stats-cards').innerHTML= +
     '<div class="stat-card"><div class="stat-label">CA TTC</div><div class="stat-value">'+tc.toFixed(2)+' €</div></div>'+
     '<div class="stat-card"><div class="stat-label">CA HT</div><div class="stat-value">'+(tc/1.2).toFixed(2)+' €</div></div>'+
     '<div class="stat-card"><div class="stat-label">TVA collectée</div><div class="stat-value">'+(tc-tc/1.2).toFixed(2)+' €</div></div>'+
@@ -1533,7 +1533,7 @@ function renderBilan() {
     }
   });
 
-  document.getElementById('bilan-cards').innerHTML =
+  document.getElementById('bilan-cards').innerHTML = +
     '<div class="dash-card"><div class="dash-label">CA TTC '+annee+'</div><div class="dash-value">'+totCA.toFixed(0)+' €</div></div>' +
     '<div class="dash-card"><div class="dash-label">CA HT</div><div class="dash-value">'+(totCA/1.2).toFixed(0)+' €</div></div>' +
     '<div class="dash-card"><div class="dash-label">TVA collectée</div><div class="dash-value">'+(totCA-totCA/1.2).toFixed(0)+' €</div></div>' +
@@ -1565,7 +1565,7 @@ function renderBilan() {
     options:opts
   });
 
-  document.getElementById('bilan-table').innerHTML =
+  document.getElementById('bilan-table').innerHTML = +
     '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>TVA</th><th>QualiRépar</th><th>Total</th><th>Jours</th><th>Moy/jour</th></tr></thead>' +
     '<tbody>' + tableRows + '</tbody>';
 }
@@ -1593,7 +1593,7 @@ function updateDevisPreview() {
   var num = 'DEV-2026-'+String(devisList.length+1).padStart(3,'0');
   var date = new Date().toISOString().split('T')[0];
   var tva = (prix/1.2*0.2).toFixed(2);
-  document.getElementById('devis-preview-content').innerHTML =
+  document.getElementById('devis-preview-content').innerHTML = +
     '<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;">' +
     '<div style="font-size:18px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div>' +
     '<div style="font-size:11px;color:#666;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89 · SIRET : 801044785 00021</div>' +
@@ -1732,7 +1732,7 @@ function renderComparaison() {
     return '<br><span style="font-size:13px;color:'+color+'">'+arrow+' '+Math.abs(pct)+'%</span>';
   }
 
-  document.getElementById('comp-cards').innerHTML =
+  document.getElementById('comp-cards').innerHTML = +
     '<div class="dash-card"><div class="dash-label">CA '+getMoisLabel(moisKeys[moisKeys.length-1])+'</div><div class="dash-value">'+dernierMois.ttc.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.ttc,moisPrec.ttc):'')+'</div></div>' +
     '<div class="dash-card"><div class="dash-label">QualiRépar</div><div class="dash-value" style="color:var(--green)">'+dernierMois.quali.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.quali,moisPrec.quali):'')+'</div></div>' +
     '<div class="dash-card"><div class="dash-label">Moy/jour</div><div class="dash-value">'+(dernierMois.jours>0?(dernierMois.ttc/dernierMois.jours).toFixed(0):0)+' €'+(moisPrec&&moisPrec.jours>0?evolution(dernierMois.ttc/dernierMois.jours,moisPrec.ttc/moisPrec.jours):'')+'</div></div>' +
@@ -1840,7 +1840,7 @@ function renderDepenses() {
   // Totaux
   var ca = caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
   var benefice = ca - total;
-  document.getElementById('depenses-totaux').innerHTML =
+  document.getElementById('depenses-totaux').innerHTML = +
     '<div class="dash-card"><div class="dash-label">Total dépenses</div><div class="dash-value" style="color:var(--red);">'+total.toFixed(2)+' €</div></div>' +
     '<div class="dash-card"><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(2)+' €</div></div>' +
     '<div class="dash-card"><div class="dash-label">Bénéfice brut</div><div class="dash-value" style="color:'+(benefice>=0?'var(--green)':'var(--red)')+'">'+benefice.toFixed(2)+' €</div></div>' +
@@ -1890,7 +1890,7 @@ function updateRepPreview() {
   var num = 'REP-2026-' + String(reparations.length + 1).padStart(3, '0');
   var date = new Date().toISOString().split('T')[0];
   var tva = (prix / 1.2 * 0.2).toFixed(2);
-  document.getElementById('rep-preview-content').innerHTML =
+  document.getElementById('rep-preview-content').innerHTML = +
     '<div style="border-bottom:2px solid #e53e3e;padding-bottom:10px;margin-bottom:12px;">' +
     '<div style="font-size:18px;font-weight:900;color:#e53e3e;">SOLUTION PHONE</div>' +
     '<div style="font-size:11px;color:#666;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>' +
@@ -2040,7 +2040,7 @@ function renderComptable() {
     '</div>' +
     '</div>' +
 
-    // Section CA
+    // Section CA +
     '<div style="margin-bottom:20px;">' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💰 Chiffre d\'Affaires</div>' +
     '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
@@ -2052,7 +2052,7 @@ function renderComptable() {
     '</tbody></table>' +
     '</div>' +
 
-    // Section Paiements
+    // Section Paiements +
     '<div style="margin-bottom:20px;">' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💳 Répartition des paiements</div>' +
     '<table><thead><tr><th>Mode</th><th style="text-align:right">Montant</th><th style="text-align:right">%</th></tr></thead><tbody>' +
@@ -2063,7 +2063,7 @@ function renderComptable() {
     '</tbody></table>' +
     '</div>' +
 
-    // Section Caisse
+    // Section Caisse +
     '<div style="margin-bottom:20px;">' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">🏪 Suivi de caisse</div>' +
     '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
@@ -2076,7 +2076,7 @@ function renderComptable() {
     '</tbody></table>' +
     '</div>' +
 
-    // Section Smartphones
+    // Section Smartphones +
     '<div style="margin-bottom:20px;">' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📱 Smartphones</div>' +
     '<table><thead><tr><th>Désignation</th><th style="text-align:right">Valeur</th></tr></thead><tbody>' +
@@ -2086,7 +2086,7 @@ function renderComptable() {
     '</tbody></table>' +
     '</div>' +
 
-    // Détail journalier
+    // Détail journalier +
     '<div>' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
     '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
@@ -2157,7 +2157,7 @@ function renderDashboard(){
   var dispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
   var ca=caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
   var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  document.getElementById('dash-cards').innerHTML=
+  document.getElementById('dash-cards').innerHTML= +
     '<div class="dash-card"><div class="dash-label">Stock disponible</div><div class="dash-value">'+dispo+' tél.</div></div>'+
     '<div class="dash-card"><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(0)+' €</div></div>'+
     '<div class="dash-card"><div class="dash-label">Marge smartphones</div><div class="dash-value" style="color:var(--green)">'+mg.toFixed(0)+' €</div></div>'+
