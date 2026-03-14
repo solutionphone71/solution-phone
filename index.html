@@ -286,6 +286,32 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-edit-caisse">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier la saisie</div>
+    <input type="hidden" id="edit-c-date">
+    <div style="padding:10px;background:var(--dark3);border-radius:8px;margin-bottom:14px;font-size:14px;">
+      📅 Date : <b id="edit-c-date-display"></b>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Total TTC (€)</label><input type="number" id="edit-c-ttc" step="0.01" oninput="updateEditCalc()"></div>
+      <div class="form-group"><label>HT (auto)</label><input type="text" id="edit-c-ht" readonly style="color:var(--text-muted)"></div>
+      <div class="form-group"><label>CB (€)</label><input type="number" id="edit-c-cb" step="0.01"></div>
+      <div class="form-group"><label>Espèces (€)</label><input type="number" id="edit-c-esp" step="0.01"></div>
+      <div class="form-group"><label>Chèque (€)</label><input type="number" id="edit-c-cheque" step="0.01"></div>
+      <div class="form-group"><label>Virement (€)</label><input type="number" id="edit-c-vir" step="0.01"></div>
+      <div class="form-group"><label>Dépôt Espèces (€)</label><input type="number" id="edit-c-depot-esp" step="0.01"></div>
+      <div class="form-group"><label>Dépôt Chèque (€)</label><input type="number" id="edit-c-depot-cheque" step="0.01"></div>
+      <div class="form-group"><label>Bonus QualiRépar (€)</label><input type="number" id="edit-c-quali" step="0.01"></div>
+      <div class="form-group"><label>Achats Smart. Espèces (€)</label><input type="number" id="edit-c-achat-smart" step="0.01"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveCaisseEdit()">✅ Enregistrer</button>
+      <button class="btn" onclick="closeModal('modal-edit-caisse')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-etiquette">
   <div class="modal" style="max-width:400px;">
     <div class="modal-title">🏷️ Étiquette</div>
@@ -317,6 +343,27 @@ async function supaFetch(table, method, body, query) {
 
 var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':891.20};
 var supabaseReady = false;
+var realtimeChannel = null;
+
+function initRealtime() {
+  // Polling toutes les 30 secondes pour synchro multiposte
+  setInterval(async function() {
+    if (!supabaseReady) return;
+    try {
+      var c = await supaFetch('caisse','GET',null,'?order=date.asc');
+      if (c) {
+        caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
+        renderCaisse();
+      }
+      var p = await supaFetch('phones','GET',null,'?order=id.asc');
+      if (p) {
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||''};});
+        renderPhones(); renderDashboard();
+      }
+    } catch(e) { console.log('Sync error:', e); }
+  }, 30000);
+  console.log('🔄 Synchronisation temps réel activée (30s)');
+}
 
 async function loadFromSupabase() {
   try {
@@ -333,6 +380,7 @@ async function loadFromSupabase() {
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
     supabaseReady=true;
+    initRealtime();
     showNotif('Données chargées !','success');
   } catch(e){console.error(e);showNotif('Mode local actif','error');}
 }
@@ -400,6 +448,51 @@ function addCaisse(){
   caisse.sort(function(a,b){return a.date.localeCompare(b.date);});
   saveCaisseRow(entry);closeModal('modal-add-caisse');renderCaisse();renderDashboard();
   showNotif('Saisie enregistrée !','success');
+}
+
+function editCaisse(date) {
+  var c = caisse.find(function(x) { return x.date === date; });
+  if (!c) return;
+  document.getElementById('edit-c-date').value = date;
+  document.getElementById('edit-c-date-display').textContent = fmtDate(date);
+  document.getElementById('edit-c-ttc').value = c.ttc || 0;
+  document.getElementById('edit-c-ht').value = ((c.ttc||0)/1.2).toFixed(2) + ' €';
+  document.getElementById('edit-c-cb').value = c.cb || 0;
+  document.getElementById('edit-c-esp').value = c.especes || 0;
+  document.getElementById('edit-c-cheque').value = c.cheque || 0;
+  document.getElementById('edit-c-vir').value = c.virement || 0;
+  document.getElementById('edit-c-depot-esp').value = c.depotEsp || 0;
+  document.getElementById('edit-c-depot-cheque').value = c.depotCheque || 0;
+  document.getElementById('edit-c-quali').value = c.quali || 0;
+  document.getElementById('edit-c-achat-smart').value = c.achatSmart || 0;
+  openModal('modal-edit-caisse');
+}
+
+function updateEditCalc() {
+  var t = parseFloat(document.getElementById('edit-c-ttc').value) || 0;
+  document.getElementById('edit-c-ht').value = (t/1.2).toFixed(2) + ' €';
+}
+
+function saveCaisseEdit() {
+  var date = document.getElementById('edit-c-date').value;
+  var idx = caisse.findIndex(function(c) { return c.date === date; });
+  if (idx < 0) return;
+  caisse[idx] = {
+    date: date,
+    ttc: parseFloat(document.getElementById('edit-c-ttc').value) || 0,
+    cb: parseFloat(document.getElementById('edit-c-cb').value) || 0,
+    especes: parseFloat(document.getElementById('edit-c-esp').value) || 0,
+    cheque: parseFloat(document.getElementById('edit-c-cheque').value) || 0,
+    virement: parseFloat(document.getElementById('edit-c-vir').value) || 0,
+    depotEsp: parseFloat(document.getElementById('edit-c-depot-esp').value) || 0,
+    depotCheque: parseFloat(document.getElementById('edit-c-depot-cheque').value) || 0,
+    quali: parseFloat(document.getElementById('edit-c-quali').value) || 0,
+    achatSmart: parseFloat(document.getElementById('edit-c-achat-smart').value) || 0
+  };
+  saveCaisseRow(caisse[idx]);
+  closeModal('modal-edit-caisse');
+  renderCaisse(); renderDashboard();
+  showNotif('✅ Saisie du ' + fmtDate(date) + ' mise à jour !', 'success');
 }
 
 function deleteCaisse(date){if(!confirm('Supprimer ?'))return;caisse=caisse.filter(function(c){return c.date!==date;});if(supabaseReady)supaFetch('caisse','DELETE',null,'?date=eq.'+date);renderCaisse();showNotif('Supprimé','success');}
