@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_212757 -->
+<!-- v20260314_213215 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1733,34 +1733,19 @@ function genererPostInstagram(id) {
   if(!p) return;
 
   // Générer le texte du post
-  var grade_desc = {
-    'A+': 'comme neuf ✨',
-    'A': 'très bon état 👌',
-    'B': 'bon état 💪',
-    'C': 'état correct 👍'
-  };
-  var desc = grade_desc[p.grade] || 'bon état';
-
-  var texte = '📱 ' + p.modele.toUpperCase() + ' ' + (p.stockage ? p.stockage + 'Go ' : '') + 'EN VENTE !
-
-' +
-    '✅ État : ' + p.grade + ' - ' + desc + '
-' +
-    (p.batterie ? '🔋 Batterie : ' + p.batterie + '%
-' : '') +
-    (p.couleur ? '🎨 Couleur : ' + p.couleur + '
-' : '') +
-    '💰 Prix : ' + p.vente + '€
-
-' +
-    '🏪 Solution Phone - 21 Rue Gambetta, Mâcon
-' +
-    '📞 03 85 33 06 89
-
-' +
-    '#smartphone #reconditionné #' + p.modele.replace(/ /g,'').toLowerCase() + ' #macon #solde #bonplan #iphone #samsung #reconditionnedphone #solutionphone #macon71 #bourgogne';
-
-  // Créer une popup avec le texte
+  var texte = '\ud83d\udcf1 ' + p.modele.toUpperCase() + (p.stockage ? ' ' + p.stockage + 'Go' : '') + ' EN VENTE !\n' +
+    '\u2705 Grade : ' + (p.grade||'A') + (p.batterie ? ' | Batterie ' + p.batterie + '%' : '') + '\n' +
+    (p.couleur ? 'Couleur : ' + p.couleur + '\n' : '') +
+    '\ud83d\udcb6 Prix : ' + p.vente + '\u20ac\n' +
+    '\ud83c\udfe3 Solution Phone - 21 Rue Gambetta, Macon\n' +
+    '\ud83d\udcde 03 85 33 06 89\n' +
+    '\ud83d\udd12 Garantie 6 mois';
+  var hashtags = '#smartphone #reconditionne #macon #iphone #samsung #hightech #bonplan #solutionphone';
+  document.getElementById('instagram-texte').value = texte;
+  document.getElementById('instagram-hashtags').value = hashtags;
+  document.getElementById('instagram-loading').style.display='none';
+  document.getElementById('instagram-content').style.display='block';
+    // Créer une popup avec le texte
   var modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.innerHTML = '<div style="background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:500px;width:100%;">' +
