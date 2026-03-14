@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_214948 -->
+<!-- v20260314_221702 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -887,7 +887,14 @@ async function supaFetch(table, method, body, query) {
   try {
     var res = await fetch(SUPA_URL + '/rest/v1/' + table + (query||''), {
       method: method||'GET',
-      headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''},
+      mode: 'cors',
+      headers: {
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json',
+        'Prefer':method==='POST'?'return=representation':'',
+        'X-Client-Info':'solution-phone'
+      },
       body: body ? JSON.stringify(body) : null
     });
     var text = await res.text();
