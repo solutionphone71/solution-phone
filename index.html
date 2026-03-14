@@ -200,6 +200,8 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-caisse')">➕ Ajouter</button>
             <button class="btn btn-sm" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
+            <button class="btn btn-sm" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-import').click()">📂 Import Phonilab CSV</button>
+            <input type="file" id="phonilab-import" accept=".csv" style="display:none" onchange="importPhonilabCSV(this)">
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -418,6 +420,110 @@ function renderCaisse(){
     var ht=(c.ttc/1.2).toFixed(2);var tva=(c.ttc-c.ttc/1.2).toFixed(2);
     return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
   }).join('')||'<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune saisie</td></tr>';
+}
+
+function importPhonilabCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    // Détecter le séparateur (virgule ou point-virgule)
+    var sep = text.indexOf(';') >= 0 ? ';' : ',';
+    var lines = text.split('\n').filter(function(l) { return l.trim(); });
+    if (lines.length < 2) { showNotif('Fichier CSV vide ou invalide', 'error'); return; }
+    
+    // Lire les headers
+    var headers = lines[0].split(sep).map(function(h) { return h.replace(/"/g,'').trim().toLowerCase(); });
+    console.log('Headers Phonilab:', headers);
+    
+    // Index des colonnes importantes
+    var iDate = headers.findIndex(function(h) { return h.includes('date'); });
+    var iMontant = headers.findIndex(function(h) { return h.includes('montant'); });
+    var iMethode = headers.findIndex(function(h) { return h.includes('m') && h.includes('thode'); });
+    var iType = headers.findIndex(function(h) { return h.includes('r') && h.includes('paration'); });
+    
+    if (iDate < 0 || iMontant < 0) { showNotif('Format CSV non reconnu', 'error'); return; }
+    
+    // Grouper par date
+    var byDate = {};
+    for (var i = 1; i < lines.length; i++) {
+      var cols = lines[i].split(sep).map(function(c) { return c.replace(/"/g,'').trim(); });
+      if (cols.length < 3) continue;
+      
+      // Parser la date (format DD-MM-YYYY ou DD/MM/YYYY)
+      var rawDate = cols[iDate];
+      var dateISO = '';
+      if (rawDate) {
+        var parts = rawDate.split(/[-\/]/);
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            dateISO = rawDate; // déjà YYYY-MM-DD
+          } else {
+            dateISO = parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+          }
+        }
+      }
+      if (!dateISO) continue;
+      
+      var montant = parseFloat((cols[iMontant]||'0').replace(',','.').replace('€','').trim()) || 0;
+      var methode = iMethode >= 0 ? (cols[iMethode]||'').toLowerCase() : '';
+      var isBonus = iType >= 0 && (cols[iType]||'').toLowerCase().includes('bonus');
+      
+      if (!byDate[dateISO]) {
+        byDate[dateISO] = {date:dateISO, ttc:0, cb:0, especes:0, cheque:0, virement:0, quali:0, depotEsp:0, depotCheque:0, achatSmart:0};
+      }
+      
+      var d = byDate[dateISO];
+      
+      if (isBonus || methode.includes('bonus')) {
+        d.quali += montant;
+      } else {
+        d.ttc += montant;
+        if (methode.includes('cb') || methode.includes('carte') || methode.includes('bank')) d.cb += montant;
+        else if (methode.includes('esp') || methode.includes('cash')) d.especes += montant;
+        else if (methode.includes('ch') && methode.includes('que')) d.cheque += montant;
+        else if (methode.includes('vir') || methode.includes('transfer')) d.virement += montant;
+        else d.cb += montant; // par défaut CB
+      }
+    }
+    
+    // Importer les données
+    var imported = 0;
+    var updated = 0;
+    Object.values(byDate).forEach(function(entry) {
+      // Arrondir
+      entry.ttc = Math.round(entry.ttc * 100) / 100;
+      entry.cb = Math.round(entry.cb * 100) / 100;
+      entry.especes = Math.round(entry.especes * 100) / 100;
+      entry.cheque = Math.round(entry.cheque * 100) / 100;
+      entry.virement = Math.round(entry.virement * 100) / 100;
+      entry.quali = Math.round(entry.quali * 100) / 100;
+      
+      var idx = caisse.findIndex(function(c) { return c.date === entry.date; });
+      if (idx >= 0) {
+        // Mettre à jour en additionnant
+        caisse[idx].ttc = entry.ttc;
+        caisse[idx].cb = entry.cb;
+        caisse[idx].especes = entry.especes;
+        caisse[idx].cheque = entry.cheque;
+        caisse[idx].virement = entry.virement;
+        caisse[idx].quali += entry.quali;
+        saveCaisseRow(caisse[idx]);
+        updated++;
+      } else {
+        caisse.push(entry);
+        caisse.sort(function(a,b){return a.date.localeCompare(b.date);});
+        saveCaisseRow(entry);
+        imported++;
+      }
+    });
+    
+    renderCaisse(); renderDashboard();
+    showNotif('Import Phonilab : ' + imported + ' ajoutés, ' + updated + ' mis à jour ✅', 'success');
+    input.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
 }
 
 function exportCaisseCSV(){
