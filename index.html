@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_214638 -->
+<!-- v20260314_214948 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -944,10 +944,24 @@ async function loadFromSupabase() {
     renderPhones();
     renderFactures();
     renderCaisse();
-  } catch(e){console.error(e);showNotif('Mode local actif','error');}
+  } catch(e){
+    console.error(e);
+    showNotif('Mode local actif - chargement local','error');
+    // Fallback: charger depuis localStorage
+    try {
+      phones = JSON.parse(localStorage.getItem('sp_phones')||'[]');
+      factures = JSON.parse(localStorage.getItem('sp_factures')||'[]');
+      caisse = JSON.parse(localStorage.getItem('sp_caisse')||'[]');
+      var savedReports = localStorage.getItem('sp_reports');
+      if(savedReports) reportsMois = JSON.parse(savedReports);
+    } catch(e2) { console.error('localStorage aussi vide', e2); }
+    renderDashboard(); renderPhones(); renderFactures(); renderCaisse();
+  }
 }
 
 async function savePhone(phone) {
+  // Toujours sauvegarder dans localStorage
+  localStorage.setItem('sp_phones', JSON.stringify(phones));
   if(!supabaseReady) return;
   var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
   if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
@@ -955,6 +969,8 @@ async function savePhone(phone) {
 }
 
 async function saveCaisseRow(row) {
+  // Toujours sauvegarder dans localStorage
+  localStorage.setItem('sp_caisse', JSON.stringify(caisse));
   if(!supabaseReady) return;
   var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart};
   var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
