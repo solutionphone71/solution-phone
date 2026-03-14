@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_231058 -->
+<!-- v20260314_231259 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -882,6 +882,10 @@ async function askClaude(prompt) {
 
 var SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
 var SUPA_KEY = 'sb_publishable_2y4HQIUn54AkC0sjZm8Zug_fSl6jL9t';
+var supaClient = null;
+try {
+  supaClient = supabase.createClient(SUPA_URL, SUPA_KEY);
+} catch(e) { console.error('Supabase SDK error:', e); }
 
 async function supaFetch(table, method, body, query) {
   try {
