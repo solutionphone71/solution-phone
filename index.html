@@ -110,6 +110,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
+    <div class="nav-item" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
   </div>
   <div class="main">
 
@@ -231,7 +232,42 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-depenses">
+    <div class="page" id="page-comparaison">
+      <div class="page-title">Comparaison Mensuelle</div>
+      <div class="page-sub">Évolution de votre activité mois par mois</div>
+
+      <div class="dash-grid" id="comp-cards"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📈 CA TTC par mois</div></div>
+          <canvas id="chart-comp-ca" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🔧 Bonus QualiRépar par mois</div></div>
+          <canvas id="chart-comp-quali" height="220"></canvas>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">💳 Répartition paiements par mois</div></div>
+          <canvas id="chart-comp-pay" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📅 Nb jours travaillés</div></div>
+          <canvas id="chart-comp-jours" height="220"></canvas>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">📊 Tableau comparatif détaillé</div></div>
+        <div style="overflow-x:auto;">
+          <table id="comp-table"></table>
+        </div>
+      </div>
+    </div>
+
+  <div class="page" id="page-depenses">
       <div class="page-title">Suivi des Dépenses</div>
       <div class="page-sub">Charges et dépenses du magasin</div>
 
@@ -567,6 +603,7 @@ function showPage(id,el){
   if(id==='comptable')renderComptable();
   if(id==='reparations')renderReparations();
   if(id==='depenses'){renderDepenses();}
+  if(id==='comparaison')renderComparaison();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -933,6 +970,124 @@ function exportPoliceCSV(){
 
 var reparations = [];
 var depenses = [];
+var chartCompCA = null, chartCompQuali = null, chartCompPay = null, chartCompJours = null;
+
+function getDataParMois() {
+  // Grouper caisse par mois
+  var moisData = {};
+  caisse.forEach(function(c) {
+    var mois = c.date.substring(0,7);
+    if (!moisData[mois]) moisData[mois] = {ttc:0,cb:0,esp:0,cheque:0,vir:0,quali:0,jours:0,depotEsp:0,depotCheque:0,achatSmart:0};
+    moisData[mois].ttc += c.ttc||0;
+    moisData[mois].cb += c.cb||0;
+    moisData[mois].esp += c.especes||0;
+    moisData[mois].cheque += c.cheque||0;
+    moisData[mois].vir += c.virement||0;
+    moisData[mois].quali += c.quali||0;
+    moisData[mois].jours += 1;
+    moisData[mois].depotEsp += c.depotEsp||0;
+    moisData[mois].depotCheque += c.depotCheque||0;
+    moisData[mois].achatSmart += c.achatSmart||0;
+  });
+  return moisData;
+}
+
+function getMoisLabel(mois) {
+  var noms = {'01':'Jan','02':'Fév','03':'Mar','04':'Avr','05':'Mai','06':'Jun','07':'Jul','08':'Aoû','09':'Sep','10':'Oct','11':'Nov','12':'Déc'};
+  var p = mois.split('-');
+  return noms[p[1]] + ' ' + p[0];
+}
+
+function renderComparaison() {
+  var moisData = getDataParMois();
+  var moisKeys = Object.keys(moisData).sort();
+  
+  if (moisKeys.length === 0) {
+    document.getElementById('comp-cards').innerHTML = '<div style="color:var(--text-muted);padding:20px;">Pas assez de données pour comparer.</div>';
+    return;
+  }
+
+  var labels = moisKeys.map(getMoisLabel);
+  var gc = 'rgba(255,255,255,0.06)', tx = '#a0aec0';
+  var opts = {responsive:true, plugins:{legend:{labels:{color:tx}}}, scales:{x:{ticks:{color:tx},grid:{color:gc}},y:{ticks:{color:tx},grid:{color:gc}}}};
+
+  // Cartes résumé (dernier mois vs mois précédent)
+  var dernierMois = moisData[moisKeys[moisKeys.length-1]];
+  var moisPrec = moisKeys.length > 1 ? moisData[moisKeys[moisKeys.length-2]] : null;
+  
+  function evolution(val, prev) {
+    if (!prev || prev === 0) return '';
+    var pct = ((val - prev) / prev * 100).toFixed(1);
+    var color = pct >= 0 ? 'var(--green)' : 'var(--red)';
+    var arrow = pct >= 0 ? '↑' : '↓';
+    return '<br><span style="font-size:13px;color:'+color+'">'+arrow+' '+Math.abs(pct)+'%</span>';
+  }
+
+  document.getElementById('comp-cards').innerHTML =
+    '<div class="dash-card"><div class="dash-label">CA '+getMoisLabel(moisKeys[moisKeys.length-1])+'</div><div class="dash-value">'+dernierMois.ttc.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.ttc,moisPrec.ttc):'')+'</div></div>' +
+    '<div class="dash-card"><div class="dash-label">QualiRépar</div><div class="dash-value" style="color:var(--green)">'+dernierMois.quali.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.quali,moisPrec.quali):'')+'</div></div>' +
+    '<div class="dash-card"><div class="dash-label">Moy/jour</div><div class="dash-value">'+(dernierMois.jours>0?(dernierMois.ttc/dernierMois.jours).toFixed(0):0)+' €'+(moisPrec&&moisPrec.jours>0?evolution(dernierMois.ttc/dernierMois.jours,moisPrec.ttc/moisPrec.jours):'')+'</div></div>' +
+    '<div class="dash-card"><div class="dash-label">Jours travaillés</div><div class="dash-value">'+dernierMois.jours+(moisPrec?evolution(dernierMois.jours,moisPrec.jours):'')+'</div></div>';
+
+  // Graphique CA
+  if(chartCompCA) chartCompCA.destroy();
+  chartCompCA = new Chart(document.getElementById('chart-comp-ca'), {
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'CA TTC (€)',data:moisKeys.map(function(m){return moisData[m].ttc.toFixed(2);}),backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1},
+      {label:'CA HT (€)',data:moisKeys.map(function(m){return (moisData[m].ttc/1.2).toFixed(2);}),backgroundColor:'rgba(229,62,62,0.3)',borderColor:'#e53e3e',borderWidth:1}
+    ]},
+    options:opts
+  });
+
+  // Graphique QualiRépar
+  if(chartCompQuali) chartCompQuali.destroy();
+  chartCompQuali = new Chart(document.getElementById('chart-comp-quali'), {
+    type:'line',
+    data:{labels:labels,datasets:[{
+      label:'Bonus QualiRépar (€)',
+      data:moisKeys.map(function(m){return moisData[m].quali.toFixed(2);}),
+      borderColor:'#48bb78',backgroundColor:'rgba(72,187,120,0.1)',fill:true,tension:0.4
+    }]},
+    options:opts
+  });
+
+  // Graphique paiements empilés
+  if(chartCompPay) chartCompPay.destroy();
+  chartCompPay = new Chart(document.getElementById('chart-comp-pay'), {
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'CB',data:moisKeys.map(function(m){return moisData[m].cb.toFixed(2);}),backgroundColor:'rgba(229,62,62,0.8)'},
+      {label:'Espèces',data:moisKeys.map(function(m){return moisData[m].esp.toFixed(2);}),backgroundColor:'rgba(72,187,120,0.8)'},
+      {label:'Chèque',data:moisKeys.map(function(m){return moisData[m].cheque.toFixed(2);}),backgroundColor:'rgba(66,153,225,0.8)'},
+      {label:'Virement',data:moisKeys.map(function(m){return moisData[m].vir.toFixed(2);}),backgroundColor:'rgba(237,137,54,0.8)'}
+    ]},
+    options:{...opts, scales:{...opts.scales, x:{...opts.scales.x,stacked:true}, y:{...opts.scales.y,stacked:true}}}
+  });
+
+  // Graphique jours travaillés
+  if(chartCompJours) chartCompJours.destroy();
+  chartCompJours = new Chart(document.getElementById('chart-comp-jours'), {
+    type:'bar',
+    data:{labels:labels,datasets:[{
+      label:'Jours travaillés',
+      data:moisKeys.map(function(m){return moisData[m].jours;}),
+      backgroundColor:'rgba(159,122,234,0.7)',borderColor:'#9f7aea',borderWidth:1
+    }]},
+    options:opts
+  });
+
+  // Tableau comparatif
+  var thead = '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>TVA</th><th>QualiRépar</th><th>CB</th><th>Espèces</th><th>Jours</th><th>Moy/jour</th></tr></thead>';
+  var tbody = '<tbody>' + moisKeys.map(function(m) {
+    var d = moisData[m];
+    var ht = d.ttc/1.2;
+    var tva = d.ttc - ht;
+    var moy = d.jours > 0 ? d.ttc/d.jours : 0;
+    return '<tr><td><b>'+getMoisLabel(m)+'</b></td><td><b>'+d.ttc.toFixed(2)+' €</b></td><td>'+ht.toFixed(2)+' €</td><td>'+tva.toFixed(2)+' €</td><td style="color:var(--green)">'+d.quali.toFixed(2)+' €</td><td>'+d.cb.toFixed(2)+' €</td><td>'+d.esp.toFixed(2)+' €</td><td>'+d.jours+'</td><td>'+moy.toFixed(2)+' €</td></tr>';
+  }).join('') + '</tbody>';
+  document.getElementById('comp-table').innerHTML = thead + tbody;
+}
 var chartDep = null;
 
 function addDepense() {
