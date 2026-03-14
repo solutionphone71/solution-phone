@@ -415,8 +415,8 @@ async function loadFromSupabase() {
 async function savePhone(phone) {
   if(!supabaseReady) return;
   var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null};
-  if(phone.id && typeof phone.id==='number' && phone.id<2000000000){await supaFetch('phones','PATCH',data,'?id=eq.'+phone.id);}
-  else{var res=await supaFetch('phones','POST',data);if(res&&res[0])phone.id=res[0].id;}
+  if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
+  else{var res=await supaFetch('phones','POST',data);if(res&&res[0]){phone.supaId=res[0].id;phone.id=res[0].id;}}
 }
 
 async function saveCaisseRow(row) {
@@ -539,7 +539,7 @@ function renderCaisse(){
     '<div class="caisse-card"><div class="caisse-label">Achats Smart.</div><div class="caisse-value">'+tot.aS.toFixed(2)+' €</div></div>';
   document.getElementById('caisse-table').innerHTML=caisse.map(function(c,i){
     var ht=(c.ttc/1.2).toFixed(2);var tva=(c.ttc-c.ttc/1.2).toFixed(2);
-    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
+    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="editCaisse(\''+c.date+'\')">✏️</button><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
   }).join('')||'<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune saisie</td></tr>';
 }
 
