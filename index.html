@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_232319 -->
+<!-- v20260314_141348 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -115,7 +115,6 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur Rachat</span></div>
-    <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Posts Instagram</span></div>
   </div>
   <div class="main">
 
@@ -224,7 +223,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
     <div class="page" id="page-police">
       <div class="page-title">Livre de Police</div>
-      <div class="page-sub">Registre légal des achats d occasion</div>
+      <div class="page-sub">Registre légal des achats d'occasion</div>
       <div class="card">
         <div class="card-header">
           <div class="card-title">Registre des achats</div>
@@ -237,77 +236,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
 
-    <div class="page" id="page-instagram">
-      <div class="page-title">Posts Instagram</div>
-      <div class="page-sub">Générez des posts avec l IA pour vendre vos smartphones</div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-        <!-- Formulaire -->
-        <div class="card">
-          <div class="card-header"><div class="card-title">📱 Informations du téléphone</div></div>
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div class="form-group"><label>Marque & Modèle *</label>
-              <input type="text" id="ig-model" placeholder="ex: iPhone 14 Pro Max"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group"><label>Stockage</label>
-                <select id="ig-storage">
-                  <option value="">— Sélectionner —</option>
-                  <option>64 Go</option><option>128 Go</option><option>256 Go</option><option>512 Go</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Couleur</label>
-                <input type="text" id="ig-color" placeholder="ex: Noir"></div>
-            </div>
-            <div class="form-group"><label>Grade</label>
-              <div style="display:flex;gap:8px;">
-                <button id="ig-grade-Aplus" class="btn" onclick="setIgGrade('A+')" style="flex:1;font-weight:700;">A+</button>
-                <button id="ig-grade-A" class="btn" onclick="setIgGrade('A')" style="flex:1;font-weight:700;">A</button>
-                <button id="ig-grade-B" class="btn" onclick="setIgGrade('B')" style="flex:1;font-weight:700;">B</button>
-                <button id="ig-grade-C" class="btn" onclick="setIgGrade('C')" style="flex:1;font-weight:700;">C</button>
-              </div>
-            </div>
-            <div class="form-group"><label>Batterie : <span id="ig-bat-display">85%</span></label>
-              <input type="range" id="ig-battery" min="60" max="100" value="85" oninput="document.getElementById('ig-bat-display').textContent=this.value+'%'" style="width:100%;accent-color:var(--red);">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group"><label>Prix de vente (€)</label>
-                <input type="number" id="ig-price" placeholder="ex: 299"></div>
-              <div class="form-group"><label>Type de post</label>
-                <select id="ig-type">
-                  <option value="vente">📱 Vente reconditionné</option>
-                  <option value="promo">🔥 Offre promotionnelle</option>
-                  <option value="arrivage">✨ Nouvel arrivage</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group"><label>Infos supplémentaires</label>
-              <input type="text" id="ig-extra" placeholder="Garantie, accessoires inclus..."></div>
-            <button class="btn btn-primary" onclick="genererPostInstagram()" id="ig-btn">✨ Générer le post</button>
-          </div>
-        </div>
-
-        <!-- Résultat -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">📸 Post généré</div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-sm" id="ig-copy-btn" onclick="copierPost()" style="display:none;">📋 Copier</button>
-            </div>
-          </div>
-          <div id="ig-output" style="font-size:14px;line-height:1.7;white-space:pre-wrap;word-break:break-word;min-height:300px;padding:8px;color:var(--text-muted);">
-            Remplissez le formulaire et cliquez sur "Générer le post" 📱
-          </div>
-        </div>
-      </div>
-
-      <!-- Historique -->
-      <div class="card" style="margin-top:18px;" id="ig-history-card" style="display:none;">
-        <div class="card-header"><div class="card-title">🕒 Derniers posts générés</div></div>
-        <div id="ig-history-list"></div>
-      </div>
-    </div>
-
-  <div class="page" id="page-rachat">
+    <div class="page" id="page-rachat">
       <div class="page-title">Calculateur de Rachat</div>
       <div class="page-sub">Estimez le prix de rachat d un smartphone</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
@@ -315,10 +244,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="card-header"><div class="card-title">🧮 Estimation</div></div>
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div class="form-group"><label>Modèle</label>
-              <input type="text" id="rc-modele" placeholder="ex: iPhone 13">
+              <input type="text" id="rc-modele" placeholder="ex: iPhone 13" oninput="calculerRachat()">
             </div>
             <div class="form-group"><label>Grade</label>
-              <select id="rc-grade">
+              <select id="rc-grade" onchange="calculerRachat()">
                 <option value="A+">A+ (comme neuf)</option>
                 <option value="A">A (très bon état)</option>
                 <option value="B">B (bon état)</option>
@@ -326,10 +255,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               </select>
             </div>
             <div class="form-group"><label>Batterie (%)</label>
-              <input type="number" id="rc-batterie" placeholder="ex: 85" min="0" max="100">
+              <input type="number" id="rc-batterie" placeholder="ex: 85" min="0" max="100" oninput="calculerRachat()">
             </div>
             <div class="form-group"><label>Stockage (Go)</label>
-              <select id="rc-stockage">
+              <select id="rc-stockage" onchange="calculerRachat()">
                 <option value="64">64 Go</option>
                 <option value="128" selected>128 Go</option>
                 <option value="256">256 Go</option>
@@ -337,14 +266,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               </select>
             </div>
             <div class="form-group"><label>État écran</label>
-              <select id="rc-ecran">
+              <select id="rc-ecran" onchange="calculerRachat()">
                 <option value="1">Parfait</option>
                 <option value="0.9">Micro-rayures</option>
                 <option value="0.75">Rayures visibles</option>
                 <option value="0.5">Fissure</option>
               </select>
             </div>
-          <button class="btn btn-primary" style="margin-top:8px;" onclick="calculerRachat()">🤖 Estimer avec l IA</button>
           </div>
         </div>
         <div class="card">
@@ -704,32 +632,6 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-instagram">
-  <div class="modal" style="max-width:500px;">
-    <div class="modal-title">📸 Post Instagram</div>
-    <div id="instagram-loading" style="text-align:center;padding:30px;display:none;">
-      <div style="font-size:32px;margin-bottom:12px;">🤖</div>
-      <div style="color:var(--text-muted);">Génération du post en cours...</div>
-    </div>
-    <div id="instagram-content" style="display:none;">
-      <div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">📝 Texte du post</div>
-        <textarea id="instagram-texte" style="width:100%;background:transparent;border:none;color:var(--text);font-size:14px;line-height:1.6;resize:vertical;min-height:200px;outline:none;"></textarea>
-      </div>
-      <div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">#️⃣ Hashtags</div>
-        <textarea id="instagram-hashtags" style="width:100%;background:transparent;border:none;color:var(--blue);font-size:13px;line-height:1.6;resize:vertical;min-height:80px;outline:none;"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="copierPost()">📋 Copier le post</button>
-        <button class="btn" style="border-color:#E1306C;color:#E1306C;" onclick="ouvrirInstagram()">📱 Ouvrir Instagram</button>
-        <button class="btn" onclick="regenererPost()">🔄 Régénérer</button>
-        <button class="btn" onclick="closeModal('modal-instagram')">Fermer</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="modal-add-client">
   <div class="modal">
     <div class="modal-title">➕ Nouveau client</div>
@@ -856,61 +758,21 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 
 <script>
-initSupaClient();
-  emailjs.init("vSpx7OHQTgKezV-Q-");
-
-// ===== API CLAUDE =====
-var CLAUDE_KEY = atob('c2stYW50LWFwaTAzLXNuckxmTjZVM0FuVlBPcEkxUmZVYlQ4eHM1amVFN1AyZ0MwN1d5M1VHdnMyVHVEdEZHeDhqSDJOMF9PcEp0bGxNbEg5YzVCZ1ZjajVDeHBjWV9fejBBLVhjTFZiQUFB');
-
-async function askClaude(prompt) {
-  var response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': CLAUDE_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{role: 'user', content: prompt}]
-    })
-  });
-  var data = await response.json();
-  return data.content[0].text;
-}
+emailjs.init("vSpx7OHQTgKezV-Q-");
 
 var SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
-var SUPA_KEY = atob('c2JfcHVibGlzaGFibGVfMnk0SFFJVW41NEFrQzBzalptOFp1Z19mU2w2akw5dA==');
-var supaClient = null;
-try {
-  supaClient = supabase.createClient(SUPA_URL, SUPA_KEY);
-} catch(e) { console.error('Supabase SDK error:', e); }
+var SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
 
 async function supaFetch(table, method, body, query) {
   try {
-    var sep = (query||'').includes('?') ? '&' : '?';
-    var url = SUPA_URL + '/rest/v1/' + table + (query||'') + sep + 'apikey=' + SUPA_KEY;
-    var res = await fetch(url, {
+    var res = await fetch(SUPA_URL + '/rest/v1/' + table + (query||''), {
       method: method||'GET',
-      mode: 'cors',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Prefer': method==='POST' ? 'return=representation' : method==='PATCH' ? 'return=minimal' : '',
-        'X-Supabase-Api-Version': '2024-01-01'
-      },
+      headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''},
       body: body ? JSON.stringify(body) : null
     });
     var text = await res.text();
     return text ? JSON.parse(text) : null;
-  } catch(e) { 
-    console.error('SUPABASE ERROR:', e.message || e);
-    showNotif('Erreur Supabase: ' + (e.message||'connexion'), 'error');
-    return null; }
+  } catch(e) { console.error(e); return null; }
 }
 
 var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':891.20};
@@ -940,11 +802,6 @@ function initRealtime() {
 async function loadFromSupabase() {
   try {
     showNotif('Chargement...','info');
-    // Test de connexion
-    var ping = await supaFetch('phones','GET',null,'?limit=1');
-    if(ping === null) {
-      throw new Error('Connexion Supabase impossible');
-    }
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
       supaFetch('factures','GET',null,'?order=id.asc'),
@@ -962,29 +819,10 @@ async function loadFromSupabase() {
     supabaseReady=true;
     initRealtime();
     showNotif('Données chargées !','success');
-    // Forcer le rendu de toutes les pages
-    renderDashboard();
-    renderPhones();
-    renderFactures();
-    renderCaisse();
-  } catch(e){
-    console.error(e);
-    showNotif('Mode local actif - chargement local','error');
-    // Fallback: charger depuis localStorage
-    try {
-      phones = JSON.parse(localStorage.getItem('sp_phones')||'[]');
-      factures = JSON.parse(localStorage.getItem('sp_factures')||'[]');
-      caisse = JSON.parse(localStorage.getItem('sp_caisse')||'[]');
-      var savedReports = localStorage.getItem('sp_reports');
-      if(savedReports) reportsMois = JSON.parse(savedReports);
-    } catch(e2) { console.error('localStorage aussi vide', e2); }
-    renderDashboard(); renderPhones(); renderFactures(); renderCaisse();
-  }
+  } catch(e){console.error(e);showNotif('Mode local actif','error');}
 }
 
 async function savePhone(phone) {
-  // Toujours sauvegarder dans localStorage
-  localStorage.setItem('sp_phones', JSON.stringify(phones));
   if(!supabaseReady) return;
   var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
   if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
@@ -992,8 +830,6 @@ async function savePhone(phone) {
 }
 
 async function saveCaisseRow(row) {
-  // Toujours sauvegarder dans localStorage
-  localStorage.setItem('sp_caisse', JSON.stringify(caisse));
   if(!supabaseReady) return;
   var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart};
   var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
@@ -1030,7 +866,6 @@ function showPage(id,el){
   if(id==='devis')renderDevis();
   if(id==='clients')renderClients();
   if(id==='rachat')calculerRachat();
-  if(id==='instagram')renderIgHistory();
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -1263,270 +1098,64 @@ function previewPhoto(input) {
   }
 }
 
-// ===== INSTAGRAM =====
-var igGrade = '';
-var igHistory = [];
-var igGeneratedText = '';
-
-function setIgGrade(g) {
-  igGrade = g;
-  ['A+','A','B','C'].forEach(function(gr) {
-    var btn = document.getElementById('ig-grade-'+gr.replace('+','plus'));
-    if(btn) btn.style.background = gr===g ? 'var(--red)' : '';
-    if(btn) btn.style.color = gr===g ? '#fff' : '';
-    if(btn) btn.style.borderColor = gr===g ? 'var(--red)' : 'var(--border)';
-  });
-}
-
-async function genererPostInstagram() {
-  var model = document.getElementById('ig-model').value.trim();
-  if(!model) { showNotif('Indiquez le modèle du téléphone','error'); return; }
-  
-  var storage = document.getElementById('ig-storage').value;
-  var color = document.getElementById('ig-color').value.trim();
-  var battery = document.getElementById('ig-battery').value;
-  var price = document.getElementById('ig-price').value;
-  var type = document.getElementById('ig-type').value;
-  var extra = document.getElementById('ig-extra').value.trim();
-  
-  var btn = document.getElementById('ig-btn');
-  btn.textContent = '⏳ Génération en cours...';
-  btn.disabled = true;
-  document.getElementById('ig-output').textContent = 'L IA rédige votre post Instagram...';
-  document.getElementById('ig-copy-btn').style.display = 'none';
-
-  var typeLabels = {vente:'vente de téléphone reconditionné', promo:'offre promotionnelle', arrivage:'nouvel arrivage en stock'};
-  
-  var prompt = 'Tu es le community manager de Solution Phone, une boutique de réparation et vente de smartphones à Mâcon (71000). Rédige un post Instagram accrocheur pour une '+typeLabels[type]+'. Caractéristiques : Modèle '+model+(storage?' Stockage '+storage:'')+(color?' Couleur '+color:'')+(igGrade?' Grade '+igGrade:'')+' Batterie '+battery+'%'+(price?' Prix '+price+'EUR':'')+'. Instructions : commence par une accroche percutante avec des emojis, mets en avant les caractéristiques avec des emojis comme puces, inclure le prix, appel à action (DM ou 03 85 33 06 89), ajouter 10 hashtags pertinents français et anglais, mentionner garantie 6 mois, ton dynamique et professionnel, max 300 mots.'+(extra?' Infos supp : '+extra:'')+'Réponds UNIQUEMENT avec le texte du post.';
-
-  try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{role:'user', content:prompt}]
-      })
-    });
-    var data = await res.json();
-    var text = data.content && data.content[0] ? data.content[0].text : '';
-    igGeneratedText = text;
-    document.getElementById('ig-output').textContent = text;
-    document.getElementById('ig-copy-btn').style.display = 'flex';
-    
-    // Historique
-    igHistory.unshift({title: model+(storage?' '+storage:'')+(price?' · '+price+'€':''), text:text, date:new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})});
-    if(igHistory.length > 5) igHistory.pop();
-    renderIgHistory();
-    showNotif('Post Instagram généré !', 'success');
-  } catch(e) {
-    document.getElementById('ig-output').textContent = 'Erreur de connexion. Vérifiez votre connexion internet.';
-    showNotif('Erreur de génération', 'error');
-  }
-  
-  btn.textContent = '✨ Générer le post';
-  btn.disabled = false;
-}
-
-function copierPost() {
-  if(!igGeneratedText) return;
-  navigator.clipboard.writeText(igGeneratedText).then(function(){
-    var btn = document.getElementById('ig-copy-btn');
-    btn.textContent = '✅ Copié !';
-    btn.style.borderColor = 'var(--green)';
-    btn.style.color = 'var(--green)';
-    setTimeout(function(){
-      btn.textContent = '📋 Copier';
-      btn.style.borderColor = '';
-      btn.style.color = '';
-    }, 2500);
-  });
-}
-
-function renderIgHistory() {
-  var card = document.getElementById('ig-history-card');
-  var list = document.getElementById('ig-history-list');
-  if(!card || !list) return;
-  if(igHistory.length === 0) { card.style.display='none'; return; }
-  card.style.display = 'block';
-  list.innerHTML = igHistory.map(function(item, i){
-    return '<div style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between;" onclick="loadIgHistory('+i+')">' +
-      '<span style="font-size:13px;font-weight:500;">'+item.title+'</span>' +
-      '<span style="font-size:11px;color:var(--text-muted);">'+item.date+'</span>' +
-      '</div>';
-  }).join('');
-}
-
-function loadIgHistory(i) {
-  igGeneratedText = igHistory[i].text;
-  document.getElementById('ig-output').textContent = igHistory[i].text;
-  document.getElementById('ig-copy-btn').style.display = 'flex';
-}
-
-// ===== INSTAGRAM =====
-var currentInstagramPhone = null;
-
-async function genererPostInstagram(id) {
-  var p = phones.find(function(x){return x.id===id;});
-  if(!p) return;
-  currentInstagramPhone = p;
-  
-  openModal('modal-instagram');
-  document.getElementById('instagram-loading').style.display='block';
-  document.getElementById('instagram-content').style.display='none';
-  
-  await genererContenuInstagram(p);
-}
-
-async function genererContenuInstagram(p) {
-  var prompt = 'Tu es un expert en marketing pour une boutique de smartphones reconditionnés en France. ' +
-    'Cree un post Instagram accrocheur en francais pour vendre ce smartphone : ' +
-    p.modele + ' ' + (p.stockage?p.stockage+'Go':'') + ' Grade ' + (p.grade||'A') + 
-    (p.batterie?' Batterie '+p.batterie+'%':'') + 
-    (p.couleur?' Couleur '+p.couleur:'') + ' Prix : ' + p.vente + 'EUR. ' +
-    'La boutique s appelle Solution Phone a Macon (71). ' +
-    'Le post doit etre enthousiaste, professionnel et donner envie d acheter. ' +
-    'Inclure des emojis. Maximum 150 mots. ' +
-    'Puis donne 20 hashtags pertinents en francais et anglais pour maximiser la portee. ' +
-    'Reponds en JSON : {"texte":"le post ici","hashtags":"#tag1 #tag2 ..."}';
-  
-  try {
-    var text = await askClaude(prompt);
-    var clean = text.replace(/```json|```/g,'').trim();
-    var json = JSON.parse(clean);
-    
-    document.getElementById('instagram-texte').value = json.texte;
-    document.getElementById('instagram-hashtags').value = json.hashtags;
-    document.getElementById('instagram-loading').style.display='none';
-    document.getElementById('instagram-content').style.display='block';
-  } catch(e) {
-    console.error(e);
-    document.getElementById('instagram-loading').style.display='none';
-    document.getElementById('instagram-content').style.display='block';
-    document.getElementById('instagram-texte').value = 
-      '📱 ' + p.modele + ' ' + (p.stockage?p.stockage+'Go':'') + ' en vente chez Solution Phone Macon !\n' +
-      '✅ Grade ' + (p.grade||'A') + (p.batterie?' | Batterie '+p.batterie+'%':'') + '\n' +
-      '💶 Prix : ' + p.vente + '€\n' +
-      '📍 21 Rue Gambetta, Macon\n' +
-      '📞 03 85 33 06 89\n' +
-      '🔒 Garanti 6 mois';
-    document.getElementById('instagram-hashtags').value = 
-      '#smartphone #reconditionne #macon #saoneetloire #iphone #samsung #bonplan #hightech #solutionphone #ecologique';
-  }
-}
-
-async function regenererPost() {
-  if(!currentInstagramPhone) return;
-  document.getElementById('instagram-loading').style.display='block';
-  document.getElementById('instagram-content').style.display='none';
-  await genererContenuInstagram(currentInstagramPhone);
-}
-
-function copierPost() {
-  var texte = document.getElementById('instagram-texte').value;
-  var hashtags = document.getElementById('instagram-hashtags').value;
-  var full = texte + '\n\n' + hashtags;
-  navigator.clipboard.writeText(full).then(function(){
-    showNotif('Post copié ! Collez-le dans Instagram 📋', 'success');
-  }).catch(function(){
-    // Fallback
-    var ta = document.createElement('textarea');
-    ta.value = full;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showNotif('Post copié !', 'success');
-  });
-}
-
-function ouvrirInstagram() {
-  copierPost();
-  setTimeout(function(){
-    window.open('https://www.instagram.com/', '_blank');
-  }, 500);
-}
-
 // ===== CALCULATEUR DE RACHAT =====
-async function calculerRachat() {
-  var modele = document.getElementById('rc-modele').value.trim();
+function calculerRachat() {
+  var modele = document.getElementById('rc-modele').value.trim().toLowerCase();
   var grade = document.getElementById('rc-grade').value;
   var batterie = parseInt(document.getElementById('rc-batterie').value) || 80;
-  var stockage = document.getElementById('rc-stockage').value;
-  var ecran = document.getElementById('rc-ecran').options[document.getElementById('rc-ecran').selectedIndex].text;
+  var stockage = parseInt(document.getElementById('rc-stockage').value);
+  var ecran = parseFloat(document.getElementById('rc-ecran').value);
 
   if (!modele) return;
 
-  // Afficher loading
+  // Chercher dans l historique des achats
+  var similaires = phones.filter(function(p) {
+    return p.modele.toLowerCase().includes(modele) || modele.includes(p.modele.toLowerCase().split(' ')[0]);
+  });
+
+  var prixBase = 0;
+  if (similaires.length > 0) {
+    prixBase = similaires.reduce(function(s,p){return s+p.achat;},0) / similaires.length;
+  } else {
+    // Prix de base estimé si pas d historique
+    prixBase = 150;
+  }
+
+  // Coefficients
+  var coefGrade = {A_PLUS:1.0, A:0.85, B:0.65, C:0.45};
+  var coefBat = batterie >= 90 ? 1.0 : batterie >= 80 ? 0.95 : batterie >= 70 ? 0.85 : 0.70;
+  var coefStock = stockage >= 256 ? 1.1 : stockage >= 128 ? 1.0 : 0.9;
+
+  var gradeKey = grade.replace('+','_PLUS');
+  var coef = (coefGrade[gradeKey]||0.85) * coefBat * coefStock * ecran;
+
+  var prixRachat = Math.round(prixBase * coef / 5) * 5; // Arrondi à 5€
+  var prixVente = Math.round(prixRachat * 1.5 / 5) * 5;
+  var marge = prixVente - prixRachat;
+  var margeMin = Math.round(prixRachat * 1.3 / 5) * 5;
+  var margeMax = Math.round(prixRachat * 1.7 / 5) * 5;
+
   document.getElementById('rachat-result').innerHTML =
-    '<div style="text-align:center;padding:40px;">' +
-    '<div style="font-size:32px;margin-bottom:12px;">🤖</div>' +
-    '<div style="color:var(--text-muted);">Analyse du marché en cours...</div>' +
-    '<div style="font-size:12px;color:var(--text-dim);margin-top:8px;">Consultation des prix Back Market, Swappie, Rebuy...</div>' +
+    '<div style="text-align:center;padding:20px;">' +
+    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">Prix de rachat suggéré</div>' +
+    '<div style="font-size:48px;font-weight:900;color:var(--red);">' + prixRachat + ' €</div>' +
+    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Fourchette : ' + Math.round(prixRachat*0.9/5)*5 + ' € — ' + Math.round(prixRachat*1.1/5)*5 + ' €</div>' +
+    '<div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:12px;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">' +
+    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente mini</div><div style="font-size:20px;font-weight:700;">' + margeMin + ' €</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente conseillé</div><div style="font-size:20px;font-weight:700;color:var(--green);">' + prixVente + ' €</div></div>' +
+    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente maxi</div><div style="font-size:20px;font-weight:700;">' + margeMax + ' €</div></div>' +
+    '</div></div>' +
+    '<div style="font-size:14px;color:var(--green);">Marge estimée : <b>' + marge + ' €</b></div>' +
+    (similaires.length > 0 ? '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Basé sur ' + similaires.length + ' achat(s) similaire(s)</div>' : '<div style="font-size:12px;color:var(--warning);margin-top:8px;">⚠️ Pas d historique - estimation approximative</div>') +
     '</div>';
 
-  // Historique de nos achats similaires
-  var similaires = phones.filter(function(p) {
-    return p.modele.toLowerCase().includes(modele.toLowerCase().split(' ')[0]);
-  });
-  var historiqueTexte = similaires.length > 0 ?
-    'Historique de nos achats similaires : ' + similaires.map(function(p){
-      return p.modele + ' ' + (p.stockage||'') + 'Go grade ' + p.grade + ' acheté ' + p.achat + 'EUR vendu ' + p.vente + 'EUR';
-    }).join(', ') : 'Pas d historique interne pour ce modele.';
-
-  var prompt = 'Tu es expert en smartphones reconditionnés en France. Je cherche a racheter un ' + modele + ' ' + stockage + 'Go en grade ' + grade + ' avec batterie a ' + batterie + '% et ecran ' + ecran + '. ' +
-    historiqueTexte + '. ' +
-    'Donne moi : 1) Le prix de rachat conseille en euros (ce que je dois payer au vendeur), 2) Le prix de vente conseille, 3) La marge estimee, 4) Une fourchette de rachat min/max. ' +
-    'Base toi sur les prix actuels de Back Market, Swappie et Rebuy en France. ' +
-    'Reponds en JSON uniquement avec ce format exact : {"rachat":X,"rachat_min":X,"rachat_max":X,"vente":X,"marge":X,"source":"explication courte"}';
-
-  try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{role: 'user', content: prompt}]
-      })
-    });
-
-    var data = await response.json();
-    var text = data.content[0].text;
-    
-    // Parser le JSON
-    var json = JSON.parse(text.replace(/```json|```/g,'').trim());
-    
-    document.getElementById('rachat-result').innerHTML =
-      '<div style="text-align:center;padding:20px;">' +
-      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Prix de rachat conseillé</div>' +
-      '<div style="font-size:52px;font-weight:900;color:var(--red);">' + json.rachat + ' €</div>' +
-      '<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Fourchette : ' + json.rachat_min + ' € — ' + json.rachat_max + ' €</div>' +
-      '<div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:12px;">' +
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-      '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente conseillé</div><div style="font-size:24px;font-weight:700;color:var(--green);">' + json.vente + ' €</div></div>' +
-      '<div><div style="font-size:11px;color:var(--text-muted);">Marge estimée</div><div style="font-size:24px;font-weight:700;color:var(--green);">' + json.marge + ' €</div></div>' +
-      '</div></div>' +
-      '<div style="font-size:12px;color:var(--text-muted);padding:10px;background:var(--dark3);border-radius:8px;text-align:left;">🤖 ' + json.source + '</div>' +
-      (similaires.length > 0 ? '<div style="font-size:12px;color:var(--blue);margin-top:8px;">📊 Basé aussi sur ' + similaires.length + ' achat(s) dans votre historique</div>' : '') +
-      '</div>';
-
-    // Historique similaires
-    document.getElementById('rachat-historique').innerHTML = similaires.length > 0 ?
-      similaires.map(function(p){
-        return '<tr><td><b>'+p.modele+'</b></td><td>'+p.grade+'</td><td>'+(p.stockage||'?')+'Go</td><td>'+p.achat+' €</td><td>'+p.vente+' €</td><td style="color:var(--green)">'+(p.vente-p.achat)+' €</td><td>'+fmtDate(p.dateAchat)+'</td></tr>';
-      }).join('') :
-      '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px;">Aucun achat similaire dans l historique</td></tr>';
-
-  } catch(e) {
-    console.error(e);
-    document.getElementById('rachat-result').innerHTML =
-      '<div style="text-align:center;padding:30px;color:var(--red);">❌ Erreur de connexion. Vérifiez votre connexion internet.</div>';
-  }
+  // Historique similaires
+  document.getElementById('rachat-historique').innerHTML = similaires.length > 0 ?
+    similaires.map(function(p){
+      return '<tr><td><b>'+p.modele+'</b></td><td>'+p.grade+'</td><td>'+(p.stockage||'?')+'Go</td><td>'+p.achat+' €</td><td>'+p.vente+' €</td><td style="color:var(--green)">'+(p.vente-p.achat)+' €</td><td>'+fmtDate(p.dateAchat)+'</td></tr>';
+    }).join('') :
+    '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px;">Aucun achat similaire dans l historique</td></tr>';
 }
 
 // ===== CLIENTS =====
@@ -1772,39 +1401,6 @@ function renderClients() {
   });
 }
 
-function genererPostInstagram(id) {
-  var p = phones.find(function(x){return x.id===id;});
-  if(!p) return;
-
-  // Générer le texte du post
-  var texte = '\ud83d\udcf1 ' + p.modele.toUpperCase() + (p.stockage ? ' ' + p.stockage + 'Go' : '') + ' EN VENTE !\n' +
-    '\u2705 Grade : ' + (p.grade||'A') + (p.batterie ? ' | Batterie ' + p.batterie + '%' : '') + '\n' +
-    (p.couleur ? 'Couleur : ' + p.couleur + '\n' : '') +
-    '\ud83d\udcb6 Prix : ' + p.vente + '\u20ac\n' +
-    '\ud83c\udfe3 Solution Phone - 21 Rue Gambetta, Macon\n' +
-    '\ud83d\udcde 03 85 33 06 89\n' +
-    '\ud83d\udd12 Garantie 6 mois';
-  var hashtags = '#smartphone #reconditionne #macon #iphone #samsung #hightech #bonplan #solutionphone';
-  document.getElementById('instagram-texte').value = texte;
-  document.getElementById('instagram-hashtags').value = hashtags;
-  document.getElementById('instagram-loading').style.display='none';
-  document.getElementById('instagram-content').style.display='block';
-    // Créer une popup avec le texte
-  var modal = document.createElement('div');
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-
-
-function copyInstaText() {
-  var text = document.getElementById('insta-text').value;
-  navigator.clipboard.writeText(text).then(function(){
-    showNotif('✅ Texte copié ! Collez-le sur Instagram', 'success');
-  }).catch(function(){
-    document.getElementById('insta-text').select();
-    document.execCommand('copy');
-    showNotif('✅ Texte copié !', 'success');
-  });
-}
-
 function editPhone(id) {
   var p = phones.find(function(x){return x.id===id;});
   if(!p) return;
@@ -1910,7 +1506,7 @@ function renderPhones(){
       '<td style="color:var(--green)"><b>'+m.toFixed(0)+' €</b></td>'+
       '<td><span class="badge '+badge+'">'+etatLabel+'</span></td>'+
       '<td style="display:flex;gap:4px;flex-wrap:wrap;">'+
-        '<button class="btn btn-sm" onclick="editPhone('+p.id+')" title="Modifier">✏️</button><button class="btn btn-sm" onclick="genererPostInstagram('+p.id+')" title="Post Instagram" style="border-color:#E1306C;color:#E1306C;">📸</button><button class="btn btn-sm" onclick="genererPostInstagram('+p.id+')" title="Post Instagram" style="border-color:#E1306C;color:#E1306C;">📸</button><button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
+        '<button class="btn btn-sm" onclick="editPhone('+p.id+')" title="Modifier">✏️</button><button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
         '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
         '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
         '<button class="btn btn-sm" onclick="'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'marquerDispo('+p.id+')':'marquerVendu('+p.id+')')+'">'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'↩️':'✅')+'</button>'+
@@ -2767,7 +2363,6 @@ function renderDashboard(){
   document.getElementById('dash-phones').innerHTML=recent.map(function(p){return'<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucun smartphone</td></tr>';
   var fin=calcFinales();var rc=caisse.slice(-5).reverse();
   document.getElementById('dash-caisse').innerHTML=rc.map(function(c){var i=caisse.indexOf(c);return'<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(2)+' €':'—')+'</td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucune saisie</td></tr>';
-}
 }
 </script>
 </body>
