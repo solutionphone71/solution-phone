@@ -933,8 +933,7 @@ function exportComptableCSV() {
     cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));
     return[fmtDate(c.date),c.ttc,ht,tva,c.cb||0,c.especes||0,c.cheque||0,c.virement||0,c.depotEsp||0,c.depotCheque||0,c.achatSmart||0,c.quali||0,cc.toFixed(2)].join(';');
   });
-  var csv=[headers.join(';')].concat(rows).join('
-');
+  var csv=[headers.join(';')].concat(rows).join('\n');
   var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);var a=document.createElement('a');
   a.href=url;a.download='Recap_Comptable_'+mois+'.csv';a.click();
