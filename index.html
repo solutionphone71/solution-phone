@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_105720 -->
+<!-- v20260314_113654 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -543,6 +543,52 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-edit-phone">
+  <div class="modal">
+    <div class="modal-title">✏️ Modifier le smartphone</div>
+    <input type="hidden" id="edit-p-id">
+    <div class="form-grid">
+      <div class="form-group"><label>Modèle *</label><input type="text" id="edit-p-modele"></div>
+      <div class="form-group"><label>Stockage (Go)</label><input type="number" id="edit-p-stockage"></div>
+      <div class="form-group"><label>Grade</label><select id="edit-p-grade"><option>A+</option><option>A</option><option>B</option><option>C</option></select></div>
+      <div class="form-group"><label>Batterie (%)</label><input type="number" id="edit-p-batterie"></div>
+      <div class="form-group"><label>IMEI</label><input type="text" id="edit-p-imei"></div>
+      <div class="form-group"><label>Prix achat (€) *</label><input type="number" id="edit-p-achat" step="0.01" oninput="updateEditMarge()"></div>
+      <div class="form-group"><label>Prix vente (€) *</label><input type="number" id="edit-p-vente" step="0.01" oninput="updateEditMarge()"></div>
+      <div class="form-group"><label>Mode paiement</label>
+        <select id="edit-p-mode">
+          <option value="ESPECES">Espèces</option>
+          <option value="CHEQUE">Chèque</option>
+          <option value="VIREMENT">Virement</option>
+          <option value="CB">CB</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Date achat</label><input type="date" id="edit-p-date-achat"></div>
+      <div class="form-group"><label>Couleur</label><input type="text" id="edit-p-couleur"></div>
+      <div class="form-group"><label>Type achat</label>
+        <select id="edit-p-type-achat" onchange="toggleEditFournisseur()">
+          <option value="PARTICULIER">👤 Particulier</option>
+          <option value="FOURNISSEUR">🏢 Fournisseur</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-p-fournisseur-group" style="display:none;">
+        <label>Fournisseur</label>
+        <select id="edit-p-fournisseur">
+          <option value="Wegacell">Wegacell</option>
+          <option value="Mobilax">Mobilax</option>
+          <option value="Utopya">Utopya</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+    </div>
+    <div id="edit-marge-preview" style="margin-top:12px;padding:10px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--text-muted);">💡 Marge calculée automatiquement</div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="savePhoneEdit()">✅ Enregistrer</button>
+      <button class="btn" onclick="closeModal('modal-edit-phone')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-add-caisse">
   <div class="modal">
     <div class="modal-title">➕ Saisie journalière</div>
@@ -939,13 +985,76 @@ function previewPhoto(input) {
   }
 }
 
-function updateMarge(){var a=parseFloat(document.getElementById('p-achat').value)||0;var v=parseFloat(document.getElementById('p-vente').value)||0;document.getElementById('marge-preview').textContent='Marge : '+(v-a).toFixed(2)+' € ('+(a>0?(((v-a)/a)*100).toFixed(1):0)+'%)';}
+function editPhone(id) {
+  var p = phones.find(function(x){return x.id===id;});
+  if(!p) return;
+  document.getElementById('edit-p-id').value = id;
+  document.getElementById('edit-p-modele').value = p.modele||'';
+  document.getElementById('edit-p-stockage').value = p.stockage||'';
+  document.getElementById('edit-p-grade').value = p.grade||'A';
+  document.getElementById('edit-p-batterie').value = p.batterie||'';
+  document.getElementById('edit-p-imei').value = p.imei||'';
+  document.getElementById('edit-p-achat').value = p.achat||'';
+  document.getElementById('edit-p-vente').value = p.vente||'';
+  document.getElementById('edit-p-mode').value = p.mode||'ESPECES';
+  document.getElementById('edit-p-date-achat').value = p.dateAchat||'';
+  document.getElementById('edit-p-couleur').value = p.couleur||'';
+  document.getElementById('edit-p-type-achat').value = p.typeAchat||'PARTICULIER';
+  document.getElementById('edit-p-fournisseur').value = p.fournisseur||'Wegacell';
+  toggleEditFournisseur();
+  updateEditMarge();
+  openModal('modal-edit-phone');
+}
+
+function toggleEditFournisseur() {
+  var type = document.getElementById('edit-p-type-achat').value;
+  document.getElementById('edit-p-fournisseur-group').style.display = type==='FOURNISSEUR'?'block':'none';
+}
+
+function updateEditMarge() {
+  var a = parseFloat(document.getElementById('edit-p-achat').value)||0;
+  var v = parseFloat(document.getElementById('edit-p-vente').value)||0;
+  var m = v-a;
+  document.getElementById('edit-marge-preview').textContent = 'Marge : '+m.toFixed(2)+' € ('+(a>0?((m/a)*100).toFixed(1):0)+'%)';
+}
+
+function savePhoneEdit() {
+  var id = parseInt(document.getElementById('edit-p-id').value);
+  var p = phones.find(function(x){return x.id===id;});
+  if(!p) return;
+  var modele = document.getElementById('edit-p-modele').value.trim();
+  var achat = parseFloat(document.getElementById('edit-p-achat').value);
+  var vente = parseFloat(document.getElementById('edit-p-vente').value);
+  if(!modele||!achat||!vente){showNotif('Modèle, achat et vente requis','error');return;}
+  p.modele = modele;
+  p.stockage = parseInt(document.getElementById('edit-p-stockage').value)||null;
+  p.grade = document.getElementById('edit-p-grade').value;
+  p.batterie = parseInt(document.getElementById('edit-p-batterie').value)||null;
+  p.imei = document.getElementById('edit-p-imei').value.trim();
+  p.achat = achat;
+  p.vente = vente;
+  p.mode = document.getElementById('edit-p-mode').value;
+  p.dateAchat = document.getElementById('edit-p-date-achat').value;
+  p.couleur = document.getElementById('edit-p-couleur').value.trim();
+  p.typeAchat = document.getElementById('edit-p-type-achat').value;
+  p.fournisseur = p.typeAchat==='FOURNISSEUR'?document.getElementById('edit-p-fournisseur').value:'';
+  savePhone(p);
+  closeModal('modal-edit-phone');
+  renderPhones(); renderDashboard();
+  showNotif('✅ '+modele+' mis à jour !','success');
+}
+
+function updateMarge(){var a=parseFloat((document.getElementById('p-achat').value||'0').toString().replace(',','.'))||0;var v=parseFloat((document.getElementById('p-vente').value||'0').toString().replace(',','.'))||0;document.getElementById('marge-preview').textContent='Marge : '+(v-a).toFixed(2)+' € ('+(a>0?(((v-a)/a)*100).toFixed(1):0)+'%)';}
 
 function addPhone(){
   var modele=document.getElementById('p-modele').value.trim();
-  var achat=parseFloat(document.getElementById('p-achat').value);
-  var vente=parseFloat(document.getElementById('p-vente').value);
-  if(!modele||!achat||!vente){showNotif('Modèle, achat et vente requis','error');return;}
+  var achatRaw=document.getElementById('p-achat').value.toString().replace(',','.');
+  var venteRaw=document.getElementById('p-vente').value.toString().replace(',','.');
+  var achat=parseFloat(achatRaw);
+  var vente=parseFloat(venteRaw);
+  if(!modele){showNotif('Modèle requis','error');return;}
+  if(!achat||achat<=0){showNotif('Prix achat invalide','error');return;}
+  if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
   var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null};
   if(phone.mode==='ESPECES'&&phone.dateAchat){var entry=caisse.find(function(c){return c.date===phone.dateAchat;});if(entry){entry.achatSmart=(entry.achatSmart||0)+achat;saveCaisseRow(entry);}}
   phones.push(phone);savePhone(phone);
@@ -960,7 +1069,33 @@ function renderPhones(){
   var f=phones.filter(function(p){return!s||p.modele.toLowerCase().indexOf(s)>=0||(p.imei||'').indexOf(s)>=0;});
   document.getElementById('phones-table').innerHTML=f.map(function(p){
     var m=p.vente-p.achat;
-    return '<tr><td><b>'+p.modele+'</b></td><td>'+(p.stockage?p.stockage+'Go':'—')+'</td><td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td><td>'+(p.batterie?p.batterie+'%':'—')+'</td><td style="font-size:11px">'+(p.imei||'—')+'</td><td>'+p.achat+' €</td><td>'+p.vente+' €</td><td style="color:var(--green)"><b>'+m.toFixed(0)+' €</b></td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button><button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button><button class="btn btn-sm" onclick="'+(p.etat==='VENDU'?'marquerDispo('+p.id+')':'marquerVendu('+p.id+')')+'">'+(p.etat==='VENDU'?'↩️':'✅')+'</button><button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button></td></tr>';
+    var badge = p.etat==='VENDU'?'badge-red':p.etat==='EN_REPARATION'?'badge-yellow':'badge-green';
+    var etatLabel = p.etat==='EN_REPARATION'?'🔧 EN RÉPA':p.etat;
+    var photoHtml = p.photo?'<img src="'+p.photo+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle;">':'';
+    var sourceHtml = p.fournisseur?'<br><span style="font-size:11px;color:var(--blue)">🏢 '+p.fournisseur+'</span>':p.typeAchat==='PARTICULIER'?'<br><span style="font-size:11px;color:var(--text-muted)">👤 Particulier</span>':'';
+    var joursStock = '';
+    if(p.etat==='DISPONIBLE'&&p.dateAchat){
+      var days=Math.floor((new Date()-new Date(p.dateAchat))/86400000);
+      if(days>30)joursStock='<br><span style="font-size:11px;color:var(--warning)">⚠️ '+days+'j</span>';
+      else if(days>15)joursStock='<br><span style="font-size:11px;color:var(--blue)">'+days+'j</span>';
+    }
+    return '<tr>'+
+      '<td>'+photoHtml+'<b>'+p.modele+'</b>'+sourceHtml+joursStock+'</td>'+
+      '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
+      '<td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td>'+
+      '<td>'+(p.batterie?p.batterie+'%':'—')+'</td>'+
+      '<td style="font-size:11px">'+(p.imei||'—')+'</td>'+
+      '<td>'+p.achat+' €</td>'+
+      '<td>'+p.vente+' €</td>'+
+      '<td style="color:var(--green)"><b>'+m.toFixed(0)+' €</b></td>'+
+      '<td><span class="badge '+badge+'">'+etatLabel+'</span></td>'+
+      '<td style="display:flex;gap:4px;flex-wrap:wrap;">'+
+        '<button class="btn btn-sm" onclick="editPhone('+p.id+')" title="Modifier">✏️</button><button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
+        '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
+        '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
+        '<button class="btn btn-sm" onclick="'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'marquerDispo('+p.id+')':'marquerVendu('+p.id+')')+'">'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'↩️':'✅')+'</button>'+
+        '<button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button>'+
+      '</td></tr>';
   }).join('')||'<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun smartphone</td></tr>';
 }
 
@@ -1078,7 +1213,8 @@ function renderPolice(){
 
 function exportPoliceCSV(){
   var h=['N Police','Date','Vendeur','Adresse','N CI','CI delivree','Modele','Couleur','IMEI','Prix','Mode'];
-  var rows=phones.map(function(p){return[p.numPolice||'',fmtDate(p.dateAchat),p.vendeurNom||'',p.vendeurAdresse||'',p.vendeurCI||'',fmtDate(p.vendeurCIDate),p.modele,p.couleur||'',p.imei||'',p.achat,p.mode].join(';');});
+  var ph2=phones.filter(function(p){return p.typeAchat!=='FOURNISSEUR';});
+  var rows=ph2.map(function(p){return[p.numPolice||'',fmtDate(p.dateAchat),p.vendeurNom||'',p.vendeurAdresse||'',p.vendeurCI||'',fmtDate(p.vendeurCIDate),p.modele,p.couleur||'',p.imei||'',p.achat,p.mode].join(';');});
   var csv=[h.join(';')].concat(rows).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='Livre_Police.csv';a.click();
   showNotif('Export Police téléchargé !','success');
