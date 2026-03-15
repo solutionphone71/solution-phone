@@ -1910,6 +1910,7 @@ function checkPin(){
       loadApiKeyFromSupabase();
       loadBonsCommande();
       loadBonsDepot();
+      loadPhonilabData();
     });
     renderEcrans();
     renderBatteries();
@@ -3152,17 +3153,25 @@ function renderBilan() {
 
   moisAll.forEach(function(m) {
     var key = annee+'-'+m;
-    var rows = caisse.filter(function(c){return c.date.startsWith(key);});
-    var ca = rows.reduce(function(s,c){return s+(c.ttc||0);},0);
-    var quali = rows.reduce(function(s,c){return s+(c.quali||0);},0);
-    var jours = rows.length;
+    // Données Z de caisse (app)
+    var rows = caisse.filter(function(c){return c.date && c.date.startsWith(key);});
+    var caApp  = rows.reduce(function(s,c){return s+(c.ttc||0);},0);
+    var quApp  = rows.reduce(function(s,c){return s+(c.quali||0);},0);
+    var jours  = rows.length;
+    // Données Phonilab (import CSV) — uniquement si pas de données app ce mois
+    var phData = phonilabData[key];
+    var caPhoni = (phData && caApp === 0) ? (phData.ttc||0) : 0;
+    var quPhoni = (phData && caApp === 0) ? (phData.quali||0) : 0;
+    var ca    = caApp + caPhoni;
+    var quali = quApp + quPhoni;
+    var source = caApp > 0 ? '' : (phData ? ' <span style="font-size:10px;color:var(--blue);">📥</span>' : '');
     totCA += ca; totQuali += quali; totJours += jours;
     cumul += ca;
     dataCA.push(ca.toFixed(2));
     dataQuali.push(quali.toFixed(2));
     dataCumul.push(cumul.toFixed(2));
     if (ca > 0 || jours > 0) {
-      tableRows += '<tr><td><b>'+moisNoms[m]+'</b></td><td><b>'+ca.toFixed(2)+' €</b></td><td>'+(ca/1.2).toFixed(2)+' €</td><td style="color:var(--green)">'+quali.toFixed(2)+' €</td><td>'+jours+'</td><td>'+(jours>0?(ca/jours).toFixed(2):0)+' €</td></tr>';
+      tableRows += '<tr><td><b>'+moisNoms[m]+'</b>'+source+'</td><td><b>'+ca.toFixed(2)+' €</b></td><td>'+(ca/1.2).toFixed(2)+' €</td><td style="color:var(--green)">'+quali.toFixed(2)+' €</td><td>'+jours+'</td><td>'+(jours>0?(ca/jours).toFixed(2):ca>0?'—':0)+' €</td></tr>';
     }
   });
 
@@ -5260,6 +5269,21 @@ showPage = function(id, el){
 // ============================================================
 //  IMPORT PHONILAB CSV
 // ============================================================
+var phonilabData = {}; // mois -> {ttc,cb,especes,cheque,virement,quali}
+
+async function loadPhonilabData(){
+  try {
+    var res = await supaFetch('phonilab_import','GET',null,'?order=mois.asc');
+    if(res) res.forEach(function(r){
+      phonilabData[r.mois] = {
+        ttc: Number(r.ttc)||0, cb: Number(r.cb)||0,
+        especes: Number(r.especes)||0, cheque: Number(r.cheque)||0,
+        virement: Number(r.virement)||0, quali: Number(r.quali)||0
+      };
+    });
+  } catch(e){ console.log('Phonilab load error',e); }
+}
+
 function importPhonilabCSV(input){
   var file = input.files[0];
   if(!file) return;
@@ -5270,7 +5294,6 @@ function importPhonilabCSV(input){
   reader.onload = function(e){
     try {
       var text = e.target.result;
-      // Parser CSV séparateur ;
       var lines = text.split('\n');
       var headers = lines[0].split(';').map(function(h){ return h.replace(/"/g,'').trim(); });
       var iDate    = headers.indexOf('Date valeur');
@@ -5283,56 +5306,56 @@ function importPhonilabCSV(input){
         var line = lines[i].trim();
         if(!line) continue;
         var cols = line.split(';').map(function(c){ return c.replace(/^"|"$/g,'').trim(); });
-        var date    = cols[iDate];    // DD-MM-YYYY
+        var date    = cols[iDate];
         var montant = cols[iMontant];
         var methode = cols[iMethode];
         if(!date||!montant||!methode) continue;
-        // Exclure uniquement les Avoirs
         if(methode === 'Avoir') continue;
         var parts = date.split('-');
         if(parts.length < 3) continue;
         var moisKey = parts[2]+'-'+parts[1]; // YYYY-MM
         var val = parseFloat(montant.replace(',','.'))||0;
-        if(!parMois[moisKey]) parMois[moisKey] = {ttc:0,cb:0,especes:0,cheque:0,virement:0};
+        if(!parMois[moisKey]) parMois[moisKey] = {ttc:0,cb:0,especes:0,cheque:0,virement:0,quali:0};
         parMois[moisKey].ttc += val;
-        if(methode==='CB')                   parMois[moisKey].cb       += val;
-        else if(methode==='Espèces')         parMois[moisKey].especes  += val;
-        else if(methode==='Chèque')          parMois[moisKey].cheque   += val;
-        else if(methode==='Virement')        parMois[moisKey].virement += val;
-        else if(methode==='Bonus Réparation') parMois[moisKey].quali   += val;
+        if(methode==='CB')                    parMois[moisKey].cb       += val;
+        else if(methode==='Espèces')          parMois[moisKey].especes  += val;
+        else if(methode==='Chèque')           parMois[moisKey].cheque   += val;
+        else if(methode==='Virement')         parMois[moisKey].virement += val;
+        else if(methode==='Bonus Réparation') parMois[moisKey].quali    += val;
       }
 
       var moisKeys = Object.keys(parMois);
       if(!moisKeys.length){ status.textContent = '❌ Aucune donnée trouvée'; return; }
 
-      // Importer dans caisse (sans écraser les données existantes)
+      // Sauvegarder dans phonilab_import (table séparée — ne touche pas au Z de caisse)
       var importes = 0;
       var promesses = moisKeys.map(function(mois){
-        // Vérifier si ce mois existe déjà dans caisse
-        var existeDeja = caisse.some(function(c){ return c.date && c.date.startsWith(mois); });
-        if(existeDeja) return Promise.resolve(); // ne pas écraser
         var d = parMois[mois];
-        // Créer une entrée par mois (date = 1er du mois)
-        var dateEntry = mois+'-01';
-        var row = {
-          date: dateEntry,
-          ttc: Math.round(d.ttc*100)/100,
-          cb: Math.round(d.cb*100)/100,
-          especes: Math.round(d.especes*100)/100,
-          cheque: Math.round(d.cheque*100)/100,
+        var data = {
+          mois: mois,
+          ttc:      Math.round(d.ttc*100)/100,
+          cb:       Math.round(d.cb*100)/100,
+          especes:  Math.round(d.especes*100)/100,
+          cheque:   Math.round(d.cheque*100)/100,
           virement: Math.round(d.virement*100)/100,
-          quali: 0, depotEsp: 0, depotCheque: 0, achatSmart: 0
+          quali:    Math.round(d.quali*100)/100
         };
-        caisse.push(row);
+        phonilabData[mois] = data;
         importes++;
-        return saveCaisseRow(row);
+        // UPSERT via DELETE + INSERT
+        return supaFetch('phonilab_import','DELETE',null,'?mois=eq.'+mois)
+          .then(function(){ return supaFetch('phonilab_import','POST',data); })
+          .catch(function(err){ console.log('upsert error',mois,err); });
       });
 
       Promise.all(promesses).then(function(){
-        status.textContent = '✅ '+importes+' mois importés ! ('+(moisKeys.length-importes)+' déjà existants)';
+        var sortedKeys = moisKeys.sort();
+        var msg = '✅ '+importes+' mois importés dans Phonilab !';
+        msg += ' ⚠️ '+sortedKeys[0]+' peut être incomplet';
+        status.textContent = msg;
         input.value = '';
         renderBilan();
-        showNotif('Import Phonilab terminé — '+importes+' mois ajoutés','success');
+        showNotif('Import Phonilab — '+importes+' mois','success');
       });
 
     } catch(err){
