@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <title>Solution Phone — Gestion</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
@@ -26,6 +26,10 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 .pin-btn:active{background:var(--red);color:#fff;transform:scale(.92);}
 @keyframes pin-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .pin-shake{animation:pin-shake .4s ease;}
+#modal-ticket-commande{color-scheme:light!important;}
+#modal-ticket-commande *{color:#000!important;background-color:transparent;}
+#modal-ticket-commande .ticket-box{background:#fff!important;}
+#modal-ticket-commande .ticket-sep{border-top:1px dashed #000!important;}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
@@ -5372,7 +5376,7 @@ function printTicketCommande(c){
       '<button onclick="fermerTicket()" style="flex:1;padding:16px;background:#555;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
-      '<div style="background:#fff;color:#000 !important;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;color-scheme:light;">' + ticketBody + '</div>' +
+      '<div class="ticket-box" style="background:#fff!important;color:#000!important;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;color-scheme:light;">' + ticketBody + '</div>' +
     '</div>';
   modal.style.display = 'block';
 }
