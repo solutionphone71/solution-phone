@@ -198,6 +198,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="mob-menu-item" onclick="showPageMobile('rachat','');closeMobileMenu()"><span class="mob-menu-icon">🧮</span>Calculateur Rachat</div>
   <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
   <div class="mob-menu-item" onclick="showPageMobile('ecrans','');closeMobileMenu()"><span class="mob-menu-icon">🖥️</span>Prix Écrans iPhone</div>
+  <div class="mob-menu-item" onclick="showPageMobile('batteries','');closeMobileMenu()"><span class="mob-menu-icon">🔋</span>Prix Batteries iPhone</div>
 </div>
 
 <div id="login-screen">
@@ -234,6 +235,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur Rachat</span></div>
     <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
     <div class="nav-item" onclick="showPage('ecrans',this)"><span class="nav-icon">🖥️</span><span>Prix Écrans iPhone</span></div>
+    <div class="nav-item" onclick="showPage('batteries',this)"><span class="nav-icon">🔋</span><span>Prix Batteries iPhone</span></div>
   </div>
   <div class="main">
 
@@ -1138,8 +1140,9 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
     <!-- Actions -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
-      <button class="btn btn-primary" onclick="printEcransA4()">🖨️ Imprimer / PDF A4</button>
-      <button class="btn" onclick="resetEcransPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser les prix</button>
+      <button class="btn btn-primary" onclick="printEcransA4()">🖨️ Imprimer Écrans A4</button>
+      <button class="btn" onclick="printBatA4()" style="border-color:var(--blue);color:var(--blue);">🖨️ Imprimer Batteries A4</button>
+      <button class="btn" onclick="resetEcransPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser écrans</button>
       <div style="font-size:12px;color:var(--text-muted);padding:8px;">
         💡 Cliquez sur n'importe quel prix pour le modifier · ✗ = non disponible
       </div>
@@ -1154,7 +1157,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <!-- Tableau iPhone -->
     <div class="card" style="margin-bottom:18px;">
       <div class="card-header">
-        <div class="card-title">📱 iPhone — Tableau 1</div>
+        <div class="card-title">📱 iPhone Écrans — Tableau 1</div>
         <div style="font-size:12px;color:var(--text-muted);">5S au 16 · Standard / XR / 11 / 12-16</div>
       </div>
       <div style="overflow-x:auto;">
@@ -1175,9 +1178,9 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
 
     <!-- Tableau Pro/Mini/Max -->
-    <div class="card">
+    <div class="card" style="margin-bottom:18px;">
       <div class="card-header">
-        <div class="card-title">📱 iPhone — Tableau 2</div>
+        <div class="card-title">📱 iPhone Écrans — Tableau 2</div>
         <div style="font-size:12px;color:var(--text-muted);">Mini · Pro · Pro Max</div>
       </div>
       <div style="overflow-x:auto;">
@@ -1196,8 +1199,136 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         </table>
       </div>
     </div>
+
+    <!-- SÉPARATEUR BATTERIES -->
+    <div style="display:flex;align-items:center;gap:14px;margin:24px 0 18px;">
+      <div style="flex:1;height:2px;background:linear-gradient(to right,var(--red),transparent);"></div>
+      <div style="font-size:18px;font-weight:800;color:var(--text);">🔋 PRIX BATTERIES IPHONE</div>
+      <div style="flex:1;height:2px;background:linear-gradient(to left,var(--red),transparent);"></div>
+    </div>
+
+    <!-- Mention batteries -->
+    <div style="background:rgba(66,153,225,0.1);border:1px solid var(--blue);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--blue);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🔋</span>
+      <span><b>3 qualités disponibles</b> · Compatible · TI (reconnue Apple) · Original · Prix TTC main d'œuvre incluse</span>
+    </div>
+
+    <!-- Tableau Batteries 1 -->
+    <div class="card" style="margin-bottom:18px;">
+      <div class="card-header">
+        <div class="card-title">🔋 iPhone Batteries — Tableau 1</div>
+        <div style="font-size:12px;color:var(--text-muted);">5S au 16 · Standard / XR / 11 / 12-16</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--blue);">
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:140px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐<br>Compatible</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐⭐<br>TI (reconnue Apple)</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐⭐⭐<br>Original</th>
+            </tr>
+          </thead>
+          <tbody id="bat-tbody-1"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tableau Batteries 2 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔋 iPhone Batteries — Tableau 2</div>
+        <div style="font-size:12px;color:var(--text-muted);">Mini · Pro · Pro Max</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--blue);">
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:140px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐<br>Compatible</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐⭐<br>TI (reconnue Apple)</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:13px;">⭐⭐⭐<br>Original</th>
+            </tr>
+          </thead>
+          <tbody id="bat-tbody-2"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
   <!-- ========== FIN PAGE PRIX ÉCRANS ========== -->
+
+  <!-- ========== PAGE PRIX BATTERIES IPHONE ========== -->
+  <div class="page" id="page-batteries">
+    <div class="page-title">🔋 Prix Batteries iPhone</div>
+    <div class="page-sub">Modifiez vos tarifs directement — sauvegarde automatique</div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
+      <button class="btn btn-primary" onclick="printBatteriesA4()">🖨️ Imprimer / PDF A4</button>
+      <button class="btn" onclick="resetBatteriesPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
+      <div style="font-size:12px;color:var(--text-muted);padding:8px;">
+        💡 Cliquez sur un prix pour le modifier
+      </div>
+    </div>
+
+    <div style="background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:20px;">🏆</span>
+      <span><b>-25€ QualiRépar déjà déduit</b> sur le prix indiqué · Prix TTC pièce et main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
+    </div>
+
+    <!-- Légende qualités -->
+    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--text-muted);">⭐⭐⭐</span> <b>Compatible</b> — Batterie de remplacement standard
+      </div>
+      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--warning);">⭐⭐⭐⭐</span> <b>TI (Reconnue Apple)</b> — Reconnue par les diagnostics Apple
+      </div>
+      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
+        <span style="color:var(--green);">⭐⭐⭐⭐⭐</span> <b>Original</b> — Batterie d'origine reconditionnée
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px;">
+      <div class="card-header">
+        <div class="card-title">🔋 Batteries iPhone — Tableau 1</div>
+        <div style="font-size:12px;color:var(--text-muted);">5S au 16</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--red);">
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
+            </tr>
+          </thead>
+          <tbody id="batteries-tbody-1"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔋 Batteries iPhone — Tableau 2</div>
+        <div style="font-size:12px;color:var(--text-muted);">Mini · Pro · Pro Max</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:var(--red);">
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
+            </tr>
+          </thead>
+          <tbody id="batteries-tbody-2"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- ========== FIN PAGE BATTERIES ========== -->
 
 </div>
 </div>
@@ -1538,6 +1669,7 @@ function showPage(id,el){
   if(id==='rachat')calculerRachat();
   if(id==='instagram'){renderInstagram();}
   if(id==='ecrans'){renderEcrans();}
+  if(id==='batteries'){renderBatteries();}
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -4269,6 +4401,8 @@ function saveEcransPrix(){
 function renderEcrans(){
   renderEcransTable('ecrans-tbody-1', ecransPrix.t1, 't1');
   renderEcransTable('ecrans-tbody-2', ecransPrix.t2, 't2');
+  renderBatTable('bat-tbody-1', batPrix.t1, 't1');
+  renderBatTable('bat-tbody-2', batPrix.t2, 't2');
 }
 
 function renderEcransTable(tbodyId, data, tableKey){
@@ -4394,9 +4528,144 @@ function printEcransA4(){
 }
 
 // ============================================================
-//  FIN MODULE PRIX ÉCRANS
+//  MODULE PRIX BATTERIES IPHONE
 // ============================================================
 
+var BATTERIES_DEFAULT = {
+  t1: [
+    {modele:'5S/SE/5C/6/6S/6S+', prix:[0,0,0]},
+    {modele:'7/7+/8/8+',          prix:[0,0,0]},
+    {modele:'X/XS/XS MAX',        prix:[0,0,0]},
+    {modele:'XR',                  prix:[0,0,0]},
+    {modele:'11',                  prix:[0,0,0]},
+    {modele:'12/12 PRO',           prix:[0,0,0]},
+    {modele:'13',                  prix:[0,0,0]},
+    {modele:'14',                  prix:[0,0,0]},
+    {modele:'15',                  prix:[0,0,0]},
+    {modele:'16',                  prix:[0,0,0]}
+  ],
+  t2: [
+    {modele:'12 mini',    prix:[0,0,0]},
+    {modele:'13 mini',    prix:[0,0,0]},
+    {modele:'11 Pro Max', prix:[0,0,0]},
+    {modele:'12 Pro Max', prix:[0,0,0]},
+    {modele:'13 Pro',     prix:[0,0,0]},
+    {modele:'13 Pro Max', prix:[0,0,0]},
+    {modele:'14 Pro',     prix:[0,0,0]},
+    {modele:'14 Pro Max', prix:[0,0,0]},
+    {modele:'15 Pro',     prix:[0,0,0]},
+    {modele:'15 Pro Max', prix:[0,0,0]},
+    {modele:'16 Pro',     prix:[0,0,0]},
+    {modele:'16 Pro Max', prix:[0,0,0]}
+  ]
+};
+
+var batteriesPrix = JSON.parse(localStorage.getItem('sp_batteries_prix') || 'null');
+if(!batteriesPrix){ batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT)); }
+
+function saveBatteriesPrix(){ localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix)); }
+
+function renderBatteries(){
+  renderBatteriesTable('batteries-tbody-1', batteriesPrix.t1, 'bt1');
+  renderBatteriesTable('batteries-tbody-2', batteriesPrix.t2, 'bt2');
+}
+
+function renderBatteriesTable(tbodyId, data, tableKey){
+  var tbody = document.getElementById(tbodyId);
+  if(!tbody) return;
+  var colColors = ['var(--text-muted)','var(--warning)','var(--green)'];
+  tbody.innerHTML = data.map(function(row, ri){
+    var isOdd = ri % 2 === 0;
+    var cells = row.prix.map(function(p, ci){
+      return '<td style="padding:6px 10px;text-align:center;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.05)':'')+';">'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:4px;">'+
+        '<input type="number" value="'+p+'" min="0" max="999" '+
+          'onchange="updateBatteriePrix(\''+tableKey+'\','+ri+','+ci+',this.value)" '+
+          'style="width:65px;padding:6px 6px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:'+(p>0?colColors[ci]:'var(--text-muted)')+';font-size:14px;font-weight:700;text-align:center;">'+
+        '<span style="font-size:12px;color:var(--text-muted);">€</span>'+
+        '</div></td>';
+    }).join('');
+    return '<tr>'+
+      '<td style="padding:10px 14px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'var(--dark3)')+';color:'+(isOdd?'var(--red)':'var(--text)')+';">'+row.modele+'</td>'+
+      cells+'</tr>';
+  }).join('');
+}
+
+function updateBatteriePrix(tableKey, ri, ci, val){
+  var v = parseInt(val);
+  if(isNaN(v)||v<0) return;
+  var key = tableKey==='bt1'?'t1':'t2';
+  batteriesPrix[key][ri].prix[ci] = v;
+  saveBatteriesPrix();
+  showNotif('Prix mis à jour !','success');
+}
+
+function resetBatteriesPrix(){
+  if(!confirm('Réinitialiser tous les prix batteries à 0 ?')) return;
+  batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT));
+  saveBatteriesPrix();
+  renderBatteries();
+  showNotif('Prix réinitialisés !','success');
+}
+
+function printBatteriesA4(){
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+
+  function buildBatHTML(data){
+    var rows = data.map(function(row, ri){
+      var isOdd = ri % 2 === 0;
+      var cells = row.prix.map(function(p, ci){
+        var colors = ['#555','#d35400','#27ae60'];
+        return '<td style="padding:9px 10px;text-align:center;border:1px solid #ddd;font-size:14px;font-weight:700;color:'+colors[ci]+';">'+
+          (p>0?p+'€':'—')+'</td>';
+      }).join('');
+      return '<tr style="background:'+(isOdd?'#fff5f5':'#fff')+'">'+
+        '<td style="padding:9px 12px;font-weight:700;font-size:13px;border:1px solid #ddd;background:'+(isOdd?'#c0392b':'#e8e8e8')+';color:'+(isOdd?'#fff':'#333')+';">'+row.modele+'</td>'+
+        cells+'</tr>';
+    }).join('');
+    return '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;">'+
+      '<thead><tr>'+
+        '<th style="padding:10px 12px;background:#2c2c2c;color:#fff;font-size:12px;border:1px solid #555;text-align:left;">Modèle</th>'+
+        '<th style="padding:10px 12px;background:#555;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐<br>Compatible</th>'+
+        '<th style="padding:10px 12px;background:#d35400;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>'+
+        '<th style="padding:10px 12px;background:#27ae60;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐⭐<br>Original</th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+
+  var html='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>Prix Batteries iPhone — Solution Phone</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}}@page{size:A4;margin:0;}</style>'+
+    '</head><body>'+
+    '<div class="no-print" style="text-align:right;padding:10px;"><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
+    '<div class="page">'+
+      '<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
+        (logo?'<img src="'+logo+'" style="height:60px;width:auto;">':'')+
+        '<div><div style="font-size:22px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+        '<div style="font-size:12px;color:#555;">Réparation SMARTPHONE · TABLETTE · PC</div></div>'+
+      '</div>'+
+      '<div style="font-size:34px;font-weight:900;color:#1a1a1a;margin-bottom:6px;">PRIX BATTERIE IPHONE 2025</div>'+
+      '<div style="background:rgba(72,187,120,0.15);border:1px solid #27ae60;border-radius:6px;padding:7px 14px;margin-bottom:14px;font-size:11px;color:#27ae60;font-weight:700;">'+
+        '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT · PRIX TTC PIÈCE ET MAIN D\'ŒUVRE · GARANTIE 3 MOIS · RÉPARATION EN 30 MIN - 1H MAX'+
+      '</div>'+
+      buildBatHTML(batteriesPrix.t1)+
+      buildBatHTML(batteriesPrix.t2)+
+      '<div style="border-top:2px solid #c0392b;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#888;">'+
+        '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · Tél : 03 85 33 06 89</div>'+
+        '<div style="display:flex;gap:12px;">'+
+          '<div style="background:#c0392b;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">RÉPARATEUR LABELLISÉ</div>'+
+          '<div style="border:2px solid #27ae60;color:#27ae60;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">LABEL QUALI RÉPAR</div>'+
+        '</div>'+
+      '</div>'+
+    '</div></body></html>';
+
+  var w=window.open('','_blank','width=900,height=1100');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ============================================================
+//  FIN MODULE PRIX BATTERIES
+// ============================================================
 
 function isMobile(){ return window.innerWidth <= 768; }
 
