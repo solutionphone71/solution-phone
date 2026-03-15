@@ -5864,11 +5864,10 @@ async function generateGmbPost(){
 
 </script>
 <script>
+// Désinstaller tous les service workers existants
 if('serviceWorker' in navigator){
-  window.addEventListener('load', function(){
-    navigator.serviceWorker.register('./sw.js')
-      .then(function(){ console.log('SW enregistré'); })
-      .catch(function(e){ console.log('SW erreur:', e); });
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){ r.unregister(); });
   });
 }
 </script>
