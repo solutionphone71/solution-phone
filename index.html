@@ -1868,6 +1868,20 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 var _pin = '';
 var _pinCode = '1609';
 
+// Bypass via URL : ?code=1609
+(function(){
+  if(window.location.search.indexOf('code=1609') !== -1){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    if(window.innerWidth <= 768) document.getElementById('mobile-nav').style.display='block';
+    loadFromSupabase().then(function(){
+      renderDashboard();renderPhones();renderFactures();renderCaisse();
+      loadApiKeyFromSupabase();
+    });
+    renderEcrans(); renderBatteries(); renderBonsDepot(); renderBonsCommande();
+  }
+})();
+
 function pinPress(n){
   if(n === '') return;
   if(_pin.length >= 4) return;
