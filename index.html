@@ -1144,7 +1144,13 @@ async function loadFromSupabase() {
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
     // Charger clients
     var cl = await supaFetch('clients','GET',null,'?order=nom.asc&limit=10000');
-    if(cl) clients = cl.map(function(x){return{id:x.id,nom:x.nom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation};});
+    if(cl) clients = cl.map(function(x){
+      var nomComplet = '';
+      if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
+      else if(x.prenom) nomComplet = x.prenom;
+      else nomComplet = x.nom||'';
+      return{id:x.id,nom:nomComplet,tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation};
+    });
     supabaseReady=true;
     initRealtime();
     showNotif('Données chargées !','success');
@@ -1975,7 +1981,7 @@ function renderStats(){
 }
 
 function renderPolice(){
-  document.getElementById('police-table').innerHTML=phones.map(function(p){return'<tr><td><b>#'+(p.numPolice||'—')+'</b></td><td>'+fmtDate(p.dateAchat)+'</td><td>'+(p.vendeurNom||'—')+'</td><td>'+(p.vendeurCI||'—')+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px">'+(p.imei||'—')+'</td><td>'+(p.couleur||'—')+'</td><td><b>'+p.achat+' €</b></td><td><button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄 Certificat</button></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun achat enregistré</td></tr>';
+  document.getElementById('police-table').innerHTML=phones.filter(function(p){return p.typeAchat!=='FOURNISSEUR';}).map(function(p){return'<tr><td><b>#'+(p.numPolice||'—')+'</b></td><td>'+fmtDate(p.dateAchat)+'</td><td>'+(p.vendeurNom||'—')+'</td><td>'+(p.vendeurCI||'—')+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px">'+(p.imei||'—')+'</td><td>'+(p.couleur||'—')+'</td><td><b>'+p.achat+' €</b></td><td><button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄 Certificat</button></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun achat particulier enregistré</td></tr>';
 }
 
 function exportPoliceCSV(){
