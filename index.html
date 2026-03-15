@@ -1158,7 +1158,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card" style="margin-bottom:18px;">
       <div class="card-header">
         <div class="card-title">📱 iPhone Écrans — Tableau 1</div>
-        <div style="font-size:12px;color:var(--text-muted);">5S au 16 · Standard / XR / 11 / 12-16</div>
+        <button class="btn btn-sm btn-primary" onclick="ajouterLigneEcran('t1')">➕ Ajouter un modèle</button>
       </div>
       <div style="overflow-x:auto;">
         <table id="ecrans-table-1" style="width:100%;border-collapse:collapse;">
@@ -1170,6 +1170,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>LPTS PRIME</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>SOFT OLED BOLT</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐⭐<br>ORIGINAL</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
             </tr>
           </thead>
           <tbody id="ecrans-tbody-1"></tbody>
@@ -1181,7 +1182,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card" style="margin-bottom:18px;">
       <div class="card-header">
         <div class="card-title">📱 iPhone Écrans — Tableau 2</div>
-        <div style="font-size:12px;color:var(--text-muted);">Mini · Pro · Pro Max</div>
+        <button class="btn btn-sm btn-primary" onclick="ajouterLigneEcran('t2')">➕ Ajouter un modèle</button>
       </div>
       <div style="overflow-x:auto;">
         <table id="ecrans-table-2" style="width:100%;border-collapse:collapse;">
@@ -1193,6 +1194,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>LPTS PRIME</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>SOFT OLED BOLT</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐⭐<br>ORIGINAL RECON.</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
             </tr>
           </thead>
           <tbody id="ecrans-tbody-2"></tbody>
@@ -1291,7 +1293,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card" style="margin-bottom:18px;">
       <div class="card-header">
         <div class="card-title">🔋 Batteries iPhone — Tableau 1</div>
-        <div style="font-size:12px;color:var(--text-muted);">5S au 16</div>
+        <button class="btn btn-sm btn-primary" onclick="ajouterLigneBatterie('bt1')">➕ Ajouter un modèle</button>
       </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;">
@@ -1301,6 +1303,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
             </tr>
           </thead>
           <tbody id="batteries-tbody-1"></tbody>
@@ -1311,7 +1314,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="card">
       <div class="card-header">
         <div class="card-title">🔋 Batteries iPhone — Tableau 2</div>
-        <div style="font-size:12px;color:var(--text-muted);">Mini · Pro · Pro Max</div>
+        <button class="btn btn-sm btn-primary" onclick="ajouterLigneBatterie('bt2')">➕ Ajouter un modèle</button>
       </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;">
@@ -1321,6 +1324,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
             </tr>
           </thead>
           <tbody id="batteries-tbody-2"></tbody>
@@ -4432,10 +4436,22 @@ function renderEcransTable(tbodyId, data, tableKey){
           '</td>';
       }
     }).join('');
-    return '<tr>'+
-      '<td style="padding:10px 14px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'var(--dark3)')+';color:'+(isOdd?'var(--red)':'var(--text)')+';">'+row.modele+'</td>'+
-      cells+
-      '</tr>';
+
+    // Colonne modèle éditable
+    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'var(--dark3)')+';">'+
+      '<input type="text" value="'+row.modele+'" '+
+      'onchange="updateEcranModele(\''+tableKey+'\','+ri+',this.value)" '+
+      'style="width:100%;padding:5px 6px;background:transparent;border:1px solid transparent;border-radius:6px;color:'+(isOdd?'var(--red)':'var(--text)')+';font-size:13px;font-weight:700;" '+
+      'onfocus="this.style.border=\'1px solid var(--red)\'" '+
+      'onblur="this.style.border=\'1px solid transparent\'">'+
+      '</td>';
+
+    // Bouton supprimer
+    var deleteCell = '<td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;">'+
+      '<button onclick="supprimerLigneEcran(\''+tableKey+'\','+ri+')" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:4px;" title="Supprimer">🗑️</button>'+
+      '</td>';
+
+    return '<tr>'+modeleCell+cells+deleteCell+'</tr>';
   }).join('');
 }
 
@@ -4445,6 +4461,26 @@ function updateEcranPrix(tableKey, ri, ci, val){
   ecransPrix[tableKey][ri].prix[ci] = v;
   saveEcransPrix();
   showNotif('Prix mis à jour !','success');
+}
+
+function updateEcranModele(tableKey, ri, val){
+  ecransPrix[tableKey][ri].modele = val.trim()||'Nouveau modèle';
+  saveEcransPrix();
+}
+
+function ajouterLigneEcran(tableKey){
+  ecransPrix[tableKey].push({modele:'Nouveau modèle', prix:[null,null,null,null,null]});
+  saveEcransPrix();
+  renderEcrans();
+  showNotif('Ligne ajoutée !','success');
+}
+
+function supprimerLigneEcran(tableKey, ri){
+  if(!confirm('Supprimer cette ligne ?')) return;
+  ecransPrix[tableKey].splice(ri, 1);
+  saveEcransPrix();
+  renderEcrans();
+  showNotif('Ligne supprimée','success');
 }
 
 function toggleEcran(tableKey, ri, ci){
@@ -4589,9 +4625,20 @@ function renderBatteriesTable(tbodyId, data, tableKey){
         '<span style="font-size:12px;color:var(--text-muted);">€</span>'+
         '</div></td>';
     }).join('');
-    return '<tr>'+
-      '<td style="padding:10px 14px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'var(--dark3)')+';color:'+(isOdd?'var(--red)':'var(--text)')+';">'+row.modele+'</td>'+
-      cells+'</tr>';
+
+    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'var(--dark3)')+';">'+
+      '<input type="text" value="'+row.modele+'" '+
+      'onchange="updateBatterieModele(\''+tableKey+'\','+ri+',this.value)" '+
+      'style="width:100%;padding:5px 6px;background:transparent;border:1px solid transparent;border-radius:6px;color:'+(isOdd?'var(--red)':'var(--text)')+';font-size:13px;font-weight:700;" '+
+      'onfocus="this.style.border=\'1px solid var(--red)\'" '+
+      'onblur="this.style.border=\'1px solid transparent\'">'+
+      '</td>';
+
+    var deleteCell = '<td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:center;">'+
+      '<button onclick="supprimerLigneBatterie(\''+tableKey+'\','+ri+')" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:4px;" title="Supprimer">🗑️</button>'+
+      '</td>';
+
+    return '<tr>'+modeleCell+cells+deleteCell+'</tr>';
   }).join('');
 }
 
@@ -4602,6 +4649,29 @@ function updateBatteriePrix(tableKey, ri, ci, val){
   batteriesPrix[key][ri].prix[ci] = v;
   saveBatteriesPrix();
   showNotif('Prix mis à jour !','success');
+}
+
+function updateBatterieModele(tableKey, ri, val){
+  var key = tableKey==='bt1'?'t1':'t2';
+  batteriesPrix[key][ri].modele = val.trim()||'Nouveau modèle';
+  saveBatteriesPrix();
+}
+
+function ajouterLigneBatterie(tableKey){
+  var key = tableKey==='bt1'?'t1':'t2';
+  batteriesPrix[key].push({modele:'Nouveau modèle', prix:[0,0,0]});
+  saveBatteriesPrix();
+  renderBatteries();
+  showNotif('Ligne ajoutée !','success');
+}
+
+function supprimerLigneBatterie(tableKey, ri){
+  if(!confirm('Supprimer cette ligne ?')) return;
+  var key = tableKey==='bt1'?'t1':'t2';
+  batteriesPrix[key].splice(ri, 1);
+  saveBatteriesPrix();
+  renderBatteries();
+  showNotif('Ligne supprimée','success');
 }
 
 function resetBatteriesPrix(){
