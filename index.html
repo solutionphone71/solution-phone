@@ -965,7 +965,8 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="modal">
     <div class="modal-title">➕ Nouveau client</div>
     <div class="form-grid">
-      <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Jean Dupont"></div>
+      <div class="form-group"><label>Prénom *</label><input type="text" id="cl-prenom" placeholder="ex: Jean"></div>
+      <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Dupont"></div>
       <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
       <div class="form-group"><label>Email</label><input type="email" id="cl-email" placeholder="ex: client@gmail.com"></div>
       <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div>
@@ -1595,11 +1596,13 @@ async function importClientsPhonilab(input) {
 }
 
 async function addClient() {
+  var prenom = document.getElementById('cl-prenom').value.trim();
   var nom = document.getElementById('cl-nom').value.trim();
-  if(!nom){showNotif('Nom requis','error');return;}
+  if(!prenom && !nom){showNotif('Prénom ou Nom requis','error');return;}
+  var nomComplet = (prenom+' '+nom).trim();
   var client = {
     id: Date.now(),
-    nom: nom,
+    nom: nomComplet,
     tel: document.getElementById('cl-tel').value.trim(),
     email: document.getElementById('cl-email').value.trim(),
     adresse: document.getElementById('cl-adresse').value.trim(),
@@ -1608,15 +1611,14 @@ async function addClient() {
   };
   clients.push(client);
   clients.sort(function(a,b){return a.nom.localeCompare(b.nom);});
-  // Sauvegarder dans Supabase
   if(supabaseReady){
-    var res = await supaFetch('clients','POST',{nom:client.nom,tel:client.tel,email:client.email,adresse:client.adresse,notes:client.notes,date_creation:client.dateCreation});
+    var res = await supaFetch('clients','POST',{prenom:prenom,nom:nom,tel:client.tel,email:client.email,adresse:client.adresse,notes:client.notes,date_creation:client.dateCreation});
     if(res&&res[0]) client.id = res[0].id;
   }
-  ['cl-nom','cl-tel','cl-email','cl-adresse','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
+  ['cl-prenom','cl-nom','cl-tel','cl-email','cl-adresse','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
   closeModal('modal-add-client');
   renderClients();
-  showNotif('Client '+nom+' ajouté !','success');
+  showNotif('Client '+nomComplet+' ajouté !','success');
 }
 
 function deleteClient(id) {
