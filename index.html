@@ -6,14 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Solution Phone — Gestion</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#c0392b">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" sizes="180x180" href="icon.png">
-<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
@@ -1867,20 +1861,6 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 // ── SYSTÈME PIN ──
 var _pin = '';
 var _pinCode = '1609';
-
-// Bypass via URL : ?code=1609
-(function(){
-  if(window.location.search.indexOf('code=1609') !== -1){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    if(window.innerWidth <= 768) document.getElementById('mobile-nav').style.display='block';
-    loadFromSupabase().then(function(){
-      renderDashboard();renderPhones();renderFactures();renderCaisse();
-      loadApiKeyFromSupabase();
-    });
-    renderEcrans(); renderBatteries(); renderBonsDepot(); renderBonsCommande();
-  }
-})();
 
 function pinPress(n){
   if(n === '') return;
