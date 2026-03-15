@@ -540,6 +540,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </select>
         </div>
         <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="printBilan()">🖨️ Imprimer</button>
+        <!-- Import Phonilab -->
+        <div style="margin-top:18px;display:flex;align-items:center;gap:8px;">
+          <label class="btn btn-sm" style="background:var(--dark3);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
+            📥 Importer Phonilab CSV
+            <input type="file" id="phonilab-csv" accept=".csv" style="display:none;" onchange="importPhonilabCSV(this)">
+          </label>
+          <div id="phonilab-status" style="font-size:12px;color:var(--text-muted);"></div>
+        </div>
       </div>
 
       <div class="dash-grid" id="bilan-cards"></div>
@@ -5250,8 +5258,94 @@ showPage = function(id, el){
 };
 
 // ============================================================
-//  MODULE BON DE COMMANDE
+//  IMPORT PHONILAB CSV
 // ============================================================
+function importPhonilabCSV(input){
+  var file = input.files[0];
+  if(!file) return;
+  var status = document.getElementById('phonilab-status');
+  status.textContent = '⏳ Lecture en cours...';
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var text = e.target.result;
+      // Parser CSV séparateur ;
+      var lines = text.split('\n');
+      var headers = lines[0].split(';').map(function(h){ return h.replace(/"/g,'').trim(); });
+      var iDate    = headers.indexOf('Date valeur');
+      var iMontant = headers.indexOf('Montant');
+      var iMethode = headers.indexOf('Méthode');
+
+      // Agréger par mois
+      var parMois = {};
+      for(var i=1;i<lines.length;i++){
+        var line = lines[i].trim();
+        if(!line) continue;
+        var cols = line.split(';').map(function(c){ return c.replace(/^"|"$/g,'').trim(); });
+        var date    = cols[iDate];    // DD-MM-YYYY
+        var montant = cols[iMontant];
+        var methode = cols[iMethode];
+        if(!date||!montant||!methode) continue;
+        // Exclure uniquement les Avoirs
+        if(methode === 'Avoir') continue;
+        var parts = date.split('-');
+        if(parts.length < 3) continue;
+        var moisKey = parts[2]+'-'+parts[1]; // YYYY-MM
+        var val = parseFloat(montant.replace(',','.'))||0;
+        if(!parMois[moisKey]) parMois[moisKey] = {ttc:0,cb:0,especes:0,cheque:0,virement:0};
+        parMois[moisKey].ttc += val;
+        if(methode==='CB')                   parMois[moisKey].cb       += val;
+        else if(methode==='Espèces')         parMois[moisKey].especes  += val;
+        else if(methode==='Chèque')          parMois[moisKey].cheque   += val;
+        else if(methode==='Virement')        parMois[moisKey].virement += val;
+        else if(methode==='Bonus Réparation') parMois[moisKey].quali   += val;
+      }
+
+      var moisKeys = Object.keys(parMois);
+      if(!moisKeys.length){ status.textContent = '❌ Aucune donnée trouvée'; return; }
+
+      // Importer dans caisse (sans écraser les données existantes)
+      var importes = 0;
+      var promesses = moisKeys.map(function(mois){
+        // Vérifier si ce mois existe déjà dans caisse
+        var existeDeja = caisse.some(function(c){ return c.date && c.date.startsWith(mois); });
+        if(existeDeja) return Promise.resolve(); // ne pas écraser
+        var d = parMois[mois];
+        // Créer une entrée par mois (date = 1er du mois)
+        var dateEntry = mois+'-01';
+        var row = {
+          date: dateEntry,
+          ttc: Math.round(d.ttc*100)/100,
+          cb: Math.round(d.cb*100)/100,
+          especes: Math.round(d.especes*100)/100,
+          cheque: Math.round(d.cheque*100)/100,
+          virement: Math.round(d.virement*100)/100,
+          quali: 0, depotEsp: 0, depotCheque: 0, achatSmart: 0
+        };
+        caisse.push(row);
+        importes++;
+        return saveCaisseRow(row);
+      });
+
+      Promise.all(promesses).then(function(){
+        status.textContent = '✅ '+importes+' mois importés ! ('+(moisKeys.length-importes)+' déjà existants)';
+        input.value = '';
+        renderBilan();
+        showNotif('Import Phonilab terminé — '+importes+' mois ajoutés','success');
+      });
+
+    } catch(err){
+      status.textContent = '❌ Erreur : '+err.message;
+      console.error(err);
+    }
+  };
+  reader.readAsText(file, 'ISO-8859-1');
+}
+// ============================================================
+//  FIN IMPORT PHONILAB
+// ============================================================
+
 
 var bonsCommande = [];
 var _cmdType = 'reparation';
