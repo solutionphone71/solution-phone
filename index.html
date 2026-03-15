@@ -1931,8 +1931,9 @@ function updatePinDisplay(){
 }
 
 function checkPin(){
-  if(_pin === _pinCode || _pin === _pinEmployee){
-    _userRole = (_pin === _pinEmployee) ? 'employe' : 'patron';
+  var pinSaisi = _pin;
+  if(pinSaisi === '1609' || pinSaisi === '5555'){
+    _userRole = (pinSaisi === '5555') ? 'employe' : 'patron';
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     if(window.innerWidth <= 768){
@@ -1949,9 +1950,10 @@ function checkPin(){
     renderBatteries();
     renderBonsDepot();
     renderBonsCommande();
-    appliquerRole();
     _pin = '';
     updatePinDisplay();
+    // Appliquer le rôle après un court délai pour que le DOM soit prêt
+    setTimeout(appliquerRole, 100);
   } else {
     document.getElementById('pin-msg').textContent = '❌ Code incorrect';
     var box = document.querySelector('.login-box');
