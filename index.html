@@ -614,6 +614,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <button class="btn" id="ig-btn-ideas" onclick="showIgTab('ideas')">💡 Idées Stock</button>
         <button class="btn" id="ig-btn-responses" onclick="showIgTab('responses')">💬 Réponses</button>
         <button class="btn" id="ig-btn-stories" onclick="showIgTab('stories')">🎨 Stories</button>
+        <button class="btn" id="ig-btn-gmb" onclick="showIgTab('gmb')">📍 Google My Business</button>
         <div style="margin-left:auto;">
           <button class="btn btn-sm" style="border-color:var(--text-dim);color:var(--text-muted);" onclick="document.getElementById('ig-api-setup').style.display='block';document.getElementById('ig-content').style.display='none';">⚙️ Changer la clé</button>
         </div>
@@ -878,6 +879,139 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
     </div>
   </div>
+
+      <!-- TAB : GOOGLE MY BUSINESS -->
+      <div id="ig-tab-gmb" style="display:none;">
+
+        <!-- Lien rapide GMB -->
+        <div style="background:linear-gradient(135deg,rgba(66,133,244,0.12),rgba(52,168,83,0.08));border:1px solid rgba(66,133,244,0.3);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="font-size:32px;">📍</div>
+            <div>
+              <div style="font-weight:700;font-size:15px;color:var(--text);">Solution Phone — Mâcon</div>
+              <div style="font-size:12px;color:var(--text-muted);">Gérez votre fiche Google directement</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="https://business.google.com/" target="_blank" class="btn btn-sm" style="border-color:#4285f4;color:#4285f4;text-decoration:none;">🖥️ Tableau de bord GMB</a>
+            <a href="https://www.google.com/maps/search/Solution+Phone+Macon" target="_blank" class="btn btn-sm" style="border-color:#34a853;color:#34a853;text-decoration:none;">⭐ Voir les avis</a>
+          </div>
+        </div>
+
+        <!-- STATS LIENS DIRECTS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;">
+          <a href="https://business.google.com/dashboard" target="_blank" style="text-decoration:none;">
+            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(66,133,244,0.3);transition:.2s;" onmouseover="this.style.borderColor='#4285f4'" onmouseout="this.style.borderColor='rgba(66,133,244,0.3)'">
+              <div style="font-size:28px;margin-bottom:6px;">👁️</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Vues & Impressions</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Combien voient votre fiche</div>
+              <div style="font-size:10px;color:#4285f4;margin-top:6px;">Ouvrir dans Google →</div>
+            </div>
+          </a>
+          <a href="https://business.google.com/dashboard" target="_blank" style="text-decoration:none;">
+            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(52,168,83,0.3);transition:.2s;" onmouseover="this.style.borderColor='#34a853'" onmouseout="this.style.borderColor='rgba(52,168,83,0.3)'">
+              <div style="font-size:28px;margin-bottom:6px;">📞</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Appels & Clics</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Appels depuis Google</div>
+              <div style="font-size:10px;color:#34a853;margin-top:6px;">Ouvrir dans Google →</div>
+            </div>
+          </a>
+          <a href="https://business.google.com/reviews" target="_blank" style="text-decoration:none;">
+            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(251,188,4,0.3);transition:.2s;" onmouseover="this.style.borderColor='#fbbc04'" onmouseout="this.style.borderColor='rgba(251,188,4,0.3)'">
+              <div style="font-size:28px;margin-bottom:6px;">⭐</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Gérer les avis</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Répondre aux avis</div>
+              <div style="font-size:10px;color:#fbbc04;margin-top:6px;">Ouvrir dans Google →</div>
+            </div>
+          </a>
+          <a href="https://business.google.com/posts" target="_blank" style="text-decoration:none;">
+            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(234,67,53,0.3);transition:.2s;" onmouseover="this.style.borderColor='#ea4335'" onmouseout="this.style.borderColor='rgba(234,67,53,0.3)'">
+              <div style="font-size:28px;margin-bottom:6px;">📝</div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">Mes posts Google</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Voir & publier des posts</div>
+              <div style="font-size:10px;color:#ea4335;margin-top:6px;">Ouvrir dans Google →</div>
+            </div>
+          </a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+          <!-- COLONNE GAUCHE : Réponses aux avis -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="card">
+              <div class="card-header"><div class="card-title">⭐ Répondre à un avis Google</div></div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group">
+                  <label>Note de l'avis</label>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    <button class="btn btn-sm" id="gmb-star-5" onclick="setGmbStars(5)" style="border-color:#f39c12;color:#f39c12;">⭐⭐⭐⭐⭐</button>
+                    <button class="btn btn-sm" id="gmb-star-4" onclick="setGmbStars(4)">⭐⭐⭐⭐</button>
+                    <button class="btn btn-sm" id="gmb-star-3" onclick="setGmbStars(3)">⭐⭐⭐</button>
+                    <button class="btn btn-sm" id="gmb-star-bad" onclick="setGmbStars(1)">⭐⭐ ou moins</button>
+                  </div>
+                  <input type="hidden" id="gmb-stars" value="5">
+                </div>
+                <div class="form-group">
+                  <label>Contenu de l'avis *</label>
+                  <textarea id="gmb-avis-text" placeholder="ex: Super boutique, réparation rapide et efficace, je recommande !" style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:100px;resize:vertical;"></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Prénom du client (si visible)</label>
+                  <input type="text" id="gmb-avis-prenom" placeholder="ex: Marie, Thomas...">
+                </div>
+                <button class="btn btn-primary" id="gmb-rep-btn" onclick="generateGmbResponse()" style="padding:12px;">
+                  🤖 Générer la réponse avec l'IA
+                </button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">💾 Réponses sauvegardées</div>
+                <button class="btn btn-sm" onclick="renderGmbSaved()">🔄</button>
+              </div>
+              <div id="gmb-saved-list">
+                <div style="color:var(--text-muted);text-align:center;padding:16px;font-size:13px;">Aucune réponse sauvegardée</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLONNE DROITE : Résultat + Posts GMB -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="card">
+              <div class="card-header"><div class="card-title">✉️ Réponse générée</div></div>
+              <div id="gmb-response-result" style="color:var(--text-muted);text-align:center;padding:30px;line-height:1.8;font-size:13px;">
+                Entrez un avis et cliquez<br>sur <b style="color:var(--text);">Générer</b>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">📝 Créer un post Google</div></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div class="form-group">
+                  <label>Type de post</label>
+                  <select id="gmb-post-type">
+                    <option value="Nouveauté">🆕 Nouveauté / Arrivage</option>
+                    <option value="Offre spéciale">🔥 Offre spéciale</option>
+                    <option value="Réparation">🔧 Prestation réparation</option>
+                    <option value="Événement">📅 Événement / Info boutique</option>
+                    <option value="QualiRépar">🏆 Label QualiRépar</option>
+                    <option value="Conseil">💡 Conseil / Astuce</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Détails (optionnel)</label>
+                  <textarea id="gmb-post-details" placeholder="ex: iPhone 15 128Go Grade A à 549€ arrivé ce matin..." style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:70px;resize:vertical;"></textarea>
+                </div>
+                <button class="btn btn-primary" id="gmb-post-btn" onclick="generateGmbPost()" style="padding:11px;">
+                  🤖 Générer le post Google
+                </button>
+              </div>
+              <div id="gmb-post-result" style="display:none;margin-top:14px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- FIN TAB GMB -->
+
   <!-- ========== FIN PAGE INSTAGRAM ========== -->
 
 </div>
@@ -2946,7 +3080,7 @@ function renderInstagram(){
 }
 
 function showIgTab(tab){
-  ['captions','calendar','ideas','responses','stories'].forEach(function(t){
+  ['captions','calendar','ideas','responses','stories','gmb'].forEach(function(t){
     var el=document.getElementById('ig-tab-'+t);
     var btn=document.getElementById('ig-btn-'+t);
     if(el)el.style.display=(t===tab?'block':'none');
@@ -2955,6 +3089,7 @@ function showIgTab(tab){
   if(tab==='calendar'){renderIgCalendar();renderIgPostsList();}
   if(tab==='ideas'){renderIgIdeas();}
   if(tab==='stories'){renderStoryTab();}
+  if(tab==='gmb'){renderGmbTab();}
 }
 
 // ---- Appel API Claude ----
@@ -3875,6 +4010,167 @@ function clearStoryPhoto(){
   renderStoryPreview();
   showNotif('Photo supprimée','info');
 }
+// ============================================================
+
+// ============================================================
+//  MODULE GOOGLE MY BUSINESS
+// ============================================================
+
+var gmbSaved = JSON.parse(localStorage.getItem('sp_gmb_saved') || '[]');
+
+function renderGmbTab(){
+  setGmbStars(5);
+  renderGmbSaved();
+}
+
+function setGmbStars(n){
+  document.getElementById('gmb-stars').value = n;
+  ['5','4','3','bad'].forEach(function(k){
+    var el = document.getElementById('gmb-star-'+k);
+    if(!el) return;
+    el.style.borderColor = 'var(--border)';
+    el.style.color = 'var(--text-muted)';
+  });
+  var active = n >= 4 ? document.getElementById('gmb-star-'+n) : document.getElementById('gmb-star-bad');
+  if(active){ active.style.borderColor='#f39c12'; active.style.color='#f39c12'; }
+}
+
+async function generateGmbResponse(){
+  var avis = document.getElementById('gmb-avis-text').value.trim();
+  if(!avis){showNotif('Entrez le contenu de l\'avis','error');return;}
+  var stars = document.getElementById('gmb-stars').value;
+  var prenom = document.getElementById('gmb-avis-prenom').value.trim();
+  var btn = document.getElementById('gmb-rep-btn');
+  btn.textContent='⏳ Génération...'; btn.disabled=true;
+  document.getElementById('gmb-response-result').innerHTML=
+    '<div style="text-align:center;padding:20px;color:var(--text-muted);">🤖 L\'IA rédige la réponse...</div>';
+
+  var tonGlobal = parseInt(stars)>=4 ? 'positif' : parseInt(stars)===3 ? 'neutre' : 'négatif';
+
+  var prompt =
+    'Tu es responsable de la communication de "Solution Phone", boutique de smartphones reconditionnés et réparations au 21 Rue Gambetta, Mâcon.\n\n'+
+    'Avis Google reçu :\nNote : '+stars+'/5 (ton '+tonGlobal+')\n'+
+    (prenom?'Prénom : '+prenom+'\n':'')+
+    'Avis : "'+avis+'"\n\n'+
+    'Rédige 2 réponses professionnelles et authentiques :\n\n'+
+    '✅ RÉPONSE COURTE (2-3 lignes) :\n'+
+    '- Remercier par le prénom si dispo\n- Répondre au point principal\n- Inviter à revenir\n\n'+
+    '📝 RÉPONSE COMPLÈTE (5-7 lignes) :\n'+
+    (parseInt(stars)>=4?
+      '- Remercier chaleureusement\n- Valoriser ce qui a plu\n- Rappeler les services (réparation, reconditionné, QualiRépar)\n- Inviter à revenir ou recommander':
+      '- Reconnaître le problème\n- Proposer une solution (venir en boutique ou appeler le 03 85 33 06 89)\n- Montrer la volonté d\'amélioration')+
+    '\n\nTon : humain, professionnel, petite boutique locale à Mâcon.\n\n'+
+    'Format EXACT :\n✅ RÉPONSE COURTE :\n[réponse]\n\n📝 RÉPONSE COMPLÈTE :\n[réponse]';
+
+  try{
+    var text = await callClaude(prompt);
+    var safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    document.getElementById('gmb-response-result').innerHTML =
+      '<div style="background:var(--dark3);border:1px solid '+(parseInt(stars)>=4?'var(--green)':'var(--warning)')+';border-radius:10px;padding:14px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:280px;overflow-y:auto;">'+safe+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">'+
+      '<button class="btn btn-primary btn-sm" id="gmb-copy-rep">📋 Copier</button>'+
+      '<button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" id="gmb-save-rep">💾 Sauvegarder</button>'+
+      '</div>';
+    document.getElementById('gmb-copy-rep').addEventListener('click',function(){
+      navigator.clipboard.writeText(text).then(function(){showNotif('Réponse copiée !','success');});
+    });
+    document.getElementById('gmb-save-rep').addEventListener('click',function(){
+      gmbSaved.unshift({id:Date.now(),date:new Date().toISOString(),stars:stars,avis:avis.substring(0,60)+'...',reponse:text});
+      if(gmbSaved.length>20)gmbSaved=gmbSaved.slice(0,20);
+      localStorage.setItem('sp_gmb_saved',JSON.stringify(gmbSaved));
+      renderGmbSaved();
+      showNotif('Sauvegardé !','success');
+    });
+    showNotif('Réponse générée !','success');
+  }catch(e){
+    document.getElementById('gmb-response-result').innerHTML='<div style="color:var(--red);padding:14px;">❌ Erreur : '+e.message+'</div>';
+  }
+  btn.textContent='🤖 Générer la réponse avec l\'IA'; btn.disabled=false;
+}
+
+function renderGmbSaved(){
+  var el = document.getElementById('gmb-saved-list');
+  if(!el) return;
+  if(!gmbSaved.length){
+    el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:13px;">Aucune réponse sauvegardée</div>';
+    return;
+  }
+  el.innerHTML = gmbSaved.map(function(s,i){
+    var c = parseInt(s.stars)>=4?'var(--green)':parseInt(s.stars)===3?'var(--warning)':'var(--red)';
+    return '<div style="padding:10px;border-bottom:1px solid var(--border);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">'+
+      '<div style="flex:1;cursor:pointer;" onclick="copyGmbSaved('+i+')">'+
+      '<div style="font-size:11px;color:'+c+';font-weight:700;margin-bottom:2px;">'+s.stars+'/5 ⭐ · '+new Date(s.date).toLocaleDateString('fr-FR')+'</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);font-style:italic;">"'+s.avis+'"</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:4px;flex-shrink:0;">'+
+      '<button class="btn btn-sm" onclick="copyGmbSaved('+i+')">📋</button>'+
+      '<button class="btn btn-sm" style="border-color:var(--red);color:var(--red);" onclick="deleteGmbSaved('+i+')">🗑️</button>'+
+      '</div></div></div>';
+  }).join('');
+}
+
+function copyGmbSaved(i){
+  var s=gmbSaved[i];if(!s)return;
+  navigator.clipboard.writeText(s.reponse).then(function(){showNotif('Réponse copiée !','success');});
+}
+
+function deleteGmbSaved(i){
+  if(!confirm('Supprimer ?'))return;
+  gmbSaved.splice(i,1);
+  localStorage.setItem('sp_gmb_saved',JSON.stringify(gmbSaved));
+  renderGmbSaved();
+}
+
+async function generateGmbPost(){
+  var type = document.getElementById('gmb-post-type').value;
+  var details = document.getElementById('gmb-post-details').value.trim();
+  var btn = document.getElementById('gmb-post-btn');
+  btn.textContent='⏳ Génération...'; btn.disabled=true;
+
+  var stockDispo = phones.filter(function(p){return p.etat==='DISPONIBLE';}).slice(0,4)
+    .map(function(p){return p.modele+(p.stockage?' '+p.stockage+'Go':'')+' à '+p.vente+'€';}).join(', ');
+
+  var prompt =
+    'Tu es community manager pour "Solution Phone", boutique de smartphones reconditionnés et réparations au 21 Rue Gambetta, Mâcon.\n\n'+
+    'Crée un post Google My Business optimisé pour le SEO local.\n\n'+
+    'Type : '+type+'\n'+
+    (details?'Informations : '+details+'\n':'')+
+    (stockDispo?'Stock dispo : '+stockDispo+'\n':'')+
+    '\nRègles :\n'+
+    '- 150-300 mots max\n'+
+    '- Mots-clés locaux : Mâcon, 71000, Saône-et-Loire\n'+
+    '- Mentionner les services si pertinent : réparation, reconditionné, QualiRépar\n'+
+    '- Call-to-action : venez en boutique, appelez le 03 85 33 06 89\n'+
+    '- Terminer par : 📍 21 Rue Gambetta, Mâcon\n'+
+    '- Pas de hashtags (inutiles sur Google)\n\n'+
+    'Rédige directement le post, sans introduction ni commentaire.';
+
+  var resultEl = document.getElementById('gmb-post-result');
+  resultEl.style.display='block';
+  resultEl.innerHTML='<div style="text-align:center;padding:16px;color:var(--text-muted);">🤖 Rédaction en cours...</div>';
+
+  try{
+    var text = await callClaude(prompt);
+    var safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    resultEl.innerHTML =
+      '<div style="background:var(--dark3);border:1px solid var(--blue);border-radius:10px;padding:14px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:250px;overflow-y:auto;">'+safe+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">'+
+      '<button class="btn btn-primary btn-sm" id="gmb-post-copy">📋 Copier</button>'+
+      '<a href="https://business.google.com/posts/create" target="_blank" class="btn btn-sm" style="border-color:#4285f4;color:#4285f4;text-decoration:none;">🌐 Publier sur Google →</a>'+
+      '</div>';
+    document.getElementById('gmb-post-copy').addEventListener('click',function(){
+      navigator.clipboard.writeText(text).then(function(){showNotif('Post copié !','success');});
+    });
+    showNotif('Post Google généré !','success');
+  }catch(e){
+    resultEl.innerHTML='<div style="color:var(--red);padding:14px;">❌ Erreur : '+e.message+'</div>';
+  }
+  btn.textContent='🤖 Générer le post Google'; btn.disabled=false;
+}
+
+// ============================================================
+//  FIN MODULE GOOGLE MY BUSINESS
 // ============================================================
 
 </script>
