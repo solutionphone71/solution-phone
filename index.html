@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_etiq_big -->
+<!-- v20260315_etiq_redesign -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -2555,32 +2555,62 @@ function buildEtiquetteHTML(p, opts){
   var showImei     = opts.imei     !== false;
   var showGarantie = opts.garantie !== false;
   var imei6 = p.imei ? p.imei.slice(-6) : '';
-  var gradeColor = p.grade==='A'?'#1a5c30':p.grade==='B'?'#7d4e00':'#922b21';
-  var gradeBg    = p.grade==='A'?'#d5f5e3':p.grade==='B'?'#fdebd0':'#f9ebea';
   var modeleShort = (p.modele||'').replace('Apple ','').replace('Samsung ','');
+
+  // Conteneur principal 90mm × 29mm
   var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
-  html += '<div style="width:12mm;background:#c0392b;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">';
-  if(logo) html += '<img src="'+logo+'" style="width:10mm;height:auto;filter:brightness(0) invert(1);">';
-  else html += '<div style="font-size:5pt;color:#fff;font-weight:900;text-align:center;line-height:1.1;padding:1mm;">SP</div>';
+
+  // BANDE ROUGE GAUCHE + logo
+  html += '<div style="width:11mm;background:#c0392b;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">';
+  if(logo) html += '<img src="'+logo+'" style="width:9mm;height:auto;filter:brightness(0) invert(1);">';
+  else html += '<div style="font-size:5pt;color:#fff;font-weight:900;text-align:center;padding:1mm;">SP</div>';
   html += '</div>';
-  html += '<div style="flex:1;padding:1.2mm 1.5mm;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">';
-  html += '<div style="font-size:13pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;">'+modeleShort+'</div>';
-  var specs = [];
-  if(showStockage && p.stockage) specs.push(p.stockage+'Go');
-  if(p.couleur) specs.push(p.couleur);
-  if(showBatterie && p.batterie) specs.push('Bat.'+p.batterie+'%');
-  html += '<div style="font-size:5.5pt;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">'+(specs.join(' · ')||'&nbsp;')+'</div>';
-  html += '<div style="display:flex;align-items:center;gap:1.5mm;">';
-  if(showGrade && p.grade) html += '<span style="background:'+gradeBg+';color:'+gradeColor+';font-size:5pt;font-weight:900;padding:0.4mm 1.2mm;border-radius:1mm;border:0.3mm solid '+gradeColor+';">GRADE '+p.grade+'</span>';
-  html += '<span style="font-size:22pt;font-weight:900;color:#c0392b;line-height:1;">'+p.vente+' \u20ac</span>';
+
+  // CONTENU — colonne gauche (infos) + colonne droite (prix)
+  html += '<div style="flex:1;display:flex;flex-direction:row;padding:1mm 1.5mm;gap:1mm;overflow:hidden;">';
+
+  // ── COLONNE GAUCHE ──
+  html += '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;">';
+
+  // Modèle
+  html += '<div style="font-size:12pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;">'+modeleShort+'</div>';
+
+  // Badges : Stockage + Grade + Batterie
+  html += '<div style="display:flex;flex-wrap:wrap;gap:1mm;align-items:center;">';
+  if(showStockage && p.stockage){
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">'+p.stockage+' Go</span>';
+  }
+  if(showGrade && p.grade){
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">Grade '+p.grade+'</span>';
+  }
+  if(showBatterie && p.batterie){
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">\uD83D\uDD0B '+p.batterie+'%</span>';
+  }
   html += '</div>';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
-  if(showImei && imei6) html += '<span style="font-size:4.5pt;color:#777;font-family:monospace;">IMEI:\u00b7\u00b7\u00b7'+imei6+'</span>';
-  else html += '<span></span>';
-  if(showGarantie) html += '<span style="font-size:4.5pt;color:#c0392b;font-weight:700;">\u2713 Gar. '+(p.grade?'12 mois':'24 mois')+'</span>';
+
+  // IMEI + Garantie
+  html += '<div style="display:flex;flex-direction:column;gap:0.3mm;">';
+  if(showImei && imei6){
+    html += '<span style="font-size:6pt;color:#333;font-weight:700;font-family:monospace;">IMEI : ···'+imei6+'</span>';
+  }
+  if(showGarantie){
+    html += '<span style="font-size:6pt;color:#1a5c30;font-weight:700;">\u2713 Garantie '+(p.grade?'12 mois':'24 mois')+'</span>';
+  }
   html += '</div>';
-  html += '<div style="font-size:4pt;color:#999;border-top:0.2mm solid #eee;padding-top:0.6mm;line-height:1;">Solution Phone \u00b7 21 Rue Gambetta \u00b7 71000 M\u00e2con \u00b7 TVA/marge Art.297A</div>';
-  html += '</div></div>';
+
+  // Pied
+  html += '<div style="font-size:4pt;color:#aaa;border-top:0.2mm solid #eee;padding-top:0.4mm;white-space:nowrap;overflow:hidden;">Solution Phone &middot; 21 Rue Gambetta &middot; Mâcon &middot; TVA marge Art.297A</div>';
+
+  html += '</div>'; // fin colonne gauche
+
+  // ── COLONNE DROITE — PRIX ──
+  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;padding-left:1mm;border-left:0.5mm solid #eee;">';
+  html += '<span style="font-size:24pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+p.vente+'</span>';
+  html += '<span style="font-size:14pt;font-weight:900;color:#c0392b;line-height:1;">&euro;</span>';
+  html += '</div>';
+
+  html += '</div>'; // fin contenu
+  html += '</div>'; // fin étiquette
   return html;
 }
 
