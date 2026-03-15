@@ -1901,6 +1901,7 @@ function checkPin(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
       loadApiKeyFromSupabase();
       loadBonsCommande();
+      loadBonsDepot();
     });
     renderEcrans();
     renderBatteries();
@@ -5511,9 +5512,56 @@ function supprimerCommande(id){
 
 
 
-var bonsDepot = JSON.parse(localStorage.getItem('sp_bons_depot') || '[]');
+var bonsDepot = [];
 
 function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(bonsDepot)); }
+
+async function loadBonsDepot(){
+  try {
+    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc');
+    if(res && res.length >= 0){
+      bonsDepot = res.map(function(x){
+        return {
+          id: x.id, numero: x.numero, date: x.date,
+          client: { nom: x.client_nom, prenom: x.client_prenom||'', tel: x.client_tel, email: x.client_email||'' },
+          appareil: { marque: x.appareil_marque||'', modele: x.appareil_modele||'', imei: x.appareil_imei||'', couleur: x.appareil_couleur||'', code: x.appareil_code||'' },
+          etat: x.etat||[], etatAutre: x.etat_autre||'',
+          accessoires: x.accessoires||[],
+          panne: x.panne||'',
+          devis: Number(x.devis)||0,
+          dateRetour: x.date_retour||'',
+          obs: x.obs||''
+        };
+      });
+      saveBonsDepot();
+    }
+  } catch(e){
+    var local = localStorage.getItem('sp_bons_depot');
+    if(local) bonsDepot = JSON.parse(local);
+  }
+  renderBonsDepot();
+}
+
+async function saveBonDepotSupabase(d){
+  var data = {
+    id: d.id, numero: d.numero, date: d.date,
+    client_nom: d.client.nom, client_prenom: d.client.prenom,
+    client_tel: d.client.tel, client_email: d.client.email||'',
+    appareil_marque: d.appareil.marque, appareil_modele: d.appareil.modele,
+    appareil_imei: d.appareil.imei, appareil_couleur: d.appareil.couleur,
+    appareil_code: d.appareil.code,
+    etat: d.etat, etat_autre: d.etatAutre,
+    accessoires: d.accessoires,
+    panne: d.panne, devis: d.devis,
+    date_retour: d.dateRetour||null, obs: d.obs
+  };
+  try {
+    var ex = await supaFetch('bons_depot','GET',null,'?id=eq.'+d.id);
+    if(ex && ex.length > 0){ await supaFetch('bons_depot','PATCH',data,'?id=eq.'+d.id); }
+    else { await supaFetch('bons_depot','POST',data); }
+  } catch(e){ console.log('Erreur save bon depot',e); }
+  saveBonsDepot();
+}
 
 function switchRepTab(tab){
   var tabs = ['depot','commande','facture'];
@@ -5591,7 +5639,7 @@ function genererBonDepot(){
     obs:          document.getElementById('dep-obs').value.trim()
   };
   bonsDepot.push(depot);
-  saveBonsDepot();
+  saveBonDepotSupabase(depot);
   renderBonsDepot();
   printBonDepot(depot);
   // Reset
@@ -5626,6 +5674,7 @@ function supprimerDepot(id){
   if(!confirm('Supprimer ce bon de dépôt ?')) return;
   bonsDepot = bonsDepot.filter(function(d){ return d.id !== id; });
   saveBonsDepot();
+  try { supaFetch('bons_depot','DELETE',null,'?id=eq.'+id); } catch(e){}
   renderBonsDepot();
   showNotif('Bon supprimé','success');
 }
