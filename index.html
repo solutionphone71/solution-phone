@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_pwa -->
+<!-- v20260315_ticket_epson -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -666,11 +666,12 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
   <div class="page" id="page-reparations">
       <div class="page-title">Réparations</div>
-      <div class="page-sub">Bon de dépôt · Factures · Historique</div>
+      <div class="page-sub">Bon de dépôt · Bon de commande · Factures · Historique</div>
 
       <!-- ONGLETS -->
-      <div style="display:flex;gap:8px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0;">
+      <div style="display:flex;gap:8px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0;flex-wrap:wrap;">
         <button id="tab-depot-btn" onclick="switchRepTab('depot')" style="padding:10px 20px;border:none;border-radius:8px 8px 0 0;background:var(--red);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">📋 Bon de Dépôt</button>
+        <button id="tab-commande-btn" onclick="switchRepTab('commande')" style="padding:10px 20px;border:none;border-radius:8px 8px 0 0;background:var(--dark3);color:var(--text-muted);font-weight:600;font-size:14px;cursor:pointer;">🛒 Bon de Commande</button>
         <button id="tab-facture-btn" onclick="switchRepTab('facture')" style="padding:10px 20px;border:none;border-radius:8px 8px 0 0;background:var(--dark3);color:var(--text-muted);font-weight:600;font-size:14px;cursor:pointer;">🧾 Facture Réparation</button>
       </div>
 
@@ -835,6 +836,83 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
       </div>
       </div><!-- fin tab-facture -->
+
+      <!-- ===== ONGLET BON DE COMMANDE ===== -->
+      <div id="tab-commande" style="display:none;">
+
+        <!-- Choix type -->
+        <div class="card" style="margin-bottom:18px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button id="cmd-type-rep" onclick="setCmdType('reparation')"
+              style="flex:1;min-width:140px;padding:20px;border:2px solid var(--red);border-radius:12px;background:var(--red);color:#fff;font-size:18px;font-weight:800;cursor:pointer;transition:.15s;">
+              🔧 Réparation
+            </button>
+            <button id="cmd-type-acc" onclick="setCmdType('accessoire')"
+              style="flex:1;min-width:140px;padding:20px;border:2px solid var(--border);border-radius:12px;background:var(--dark3);color:var(--text-muted);font-size:18px;font-weight:800;cursor:pointer;transition:.15s;">
+              🎁 Accessoire
+            </button>
+          </div>
+        </div>
+
+        <div class="card" style="max-width:480px;">
+          <!-- Champs communs -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="form-group"><label>Nom *</label><input type="text" id="cmd-nom" placeholder="Jean Dupont"></div>
+            <div class="form-group"><label>Téléphone *</label><input type="tel" id="cmd-tel" placeholder="06 XX XX XX XX"></div>
+
+            <!-- Champs réparation -->
+            <div id="cmd-block-rep">
+              <div class="form-group" style="margin-bottom:12px;"><label>Modèle téléphone *</label><input type="text" id="cmd-modele" placeholder="ex: iPhone 15 Pro"></div>
+              <div class="form-group"><label>Pièce *</label>
+                <select id="cmd-piece">
+                  <option value="">— Choisir la pièce —</option>
+                  <option>Écran</option>
+                  <option>Batterie</option>
+                  <option>Vitre arrière</option>
+                  <option>Connecteur de charge</option>
+                  <option>Caméra arrière</option>
+                  <option>Caméra avant</option>
+                  <option>Bouton power</option>
+                  <option>Bouton volume</option>
+                  <option>Haut-parleur</option>
+                  <option>Micro</option>
+                  <option>Autre</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Champs accessoire -->
+            <div id="cmd-block-acc" style="display:none;">
+              <div class="form-group"><label>Accessoire *</label><input type="text" id="cmd-acc-nom" placeholder="ex: Coque iPhone 15 Pro Noire"></div>
+            </div>
+
+            <div class="form-group"><label>Prix (€) *</label><input type="number" id="cmd-prix" placeholder="0.00" step="0.01"></div>
+
+            <!-- Déjà payé — visible uniquement accessoire -->
+            <div id="cmd-block-paye" style="display:none;">
+              <label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;background:var(--dark3);padding:12px;border-radius:8px;border:1.5px solid var(--border);">
+                <input type="checkbox" id="cmd-paye" style="width:18px;height:18px;cursor:pointer;accent-color:var(--green);">
+                <span>✅ Déjà payé</span>
+              </label>
+            </div>
+
+            <button class="btn btn-primary" style="padding:14px;font-size:16px;font-weight:800;margin-top:4px;" onclick="genererBonCommande()">
+              🖨️ Imprimer le Bon de Commande
+            </button>
+          </div>
+        </div>
+
+        <!-- Historique -->
+        <div class="card" style="margin-top:18px;">
+          <div class="card-header"><div class="card-title">📂 Historique Bons de Commande</div></div>
+          <div style="overflow-x:auto;">
+            <table><thead><tr><th>N°</th><th>Date</th><th>Type</th><th>Client</th><th>Tél</th><th>Détail</th><th>Prix</th><th>Actions</th></tr></thead>
+            <tbody id="commande-table"></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- ===== FIN ONGLET BON DE COMMANDE ===== -->
+
     </div><!-- fin page-reparations -->
 
   <div class="page" id="page-comptable">
@@ -1822,10 +1900,12 @@ function checkPin(){
     }
     loadFromSupabase().then(function(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
+      loadApiKeyFromSupabase();
     });
     renderEcrans();
     renderBatteries();
     renderBonsDepot();
+    renderBonsCommande();
     _pin = '';
     updatePinDisplay();
   } else {
@@ -3714,30 +3794,59 @@ var igPosts   = JSON.parse(localStorage.getItem('sp_ig_posts')  || '[]');
 var igDrafts  = JSON.parse(localStorage.getItem('sp_ig_drafts') || '[]');
 var igCalMonth = (function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})();
 
-function getIgApiKey(){return localStorage.getItem('sp_claude_key')||'';}
+function getIgApiKey(){
+  return localStorage.getItem('sp_claude_key') || window._cachedApiKey || '';
+}
 
-function saveApiKey(){
-  var k=document.getElementById('ig-api-key').value.trim();
-  if(!k){showNotif('Clé vide !','error');return;}
-  localStorage.setItem('sp_claude_key',k);
-  showNotif('Clé API sauvegardée !','success');
+async function saveApiKey(){
+  var k = document.getElementById('ig-api-key').value.trim();
+  if(!k){ showNotif('Clé vide !','error'); return; }
+  // Sauvegarde locale
+  localStorage.setItem('sp_claude_key', k);
+  window._cachedApiKey = k;
+  // Sauvegarde Supabase pour persistance cross-device / PWA
+  try {
+    var existing = await supaFetch('settings','GET',null,'?key=eq.claude_api_key');
+    if(existing && existing.length > 0){
+      await supaFetch('settings','PATCH',{key:'claude_api_key',value:k},'?key=eq.claude_api_key');
+    } else {
+      await supaFetch('settings','POST',{key:'claude_api_key',value:k});
+    }
+    showNotif('Clé API sauvegardée !','success');
+  } catch(e){
+    showNotif('Clé sauvegardée localement','success');
+  }
   document.getElementById('ig-api-setup').style.display='none';
   document.getElementById('ig-content').style.display='block';
   showIgTab('captions');
   renderIgDrafts();
 }
 
+async function loadApiKeyFromSupabase(){
+  // Charger la clé depuis Supabase si pas en localStorage
+  var local = localStorage.getItem('sp_claude_key');
+  if(local){ window._cachedApiKey = local; return; }
+  try {
+    var res = await supaFetch('settings','GET',null,'?key=eq.claude_api_key');
+    if(res && res.length > 0 && res[0].value){
+      localStorage.setItem('sp_claude_key', res[0].value);
+      window._cachedApiKey = res[0].value;
+    }
+  } catch(e){}
+}
+
 function renderInstagram(){
-  var k=getIgApiKey();
-  document.getElementById('ig-api-key').value=k;
-  if(k){
-    document.getElementById('ig-api-setup').style.display='none';
-    document.getElementById('ig-content').style.display='block';
-    showIgTab('captions');
-    renderIgDrafts();
-  } else {
-    document.getElementById('ig-api-setup').style.display='block';
-    document.getElementById('ig-content').style.display='none';
+  loadApiKeyFromSupabase().then(function(){
+    var k = getIgApiKey();
+    document.getElementById('ig-api-key').value = k;
+    if(k){
+      document.getElementById('ig-api-setup').style.display='none';
+      document.getElementById('ig-content').style.display='block';
+      showIgTab('captions');
+      renderIgDrafts();
+    } else {
+      document.getElementById('ig-api-setup').style.display='block';
+      document.getElementById('ig-content').style.display='none';
   }
 }
 
@@ -5139,21 +5248,186 @@ showPage = function(id, el){
 };
 
 // ============================================================
-//  MODULE BON DE DÉPÔT RÉPARATION
+//  MODULE BON DE COMMANDE
 // ============================================================
+
+var bonsCommande = JSON.parse(localStorage.getItem('sp_bons_commande') || '[]');
+var _cmdType = 'reparation';
+
+function saveBonsCommande(){ localStorage.setItem('sp_bons_commande', JSON.stringify(bonsCommande)); }
+
+function setCmdType(type){
+  _cmdType = type;
+  var isRep = type === 'reparation';
+  document.getElementById('cmd-block-rep').style.display  = isRep ? '' : 'none';
+  document.getElementById('cmd-block-acc').style.display  = isRep ? 'none' : '';
+  document.getElementById('cmd-block-paye').style.display = isRep ? 'none' : '';
+  document.getElementById('cmd-type-rep').style.background   = isRep ? 'var(--red)' : 'var(--dark3)';
+  document.getElementById('cmd-type-rep').style.color        = isRep ? '#fff' : 'var(--text-muted)';
+  document.getElementById('cmd-type-rep').style.borderColor  = isRep ? 'var(--red)' : 'var(--border)';
+  document.getElementById('cmd-type-acc').style.background   = isRep ? 'var(--dark3)' : 'var(--red)';
+  document.getElementById('cmd-type-acc').style.color        = isRep ? 'var(--text-muted)' : '#fff';
+  document.getElementById('cmd-type-acc').style.borderColor  = isRep ? 'var(--border)' : 'var(--red)';
+}
+
+function genererBonCommande(){
+  var nom = document.getElementById('cmd-nom').value.trim();
+  var tel = document.getElementById('cmd-tel').value.trim();
+  var prix = parseFloat(document.getElementById('cmd-prix').value)||0;
+  if(!nom||!tel){ showNotif('Nom et téléphone obligatoires','error'); return; }
+  if(!prix){ showNotif('Prix obligatoire','error'); return; }
+
+  var detail = '';
+  if(_cmdType === 'reparation'){
+    var modele = document.getElementById('cmd-modele').value.trim();
+    var piece  = document.getElementById('cmd-piece').value;
+    if(!modele||!piece){ showNotif('Modèle et pièce obligatoires','error'); return; }
+    detail = modele + ' — ' + piece;
+  } else {
+    var accNom = document.getElementById('cmd-acc-nom').value.trim();
+    if(!accNom){ showNotif('Nom de l\'accessoire obligatoire','error'); return; }
+    detail = accNom;
+  }
+
+  var paye = _cmdType === 'accessoire' && document.getElementById('cmd-paye').checked;
+  var num  = 'CMD-'+new Date().getFullYear()+'-'+String(bonsCommande.length+1).padStart(3,'0');
+  var cmd  = {
+    id: Date.now(), numero: num,
+    date: new Date().toISOString().split('T')[0],
+    type: _cmdType, client: {nom, tel},
+    detail, prix, paye
+  };
+  bonsCommande.push(cmd);
+  saveBonsCommande();
+  renderBonsCommande();
+  printTicketCommande(cmd);
+
+  // Reset
+  ['cmd-nom','cmd-tel','cmd-modele','cmd-acc-nom','cmd-prix'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('cmd-piece').value='';
+  document.getElementById('cmd-paye').checked=false;
+  showNotif('Bon '+num+' créé !','success');
+}
+
+function printTicketCommande(c){
+  if(!c) return;
+  var isRep = c.type === 'reparation';
+  var date  = new Date(c.date).toLocaleDateString('fr-FR');
+  var now   = new Date();
+  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+  // Format ticket thermique 80mm — texte centré, largeur fixe
+  function line(txt, bold){ return '<div style="font-weight:'+(bold?'900':'400')+';white-space:pre-wrap;word-break:break-word;">'+txt+'</div>'; }
+  function sep(){ return '<div style="border-top:1px dashed #000;margin:4px 0;"></div>'; }
+  function center(txt, size, bold){
+    return '<div style="text-align:center;font-size:'+(size||13)+'px;font-weight:'+(bold?'900':'400')+';line-height:1.3;">'+txt+'</div>';
+  }
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>'+c.numero+'</title>'+
+    '<style>'+
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:"Courier New",Courier,monospace;font-size:13px;background:#fff;color:#000;width:80mm;margin:0 auto;}'+
+    '@page{size:80mm auto;margin:3mm;}'+
+    '@media print{.no-print{display:none!important;}}'+
+    '</style></head><body>'+
+
+    '<div class="no-print" style="padding:8px;text-align:center;margin-bottom:8px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer le ticket</button>'+
+    '</div>'+
+
+    // EN-TÊTE
+    center('SOLUTION PHONE', 18, true)+
+    center('21 Rue Gambetta - 71000 Macon', 11)+
+    center('Tel : 03 85 33 06 89', 11)+
+    sep()+
+
+    // Type + numéro
+    center(isRep ? '*** REPARATION ***' : '*** ACCESSOIRE ***', 14, true)+
+    center(c.numero, 12)+
+    center(date+' à '+heure, 11)+
+    sep()+
+
+    // Client
+    line('Client  : '+c.client.nom)+
+    line('Tel     : '+c.client.tel)+
+    sep()+
+
+    // Détail
+    (isRep
+      ? line('Appareil: '+c.detail.split(' — ')[0])+
+        line('Piece   : '+c.detail.split(' — ')[1])
+      : line('Article : '+c.detail)
+    )+
+    sep()+
+
+    // Prix
+    center(c.prix.toFixed(2)+' EUR', 20, true)+
+    (c.paye
+      ? center('*** DEJA PAYE ***', 14, true)
+      : center('A REGLER A LA REPRISE', 12)
+    )+
+    sep()+
+
+    // Pied
+    center('Merci de votre confiance !', 11)+
+    center('www.solutionphone71.fr', 11)+
+    '<div style="margin-top:8px;"></div>'+
+
+    '</body></html>';
+
+  var w = window.open('','_blank','width=400,height=600');
+  w.document.write(html);
+  w.document.close();
+}
+
+function renderBonsCommande(){
+  var tbody = document.getElementById('commande-table');
+  if(!tbody) return;
+  tbody.innerHTML = bonsCommande.slice().reverse().map(function(c){
+    return '<tr>'+
+      '<td><b>'+c.numero+'</b></td>'+
+      '<td>'+fmtDate(c.date)+'</td>'+
+      '<td><span class="badge '+(c.type==='reparation'?'badge-red':'badge-blue')+'">'+(c.type==='reparation'?'🔧':'🎁')+'</span></td>'+
+      '<td>'+c.client.nom+'</td>'+
+      '<td>'+c.client.tel+'</td>'+
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</td>'+
+      '<td><b>'+c.prix.toFixed(2)+' €</b>'+(c.paye?' <span style="color:var(--green);font-size:11px;">✓ payé</span>':'')+'</td>'+
+      '<td style="display:flex;gap:4px;">'+
+        '<button class="btn btn-sm" onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" title="Réimprimer">🖨️</button>'+
+        '<button class="btn btn-sm" onclick="supprimerCommande('+c.id+')" style="color:var(--text-dim)">🗑️</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun bon de commande</td></tr>';
+}
+
+function supprimerCommande(id){
+  if(!confirm('Supprimer ce bon ?')) return;
+  bonsCommande = bonsCommande.filter(function(c){ return c.id !== id; });
+  saveBonsCommande(); renderBonsCommande();
+}
+
+// ============================================================
+//  FIN MODULE BON DE COMMANDE
+// ============================================================
+
+
 
 var bonsDepot = JSON.parse(localStorage.getItem('sp_bons_depot') || '[]');
 
 function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(bonsDepot)); }
 
 function switchRepTab(tab){
-  var isDepot = tab === 'depot';
-  document.getElementById('tab-depot').style.display = isDepot ? '' : 'none';
-  document.getElementById('tab-facture').style.display = isDepot ? 'none' : '';
-  document.getElementById('tab-depot-btn').style.background = isDepot ? 'var(--red)' : 'var(--dark3)';
-  document.getElementById('tab-depot-btn').style.color = isDepot ? '#fff' : 'var(--text-muted)';
-  document.getElementById('tab-facture-btn').style.background = isDepot ? 'var(--dark3)' : 'var(--red)';
-  document.getElementById('tab-facture-btn').style.color = isDepot ? 'var(--text-muted)' : '#fff';
+  var tabs = ['depot','commande','facture'];
+  tabs.forEach(function(t){
+    var el = document.getElementById('tab-'+t);
+    var btn = document.getElementById('tab-'+t+'-btn');
+    if(el) el.style.display = t===tab ? '' : 'none';
+    if(btn){
+      btn.style.background = t===tab ? 'var(--red)' : 'var(--dark3)';
+      btn.style.color = t===tab ? '#fff' : 'var(--text-muted)';
+    }
+  });
 }
 
 function getDepotEtat(){
