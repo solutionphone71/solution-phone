@@ -257,14 +257,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📱</span><span>Smartphones</span></div>
     <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures</span></div>
-    <div class="nav-item" onclick="showPage('stats',this)"><span class="nav-icon">📊</span><span>Statistiques</span></div>
-    <div class="nav-item" onclick="showPage('caisse',this)"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
+    <div class="nav-item" id="nav-stats" onclick="showPage('stats',this)"><span class="nav-icon">📊</span><span>Statistiques</span></div>
+    <div class="nav-item" id="nav-caisse" onclick="showPage('caisse',this)"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de Police</span></div>
-    <div class="nav-item" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
+    <div class="nav-item" id="nav-comptable" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap Comptable</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
-    <div class="nav-item" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
-    <div class="nav-item" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
-    <div class="nav-item" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan Annuel</span></div>
+    <div class="nav-item" id="nav-depenses" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
+    <div class="nav-item" id="nav-comparaison" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
+    <div class="nav-item" id="nav-bilan" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan Annuel</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur Rachat</span></div>
@@ -1883,21 +1883,23 @@ var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison',
 
 function appliquerRole(){
   var isEmploye = _userRole === 'employe';
-  // Sidebar desktop
-  _modulesPatronOnly.forEach(function(mod){
-    var navItem = document.querySelector('.nav-item[onclick*="\''+mod+'\'"]');
-    if(navItem) navItem.style.display = isEmploye ? 'none' : '';
+  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats'];
+  ids.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = isEmploye ? 'none' : '';
   });
-  // Menu mobile
+  // Menu mobile items
   var mobItems = document.querySelectorAll('.mob-menu-item');
+  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats'];
   mobItems.forEach(function(item){
-    var hidden = _modulesPatronOnly.some(function(m){ return item.getAttribute('onclick') && item.getAttribute('onclick').indexOf("'"+m+"'") !== -1; });
-    if(hidden) item.style.display = isEmploye ? 'none' : '';
+    var txt = item.getAttribute('onclick')||'';
+    var cacher = cacheMobile.some(function(m){ return txt.indexOf(m) !== -1; });
+    if(cacher) item.style.display = isEmploye ? 'none' : '';
   });
-  // Bouton Z de caisse dans nav mobile bas
+  // Bouton Z de caisse nav mobile bas
   var mobCaisse = document.getElementById('mob-btn-caisse');
   if(mobCaisse) mobCaisse.style.display = isEmploye ? 'none' : '';
-  // Badge rôle dans la sidebar
+  // Badge rôle
   var badge = document.getElementById('role-badge');
   if(badge){
     badge.textContent = isEmploye ? '👤 Employé' : '👑 Patron';
