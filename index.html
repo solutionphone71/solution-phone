@@ -3326,32 +3326,38 @@ function storyPromo(ctx,W,H,s){
 
   // Modèle
   ctx.fillStyle='#ffffff';
-  var fontSize=modele.length>14?64:80;
+  var fontSize=modele.length>14?60:76;
   ctx.font='bold '+Math.round(fontSize*s)+'px Arial,sans-serif';
+  ctx.textAlign='center';
   igWrapText(ctx,modele,W/2,yBase,W-80*s,Math.round(fontSize*1.2*s));
 
-  // Grade pill
+  // Grade pill — juste sous le modèle
+  var py=yBase+88*s;
   ctx.fillStyle='rgba(255,255,255,0.12)';
-  var pw=320*s,ph=48*s,px=(W-pw)/2,py=yBase+120*s;
+  var pw=320*s,ph=44*s,px=(W-pw)/2;
   ctx.beginPath();
-  if(ctx.roundRect)ctx.roundRect(px,py,pw,ph,24*s);else ctx.rect(px,py,pw,ph);
+  if(ctx.roundRect)ctx.roundRect(px,py,pw,ph,22*s);else ctx.rect(px,py,pw,ph);
   ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='bold '+Math.round(24*s)+'px Arial,sans-serif';
-  ctx.fillText('Grade '+grade+' · Reconditionné certifié',W/2,py+32*s);
+  ctx.fillStyle='rgba(255,255,255,0.75)';
+  ctx.font='bold '+Math.round(22*s)+'px Arial,sans-serif';
+  ctx.fillText('Grade '+grade+' · Reconditionné certifié',W/2,py+30*s);
 
-  // Prix
+  // Prix — bien séparé en dessous du grade
   if(prix>0){
-    var yPrix=yBase+230*s;
-    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(storyImg?120:160)*s+'px Arial,sans-serif';
+    var yPrix=yBase+300*s;
+    ctx.fillStyle='#ff4757';
+    ctx.font='bold '+Math.round(110*s)+'px Arial,sans-serif';
     ctx.fillText(prix+'€',W/2,yPrix);
-    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font=Math.round(26*s)+'px Arial,sans-serif';
-    ctx.fillText('Prix de vente TTC · Garanti',W/2,yPrix+44*s);
+    ctx.fillStyle='rgba(255,255,255,0.45)';
+    ctx.font=Math.round(24*s)+'px Arial,sans-serif';
+    ctx.fillText('Prix de vente TTC · Garanti',W/2,yPrix+46*s);
   }
 
-  // Desc
+  // Desc — sous le prix
   if(desc){
-    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=Math.round(28*s)+'px Arial,sans-serif';
-    igWrapText(ctx,desc,W/2,yBase+420*s,W-120*s,40*s);
+    ctx.fillStyle='rgba(255,255,255,0.7)';
+    ctx.font=Math.round(28*s)+'px Arial,sans-serif';
+    igWrapText(ctx,desc,W/2,yBase+480*s,W-120*s,40*s);
   }
 
   // CTA button
