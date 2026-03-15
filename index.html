@@ -723,6 +723,19 @@ tr:hover td{background:rgba(255,255,255,0.02);}
                   <div class="form-group"><label>Détail (optionnel)</label>
                     <input type="text" id="story-promo-desc" placeholder="ex: 256Go · Batterie 91%" oninput="renderStoryPreview()">
                   </div>
+                  <div class="form-group">
+                    <label>📸 Photo du téléphone (optionnel)</label>
+                    <div id="story-photo-zone" onclick="document.getElementById('story-photo-input').click()"
+                      style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:var(--dark3);transition:.2s;"
+                      onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+                      <div id="story-photo-preview" style="display:none;"><img id="story-photo-thumb" style="max-height:80px;border-radius:8px;"></div>
+                      <div id="story-photo-placeholder" style="color:var(--text-muted);font-size:13px;">
+                        🖼️ Cliquez pour ajouter une photo<br><span style="font-size:11px;">JPG, PNG — depuis votre téléphone ou ordi</span>
+                      </div>
+                    </div>
+                    <input type="file" id="story-photo-input" accept="image/*" style="display:none;" onchange="loadStoryPhoto(this)">
+                    <button id="story-photo-clear" class="btn btn-sm" style="display:none;margin-top:6px;border-color:var(--red);color:var(--red);" onclick="clearStoryPhoto()">🗑️ Supprimer la photo</button>
+                  </div>
                 </div>
 
                 <!-- FORM REPARATION -->
@@ -3200,19 +3213,48 @@ function storyPromo(ctx,W,H,s){
   ctx.fillStyle='#fff';ctx.font='bold '+Math.round(34*s)+'px Arial,sans-serif';ctx.textAlign='center';
   ctx.fillText('📱  PROMO DU JOUR',W/2,by+46*s);
 
-  // Grand emoji téléphone
-  ctx.font=Math.round(180*s)+'px serif';
-  ctx.textAlign='center';ctx.fillText('📱',W/2,480*s);
+  // Photo ou emoji téléphone
+  var storyImg=window._storyPhotoImg||null;
+  if(storyImg){
+    // Cadre lumineux derrière la photo
+    ctx.save();
+    ctx.shadowColor='rgba(229,62,62,0.6)';ctx.shadowBlur=60*s;
+    var iw=storyImg.naturalWidth,ih=storyImg.naturalHeight;
+    var maxW=680*s,maxH=580*s;
+    var ratio=Math.min(maxW/iw,maxH/ih);
+    var dw=iw*ratio,dh=ih*ratio;
+    var dx=(W-dw)/2,dy=200*s;
+    // Fond blanc doux derrière la photo
+    ctx.fillStyle='rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(dx-16*s,dy-16*s,dw+32*s,dh+32*s,24*s);
+    else ctx.rect(dx-16*s,dy-16*s,dw+32*s,dh+32*s);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(dx,dy,dw,dh,18*s);
+    else ctx.rect(dx,dy,dw,dh);
+    ctx.clip();
+    ctx.drawImage(storyImg,dx,dy,dw,dh);
+    ctx.restore();
+  } else {
+    ctx.font=Math.round(180*s)+'px serif';
+    ctx.textAlign='center';ctx.fillText('📱',W/2,480*s);
+  }
+
+  // Positions dynamiques selon photo ou emoji
+  var yBase=storyImg?820*s:560*s;
 
   // Modèle
   ctx.fillStyle='#ffffff';
   var fontSize=modele.length>14?64:80;
   ctx.font='bold '+Math.round(fontSize*s)+'px Arial,sans-serif';
-  igWrapText(ctx,modele,W/2,560*s,W-80*s,Math.round(fontSize*1.2*s));
+  igWrapText(ctx,modele,W/2,yBase,W-80*s,Math.round(fontSize*1.2*s));
 
   // Grade pill
   ctx.fillStyle='rgba(255,255,255,0.12)';
-  var pw=320*s,ph=48*s,px=(W-pw)/2,py=700*s;
+  var pw=320*s,ph=48*s,px=(W-pw)/2,py=yBase+160*s;
   ctx.beginPath();
   if(ctx.roundRect)ctx.roundRect(px,py,pw,ph,24*s);else ctx.rect(px,py,pw,ph);
   ctx.fill();
@@ -3221,16 +3263,17 @@ function storyPromo(ctx,W,H,s){
 
   // Prix
   if(prix>0){
-    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(160*s)+'px Arial,sans-serif';
-    ctx.fillText(prix+'€',W/2,920*s);
+    var yPrix=yBase+280*s;
+    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(storyImg?130:160)*s+'px Arial,sans-serif';
+    ctx.fillText(prix+'€',W/2,yPrix);
     ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font=Math.round(28*s)+'px Arial,sans-serif';
-    ctx.fillText('Prix de vente TTC · Garanti',W/2,960*s);
+    ctx.fillText('Prix de vente TTC · Garanti',W/2,yPrix+40*s);
   }
 
   // Desc
   if(desc){
     ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=Math.round(30*s)+'px Arial,sans-serif';
-    igWrapText(ctx,desc,W/2,1020*s,W-120*s,42*s);
+    igWrapText(ctx,desc,W/2,yBase+430*s,W-120*s,42*s);
   }
 
   // CTA button
@@ -3411,8 +3454,54 @@ function storyBrouillon(ctx,W,H,s){
 
 function val(id){var e=document.getElementById(id);return e?e.value:'';}
 
-// ============================================================
-//  FIN CRÉATEUR DE STORIES
+// ---- Gestion photo story ----
+window._storyPhotoImg = null;
+
+function loadStoryPhoto(input){
+  var file=input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      window._storyPhotoImg=img;
+      // Miniature
+      var thumb=document.getElementById('story-photo-thumb');
+      if(thumb)thumb.src=e.target.result;
+      var prev=document.getElementById('story-photo-preview');
+      var plac=document.getElementById('story-photo-placeholder');
+      var clr=document.getElementById('story-photo-clear');
+      if(prev)prev.style.display='block';
+      if(plac)plac.style.display='none';
+      if(clr)clr.style.display='inline-flex';
+      // Changer le style de la zone
+      var zone=document.getElementById('story-photo-zone');
+      if(zone){zone.style.borderColor='var(--green)';zone.style.borderStyle='solid';}
+      renderStoryPreview();
+      showNotif('Photo chargée !','success');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearStoryPhoto(){
+  window._storyPhotoImg=null;
+  var input=document.getElementById('story-photo-input');
+  if(input)input.value='';
+  var thumb=document.getElementById('story-photo-thumb');
+  if(thumb)thumb.src='';
+  var prev=document.getElementById('story-photo-preview');
+  var plac=document.getElementById('story-photo-placeholder');
+  var clr=document.getElementById('story-photo-clear');
+  if(prev)prev.style.display='none';
+  if(plac)plac.style.display='block';
+  if(clr)clr.style.display='none';
+  var zone=document.getElementById('story-photo-zone');
+  if(zone){zone.style.borderColor='var(--border)';zone.style.borderStyle='dashed';}
+  renderStoryPreview();
+  showNotif('Photo supprimée','info');
+}
 // ============================================================
 
 </script>
