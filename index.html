@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_bon_depot -->
+<!-- v20260315_etiquette_brother -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1622,11 +1622,44 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 </div>
 
 <div class="modal-overlay" id="modal-etiquette">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-title">🏷️ Étiquette</div>
-    <div id="etiquette-preview" style="background:#fff;color:#000;padding:16px;border-radius:8px;font-family:Arial,sans-serif;text-align:center;"></div>
-    <div style="display:flex;gap:10px;margin-top:16px;">
-      <button class="btn btn-primary" onclick="printEtiquette()">🖨️ Imprimer</button>
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">🏷️ Étiquette Brother DK-11201 (29×90mm)</div>
+
+    <!-- Options -->
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="etiq-show-grade" checked onchange="refreshEtiquette()"> Grade
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="etiq-show-stockage" checked onchange="refreshEtiquette()"> Stockage
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="etiq-show-batterie" onchange="refreshEtiquette()"> Batterie
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="etiq-show-imei" checked onchange="refreshEtiquette()"> IMEI (6 derniers)
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="etiq-show-garantie" checked onchange="refreshEtiquette()"> Garantie
+      </label>
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
+        <label>Qté :</label>
+        <input type="number" id="etiq-qty" value="1" min="1" max="99" style="width:52px;padding:4px 6px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--text);">
+      </div>
+    </div>
+
+    <!-- Aperçu -->
+    <div style="background:#f0f0f0;padding:12px;border-radius:8px;display:flex;justify-content:center;margin-bottom:14px;">
+      <div id="etiquette-preview"></div>
+    </div>
+
+    <!-- Info imprimante -->
+    <div style="background:rgba(66,153,225,0.1);border:1px solid var(--blue);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--blue);margin-bottom:14px;">
+      📡 <b>Brother QL-820NWB</b> — Assurez-vous que l'imprimante est sélectionnée via AirPrint/Wi-Fi · Format DK-11201 · 29×90mm
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="printEtiquetteBrother()">🖨️ Imprimer sur Brother</button>
       <button class="btn" onclick="closeModal('modal-etiquette')">Fermer</button>
     </div>
   </div>
@@ -2511,12 +2544,106 @@ function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!
 function deletePhone(id){if(!confirm('Supprimer ?'))return;phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
 
 var curPhone=null;
+var _etiquettePhone = null;
+
+function buildEtiquetteHTML(p, opts){
+  opts = opts || {};
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var showGrade    = opts.grade    !== false;
+  var showStockage = opts.stockage !== false;
+  var showBatterie = opts.batterie === true;
+  var showImei     = opts.imei     !== false;
+  var showGarantie = opts.garantie !== false;
+  var imei6 = p.imei ? p.imei.slice(-6) : '';
+  var gradeColor = p.grade==='A'?'#1a5c30':p.grade==='B'?'#7d4e00':'#922b21';
+  var gradeBg    = p.grade==='A'?'#d5f5e3':p.grade==='B'?'#fdebd0':'#f9ebea';
+  var modeleShort = (p.modele||'').replace('Apple ','').replace('Samsung ','');
+  var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
+  html += '<div style="width:12mm;background:#c0392b;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">';
+  if(logo) html += '<img src="'+logo+'" style="width:10mm;height:auto;filter:brightness(0) invert(1);">';
+  else html += '<div style="font-size:5pt;color:#fff;font-weight:900;text-align:center;line-height:1.1;padding:1mm;">SP</div>';
+  html += '</div>';
+  html += '<div style="flex:1;padding:1.2mm 1.5mm;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">';
+  html += '<div style="font-size:7pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1;">'+modeleShort+'</div>';
+  var specs = [];
+  if(showStockage && p.stockage) specs.push(p.stockage+'Go');
+  if(p.couleur) specs.push(p.couleur);
+  if(showBatterie && p.batterie) specs.push('Bat.'+p.batterie+'%');
+  html += '<div style="font-size:5.5pt;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">'+(specs.join(' · ')||'&nbsp;')+'</div>';
+  html += '<div style="display:flex;align-items:center;gap:1.5mm;">';
+  if(showGrade && p.grade) html += '<span style="background:'+gradeBg+';color:'+gradeColor+';font-size:5pt;font-weight:900;padding:0.4mm 1.2mm;border-radius:1mm;border:0.3mm solid '+gradeColor+';">GRADE '+p.grade+'</span>';
+  html += '<span style="font-size:11pt;font-weight:900;color:#c0392b;line-height:1;">'+p.vente+' \u20ac</span>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+  if(showImei && imei6) html += '<span style="font-size:4.5pt;color:#777;font-family:monospace;">IMEI:\u00b7\u00b7\u00b7'+imei6+'</span>';
+  else html += '<span></span>';
+  if(showGarantie) html += '<span style="font-size:4.5pt;color:#c0392b;font-weight:700;">\u2713 Gar. '+(p.grade?'12 mois':'24 mois')+'</span>';
+  html += '</div>';
+  html += '<div style="font-size:4pt;color:#999;border-top:0.2mm solid #eee;padding-top:0.6mm;line-height:1;">Solution Phone \u00b7 21 Rue Gambetta \u00b7 71000 M\u00e2con \u00b7 TVA/marge Art.297A</div>';
+  html += '</div></div>';
+  return html;
+}
+
 function showEtiquette(id){
-  var p=phones.find(function(x){return x.id===id;});if(!p)return;curPhone=p;
-  document.getElementById('etiquette-preview').innerHTML='<div style="border:2px solid #000;padding:14px;width:260px;margin:0 auto;font-family:Arial;"><div style="font-size:17px;font-weight:900;border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:8px;">📱 '+p.modele+'</div>'+(p.stockage?'<div>💾 '+p.stockage+' Go</div>':'')+(p.grade?'<div>⭐ Grade : '+p.grade+'</div>':'')+(p.batterie?'<div>🔋 Batterie : '+p.batterie+'%</div>':'')+(p.imei?'<div style="font-size:11px">IMEI : '+p.imei+'</div>':'')+'<div style="font-size:22px;font-weight:900;margin-top:8px;color:#e53e3e;">'+p.vente+' €</div><div style="font-size:10px;color:#666;">TVA sur marge · Art. 297 CGI · Solution Phone · 03 85 33 06 89</div></div>';
+  _etiquettePhone = phones.find(function(x){return x.id===id;});
+  if(!_etiquettePhone) return;
+  curPhone = _etiquettePhone;
+  refreshEtiquette();
   openModal('modal-etiquette');
 }
-function printEtiquette(){var c=document.getElementById('etiquette-preview').innerHTML;var w=window.open('','_blank','width=400,height=400');w.document.write('<!DOCTYPE html><html><head><title>Etiquette</title><style>body{margin:20px;font-family:Arial;}@media print{body{margin:0;}}</style></head><body>'+c+'<script>window.onload=function(){window.print();}<\/script></body></html>');w.document.close();}
+
+function refreshEtiquette(){
+  if(!_etiquettePhone) return;
+  var opts = {
+    grade:    document.getElementById('etiq-show-grade').checked,
+    stockage: document.getElementById('etiq-show-stockage').checked,
+    batterie: document.getElementById('etiq-show-batterie').checked,
+    imei:     document.getElementById('etiq-show-imei').checked,
+    garantie: document.getElementById('etiq-show-garantie').checked
+  };
+  var prev = document.getElementById('etiquette-preview');
+  prev.innerHTML = buildEtiquetteHTML(_etiquettePhone, opts);
+  if(prev.firstChild){
+    prev.firstChild.style.transform = 'scale(1.6)';
+    prev.firstChild.style.transformOrigin = 'top left';
+    prev.style.width = '144mm';
+    prev.style.height = '46.4mm';
+    prev.style.overflow = 'hidden';
+  }
+}
+
+function printEtiquetteBrother(){
+  if(!_etiquettePhone) return;
+  var opts = {
+    grade:    document.getElementById('etiq-show-grade').checked,
+    stockage: document.getElementById('etiq-show-stockage').checked,
+    batterie: document.getElementById('etiq-show-batterie').checked,
+    imei:     document.getElementById('etiq-show-imei').checked,
+    garantie: document.getElementById('etiq-show-garantie').checked
+  };
+  var qty = parseInt(document.getElementById('etiq-qty').value)||1;
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>Etiquette '+_etiquettePhone.modele+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:#fff;}'+
+    '@page{size:90mm 29mm;margin:0;}'+
+    '@media print{.no-print{display:none!important;}.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}}'+
+    'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
+    '<div class="no-print" style="padding:10px;background:#f5f5f5;text-align:center;margin-bottom:10px;">'+
+      '<b style="color:#c0392b;">Brother QL-820NWB &bull; DK-11201 &bull; 29&times;90mm</b><br>'+
+      '<small>S&eacute;lectionnez <b>Brother QL-820NWB</b> dans la liste des imprimantes &bull; Format : DK-11201</small><br><br>'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">'+
+        '&#128438; Imprimer '+qty+' &eacute;tiquette'+(qty>1?'s':'')+'</button>'+
+    '</div>';
+  for(var j=0;j<qty;j++) html += '<div class="etiq-wrap">'+buildEtiquetteHTML(_etiquettePhone, opts)+'</div>';
+  html += '</body></html>';
+  var w = window.open('','_blank','width=800,height=400');
+  w.document.write(html);
+  w.document.close();
+}
+
+// Garde compatibilité ancienne fonction
+function printEtiquette(){ printEtiquetteBrother(); }
+
 
 function getQRCodeURL(text) {
   return 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + encodeURIComponent(text);
