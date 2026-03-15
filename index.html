@@ -2180,8 +2180,8 @@ function buildA4HTML(opts){
         '<div style="font-size:12px;color:#555;margin-top:3px;">Réparation Smartphone · Tablette · PC</div>'+
         '<div style="font-size:11px;color:#777;margin-top:6px;line-height:1.7;">'+
           '21 Rue Gambetta · 71000 Mâcon<br>'+
-          'SIRET : 801 044 785 00021<br>'+
-          'Tél : 03 85 33 06 89'+
+          'Tél : 03 85 33 06 89 · solution.phone71@gmail.com<br>'+
+          'SIRET : 801 044 785 00021'+
         '</div>'+
       '</div></div>'+
 
@@ -2231,19 +2231,47 @@ function buildA4HTML(opts){
     '</div>'+
 
     // NOTES / GARANTIE
-    (opts.notes||opts.garantie ? '<div style="background:#fff8e1;border-left:4px solid #f39c12;padding:10px 14px;border-radius:4px;margin-bottom:8mm;font-size:12px;color:#555;line-height:1.7;">'+
+    (opts.notes||opts.garantie ? '<div style="background:#fff8e1;border-left:4px solid #f39c12;padding:10px 14px;border-radius:4px;margin-bottom:6mm;font-size:12px;color:#555;line-height:1.7;">'+
       (opts.garantie ? '✅ Garantie : <b>'+opts.garantie+'</b><br>' : '')+
       (opts.notes ? opts.notes : '')+
     '</div>' : '')+
 
+    // MODE RÈGLEMENT
+    (opts.mode ? '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8mm;">'+
+      '<div style="background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:8px 16px;font-size:12px;color:#555;">'+
+        '💳 Mode de règlement : <b style="color:#1a1a1a;">'+opts.mode+'</b>'+
+      '</div>'+
+    '</div>' : '')+
+
+    // ZONE SIGNATURE
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:10mm;margin-top:4mm;">'+
+      '<div>'+
+        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Signature du client</div>'+
+        '<div style="border:1px dashed #ddd;border-radius:6px;height:60px;background:#fafafa;display:flex;align-items:center;justify-content:center;">'+
+          '<span style="font-size:11px;color:#ccc;font-style:italic;">Bon pour accord</span>'+
+        '</div>'+
+        '<div style="font-size:10px;color:#aaa;margin-top:6px;">Date et signature :</div>'+
+      '</div>'+
+      '<div>'+
+        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Cachet Solution Phone</div>'+
+        '<div style="border:1px dashed #ddd;border-radius:6px;height:60px;background:#fafafa;display:flex;align-items:center;justify-content:center;">'+
+          '<span style="font-size:11px;color:#ccc;font-style:italic;">Signature du vendeur</span>'+
+        '</div>'+
+        '<div style="font-size:10px;color:#aaa;margin-top:6px;">Date et signature :</div>'+
+      '</div>'+
+    '</div>'+
+
     // PIED DE PAGE
-    '<div style="position:absolute;bottom:12mm;left:14mm;right:14mm;border-top:1px solid #eee;padding-top:6mm;">'+
+    '<div style="position:absolute;bottom:12mm;left:14mm;right:14mm;border-top:2px solid '+couleur+';padding-top:5mm;">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;">'+
         '<div style="font-size:10px;color:#aaa;line-height:1.8;">'+
-          'Solution Phone · 21 Rue Gambetta · 71000 Mâcon · Tél : 03 85 33 06 89<br>'+
+          '<b style="color:'+couleur+';">Solution Phone</b> · 21 Rue Gambetta · 71000 Mâcon<br>'+
+          'Tél : 03 85 33 06 89 · solution.phone71@gmail.com<br>'+
           'SIRET : 801 044 785 00021 · TVA non applicable — Art. 297 A du CGI (régime de la marge)'+
         '</div>'+
-        '<div style="font-size:10px;color:#ccc;text-align:right;">'+typeBadge+' '+opts.numero+'</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:10px;color:#ccc;">'+typeBadge+' '+opts.numero+'</div>'+
+        '</div>'+
       '</div>'+
     '</div>'+
 
