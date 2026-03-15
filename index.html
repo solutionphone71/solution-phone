@@ -252,6 +252,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="sidebar-logo">
       <div class="logo-t">📱 Solution Phone</div>
       <div class="logo-s">Mâcon · Gestion</div>
+      <div id="role-badge" style="font-size:11px;font-weight:700;margin-top:4px;color:var(--warning);">👑 Patron</div>
     </div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📱</span><span>Smartphones</span></div>
@@ -1873,7 +1874,36 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ── SYSTÈME PIN ──
 var _pin = '';
-var _pinCode = '1609';
+var _pinCode      = '1609'; // Patron — accès complet
+var _pinEmployee  = '5555'; // Employé — modules financiers cachés
+var _userRole     = 'patron'; // 'patron' ou 'employe'
+
+// Modules cachés pour les employés
+var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats'];
+
+function appliquerRole(){
+  var isEmploye = _userRole === 'employe';
+  // Sidebar desktop
+  _modulesPatronOnly.forEach(function(mod){
+    var navItem = document.querySelector('.nav-item[onclick*="\''+mod+'\'"]');
+    if(navItem) navItem.style.display = isEmploye ? 'none' : '';
+  });
+  // Menu mobile
+  var mobItems = document.querySelectorAll('.mob-menu-item');
+  mobItems.forEach(function(item){
+    var hidden = _modulesPatronOnly.some(function(m){ return item.getAttribute('onclick') && item.getAttribute('onclick').indexOf("'"+m+"'") !== -1; });
+    if(hidden) item.style.display = isEmploye ? 'none' : '';
+  });
+  // Bouton Z de caisse dans nav mobile bas
+  var mobCaisse = document.getElementById('mob-btn-caisse');
+  if(mobCaisse) mobCaisse.style.display = isEmploye ? 'none' : '';
+  // Badge rôle dans la sidebar
+  var badge = document.getElementById('role-badge');
+  if(badge){
+    badge.textContent = isEmploye ? '👤 Employé' : '👑 Patron';
+    badge.style.color = isEmploye ? 'var(--blue)' : 'var(--warning)';
+  }
+}
 
 function pinPress(n){
   if(n === '') return;
@@ -1899,7 +1929,8 @@ function updatePinDisplay(){
 }
 
 function checkPin(){
-  if(_pin === _pinCode){
+  if(_pin === _pinCode || _pin === _pinEmployee){
+    _userRole = (_pin === _pinEmployee) ? 'employe' : 'patron';
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     if(window.innerWidth <= 768){
@@ -1916,6 +1947,7 @@ function checkPin(){
     renderBatteries();
     renderBonsDepot();
     renderBonsCommande();
+    appliquerRole();
     _pin = '';
     updatePinDisplay();
   } else {
