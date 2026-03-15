@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_etiq_redesign -->
+<!-- v20260315_pin_login -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -23,6 +23,10 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 .login-sub{color:var(--text-muted);font-size:13px;margin-bottom:28px;}
 .login-box input{width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;margin-bottom:10px;}
 .login-box button{width:100%;padding:13px;background:var(--red);border:none;border-radius:8px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;}
+.pin-btn{width:68px;height:68px;background:var(--dark3);border:1.5px solid var(--border);border-radius:50%;color:var(--text);font-size:24px;font-weight:700;cursor:pointer;transition:background .12s,transform .1s;-webkit-tap-highlight-color:transparent;}
+.pin-btn:active{background:var(--red);color:#fff;transform:scale(.92);}
+@keyframes pin-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.pin-shake{animation:pin-shake .4s ease;}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
@@ -211,9 +215,31 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="login-logo">📱</div>
     <div class="login-title">Solution Phone</div>
     <div class="login-sub">21 Rue Gambetta · Mâcon</div>
-    <input type="text" id="login-user" value="admin" placeholder="Identifiant">
-    <input type="password" id="login-pass" value="solution2026" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doLogin()">
-    <button onclick="doLogin()">Connexion</button>
+
+    <!-- Affichage code -->
+    <div style="display:flex;gap:12px;justify-content:center;margin:20px 0 8px;">
+      <div id="pin-d1" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d2" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d3" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d4" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
+    </div>
+    <div id="pin-msg" style="height:18px;font-size:12px;color:var(--red);text-align:center;margin-bottom:12px;"></div>
+
+    <!-- Pavé numérique -->
+    <div style="display:grid;grid-template-columns:repeat(3,68px);gap:10px;justify-content:center;">
+      <button onclick="pinPress(1)" class="pin-btn">1</button>
+      <button onclick="pinPress(2)" class="pin-btn">2</button>
+      <button onclick="pinPress(3)" class="pin-btn">3</button>
+      <button onclick="pinPress(4)" class="pin-btn">4</button>
+      <button onclick="pinPress(5)" class="pin-btn">5</button>
+      <button onclick="pinPress(6)" class="pin-btn">6</button>
+      <button onclick="pinPress(7)" class="pin-btn">7</button>
+      <button onclick="pinPress(8)" class="pin-btn">8</button>
+      <button onclick="pinPress(9)" class="pin-btn">9</button>
+      <button onclick="pinClear()" class="pin-btn" style="font-size:18px;color:var(--text-muted);">⌫</button>
+      <button onclick="pinPress(0)" class="pin-btn">0</button>
+      <button onclick="pinPress('')" class="pin-btn" style="visibility:hidden;"></button>
+    </div>
   </div>
 </div>
 
@@ -1756,23 +1782,62 @@ function showNotif(msg,type){var n=document.getElementById('notif');n.textConten
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-function doLogin(){
-  if(document.getElementById('login-user').value==='admin'&&document.getElementById('login-pass').value==='solution2026'){
+// ── SYSTÈME PIN ──
+var _pin = '';
+var _pinCode = '1609';
+
+function pinPress(n){
+  if(n === '') return;
+  if(_pin.length >= 4) return;
+  _pin += String(n);
+  updatePinDisplay();
+  if(_pin.length === 4) setTimeout(checkPin, 150);
+}
+
+function pinClear(){
+  _pin = _pin.slice(0, -1);
+  updatePinDisplay();
+  document.getElementById('pin-msg').textContent = '';
+}
+
+function updatePinDisplay(){
+  for(var i=1;i<=4;i++){
+    var el = document.getElementById('pin-d'+i);
+    el.textContent = _pin.length >= i ? '●' : '';
+    el.style.borderColor = _pin.length >= i ? 'var(--red)' : 'var(--border)';
+    el.style.background = _pin.length >= i ? 'rgba(192,57,43,0.15)' : 'var(--dark3)';
+  }
+}
+
+function checkPin(){
+  if(_pin === _pinCode){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
-    // Afficher la nav mobile uniquement après connexion
     if(window.innerWidth <= 768){
       document.getElementById('mobile-nav').style.display='block';
     }
     loadFromSupabase().then(function(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
     });
-    // Initialiser les prix dès le login pour que les tableaux soient prêts
     renderEcrans();
     renderBatteries();
     renderBonsDepot();
-  } else {showNotif('Identifiants incorrects','error');}
+    _pin = '';
+    updatePinDisplay();
+  } else {
+    document.getElementById('pin-msg').textContent = '❌ Code incorrect';
+    var box = document.querySelector('.login-box');
+    box.classList.add('pin-shake');
+    setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
+    _pin = '';
+    setTimeout(function(){
+      updatePinDisplay();
+      document.getElementById('pin-msg').textContent = '';
+    }, 600);
+  }
 }
+
+function doLogin(){ checkPin(); }
 
 function showPage(id,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
