@@ -1900,6 +1900,7 @@ function checkPin(){
     loadFromSupabase().then(function(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
       loadApiKeyFromSupabase();
+      loadBonsCommande();
     });
     renderEcrans();
     renderBatteries();
@@ -5251,10 +5252,58 @@ showPage = function(id, el){
 //  MODULE BON DE COMMANDE
 // ============================================================
 
-var bonsCommande = JSON.parse(localStorage.getItem('sp_bons_commande') || '[]');
+var bonsCommande = [];
 var _cmdType = 'reparation';
 
 function saveBonsCommande(){ localStorage.setItem('sp_bons_commande', JSON.stringify(bonsCommande)); }
+
+async function loadBonsCommande(){
+  // Charger depuis Supabase en priorité
+  try {
+    var res = await supaFetch('bons_commande','GET',null,'?order=id.desc');
+    if(res && res.length >= 0){
+      bonsCommande = res.map(function(x){
+        return {
+          id: x.id, numero: x.numero, date: x.date,
+          type: x.type,
+          client: { nom: x.client_nom, tel: x.client_tel },
+          detail: x.detail,
+          prix: Number(x.prix)||0,
+          paye: x.paye||false,
+          traite: x.traite||false,
+          traiteDate: x.traite_date||''
+        };
+      });
+      saveBonsCommande(); // sync local
+    }
+  } catch(e){
+    // Fallback localStorage
+    var local = localStorage.getItem('sp_bons_commande');
+    if(local) bonsCommande = JSON.parse(local);
+  }
+  renderBonsCommande();
+}
+
+async function saveBonCommandeSupabase(cmd){
+  var data = {
+    id: cmd.id, numero: cmd.numero, date: cmd.date,
+    type: cmd.type,
+    client_nom: cmd.client.nom, client_tel: cmd.client.tel,
+    detail: cmd.detail, prix: cmd.prix,
+    paye: cmd.paye||false,
+    traite: cmd.traite||false,
+    traite_date: cmd.traiteDate||null
+  };
+  try {
+    var ex = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id);
+    if(ex && ex.length > 0){
+      await supaFetch('bons_commande','PATCH',data,'?id=eq.'+cmd.id);
+    } else {
+      await supaFetch('bons_commande','POST',data);
+    }
+  } catch(e){ console.log('Erreur save bon commande',e); }
+  saveBonsCommande();
+}
 
 function setCmdType(type){
   _cmdType = type;
@@ -5298,7 +5347,7 @@ function genererBonCommande(){
     detail, prix, paye
   };
   bonsCommande.push(cmd);
-  saveBonsCommande();
+  saveBonCommandeSupabase(cmd);
   renderBonsCommande();
   printTicketCommande(cmd);
 
@@ -5441,7 +5490,7 @@ function envoyerSMSCommande(id){
   // Marquer comme traité
   c.traite = true;
   c.traiteDate = new Date().toISOString().split('T')[0];
-  saveBonsCommande();
+  saveBonCommandeSupabase(c);
   renderBonsCommande();
   showNotif(c.client.nom+' archivé ✓','success');
   // Ouvrir SMS
@@ -5451,7 +5500,9 @@ function envoyerSMSCommande(id){
 function supprimerCommande(id){
   if(!confirm('Supprimer ce bon ?')) return;
   bonsCommande = bonsCommande.filter(function(c){ return c.id !== id; });
-  saveBonsCommande(); renderBonsCommande();
+  saveBonsCommande();
+  try { supaFetch('bons_commande','DELETE',null,'?id=eq.'+id); } catch(e){}
+  renderBonsCommande();
 }
 
 // ============================================================
