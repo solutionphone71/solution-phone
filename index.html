@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260314_141348 -->
+<!-- v20260315_instagram -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -115,6 +115,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur Rachat</span></div>
+    <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
   </div>
   <div class="main">
 
@@ -568,11 +569,191 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <div id="comptable-content"></div>
     </div>
 
+  <!-- ========== PAGE INSTAGRAM / IA ========== -->
+  <div class="page" id="page-instagram">
+    <div class="page-title">📸 Instagram &amp; Réseaux Sociaux</div>
+    <div class="page-sub">Créez du contenu optimisé avec l'IA Claude</div>
+
+    <!-- Config clé API -->
+    <div id="ig-api-setup" class="card" style="border-color:var(--warning);margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="font-size:32px;">🔑</div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:4px;">Clé API Anthropic (Claude)</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Nécessaire pour générer du contenu avec l'IA. Stockée localement sur votre appareil.</div>
+          <div style="display:flex;gap:8px;">
+            <input type="password" id="ig-api-key" placeholder="sk-ant-api03-..." style="flex:1;padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
+            <button class="btn btn-primary" onclick="saveApiKey()">✅ Enregistrer</button>
+          </div>
+        </div>
+        <a href="https://console.anthropic.com/" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;white-space:nowrap;">Créer une clé →</a>
+      </div>
+    </div>
+
+    <!-- Contenu principal (affiché après config clé) -->
+    <div id="ig-content" style="display:none;">
+      <!-- Onglets -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
+        <button class="btn btn-primary" id="ig-btn-captions" onclick="showIgTab('captions')">✍️ Captions</button>
+        <button class="btn" id="ig-btn-calendar" onclick="showIgTab('calendar')">📅 Calendrier</button>
+        <button class="btn" id="ig-btn-ideas" onclick="showIgTab('ideas')">💡 Idées Stock</button>
+        <button class="btn" id="ig-btn-responses" onclick="showIgTab('responses')">💬 Réponses</button>
+        <div style="margin-left:auto;">
+          <button class="btn btn-sm" style="border-color:var(--text-dim);color:var(--text-muted);" onclick="document.getElementById('ig-api-setup').style.display='block';document.getElementById('ig-content').style.display='none';">⚙️ Changer la clé</button>
+        </div>
+      </div>
+
+      <!-- TAB : CAPTIONS -->
+      <div id="ig-tab-captions">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">✨ Générateur de caption</div></div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="form-group"><label>Type de post</label>
+                <select id="ig-post-type">
+                  <option value="Promo smartphone reconditionné">📱 Promo smartphone reconditionné</option>
+                  <option value="Réparation téléphone">🔧 Réparation téléphone</option>
+                  <option value="Nouveau stock arrivé en boutique">🆕 Nouveau stock arrivé</option>
+                  <option value="Offre spéciale bonne affaire">🔥 Offre spéciale / Bonne affaire</option>
+                  <option value="Label QualiRépar garantie qualité">🏆 Label QualiRépar</option>
+                  <option value="Présentation de la boutique Solution Phone">🏪 Présentation boutique</option>
+                  <option value="Conseil téléphonie astuce pratique">💡 Conseil / Astuce</option>
+                  <option value="Rachat de smartphone reprise">💰 Rachat de smartphone</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Ton du message</label>
+                <select id="ig-tone">
+                  <option value="Professionnel et chaleureux">Professionnel et chaleureux</option>
+                  <option value="Dynamique et enthousiaste">Dynamique et enthousiaste</option>
+                  <option value="Informatif et rassurant">Informatif et rassurant</option>
+                  <option value="Humoristique et décontracté">Humoristique et décontracté</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Détails supplémentaires (optionnel)</label>
+                <textarea id="ig-post-details" placeholder="ex: iPhone 15 256Go Grade A à 699€, batterie 94%..." style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+              </div>
+              <button class="btn btn-primary" id="ig-gen-btn" onclick="generateCaption()" style="padding:12px;">✨ Générer avec l'IA Claude</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📝 Résultat généré</div></div>
+            <div id="ig-caption-result" style="color:var(--text-muted);text-align:center;padding:40px 16px;line-height:1.8;">
+              ✨ Remplissez le formulaire<br>et cliquez sur <b style="color:var(--text);">Générer</b><br><span style="font-size:12px;">L'IA créera un post optimisé pour Instagram</span>
+            </div>
+            <textarea id="ig-last-result" style="display:none;"></textarea>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px;">
+          <div class="card-header">
+            <div class="card-title">💾 Brouillons sauvegardés</div>
+            <button class="btn btn-sm" onclick="renderIgDrafts()">🔄 Actualiser</button>
+          </div>
+          <div id="ig-drafts-list"><div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">Aucun brouillon enregistré</div></div>
+        </div>
+      </div>
+
+      <!-- TAB : CALENDRIER -->
+      <div id="ig-tab-calendar" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header">
+            <div class="card-title">📅 Calendrier des publications</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn btn-sm" onclick="prevCalMonth()">◀</button>
+              <span id="ig-cal-title" style="font-weight:700;min-width:150px;text-align:center;font-size:15px;"></span>
+              <button class="btn btn-sm" onclick="nextCalMonth()">▶</button>
+            </div>
+          </div>
+          <div id="ig-calendar"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 Tous les posts planifiés</div></div>
+          <div id="ig-posts-list"><div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">Cliquez sur un jour du calendrier pour planifier un post</div></div>
+        </div>
+      </div>
+
+      <!-- TAB : IDEES STOCK -->
+      <div id="ig-tab-ideas" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="card-header">
+            <div class="card-title">💡 Posts suggérés selon votre stock</div>
+            <button class="btn btn-sm btn-primary" onclick="renderIgIdeas()">🔄 Mettre à jour</button>
+          </div>
+          <div id="ig-ideas-list"><div style="color:var(--text-muted);text-align:center;padding:20px;">Chargement du stock...</div></div>
+        </div>
+        <div id="ig-ideas-result"></div>
+      </div>
+
+      <!-- TAB : REPONSES -->
+      <div id="ig-tab-responses" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">💬 Répondre à un commentaire</div></div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="form-group"><label>Commentaire reçu *</label>
+                <textarea id="ig-comment" placeholder="ex: C'est quoi le tarif pour une réparation écran iPhone 12 ?" style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:110px;resize:vertical;"></textarea>
+              </div>
+              <div class="form-group"><label>Type de commentaire</label>
+                <select id="ig-response-context">
+                  <option value="Commentaire positif ou compliment client">😊 Commentaire positif</option>
+                  <option value="Demande de prix ou d informations sur un produit ou service">💬 Demande d'information / prix</option>
+                  <option value="Reclamation ou avis negatif insatisfaction">😠 Réclamation / avis négatif</option>
+                  <option value="Question technique sur une reparation smartphone">🔧 Question technique réparation</option>
+                  <option value="Interet pour un smartphone reconditionne en vente">📱 Intérêt pour un produit</option>
+                  <option value="Demande de disponibilite ou d horaires">🕐 Disponibilité / horaires</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="ig-resp-btn" onclick="generateResponse()" style="padding:12px;">💬 Générer les réponses avec IA</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">✉️ Réponses suggérées</div></div>
+            <div id="ig-response-result" style="color:var(--text-muted);text-align:center;padding:40px 16px;line-height:1.8;">
+              Entrez un commentaire<br>et cliquez sur <b style="color:var(--text);">Générer</b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ========== FIN PAGE INSTAGRAM ========== -->
+
 </div>
 </div>
 </div>
 
-<!-- MODALS -->
+<!-- MODAL : Planification post Instagram -->
+<div class="modal-overlay" id="modal-ig-post">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">📅 Planifier un post Instagram</div>
+    <input type="hidden" id="ig-plan-date">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="form-group">
+        <label>Date</label>
+        <div id="ig-plan-date-display" style="font-size:16px;font-weight:700;color:var(--red);padding:8px 0;"></div>
+      </div>
+      <div class="form-group"><label>Type de post</label>
+        <select id="ig-plan-type">
+          <option value="Promo Smartphone">📱 Promo Smartphone</option>
+          <option value="Réparation">🔧 Réparation</option>
+          <option value="Nouveau stock">🆕 Nouveau stock</option>
+          <option value="Offre spéciale">🔥 Offre spéciale</option>
+          <option value="Conseil">💡 Conseil / Astuce</option>
+          <option value="QualiRépar">🏆 QualiRépar</option>
+          <option value="Rachat">💰 Rachat</option>
+          <option value="Autre">📌 Autre</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Note / Idée</label>
+        <textarea id="ig-plan-note" placeholder="ex: Mettre en avant l'iPhone 15 Pro arrivé cette semaine..." style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveIgPost()">✅ Planifier</button>
+      <button class="btn" onclick="closeModal('modal-ig-post')">Annuler</button>
+    </div>
+  </div>
+</div>
+<!-- FIN MODAL Instagram -->
 <div class="modal-overlay" id="modal-add-phone">
   <div class="modal">
     <div class="modal-title">➕ Ajouter un smartphone</div>
@@ -866,6 +1047,7 @@ function showPage(id,el){
   if(id==='devis')renderDevis();
   if(id==='clients')renderClients();
   if(id==='rachat')calculerRachat();
+  if(id==='instagram'){renderInstagram();}
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
 }
@@ -2364,6 +2546,399 @@ function renderDashboard(){
   var fin=calcFinales();var rc=caisse.slice(-5).reverse();
   document.getElementById('dash-caisse').innerHTML=rc.map(function(c){var i=caisse.indexOf(c);return'<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(2)+' €':'—')+'</td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucune saisie</td></tr>';
 }
+
+// ============================================================
+//  MODULE INSTAGRAM / IA — Solution Phone
+// ============================================================
+
+var igPosts   = JSON.parse(localStorage.getItem('sp_ig_posts')  || '[]');
+var igDrafts  = JSON.parse(localStorage.getItem('sp_ig_drafts') || '[]');
+var igCalMonth = (function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})();
+
+function getIgApiKey(){return localStorage.getItem('sp_claude_key')||'';}
+
+function saveApiKey(){
+  var k=document.getElementById('ig-api-key').value.trim();
+  if(!k){showNotif('Clé vide !','error');return;}
+  localStorage.setItem('sp_claude_key',k);
+  showNotif('Clé API sauvegardée !','success');
+  document.getElementById('ig-api-setup').style.display='none';
+  document.getElementById('ig-content').style.display='block';
+  showIgTab('captions');
+  renderIgDrafts();
+}
+
+function renderInstagram(){
+  var k=getIgApiKey();
+  document.getElementById('ig-api-key').value=k;
+  if(k){
+    document.getElementById('ig-api-setup').style.display='none';
+    document.getElementById('ig-content').style.display='block';
+    showIgTab('captions');
+    renderIgDrafts();
+  } else {
+    document.getElementById('ig-api-setup').style.display='block';
+    document.getElementById('ig-content').style.display='none';
+  }
+}
+
+function showIgTab(tab){
+  ['captions','calendar','ideas','responses'].forEach(function(t){
+    var el=document.getElementById('ig-tab-'+t);
+    var btn=document.getElementById('ig-btn-'+t);
+    if(el)el.style.display=(t===tab?'block':'none');
+    if(btn){btn.className='btn'+(t===tab?' btn-primary':'');}
+  });
+  if(tab==='calendar'){renderIgCalendar();renderIgPostsList();}
+  if(tab==='ideas'){renderIgIdeas();}
+}
+
+// ---- Appel API Claude ----
+async function callClaude(prompt){
+  var key=getIgApiKey();
+  if(!key){showNotif('Clé API manquante','error');throw new Error('No API key');}
+  var resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':key,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-sonnet-4-5',
+      max_tokens:1000,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  if(!resp.ok){var err=await resp.json().catch(function(){return{};});throw new Error((err.error&&err.error.message)||'Erreur '+resp.status);}
+  var data=await resp.json();
+  return data.content[0].text;
+}
+
+// ---- Génération de caption ----
+async function generateCaption(){
+  var type=document.getElementById('ig-post-type').value;
+  var details=document.getElementById('ig-post-details').value;
+  var tone=document.getElementById('ig-tone').value;
+  var btn=document.getElementById('ig-gen-btn');
+  btn.textContent='⏳ Génération en cours...';btn.disabled=true;
+  document.getElementById('ig-caption-result').innerHTML='<div style="text-align:center;padding:30px;color:var(--text-muted);">🤖 L\'IA rédige votre post...</div>';
+
+  var stockDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).slice(0,5)
+    .map(function(p){return p.modele+(p.stockage?' '+p.stockage+'Go':'')+' Grade '+(p.grade||'A')+' à '+p.vente+'€';}).join(', ');
+
+  var prompt='Tu es community manager expert pour "Solution Phone", une boutique de smartphones reconditionnés et de réparations au 21 Rue Gambetta à Mâcon (71000).\n\n'+
+    'Type de post : '+type+'\n'+
+    'Ton souhaité : '+tone+'\n'+
+    (details?'Informations supplémentaires : '+details+'\n':'')+
+    (stockDispo?'Stock disponible en ce moment : '+stockDispo+'\n':'')+
+    '\nCrée un post Instagram optimisé avec :\n'+
+    '1. Un texte accrocheur avec émojis (80-150 mots max)\n'+
+    '2. Une call-to-action claire (venir en boutique, appeler, DM)\n'+
+    '3. La mention : 📍 21 Rue Gambetta, Mâcon\n'+
+    '4. 15 à 20 hashtags pertinents (mix populaires + locaux : #macon #macon71 #bourgogne etc.)\n\n'+
+    'Format EXACT attendu :\n'+
+    '📝 TEXTE :\n[texte du post]\n\n'+
+    '#️⃣ HASHTAGS :\n[hashtags séparés par des espaces]';
+
+  try{
+    var result=await callClaude(prompt);
+    document.getElementById('ig-last-result').value=result;
+    var safe=result.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    document.getElementById('ig-caption-result').innerHTML=
+      '<div style="background:var(--dark3);border:1px solid var(--green);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:340px;overflow-y:auto;">'+safe+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">'+
+      '<button class="btn btn-primary btn-sm" onclick="copyIgCaption()">📋 Copier</button>'+
+      '<button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" onclick="saveIgDraft()">💾 Sauvegarder en brouillon</button>'+
+      '</div>';
+    showNotif('Caption générée !','success');
+  }catch(e){
+    document.getElementById('ig-caption-result').innerHTML='<div style="color:var(--red);padding:16px;">❌ Erreur : '+e.message+'</div>';
+    showNotif('Erreur API : '+e.message,'error');
+  }
+  btn.textContent='✨ Générer avec l\'IA Claude';btn.disabled=false;
+}
+
+function copyIgCaption(){
+  var t=document.getElementById('ig-last-result').value;
+  if(!t)return;
+  navigator.clipboard.writeText(t).then(function(){showNotif('Copié dans le presse-papier !','success');});
+}
+
+function saveIgDraft(){
+  var t=document.getElementById('ig-last-result').value;
+  if(!t)return;
+  var type=document.getElementById('ig-post-type').value;
+  igDrafts.unshift({id:Date.now(),date:new Date().toISOString(),type:type,text:t});
+  if(igDrafts.length>20)igDrafts=igDrafts.slice(0,20);
+  localStorage.setItem('sp_ig_drafts',JSON.stringify(igDrafts));
+  renderIgDrafts();
+  showNotif('Brouillon sauvegardé !','success');
+}
+
+function renderIgDrafts(){
+  var el=document.getElementById('ig-drafts-list');
+  if(!el)return;
+  if(!igDrafts.length){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:13px;">Aucun brouillon</div>';return;}
+  el.innerHTML=igDrafts.map(function(d,i){
+    var dt=new Date(d.date).toLocaleDateString('fr-FR');
+    var preview=d.text.substring(0,80).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'...';
+    return '<div style="display:flex;justify-content:space-between;align-items:start;padding:10px;border-bottom:1px solid var(--border);gap:10px;">'+
+      '<div style="flex:1;cursor:pointer;" onclick="showDraftFull('+i+')">'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">'+dt+' · '+d.type+'</div>'+
+      '<div style="font-size:12px;color:var(--text);">'+preview+'</div></div>'+
+      '<div style="display:flex;gap:6px;flex-shrink:0;">'+
+      '<button class="btn btn-sm" onclick="copyDraft('+i+')">📋</button>'+
+      '<button class="btn btn-sm" style="border-color:var(--red);color:var(--red);" onclick="deleteDraft('+i+')">🗑️</button></div>'+
+      '</div>';
+  }).join('');
+}
+
+function showDraftFull(i){
+  var d=igDrafts[i];if(!d)return;
+  document.getElementById('ig-last-result').value=d.text;
+  var safe=d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('ig-caption-result').innerHTML=
+    '<div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:340px;overflow-y:auto;">'+safe+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="copyIgCaption()">📋 Copier</button></div>';
+}
+
+function copyDraft(i){
+  var d=igDrafts[i];if(!d)return;
+  navigator.clipboard.writeText(d.text).then(function(){showNotif('Copié !','success');});
+}
+
+function deleteDraft(i){
+  if(!confirm('Supprimer ce brouillon ?'))return;
+  igDrafts.splice(i,1);
+  localStorage.setItem('sp_ig_drafts',JSON.stringify(igDrafts));
+  renderIgDrafts();
+}
+
+// ---- Calendrier ----
+function renderIgCalendar(){
+  var parts=igCalMonth.split('-');
+  var year=parseInt(parts[0]),month=parseInt(parts[1]);
+  var firstDay=new Date(year,month-1,1).getDay();
+  firstDay=firstDay===0?6:firstDay-1;
+  var daysInMonth=new Date(year,month,0).getDate();
+  var monthNames=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var el=document.getElementById('ig-cal-title');
+  if(el)el.textContent=monthNames[month-1]+' '+year;
+
+  var html='<table style="width:100%;border-collapse:collapse;margin-top:8px;">';
+  html+='<thead><tr>'+['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(function(d){
+    return '<th style="padding:8px 4px;text-align:center;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">'+d+'</th>';
+  }).join('')+'</tr></thead><tbody>';
+
+  var day=1;
+  for(var week=0;week<6;week++){
+    if(day>daysInMonth)break;
+    html+='<tr>';
+    for(var dow=0;dow<7;dow++){
+      if((week===0&&dow<firstDay)||day>daysInMonth){
+        html+='<td style="padding:3px;"></td>';
+      } else {
+        var ds=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+        var todayStr=(new Date()).toISOString().substring(0,10);
+        var isToday=(ds===todayStr);
+        var posts=igPosts.filter(function(p){return p.date===ds;});
+        var hasPosts=posts.length>0;
+        html+='<td style="padding:3px;vertical-align:top;" onclick="openIgPlanModal(\''+ds+'\')">';
+        html+='<div style="background:'+(hasPosts?'rgba(229,62,62,0.12)':'var(--dark3)')+';border:1px solid '+(isToday?'var(--blue)':hasPosts?'var(--red)':'var(--border)')+';border-radius:8px;padding:6px;min-height:58px;cursor:pointer;transition:.15s;" onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">';
+        html+='<div style="font-size:12px;font-weight:700;color:'+(isToday?'var(--blue)':hasPosts?'var(--red)':'var(--text-muted)')+';">'+day+'</div>';
+        if(hasPosts){
+          posts.forEach(function(p){
+            html+='<div style="font-size:9px;background:var(--red);color:#fff;border-radius:3px;padding:2px 4px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">📸 '+p.type+'</div>';
+          });
+        } else {
+          html+='<div style="font-size:9px;color:var(--text-dim);margin-top:2px;text-align:center;">+</div>';
+        }
+        html+='</div></td>';
+        day++;
+      }
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+  var calEl=document.getElementById('ig-calendar');
+  if(calEl)calEl.innerHTML=html;
+}
+
+function prevCalMonth(){
+  var p=igCalMonth.split('-');var y=parseInt(p[0]),m=parseInt(p[1]);
+  m--;if(m<1){m=12;y--;}
+  igCalMonth=y+'-'+String(m).padStart(2,'0');
+  renderIgCalendar();
+}
+
+function nextCalMonth(){
+  var p=igCalMonth.split('-');var y=parseInt(p[0]),m=parseInt(p[1]);
+  m++;if(m>12){m=1;y++;}
+  igCalMonth=y+'-'+String(m).padStart(2,'0');
+  renderIgCalendar();
+}
+
+function openIgPlanModal(date){
+  document.getElementById('ig-plan-date').value=date;
+  var parts=date.split('-');
+  document.getElementById('ig-plan-date-display').textContent=parts[2]+'/'+parts[1]+'/'+parts[0];
+  document.getElementById('ig-plan-type').value='Promo Smartphone';
+  document.getElementById('ig-plan-note').value='';
+  openModal('modal-ig-post');
+}
+
+function saveIgPost(){
+  var date=document.getElementById('ig-plan-date').value;
+  var type=document.getElementById('ig-plan-type').value;
+  var note=document.getElementById('ig-plan-note').value;
+  if(!date){showNotif('Date manquante','error');return;}
+  igPosts=igPosts.filter(function(p){return!(p.date===date&&p.type===type);});
+  igPosts.push({id:Date.now(),date:date,type:type,note:note});
+  igPosts.sort(function(a,b){return a.date.localeCompare(b.date);});
+  localStorage.setItem('sp_ig_posts',JSON.stringify(igPosts));
+  closeModal('modal-ig-post');
+  renderIgCalendar();
+  renderIgPostsList();
+  showNotif('Post planifié le '+document.getElementById('ig-plan-date-display').textContent+' !','success');
+}
+
+function renderIgPostsList(){
+  var el=document.getElementById('ig-posts-list');
+  if(!el)return;
+  var upcoming=igPosts.filter(function(p){return p.date>=(new Date()).toISOString().substring(0,10);}).slice(0,10);
+  if(!upcoming.length){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:16px;font-size:13px;">Aucun post planifié à venir</div>';return;}
+  el.innerHTML='<table style="width:100%;font-size:13px;border-collapse:collapse;">'+
+    '<thead><tr><th>Date</th><th>Type</th><th>Note</th><th></th></tr></thead><tbody>'+
+    upcoming.map(function(p){
+      var parts=p.date.split('-');
+      return '<tr><td style="padding:9px 12px;border-bottom:1px solid var(--border);font-weight:600;">'+parts[2]+'/'+parts[1]+'/'+parts[0]+'</td>'+
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--border);"><span class="badge badge-red">'+p.type+'</span></td>'+
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text-muted);">'+(p.note||'—')+'</td>'+
+        '<td style="padding:9px 12px;border-bottom:1px solid var(--border);"><button class="btn btn-sm" style="border-color:var(--red);color:var(--red);" onclick="deleteIgPost('+p.id+')">🗑️</button></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+
+function deleteIgPost(id){
+  if(!confirm('Supprimer ce post planifié ?'))return;
+  igPosts=igPosts.filter(function(p){return p.id!==id;});
+  localStorage.setItem('sp_ig_posts',JSON.stringify(igPosts));
+  renderIgCalendar();
+  renderIgPostsList();
+}
+
+// ---- Idées selon le stock ----
+function renderIgIdeas(){
+  var el=document.getElementById('ig-ideas-list');
+  if(!el)return;
+  var available=phones.filter(function(p){return p.etat==='DISPONIBLE';});
+  if(!available.length){
+    el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:30px;">📱 Aucun smartphone disponible en stock</div>';
+    return;
+  }
+  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:4px;">'+
+    available.slice(0,8).map(function(p){
+      var marge=p.vente-p.achat;
+      var enc=encodeURIComponent(p.modele);
+      return '<div style="background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:start;">'+
+        '<div><div style="font-weight:700;font-size:14px;">📱 '+p.modele+'</div>'+
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Grade '+(p.grade||'A')+' · '+(p.stockage||'?')+'Go · '+(p.batterie||'?')+'%</div></div>'+
+        '<div style="text-align:right;"><div style="font-size:17px;font-weight:800;color:var(--blue);">'+p.vente+' €</div>'+
+        '<div style="font-size:11px;color:var(--green);">+'+marge+' € marge</div></div></div>'+
+        '<button class="btn btn-primary btn-sm" onclick="generatePhonePost(\''+enc+'\','+p.vente+',\''+(p.grade||'A')+'\','+(p.stockage||128)+','+(p.batterie||80)+')" style="width:100%;">✨ Générer un post</button>'+
+        '</div>';
+    }).join('')+'</div>';
+}
+
+async function generatePhonePost(enc,prix,grade,stockage,batterie){
+  var modele=decodeURIComponent(enc);
+  var res=document.getElementById('ig-ideas-result');
+  res.innerHTML='<div class="card"><div style="text-align:center;padding:24px;color:var(--text-muted);">⏳ L\'IA rédige le post pour le '+modele+'...</div></div>';
+
+  var gradeLabel={'A+':'comme neuf, état irréprochable','A':'très bon état, légères traces d\'usage','B':'bon état, quelques micro-rayures','C':'état correct, marques visibles'}[grade]||'reconditionné';
+
+  var prompt='Tu es community manager pour "Solution Phone", boutique de smartphones reconditionnés au 21 Rue Gambetta, Mâcon.\n\n'+
+    'Crée un post Instagram vendeur pour ce smartphone :\n'+
+    '- Modèle : '+modele+'\n'+
+    '- Prix : '+prix+'€\n'+
+    '- Grade '+grade+' ('+gradeLabel+')\n'+
+    '- Stockage : '+stockage+'Go\n'+
+    '- Batterie : '+batterie+'%\n\n'+
+    'Le post doit :\n'+
+    '✅ Être enthousiaste et vendeur\n'+
+    '✅ Mettre en avant le rapport qualité/prix du reconditionné\n'+
+    '✅ Mentionner batterie, stockage et grade\n'+
+    '✅ Avoir une call-to-action : venir en boutique ou envoyer un DM\n'+
+    '✅ Se terminer par : 📍 21 Rue Gambetta, Mâcon\n'+
+    '✅ Inclure 15 hashtags pertinents dont #macon #reconditione #secondemain\n\n'+
+    'Format attendu :\n📝 TEXTE :\n[texte]\n\n#️⃣ HASHTAGS :\n[hashtags]';
+
+  try{
+    var text=await callClaude(prompt);
+    var safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    res.innerHTML='<div class="card">'+
+      '<div class="card-header"><div class="card-title">✨ Post généré pour '+modele+'</div></div>'+
+      '<div style="background:var(--dark3);border:1px solid var(--green);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:300px;overflow-y:auto;">'+safe+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:12px;">'+
+      '<button class="btn btn-primary btn-sm" id="ig-ideas-copy-btn">📋 Copier</button>'+
+      '<button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" id="ig-ideas-save-btn">💾 Sauvegarder</button>'+
+      '</div></div>';
+    document.getElementById('ig-ideas-copy-btn').addEventListener('click',function(){
+      navigator.clipboard.writeText(text).then(function(){showNotif('Copié !','success');});
+    });
+    document.getElementById('ig-ideas-save-btn').addEventListener('click',function(){
+      igDrafts.unshift({id:Date.now(),date:new Date().toISOString(),type:'Promo '+modele,text:text});
+      localStorage.setItem('sp_ig_drafts',JSON.stringify(igDrafts));
+      showNotif('Sauvegardé dans les brouillons !','success');
+    });
+    showNotif('Post généré !','success');
+  }catch(e){
+    res.innerHTML='<div class="card"><div style="color:var(--red);padding:16px;">❌ Erreur : '+e.message+'</div></div>';
+  }
+}
+
+// ---- Réponses aux commentaires ----
+async function generateResponse(){
+  var comment=document.getElementById('ig-comment').value.trim();
+  var context=document.getElementById('ig-response-context').value;
+  if(!comment){showNotif('Entrez un commentaire à traiter','error');return;}
+  var btn=document.getElementById('ig-resp-btn');
+  btn.textContent='⏳ Génération...';btn.disabled=true;
+  document.getElementById('ig-response-result').innerHTML='<div style="text-align:center;padding:24px;color:var(--text-muted);">🤖 L\'IA rédige les réponses...</div>';
+
+  var prompt='Tu es responsable des réseaux sociaux de "Solution Phone", boutique de smartphones reconditionnés et réparations au 21 Rue Gambetta, Mâcon.\n\n'+
+    'Un utilisateur a posté ce commentaire Instagram : "'+comment+'"\n'+
+    'Type de commentaire : '+context+'\n\n'+
+    'Génère 2 réponses professionnelles, chaleureuses et engageantes :\n\n'+
+    '1. RÉPONSE COURTE (1-2 lignes max, directe avec émoji)\n'+
+    '2. RÉPONSE COMPLÈTE (3-5 lignes, plus détaillée, avec invitation à venir ou à nous contacter : 06/03 XX XX XX ou en DM)\n\n'+
+    'Ton : professionnel mais chaleureux, représente bien une petite boutique de quartier à Mâcon.\n'+
+    'Ne mentionne pas de prix exacts.\n\n'+
+    'Format EXACT :\n💬 RÉPONSE COURTE :\n[réponse]\n\n📩 RÉPONSE COMPLÈTE :\n[réponse]';
+
+  try{
+    var text=await callClaude(prompt);
+    var safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    document.getElementById('ig-response-result').innerHTML=
+      '<div style="background:var(--dark3);border:1px solid var(--blue);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;">'+safe+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:12px;">'+
+      '<button class="btn btn-primary btn-sm" id="ig-resp-copy-btn">📋 Copier</button></div>';
+    document.getElementById('ig-resp-copy-btn').addEventListener('click',function(){
+      navigator.clipboard.writeText(text).then(function(){showNotif('Copié !','success');});
+    });
+    showNotif('Réponses générées !','success');
+  }catch(e){
+    document.getElementById('ig-response-result').innerHTML='<div style="color:var(--red);padding:16px;">❌ Erreur : '+e.message+'</div>';
+    showNotif('Erreur : '+e.message,'error');
+  }
+  btn.textContent='💬 Générer les réponses avec IA';btn.disabled=false;
+}
+
+// ============================================================
+//  FIN MODULE INSTAGRAM / IA
+// ============================================================
 </script>
 </body>
 </html>
