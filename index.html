@@ -238,49 +238,63 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
 
     <div class="page" id="page-rachat">
-      <div class="page-title">Calculateur de Rachat</div>
-      <div class="page-sub">Estimez le prix de rachat d un smartphone</div>
+      <div class="page-title">🧮 Calculateur de Rachat</div>
+      <div class="page-sub">Prix basés sur BackMarket + votre historique — Propulsé par IA</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
         <div class="card">
-          <div class="card-header"><div class="card-title">🧮 Estimation</div></div>
+          <div class="card-header"><div class="card-title">📋 Informations du smartphone</div></div>
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <div class="form-group"><label>Modèle</label>
-              <input type="text" id="rc-modele" placeholder="ex: iPhone 13" oninput="calculerRachat()">
+            <div class="form-group">
+              <label>Modèle *</label>
+              <input type="text" id="rc-modele" placeholder="ex: iPhone 13, Samsung S23..." style="font-size:15px;">
             </div>
-            <div class="form-group"><label>Grade</label>
-              <select id="rc-grade" onchange="calculerRachat()">
-                <option value="A+">A+ (comme neuf)</option>
-                <option value="A">A (très bon état)</option>
-                <option value="B">B (bon état)</option>
-                <option value="C">C (état correct)</option>
-              </select>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-group"><label>Stockage</label>
+                <select id="rc-stockage">
+                  <option value="64">64 Go</option>
+                  <option value="128" selected>128 Go</option>
+                  <option value="256">256 Go</option>
+                  <option value="512">512 Go</option>
+                  <option value="1024">1 To</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Batterie (%)</label>
+                <input type="number" id="rc-batterie" placeholder="ex: 85" min="0" max="100" value="85">
+              </div>
             </div>
-            <div class="form-group"><label>Batterie (%)</label>
-              <input type="number" id="rc-batterie" placeholder="ex: 85" min="0" max="100" oninput="calculerRachat()">
-            </div>
-            <div class="form-group"><label>Stockage (Go)</label>
-              <select id="rc-stockage" onchange="calculerRachat()">
-                <option value="64">64 Go</option>
-                <option value="128" selected>128 Go</option>
-                <option value="256">256 Go</option>
-                <option value="512">512 Go</option>
+            <div class="form-group"><label>État général</label>
+              <select id="rc-grade">
+                <option value="A+">A+ — Comme neuf, aucun défaut</option>
+                <option value="A" selected>A — Très bon état, micro-traces</option>
+                <option value="B">B — Bon état, rayures légères</option>
+                <option value="C">C — État correct, marques visibles</option>
               </select>
             </div>
             <div class="form-group"><label>État écran</label>
-              <select id="rc-ecran" onchange="calculerRachat()">
-                <option value="1">Parfait</option>
-                <option value="0.9">Micro-rayures</option>
-                <option value="0.75">Rayures visibles</option>
-                <option value="0.5">Fissure</option>
+              <select id="rc-ecran">
+                <option value="parfait">✅ Parfait</option>
+                <option value="micro">🔍 Micro-rayures</option>
+                <option value="rayures">⚠️ Rayures visibles</option>
+                <option value="fissure">❌ Fissure</option>
               </select>
+            </div>
+            <div class="form-group"><label>Remarques (optionnel)</label>
+              <input type="text" id="rc-remarques" placeholder="ex: bouton home HS, double SIM, boîte d'origine...">
+            </div>
+            <button class="btn btn-primary" id="rc-btn" onclick="calculerRachatIA()" style="padding:13px;font-size:15px;">
+              🤖 Estimer avec l'IA + BackMarket
+            </button>
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;">
+              L'IA consulte les prix BackMarket en temps réel et analyse votre historique
             </div>
           </div>
         </div>
         <div class="card">
-          <div class="card-header"><div class="card-title">💰 Résultat</div></div>
+          <div class="card-header"><div class="card-title">💰 Estimation</div></div>
           <div id="rachat-result">
-            <div style="text-align:center;color:var(--text-muted);padding:40px;">
-              Remplissez le formulaire pour obtenir une estimation
+            <div style="text-align:center;color:var(--text-muted);padding:40px;line-height:2;">
+              🤖 Remplissez le formulaire<br>et cliquez sur <b style="color:var(--text)">Estimer avec l'IA</b><br>
+              <span style="font-size:12px;">L'IA analyse les prix BackMarket<br>+ votre historique d'achats</span>
             </div>
           </div>
         </div>
@@ -1436,64 +1450,136 @@ function previewPhoto(input) {
 }
 
 // ===== CALCULATEUR DE RACHAT =====
-function calculerRachat() {
-  var modele = document.getElementById('rc-modele').value.trim().toLowerCase();
-  var grade = document.getElementById('rc-grade').value;
-  var batterie = parseInt(document.getElementById('rc-batterie').value) || 80;
-  var stockage = parseInt(document.getElementById('rc-stockage').value);
-  var ecran = parseFloat(document.getElementById('rc-ecran').value);
+async function calculerRachatIA() {
+  var modele = document.getElementById('rc-modele').value.trim();
+  if(!modele){showNotif('Entrez un modèle','error');return;}
 
-  if (!modele) return;
+  var grade    = document.getElementById('rc-grade').value;
+  var stockage = document.getElementById('rc-stockage').value;
+  var batterie = document.getElementById('rc-batterie').value || '85';
+  var ecran    = document.getElementById('rc-ecran').value;
+  var remarques= document.getElementById('rc-remarques').value.trim();
 
-  // Chercher dans l historique des achats
-  var similaires = phones.filter(function(p) {
-    return p.modele.toLowerCase().includes(modele) || modele.includes(p.modele.toLowerCase().split(' ')[0]);
+  // Historique similaires dans le stock
+  var similaires = phones.filter(function(p){
+    return p.modele.toLowerCase().includes(modele.toLowerCase().split(' ')[0]);
   });
+  var histoTexte = similaires.length > 0
+    ? similaires.slice(0,5).map(function(p){
+        return p.modele+' Grade '+(p.grade||'A')+' '+( p.stockage||'?')+'Go → acheté '+p.achat+'€, vendu '+p.vente+'€';
+      }).join('\n')
+    : 'Aucun historique pour ce modèle';
 
-  var prixBase = 0;
-  if (similaires.length > 0) {
-    prixBase = similaires.reduce(function(s,p){return s+p.achat;},0) / similaires.length;
-  } else {
-    // Prix de base estimé si pas d historique
-    prixBase = 150;
-  }
-
-  // Coefficients
-  var coefGrade = {A_PLUS:1.0, A:0.85, B:0.65, C:0.45};
-  var coefBat = batterie >= 90 ? 1.0 : batterie >= 80 ? 0.95 : batterie >= 70 ? 0.85 : 0.70;
-  var coefStock = stockage >= 256 ? 1.1 : stockage >= 128 ? 1.0 : 0.9;
-
-  var gradeKey = grade.replace('+','_PLUS');
-  var coef = (coefGrade[gradeKey]||0.85) * coefBat * coefStock * ecran;
-
-  var prixRachat = Math.round(prixBase * coef / 5) * 5; // Arrondi à 5€
-  var prixVente = Math.round(prixRachat * 1.5 / 5) * 5;
-  var marge = prixVente - prixRachat;
-  var margeMin = Math.round(prixRachat * 1.3 / 5) * 5;
-  var margeMax = Math.round(prixRachat * 1.7 / 5) * 5;
-
+  var btn = document.getElementById('rc-btn');
+  btn.textContent = '⏳ Analyse en cours...'; btn.disabled = true;
   document.getElementById('rachat-result').innerHTML =
-    '<div style="text-align:center;padding:20px;">' +
-    '<div style="font-size:14px;color:var(--text-muted);margin-bottom:8px;">Prix de rachat suggéré</div>' +
-    '<div style="font-size:48px;font-weight:900;color:var(--red);">' + prixRachat + ' €</div>' +
-    '<div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Fourchette : ' + Math.round(prixRachat*0.9/5)*5 + ' € — ' + Math.round(prixRachat*1.1/5)*5 + ' €</div>' +
-    '<div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:12px;">' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">' +
-    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente mini</div><div style="font-size:20px;font-weight:700;">' + margeMin + ' €</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente conseillé</div><div style="font-size:20px;font-weight:700;color:var(--green);">' + prixVente + ' €</div></div>' +
-    '<div><div style="font-size:11px;color:var(--text-muted);">Prix vente maxi</div><div style="font-size:20px;font-weight:700;">' + margeMax + ' €</div></div>' +
-    '</div></div>' +
-    '<div style="font-size:14px;color:var(--green);">Marge estimée : <b>' + marge + ' €</b></div>' +
-    (similaires.length > 0 ? '<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">Basé sur ' + similaires.length + ' achat(s) similaire(s)</div>' : '<div style="font-size:12px;color:var(--warning);margin-top:8px;">⚠️ Pas d historique - estimation approximative</div>') +
-    '</div>';
+    '<div style="text-align:center;padding:30px;color:var(--text-muted);">'+
+    '🔍 L\'IA consulte les prix BackMarket et analyse votre historique...<br>'+
+    '<span style="font-size:12px;margin-top:8px;display:block;">Cela prend environ 10 secondes</span></div>';
 
-  // Historique similaires
-  document.getElementById('rachat-historique').innerHTML = similaires.length > 0 ?
-    similaires.map(function(p){
-      return '<tr><td><b>'+p.modele+'</b></td><td>'+p.grade+'</td><td>'+(p.stockage||'?')+'Go</td><td>'+p.achat+' €</td><td>'+p.vente+' €</td><td style="color:var(--green)">'+(p.vente-p.achat)+' €</td><td>'+fmtDate(p.dateAchat)+'</td></tr>';
-    }).join('') :
-    '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px;">Aucun achat similaire dans l historique</td></tr>';
+  var prompt =
+    'Tu es expert en rachat de smartphones reconditionnés pour "Solution Phone", boutique à Mâcon.\n\n'+
+    'Smartphone à racheter :\n'+
+    '- Modèle : '+modele+'\n'+
+    '- Stockage : '+stockage+'Go\n'+
+    '- Grade : '+grade+'\n'+
+    '- Batterie : '+batterie+'%\n'+
+    '- État écran : '+ecran+'\n'+
+    (remarques?'- Remarques : '+remarques+'\n':'')+
+    '\nHistorique de rachats similaires dans notre boutique :\n'+histoTexte+'\n\n'+
+    'Analyse les prix actuels sur BackMarket.fr pour ce modèle exact ('+stockage+'Go, grade '+grade+') et donne une estimation de rachat précise.\n\n'+
+    'Réponds UNIQUEMENT avec ce format JSON exact, sans texte avant ni après :\n'+
+    '{\n'+
+    '  "prixBackmarket": <prix de vente moyen BackMarket en €>,\n'+
+    '  "prixRachatMin": <prix rachat minimum en €>,\n'+
+    '  "prixRachatConseille": <prix rachat conseillé en €>,\n'+
+    '  "prixRachatMax": <prix rachat maximum en €>,\n'+
+    '  "prixVenteConseille": <prix de revente conseillé en €>,\n'+
+    '  "margeEstimee": <marge estimée en €>,\n'+
+    '  "explication": "<2-3 phrases expliquant le raisonnement, mention BackMarket, état, batterie>",\n'+
+    '  "alertes": "<points de vigilance à vérifier lors du rachat ou vide si aucun>"\n'+
+    '}';
+
+  try {
+    var key = getIgApiKey();
+    if(!key){ showNotif('Clé API manquante — configurez-la dans Instagram/IA','error'); btn.textContent='🤖 Estimer avec l\'IA + BackMarket'; btn.disabled=false; return; }
+
+    var resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',
+        max_tokens:1000,
+        tools:[{"type":"web_search_20250305","name":"web_search"}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+
+    var data = await resp.json();
+    var texte = data.content.map(function(b){return b.type==='text'?b.text:'';}).join('');
+    var clean = texte.replace(/```json|```/g,'').trim();
+    // Extraire le JSON
+    var match = clean.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error('Format de réponse inattendu');
+    var r = JSON.parse(match[0]);
+
+    // Afficher le résultat
+    document.getElementById('rachat-result').innerHTML =
+      '<div style="text-align:center;padding:16px 10px;">' +
+
+      // Prix BackMarket référence
+      '<div style="background:var(--dark3);border:1px solid var(--blue);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">'+
+      '<div style="font-size:12px;color:var(--blue);font-weight:600;">📦 Prix BackMarket (réf.)</div>'+
+      '<div style="font-size:22px;font-weight:800;color:var(--blue);">'+r.prixBackmarket+' €</div></div>'+
+
+      // Prix rachat conseillé
+      '<div style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">💰 Prix de rachat conseillé</div>'+
+      '<div style="font-size:52px;font-weight:900;color:var(--red);line-height:1;">'+r.prixRachatConseille+' €</div>'+
+      '<div style="font-size:13px;color:var(--text-muted);margin:6px 0 16px;">Fourchette : <b>'+r.prixRachatMin+'€</b> — <b>'+r.prixRachatMax+'€</b></div>'+
+
+      // Grille vente / marge
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">'+
+      '<div style="background:var(--dark3);border-radius:10px;padding:12px;">'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Prix de revente conseillé</div>'+
+      '<div style="font-size:24px;font-weight:700;color:var(--green);">'+r.prixVenteConseille+' €</div></div>'+
+      '<div style="background:var(--dark3);border-radius:10px;padding:12px;">'+
+      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Marge estimée</div>'+
+      '<div style="font-size:24px;font-weight:700;color:var(--green);">+'+r.margeEstimee+' €</div></div>'+
+      '</div>'+
+
+      // Explication
+      '<div style="background:rgba(66,153,225,0.08);border:1px solid rgba(66,153,225,0.2);border-radius:10px;padding:12px;text-align:left;font-size:13px;color:var(--text-muted);margin-bottom:10px;line-height:1.6;">'+
+      '🤖 '+r.explication+'</div>'+
+
+      // Alertes
+      (r.alertes ? '<div style="background:rgba(237,137,54,0.1);border:1px solid var(--warning);border-radius:10px;padding:12px;text-align:left;font-size:13px;color:var(--warning);line-height:1.6;">'+
+      '⚠️ '+r.alertes+'</div>' : '')+
+
+      '</div>';
+
+    // Historique similaires
+    document.getElementById('rachat-historique').innerHTML = similaires.length > 0
+      ? similaires.map(function(p){
+          return '<tr><td><b>'+p.modele+'</b></td><td>'+p.grade+'</td><td>'+(p.stockage||'?')+'Go</td><td>'+p.achat+' €</td><td>'+p.vente+' €</td><td style="color:var(--green)">+'+(p.vente-p.achat)+' €</td><td>'+fmtDate(p.dateAchat)+'</td></tr>';
+        }).join('')
+      : '<tr><td colspan="7" style="text-align:center;color:var(--text-dim);padding:16px;">Aucun rachat similaire dans l\'historique</td></tr>';
+
+    showNotif('Estimation IA générée !','success');
+
+  } catch(e) {
+    document.getElementById('rachat-result').innerHTML =
+      '<div style="color:var(--red);padding:20px;text-align:center;">❌ Erreur : '+e.message+'<br><span style="font-size:12px;color:var(--text-muted);">Vérifiez votre clé API dans Instagram / IA</span></div>';
+    showNotif('Erreur : '+e.message,'error');
+  }
+  btn.textContent = '🤖 Estimer avec l\'IA + BackMarket'; btn.disabled = false;
 }
+
+function calculerRachat(){ calculerRachatIA(); }
 
 // ===== CLIENTS =====
 var clients = [];
