@@ -5389,22 +5389,45 @@ function fermerTicket(){
 function renderBonsCommande(){
   var tbody = document.getElementById('commande-table');
   if(!tbody) return;
-  tbody.innerHTML = bonsCommande.slice().reverse().map(function(c){
-    return '<tr>'+
+
+  var enAttente = bonsCommande.filter(function(c){ return !c.traite; }).reverse();
+  var traites   = bonsCommande.filter(function(c){ return c.traite; }).reverse();
+
+  function rowHtml(c){
+    var dateFmt = c.traiteDate ? ' <span style="font-size:10px;color:var(--text-muted);">'+fmtDate(c.traiteDate)+'</span>' : '';
+    return '<tr style="'+(c.traite?'opacity:0.55;':'')+'">' +
       '<td><b>'+c.numero+'</b></td>'+
       '<td>'+fmtDate(c.date)+'</td>'+
       '<td><span class="badge '+(c.type==='reparation'?'badge-red':'badge-blue')+'">'+(c.type==='reparation'?'🔧':'🎁')+'</span></td>'+
       '<td>'+c.client.nom+'</td>'+
       '<td>'+c.client.tel+'</td>'+
-      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</td>'+
-      '<td><b>'+c.prix.toFixed(2)+' €</b>'+(c.paye?' <span style="color:var(--green);font-size:11px;">✓ payé</span>':'')+'</td>'+
+      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</td>'+
+      '<td><b>'+c.prix.toFixed(2)+' €</b>'+(c.paye?' <span style="color:var(--green);font-size:11px;">✓</span>':'')+dateFmt+'</td>'+
       '<td style="display:flex;gap:4px;">'+
-        '<button class="btn btn-sm btn-primary" onclick="envoyerSMSCommande('+c.id+')" title="Envoyer SMS client">📱</button>'+
-        '<button class="btn btn-sm" onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" title="Réimprimer">🖨️</button>'+
-        '<button class="btn btn-sm" onclick="supprimerCommande('+c.id+')" style="color:var(--text-dim)">🗑️</button>'+
+        (!c.traite ? '<button class="btn btn-sm btn-primary" onclick="envoyerSMSCommande('+c.id+')" title="SMS → Archiver">📱 SMS</button>' : '<span style="font-size:11px;color:var(--green);font-weight:700;">✓ Traité</span>')+
+        ' <button class="btn btn-sm" onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" title="Réimprimer">🖨️</button>'+
+        ' <button class="btn btn-sm" onclick="supprimerCommande('+c.id+')" style="color:var(--text-dim)">🗑️</button>'+
       '</td>'+
     '</tr>';
-  }).join('')||'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun bon de commande</td></tr>';
+  }
+
+  var html = '';
+
+  // Section À TRAITER
+  html += '<tr><td colspan="8" style="background:var(--dark3);padding:8px 12px;font-weight:800;font-size:13px;color:var(--warning);">📬 À traiter ('+enAttente.length+')</td></tr>';
+  if(enAttente.length){
+    html += enAttente.map(rowHtml).join('');
+  } else {
+    html += '<tr><td colspan="8" style="text-align:center;padding:12px;color:var(--green);font-weight:700;">✅ Tout est traité !</td></tr>';
+  }
+
+  // Section ARCHIVÉS
+  if(traites.length){
+    html += '<tr><td colspan="8" style="background:var(--dark3);padding:8px 12px;font-weight:800;font-size:13px;color:var(--text-muted);">🗂️ Archivés ('+traites.length+')</td></tr>';
+    html += traites.map(rowHtml).join('');
+  }
+
+  tbody.innerHTML = html || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun bon de commande</td></tr>';
 }
 
 function envoyerSMSCommande(id){
@@ -5412,10 +5435,17 @@ function envoyerSMSCommande(id){
   if(!c) return;
   var isRep = c.type === 'reparation';
   var msg = isRep
-    ? 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ('+c.detail+'). Vous pouvez passer quand vous voulez. À bientôt ! Solution Phone — 03 85 33 06 89'
-    : 'Bonjour '+c.client.nom+', votre commande est disponible en magasin ('+c.detail+'). Vous pouvez passer quand vous voulez. À bientôt ! Solution Phone — 03 85 33 06 89';
+    ? 'Bonjour '+c.client.nom+', votre pièce est arrivée ('+c.detail+'). Vous pouvez passer quand vous voulez. Solution Phone — 03 85 33 06 89'
+    : 'Bonjour '+c.client.nom+', votre commande est disponible ('+c.detail+'). Vous pouvez passer quand vous voulez. Solution Phone — 03 85 33 06 89';
   var tel = c.client.tel.replace(/\s/g,'');
-  window.location.href = 'sms:'+tel+'?body='+encodeURIComponent(msg);
+  // Marquer comme traité
+  c.traite = true;
+  c.traiteDate = new Date().toISOString().split('T')[0];
+  saveBonsCommande();
+  renderBonsCommande();
+  showNotif(c.client.nom+' archivé ✓','success');
+  // Ouvrir SMS
+  setTimeout(function(){ window.location.href = 'sms:'+tel+'?body='+encodeURIComponent(msg); }, 300);
 }
 
 function supprimerCommande(id){
