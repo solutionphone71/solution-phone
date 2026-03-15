@@ -598,6 +598,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <button class="btn" id="ig-btn-calendar" onclick="showIgTab('calendar')">📅 Calendrier</button>
         <button class="btn" id="ig-btn-ideas" onclick="showIgTab('ideas')">💡 Idées Stock</button>
         <button class="btn" id="ig-btn-responses" onclick="showIgTab('responses')">💬 Réponses</button>
+        <button class="btn" id="ig-btn-stories" onclick="showIgTab('stories')">🎨 Stories</button>
         <div style="margin-left:auto;">
           <button class="btn btn-sm" style="border-color:var(--text-dim);color:var(--text-muted);" onclick="document.getElementById('ig-api-setup').style.display='block';document.getElementById('ig-content').style.display='none';">⚙️ Changer la clé</button>
         </div>
@@ -683,7 +684,123 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         <div id="ig-ideas-result"></div>
       </div>
 
-      <!-- TAB : REPONSES -->
+      <!-- TAB : STORIES -->
+      <div id="ig-tab-stories" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+          <!-- Panneau gauche : formulaire -->
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🎨 Paramètres de la Story</div></div>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div class="form-group"><label>Type de Story</label>
+                  <select id="story-type" onchange="updateStoryType()">
+                    <option value="promo">📱 Promo Smartphone</option>
+                    <option value="reparation">🔧 Offre Réparation</option>
+                    <option value="texte">✏️ Story Texte / Annonce</option>
+                    <option value="brouillon">🤖 Depuis brouillon IA</option>
+                  </select>
+                </div>
+
+                <!-- FORM PROMO -->
+                <div id="story-form-promo" style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Smartphone du stock</label>
+                    <select id="story-phone-select" onchange="renderStoryPreview()">
+                      <option value="">-- Saisie manuelle --</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>Modèle (si manuel)</label>
+                    <input type="text" id="story-promo-modele" placeholder="ex: iPhone 13 Pro" oninput="renderStoryPreview()">
+                  </div>
+                  <div class="form-group"><label>Prix (€)</label>
+                    <input type="number" id="story-promo-prix" placeholder="ex: 499" oninput="renderStoryPreview()">
+                  </div>
+                  <div class="form-group"><label>Grade</label>
+                    <select id="story-promo-grade" onchange="renderStoryPreview()">
+                      <option value="A+">A+</option><option value="A" selected>A</option><option value="B">B</option><option value="C">C</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>Détail (optionnel)</label>
+                    <input type="text" id="story-promo-desc" placeholder="ex: 256Go · Batterie 91%" oninput="renderStoryPreview()">
+                  </div>
+                </div>
+
+                <!-- FORM REPARATION -->
+                <div id="story-form-rep" style="display:none;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Type de réparation</label>
+                    <select id="story-rep-type" onchange="renderStoryPreview()">
+                      <option>Remplacement écran</option>
+                      <option>Remplacement batterie</option>
+                      <option>Réparation connecteur</option>
+                      <option>Réparation caméra</option>
+                      <option>Déblocage / Flash</option>
+                      <option>Diagnostic offert</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>Appareil</label>
+                    <input type="text" id="story-rep-appareil" placeholder="ex: iPhone 12, Samsung S21..." oninput="renderStoryPreview()">
+                  </div>
+                  <div class="form-group"><label>À partir de (€)</label>
+                    <input type="number" id="story-rep-prix" placeholder="ex: 59" oninput="renderStoryPreview()">
+                  </div>
+                  <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
+                    <input type="checkbox" id="story-rep-quali" onchange="renderStoryPreview()" style="width:18px;height:18px;accent-color:var(--green);">
+                    <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);">Mentionner le label QualiRépar 🏆</label>
+                  </div>
+                </div>
+
+                <!-- FORM TEXTE -->
+                <div id="story-form-texte" style="display:none;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Titre principal</label>
+                    <input type="text" id="story-texte-titre" placeholder="ex: FERMETURE EXCEPTIONNELLE" oninput="renderStoryPreview()" value="Nouveau !">
+                  </div>
+                  <div class="form-group"><label>Message</label>
+                    <textarea id="story-texte-msg" placeholder="ex: Nous serons fermés le lundi 25 mars..." style="padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;" oninput="renderStoryPreview()">Votre message ici</textarea>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label>Couleur haut</label>
+                      <input type="color" id="story-texte-bg1" value="#e53e3e" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                    </div>
+                    <div class="form-group"><label>Couleur bas</label>
+                      <input type="color" id="story-texte-bg2" value="#7b0d0d" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FORM BROUILLON -->
+                <div id="story-form-brouillon" style="display:none;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Choisir un brouillon IA</label>
+                    <select id="story-draft-select" onchange="renderStoryPreview()">
+                      <option value="">-- Aucun brouillon --</option>
+                    </select>
+                  </div>
+                  <div style="font-size:12px;color:var(--text-muted);padding:8px;background:var(--dark3);border-radius:8px;">
+                    💡 Les brouillons sont ceux sauvegardés dans l'onglet <b>Captions</b> ou <b>Idées Stock</b>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="downloadStory()" style="padding:14px;font-size:15px;">
+              📥 Télécharger la Story (1080×1920)
+            </button>
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;">
+              Format Instagram Story · PNG haute qualité<br>Postez-la directement depuis votre téléphone
+            </div>
+          </div>
+
+          <!-- Panneau droit : aperçu canvas -->
+          <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+            <div class="card-header" style="width:100%;"><div class="card-title">👁️ Aperçu</div></div>
+            <div style="position:relative;border:2px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+              <canvas id="story-preview-canvas" style="display:block;width:270px;height:480px;"></canvas>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);">Aperçu · Taille réelle : 1080×1920 px</div>
+          </div>
+
+        </div>
+      </div>
+      <!-- FIN TAB STORIES -->
       <div id="ig-tab-responses" style="display:none;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
           <div class="card">
@@ -2583,7 +2700,7 @@ function renderInstagram(){
 }
 
 function showIgTab(tab){
-  ['captions','calendar','ideas','responses'].forEach(function(t){
+  ['captions','calendar','ideas','responses','stories'].forEach(function(t){
     var el=document.getElementById('ig-tab-'+t);
     var btn=document.getElementById('ig-btn-'+t);
     if(el)el.style.display=(t===tab?'block':'none');
@@ -2591,6 +2708,7 @@ function showIgTab(tab){
   });
   if(tab==='calendar'){renderIgCalendar();renderIgPostsList();}
   if(tab==='ideas'){renderIgIdeas();}
+  if(tab==='stories'){renderStoryTab();}
 }
 
 // ---- Appel API Claude ----
@@ -2937,8 +3055,366 @@ async function generateResponse(){
 }
 
 // ============================================================
-//  FIN MODULE INSTAGRAM / IA
+//  CRÉATEUR DE STORIES INSTAGRAM
 // ============================================================
+
+function renderStoryTab(){
+  var phonesAvail=phones.filter(function(p){return p.etat==='DISPONIBLE';});
+  var sel=document.getElementById('story-phone-select');
+  if(sel){
+    sel.innerHTML='<option value="">-- Saisie manuelle --</option>'+
+      phonesAvail.map(function(p){
+        return '<option value="'+p.id+'">'+p.modele+' · '+p.vente+'€ · Grade '+(p.grade||'A')+'</option>';
+      }).join('');
+    sel.onchange=function(){
+      var phone=phones.find(function(x){return x.id==sel.value;});
+      if(phone){
+        var mm=document.getElementById('story-promo-modele');
+        var mp=document.getElementById('story-promo-prix');
+        var mg=document.getElementById('story-promo-grade');
+        var md=document.getElementById('story-promo-desc');
+        if(mm)mm.value=phone.modele;
+        if(mp)mp.value=phone.vente;
+        if(mg)mg.value=phone.grade||'A';
+        if(md)md.value=(phone.stockage?phone.stockage+'Go':'')+(phone.batterie?' · Batterie '+phone.batterie+'%':'');
+      }
+      renderStoryPreview();
+    };
+  }
+  var dsel=document.getElementById('story-draft-select');
+  if(dsel){
+    dsel.innerHTML='<option value="">-- Aucun brouillon --</option>'+
+      igDrafts.map(function(d,i){
+        return '<option value="'+i+'">'+(d.type||'Brouillon')+' · '+new Date(d.date).toLocaleDateString('fr-FR')+'</option>';
+      }).join('');
+  }
+  updateStoryType();
+}
+
+function updateStoryType(){
+  var type=document.getElementById('story-type').value;
+  var forms={promo:'story-form-promo',reparation:'story-form-rep',texte:'story-form-texte',brouillon:'story-form-brouillon'};
+  Object.keys(forms).forEach(function(k){
+    var el=document.getElementById(forms[k]);
+    if(el)el.style.display=(k===type?'flex':'none');
+  });
+  renderStoryPreview();
+}
+
+function renderStoryPreview(){
+  var canvas=document.getElementById('story-preview-canvas');
+  if(!canvas)return;
+  drawStory(canvas,810,1440);
+}
+
+function downloadStory(){
+  var canvas=document.createElement('canvas');
+  drawStory(canvas,1080,1920);
+  canvas.toBlob(function(blob){
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download='story_solution_phone_'+Date.now()+'.png';a.click();
+    URL.revokeObjectURL(url);
+    showNotif('Story téléchargée ! 📥','success');
+  },'image/png');
+}
+
+function drawStory(canvas,W,H){
+  canvas.width=W;canvas.height=H;
+  var ctx=canvas.getContext('2d');
+  var s=W/1080;
+  var type=document.getElementById('story-type')?document.getElementById('story-type').value:'promo';
+  if(type==='promo')storyPromo(ctx,W,H,s);
+  else if(type==='reparation')storyRep(ctx,W,H,s);
+  else if(type==='texte')storyTexte(ctx,W,H,s);
+  else if(type==='brouillon')storyBrouillon(ctx,W,H,s);
+}
+
+function igWrapText(ctx,text,x,y,maxW,lh){
+  if(!text)return 0;
+  var words=text.split(' '),line='',lines=[];
+  words.forEach(function(w){
+    var test=line+w+' ';
+    if(ctx.measureText(test).width>maxW&&line){lines.push(line.trim());line=w+' ';}
+    else line=test;
+  });
+  if(line.trim())lines.push(line.trim());
+  lines.forEach(function(l,i){ctx.fillText(l,x,y+i*lh);});
+  return lines.length*lh;
+}
+
+function storyBranding(ctx,W,H,s){
+  var bh=130*s;
+  ctx.fillStyle='rgba(0,0,0,0.82)';
+  ctx.fillRect(0,H-bh,W,bh);
+  ctx.textAlign='center';
+  ctx.fillStyle='#e53e3e';
+  ctx.font='bold '+Math.round(32*s)+'px -apple-system,Arial,sans-serif';
+  ctx.fillText('📱 Solution Phone',W/2,H-bh+42*s);
+  ctx.fillStyle='rgba(255,255,255,0.65)';
+  ctx.font=Math.round(24*s)+'px -apple-system,Arial,sans-serif';
+  ctx.fillText('21 Rue Gambetta · Mâcon · 71000',W/2,H-bh+74*s);
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.font=Math.round(20*s)+'px -apple-system,Arial,sans-serif';
+  ctx.fillText('solutionphone71.github.io/solution-phone',W/2,H-bh+100*s);
+}
+
+function storyDecoBubbles(ctx,W,H,c1,c2){
+  ctx.save();
+  ctx.globalAlpha=0.07;
+  ctx.fillStyle=c1;
+  ctx.beginPath();ctx.arc(W*0.88,H*0.12,320,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(W*0.08,H*0.82,260,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.arc(W*0.5,H*0.55,200,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function storyPromo(ctx,W,H,s){
+  var modele=val('story-promo-modele')||'Smartphone';
+  var prix=parseFloat(val('story-promo-prix'))||0;
+  var grade=val('story-promo-grade')||'A';
+  var desc=val('story-promo-desc')||'';
+  var phoneId=val('story-phone-select');
+  var phone=phones.find(function(p){return p.id==phoneId;});
+  if(phone){modele=phone.modele;prix=phone.vente;grade=phone.grade||'A';}
+
+  // Background
+  var g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#0d0d0d');g.addColorStop(0.6,'#1a0505');g.addColorStop(1,'#2d0a0a');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  storyDecoBubbles(ctx,W,H,'#e53e3e','#ff6b6b');
+
+  // Barre rouge haut
+  var topG=ctx.createLinearGradient(0,0,W,0);
+  topG.addColorStop(0,'#e53e3e');topG.addColorStop(1,'#c53030');
+  ctx.fillStyle=topG;ctx.fillRect(0,0,W,10*s);
+
+  // Badge PROMO
+  var bw=360*s,bh=68*s,bx=(W-bw)/2,by=80*s;
+  ctx.fillStyle='#e53e3e';
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,34*s);
+  else ctx.rect(bx,by,bw,bh);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(34*s)+'px Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText('📱  PROMO DU JOUR',W/2,by+46*s);
+
+  // Grand emoji téléphone
+  ctx.font=Math.round(180*s)+'px serif';
+  ctx.textAlign='center';ctx.fillText('📱',W/2,480*s);
+
+  // Modèle
+  ctx.fillStyle='#ffffff';
+  var fontSize=modele.length>14?64:80;
+  ctx.font='bold '+Math.round(fontSize*s)+'px Arial,sans-serif';
+  igWrapText(ctx,modele,W/2,560*s,W-80*s,Math.round(fontSize*1.2*s));
+
+  // Grade pill
+  ctx.fillStyle='rgba(255,255,255,0.12)';
+  var pw=320*s,ph=48*s,px=(W-pw)/2,py=700*s;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(px,py,pw,ph,24*s);else ctx.rect(px,py,pw,ph);
+  ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='bold '+Math.round(24*s)+'px Arial,sans-serif';
+  ctx.fillText('Grade '+grade+' · Reconditionné certifié',W/2,py+32*s);
+
+  // Prix
+  if(prix>0){
+    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(160*s)+'px Arial,sans-serif';
+    ctx.fillText(prix+'€',W/2,920*s);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font=Math.round(28*s)+'px Arial,sans-serif';
+    ctx.fillText('Prix de vente TTC · Garanti',W/2,960*s);
+  }
+
+  // Desc
+  if(desc){
+    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=Math.round(30*s)+'px Arial,sans-serif';
+    igWrapText(ctx,desc,W/2,1020*s,W-120*s,42*s);
+  }
+
+  // CTA button
+  var ctaG=ctx.createLinearGradient(0,0,W,0);
+  ctaG.addColorStop(0,'#e53e3e');ctaG.addColorStop(1,'#c53030');
+  ctx.fillStyle=ctaG;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(80*s,1640*s,W-160*s,96*s,48*s);else ctx.rect(80*s,1640*s,W-160*s,96*s);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(36*s)+'px Arial,sans-serif';
+  ctx.fillText('Disponible en boutique  👇',W/2,1698*s);
+
+  storyBranding(ctx,W,H,s);
+}
+
+function storyRep(ctx,W,H,s){
+  var typeRep=val('story-rep-type')||'Remplacement écran';
+  var appareil=val('story-rep-appareil')||'';
+  var prix=parseFloat(val('story-rep-prix'))||0;
+  var quali=document.getElementById('story-rep-quali')&&document.getElementById('story-rep-quali').checked;
+
+  var g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#020c1b');g.addColorStop(1,'#051a0f');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  storyDecoBubbles(ctx,W,H,'#4299e1','#48bb78');
+
+  ctx.fillStyle='#4299e1';ctx.fillRect(0,0,W,10*s);
+
+  var bw=400*s,bh=68*s,bx=(W-bw)/2;
+  ctx.fillStyle='#4299e1';
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(bx,80*s,bw,bh,34*s);else ctx.rect(bx,80*s,bw,bh);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(32*s)+'px Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText('🔧  RÉPARATION EXPRESS',W/2,126*s);
+
+  ctx.font=Math.round(180*s)+'px serif';ctx.fillText('🔧',W/2,430*s);
+
+  ctx.fillStyle='#fff';
+  var fsize=typeRep.length>20?52:68;
+  ctx.font='bold '+Math.round(fsize*s)+'px Arial,sans-serif';
+  igWrapText(ctx,typeRep,W/2,520*s,W-80*s,Math.round(fsize*1.25*s));
+
+  if(appareil){
+    ctx.fillStyle='rgba(255,255,255,0.65)';ctx.font=Math.round(34*s)+'px Arial,sans-serif';
+    ctx.fillText('pour '+appareil,W/2,680*s);
+  }
+
+  if(prix>0){
+    ctx.fillStyle='#48bb78';ctx.font='bold '+Math.round(48*s)+'px Arial,sans-serif';
+    ctx.fillText('À PARTIR DE',W/2,800*s);
+    ctx.font='bold '+Math.round(150*s)+'px Arial,sans-serif';
+    ctx.fillText(prix+'€',W/2,960*s);
+  }
+
+  if(quali){
+    ctx.fillStyle='rgba(72,187,120,0.18)';
+    ctx.strokeStyle='#48bb78';ctx.lineWidth=3*s;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(60*s,1020*s,W-120*s,80*s,12*s);else ctx.rect(60*s,1020*s,W-120*s,80*s);
+    ctx.fill();ctx.stroke();
+    ctx.fillStyle='#48bb78';ctx.font='bold '+Math.round(28*s)+'px Arial,sans-serif';
+    ctx.fillText('🏆  Label QualiRépar · Garantie Qualité',W/2,1068*s);
+  }
+
+  ctx.fillStyle='#4299e1';
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(80*s,1640*s,W-160*s,96*s,48*s);else ctx.rect(80*s,1640*s,W-160*s,96*s);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(34*s)+'px Arial,sans-serif';
+  ctx.fillText('Réparation rapide · DM ou venez !',W/2,1698*s);
+
+  storyBranding(ctx,W,H,s);
+}
+
+function storyTexte(ctx,W,H,s){
+  var titre=val('story-texte-titre')||'Annonce';
+  var msg=val('story-texte-msg')||'';
+  var c1=val('story-texte-bg1')||'#e53e3e';
+  var c2=val('story-texte-bg2')||'#7b0d0d';
+
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,c1);g.addColorStop(1,c2);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+  // Cercles déco
+  ctx.save();ctx.globalAlpha=0.12;ctx.fillStyle='#fff';
+  ctx.beginPath();ctx.arc(W*0.9,H*0.1,400,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(W*0.05,H*0.85,320,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+
+  // Pill Solution Phone haut
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  var pw=280*s;
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect((W-pw)/2,80*s,pw,50*s,25*s);else ctx.rect((W-pw)/2,80*s,pw,50*s);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(24*s)+'px Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText('📱 Solution Phone',W/2,114*s);
+
+  // Ligne déco
+  ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2*s;
+  ctx.beginPath();ctx.moveTo(80*s,180*s);ctx.lineTo(W-80*s,180*s);ctx.stroke();
+
+  // Titre
+  ctx.fillStyle='#fff';
+  var fs=titre.length>16?72:96;
+  ctx.font='bold '+Math.round(fs*s)+'px Arial,sans-serif';
+  igWrapText(ctx,titre.toUpperCase(),W/2,600*s,W-80*s,Math.round(fs*1.2*s));
+
+  // Ligne déco milieu
+  ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=3*s;
+  ctx.beginPath();ctx.moveTo(160*s,800*s);ctx.lineTo(W-160*s,800*s);ctx.stroke();
+
+  // Message
+  if(msg){
+    ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font=Math.round(36*s)+'px Arial,sans-serif';
+    igWrapText(ctx,msg,W/2,870*s,W-100*s,52*s);
+  }
+
+  storyBranding(ctx,W,H,s);
+}
+
+function storyBrouillon(ctx,W,H,s){
+  var idx=parseInt(val('story-draft-select'));
+  var draft=(idx>=0&&igDrafts[idx])?igDrafts[idx]:null;
+
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#0f0f0f');g.addColorStop(1,'#111827');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  storyDecoBubbles(ctx,W,H,'#e53e3e','#4299e1');
+
+  ctx.fillStyle='#e53e3e';ctx.fillRect(0,0,W,10*s);
+
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(36*s)+'px Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText('📸 Solution Phone',W/2,100*s);
+
+  if(!draft||isNaN(idx)){
+    ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font=Math.round(34*s)+'px Arial,sans-serif';
+    ctx.fillText('Sélectionnez un brouillon',W/2,H/2);
+    storyBranding(ctx,W,H,s);return;
+  }
+
+  var text=draft.text;
+  var tm=text.match(/📝 TEXTE :\n([\s\S]*?)(?:\n\n#️⃣|$)/);
+  var textePost=tm?tm[1].trim():text.substring(0,500);
+  var hm=text.match(/#️⃣ HASHTAGS :\n([\s\S]*?)$/);
+  var hashtags=hm?hm[1].trim().split(/\s+/).slice(0,5).join(' '):'';
+
+  // Card
+  ctx.fillStyle='rgba(255,255,255,0.06)';
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(40*s,150*s,W-80*s,H-350*s,20*s);else ctx.rect(40*s,150*s,W-80*s,H-350*s);
+  ctx.fill();
+
+  // Badge type
+  ctx.fillStyle='rgba(229,62,62,0.8)';
+  var tw=Math.min(ctx.measureText(draft.type||'Post IA').width+40*s,W-160*s);
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect((W-tw)/2,160*s,tw,42*s,21*s);else ctx.rect((W-tw)/2,160*s,tw,42*s);
+  ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold '+Math.round(22*s)+'px Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText(draft.type||'Post IA',W/2,188*s);
+
+  // Texte
+  ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font=Math.round(31*s)+'px Arial,sans-serif';ctx.textAlign='left';
+  var short=textePost.length>450?textePost.substring(0,447)+'...':textePost;
+  igWrapText(ctx,short,70*s,260*s,W-140*s,46*s);
+
+  // Hashtags
+  if(hashtags){
+    ctx.fillStyle='#60a5fa';ctx.font=Math.round(26*s)+'px Arial,sans-serif';ctx.textAlign='center';
+    igWrapText(ctx,hashtags,W/2,H-230*s,W-80*s,36*s);
+  }
+
+  storyBranding(ctx,W,H,s);
+}
+
+function val(id){var e=document.getElementById(id);return e?e.value:'';}
+
+// ============================================================
+//  FIN CRÉATEUR DE STORIES
+// ============================================================
+
 </script>
 </body>
 </html>
