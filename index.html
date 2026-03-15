@@ -5311,25 +5311,13 @@ function printTicketCommande(c){
   var now   = new Date();
   var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
 
-  // Format ticket thermique 80mm — texte centré, largeur fixe
-  function line(txt, bold){ return '<div style="font-weight:'+(bold?'900':'400')+';white-space:pre-wrap;word-break:break-word;">'+txt+'</div>'; }
+  function line(txt, bold){ return '<div style="font-weight:'+(bold?'900':'400')+';white-space:pre-wrap;word-break:break-word;font-family:Courier New,monospace;font-size:13px;">'+txt+'</div>'; }
   function sep(){ return '<div style="border-top:1px dashed #000;margin:4px 0;"></div>'; }
   function center(txt, size, bold){
-    return '<div style="text-align:center;font-size:'+(size||13)+'px;font-weight:'+(bold?'900':'400')+';line-height:1.3;">'+txt+'</div>';
+    return '<div style="text-align:center;font-size:'+(size||13)+'px;font-weight:'+(bold?'900':'400')+';line-height:1.3;font-family:Courier New,monospace;">'+txt+'</div>';
   }
 
-  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
-    '<title>'+c.numero+'</title>'+
-    '<style>'+
-    '*{margin:0;padding:0;box-sizing:border-box;}'+
-    'body{font-family:"Courier New",Courier,monospace;font-size:13px;background:#fff;color:#000;width:80mm;margin:0 auto;}'+
-    '@page{size:80mm auto;margin:3mm;}'+
-    '@media print{.no-print{display:none!important;}}'+
-    '</style></head><body>'+
-
-    '<div class="no-print" style="padding:8px;text-align:center;margin-bottom:8px;">'+
-      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer le ticket</button>'+
-    '</div>'+
+  var ticketBody =
 
     // EN-TÊTE
     center('SOLUTION PHONE', 18, true)+
@@ -5367,13 +5355,23 @@ function printTicketCommande(c){
     // Pied
     center('Merci de votre confiance !', 11)+
     center('www.solutionphone71.fr', 11)+
-    '<div style="margin-top:8px;"></div>'+
+    '<div style="margin-top:8px;"></div>';
 
-    '</body></html>';
-
-  var w = window.open('','_blank','width=400,height=600');
-  w.document.write(html);
-  w.document.close();
+  // Afficher dans un modal au lieu de window.open (compatibilité iPhone)
+  var modal = document.getElementById('modal-ticket-commande');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'modal-ticket-commande';
+    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;padding:16px;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML =
+    '<div style="display:flex;gap:10px;margin-bottom:12px;width:100%;max-width:400px;">' +
+      '<button onclick="window.print()" style="flex:1;padding:12px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
+      '<button onclick="document.getElementById(\'modal-ticket-commande\').style.display=\'none\'" style="flex:1;padding:12px;background:#333;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
+    '</div>' +
+    '<div style="background:#fff;border-radius:8px;padding:12px;width:100%;max-width:400px;">' + ticketBody + '</div>';
+  modal.style.display = 'flex';
 }
 
 function renderBonsCommande(){
