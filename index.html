@@ -5366,15 +5366,19 @@ function printTicketCommande(c){
     document.body.appendChild(modal);
   }
   modal.innerHTML =
-    // Barre fixe en haut
     '<div style="position:sticky;top:0;z-index:2;background:#1a1a1a;padding:10px 16px;display:flex;gap:10px;">' +
       '<button onclick="window.print()" style="flex:1;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
-      '<button onclick="document.getElementById(\'modal-ticket-commande\').style.display=\'none\'" style="flex:1;padding:14px;background:#555;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
+      '<button onclick="fermerTicket()" style="flex:1;padding:14px;background:#555;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
       '<div style="background:#fff;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;">' + ticketBody + '</div>' +
     '</div>';
   modal.style.display = 'block';
+}
+
+function fermerTicket(){
+  var m = document.getElementById('modal-ticket-commande');
+  if(m) m.style.display = 'none';
 }
 
 function renderBonsCommande(){
