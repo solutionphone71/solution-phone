@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_clean_ecrans -->
+<!-- v20260315_print_design -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -4456,64 +4456,98 @@ function resetEcransPrix(){
 
 function printEcransA4(){
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
-  var qualites = ['HD ECO+','LPTS','LPTS PRIME','SOFT OLED BOLT','ORIGINAL'];
 
-  function buildTableHTML(data, titre){
+  // Étoiles HTML pour chaque qualité
+  var qualHeaders = [
+    {label:'Qualité écran →', stars:'', bg:'#3a3a3a'},
+    {label:'HD ECO+',         stars:'★★', bg:'#5a5a5a'},
+    {label:'LPTS',            stars:'★★★', bg:'#8e6b00'},
+    {label:'LPTS PRIME',      stars:'★★★★', bg:'#b8860b'},
+    {label:'SOFT OLED BOLT',  stars:'★★★★★', bg:'#c0392b'},
+    {label:'ORIGINAL',        stars:'★★★★★★', bg:'#922b21'}
+  ];
+
+  function buildTableHTML(data){
+    var headerRow = qualHeaders.map(function(q, i){
+      return '<th style="padding:9px 6px;text-align:center;background:'+q.bg+';color:#fff;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;border-right:1px solid rgba(255,255,255,0.15);">'+
+        (q.stars?'<div style="font-size:9px;color:#ffd700;letter-spacing:1px;margin-bottom:2px;">'+q.stars+'</div>':'')+
+        q.label+'</th>';
+    }).join('');
+
     var rows = data.map(function(row, ri){
       var isOdd = ri % 2 === 0;
+      var rowBg = isOdd ? '#fff5f5' : '#fff';
       var cells = row.prix.map(function(p){
-        return '<td style="padding:8px 10px;text-align:center;border:1px solid #ddd;font-size:13px;font-weight:700;color:'+(p===null?'#bbb':'#1a1a1a')+';">'+
-          (p===null?'✗':p+'€')+
+        var isNull = (p === null);
+        var cellBg = isOdd ? '#ffe8e8' : '#f9f9f9';
+        return '<td style="padding:9px 8px;text-align:center;background:'+cellBg+';border-right:1px solid #e0e0e0;border-bottom:1px solid #e8e8e8;font-size:'+(isNull?'16':'14')+'px;font-weight:'+(isNull?'400':'800')+';color:'+(isNull?'#ccc':'#1a1a1a')+';">'+
+          (isNull ? '✗' : p+'<span style="font-size:10px;font-weight:600;">€</span>')+
           '</td>';
       }).join('');
-      return '<tr style="background:'+(isOdd?'#fff5f5':'#fff')+'">'+
-        '<td style="padding:8px 12px;font-weight:700;font-size:13px;border:1px solid #ddd;background:'+(isOdd?'#c0392b':'#e8e8e8')+';color:'+(isOdd?'#fff':'#333')+';">'+row.modele+'</td>'+
+      return '<tr>'+
+        '<td style="padding:9px 12px;font-weight:800;font-size:12px;background:'+(isOdd?'#c0392b':'#d5d5d5')+';color:'+(isOdd?'#fff':'#333')+';border-right:2px solid rgba(0,0,0,0.15);border-bottom:1px solid rgba(0,0,0,0.1);white-space:nowrap;">'+row.modele+'</td>'+
         cells+'</tr>';
     }).join('');
 
-    var headers = ['Qualité écran →','⭐⭐ HD ECO+','⭐⭐⭐ LPTS','⭐⭐⭐⭐ LPTS PRIME','⭐⭐⭐⭐⭐ SOFT OLED BOLT','⭐⭐⭐⭐⭐⭐ ORIGINAL'].map(function(h){
-      return '<th style="padding:8px 10px;background:#2c2c2c;color:#fff;font-size:11px;border:1px solid #555;text-align:center;">'+h+'</th>';
-    }).join('');
-
-    return '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">'+
-      '<thead><tr>'+headers+'</tr></thead><tbody>'+rows+'</tbody></table>';
+    return '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;border:1px solid #ddd;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">'+
+      '<thead><tr>'+headerRow+'</tr></thead><tbody>'+rows+'</tbody></table>';
   }
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Prix Écrans iPhone — Solution Phone</title>'+
     '<style>'+
       '*{margin:0;padding:0;box-sizing:border-box;}'+
-      'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}'+
-      '.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}'+
-      '@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}}'+
+      'body{font-family:"Arial",sans-serif;background:#fff;color:#1a1a1a;}'+
+      '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;background:#fff;}'+
+      '@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;margin:0;width:100%;}}'+
       '@page{size:A4;margin:0;}'+
     '</style></head><body>'+
-    '<div class="no-print" style="text-align:right;padding:10px;">'+
-      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
+
+    // Bouton imprimer
+    '<div class="no-print" style="text-align:right;padding:10px 14px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(192,57,43,0.4);">🖨️ Imprimer / PDF</button>'+
     '</div>'+
+
     '<div class="page">'+
-      // En-tête
-      '<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
-        (logo?'<img src="'+logo+'" style="height:60px;width:auto;">':'')+
-        '<div>'+
-          '<div style="font-size:22px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-          '<div style="font-size:12px;color:#555;">Réparation SMARTPHONE · TABLETTE · PC</div>'+
+
+      // HEADER
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:3px solid #c0392b;">'+
+        '<div style="display:flex;align-items:center;gap:12px;">'+
+          (logo?'<img src="'+logo+'" style="height:56px;width:auto;">':'')+
+          '<div>'+
+            '<div style="font-size:20px;font-weight:900;color:#c0392b;letter-spacing:-0.5px;">SOLUTION PHONE</div>'+
+            '<div style="font-size:10px;color:#777;margin-top:1px;">Réparation SMARTPHONE · TABLETTE · PC</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:11px;color:#555;">21 Rue Gambetta · 71000 Mâcon</div>'+
+          '<div style="font-size:11px;color:#555;">Tél : 03 85 33 06 89</div>'+
         '</div>'+
       '</div>'+
-      '<div style="font-size:34px;font-weight:900;color:#1a1a1a;margin-bottom:4px;">PRIX ÉCRAN IPHONE 2025</div>'+
-      '<div style="background:rgba(72,187,120,0.15);border:1px solid #27ae60;border-radius:6px;padding:7px 14px;margin-bottom:12px;font-size:11px;color:#27ae60;font-weight:700;">'+
-        '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT · PRIX TTC PIÈCE ET MAIN D\'ŒUVRE · GARANTIE 3 MOIS SAUF CASSE OU RAYURE · RÉPARATION EN 30 MIN - 1H MAX'+
+
+      // TITRE
+      '<div style="margin-bottom:8px;">'+
+        '<div style="font-size:30px;font-weight:900;color:#1a1a1a;letter-spacing:-1px;line-height:1;">PRIX ÉCRAN IPHONE 2025</div>'+
       '</div>'+
-      buildTableHTML(ecransPrix.t1, 'Tableau 1')+
-      buildTableHTML(ecransPrix.t2, 'Tableau 2')+
-      // Pied de page
-      '<div style="border-top:2px solid #c0392b;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#888;">'+
-        '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · Tél : 03 85 33 06 89</div>'+
-        '<div style="display:flex;gap:20px;align-items:center;">'+
-          '<div style="background:#c0392b;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">RÉPARATEUR LABELLISÉ</div>'+
-          '<div style="border:2px solid #27ae60;color:#27ae60;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">LABEL QUALI RÉPAR</div>'+
+
+      // BANDEAU QUALIREPAR
+      '<div style="background:linear-gradient(135deg,#1a5c30,#27ae60);border-radius:6px;padding:6px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;">'+
+        '<span style="font-size:14px;">🏆</span>'+
+        '<span style="font-size:10px;color:#fff;font-weight:700;letter-spacing:.3px;">-25€ QUALIREPAR DÉJÀ DÉDUIT &nbsp;·&nbsp; PRIX TTC PIÈCE + MAIN D\'ŒUVRE &nbsp;·&nbsp; GARANTIE 3 MOIS SAUF CASSE OU RAYURE &nbsp;·&nbsp; RÉPARATION EN 30 MIN - 1H MAX</span>'+
+      '</div>'+
+
+      buildTableHTML(ecransPrix.t1)+
+      buildTableHTML(ecransPrix.t2)+
+
+      // PIED DE PAGE
+      '<div style="margin-top:8px;padding-top:8px;border-top:2px solid #c0392b;display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-size:9px;color:#888;">Solution Phone · 21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89 &nbsp;·&nbsp; TVA non applicable Art. 297 A CGI (régime de la marge)</div>'+
+        '<div style="display:flex;gap:8px;align-items:center;">'+
+          '<div style="background:#c0392b;color:#fff;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.5px;">RÉPARATEUR LABELLISÉ</div>'+
+          '<div style="border:1.5px solid #27ae60;color:#27ae60;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.5px;">LABEL QUALI RÉPAR</div>'+
         '</div>'+
       '</div>'+
+
     '</div>'+
     '<script>window.onload=function(){};<\/script>'+
     '</body></html>';
