@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_print_design -->
+<!-- v20260315_bon_depot -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -635,8 +635,132 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
 
   <div class="page" id="page-reparations">
-      <div class="page-title">Factures de Réparation</div>
-      <div class="page-sub">Créer et gérer les factures de réparation</div>
+      <div class="page-title">Réparations</div>
+      <div class="page-sub">Bon de dépôt · Factures · Historique</div>
+
+      <!-- ONGLETS -->
+      <div style="display:flex;gap:8px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0;">
+        <button id="tab-depot-btn" onclick="switchRepTab('depot')" style="padding:10px 20px;border:none;border-radius:8px 8px 0 0;background:var(--red);color:#fff;font-weight:700;font-size:14px;cursor:pointer;">📋 Bon de Dépôt</button>
+        <button id="tab-facture-btn" onclick="switchRepTab('facture')" style="padding:10px 20px;border:none;border-radius:8px 8px 0 0;background:var(--dark3);color:var(--text-muted);font-weight:600;font-size:14px;cursor:pointer;">🧾 Facture Réparation</button>
+      </div>
+
+      <!-- ===== ONGLET BON DE DÉPÔT ===== -->
+      <div id="tab-depot">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <!-- Client -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">👤 Informations client</div></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group"><label>Nom *</label><input type="text" id="dep-nom" placeholder="Dupont"></div>
+                  <div class="form-group"><label>Prénom *</label><input type="text" id="dep-prenom" placeholder="Jean"></div>
+                </div>
+                <div class="form-group"><label>Téléphone *</label><input type="tel" id="dep-tel" placeholder="06 XX XX XX XX"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="dep-email" placeholder="client@gmail.com"></div>
+              </div>
+            </div>
+
+            <!-- Appareil -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">📱 Appareil déposé</div></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group"><label>Marque *</label>
+                    <select id="dep-marque">
+                      <option value="">— Choisir —</option>
+                      <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
+                      <option>Huawei</option><option>OnePlus</option><option>Google</option>
+                      <option>Autre</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group"><label>IMEI / N° Série</label><input type="text" id="dep-imei" placeholder="352099..."></div>
+                  <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit"></div>
+                </div>
+                <div class="form-group"><label>Code / Mot de passe</label>
+                  <input type="text" id="dep-code" placeholder="ex : 1234 (ou laisser vide si non communiqué)">
+                  <div style="font-size:11px;color:var(--warning);margin-top:4px;">⚠️ Renseigné uniquement si le client le souhaite</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Accessoires remis -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">🎁 Accessoires remis avec l'appareil</div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 0;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-coque"> Coque / Étui</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-chargeur"> Chargeur</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-cable"> Câble</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-boite"> Boîte d'origine</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-verre"> Protection écran</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-autre"> Autre</label>
+              </div>
+              <div class="form-group" style="margin-top:8px;"><label>Préciser si autre</label><input type="text" id="dep-acc-autre-txt" placeholder="ex : AirPods, carte SIM..."></div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;">
+
+            <!-- État de l'appareil -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">🔍 État de l'appareil à la remise</div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px 0;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-ecran"> Écran fissuré / cassé</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-ray-ecran"> Rayures écran</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-ray-dos"> Rayures dos</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-vitre-dos"> Vitre arrière cassée</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-bouton"> Bouton(s) HS</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-hp"> Haut-parleur HS</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-micro"> Micro HS</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-camera"> Caméra HS</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-charge"> Connecteur charge HS</label>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-batterie"> Batterie défaillante</label>
+              </div>
+              <div class="form-group" style="margin-top:8px;"><label>Autres observations esthétiques</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins, dépôt calcaire..."></textarea></div>
+            </div>
+
+            <!-- Panne et devis -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">🛠️ Panne & Devis</div></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div class="form-group"><label>Panne décrite par le client *</label>
+                  <textarea id="dep-panne" rows="3" placeholder="ex : L'écran est fissuré suite à une chute, le tactile ne répond plus en bas..."></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="form-group"><label>Devis estimatif (€)</label><input type="number" id="dep-devis" placeholder="0.00" step="0.01"></div>
+                  <div class="form-group"><label>Date de restitution prévue</label><input type="date" id="dep-date-retour"></div>
+                </div>
+                <div class="form-group"><label>Observations technicien</label>
+                  <textarea id="dep-obs" rows="2" placeholder="Notes internes (non affichées sur le bon client)"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton -->
+            <button class="btn btn-primary" style="padding:14px;font-size:16px;font-weight:800;letter-spacing:.5px;" onclick="genererBonDepot()">
+              📋 Générer & Imprimer le Bon de Dépôt
+            </button>
+          </div>
+        </div>
+
+        <!-- Historique bons de dépôt -->
+        <div class="card" style="margin-top:18px;">
+          <div class="card-header">
+            <div class="card-title">📂 Historique Bons de Dépôt</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Téléphone</th><th>Appareil</th><th>Panne</th><th>Devis</th><th>Actions</th></tr></thead>
+            <tbody id="depot-table"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ONGLET FACTURE ===== -->
+      <div id="tab-facture" style="display:none;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
         <div class="card">
           <div class="card-header"><div class="card-title">🔧 Nouvelle facture réparation</div></div>
@@ -680,7 +804,8 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <tbody id="reparations-table"></tbody></table>
         </div>
       </div>
-    </div>
+      </div><!-- fin tab-facture -->
+    </div><!-- fin page-reparations -->
 
   <div class="page" id="page-comptable">
       <div class="page-title">Récapitulatif Comptable</div>
@@ -1612,6 +1737,7 @@ function doLogin(){
     // Initialiser les prix dès le login pour que les tableaux soient prêts
     renderEcrans();
     renderBatteries();
+    renderBonsDepot();
   } else {showNotif('Identifiants incorrects','error');}
 }
 
@@ -4787,8 +4913,282 @@ showPage = function(id, el){
 };
 
 // ============================================================
-//  FIN NAVIGATION MOBILE
+//  MODULE BON DE DÉPÔT RÉPARATION
 // ============================================================
+
+var bonsDepot = JSON.parse(localStorage.getItem('sp_bons_depot') || '[]');
+
+function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(bonsDepot)); }
+
+function switchRepTab(tab){
+  var isDepot = tab === 'depot';
+  document.getElementById('tab-depot').style.display = isDepot ? '' : 'none';
+  document.getElementById('tab-facture').style.display = isDepot ? 'none' : '';
+  document.getElementById('tab-depot-btn').style.background = isDepot ? 'var(--red)' : 'var(--dark3)';
+  document.getElementById('tab-depot-btn').style.color = isDepot ? '#fff' : 'var(--text-muted)';
+  document.getElementById('tab-facture-btn').style.background = isDepot ? 'var(--dark3)' : 'var(--red)';
+  document.getElementById('tab-facture-btn').style.color = isDepot ? 'var(--text-muted)' : '#fff';
+}
+
+function getDepotEtat(){
+  var etats = [
+    {id:'dep-etat-ecran',     label:'Écran fissuré/cassé'},
+    {id:'dep-etat-ray-ecran', label:'Rayures écran'},
+    {id:'dep-etat-ray-dos',   label:'Rayures dos'},
+    {id:'dep-etat-vitre-dos', label:'Vitre arrière cassée'},
+    {id:'dep-etat-bouton',    label:'Bouton(s) HS'},
+    {id:'dep-etat-hp',        label:'Haut-parleur HS'},
+    {id:'dep-etat-micro',     label:'Micro HS'},
+    {id:'dep-etat-camera',    label:'Caméra HS'},
+    {id:'dep-etat-charge',    label:'Connecteur charge HS'},
+    {id:'dep-etat-batterie',  label:'Batterie défaillante'}
+  ];
+  return etats.filter(function(e){ return document.getElementById(e.id).checked; }).map(function(e){ return e.label; });
+}
+
+function getDepotAccessoires(){
+  var acc = [
+    {id:'dep-acc-coque',    label:'Coque/Étui'},
+    {id:'dep-acc-chargeur', label:'Chargeur'},
+    {id:'dep-acc-cable',    label:'Câble'},
+    {id:'dep-acc-boite',    label:'Boîte d\'origine'},
+    {id:'dep-acc-verre',    label:'Protection écran'},
+    {id:'dep-acc-autre',    label:'Autre'}
+  ];
+  var list = acc.filter(function(a){ return document.getElementById(a.id).checked; }).map(function(a){ return a.label; });
+  var autreVal = document.getElementById('dep-acc-autre-txt').value.trim();
+  if(autreVal) list.push(autreVal);
+  return list;
+}
+
+function genererBonDepot(){
+  var nom    = document.getElementById('dep-nom').value.trim();
+  var prenom = document.getElementById('dep-prenom').value.trim();
+  var tel    = document.getElementById('dep-tel').value.trim();
+  var marque = document.getElementById('dep-marque').value;
+  var modele = document.getElementById('dep-modele').value.trim();
+  var panne  = document.getElementById('dep-panne').value.trim();
+  if(!nom || !tel || !marque || !modele || !panne){
+    showNotif('Remplissez les champs obligatoires *','error'); return;
+  }
+  var num = 'DEP-'+new Date().getFullYear()+'-'+String(bonsDepot.length+1).padStart(3,'0');
+  var depot = {
+    id: Date.now(), numero: num,
+    date: new Date().toISOString().split('T')[0],
+    client: { nom, prenom, tel,
+      email: document.getElementById('dep-email').value.trim()
+    },
+    appareil: {
+      marque, modele,
+      imei:    document.getElementById('dep-imei').value.trim(),
+      couleur: document.getElementById('dep-couleur').value.trim(),
+      code:    document.getElementById('dep-code').value.trim()
+    },
+    etat:         getDepotEtat(),
+    etatAutre:    document.getElementById('dep-etat-autre').value.trim(),
+    accessoires:  getDepotAccessoires(),
+    panne,
+    devis:        parseFloat(document.getElementById('dep-devis').value)||0,
+    dateRetour:   document.getElementById('dep-date-retour').value,
+    obs:          document.getElementById('dep-obs').value.trim()
+  };
+  bonsDepot.push(depot);
+  saveBonsDepot();
+  renderBonsDepot();
+  printBonDepot(depot);
+  // Reset
+  ['dep-nom','dep-prenom','dep-tel','dep-email','dep-imei','dep-couleur','dep-code','dep-panne','dep-devis','dep-date-retour','dep-obs','dep-etat-autre','dep-acc-autre-txt'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('dep-marque').value='';
+  document.getElementById('dep-modele').value='';
+  ['dep-acc-coque','dep-acc-chargeur','dep-acc-cable','dep-acc-boite','dep-acc-verre','dep-acc-autre','dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos','dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera','dep-etat-charge','dep-etat-batterie'].forEach(function(id){ document.getElementById(id).checked=false; });
+  showNotif('Bon de dépôt '+num+' créé !','success');
+}
+
+function renderBonsDepot(){
+  var tbody = document.getElementById('depot-table');
+  if(!tbody) return;
+  tbody.innerHTML = bonsDepot.slice().reverse().map(function(d){
+    return '<tr>'+
+      '<td><b>'+d.numero+'</b></td>'+
+      '<td>'+fmtDate(d.date)+'</td>'+
+      '<td>'+d.client.prenom+' '+d.client.nom+'</td>'+
+      '<td>'+d.client.tel+'</td>'+
+      '<td>'+d.appareil.marque+' '+d.appareil.modele+'</td>'+
+      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+d.panne+'</td>'+
+      '<td>'+(d.devis?d.devis.toFixed(2)+' €':'—')+'</td>'+
+      '<td style="display:flex;gap:4px;">'+
+        '<button class="btn btn-sm" onclick="printBonDepot(bonsDepot.find(function(x){return x.id==='+d.id+'}))" title="Réimprimer">🖨️</button>'+
+        '<button class="btn btn-sm" onclick="supprimerDepot('+d.id+')" title="Supprimer" style="color:var(--text-dim)">🗑️</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun bon de dépôt</td></tr>';
+}
+
+function supprimerDepot(id){
+  if(!confirm('Supprimer ce bon de dépôt ?')) return;
+  bonsDepot = bonsDepot.filter(function(d){ return d.id !== id; });
+  saveBonsDepot();
+  renderBonsDepot();
+  showNotif('Bon supprimé','success');
+}
+
+function printBonDepot(d){
+  if(!d) return;
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var dateRetour = d.dateRetour ? new Date(d.dateRetour).toLocaleDateString('fr-FR') : '—';
+  var dateDepot  = new Date(d.date).toLocaleDateString('fr-FR');
+
+  function checkRow(label, checked){
+    return '<tr>'+
+      '<td style="padding:5px 10px;font-size:12px;color:#333;border-bottom:1px solid #eee;">'+label+'</td>'+
+      '<td style="padding:5px 10px;text-align:center;font-size:16px;border-bottom:1px solid #eee;">'+(checked?'☑':'☐')+'</td>'+
+    '</tr>';
+  }
+
+  var etatsAll = [
+    'Écran fissuré/cassé','Rayures écran','Rayures dos','Vitre arrière cassée',
+    'Bouton(s) HS','Haut-parleur HS','Micro HS','Caméra HS',
+    'Connecteur charge HS','Batterie défaillante'
+  ];
+  var accAll = ['Coque/Étui','Chargeur','Câble','Boîte d\'origine','Protection écran','Autre'];
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>Bon de Dépôt '+d.numero+' — Solution Phone</title>'+
+    '<style>'+
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:13px;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}'+
+    '@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;}}'+
+    '@page{size:A4;margin:0;}'+
+    'table{border-collapse:collapse;}'+
+    '</style></head><body>'+
+
+    '<div class="no-print" style="text-align:right;padding:10px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '</div>'+
+
+    '<div class="page">'+
+
+    // EN-TÊTE
+    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:12px;">'+
+        (logo?'<img src="'+logo+'" style="height:50px;width:auto;">':'')+
+        '<div>'+
+          '<div style="font-size:18px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:10px;color:#777;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:-1px;">BON DE DÉPÔT</div>'+
+        '<div style="font-size:14px;font-weight:700;color:#c0392b;">'+d.numero+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    // DATES
+    '<div style="display:flex;gap:16px;margin-bottom:10px;">'+
+      '<div style="flex:1;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:8px 12px;">'+
+        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Date de dépôt</div>'+
+        '<div style="font-size:16px;font-weight:800;color:#1a1a1a;">'+dateDepot+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:#fff8f8;border:1px solid #f5c6c6;border-radius:6px;padding:8px 12px;">'+
+        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Restitution prévue</div>'+
+        '<div style="font-size:16px;font-weight:800;color:#c0392b;">'+dateRetour+'</div>'+
+      '</div>'+
+      '<div style="flex:1;background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;">'+
+        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Devis estimatif</div>'+
+        '<div style="font-size:16px;font-weight:800;color:#1a5c30;">'+(d.devis?d.devis.toFixed(2)+' €':'À établir')+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    // BLOC CLIENT + APPAREIL côte à côte
+    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+
+      // CLIENT
+      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:8px;overflow:hidden;">'+
+        '<div style="background:#c0392b;padding:6px 12px;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">👤 Client</div>'+
+        '<div style="padding:10px 12px;">'+
+          '<table style="width:100%;">'+
+            '<tr><td style="font-size:11px;color:#888;width:80px;">Nom</td><td style="font-size:13px;font-weight:700;">'+d.client.prenom+' '+d.client.nom+'</td></tr>'+
+            '<tr><td style="font-size:11px;color:#888;">Téléphone</td><td style="font-size:13px;font-weight:700;color:#c0392b;">'+d.client.tel+'</td></tr>'+
+            '<tr><td style="font-size:11px;color:#888;">Email</td><td style="font-size:12px;">'+(d.client.email||'—')+'</td></tr>'+
+          '</table>'+
+        '</div>'+
+      '</div>'+
+
+      // APPAREIL
+      '<div style="flex:1;border:1.5px solid #2c2c2c;border-radius:8px;overflow:hidden;">'+
+        '<div style="background:#2c2c2c;padding:6px 12px;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">📱 Appareil</div>'+
+        '<div style="padding:10px 12px;">'+
+          '<table style="width:100%;">'+
+            '<tr><td style="font-size:11px;color:#888;width:80px;">Modèle</td><td style="font-size:13px;font-weight:700;">'+d.appareil.marque+' '+d.appareil.modele+'</td></tr>'+
+            '<tr><td style="font-size:11px;color:#888;">IMEI</td><td style="font-size:12px;font-family:monospace;">'+(d.appareil.imei||'—')+'</td></tr>'+
+            '<tr><td style="font-size:11px;color:#888;">Couleur</td><td style="font-size:12px;">'+(d.appareil.couleur||'—')+'</td></tr>'+
+            '<tr><td style="font-size:11px;color:#888;">Code</td><td style="font-size:13px;font-weight:700;color:#2c2c2c;">'+(d.appareil.code||'Non communiqué')+'</td></tr>'+
+          '</table>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // PANNE
+    '<div style="border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;margin-bottom:10px;">'+
+      '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🔧 Panne décrite par le client</div>'+
+      '<div style="padding:10px 12px;font-size:13px;min-height:40px;">'+d.panne+'</div>'+
+    '</div>'+
+
+    // ÉTAT + ACCESSOIRES côte à côte
+    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+
+      // ÉTAT
+      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;">'+
+        '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🔍 État à la remise</div>'+
+        '<table style="width:100%;">'+
+        etatsAll.map(function(e){ return checkRow(e, d.etat.includes(e)); }).join('')+
+        '</table>'+
+        (d.etatAutre?'<div style="padding:6px 10px;font-size:11px;color:#666;border-top:1px solid #eee;"><i>'+d.etatAutre+'</i></div>':'')+
+      '</div>'+
+
+      // ACCESSOIRES
+      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;">'+
+        '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🎁 Accessoires remis</div>'+
+        '<table style="width:100%;">'+
+        accAll.map(function(a){ return checkRow(a, d.accessoires.includes(a)||d.accessoires.includes(a.replace("Autre","").trim())||(a==="Autre"&&d.accessoires.some(function(x){return x!=="Coque/Étui"&&x!=="Chargeur"&&x!=="Câble"&&x!=="Boîte d\'origine"&&x!=="Protection écran";}))); }).join('')+
+        '</table>'+
+      '</div>'+
+    '</div>'+
+
+    // SIGNATURES
+    '<div style="display:flex;gap:10px;margin-top:12px;">'+
+      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;padding:10px 12px;min-height:80px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Signature du client</div>'+
+        '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">"Je certifie déposer l\'appareil tel que décrit ci-dessus"</div>'+
+        '<div style="height:45px;border-bottom:1.5px solid #333;margin-top:8px;"></div>'+
+      '</div>'+
+      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;padding:10px 12px;min-height:80px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Signature du technicien</div>'+
+        '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">Solution Phone</div>'+
+        '<div style="height:45px;border-bottom:1.5px solid #333;margin-top:8px;"></div>'+
+      '</div>'+
+    '</div>'+
+
+    // PIED DE PAGE
+    '<div style="border-top:1.5px solid #ddd;margin-top:12px;padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:#aaa;">'+
+      '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
+      '<div>Bon de dépôt '+d.numero+' · '+dateDepot+'</div>'+
+      '<div style="color:#c0392b;font-weight:700;">Garantie 3 mois sauf casse ou dégât des eaux</div>'+
+    '</div>'+
+
+    '</div>'+
+    '</body></html>';
+
+  var w = window.open('','_blank','width=900,height=1100');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ============================================================
+//  FIN MODULE BON DE DÉPÔT
+// ============================================================
+
 
 
 var gmbSaved = JSON.parse(localStorage.getItem('sp_gmb_saved') || '[]');
