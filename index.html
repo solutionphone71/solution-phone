@@ -693,6 +693,24 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             <div class="card">
               <div class="card-header"><div class="card-title">🎨 Paramètres de la Story</div></div>
               <div style="display:flex;flex-direction:column;gap:12px;">
+
+                <!-- Lien Shopify global -->
+                <div style="background:linear-gradient(135deg,rgba(72,187,120,0.12),rgba(66,153,225,0.08));border:1px solid rgba(72,187,120,0.3);border-radius:10px;padding:12px;">
+                  <div style="font-size:11px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">🛒 Boutique en ligne Shopify</div>
+                  <div class="form-group" style="margin:0;">
+                    <input type="text" id="story-shop-url" placeholder="ex: solution-phone.myshopify.com"
+                      oninput="onShopUrlChange()"
+                      style="padding:9px 12px;background:var(--dark3);border:1px solid rgba(72,187,120,0.4);border-radius:8px;color:var(--text);font-size:13px;width:100%;">
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+                    <input type="checkbox" id="story-show-qr" checked onchange="renderStoryPreview()" style="width:16px;height:16px;accent-color:var(--green);">
+                    <label style="font-size:12px;color:var(--text-muted);text-transform:none;letter-spacing:0;">Afficher le QR code sur la Story</label>
+                    <input type="checkbox" id="story-show-banner" checked onchange="renderStoryPreview()" style="width:16px;height:16px;accent-color:var(--green);">
+                    <label style="font-size:12px;color:var(--text-muted);text-transform:none;letter-spacing:0;">Bandeau boutique</label>
+                  </div>
+                  <div id="story-qr-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;"></div>
+                </div>
+
                 <div class="form-group"><label>Type de Story</label>
                   <select id="story-type" onchange="updateStoryType()">
                     <option value="promo">📱 Promo Smartphone</option>
@@ -3157,19 +3175,79 @@ function igWrapText(ctx,text,x,y,maxW,lh){
 }
 
 function storyBranding(ctx,W,H,s){
-  var bh=130*s;
+  var showQr=document.getElementById('story-show-qr')&&document.getElementById('story-show-qr').checked;
+  var showBanner=document.getElementById('story-show-banner')&&document.getElementById('story-show-banner').checked;
+  var shopUrl=val('story-shop-url')||'';
+  var hasShop=shopUrl.length>3;
+
+  // Bandeau boutique en ligne (juste au-dessus du branding)
+  var brandH=130*s;
+  var bannerH=(hasShop&&showBanner)?72*s:0;
+  var qrSize=160*s;
+  var qrZoneH=(hasShop&&showQr)?qrSize+20*s:0;
+  var totalBottom=brandH+bannerH+qrZoneH;
+
+  // Fond branding bas
   ctx.fillStyle='rgba(0,0,0,0.82)';
-  ctx.fillRect(0,H-bh,W,bh);
-  ctx.textAlign='center';
+  ctx.fillRect(0,H-totalBottom,W,totalBottom);
+
+  var yStart=H-totalBottom;
+
+  // Zone QR code
+  if(hasShop&&showQr&&window._storyQrImg){
+    var qrX=(W-qrSize)/2;
+    var qrY=yStart+10*s;
+    // Fond blanc pour le QR
+    ctx.fillStyle='#ffffff';
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(qrX-8*s,qrY-8*s,qrSize+16*s,qrSize+16*s,12*s);
+    else ctx.rect(qrX-8*s,qrY-8*s,qrSize+16*s,qrSize+16*s);
+    ctx.fill();
+    ctx.drawImage(window._storyQrImg,qrX,qrY,qrSize,qrSize);
+    // Label sous le QR
+    ctx.fillStyle='rgba(255,255,255,0.55)';
+    ctx.font=Math.round(20*s)+'px Arial,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('Scanner pour visiter la boutique',W/2,qrY+qrSize+18*s);
+    yStart+=qrZoneH;
+  } else if(hasShop&&showQr&&!window._storyQrImg){
+    yStart+=qrZoneH;
+  }
+
+  // Bandeau boutique en ligne
+  if(hasShop&&showBanner){
+    var g2=ctx.createLinearGradient(0,yStart,W,yStart);
+    g2.addColorStop(0,'rgba(72,187,120,0.25)');
+    g2.addColorStop(0.5,'rgba(72,187,120,0.35)');
+    g2.addColorStop(1,'rgba(66,153,225,0.25)');
+    ctx.fillStyle=g2;
+    ctx.fillRect(0,yStart,W,bannerH);
+    ctx.strokeStyle='rgba(72,187,120,0.5)';
+    ctx.lineWidth=1*s;
+    ctx.beginPath();ctx.moveTo(0,yStart);ctx.lineTo(W,yStart);ctx.stroke();
+
+    ctx.textAlign='center';
+    ctx.fillStyle='#48bb78';
+    ctx.font='bold '+Math.round(28*s)+'px Arial,sans-serif';
+    ctx.fillText('🛒  Disponible sur notre boutique en ligne',W/2,yStart+28*s);
+    var displayUrl=shopUrl.replace(/^https?:\/\//,'');
+    ctx.fillStyle='rgba(255,255,255,0.65)';
+    ctx.font=Math.round(21*s)+'px Arial,sans-serif';
+    ctx.fillText(displayUrl,W/2,yStart+54*s);
+    yStart+=bannerH;
+  }
+
+  // Branding Solution Phone
   ctx.fillStyle='#e53e3e';
   ctx.font='bold '+Math.round(32*s)+'px -apple-system,Arial,sans-serif';
-  ctx.fillText('📱 Solution Phone',W/2,H-bh+42*s);
+  ctx.textAlign='center';
+  ctx.fillText('📱 Solution Phone',W/2,yStart+42*s);
   ctx.fillStyle='rgba(255,255,255,0.65)';
   ctx.font=Math.round(24*s)+'px -apple-system,Arial,sans-serif';
-  ctx.fillText('21 Rue Gambetta · Mâcon · 71000',W/2,H-bh+74*s);
+  ctx.fillText('21 Rue Gambetta · Mâcon · 71000',W/2,yStart+74*s);
   ctx.fillStyle='rgba(255,255,255,0.35)';
   ctx.font=Math.round(20*s)+'px -apple-system,Arial,sans-serif';
-  ctx.fillText('solutionphone71.github.io/solution-phone',W/2,H-bh+100*s);
+  ctx.fillText('solutionphone71.github.io/solution-phone',W/2,yStart+100*s);
 }
 
 function storyDecoBubbles(ctx,W,H,c1,c2){
@@ -3220,10 +3298,10 @@ function storyPromo(ctx,W,H,s){
     ctx.save();
     ctx.shadowColor='rgba(229,62,62,0.6)';ctx.shadowBlur=60*s;
     var iw=storyImg.naturalWidth,ih=storyImg.naturalHeight;
-    var maxW=680*s,maxH=580*s;
+    var maxW=720*s,maxH=620*s;
     var ratio=Math.min(maxW/iw,maxH/ih);
     var dw=iw*ratio,dh=ih*ratio;
-    var dx=(W-dw)/2,dy=200*s;
+    var dx=(W-dw)/2,dy=140*s;
     // Fond blanc doux derrière la photo
     ctx.fillStyle='rgba(255,255,255,0.06)';
     ctx.beginPath();
@@ -3244,7 +3322,7 @@ function storyPromo(ctx,W,H,s){
   }
 
   // Positions dynamiques selon photo ou emoji
-  var yBase=storyImg?820*s:560*s;
+  var yBase=storyImg?920*s:560*s;
 
   // Modèle
   ctx.fillStyle='#ffffff';
@@ -3263,17 +3341,17 @@ function storyPromo(ctx,W,H,s){
 
   // Prix
   if(prix>0){
-    var yPrix=yBase+280*s;
-    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(storyImg?130:160)*s+'px Arial,sans-serif';
+    var yPrix=yBase+270*s;
+    ctx.fillStyle='#ff4757';ctx.font='bold '+Math.round(storyImg?120:160)*s+'px Arial,sans-serif';
     ctx.fillText(prix+'€',W/2,yPrix);
-    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font=Math.round(28*s)+'px Arial,sans-serif';
-    ctx.fillText('Prix de vente TTC · Garanti',W/2,yPrix+40*s);
+    ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font=Math.round(26*s)+'px Arial,sans-serif';
+    ctx.fillText('Prix de vente TTC · Garanti',W/2,yPrix+38*s);
   }
 
   // Desc
   if(desc){
-    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=Math.round(30*s)+'px Arial,sans-serif';
-    igWrapText(ctx,desc,W/2,yBase+430*s,W-120*s,42*s);
+    ctx.fillStyle='rgba(255,255,255,0.75)';ctx.font=Math.round(28*s)+'px Arial,sans-serif';
+    igWrapText(ctx,desc,W/2,yBase+420*s,W-120*s,40*s);
   }
 
   // CTA button
@@ -3454,8 +3532,42 @@ function storyBrouillon(ctx,W,H,s){
 
 function val(id){var e=document.getElementById(id);return e?e.value:'';}
 
-// ---- Gestion photo story ----
-window._storyPhotoImg = null;
+// ---- Gestion QR code Shopify ----
+window._storyQrImg = null;
+var _qrDebounce = null;
+
+function onShopUrlChange(){
+  var url = val('story-shop-url').trim();
+  var status = document.getElementById('story-qr-status');
+  if(!url || url.length < 4){
+    window._storyQrImg = null;
+    if(status) status.textContent = '';
+    renderStoryPreview();
+    return;
+  }
+  if(status) status.innerHTML = '⏳ Génération du QR code...';
+  clearTimeout(_qrDebounce);
+  _qrDebounce = setTimeout(function(){ loadQrCode(url); }, 600);
+}
+
+function loadQrCode(url){
+  var fullUrl = url.startsWith('http') ? url : 'https://' + url;
+  var status = document.getElementById('story-qr-status');
+  var apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=10&data=' + encodeURIComponent(fullUrl);
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function(){
+    window._storyQrImg = img;
+    if(status) status.innerHTML = '✅ QR code prêt — pointe vers <b style="color:var(--green);">' + fullUrl.replace(/^https?:\/\//,'') + '</b>';
+    renderStoryPreview();
+  };
+  img.onerror = function(){
+    if(status) status.innerHTML = '⚠️ QR code indisponible (vérifiez votre connexion)';
+    window._storyQrImg = null;
+    renderStoryPreview();
+  };
+  img.src = apiUrl;
+}
 
 function loadStoryPhoto(input){
   var file=input.files[0];
