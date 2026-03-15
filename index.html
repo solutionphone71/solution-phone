@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260315_prix_add_row -->
+<!-- v20260315_fix_batteries_menu -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -135,6 +135,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;
 }
 #mobile-menu-panel{
+  display:none;
   position:fixed;bottom:70px;left:0;right:0;
   background:var(--dark2);border-top:1px solid var(--border);
   border-radius:16px 16px 0 0;
@@ -143,6 +144,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   transform:translateY(100%);transition:.25s ease;
 }
 #mobile-menu-panel.open{transform:translateY(0);}
+@media(max-width:768px){
+  #mobile-menu-panel{display:block;transform:translateY(100%);}
+  #mobile-menu-panel.open{transform:translateY(0);}
+}
 .mob-menu-item{
   display:flex;align-items:center;gap:14px;
   padding:12px 14px;border-radius:10px;cursor:pointer;
@@ -1655,7 +1660,12 @@ function doLogin(){
     if(window.innerWidth <= 768){
       document.getElementById('mobile-nav').style.display='block';
     }
-    loadFromSupabase().then(function(){renderDashboard();renderPhones();renderFactures();renderCaisse();});
+    loadFromSupabase().then(function(){
+      renderDashboard();renderPhones();renderFactures();renderCaisse();
+    });
+    // Initialiser les prix dès le login pour que les tableaux soient prêts
+    renderEcrans();
+    renderBatteries();
   } else {showNotif('Identifiants incorrects','error');}
 }
 
