@@ -5389,11 +5389,23 @@ function renderBonsCommande(){
       '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</td>'+
       '<td><b>'+c.prix.toFixed(2)+' €</b>'+(c.paye?' <span style="color:var(--green);font-size:11px;">✓ payé</span>':'')+'</td>'+
       '<td style="display:flex;gap:4px;">'+
+        '<button class="btn btn-sm btn-primary" onclick="envoyerSMSCommande('+c.id+')" title="Envoyer SMS client">📱</button>'+
         '<button class="btn btn-sm" onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" title="Réimprimer">🖨️</button>'+
         '<button class="btn btn-sm" onclick="supprimerCommande('+c.id+')" style="color:var(--text-dim)">🗑️</button>'+
       '</td>'+
     '</tr>';
   }).join('')||'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun bon de commande</td></tr>';
+}
+
+function envoyerSMSCommande(id){
+  var c = bonsCommande.find(function(x){ return x.id === id; });
+  if(!c) return;
+  var isRep = c.type === 'reparation';
+  var msg = isRep
+    ? 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ('+c.detail+'). Vous pouvez passer quand vous voulez. À bientôt ! Solution Phone — 03 85 33 06 89'
+    : 'Bonjour '+c.client.nom+', votre commande est disponible en magasin ('+c.detail+'). Vous pouvez passer quand vous voulez. À bientôt ! Solution Phone — 03 85 33 06 89';
+  var tel = c.client.tel.replace(/\s/g,'');
+  window.location.href = 'sms:'+tel+'?body='+encodeURIComponent(msg);
 }
 
 function supprimerCommande(id){
