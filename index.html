@@ -2797,8 +2797,8 @@ function buildEtiquetteHTML(p, opts){
   html += '</div>'; // fin colonne gauche
 
   // ── COLONNE DROITE — PRIX ──
-  html += '<div style="min-width:20mm;width:20mm;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border-left:0.5mm solid #eee;">';
-  html += '<span style="font-size:16pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+prixAffiche+'€</span>';
+  html += '<div style="width:22mm;min-width:22mm;max-width:22mm;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border-left:0.5mm solid #eee;">';
+  html += '<span style="font-size:13pt;font-weight:900;color:#c0392b;line-height:1.1;text-align:center;">'+prixAffiche+'&euro;</span>';
   html += '</div>';
 
   html += '</div>'; // fin contenu
@@ -2826,10 +2826,10 @@ function refreshEtiquette(){
   var prev = document.getElementById('etiquette-preview');
   prev.innerHTML = buildEtiquetteHTML(_etiquettePhone, opts);
   if(prev.firstChild){
-    prev.firstChild.style.transform = 'scale(1.5)';
+    prev.firstChild.style.transform = 'scale(1.2)';
     prev.firstChild.style.transformOrigin = 'top left';
-    prev.style.width = '135mm';
-    prev.style.height = '43.5mm';
+    prev.style.width = '108mm';
+    prev.style.height = '35mm';
     prev.style.overflow = 'visible';
   }
 }
