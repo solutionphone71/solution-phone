@@ -71,6 +71,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 .android-prix-cell:hover{background:rgba(192,57,43,0.12);}
 .android-prix-cell.has-prix{color:var(--red);font-weight:600;}
 .android-prix-cell.no-prix{color:var(--text-muted);font-size:11px;}
+@media(max-width:768px){.docs-grid{grid-template-columns:1fr!important;}}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
@@ -279,6 +280,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('ecrans',this)"><span class="nav-icon">🖥️</span><span>Prix Écrans iPhone</span></div>
     <div class="nav-item" onclick="showPage('batteries',this)"><span class="nav-icon">🔋</span><span>Prix Batteries iPhone</span></div>
     <div class="nav-item" onclick="showPage('prix-android',this);androidInit();"><span class="nav-icon">🤖</span><span>Prix Réparations Android</span></div>
+    <div class="nav-item" onclick="showPage('docs-comptable',this);docsComptableInit();"><span class="nav-icon">📂</span><span>Documents Comptable</span></div>
   </div>
   <div class="main">
 
@@ -1582,6 +1584,74 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
   </div>
   <!-- ========== FIN PAGE PRIX ANDROID ========== -->
+
+  <!-- ========== PAGE DOCUMENTS COMPTABLE ========== -->
+  <div class="page" id="page-docs-comptable">
+    <div class="page-title">📂 Documents Comptable</div>
+    <div class="page-sub">Checklist mensuelle + analyse relevé bancaire</div>
+
+    <!-- Sélecteur mois -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+      <select id="docs-mois-select" onchange="docsComptableInit()" style="background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;">
+        <option value="2026-01">Janvier 2026</option>
+        <option value="2026-02" selected>Février 2026</option>
+        <option value="2026-03">Mars 2026</option>
+        <option value="2026-04">Avril 2026</option>
+        <option value="2026-05">Mai 2026</option>
+        <option value="2026-06">Juin 2026</option>
+        <option value="2026-07">Juillet 2026</option>
+        <option value="2026-08">Août 2026</option>
+        <option value="2026-09">Septembre 2026</option>
+        <option value="2026-10">Octobre 2026</option>
+        <option value="2026-11">Novembre 2026</option>
+        <option value="2026-12">Décembre 2026</option>
+      </select>
+      <div id="docs-progress-badge" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;"></div>
+      <a id="docs-drive-btn" href="#" target="_blank" style="background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;">
+        📁 Ouvrir Google Drive
+      </a>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="docs-grid">
+
+      <!-- CHECKLIST -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">✅ Checklist factures</div>
+          <button class="btn btn-sm" onclick="docsResetChecklist()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
+        </div>
+        <div id="docs-checklist" style="padding:8px 0;"></div>
+      </div>
+
+      <!-- IMPORT RELEVÉ -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏦 Analyse relevé bancaire</div>
+        </div>
+        <div style="padding:0 0 16px;">
+          <div style="background:var(--dark3);border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('docs-pdf-input').click()">
+            <div style="font-size:28px;margin-bottom:8px;">📄</div>
+            <div style="font-size:14px;color:var(--text);">Cliquez pour importer votre relevé PDF</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Banque Populaire Bourgogne Franche-Comté</div>
+            <input type="file" id="docs-pdf-input" accept=".pdf" style="display:none;" onchange="docsAnalysePDF(this)">
+          </div>
+          <div id="docs-analyse-result"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RÉSUMÉ CATÉGORISÉ -->
+    <div class="card" style="margin-top:20px;" id="docs-resume-card" style="display:none;">
+      <div class="card-header">
+        <div class="card-title">📊 Résumé des dépenses</div>
+        <button class="btn btn-sm btn-primary" onclick="docsExportResume()">📥 Exporter Excel</button>
+      </div>
+      <div id="docs-resume-content"></div>
+    </div>
+
+  </div>
+  <!-- ========== FIN PAGE DOCUMENTS COMPTABLE ========== -->
 
 </div>
 </div>
@@ -5492,6 +5562,271 @@ function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 // ============================================================
 //  FIN MODULE PRIX ANDROID
+// ============================================================
+
+// ============================================================
+//  MODULE DOCUMENTS COMPTABLE
+// ============================================================
+
+var DOCS_CHECKLIST = [
+  // Automatiques (Gmail)
+  {id:'total', label:'⚡ TotalEnergies', cat:'Énergie', auto:true},
+  {id:'verisure', label:'🔒 Verisure (alarme)', cat:'Assurances', auto:true},
+  {id:'allianz', label:'🛡️ Allianz', cat:'Assurances', auto:true},
+  {id:'generali', label:'🛡️ Generali', cat:'Assurances', auto:true},
+  {id:'free', label:'📡 Free Pro (internet)', cat:'Télécom', auto:true},
+  {id:'orange', label:'📱 Orange (mobile)', cat:'Télécom', auto:true},
+  {id:'bouygues', label:'📱 Bouygues', cat:'Télécom', auto:true},
+  {id:'cofagest', label:'📊 Cofagest (comptable)', cat:'Comptabilité', auto:true},
+  {id:'externain', label:'💼 ExternAin Paie', cat:'Social', auto:true},
+  {id:'ibt', label:'🏠 IBT Gestion', cat:'Loyer/Charges', auto:true},
+  {id:'charnay', label:'🏠 Charnay Immobilier', cat:'Loyer/Charges', auto:true},
+  {id:'urssaf', label:'👥 URSSAF', cat:'Social', auto:true},
+  // Manuels
+  {id:'utopya', label:'📦 Utopya (factures)', cat:'Fournisseurs', auto:false},
+  {id:'mobilax', label:'📦 Mobilax (factures)', cat:'Fournisseurs', auto:false},
+  {id:'amazon', label:'🛒 Amazon', cat:'Achats', auto:false},
+  {id:'paypal', label:'💳 PayPal (relevé)', cat:'Paiements', auto:false},
+  {id:'banque', label:'🏦 Relevé bancaire', cat:'Banque', auto:false},
+  {id:'dgfip', label:'💰 TVA / DGFIP', cat:'Taxes', auto:false},
+];
+
+var DOCS_CATS = {
+  'Énergie':'⚡', 'Assurances':'🛡️', 'Télécom':'📡',
+  'Comptabilité':'📊', 'Social':'👥', 'Loyer/Charges':'🏠',
+  'Fournisseurs':'📦', 'Achats':'🛒', 'Paiements':'💳',
+  'Banque':'🏦', 'Taxes':'💰'
+};
+
+var DOCS_CATS_RELEVE = {
+  'TotalEnergies': 'Énergie',
+  'UTOPYA': 'Fournisseurs',
+  'URSSAF': 'Social',
+  'ALLIANZ': 'Assurances',
+  'GENERALI': 'Assurances',
+  'IBT GESTION': 'Loyer/Charges',
+  'AMAZON': 'Achats',
+  'VERISURE': 'Assurances',
+  'PayPal': 'Paiements',
+  'COFAGEST': 'Comptabilité',
+  'Free Pro': 'Télécom',
+  'ORANGE': 'Télécom',
+  'Bouygues': 'Télécom',
+  'CHARNAY IMMOBILIER': 'Loyer/Charges',
+  'Wegacell': 'Fournisseurs',
+  'ND DISTRIBUTION': 'Fournisseurs',
+  'Partner Tele': 'Fournisseurs',
+  'DGFIP': 'Taxes',
+  'Extern Ain Paie': 'Social',
+  'RYTHMEO': 'Assurances',
+};
+
+var DOCS_DRIVE_LINKS = {
+  '2026-01': null,
+  '2026-02': 'https://drive.google.com/drive/folders/1OOXLqN7nrhEI_9pNl3-E_O4UdZ4DWYGH',
+  '2026-03': 'https://drive.google.com/drive/folders/1NvdenvcEaZw-lcxNq3s0-NthOt3x0ZjC',
+  '2026-04': 'https://drive.google.com/drive/folders/1rVC9gaxMbWTaYEM-QotNqhRfpGZU4PQe',
+  '2026-05': 'https://drive.google.com/drive/folders/1W2Nmy-kXuqZoBPTqsFBgA41eSIf8eujU',
+  '2026-06': 'https://drive.google.com/drive/folders/13Va_eJ-qumyhEOPjG-UHEvOovaoinKWF',
+  '2026-07': 'https://drive.google.com/drive/folders/12pgMejJ9qnz58hCwzmpwLS_mN-mLQayP',
+  '2026-08': 'https://drive.google.com/drive/folders/1PF1lHFyG998unxW9-0z5c0WCK8vvcEGe',
+  '2026-09': 'https://drive.google.com/drive/folders/1dyyMlvdYKeaIQIvn6B0sp6whVSKG4VBx',
+  '2026-10': 'https://drive.google.com/drive/folders/1V03S-1sVxuCkbcdoG4EeovFOdb-xbUEn',
+  '2026-11': 'https://drive.google.com/drive/folders/1ZdPbrNRZM4hLBUYuDvy99qpzVaT6ifOv',
+  '2026-12': 'https://drive.google.com/drive/folders/1DNEBtWUAFGon7yUj1F1F8IoP9EXcQ9wz',
+};
+
+function docsGetKey(){
+  var sel = document.getElementById('docs-mois-select');
+  return 'docs_checklist_' + (sel ? sel.value : '2026-02');
+}
+
+function docsComptableInit(){
+  docsRenderChecklist();
+  // Mettre à jour le bouton Drive
+  var sel = document.getElementById('docs-mois-select');
+  var mois = sel ? sel.value : '2026-02';
+  var btn = document.getElementById('docs-drive-btn');
+  if(btn){
+    var link = DOCS_DRIVE_LINKS[mois];
+    var nomMois = sel ? sel.options[sel.selectedIndex].text : 'Février 2026';
+    if(link){
+      btn.href = link;
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'all';
+      btn.innerHTML = '📁 Drive — ' + nomMois;
+    } else {
+      btn.href = '#';
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
+      btn.innerHTML = '📁 Drive — ' + nomMois + ' (non disponible)';
+    }
+  }
+}
+
+function docsRenderChecklist(){
+  var key = docsGetKey();
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e){}
+  var container = document.getElementById('docs-checklist');
+  if(!container) return;
+
+  var html = '';
+  var lastCat = '';
+  var total = DOCS_CHECKLIST.length;
+  var done = 0;
+
+  DOCS_CHECKLIST.forEach(function(item){
+    var checked = saved[item.id] || false;
+    if(checked) done++;
+    if(item.cat !== lastCat){
+      html += '<div style="padding:6px 16px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:8px;">'
+            + (DOCS_CATS[item.cat]||'') + ' ' + item.cat + '</div>';
+      lastCat = item.cat;
+    }
+    html += '<label style="display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-radius:6px;transition:.1s;" onmouseover="this.style.background=\'var(--dark3)\'" onmouseout="this.style.background=\'\'">'+
+      '<input type="checkbox" ' + (checked?'checked':'') + ' onchange="docsToggle(\''+item.id+'\')" style="width:16px;height:16px;accent-color:var(--red);">'+
+      '<span style="flex:1;font-size:13px;'+(checked?'text-decoration:line-through;color:var(--text-muted);':'')+'">'+item.label+'</span>'+
+      '<span style="font-size:11px;color:'+(item.auto?'var(--green)':'var(--warning)')+';">'+(item.auto?'📧 Auto':'📥 Manuel')+'</span>'+
+    '</label>';
+  });
+
+  container.innerHTML = html;
+  var badge = document.getElementById('docs-progress-badge');
+  if(badge){
+    var pct = Math.round(done/total*100);
+    badge.textContent = done + '/' + total + ' factures (' + pct + '%)';
+    badge.style.background = pct===100 ? 'var(--green)' : pct>50 ? 'var(--warning)' : 'var(--red)';
+  }
+}
+
+function docsToggle(id){
+  var key = docsGetKey();
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e){}
+  saved[id] = !saved[id];
+  localStorage.setItem(key, JSON.stringify(saved));
+  docsRenderChecklist();
+}
+
+function docsResetChecklist(){
+  if(!confirm('Réinitialiser la checklist du mois ?')) return;
+  localStorage.removeItem(docsGetKey());
+  docsRenderChecklist();
+}
+
+async function docsAnalysePDF(input){
+  var file = input.files[0];
+  if(!file) return;
+  var result = document.getElementById('docs-analyse-result');
+  result.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">⏳ Analyse en cours...</div>';
+
+  try {
+    // Lire le PDF avec l'IA Claude
+    var key = localStorage.getItem('sp_claude_key');
+    if(!key){ result.innerHTML = '<div style="color:var(--red);padding:10px;">❌ Clé API requise</div>'; return; }
+
+    var base64 = await new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(r.result.split(',')[1]); };
+      r.onerror = function(){ rej(new Error('Erreur lecture')); };
+      r.readAsDataURL(file);
+    });
+
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+            { type: 'text', text: `Extrait toutes les DÉPENSES (montants négatifs/débits) de ce relevé bancaire.
+Pour chaque dépense retourne un JSON array avec : date, libelle, montant (positif), categorie.
+Catégories possibles : Énergie, Assurances, Télécom, Comptabilité, Social, Loyer/Charges, Fournisseurs, Achats, Paiements, Banque, Taxes, Divers.
+Retourne UNIQUEMENT le JSON, sans texte avant ou après, sans backticks.` }
+          ]
+        }]
+      })
+    });
+
+    var data = await resp.json();
+    var text = data.content[0].text.replace(/```json|```/g,'').trim();
+    var depenses = JSON.parse(text);
+    docsAfficheResume(depenses);
+
+  } catch(e) {
+    result.innerHTML = '<div style="color:var(--red);padding:10px;">❌ Erreur : ' + e.message + '</div>';
+  }
+}
+
+function docsAfficheResume(depenses){
+  var result = document.getElementById('docs-analyse-result');
+  result.innerHTML = '<div style="color:var(--green);padding:10px;font-size:13px;">✅ ' + depenses.length + ' dépenses extraites</div>';
+
+  // Grouper par catégorie
+  var cats = {};
+  depenses.forEach(function(d){
+    var cat = d.categorie || 'Divers';
+    if(!cats[cat]) cats[cat] = [];
+    cats[cat].push(d);
+  });
+
+  var resumeCard = document.getElementById('docs-resume-card');
+  var resumeContent = document.getElementById('docs-resume-content');
+  if(resumeCard) resumeCard.style.display = 'block';
+
+  var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">';
+  html += '<thead><tr style="background:var(--red);"><th style="padding:10px;text-align:left;color:#fff;font-size:13px;">Catégorie</th><th style="padding:10px;text-align:left;color:#fff;font-size:13px;">Libellé</th><th style="padding:10px;text-align:center;color:#fff;font-size:13px;">Date</th><th style="padding:10px;text-align:right;color:#fff;font-size:13px;">Montant</th></tr></thead><tbody>';
+
+  var totalGeneral = 0;
+  Object.keys(cats).sort().forEach(function(cat, ci){
+    var total = 0;
+    cats[cat].forEach(function(d, i){
+      var bg = ci%2===0 ? '' : 'background:var(--dark3);';
+      html += '<tr style="'+bg+'border-bottom:1px solid var(--border);">';
+      html += '<td style="padding:8px 10px;font-size:12px;color:var(--text-muted);">'+(i===0?cat:'')+'</td>';
+      html += '<td style="padding:8px 10px;font-size:13px;">'+d.libelle+'</td>';
+      html += '<td style="padding:8px 10px;font-size:12px;text-align:center;color:var(--text-muted);">'+d.date+'</td>';
+      html += '<td style="padding:8px 10px;font-size:13px;text-align:right;color:var(--red);font-weight:600;">'+parseFloat(d.montant).toFixed(2)+' €</td>';
+      html += '</tr>';
+      total += parseFloat(d.montant)||0;
+    });
+    totalGeneral += total;
+    html += '<tr style="background:rgba(192,57,43,0.08);"><td colspan="3" style="padding:6px 10px;font-size:12px;font-weight:700;">Total '+cat+'</td><td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--red);">'+total.toFixed(2)+' €</td></tr>';
+  });
+
+  html += '<tr style="background:var(--red);"><td colspan="3" style="padding:10px;color:#fff;font-weight:700;font-size:14px;">TOTAL DÉPENSES</td><td style="padding:10px;text-align:right;color:#fff;font-weight:700;font-size:14px;">'+totalGeneral.toFixed(2)+' €</td></tr>';
+  html += '</tbody></table></div>';
+
+  // Stocker pour export
+  window._docsDepenses = depenses;
+  if(resumeContent) resumeContent.innerHTML = html;
+}
+
+function docsExportResume(){
+  if(!window._docsDepenses || !window._docsDepenses.length){ showToast('Aucune donnée à exporter'); return; }
+  var csv = 'Date;Libellé;Catégorie;Montant\n';
+  window._docsDepenses.forEach(function(d){
+    csv += d.date+';'+d.libelle+';'+(d.categorie||'Divers')+';'+parseFloat(d.montant).toFixed(2)+'\n';
+  });
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'depenses-'+docsGetKey()+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ Export CSV téléchargé !');
+}
+
+// ============================================================
+//  FIN MODULE DOCUMENTS COMPTABLE
 // ============================================================
 
 function isMobile(){ return window.innerWidth <= 768; }
