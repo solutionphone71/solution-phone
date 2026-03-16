@@ -2755,11 +2755,8 @@ function buildEtiquetteHTML(p, opts){
   // Conteneur principal 90mm × 29mm
   var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
 
-  // BANDE ROUGE GAUCHE + logo
-  html += '<div style="width:11mm;background:#c0392b;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">';
-  if(logo) html += '<img src="'+logo+'" style="width:9mm;height:auto;filter:brightness(0) invert(1);">';
-  else html += '<div style="font-size:5pt;color:#fff;font-weight:900;text-align:center;padding:1mm;">SP</div>';
-  html += '</div>';
+  // BANDE ROUGE GAUCHE — simple liseré
+  html += '<div style="width:4mm;background:#c0392b;flex-shrink:0;"></div>';
 
   // CONTENU — colonne gauche (infos) + colonne droite (prix)
   html += '<div style="flex:1;display:flex;flex-direction:row;padding:1mm 1.5mm;gap:1mm;overflow:hidden;">';
