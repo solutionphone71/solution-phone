@@ -5670,6 +5670,9 @@ function docsRenderChecklist(){
   try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e){}
   var container = document.getElementById('docs-checklist');
   if(!container) return;
+  var sel = document.getElementById('docs-mois-select');
+  var mois = sel ? sel.value : '2026-02';
+  var driveLink = DOCS_DRIVE_LINKS[mois] || '#';
 
   var html = '';
   var lastCat = '';
@@ -5688,6 +5691,7 @@ function docsRenderChecklist(){
       '<input type="checkbox" ' + (checked?'checked':'') + ' onchange="docsToggle(\''+item.id+'\')" style="width:16px;height:16px;accent-color:var(--red);">'+
       '<span style="flex:1;font-size:13px;'+(checked?'text-decoration:line-through;color:var(--text-muted);':'')+'">'+item.label+'</span>'+
       '<span style="font-size:11px;color:'+(item.auto?'var(--green)':'var(--warning)')+';">'+(item.auto?'📧 Auto':'📥 Manuel')+'</span>'+
+      '<a href="'+driveLink+'" target="_blank" onclick="event.stopPropagation()" style="background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-size:11px;text-decoration:none;flex-shrink:0;">📁</a>'+
     '</label>';
   });
 
