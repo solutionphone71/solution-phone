@@ -4931,6 +4931,25 @@ if(!ecransPrix){ ecransPrix = JSON.parse(JSON.stringify(ECRANS_DEFAULT)); }
 
 function saveEcransPrix(){
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
+  // Sync Supabase
+  if(!SUPA_URL || !SUPA_KEY) return;
+  var rows = [];
+  ['t1','t2'].forEach(function(tbl){
+    (ecransPrix[tbl]||[]).forEach(function(ligne){
+      rows.push({
+        tableau: tbl,
+        modele: ligne.modele,
+        p0: ligne.prix[0]||null, p1: ligne.prix[1]||null,
+        p2: ligne.prix[2]||null, p3: ligne.prix[3]||null,
+        p4: ligne.prix[4]||null
+      });
+    });
+  });
+  fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify(rows)
+  }).catch(function(){});
 }
 
 function renderEcrans(){
