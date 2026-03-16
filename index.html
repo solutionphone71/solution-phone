@@ -278,7 +278,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
     <div class="nav-item" onclick="showPage('ecrans',this)"><span class="nav-icon">🖥️</span><span>Prix Écrans iPhone</span></div>
     <div class="nav-item" onclick="showPage('batteries',this)"><span class="nav-icon">🔋</span><span>Prix Batteries iPhone</span></div>
-    <div class="nav-item" onclick="showPage('prix-android',this);androidRender();"><span class="nav-icon">🤖</span><span>Prix Réparations Android</span></div>
+    <div class="nav-item" onclick="showPage('prix-android',this);androidInit();"><span class="nav-icon">🤖</span><span>Prix Réparations Android</span></div>
   </div>
   <div class="main">
 
@@ -5322,21 +5322,19 @@ var androidData = {};
 var androidMarqueActive = 'Samsung';
 
 function androidInit(){
-  // Charger depuis localStorage
   var saved = localStorage.getItem('sp_android_prix');
   if(saved){
     try{ androidData = JSON.parse(saved); }catch(e){ androidData = {}; }
   }
-  // Initialiser les marques manquantes
   ANDROID_MARQUES.forEach(function(m){
     if(!androidData[m]) androidData[m] = {};
     ANDROID_MODELES_DEFAULT[m].forEach(function(mod){
       if(!androidData[m][mod]) androidData[m][mod] = {ecran_compat:'',ecran_original:'',batterie_compat:'',batterie_original:'',connecteur:'',vitre_arriere:'',remarques:''};
     });
   });
-  // Charger Supabase en arrière-plan
+  localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
+  setTimeout(function(){ androidRender(); }, 50);
   androidLoadSupabase();
-  androidRender();
 }
 
 async function androidLoadSupabase(){
