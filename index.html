@@ -2749,8 +2749,9 @@ function buildEtiquetteHTML(p, opts){
   var showBatterie = opts.batterie === true;
   var showImei     = opts.imei     !== false;
   var showGarantie = opts.garantie !== false;
-  var imei6 = p.imei ? p.imei.slice(-6) : '';
+  var imei6 = p.imei ? p.imei : '';
   var modeleShort = (p.modele||'').replace('Apple ','').replace('Samsung ','');
+  var prixAffiche = p.vente ? String(p.vente) : (p.prix ? String(p.prix) : '—');
 
   // Conteneur principal 90mm × 29mm
   var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
@@ -2783,7 +2784,7 @@ function buildEtiquetteHTML(p, opts){
   // IMEI + Garantie
   html += '<div style="display:flex;flex-direction:column;gap:0.3mm;">';
   if(showImei && imei6){
-    html += '<span style="font-size:5.5pt;color:#000;font-weight:700;font-family:monospace;white-space:nowrap;">IMEI:'+imei6+'</span>';
+    html += '<span style="font-size:5pt;color:#000;font-weight:700;font-family:monospace;white-space:nowrap;">IMEI:'+imei6+'</span>';
   }
   if(showGarantie){
     html += '<span style="font-size:5.5pt;color:#1a5c30;font-weight:700;">\u2713 Gar. '+(p.grade?'12 mois':'24 mois')+'</span>';
@@ -2797,7 +2798,7 @@ function buildEtiquetteHTML(p, opts){
 
   // ── COLONNE DROITE — PRIX ──
   html += '<div style="min-width:18mm;width:18mm;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;padding-left:1mm;border-left:0.5mm solid #eee;">';
-  html += '<span style="font-size:20pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+p.vente+'</span>';
+  html += '<span style="font-size:20pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+prixAffiche+'</span>';
   html += '<span style="font-size:12pt;font-weight:900;color:#c0392b;line-height:1;">&euro;</span>';
   html += '</div>';
 
@@ -2826,11 +2827,11 @@ function refreshEtiquette(){
   var prev = document.getElementById('etiquette-preview');
   prev.innerHTML = buildEtiquetteHTML(_etiquettePhone, opts);
   if(prev.firstChild){
-    prev.firstChild.style.transform = 'scale(1.6)';
+    prev.firstChild.style.transform = 'scale(1.5)';
     prev.firstChild.style.transformOrigin = 'top left';
-    prev.style.width = '144mm';
-    prev.style.height = '46.4mm';
-    prev.style.overflow = 'hidden';
+    prev.style.width = '135mm';
+    prev.style.height = '43.5mm';
+    prev.style.overflow = 'visible';
   }
 }
 
