@@ -2768,40 +2768,40 @@ function buildEtiquetteHTML(p, opts){
   html += '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;">';
 
   // Modèle
-  html += '<div style="font-size:12pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;">'+modeleShort+'</div>';
+  html += '<div style="font-size:11pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;">'+modeleShort+'</div>';
 
   // Badges : Stockage + Grade + Batterie
-  html += '<div style="display:flex;flex-wrap:wrap;gap:1mm;align-items:center;">';
+  html += '<div style="display:flex;flex-wrap:nowrap;gap:1mm;align-items:center;">';
   if(showStockage && p.stockage){
-    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">'+p.stockage+' Go</span>';
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;white-space:nowrap;">'+p.stockage+' Go</span>';
   }
   if(showGrade && p.grade){
-    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">Grade '+p.grade+'</span>';
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;white-space:nowrap;">Grade '+p.grade+'</span>';
   }
   if(showBatterie && p.batterie){
-    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;">\uD83D\uDD0B '+p.batterie+'%</span>';
+    html += '<span style="background:#c0392b;color:#fff;font-size:6pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;white-space:nowrap;">\uD83D\uDD0B '+p.batterie+'%</span>';
   }
   html += '</div>';
 
   // IMEI + Garantie
   html += '<div style="display:flex;flex-direction:column;gap:0.3mm;">';
   if(showImei && imei6){
-    html += '<span style="font-size:6pt;color:#333;font-weight:700;font-family:monospace;">IMEI : ···'+imei6+'</span>';
+    html += '<span style="font-size:5.5pt;color:#000;font-weight:700;font-family:monospace;white-space:nowrap;">IMEI:'+imei6+'</span>';
   }
   if(showGarantie){
-    html += '<span style="font-size:6pt;color:#1a5c30;font-weight:700;">\u2713 Garantie '+(p.grade?'12 mois':'24 mois')+'</span>';
+    html += '<span style="font-size:5.5pt;color:#1a5c30;font-weight:700;">\u2713 Gar. '+(p.grade?'12 mois':'24 mois')+'</span>';
   }
   html += '</div>';
 
   // Pied
-  html += '<div style="font-size:4pt;color:#aaa;border-top:0.2mm solid #eee;padding-top:0.4mm;white-space:nowrap;overflow:hidden;">Solution Phone &middot; 21 Rue Gambetta &middot; Mâcon &middot; TVA marge Art.297A</div>';
+  html += '<div style="font-size:3.5pt;color:#aaa;border-top:0.2mm solid #eee;padding-top:0.4mm;white-space:nowrap;overflow:hidden;">SP · 21 Rue Gambetta · Mâcon · TVA marge Art.297A</div>';
 
   html += '</div>'; // fin colonne gauche
 
   // ── COLONNE DROITE — PRIX ──
-  html += '<div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex-shrink:0;padding-left:1mm;border-left:0.5mm solid #eee;">';
-  html += '<span style="font-size:24pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+p.vente+'</span>';
-  html += '<span style="font-size:14pt;font-weight:900;color:#c0392b;line-height:1;">&euro;</span>';
+  html += '<div style="min-width:18mm;width:18mm;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;padding-left:1mm;border-left:0.5mm solid #eee;">';
+  html += '<span style="font-size:20pt;font-weight:900;color:#c0392b;line-height:1;white-space:nowrap;">'+p.vente+'</span>';
+  html += '<span style="font-size:12pt;font-weight:900;color:#c0392b;line-height:1;">&euro;</span>';
   html += '</div>';
 
   html += '</div>'; // fin contenu
