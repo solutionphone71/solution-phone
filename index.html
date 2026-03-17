@@ -30,14 +30,6 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 #modal-ticket-commande *{color:#000!important;background-color:transparent;}
 #modal-ticket-commande .ticket-box{background:#fff!important;}
 #modal-ticket-commande .ticket-sep{border-top:1px dashed #000!important;}
-@media print{
-  body > *:not(#modal-ticket-commande){display:none!important;}
-  #modal-ticket-commande{position:static!important;width:80mm!important;height:auto!important;background:#fff!important;overflow:visible!important;}
-  #modal-ticket-commande > div:first-child{display:none!important;}
-  #modal-ticket-commande .ticket-box{width:72mm!important;max-width:72mm!important;padding:2mm!important;font-size:11px!important;border-radius:0!important;box-shadow:none!important;}
-  #modal-ticket-commande .ticket-box *{font-size:11px!important;}
-  @page{size:80mm auto;margin:2mm 0;}
-}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
@@ -6168,15 +6160,110 @@ function printTicketCommande(c){
     document.body.appendChild(modal);
   }
   modal.innerHTML =
-    '<div style="background:#1a1a1a;padding:14px 16px;display:flex;gap:10px;margin-top:env(safe-area-inset-top,0px);">' +
-      '<button onclick="window.print()" style="flex:1;padding:16px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
-      '<button onclick="fermerTicket()" style="flex:1;padding:16px;background:#555;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
+    '<div style="background:#1a1a1a;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
+      '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:120px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson Direct</button>' +
+      '<button onclick="window.print()" style="flex:1;min-width:100px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
+      '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:#555;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
       '<div class="ticket-box" style="background:#fff!important;color:#000!important;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;color-scheme:light;">' + ticketBody + '</div>' +
     '</div>';
+  window._currentTicket = c;
   modal.style.display = 'block';
 }
+
+// ============================================================
+//  IMPRESSION DIRECTE EPSON TM-m30II via ePOS-Print
+// ============================================================
+var EPSON_IP = '192.168.10.201';
+
+function eposPrint(c){
+  if(!c) return;
+  var isRep = c.type === 'reparation';
+  var date  = new Date(c.date).toLocaleDateString('fr-FR');
+  var now   = new Date();
+  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function txt(s,bold,size){
+    // size: 0=normal, 1=double, 2=double-haut
+    var w = size?'2':'1', h = size?'2':'1';
+    return '<text bold="'+(bold?'true':'false')+'" width="'+w+'" height="'+h+'">'+esc(s)+'</text>';
+  }
+  function feed(n){ return '<feed line="'+(n||1)+'"/>'; }
+  function cut(){ return '<cut type="feed"/>'; }
+  function align(a){ return '<text align="'+a+'"/>'; } // left, center, right
+  function sep(){ return txt('------------------------------------------------\n'); }
+
+  var body =
+    align('center')+
+    txt('SOLUTION PHONE\n',true,1)+
+    txt('21 Rue Gambetta - 71000 Macon\n',false,0)+
+    txt('Tel : 03 85 33 06 89\n',false,0)+
+    sep()+
+    txt((isRep?'*** REPARATION ***':'*** ACCESSOIRE ***')+'\n',true,0)+
+    txt(esc(c.numero)+'\n',false,0)+
+    txt(date+' a '+heure+'\n',false,0)+
+    sep()+
+    align('left')+
+    txt('Client  : '+esc(c.client.nom)+'\n',false,0)+
+    txt('Tel     : '+esc(c.client.tel)+'\n',false,0)+
+    sep()+
+    (isRep
+      ? txt('Appareil: '+esc(c.detail.split(' — ')[0])+'\n',false,0)+
+        txt('Piece   : '+esc(c.detail.split(' — ')[1]||'')+'\n',false,0)
+      : txt('Article : '+esc(c.detail)+'\n',false,0)
+    )+
+    sep()+
+    align('center')+
+    txt(c.prix.toFixed(2)+' EUR\n',true,1)+
+    (c.paye
+      ? txt('*** DEJA PAYE ***\n',true,0)
+      : txt('A REGLER A LA REPRISE\n',false,0)
+    )+
+    sep()+
+    txt('Merci de votre confiance !\n',false,0)+
+    txt('www.solutionphone71.fr\n',false,0)+
+    feed(3)+
+    cut();
+
+  var soap =
+    '<?xml version="1.0" encoding="utf-8"?>'+
+    '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'+
+      '<s:Body>'+
+        '<epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+
+          body+
+        '</epos-print>'+
+      '</s:Body>'+
+    '</s:Envelope>';
+
+  showNotif('⏳ Envoi à l\'imprimante...','info');
+
+  fetch('http://'+EPSON_IP+'/cgi-bin/epos/service.cgi?devid=local_printer&timeout=10000', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/xml; charset=utf-8',
+      'SOAPAction': '""'
+    },
+    body: soap
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(txt){
+    if(txt.indexOf('success') !== -1 || txt.indexOf('SchemaType') !== -1){
+      showNotif('✅ Ticket imprimé !','success');
+    } else {
+      showNotif('⚠️ Réponse imprimante inattendue','error');
+      console.log('ePOS response:',txt);
+    }
+  })
+  .catch(function(err){
+    showNotif('❌ Imprimante non joignable — vérifiez le WiFi','error');
+    console.error('ePOS error:',err);
+  });
+}
+// ============================================================
+//  FIN EPSON ePOS
+// ============================================================
 
 function fermerTicket(){
   var m = document.getElementById('modal-ticket-commande');
