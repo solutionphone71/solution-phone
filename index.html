@@ -30,6 +30,14 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 #modal-ticket-commande *{color:#000!important;background-color:transparent;}
 #modal-ticket-commande .ticket-box{background:#fff!important;}
 #modal-ticket-commande .ticket-sep{border-top:1px dashed #000!important;}
+@media print{
+  body > *:not(#modal-ticket-commande){display:none!important;}
+  #modal-ticket-commande{position:static!important;width:80mm!important;height:auto!important;background:#fff!important;overflow:visible!important;}
+  #modal-ticket-commande > div:first-child{display:none!important;}
+  #modal-ticket-commande .ticket-box{width:72mm!important;max-width:72mm!important;padding:2mm!important;font-size:11px!important;border-radius:0!important;box-shadow:none!important;}
+  #modal-ticket-commande .ticket-box *{font-size:11px!important;}
+  @page{size:80mm auto;margin:2mm 0;}
+}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
@@ -2972,37 +2980,21 @@ function printEtiquetteBrother(){
     garantie: document.getElementById('etiq-show-garantie').checked
   };
   var qty = parseInt(document.getElementById('etiq-qty').value)||1;
-  // iOS Safari force portrait 29x90mm = 110x340px par page
-  // On tourne le contenu 340x110 de -90deg pour le placer en paysage dans 110x340
-  var etiqHTML = buildEtiquetteHTML(_etiquettePhone, opts);
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
-    '<meta name="viewport" content="width=110,initial-scale=1.0">'+
     '<title>Etiquette '+_etiquettePhone.modele+'</title>'+
-    '<style>'+
-    '*{margin:0;padding:0;box-sizing:border-box;}'+
-    '@page{size:29mm 90mm;margin:0;}'+
-    'html{width:110px;overflow:hidden;}'+
-    'body{width:110px;background:#fff;overflow:hidden;font-family:Arial,Helvetica,sans-serif;}'+
-    '@media print{'+
-      'html,body{width:110px!important;height:'+(qty*340)+'px!important;overflow:hidden!important;}'+
-      '.etiq-page{page-break-after:always;}.etiq-page:last-child{page-break-after:avoid;}'+
-    '}'+
-    '.etiq-page{position:relative;width:110px;height:340px;overflow:hidden;}'+
-    '.etiq-rotated{'+
-      'position:absolute;'+
-      'width:340px;height:110px;'+
-      'top:115px;left:-115px;'+
-      'transform:rotate(-90deg);'+
-      'transform-origin:center center;'+
-      'overflow:hidden;'+
-    '}'+
-    '</style></head><body>';
-  for(var j=0;j<qty;j++){
-    html += '<div class="etiq-page"><div class="etiq-rotated">'+etiqHTML+'</div></div>';
-  }
-  html += '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);}<\/scr'+'ipt>';
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:#fff;}'+
+    '@page{size:90mm 29mm;margin:0;}'+
+    '@media print{.no-print{display:none!important;}.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}}'+
+    'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
+    '<div class="no-print" style="padding:10px;background:#f5f5f5;text-align:center;margin-bottom:10px;">'+
+      '<b style="color:#c0392b;">Brother QL-820NWB &bull; DK-11201 &bull; 29&times;90mm</b><br>'+
+      '<small>S&eacute;lectionnez <b>Brother QL-820NWB</b> dans la liste des imprimantes &bull; Format : DK-11201</small><br><br>'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">'+
+        '&#128438; Imprimer '+qty+' &eacute;tiquette'+(qty>1?'s':'')+'</button>'+
+    '</div>';
+  for(var j=0;j<qty;j++) html += '<div class="etiq-wrap">'+buildEtiquetteHTML(_etiquettePhone, opts)+'</div>';
   html += '</body></html>';
-  var w = window.open('','_blank','width=200,height=400');
+  var w = window.open('','_blank','width=800,height=400');
   w.document.write(html);
   w.document.close();
 }
