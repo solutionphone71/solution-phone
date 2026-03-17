@@ -2974,9 +2974,14 @@ function printEtiquetteBrother(){
   var qty = parseInt(document.getElementById('etiq-qty').value)||1;
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Etiquette '+_etiquettePhone.modele+'</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:#fff;}'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}'+
+    'html,body{width:90mm;'+(qty===1?'height:29mm;overflow:hidden;':'')+' background:#fff;}'+
     '@page{size:90mm 29mm;margin:0;}'+
-    '@media print{.no-print{display:none!important;}.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}}'+
+    '@media print{.no-print{display:none!important;}'+
+    (qty===1
+      ? 'html,body{width:90mm!important;height:29mm!important;overflow:hidden!important;}.etiq-wrap{page-break-after:avoid!important;}'
+      : '.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}'
+    )+'}'+
     'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
     '<div class="no-print" style="padding:10px;background:#f5f5f5;text-align:center;margin-bottom:10px;">'+
       '<b style="color:#c0392b;">Brother QL-820NWB &bull; DK-11201 &bull; 29&times;90mm</b><br>'+
