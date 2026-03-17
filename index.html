@@ -2975,11 +2975,12 @@ function printEtiquetteBrother(){
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Etiquette '+_etiquettePhone.modele+'</title>'+
     '<style>*{margin:0;padding:0;box-sizing:border-box;}'+
-    'html,body{width:90mm;'+(qty===1?'height:29mm;overflow:hidden;':'')+' background:#fff;}'+
+    'html,body{width:90mm;background:#fff;}'+
     '@page{size:90mm 29mm;margin:0;}'+
     '@media print{.no-print{display:none!important;}'+
+    'html,body{width:90mm!important;height:29mm!important;overflow:hidden!important;}'+
     (qty===1
-      ? 'html,body{width:90mm!important;height:29mm!important;overflow:hidden!important;}.etiq-wrap{page-break-after:avoid!important;}'
+      ? '.etiq-wrap{page-break-after:avoid!important;}'
       : '.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}'
     )+'}'+
     'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
