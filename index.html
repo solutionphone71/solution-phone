@@ -2972,9 +2972,8 @@ function printEtiquetteBrother(){
     garantie: document.getElementById('etiq-show-garantie').checked
   };
   var qty = parseInt(document.getElementById('etiq-qty').value)||1;
-  // iOS Safari force le portrait : 29mm (larg) x 90mm (haut) = 110px x 340px
-  // On tourne le contenu de -90deg pour retrouver le paysage 90x29mm
-  // Maths : element 340x110 centré dans parent 110x340, rotated -90deg => visuellement 110x340 ✓
+  // iOS Safari force portrait 29x90mm = 110x340px par page
+  // On tourne le contenu 340x110 de -90deg pour le placer en paysage dans 110x340
   var etiqHTML = buildEtiquetteHTML(_etiquettePhone, opts);
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<meta name="viewport" content="width=110,initial-scale=1.0">'+
@@ -2982,13 +2981,21 @@ function printEtiquetteBrother(){
     '<style>'+
     '*{margin:0;padding:0;box-sizing:border-box;}'+
     '@page{size:29mm 90mm;margin:0;}'+
-    'html,body{width:110px;background:#fff;overflow:hidden;}'+
+    'html{width:110px;overflow:hidden;}'+
+    'body{width:110px;background:#fff;overflow:hidden;font-family:Arial,Helvetica,sans-serif;}'+
     '@media print{'+
       'html,body{width:110px!important;height:'+(qty*340)+'px!important;overflow:hidden!important;}'+
       '.etiq-page{page-break-after:always;}.etiq-page:last-child{page-break-after:avoid;}'+
     '}'+
     '.etiq-page{position:relative;width:110px;height:340px;overflow:hidden;}'+
-    '.etiq-rotated{position:absolute;top:115px;left:-115px;width:340px;height:110px;transform:rotate(-90deg);}'+
+    '.etiq-rotated{'+
+      'position:absolute;'+
+      'width:340px;height:110px;'+
+      'top:115px;left:-115px;'+
+      'transform:rotate(-90deg);'+
+      'transform-origin:center center;'+
+      'overflow:hidden;'+
+    '}'+
     '</style></head><body>';
   for(var j=0;j<qty;j++){
     html += '<div class="etiq-page"><div class="etiq-rotated">'+etiqHTML+'</div></div>';
