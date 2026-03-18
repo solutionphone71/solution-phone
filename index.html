@@ -30,6 +30,14 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 #modal-ticket-commande *{color:#000!important;background-color:transparent;}
 #modal-ticket-commande .ticket-box{background:#fff!important;}
 #modal-ticket-commande .ticket-sep{border-top:1px dashed #000!important;}
+@media print{
+  body > *:not(#modal-ticket-commande){display:none!important;}
+  #modal-ticket-commande{position:static!important;width:80mm!important;height:auto!important;background:#fff!important;overflow:visible!important;}
+  #modal-ticket-commande > div:first-child{display:none!important;}
+  #modal-ticket-commande .ticket-box{width:72mm!important;max-width:72mm!important;padding:2mm!important;font-size:11px!important;border-radius:0!important;}
+  #modal-ticket-commande .ticket-box *{font-size:11px!important;}
+  @page{size:80mm auto;margin:2mm 0;}
+}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
@@ -2001,8 +2009,8 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ── SYSTÈME PIN ──
 var _pin = '';
-var _pinCode      = '8cd6cb7e1601eb5dcd0a0d3d8f62c2dd8ee483819f9130a34259a217e927679f'; // Patron
-var _pinEmployee  = 'c1f330d0aff31c1c87403f1e4347bcc21aff7c179908723535f2b31723702525'; // Employé
+var _pinCode      = 'cda6045aa5f1b2cf10a85e13ce88969ff61a6301'; // Patron — accès complet
+var _pinEmployee  = 'ab874467a7d1ff5fc71a4ade87dc0e098b458aae'; // Employé — modules financiers cachés
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
@@ -2059,46 +2067,45 @@ function updatePinDisplay(){
 
 function checkPin(){
   var pinSaisi = _pin;
-  // Calcul SHA-256 du PIN saisi
+  // Hash SHA1 du PIN saisi via SubtleCrypto
   var msgBuffer = new TextEncoder().encode(pinSaisi);
-  crypto.subtle.digest('SHA-256', msgBuffer).then(function(hashBuffer){
+  crypto.subtle.digest('SHA-1', msgBuffer).then(function(hashBuffer){
     var hashArray = Array.from(new Uint8Array(hashBuffer));
     var hashHex = hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
     if(hashHex === _pinCode || hashHex === _pinEmployee){
       _userRole = (hashHex === _pinEmployee) ? 'employe' : 'patron';
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    if(window.innerWidth <= 768){
-      document.getElementById('mobile-nav').style.display='block';
-    }
-    loadFromSupabase().then(function(){
-      renderDashboard();renderPhones();renderFactures();renderCaisse();
-      loadApiKeyFromSupabase();
-      loadBonsCommande();
-      loadBonsDepot();
-      loadPhonilabData();
-    });
-    renderEcrans();
-    renderBatteries();
-    androidInit();
-    renderBonsDepot();
-    renderBonsCommande();
-    _pin = '';
-    updatePinDisplay();
-    // Appliquer le rôle après un court délai pour que le DOM soit prêt
-    setTimeout(appliquerRole, 100);
-  } else {
-    document.getElementById('pin-msg').textContent = '❌ Code incorrect';
-    var box = document.querySelector('.login-box');
-    box.classList.add('pin-shake');
-    setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
-    _pin = '';
-    setTimeout(function(){
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('app').style.display='block';
+      if(window.innerWidth <= 768){
+        document.getElementById('mobile-nav').style.display='block';
+      }
+      loadFromSupabase().then(function(){
+        renderDashboard();renderPhones();renderFactures();renderCaisse();
+        loadApiKeyFromSupabase();
+        loadBonsCommande();
+        loadBonsDepot();
+        loadPhonilabData();
+      });
+      renderEcrans();
+      renderBatteries();
+      androidInit();
+      renderBonsDepot();
+      renderBonsCommande();
+      _pin = '';
       updatePinDisplay();
-      document.getElementById('pin-msg').textContent = '';
-    }, 600);
-  }
-  }); // fin crypto.subtle.digest
+      setTimeout(appliquerRole, 100);
+    } else {
+      document.getElementById('pin-msg').textContent = '❌ Code incorrect';
+      var box = document.querySelector('.login-box');
+      box.classList.add('pin-shake');
+      setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
+      _pin = '';
+      setTimeout(function(){
+        updatePinDisplay();
+        document.getElementById('pin-msg').textContent = '';
+      }, 600);
+    }
+  });
 }
 
 function doLogin(){ checkPin(); }
@@ -6166,19 +6173,67 @@ function printTicketCommande(c){
     document.body.appendChild(modal);
   }
   modal.innerHTML =
-    '<div style="background:#1a1a1a;padding:14px 16px;display:flex;gap:10px;margin-top:env(safe-area-inset-top,0px);">' +
-      '<button onclick="window.print()" style="flex:1;padding:16px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
-      '<button onclick="fermerTicket()" style="flex:1;padding:16px;background:#555;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
+    '<div style="background:#1a1a1a;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
+      '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson Direct</button>' +
+      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
+      '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:#555;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
       '<div class="ticket-box" style="background:#fff!important;color:#000!important;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;color-scheme:light;">' + ticketBody + '</div>' +
     '</div>';
+  window._currentTicket = c;
   modal.style.display = 'block';
 }
 
 function fermerTicket(){
   var m = document.getElementById('modal-ticket-commande');
   if(m) m.style.display = 'none';
+}
+
+var VPS_PRINT = 'http://212.227.82.100/print';
+
+function eposPrint(c){
+  if(!c) return;
+  var isRep = c.type === 'reparation';
+  var date  = new Date(c.date).toLocaleDateString('fr-FR');
+  var now   = new Date();
+  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function txt(s,bold,dbl){ return '<text bold="'+(bold?'true':'false')+'" width="'+(dbl?'2':'1')+'" height="'+(dbl?'2':'1')+'">'+esc(s)+'</text>'; }
+  function align(a){ return '<text align="'+a+'"/>'; }
+  function sep(){ return txt('------------------------------------------------\n',false,false); }
+  var body =
+    align('center')+txt('SOLUTION PHONE\n',true,true)+
+    txt('21 Rue Gambetta - 71000 Macon\n',false,false)+
+    txt('Tel : 03 85 33 06 89\n',false,false)+sep()+
+    txt((isRep?'*** REPARATION ***':'*** ACCESSOIRE ***')+'\n',true,false)+
+    txt(esc(c.numero)+'\n',false,false)+
+    txt(date+' a '+heure+'\n',false,false)+sep()+
+    align('left')+
+    txt('Client  : '+esc(c.client.nom)+'\n',false,false)+
+    txt('Tel     : '+esc(c.client.tel)+'\n',false,false)+sep()+
+    (isRep
+      ? txt('Appareil: '+esc(c.detail.split(' — ')[0])+'\n',false,false)+txt('Piece   : '+esc(c.detail.split(' — ')[1]||'')+'\n',false,false)
+      : txt('Article : '+esc(c.detail)+'\n',false,false)
+    )+sep()+
+    align('center')+txt(c.prix.toFixed(2)+' EUR\n',true,true)+
+    (c.paye?txt('*** DEJA PAYE ***\n',true,false):txt('A REGLER A LA REPRISE\n',false,false))+sep()+
+    txt('Merci de votre confiance !\n',false,false)+
+    txt('www.solutionphone71.fr\n',false,false)+
+    '<feed line="4"/><cut type="feed"/>';
+  var soap =
+    '<?xml version="1.0" encoding="utf-8"?>'+
+    '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'+
+      '<s:Body><epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+body+
+      '</epos-print></s:Body></s:Envelope>';
+  showNotif('⏳ Envoi à l\'imprimante...','info');
+  fetch(VPS_PRINT,{method:'POST',headers:{'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},body:soap})
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if(j.ok){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
+    else { showNotif('⚠️ Erreur','error'); }
+  })
+  .catch(function(e){ showNotif('❌ VPS non joignable','error'); console.error(e); });
 }
 
 function renderBonsCommande(){
