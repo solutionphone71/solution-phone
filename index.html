@@ -30,6 +30,14 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 #modal-ticket-commande *{color:#000!important;background-color:transparent;}
 #modal-ticket-commande .ticket-box{background:#fff!important;}
 #modal-ticket-commande .ticket-sep{border-top:1px dashed #000!important;}
+@media print{
+  body > *:not(#modal-ticket-commande){display:none!important;}
+  #modal-ticket-commande{position:static!important;width:80mm!important;height:auto!important;background:#fff!important;overflow:visible!important;}
+  #modal-ticket-commande > div:first-child{display:none!important;}
+  #modal-ticket-commande .ticket-box{width:72mm!important;max-width:72mm!important;padding:2mm!important;font-size:11px!important;border-radius:0!important;}
+  #modal-ticket-commande .ticket-box *{font-size:11px!important;}
+  @page{size:80mm auto;margin:2mm 0;}
+}
 #app{display:none;}
 .layout{display:flex;min-height:100vh;}
 .sidebar{width:210px;background:var(--dark2);border-right:1px solid var(--border);padding:16px 0;position:fixed;height:100vh;overflow-y:auto;z-index:100;}
