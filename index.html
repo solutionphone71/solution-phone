@@ -2009,8 +2009,8 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ── SYSTÈME PIN ──
 var _pin = '';
-var _pinCode      = 'cda6045aa5f1b2cf10a85e13ce88969ff61a6301'; // Patron — accès complet
-var _pinEmployee  = 'ab874467a7d1ff5fc71a4ade87dc0e098b458aae'; // Employé — modules financiers cachés
+var _pinCode      = '1609'; // Patron — accès complet
+var _pinEmployee  = '5555'; // Employé — modules financiers cachés
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
@@ -2067,45 +2067,39 @@ function updatePinDisplay(){
 
 function checkPin(){
   var pinSaisi = _pin;
-  // Hash SHA1 du PIN saisi via SubtleCrypto
-  var msgBuffer = new TextEncoder().encode(pinSaisi);
-  crypto.subtle.digest('SHA-1', msgBuffer).then(function(hashBuffer){
-    var hashArray = Array.from(new Uint8Array(hashBuffer));
-    var hashHex = hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
-    if(hashHex === _pinCode || hashHex === _pinEmployee){
-      _userRole = (hashHex === _pinEmployee) ? 'employe' : 'patron';
-      document.getElementById('login-screen').style.display='none';
-      document.getElementById('app').style.display='block';
-      if(window.innerWidth <= 768){
-        document.getElementById('mobile-nav').style.display='block';
-      }
-      loadFromSupabase().then(function(){
-        renderDashboard();renderPhones();renderFactures();renderCaisse();
-        loadApiKeyFromSupabase();
-        loadBonsCommande();
-        loadBonsDepot();
-        loadPhonilabData();
-      });
-      renderEcrans();
-      renderBatteries();
-      androidInit();
-      renderBonsDepot();
-      renderBonsCommande();
-      _pin = '';
-      updatePinDisplay();
-      setTimeout(appliquerRole, 100);
-    } else {
-      document.getElementById('pin-msg').textContent = '❌ Code incorrect';
-      var box = document.querySelector('.login-box');
-      box.classList.add('pin-shake');
-      setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
-      _pin = '';
-      setTimeout(function(){
-        updatePinDisplay();
-        document.getElementById('pin-msg').textContent = '';
-      }, 600);
+  if(pinSaisi === _pinCode || pinSaisi === _pinEmployee){
+    _userRole = (pinSaisi === _pinEmployee) ? 'employe' : 'patron';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    if(window.innerWidth <= 768){
+      document.getElementById('mobile-nav').style.display='block';
     }
-  });
+    loadFromSupabase().then(function(){
+      renderDashboard();renderPhones();renderFactures();renderCaisse();
+      loadApiKeyFromSupabase();
+      loadBonsCommande();
+      loadBonsDepot();
+      loadPhonilabData();
+    });
+    renderEcrans();
+    renderBatteries();
+    androidInit();
+    renderBonsDepot();
+    renderBonsCommande();
+    _pin = '';
+    updatePinDisplay();
+    setTimeout(appliquerRole, 100);
+  } else {
+    document.getElementById('pin-msg').textContent = '❌ Code incorrect';
+    var box = document.querySelector('.login-box');
+    box.classList.add('pin-shake');
+    setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
+    _pin = '';
+    setTimeout(function(){
+      updatePinDisplay();
+      document.getElementById('pin-msg').textContent = '';
+    }, 600);
+  }
 }
 
 function doLogin(){ checkPin(); }
