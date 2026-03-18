@@ -6178,11 +6178,11 @@ function fermerTicket(){
 }
 
 // ============================================================
-//  IMPRESSION DIRECTE EPSON via PC relais local
-//  PC du magasin : http://192.168.10.111/epson
-//  Fonctionne quand l'iPhone est sur le WiFi du magasin
+//  IMPRESSION EPSON via file d'attente VPS
+//  iPhone → VPS → PC magasin → Epson
+//  Fonctionne depuis n'importe où !
 // ============================================================
-var EPSON_PC_RELAY = 'http://192.168.10.111/epson';
+var VPS_PRINT = 'http://212.227.82.100/print';
 
 function eposPrint(c){
   if(!c) return;
@@ -6219,24 +6219,24 @@ function eposPrint(c){
       '<s:Body><epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+
         body+
       '</epos-print></s:Body></s:Envelope>';
+
   showNotif('⏳ Envoi à l\'imprimante...','info');
-  fetch(EPSON_PC_RELAY,{
-    method:'POST',
-    headers:{'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},
-    body:soap
+  fetch(VPS_PRINT, {
+    method: 'POST',
+    headers: {'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},
+    body: soap
   })
-  .then(function(r){return r.text();})
-  .then(function(t){
-    if(t.indexOf('success')!==-1||t.indexOf('epos-print')!==-1){
-      showNotif('✅ Ticket imprimé !','success');
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    if(j.ok){
+      showNotif('✅ Ticket envoyé — impression en cours !','success');
       fermerTicket();
     } else {
-      showNotif('⚠️ Réponse inattendue','error');
-      console.log('ePOS:',t);
+      showNotif('⚠️ Erreur envoi','error');
     }
   })
   .catch(function(e){
-    showNotif('❌ PC relais non joignable — WiFi magasin requis','error');
+    showNotif('❌ VPS non joignable','error');
     console.error(e);
   });
 }
