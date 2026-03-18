@@ -6177,11 +6177,6 @@ function fermerTicket(){
   if(m) m.style.display = 'none';
 }
 
-// ============================================================
-//  IMPRESSION EPSON via file d'attente VPS
-//  iPhone → VPS → PC magasin → Epson
-//  Fonctionne depuis n'importe où !
-// ============================================================
 var VPS_PRINT = 'http://212.227.82.100/print';
 
 function eposPrint(c){
@@ -6216,31 +6211,17 @@ function eposPrint(c){
   var soap =
     '<?xml version="1.0" encoding="utf-8"?>'+
     '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'+
-      '<s:Body><epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+
-        body+
+      '<s:Body><epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+body+
       '</epos-print></s:Body></s:Envelope>';
-
   showNotif('⏳ Envoi à l\'imprimante...','info');
-  fetch(VPS_PRINT, {
-    method: 'POST',
-    headers: {'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},
-    body: soap
-  })
-  .then(function(r){ return r.json(); })
+  fetch(VPS_PRINT,{method:'POST',headers:{'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},body:soap})
+  .then(function(r){return r.json();})
   .then(function(j){
-    if(j.ok){
-      showNotif('✅ Ticket envoyé — impression en cours !','success');
-      fermerTicket();
-    } else {
-      showNotif('⚠️ Erreur envoi','error');
-    }
+    if(j.ok){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
+    else { showNotif('⚠️ Erreur','error'); }
   })
-  .catch(function(e){
-    showNotif('❌ VPS non joignable','error');
-    console.error(e);
-  });
+  .catch(function(e){ showNotif('❌ VPS non joignable','error'); console.error(e); });
 }
-// ============================================================
 
 function renderBonsCommande(){
   var tbody = document.getElementById('commande-table');
