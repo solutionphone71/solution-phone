@@ -6178,9 +6178,11 @@ function fermerTicket(){
 }
 
 // ============================================================
-//  IMPRESSION DIRECTE EPSON TM-m30II via relais HTTPS local
+//  IMPRESSION DIRECTE EPSON via PC relais local
+//  PC du magasin : http://192.168.10.111/epson
+//  Fonctionne quand l'iPhone est sur le WiFi du magasin
 // ============================================================
-var EPSON_RELAY = 'https://192.168.10.111:8765';
+var EPSON_PC_RELAY = 'http://192.168.10.111/epson';
 
 function eposPrint(c){
   if(!c) return;
@@ -6218,7 +6220,7 @@ function eposPrint(c){
         body+
       '</epos-print></s:Body></s:Envelope>';
   showNotif('⏳ Envoi à l\'imprimante...','info');
-  fetch(EPSON_RELAY+'/print',{
+  fetch(EPSON_PC_RELAY,{
     method:'POST',
     headers:{'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},
     body:soap
@@ -6234,7 +6236,7 @@ function eposPrint(c){
     }
   })
   .catch(function(e){
-    showNotif('❌ Relais non joignable — PC allumé ?','error');
+    showNotif('❌ PC relais non joignable — WiFi magasin requis','error');
     console.error(e);
   });
 }
