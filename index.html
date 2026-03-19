@@ -5555,10 +5555,10 @@ function printBatteriesA4(){
 //  MODULE PRIX RÉPARATIONS ANDROID
 // ============================================================
 
-var ANDROID_MARQUES = ['Samsung','Xiaomi','Oppo','OnePlus','Motorola','Google','Honor'];
+var ANDROID_MARQUES = ['Samsung','Xiaomi','Oppo','OnePlus','Realme','Motorola','Google','Honor','Nothing'];
 var ANDROID_MODELES_DEFAULT = {
   Samsung: [
-    // ── Galaxy A (les plus réparés) ──
+    // ── Galaxy A ──
     'Galaxy A03','Galaxy A03s','Galaxy A04','Galaxy A04s',
     'Galaxy A05','Galaxy A05s','Galaxy A06','Galaxy A06 5G',
     'Galaxy A10','Galaxy A10s',
@@ -5575,8 +5575,7 @@ var ANDROID_MODELES_DEFAULT = {
     'Galaxy A35 5G','Galaxy A36 5G',
     'Galaxy A41','Galaxy A42 5G',
     'Galaxy A50','Galaxy A50s',
-    'Galaxy A51','Galaxy A51 5G',
-    'Galaxy A52','Galaxy A52s 5G',
+    'Galaxy A51','Galaxy A52','Galaxy A52s 5G',
     'Galaxy A53 5G','Galaxy A54 5G',
     'Galaxy A55 5G','Galaxy A56 5G',
     'Galaxy A71','Galaxy A72',
@@ -5586,7 +5585,7 @@ var ANDROID_MODELES_DEFAULT = {
     'Galaxy S22','Galaxy S22+','Galaxy S22 Ultra',
     'Galaxy S23 FE','Galaxy S23','Galaxy S23+','Galaxy S23 Ultra',
     'Galaxy S24 FE','Galaxy S24','Galaxy S24+','Galaxy S24 Ultra',
-    'Galaxy S25','Galaxy S25+','Galaxy S25 Ultra','Galaxy S25 FE',
+    'Galaxy S25','Galaxy S25+','Galaxy S25 Ultra',
     // ── Galaxy M ──
     'Galaxy M13','Galaxy M14','Galaxy M15',
     'Galaxy M23','Galaxy M33','Galaxy M34','Galaxy M35',
@@ -5631,16 +5630,16 @@ var ANDROID_MODELES_DEFAULT = {
   Oppo: [
     // ── Série A ──
     'Oppo A15','Oppo A16','Oppo A17',
-    'Oppo A52','Oppo A53','Oppo A54',
-    'Oppo A57','Oppo A57s',
-    'Oppo A74','Oppo A76','Oppo A77',
-    'Oppo A78','Oppo A91','Oppo A94',
+    'Oppo A40','Oppo A52','Oppo A53','Oppo A54 5G',
+    'Oppo A57','Oppo A72','Oppo A74 4G','Oppo A74 5G',
+    'Oppo A76','Oppo A77 5G','Oppo A80','Oppo A94',
     // ── Série Reno ──
-    'Oppo Reno 2','Oppo Reno Z',
+    'Oppo Reno 2','Oppo Reno 2Z',
     'Oppo Reno 3','Oppo Reno 4 Pro',
-    'Oppo Reno 6','Oppo Reno 7',
+    'Oppo Reno 6','Oppo Reno 7 4G','Oppo Reno 7 5G',
     'Oppo Reno 8','Oppo Reno 8 Lite',
-    'Oppo Reno 10','Oppo Reno 12','Oppo Reno 13',
+    'Oppo Reno 10','Oppo Reno 12','Oppo Reno 12 Pro',
+    'Oppo Reno 13','Oppo Reno 13 Pro',
     // ── Find X ──
     'Oppo Find X3 Lite','Oppo Find X3 Pro',
     'Oppo Find X5','Oppo Find X5 Pro',
@@ -5657,6 +5656,18 @@ var ANDROID_MODELES_DEFAULT = {
     'OnePlus Nord 3','OnePlus Nord 4','OnePlus Nord 5',
     'OnePlus Nord CE','OnePlus Nord CE 2','OnePlus Nord CE 3 Lite',
   ],
+  Realme: [
+    'Realme 6','Realme 7','Realme 8','Realme 8 Pro',
+    'Realme 9 4G','Realme 9 5G','Realme 9 Pro','Realme 9 Pro+',
+    'Realme 10 4G','Realme 10 5G',
+    'Realme 11 Pro','Realme 11 Pro+',
+    'Realme 12 Pro','Realme 12 Pro+',
+    'Realme 13','Realme 13 5G',
+    'Realme C21','Realme C30','Realme C31',
+    'Realme C33','Realme C35','Realme C55','Realme C67',
+    'Realme GT 2','Realme GT 2 Pro',
+    'Realme GT Neo 3',
+  ],
   Motorola: [
     // ── Moto G ──
     'Moto G04','Moto G05','Moto G06',
@@ -5666,8 +5677,7 @@ var ANDROID_MODELES_DEFAULT = {
     'Moto G42','Moto G52','Moto G53 5G',
     'Moto G54 5G','Moto G55 5G',
     'Moto G62 5G','Moto G72',
-    'Moto G73 5G','Moto G84 5G',
-    'Moto G85 5G','Moto G86 5G',
+    'Moto G73 5G','Moto G84 5G','Moto G85 5G',
     // ── Edge ──
     'Motorola Edge 20','Motorola Edge 20 Lite',
     'Motorola Edge 30','Motorola Edge 30 Neo','Motorola Edge 30 Fusion',
@@ -5703,14 +5713,18 @@ var ANDROID_MODELES_DEFAULT = {
     // ── Honor X ──
     'Honor X6','Honor X6a','Honor X6b',
     'Honor X7','Honor X7a','Honor X7b',
-    'Honor X8','Honor X8a','Honor X8b',
-    'Honor X8 5G',
+    'Honor X8','Honor X8a','Honor X8b','Honor X8 5G',
     // ── Magic ──
     'Honor Magic 4 Lite',
     'Honor Magic 5 Lite','Honor Magic 5 Pro',
     'Honor Magic 6 Lite','Honor Magic 6 Pro',
     'Honor Magic 7 Lite','Honor Magic 7 Pro',
     'Honor Magic 8 Lite','Honor Magic 8 Pro',
+  ],
+  Nothing: [
+    'Nothing Phone (2)',
+    'Nothing Phone (2a)','Nothing Phone (2a) Plus',
+    'Nothing Phone (3a)','Nothing Phone (3a) Pro',
   ],
 };
 var ANDROID_COLS = ['ecran_compat','ecran_original','batterie_compat','batterie_original','connecteur','vitre_arriere','remarques'];
