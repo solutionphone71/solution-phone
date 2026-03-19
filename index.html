@@ -1511,15 +1511,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   <!-- ========== PAGE PRIX BATTERIES IPHONE ========== -->
   <div class="page" id="page-batteries">
     <div class="page-title">🔋 Prix Batteries iPhone</div>
-    <div class="page-sub">Modifiez vos tarifs directement — sauvegarde automatique</div>
+    <div class="page-sub">Modifiez vos tarifs directement — sauvegarde Supabase</div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
       <button class="btn btn-primary" onclick="printBatteriesA4()">🖨️ Imprimer / PDF A4</button>
       <button class="btn" id="btn-save-bat" onclick="manuelleSauvegardeBatteries()" style="border-color:var(--green);color:var(--green);font-weight:700;">💾 Sauvegarder</button>
+      <button class="btn" onclick="ajouterLigneBatterie()" style="border-color:var(--blue);color:var(--blue);">➕ Ajouter un modèle</button>
       <button class="btn" onclick="resetBatteriesPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
-      <div id="bat-save-status" style="font-size:12px;color:var(--text-muted);padding:8px;">
-        💡 Les modifications se sauvegardent automatiquement
-      </div>
+      <div id="bat-save-status" style="font-size:12px;color:var(--text-muted);padding:8px;">💡 Entrez vos prix puis cliquez 💾 Sauvegarder</div>
     </div>
 
     <div style="background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:10px;">
@@ -1527,23 +1526,14 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       <span><b>-25€ QualiRépar déjà déduit</b> sur le prix indiqué · Prix TTC pièce et main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
     </div>
 
-    <!-- Légende qualités -->
-    <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
-      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
-        <span style="color:var(--text-muted);">⭐⭐⭐</span> <b>Compatible</b> — Batterie de remplacement standard
-      </div>
-      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
-        <span style="color:var(--warning);">⭐⭐⭐⭐</span> <b>TI (Reconnue Apple)</b> — Reconnue par les diagnostics Apple
-      </div>
-      <div style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;">
-        <span style="color:var(--green);">⭐⭐⭐⭐⭐</span> <b>Original</b> — Batterie d'origine reconditionnée
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:18px;">
+    <div class="card">
       <div class="card-header">
-        <div class="card-title">🔋 Batteries iPhone — Tableau 1</div>
-        <button class="btn btn-sm btn-primary" onclick="ajouterLigneBatterie('bt1')">➕ Ajouter un modèle</button>
+        <div class="card-title">🔋 Prix Batteries iPhone</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;">
+          <span><span style="color:var(--text-muted);">⭐⭐⭐</span> Compatible</span>
+          <span><span style="color:var(--warning);">⭐⭐⭐⭐</span> TI Reconnue Apple</span>
+          <span><span style="color:var(--green);">⭐⭐⭐⭐⭐</span> Original</span>
+        </div>
       </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;">
@@ -1551,33 +1541,12 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             <tr style="background:var(--red);">
               <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;">Modèle</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
+              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI Reconnue Apple</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
+              <th style="padding:4px;color:#fff;font-size:11px;"></th>
             </tr>
           </thead>
           <tbody id="batteries-tbody-1"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">🔋 Batteries iPhone — Tableau 2</div>
-        <button class="btn btn-sm btn-primary" onclick="ajouterLigneBatterie('bt2')">➕ Ajouter un modèle</button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:var(--red);">
-              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;">Modèle</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
-            </tr>
-          </thead>
-          <tbody id="batteries-tbody-2"></tbody>
         </table>
       </div>
     </div>
@@ -5135,9 +5104,17 @@ function saveEcransPrix(){
     headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
     body: JSON.stringify(rows)
   }).then(function(r){
-    if(r && r.ok) console.log('Écrans sauvegardés Supabase : '+rows.length+' lignes');
-    else r && r.text().then(function(t){ console.error('Supabase écrans error:', t); });
-  }).catch(function(e){ console.error('Supabase écrans save error:', e); });
+    if(r && r.ok){
+      console.log('Écrans sauvegardés Supabase : '+rows.length+' lignes');
+    } else {
+      r && r.text().then(function(t){
+        console.error('Supabase écrans error:', t);
+        showNotif('⚠️ Erreur Supabase écrans : '+t.substring(0,80),'error');
+      });
+    }
+  }).catch(function(e){
+    console.error('Supabase écrans save error:', e);
+  });
 }
 
 async function loadEcransFromSupabase(){
@@ -5377,26 +5354,25 @@ var BATTERIES_DEFAULT = {
     {modele:'X/XS/XS MAX',        prix:[0,0,0]},
     {modele:'XR',                  prix:[0,0,0]},
     {modele:'11',                  prix:[0,0,0]},
+    {modele:'12 mini',             prix:[0,0,0]},
     {modele:'12/12 PRO',           prix:[0,0,0]},
+    {modele:'12 Pro Max',          prix:[0,0,0]},
+    {modele:'13 mini',             prix:[0,0,0]},
     {modele:'13',                  prix:[0,0,0]},
+    {modele:'13 Pro',              prix:[0,0,0]},
+    {modele:'13 Pro Max',          prix:[0,0,0]},
     {modele:'14',                  prix:[0,0,0]},
+    {modele:'14 Pro',              prix:[0,0,0]},
+    {modele:'14 Pro Max',          prix:[0,0,0]},
     {modele:'15',                  prix:[0,0,0]},
-    {modele:'16',                  prix:[0,0,0]}
+    {modele:'15 Pro',              prix:[0,0,0]},
+    {modele:'15 Pro Max',          prix:[0,0,0]},
+    {modele:'16',                  prix:[0,0,0]},
+    {modele:'16 Pro',              prix:[0,0,0]},
+    {modele:'16 Pro Max',          prix:[0,0,0]},
+    {modele:'11 Pro Max',          prix:[0,0,0]}
   ],
-  t2: [
-    {modele:'12 mini',    prix:[0,0,0]},
-    {modele:'13 mini',    prix:[0,0,0]},
-    {modele:'11 Pro Max', prix:[0,0,0]},
-    {modele:'12 Pro Max', prix:[0,0,0]},
-    {modele:'13 Pro',     prix:[0,0,0]},
-    {modele:'13 Pro Max', prix:[0,0,0]},
-    {modele:'14 Pro',     prix:[0,0,0]},
-    {modele:'14 Pro Max', prix:[0,0,0]},
-    {modele:'15 Pro',     prix:[0,0,0]},
-    {modele:'15 Pro Max', prix:[0,0,0]},
-    {modele:'16 Pro',     prix:[0,0,0]},
-    {modele:'16 Pro Max', prix:[0,0,0]}
-  ]
+  t2: []
 };
 
 var batteriesPrix = JSON.parse(localStorage.getItem('sp_batteries_prix') || 'null');
@@ -5404,65 +5380,76 @@ if(!batteriesPrix){ batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT)
 
 function saveBatteriesPrix(){
   localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
-  // Sync Supabase — même structure que ecrans_prix
   if(!SUPA_URL || !SUPA_KEY) return;
+  // Construire les lignes (uniquement t1 — tableau unique)
   var rows = [];
-  ['t1','t2'].forEach(function(tbl){
-    (batteriesPrix[tbl]||[]).forEach(function(ligne){
-      var p0 = ligne.prix[0] !== null && ligne.prix[0] !== undefined ? Number(ligne.prix[0]) : 0;
-      var p1 = ligne.prix[1] !== null && ligne.prix[1] !== undefined ? Number(ligne.prix[1]) : 0;
-      var p2 = ligne.prix[2] !== null && ligne.prix[2] !== undefined ? Number(ligne.prix[2]) : 0;
-      rows.push({
-        tableau: tbl,
-        modele: ligne.modele,
-        p0: p0, p1: p1, p2: p2
-      });
+  (batteriesPrix.t1||[]).forEach(function(ligne){
+    rows.push({
+      tableau: 't1',
+      modele: ligne.modele,
+      p0: Number(ligne.prix[0])||0,
+      p1: Number(ligne.prix[1])||0,
+      p2: Number(ligne.prix[2])||0
     });
   });
-  // UPSERT avec contrainte UNIQUE (tableau, modele)
-  fetch(SUPA_URL+'/rest/v1/batteries_prix', {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-    body: JSON.stringify(rows)
+  // DELETE toutes les lignes existantes puis INSERT (100% fiable, sans dépendre de UNIQUE)
+  fetch(SUPA_URL+'/rest/v1/batteries_prix?id=gte.0', {
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(){
+    return fetch(SUPA_URL+'/rest/v1/batteries_prix', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify(rows)
+    });
   }).then(function(r){
-    if(r && r.ok) console.log('Batteries sauvegardées Supabase : '+rows.length+' lignes');
-    else r && r.text().then(function(t){ console.error('Supabase batteries error:', t); });
-  }).catch(function(e){ console.error('Supabase batteries save error:', e); });
+    var status = document.getElementById('bat-save-status');
+    if(r && r.ok){
+      console.log('Batteries sauvegardées : '+rows.length+' lignes');
+      if(status){ status.textContent='✅ Sauvegardé sur Supabase — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
+    } else {
+      r && r.text().then(function(t){
+        console.error('Supabase batteries error:', t);
+        if(status){ status.textContent='⚠️ Erreur sauvegarde : '+t.substring(0,60); status.style.color='var(--red)'; }
+      });
+    }
+  }).catch(function(e){
+    console.error('Supabase batteries save error:', e);
+    var status = document.getElementById('bat-save-status');
+    if(status){ status.textContent='⚠️ Erreur réseau'; status.style.color='var(--red)'; }
+  });
 }
+
 
 async function loadBatteriesFromSupabase(){
   if(!SUPA_URL || !SUPA_KEY) return;
   try {
-    var res = await fetch(SUPA_URL+'/rest/v1/batteries_prix?select=*', {
+    var res = await fetch(SUPA_URL+'/rest/v1/batteries_prix?select=*&order=id.asc', {
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
     });
-    if(!res.ok) return;
+    if(!res.ok){ console.log('Batteries load HTTP error:', res.status); return; }
     var rows = await res.json();
-    if(!rows || !rows.length) return;
-    // Reconstruire l'objet depuis Supabase
-    var newPrix = {t1:[], t2:[]};
-    rows.forEach(function(r){
-      var tbl = r.tableau;
-      if(!newPrix[tbl]) newPrix[tbl] = [];
-      newPrix[tbl].push({
+    if(!rows || !rows.length){ console.log('Batteries Supabase vide'); return; }
+    // Tout dans t1 (tableau unique)
+    var lignes = rows.map(function(r){
+      return {
         modele: r.modele,
         prix: [
           r.p0 !== null && r.p0 !== undefined ? Number(r.p0) : 0,
           r.p1 !== null && r.p1 !== undefined ? Number(r.p1) : 0,
           r.p2 !== null && r.p2 !== undefined ? Number(r.p2) : 0
         ]
-      });
+      };
     });
-    if(newPrix.t1.length || newPrix.t2.length){
-      batteriesPrix = newPrix;
-      localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
-    }
+    batteriesPrix = { t1: lignes, t2: [] };
+    localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
+    console.log('Batteries chargées depuis Supabase : '+lignes.length+' modèles');
   } catch(e){ console.log('Batteries Supabase load error:', e); }
 }
 
+
 function renderBatteries(){
-  renderBatteriesTable('batteries-tbody-1', batteriesPrix.t1, 'bt1');
-  renderBatteriesTable('batteries-tbody-2', batteriesPrix.t2, 'bt2');
+  renderBatteriesTable('batteries-tbody-1', batteriesPrix.t1||[], 'bt1');
 }
 
 function renderBatteriesTable(tbodyId, data, tableKey){
@@ -5510,12 +5497,15 @@ function updateBatteriePrix(tableKey, ri, ci, val){
 }
 
 function manuelleSauvegardeBatteries(){
-  saveBatteriesPrix();
   var btn = document.getElementById('btn-save-bat');
   var status = document.getElementById('bat-save-status');
-  if(btn){ btn.textContent='✅ Sauvegardé !'; setTimeout(function(){ btn.textContent='💾 Sauvegarder'; }, 2000); }
-  if(status){ status.innerHTML='✅ Sauvegardé sur Supabase — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
-  showNotif('Prix batteries sauvegardés !','success');
+  if(btn){ btn.textContent='⏳ Sauvegarde...'; btn.disabled=true; }
+  if(status){ status.textContent='Sauvegarde en cours...'; status.style.color='var(--text-muted)'; }
+  saveBatteriesPrix();
+  // Le feedback visuel est géré dans saveBatteriesPrix
+  setTimeout(function(){
+    if(btn){ btn.textContent='💾 Sauvegarder'; btn.disabled=false; }
+  }, 3000);
 }
 
 function updateBatterieModele(tableKey, ri, val){
@@ -5525,17 +5515,15 @@ function updateBatterieModele(tableKey, ri, val){
 }
 
 function ajouterLigneBatterie(tableKey){
-  var key = tableKey==='bt1'?'t1':'t2';
-  batteriesPrix[key].push({modele:'Nouveau modèle', prix:[0,0,0]});
-  saveBatteriesPrix();
+  if(!batteriesPrix.t1) batteriesPrix.t1=[];
+  batteriesPrix.t1.push({modele:'Nouveau modèle', prix:[0,0,0]});
   renderBatteries();
-  showNotif('Ligne ajoutée !','success');
+  showNotif('Ligne ajoutée — cliquez 💾 Sauvegarder !','success');
 }
 
 function supprimerLigneBatterie(tableKey, ri){
   if(!confirm('Supprimer cette ligne ?')) return;
-  var key = tableKey==='bt1'?'t1':'t2';
-  batteriesPrix[key].splice(ri, 1);
+  batteriesPrix.t1.splice(ri, 1);
   saveBatteriesPrix();
   renderBatteries();
   showNotif('Ligne supprimée','success');
@@ -5588,8 +5576,7 @@ function printBatteriesA4(){
       '<div style="background:rgba(72,187,120,0.15);border:1px solid #27ae60;border-radius:6px;padding:7px 14px;margin-bottom:14px;font-size:11px;color:#27ae60;font-weight:700;">'+
         '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT · PRIX TTC PIÈCE ET MAIN D\'ŒUVRE · GARANTIE 3 MOIS · RÉPARATION EN 30 MIN - 1H MAX'+
       '</div>'+
-      buildBatHTML(batteriesPrix.t1)+
-      buildBatHTML(batteriesPrix.t2)+
+      buildBatHTML(batteriesPrix.t1||[])+
       '<div style="border-top:2px solid #c0392b;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#888;">'+
         '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · Tél : 03 85 33 06 89</div>'+
         '<div style="display:flex;gap:12px;">'+
