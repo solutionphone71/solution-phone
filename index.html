@@ -5557,12 +5557,168 @@ function printBatteriesA4(){
 
 var ANDROID_MARQUES = ['Samsung','Xiaomi','Oppo','Motorola','Google','Honor'];
 var ANDROID_MODELES_DEFAULT = {
-  Samsung:  ['Galaxy A14','Galaxy A15','Galaxy A34','Galaxy A54','Galaxy A55','Galaxy S21','Galaxy S22','Galaxy S23','Galaxy S24'],
-  Xiaomi:   ['Redmi Note 12','Redmi Note 12 Pro','Redmi Note 13','Redmi Note 13 Pro','Redmi 12','Xiaomi 13','POCO X5 Pro'],
-  Oppo:     ['Oppo A17','Oppo A57','Oppo Reno 8','Oppo Reno 10','Oppo Find X5'],
-  Motorola: ['Moto G14','Moto G34','Moto G54','Moto G84','Edge 30','Edge 40'],
-  Google:   ['Pixel 6','Pixel 6a','Pixel 7','Pixel 7a','Pixel 8','Pixel 8a','Pixel 9'],
-  Honor:    ['Honor 90','Honor 90 Lite','Honor Magic 5 Lite','Honor X8','Honor 200'],
+  Samsung: [
+    // Série A
+    'Galaxy A03','Galaxy A03s','Galaxy A03 Core',
+    'Galaxy A04','Galaxy A04s','Galaxy A04e',
+    'Galaxy A05','Galaxy A05s',
+    'Galaxy A06',
+    'Galaxy A10','Galaxy A10s','Galaxy A10e',
+    'Galaxy A12','Galaxy A12 Nacho',
+    'Galaxy A13','Galaxy A13 5G',
+    'Galaxy A14','Galaxy A14 5G',
+    'Galaxy A15','Galaxy A15 5G',
+    'Galaxy A20e',
+    'Galaxy A21s',
+    'Galaxy A22','Galaxy A22 5G',
+    'Galaxy A23','Galaxy A23 5G',
+    'Galaxy A24',
+    'Galaxy A25 5G',
+    'Galaxy A32','Galaxy A32 5G',
+    'Galaxy A33 5G',
+    'Galaxy A34 5G',
+    'Galaxy A35 5G',
+    'Galaxy A40',
+    'Galaxy A41',
+    'Galaxy A42 5G',
+    'Galaxy A50','Galaxy A50s',
+    'Galaxy A51','Galaxy A51 5G',
+    'Galaxy A52','Galaxy A52s 5G',
+    'Galaxy A53 5G',
+    'Galaxy A54 5G',
+    'Galaxy A55 5G',
+    'Galaxy A70','Galaxy A70s',
+    'Galaxy A71','Galaxy A71 5G',
+    'Galaxy A72',
+    // Série S
+    'Galaxy S20','Galaxy S20+','Galaxy S20 Ultra',
+    'Galaxy S20 FE','Galaxy S20 FE 5G',
+    'Galaxy S21','Galaxy S21+','Galaxy S21 Ultra',
+    'Galaxy S21 FE 5G',
+    'Galaxy S22','Galaxy S22+','Galaxy S22 Ultra',
+    'Galaxy S23','Galaxy S23+','Galaxy S23 Ultra',
+    'Galaxy S23 FE',
+    'Galaxy S24','Galaxy S24+','Galaxy S24 Ultra',
+    'Galaxy S24 FE',
+    // Série M
+    'Galaxy M12','Galaxy M13','Galaxy M14',
+    'Galaxy M21','Galaxy M22','Galaxy M23',
+    'Galaxy M31','Galaxy M32','Galaxy M33',
+    'Galaxy M51','Galaxy M52','Galaxy M53',
+    // Série Note
+    'Galaxy Note 10','Galaxy Note 10+',
+    'Galaxy Note 20','Galaxy Note 20 Ultra',
+    // Série Z
+    'Galaxy Z Flip 3','Galaxy Z Flip 4','Galaxy Z Flip 5',
+    'Galaxy Z Fold 3','Galaxy Z Fold 4','Galaxy Z Fold 5',
+    // Série Xcover
+    'Galaxy Xcover 5','Galaxy Xcover 6 Pro',
+  ],
+  Xiaomi: [
+    // Redmi Note
+    'Redmi Note 8','Redmi Note 8 Pro',
+    'Redmi Note 9','Redmi Note 9 Pro','Redmi Note 9S',
+    'Redmi Note 10','Redmi Note 10 Pro','Redmi Note 10S',
+    'Redmi Note 11','Redmi Note 11 Pro','Redmi Note 11S',
+    'Redmi Note 12','Redmi Note 12 Pro','Redmi Note 12S',
+    'Redmi Note 13','Redmi Note 13 Pro','Redmi Note 13 Pro+',
+    // Redmi
+    'Redmi 9','Redmi 9A','Redmi 9C','Redmi 9T',
+    'Redmi 10','Redmi 10A','Redmi 10C',
+    'Redmi 12','Redmi 12C',
+    'Redmi 13','Redmi 13C',
+    // Xiaomi (Mi)
+    'Xiaomi 11 Lite 5G NE',
+    'Xiaomi 12','Xiaomi 12 Lite','Xiaomi 12 Pro',
+    'Xiaomi 12T','Xiaomi 12T Pro',
+    'Xiaomi 13','Xiaomi 13 Lite','Xiaomi 13 Pro',
+    'Xiaomi 13T','Xiaomi 13T Pro',
+    'Xiaomi 14','Xiaomi 14 Pro',
+    // POCO
+    'POCO M3','POCO M4 Pro','POCO M5','POCO M5s',
+    'POCO X3 NFC','POCO X3 Pro',
+    'POCO X4 Pro 5G','POCO X4 GT',
+    'POCO X5','POCO X5 Pro',
+    'POCO X6','POCO X6 Pro',
+    'POCO F3','POCO F4','POCO F5',
+  ],
+  Oppo: [
+    // Série A
+    'Oppo A15','Oppo A15s',
+    'Oppo A16','Oppo A16s',
+    'Oppo A17','Oppo A17k',
+    'Oppo A18','Oppo A38',
+    'Oppo A52','Oppo A53','Oppo A53s',
+    'Oppo A54','Oppo A54s',
+    'Oppo A55','Oppo A57','Oppo A57s',
+    'Oppo A58','Oppo A58x',
+    'Oppo A72','Oppo A73',
+    'Oppo A74','Oppo A74 5G',
+    'Oppo A76','Oppo A77','Oppo A77s',
+    'Oppo A78','Oppo A78 5G',
+    'Oppo A91','Oppo A92','Oppo A93','Oppo A94',
+    'Oppo A96','Oppo A98',
+    // Série Reno
+    'Oppo Reno 4','Oppo Reno 4 Pro',
+    'Oppo Reno 5','Oppo Reno 5 Lite',
+    'Oppo Reno 6','Oppo Reno 6 Pro',
+    'Oppo Reno 7','Oppo Reno 7 Lite',
+    'Oppo Reno 8','Oppo Reno 8 Lite','Oppo Reno 8 Pro',
+    'Oppo Reno 10','Oppo Reno 10 Pro',
+    'Oppo Reno 11','Oppo Reno 11 Pro',
+    // Find
+    'Oppo Find X3 Lite','Oppo Find X3 Pro',
+    'Oppo Find X5','Oppo Find X5 Pro',
+    'Oppo Find X6 Pro',
+  ],
+  Motorola: [
+    // Moto G
+    'Moto G8 Power','Moto G8 Plus',
+    'Moto G9 Play','Moto G9 Power','Moto G9 Plus',
+    'Moto G10','Moto G10 Power',
+    'Moto G20','Moto G22','Moto G23',
+    'Moto G30','Moto G31','Moto G32',
+    'Moto G41','Moto G42','Moto G50',
+    'Moto G51 5G','Moto G52','Moto G53',
+    'Moto G54','Moto G62','Moto G72',
+    'Moto G73','Moto G84','Moto G85',
+    'Moto G14','Moto G34','Moto G45',
+    // Edge
+    'Motorola Edge 20','Motorola Edge 20 Lite','Motorola Edge 20 Pro',
+    'Motorola Edge 30','Motorola Edge 30 Neo','Motorola Edge 30 Pro',
+    'Motorola Edge 30 Fusion',
+    'Motorola Edge 40','Motorola Edge 40 Neo','Motorola Edge 40 Pro',
+    'Motorola Edge 50','Motorola Edge 50 Fusion','Motorola Edge 50 Pro',
+    // Moto E
+    'Moto E6s','Moto E7','Moto E7i Power',
+    'Moto E20','Moto E22','Moto E32',
+    'Moto E40','Moto E13',
+  ],
+  Google: [
+    'Pixel 4','Pixel 4 XL','Pixel 4a','Pixel 4a 5G',
+    'Pixel 5','Pixel 5a',
+    'Pixel 6','Pixel 6 Pro','Pixel 6a',
+    'Pixel 7','Pixel 7 Pro','Pixel 7a',
+    'Pixel 8','Pixel 8 Pro','Pixel 8a',
+    'Pixel 9','Pixel 9 Pro','Pixel 9 Pro XL','Pixel 9 Pro Fold',
+    'Pixel Fold',
+  ],
+  Honor: [
+    'Honor 8A','Honor 8X',
+    'Honor 9A','Honor 9X','Honor 9 Lite',
+    'Honor 10 Lite','Honor 10X Lite',
+    'Honor 20 Lite','Honor 20',
+    'Honor 50','Honor 50 Lite',
+    'Honor 70','Honor 70 Lite',
+    'Honor 80','Honor 90','Honor 90 Lite',
+    'Honor 200','Honor 200 Lite','Honor 200 Pro',
+    'Honor Magic 4 Lite','Honor Magic 5 Lite','Honor Magic 6 Lite',
+    'Honor X6','Honor X6a','Honor X6b',
+    'Honor X7','Honor X7a','Honor X7b',
+    'Honor X8','Honor X8a','Honor X8b',
+    'Honor X9','Honor X9a','Honor X9b',
+    'Honor X10',
+  ],
 };
 var ANDROID_COLS = ['ecran_compat','ecran_original','batterie_compat','batterie_original','connecteur','vitre_arriere','remarques'];
 var ANDROID_COLS_LABEL = ['Écran Compat.','Écran Original','Bat. Compat.','Bat. Originale','Connecteur','Vitre Arrière','Remarques'];
@@ -5589,48 +5745,63 @@ function androidInit(){
 async function androidLoadSupabase(){
   if(!SUPA_URL || !SUPA_KEY) return;
   try{
-    var r = await fetch(SUPA_URL+'/rest/v1/prix_reparation_android?select=*', {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    // Charger depuis settings (nouvelle méthode fiable)
+    var rows = await supaFetch('settings','GET',null,'?key=eq.android_prix_json');
+    if(rows && rows.length && rows[0].value){
+      var data = JSON.parse(rows[0].value);
+      if(data && Object.keys(data).length > 0){
+        androidData = data;
+        localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
+        androidRender();
+        console.log('Android chargé depuis settings');
+        return;
+      }
+    }
+    // Fallback : ancienne table prix_reparation_android
+    console.log('Android: fallback sur prix_reparation_android');
+    var r = await fetch(SUPA_URL+'/rest/v1/prix_reparation_android?select=*', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
     if(!r.ok) return;
-    var rows = await r.json();
-    rows.forEach(function(row){
-      var m = row.marque, mod = row.modele;
-      if(!androidData[m]) androidData[m] = {};
-      androidData[m][mod] = {
-        ecran_compat: row.ecran_compat||'', ecran_original: row.ecran_original||'',
-        batterie_compat: row.batterie_compat||'', batterie_original: row.batterie_original||'',
-        connecteur: row.connecteur||'', vitre_arriere: row.vitre_arriere||'',
-        remarques: row.remarques||''
+    var rows2 = await r.json();
+    if(!rows2 || !rows2.length) return;
+    rows2.forEach(function(row){
+      var m=row.marque, mod=row.modele;
+      if(!androidData[m]) androidData[m]={};
+      androidData[m][mod]={
+        ecran_compat:row.ecran_compat||'', ecran_original:row.ecran_original||'',
+        batterie_compat:row.batterie_compat||'', batterie_original:row.batterie_original||'',
+        connecteur:row.connecteur||'', vitre_arriere:row.vitre_arriere||'',
+        remarques:row.remarques||''
       };
     });
     localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
     androidRender();
-  }catch(e){}
+    // Migrer vers settings automatiquement
+    androidSauvegarder();
+    console.log('Android migré depuis prix_reparation_android');
+  }catch(e){ console.log('Android load error:', e); }
 }
+
 
 async function androidSauvegarder(){
   localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
   if(!SUPA_URL || !SUPA_KEY){ showNotif('Sauvegardé localement','info'); return; }
-  var rows = [];
-  ANDROID_MARQUES.forEach(function(m){
-    Object.keys(androidData[m]||{}).forEach(function(mod){
-      var d = androidData[m][mod];
-      rows.push({marque:m, modele:mod,
-        ecran_compat: d.ecran_compat||null, ecran_original: d.ecran_original||null,
-        batterie_compat: d.batterie_compat||null, batterie_original: d.batterie_original||null,
-        connecteur: d.connecteur||null, vitre_arriere: d.vitre_arriere||null,
-        remarques: d.remarques||null
-      });
-    });
-  });
   try{
-    await fetch(SUPA_URL+'/rest/v1/prix_reparation_android', {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-      body: JSON.stringify(rows)
-    });
+    var jsonData = JSON.stringify(androidData);
+    // Même méthode que batteries/écrans : JSON dans la table settings
+    var rows = await supaFetch('settings','GET',null,'?key=eq.android_prix_json');
+    var exists = rows && rows.length > 0;
+    var method = exists ? 'PATCH' : 'POST';
+    var query  = exists ? '?key=eq.android_prix_json' : '';
+    await supaFetch('settings', method, {key:'android_prix_json', value: jsonData}, query);
     showNotif('✅ Prix Android sauvegardés !','success');
-  }catch(e){ showNotif('Sauvegardé localement','info'); }
+  }catch(e){
+    console.error('Android save error:', e);
+    showNotif('Sauvegardé localement uniquement','info');
+  }
 }
+
 
 function androidShowTab(marque){
   androidMarqueActive = marque;
