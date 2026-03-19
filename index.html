@@ -272,6 +272,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     </div>
     <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📱</span><span>Smartphones</span></div>
+    <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">💹</span><span>Ventes Smartphones</span></div>
     <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures</span></div>
     <div class="nav-item" id="nav-stats" onclick="showPage('stats',this)"><span class="nav-icon">📊</span><span>Statistiques</span></div>
     <div class="nav-item" id="nav-caisse" onclick="showPage('caisse',this)"><span class="nav-icon">💰</span><span>Z de Caisse</span></div>
@@ -321,6 +322,44 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <tbody id="phones-table"></tbody></table>
         </div>
       </div>
+    </div>
+
+    <div class="page" id="page-ventes-smart">
+      <div class="page-title">💹 Ventes Smartphones</div>
+      <div class="page-sub">Rapport comptable mensuel — Marge & TVA sur marge</div>
+
+      <!-- Filtres -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:0;">
+          <label>Année</label>
+          <select id="vs-annee" onchange="renderVentesSmartphones()" style="width:110px;">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:0;">
+          <label>Mois</label>
+          <select id="vs-mois" onchange="renderVentesSmartphones()" style="width:150px;">
+            <option value="">Tous les mois</option>
+            <option value="01">Janvier</option><option value="02">Février</option>
+            <option value="03">Mars</option><option value="04">Avril</option>
+            <option value="05">Mai</option><option value="06">Juin</option>
+            <option value="07">Juillet</option><option value="08">Août</option>
+            <option value="09">Septembre</option><option value="10">Octobre</option>
+            <option value="11">Novembre</option><option value="12">Décembre</option>
+          </select>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm" onclick="printVentesSmartphones()">🖨️ Imprimer / PDF</button>
+          <button class="btn btn-sm" onclick="exportVentesCSV()" style="border-color:var(--green);color:var(--green);">📥 Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Cartes résumé -->
+      <div class="dash-grid" id="vs-cards" style="margin-bottom:20px;"></div>
+
+      <!-- Contenu par mois -->
+      <div id="vs-content"></div>
     </div>
 
     <div class="page" id="page-factures">
@@ -2014,11 +2053,11 @@ var _pinEmployee  = '5555'; // Employé — modules financiers cachés
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
-var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats'];
+var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart'];
 
 function appliquerRole(){
   var isEmploye = _userRole === 'employe';
-  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats'];
+  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-ventes-smart'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = isEmploye ? 'none' : '';
@@ -2089,6 +2128,8 @@ function checkPin(){
     _pin = '';
     updatePinDisplay();
     setTimeout(appliquerRole, 100);
+    // Charger batteries depuis Supabase au démarrage
+    loadBatteriesFromSupabase().then(function(){ renderBatteries(); });
   } else {
     document.getElementById('pin-msg').textContent = '❌ Code incorrect';
     var box = document.querySelector('.login-box');
@@ -2122,9 +2163,10 @@ function showPage(id,el){
   if(id==='rachat')calculerRachat();
   if(id==='instagram'){renderInstagram();}
   if(id==='ecrans'){renderEcrans();}
-  if(id==='batteries'){renderBatteries();}
+  if(id==='batteries'){loadBatteriesFromSupabase().then(function(){ renderBatteries(); });}
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
+  if(id==='ventes-smart')renderVentesSmartphones();
 }
 
 function getMoisActuel(){if(!caisse.length){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}return caisse[0].date.substring(0,7);}
@@ -2812,17 +2854,40 @@ function addPhone(){
 
 function renderPhones(){
   var s=(document.getElementById('search-phones')?document.getElementById('search-phones').value:'').toLowerCase();
-  var f=phones.filter(function(p){return!s||p.modele.toLowerCase().indexOf(s)>=0||(p.imei||'').indexOf(s)>=0;});
+  // Afficher UNIQUEMENT les téléphones non vendus dans le stock
+  var f=phones.filter(function(p){
+    if(p.etat==='VENDU') return false;
+    return !s||p.modele.toLowerCase().indexOf(s)>=0||(p.imei||'').indexOf(s)>=0;
+  });
+
+  // Bandeau récapitulatif
+  var nbVendus=phones.filter(function(p){return p.etat==='VENDU';}).length;
+  var nbDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var nbRepa=phones.filter(function(p){return p.etat==='EN_REPARATION';}).length;
+  var existing=document.getElementById('phones-recap-bar');
+  if(existing)existing.remove();
+  var card=document.querySelector('#page-phones .card');
+  if(card){
+    var bar=document.createElement('div');
+    bar.id='phones-recap-bar';
+    bar.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;';
+    bar.innerHTML=
+      '<div style="background:rgba(72,187,120,0.12);border:1px solid var(--green);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--green);">✅ Disponibles : '+nbDispo+'</div>'+
+      (nbRepa?'<div style="background:rgba(66,153,225,0.12);border:1px solid var(--blue);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--blue);">🔧 En répa : '+nbRepa+'</div>':'')+
+      '<div style="background:rgba(229,62,62,0.08);border:1px solid rgba(229,62,62,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--text-muted);">💹 Vendus : '+nbVendus+' — <span style="cursor:pointer;text-decoration:underline;color:var(--red);" onclick="showPage('ventes-smart',null);renderVentesSmartphones();">Voir le rapport →</span></div>';
+    card.insertBefore(bar,card.firstChild);
+  }
+
   document.getElementById('phones-table').innerHTML=f.map(function(p){
     var m=p.vente-p.achat;
-    var badge = p.etat==='VENDU'?'badge-red':p.etat==='EN_REPARATION'?'badge-yellow':'badge-green';
-    var etatLabel = p.etat==='EN_REPARATION'?'🔧 EN RÉPA':p.etat;
-    var photoHtml = p.photo?'<img src="'+p.photo+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle;">':'';
-    var sourceHtml = p.fournisseur?'<br><span style="font-size:11px;color:var(--blue)">🏢 '+p.fournisseur+'</span>':p.typeAchat==='PARTICULIER'?'<br><span style="font-size:11px;color:var(--text-muted)">👤 Particulier</span>':'';
-    var joursStock = '';
+    var badge=p.etat==='EN_REPARATION'?'badge-blue':'badge-green';
+    var etatLabel=p.etat==='EN_REPARATION'?'🔧 EN RÉPA':'✅ DISPO';
+    var photoHtml=p.photo?'<img src="'+p.photo+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle;">':'';
+    var sourceHtml=p.fournisseur?'<br><span style="font-size:11px;color:var(--blue)">🏢 '+p.fournisseur+'</span>':p.typeAchat==='PARTICULIER'?'<br><span style="font-size:11px;color:var(--text-muted)">👤 Particulier</span>':'';
+    var joursStock='';
     if(p.etat==='DISPONIBLE'&&p.dateAchat){
       var days=Math.floor((new Date()-new Date(p.dateAchat))/86400000);
-      if(days>30)joursStock='<br><span style="font-size:11px;color:var(--warning)">⚠️ '+days+'j</span>';
+      if(days>30)joursStock='<br><span style="font-size:11px;color:var(--warning)">⚠️ '+days+'j en stock</span>';
       else if(days>15)joursStock='<br><span style="font-size:11px;color:var(--blue)">'+days+'j</span>';
     }
     return '<tr>'+
@@ -2836,13 +2901,14 @@ function renderPhones(){
       '<td style="color:var(--green)"><b>'+m.toFixed(0)+' €</b></td>'+
       '<td><span class="badge '+badge+'">'+etatLabel+'</span></td>'+
       '<td style="display:flex;gap:4px;flex-wrap:wrap;">'+
-        '<button class="btn btn-sm" onclick="editPhone('+p.id+')" title="Modifier">✏️</button><button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
+        '<button class="btn btn-sm" onclick="editPhone('+p.id+')" title="Modifier">✏️</button>'+
+        '<button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
         '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
         '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
-        '<button class="btn btn-sm" onclick="'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'marquerDispo('+p.id+')':'marquerVendu('+p.id+')')+'">'+(p.etat==='VENDU'||p.etat==='EN_REPARATION'?'↩️':'✅')+'</button>'+
+        '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Marquer vendu">✅ Vendu</button>'+
         '<button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button>'+
       '</td></tr>';
-  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun smartphone</td></tr>';
+  }).join('')||'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim)">📦 Aucun smartphone en stock</td></tr>';
 }
 
 function marquerReparation(id){
@@ -2869,8 +2935,30 @@ async function verifierIMEI(imei) {
   showNotif('✅ IMEI non trouvé dans votre stock', 'success');
 }
 
-function marquerVendu(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='VENDU';p.dateVente=new Date().toISOString().split('T')[0];savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' marqué vendu','success');}
+function marquerVendu(id){
+  var p=phones.find(function(x){return x.id===id;});
+  if(!p)return;
+  if(!confirm('Marquer '+p.modele+' comme VENDU ?\nIl sera retiré du stock et ajouté au rapport des ventes.'))return;
+  p.etat='VENDU';
+  p.dateVente=new Date().toISOString().split('T')[0];
+  savePhone(p);
+  renderPhones();
+  renderDashboard();
+  showNotif('✅ '+p.modele+' vendu — visible dans Ventes Smartphones','success');
+}
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
+
+function annulerVente(id){
+  var p=phones.find(function(x){return x.id===id;});
+  if(!p)return;
+  if(!confirm('Remettre '+p.modele+' en stock ?\nIl sera retiré du rapport des ventes.'))return;
+  p.etat='DISPONIBLE';
+  p.dateVente=null;
+  savePhone(p);
+  renderVentesSmartphones();
+  renderDashboard();
+  showNotif('↩️ '+p.modele+' remis en stock','success');
+}
 function deletePhone(id){if(!confirm('Supprimer ?'))return;phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
 
 var curPhone=null;
@@ -5260,7 +5348,54 @@ var BATTERIES_DEFAULT = {
 var batteriesPrix = JSON.parse(localStorage.getItem('sp_batteries_prix') || 'null');
 if(!batteriesPrix){ batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT)); }
 
-function saveBatteriesPrix(){ localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix)); }
+function saveBatteriesPrix(){
+  localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
+  // Sync Supabase — même structure que ecrans_prix
+  if(!SUPA_URL || !SUPA_KEY) return;
+  var rows = [];
+  ['t1','t2'].forEach(function(tbl){
+    (batteriesPrix[tbl]||[]).forEach(function(ligne){
+      rows.push({
+        tableau: tbl,
+        modele: ligne.modele,
+        p0: ligne.prix[0]||null,
+        p1: ligne.prix[1]||null,
+        p2: ligne.prix[2]||null
+      });
+    });
+  });
+  fetch(SUPA_URL+'/rest/v1/batteries_prix', {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+    body: JSON.stringify(rows)
+  }).catch(function(){});
+}
+
+async function loadBatteriesFromSupabase(){
+  if(!SUPA_URL || !SUPA_KEY) return;
+  try {
+    var res = await fetch(SUPA_URL+'/rest/v1/batteries_prix?select=*', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!res.ok) return;
+    var rows = await res.json();
+    if(!rows || !rows.length) return;
+    // Reconstruire l'objet depuis Supabase
+    var newPrix = {t1:[], t2:[]};
+    rows.forEach(function(r){
+      var tbl = r.tableau;
+      if(!newPrix[tbl]) newPrix[tbl] = [];
+      newPrix[tbl].push({
+        modele: r.modele,
+        prix: [r.p0, r.p1, r.p2]
+      });
+    });
+    if(newPrix.t1.length || newPrix.t2.length){
+      batteriesPrix = newPrix;
+      localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
+    }
+  } catch(e){ console.log('Batteries Supabase load error:', e); }
+}
 
 function renderBatteries(){
   renderBatteriesTable('batteries-tbody-1', batteriesPrix.t1, 'bt1');
@@ -6632,7 +6767,354 @@ function printBonDepot(d){
 
 
 
-var gmbSaved = JSON.parse(localStorage.getItem('sp_gmb_saved') || '[]');
+// ============================================================
+//  MODULE VENTES SMARTPHONES — RAPPORT COMPTABLE MENSUEL
+// ============================================================
+
+var MOIS_NOMS = {
+  '01':'Janvier','02':'Février','03':'Mars','04':'Avril',
+  '05':'Mai','06':'Juin','07':'Juillet','08':'Août',
+  '09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'
+};
+
+function getTVAMarge(achat, vente){
+  // TVA sur marge = (vente - achat) / 1.2 * 0.2
+  var marge = vente - achat;
+  return marge > 0 ? marge - marge/1.2 : 0;
+}
+
+function renderVentesSmartphones(){
+  var annee = document.getElementById('vs-annee') ? document.getElementById('vs-annee').value : new Date().getFullYear().toString();
+  var filtreMois = document.getElementById('vs-mois') ? document.getElementById('vs-mois').value : '';
+
+  // Filtrer les smartphones vendus
+  var vendus = phones.filter(function(p){
+    if(p.etat !== 'VENDU' || !p.dateVente) return false;
+    if(!p.dateVente.startsWith(annee)) return false;
+    if(filtreMois && !p.dateVente.startsWith(annee+'-'+filtreMois)) return false;
+    return true;
+  });
+
+  // Grouper par mois
+  var parMois = {};
+  vendus.forEach(function(p){
+    var mois = p.dateVente.substring(0,7);
+    if(!parMois[mois]) parMois[mois] = [];
+    parMois[mois].push(p);
+  });
+
+  var moisKeys = Object.keys(parMois).sort();
+
+  // Totaux globaux
+  var totVente=0, totAchat=0, totMarge=0, totTVA=0;
+  vendus.forEach(function(p){
+    totVente += p.vente;
+    totAchat += p.achat;
+    totMarge += (p.vente - p.achat);
+    totTVA += getTVAMarge(p.achat, p.vente);
+  });
+
+  // Cartes résumé
+  document.getElementById('vs-cards').innerHTML =
+    '<div class="dash-card"><div class="dash-label">Téléphones vendus</div><div class="dash-value">'+vendus.length+'</div></div>'+
+    '<div class="dash-card"><div class="dash-label">CA Ventes TTC</div><div class="dash-value" style="color:var(--blue)">'+totVente.toFixed(2)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">Total Achats</div><div class="dash-value">'+totAchat.toFixed(2)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">Marge Brute</div><div class="dash-value" style="color:var(--green)">'+totMarge.toFixed(2)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">TVA sur marge</div><div class="dash-value" style="color:var(--warning)">'+totTVA.toFixed(2)+' €</div></div>'+
+    '<div class="dash-card"><div class="dash-label">Marge HT</div><div class="dash-value" style="color:var(--green)">'+(totMarge-totTVA).toFixed(2)+' €</div></div>';
+
+  if(!moisKeys.length){
+    document.getElementById('vs-content').innerHTML =
+      '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted);">📦 Aucun smartphone vendu sur cette période</div>';
+    return;
+  }
+
+  var html = '';
+  var grandVente=0, grandAchat=0, grandMarge=0, grandTVA=0, grandNb=0;
+
+  moisKeys.forEach(function(mois){
+    var liste = parMois[mois];
+    var parts = mois.split('-');
+    var moisLabel = MOIS_NOMS[parts[1]] + ' ' + parts[0];
+
+    var mVente=0, mAchat=0, mMarge=0, mTVA=0;
+    liste.forEach(function(p){
+      mVente += p.vente;
+      mAchat += p.achat;
+      mMarge += (p.vente - p.achat);
+      mTVA += getTVAMarge(p.achat, p.vente);
+    });
+    grandVente+=mVente; grandAchat+=mAchat; grandMarge+=mMarge; grandTVA+=mTVA; grandNb+=liste.length;
+
+    html += '<div class="card" style="margin-bottom:18px;">'+
+      '<div class="card-header">'+
+        '<div>'+
+          '<div class="card-title">📅 '+moisLabel+'</div>'+
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+liste.length+' smartphone'+(liste.length>1?'s':'')+' vendu'+(liste.length>1?'s':'')+' · Marge : <b style="color:var(--green)">'+mMarge.toFixed(2)+'€</b></div>'+
+        '</div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<button class="btn btn-sm" onclick="printMoisVentes(\''+mois+'\')" style="border-color:var(--red);color:var(--red);">🖨️ Imprimer ce mois</button>'+
+          '<button class="btn btn-sm" onclick="exportMoisCSV(\''+mois+'\')" style="border-color:var(--green);color:var(--green);">📥 CSV</button>'+
+        '</div>'+
+      '</div>'+
+      '<div style="overflow-x:auto;">'+
+      '<table>'+
+        '<thead><tr>'+
+          '<th>Modèle</th>'+
+          '<th>Stock.</th>'+
+          '<th>Grade</th>'+
+          '<th>Date vente</th>'+
+          '<th>IMEI</th>'+
+          '<th>Source</th>'+
+          '<th style="text-align:right">Prix Achat</th>'+
+          '<th style="text-align:right">Prix Vente</th>'+
+          '<th style="text-align:right;color:var(--green)">Marge Brute</th>'+
+          '<th style="text-align:right;color:var(--warning)">TVA/marge</th>'+
+          '<th style="text-align:right">Marge HT</th>'+
+          '<th></th>'+
+        '</tr></thead>'+
+        '<tbody>'+
+        liste.map(function(p, i){
+          var marge = p.vente - p.achat;
+          var tva = getTVAMarge(p.achat, p.vente);
+          var margeHT = marge - tva;
+          var bg = i%2===0 ? '' : 'background:rgba(255,255,255,0.02);';
+          var source = p.fournisseur ? ('🏢 '+p.fournisseur) : '👤 Particulier';
+          return '<tr style="'+bg+'">'+
+            '<td><b>'+p.modele+'</b></td>'+
+            '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
+            '<td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td>'+
+            '<td style="font-size:12px;">'+fmtDate(p.dateVente)+'</td>'+
+            '<td style="font-size:11px;color:var(--text-muted)">'+(p.imei||'—')+'</td>'+
+            '<td style="font-size:11px;">'+source+'</td>'+
+            '<td style="text-align:right">'+p.achat.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;font-weight:700">'+p.vente.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;color:var(--green);font-weight:700">'+marge.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;color:var(--warning)">'+tva.toFixed(2)+' €</td>'+
+            '<td style="text-align:right">'+margeHT.toFixed(2)+' €</td>'+
+            '<td><button class="btn btn-sm" onclick="annulerVente('+p.id+')" title="Remettre en stock" style="color:var(--text-muted);font-size:11px;">↩️</button></td>'+
+          '</tr>';
+        }).join('')+
+        // Ligne total du mois
+        '<tr style="background:rgba(229,62,62,0.1);font-weight:800;border-top:2px solid var(--red);">'+
+          '<td colspan="6" style="padding:10px 12px;color:var(--red);">TOTAL '+moisLabel.toUpperCase()+' ('+liste.length+' tél.)</td>'+
+          '<td style="text-align:right;padding:10px 12px;">'+mAchat.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:10px 12px;">'+mVente.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:10px 12px;color:var(--green)">'+mMarge.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:10px 12px;color:var(--warning)">'+mTVA.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:10px 12px;">'+(mMarge-mTVA).toFixed(2)+' €</td>'+
+          '<td></td>'+
+        '</tr>'+
+        '</tbody>'+
+      '</table></div></div>';
+  });
+
+  // Récapitulatif général (si plusieurs mois)
+  if(moisKeys.length > 1){
+    html += '<div class="card" style="border:2px solid var(--red);background:rgba(229,62,62,0.06);">'+
+      '<div class="card-header"><div class="card-title" style="color:var(--red);font-size:18px;">📊 RÉCAPITULATIF '+annee+(filtreMois?' — '+MOIS_NOMS[filtreMois]:'')+'</div></div>'+
+      '<table>'+
+        '<thead><tr>'+
+          '<th>Mois</th><th style="text-align:center">Nb</th>'+
+          '<th style="text-align:right">Total Achats</th>'+
+          '<th style="text-align:right">CA Ventes TTC</th>'+
+          '<th style="text-align:right;color:var(--green)">Marge Brute</th>'+
+          '<th style="text-align:right;color:var(--warning)">TVA/marge</th>'+
+          '<th style="text-align:right">Marge HT</th>'+
+        '</tr></thead><tbody>'+
+        moisKeys.map(function(mois, i){
+          var liste = parMois[mois];
+          var mv=0,ma=0,mm=0,mt=0;
+          liste.forEach(function(p){ mv+=p.vente; ma+=p.achat; mm+=(p.vente-p.achat); mt+=getTVAMarge(p.achat,p.vente); });
+          var parts=mois.split('-');
+          var bg = i%2===0 ? '' : 'background:rgba(255,255,255,0.02);';
+          return '<tr style="'+bg+'">'+
+            '<td><b>'+MOIS_NOMS[parts[1]]+' '+parts[0]+'</b></td>'+
+            '<td style="text-align:center">'+liste.length+'</td>'+
+            '<td style="text-align:right">'+ma.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;font-weight:700">'+mv.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;color:var(--green);font-weight:700">'+mm.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;color:var(--warning)">'+mt.toFixed(2)+' €</td>'+
+            '<td style="text-align:right">'+(mm-mt).toFixed(2)+' €</td>'+
+          '</tr>';
+        }).join('')+
+        '<tr style="background:var(--red);color:#fff;font-weight:900;font-size:14px;">'+
+          '<td style="padding:12px;">TOTAL GÉNÉRAL</td>'+
+          '<td style="text-align:center;padding:12px;">'+grandNb+'</td>'+
+          '<td style="text-align:right;padding:12px;">'+grandAchat.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:12px;">'+grandVente.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:12px;">'+grandMarge.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:12px;">'+grandTVA.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:12px;">'+(grandMarge-grandTVA).toFixed(2)+' €</td>'+
+        '</tr>'+
+        '</tbody></table>'+
+      '<div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px 16px;margin-top:14px;font-size:12px;color:var(--text-muted);line-height:1.8;">'+
+        '📌 <b style="color:var(--text)">Rappel régime TVA sur la marge (Art. 297 A CGI)</b><br>'+
+        'Marge brute = Prix vente - Prix achat &nbsp;·&nbsp; '+
+        'TVA sur marge = Marge ÷ 1,2 × 0,2 &nbsp;·&nbsp; '+
+        'Marge HT = Marge brute - TVA sur marge'+
+      '</div>'+
+    '</div>';
+  }
+
+  document.getElementById('vs-content').innerHTML = html;
+}
+
+function getVentesData(moisFilter){
+  var annee = document.getElementById('vs-annee') ? document.getElementById('vs-annee').value : new Date().getFullYear().toString();
+  return phones.filter(function(p){
+    if(p.etat !== 'VENDU' || !p.dateVente) return false;
+    if(!p.dateVente.startsWith(annee)) return false;
+    if(moisFilter && !p.dateVente.startsWith(moisFilter)) return false;
+    return true;
+  });
+}
+
+function printMoisVentes(mois){
+  var liste = phones.filter(function(p){ return p.etat==='VENDU' && p.dateVente && p.dateVente.startsWith(mois); });
+  if(!liste.length){ showNotif('Aucune vente ce mois','error'); return; }
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var parts = mois.split('-');
+  var moisLabel = MOIS_NOMS[parts[1]] + ' ' + parts[0];
+  var mVente=0, mAchat=0, mMarge=0, mTVA=0;
+  liste.forEach(function(p){ mVente+=p.vente; mAchat+=p.achat; mMarge+=(p.vente-p.achat); mTVA+=getTVAMarge(p.achat,p.vente); });
+
+  var rows = liste.map(function(p, i){
+    var marge=p.vente-p.achat, tva=getTVAMarge(p.achat,p.vente);
+    var bg = i%2===0?'#fff':'#fafafa';
+    return '<tr style="background:'+bg+';border-bottom:1px solid #eee;">'+
+      '<td style="padding:8px 10px;font-size:12px;font-weight:700;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td>'+
+      '<td style="padding:8px 10px;font-size:11px;text-align:center;">'+(p.grade||'—')+'</td>'+
+      '<td style="padding:8px 10px;font-size:10px;color:#888;font-family:monospace;">'+(p.imei||'—')+'</td>'+
+      '<td style="padding:8px 10px;font-size:11px;color:#555;">'+(p.fournisseur?p.fournisseur:'Particulier')+'</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-size:12px;">'+p.achat.toFixed(2)+'€</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;">'+p.vente.toFixed(2)+'€</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-size:12px;color:#27ae60;font-weight:700;">'+marge.toFixed(2)+'€</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-size:12px;color:#e67e22;">'+tva.toFixed(2)+'€</td>'+
+      '<td style="padding:8px 10px;text-align:right;font-size:12px;">'+(marge-tva).toFixed(2)+'€</td>'+
+    '</tr>';
+  }).join('');
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Ventes '+moisLabel+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}@page{size:A4 landscape;margin:0;}}</style>'+
+    '</head><body>'+
+    '<div class="no-print" style="text-align:right;padding:10px;"><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
+    '<div class="page">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:12px;">'+
+        '<div style="display:flex;align-items:center;gap:12px;">'+(logo?'<img src="'+logo+'" style="height:55px;width:auto;">':'')+
+          '<div><div style="font-size:20px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:11px;color:#777;">21 Rue Gambetta · 71000 Mâcon · SIRET : 801044785 00021</div></div>'+
+        '</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:18px;font-weight:900;">VENTES SMARTPHONES</div>'+
+          '<div style="font-size:22px;font-weight:900;color:#c0392b;">'+moisLabel+'</div>'+
+          '<div style="font-size:10px;color:#999;">TVA sur marge — Art. 297 A CGI</div>'+
+        '</div>'+
+      '</div>'+
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;">'+
+        '<thead><tr style="background:#c0392b;color:#fff;">'+
+          '<th style="padding:8px 10px;text-align:left;font-size:11px;">Modèle</th>'+
+          '<th style="padding:8px 10px;text-align:center;font-size:11px;">Grade</th>'+
+          '<th style="padding:8px 10px;text-align:left;font-size:11px;">IMEI</th>'+
+          '<th style="padding:8px 10px;text-align:left;font-size:11px;">Source</th>'+
+          '<th style="padding:8px 10px;text-align:right;font-size:11px;">Prix Achat</th>'+
+          '<th style="padding:8px 10px;text-align:right;font-size:11px;">Prix Vente TTC</th>'+
+          '<th style="padding:8px 10px;text-align:right;font-size:11px;">Marge Brute</th>'+
+          '<th style="padding:8px 10px;text-align:right;font-size:11px;">TVA/marge</th>'+
+          '<th style="padding:8px 10px;text-align:right;font-size:11px;">Marge HT</th>'+
+        '</tr></thead>'+
+        '<tbody>'+rows+
+        '<tr style="background:#1a1a1a;color:#fff;font-weight:900;">'+
+          '<td colspan="4" style="padding:10px;">TOTAL '+moisLabel.toUpperCase()+' ('+liste.length+' téléphones)</td>'+
+          '<td style="padding:10px;text-align:right;">'+mAchat.toFixed(2)+'€</td>'+
+          '<td style="padding:10px;text-align:right;">'+mVente.toFixed(2)+'€</td>'+
+          '<td style="padding:10px;text-align:right;color:#48bb78;">'+mMarge.toFixed(2)+'€</td>'+
+          '<td style="padding:10px;text-align:right;color:#ed8936;">'+mTVA.toFixed(2)+'€</td>'+
+          '<td style="padding:10px;text-align:right;">'+(mMarge-mTVA).toFixed(2)+'€</td>'+
+        '</tr>'+
+        '</tbody></table>'+
+      '<div style="background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:10px 14px;font-size:10px;color:#666;line-height:1.8;">'+
+        '<b>Régime TVA sur la marge (Art. 297 A du CGI)</b><br>'+
+        'Marge brute = Prix de vente TTC − Prix d'achat &nbsp;·&nbsp; TVA sur marge = Marge ÷ 1,2 × 0,2 &nbsp;·&nbsp; Marge HT = Marge brute − TVA sur marge'+
+      '</div>'+
+      '<div style="border-top:2px solid #c0392b;margin-top:12px;padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:#aaa;">'+
+        '<div>Document généré le '+new Date().toLocaleDateString('fr-FR')+' · Solution Phone · 21 Rue Gambetta · 71000 Mâcon</div>'+
+        '<div style="color:#c0392b;font-weight:700;">CONFIDENTIEL — USAGE COMPTABLE</div>'+
+      '</div>'+
+    '</div><script>window.onload=function(){};<\/script></body></html>';
+
+  var w = window.open('','_blank','width=1100,height=850');
+  w.document.write(html);
+  w.document.close();
+}
+
+function printVentesSmartphones(){
+  var annee = document.getElementById('vs-annee') ? document.getElementById('vs-annee').value : new Date().getFullYear().toString();
+  var filtreMois = document.getElementById('vs-mois') ? document.getElementById('vs-mois').value : '';
+  if(filtreMois){
+    printMoisVentes(annee+'-'+filtreMois);
+  } else {
+    // Imprimer tous les mois
+    var moisKeys = [];
+    phones.forEach(function(p){
+      if(p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(annee)){
+        var m=p.dateVente.substring(0,7);
+        if(moisKeys.indexOf(m)<0) moisKeys.push(m);
+      }
+    });
+    moisKeys.sort().forEach(function(m){ setTimeout(function(){ printMoisVentes(m); }, 300); });
+  }
+}
+
+function exportMoisCSV(mois){
+  var liste = phones.filter(function(p){ return p.etat==='VENDU' && p.dateVente && p.dateVente.startsWith(mois); });
+  var headers = ['Modele','Stockage','Grade','IMEI','Source','Date Vente','Prix Achat','Prix Vente TTC','Marge Brute','TVA sur marge','Marge HT'];
+  var rows = liste.map(function(p){
+    var marge=p.vente-p.achat, tva=getTVAMarge(p.achat,p.vente);
+    return [
+      p.modele, (p.stockage||'')+'Go', p.grade||'', p.imei||'',
+      p.fournisseur||'Particulier', fmtDate(p.dateVente),
+      p.achat.toFixed(2), p.vente.toFixed(2),
+      marge.toFixed(2), tva.toFixed(2), (marge-tva).toFixed(2)
+    ].join(';');
+  });
+  var csv = [headers.join(';')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href=url; a.download='Ventes_Smartphones_'+mois+'.csv'; a.click();
+  showNotif('Export CSV '+mois+' téléchargé !','success');
+}
+
+function exportVentesCSV(){
+  var annee = document.getElementById('vs-annee') ? document.getElementById('vs-annee').value : new Date().getFullYear().toString();
+  var filtreMois = document.getElementById('vs-mois') ? document.getElementById('vs-mois').value : '';
+  var moisFilter = filtreMois ? annee+'-'+filtreMois : null;
+  var liste = getVentesData(moisFilter);
+  if(!liste.length){ showNotif('Aucune vente à exporter','error'); return; }
+  var headers = ['Mois','Modele','Stockage','Grade','IMEI','Source','Date Vente','Prix Achat','Prix Vente TTC','Marge Brute','TVA sur marge','Marge HT'];
+  var rows = liste.map(function(p){
+    var marge=p.vente-p.achat, tva=getTVAMarge(p.achat,p.vente);
+    var parts=(p.dateVente||'').substring(0,7).split('-');
+    return [
+      MOIS_NOMS[parts[1]]||'',' '+parts[0],
+      p.modele, (p.stockage||'')+'Go', p.grade||'', p.imei||'',
+      p.fournisseur||'Particulier', fmtDate(p.dateVente),
+      p.achat.toFixed(2), p.vente.toFixed(2),
+      marge.toFixed(2), tva.toFixed(2), (marge-tva).toFixed(2)
+    ].join(';');
+  });
+  var csv = [headers.join(';')].concat(rows).join('\n');
+  var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download='Ventes_Smartphones_'+annee+'.csv'; a.click();
+  showNotif('Export CSV complet téléchargé !','success');
+}
+
+// ============================================================
+//  FIN MODULE VENTES SMARTPHONES
+// ============================================================
+
 
 function renderGmbTab(){
   setGmbStars(5);
