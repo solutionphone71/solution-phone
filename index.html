@@ -1515,9 +1515,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
       <button class="btn btn-primary" onclick="printBatteriesA4()">🖨️ Imprimer / PDF A4</button>
+      <button class="btn" id="btn-save-bat" onclick="manuelleSauvegardeBatteries()" style="border-color:var(--green);color:var(--green);font-weight:700;">💾 Sauvegarder</button>
       <button class="btn" onclick="resetBatteriesPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
-      <div style="font-size:12px;color:var(--text-muted);padding:8px;">
-        💡 Cliquez sur un prix pour le modifier
+      <div id="bat-save-status" style="font-size:12px;color:var(--text-muted);padding:8px;">
+        💡 Les modifications se sauvegardent automatiquement
       </div>
     </div>
 
@@ -5120,11 +5121,11 @@ function saveEcransPrix(){
       rows.push({
         tableau: tbl,
         modele: ligne.modele,
-        p0: ligne.prix[0] !== undefined ? ligne.prix[0] : null,
-        p1: ligne.prix[1] !== undefined ? ligne.prix[1] : null,
-        p2: ligne.prix[2] !== undefined ? ligne.prix[2] : null,
-        p3: ligne.prix[3] !== undefined ? ligne.prix[3] : null,
-        p4: ligne.prix[4] !== undefined ? ligne.prix[4] : null
+        p0: ligne.prix[0] !== null && ligne.prix[0] !== undefined ? Number(ligne.prix[0]) : 0,
+        p1: ligne.prix[1] !== null && ligne.prix[1] !== undefined ? Number(ligne.prix[1]) : 0,
+        p2: ligne.prix[2] !== null && ligne.prix[2] !== undefined ? Number(ligne.prix[2]) : 0,
+        p3: ligne.prix[3] !== null && ligne.prix[3] !== undefined ? Number(ligne.prix[3]) : 0,
+        p4: ligne.prix[4] !== null && ligne.prix[4] !== undefined ? Number(ligne.prix[4]) : 0
       });
     });
   });
@@ -5156,11 +5157,11 @@ async function loadEcransFromSupabase(){
       newPrix[tbl].push({
         modele: r.modele,
         prix: [
-          r.p0 !== null ? r.p0 : null,
-          r.p1 !== null ? r.p1 : null,
-          r.p2 !== null ? r.p2 : null,
-          r.p3 !== null ? r.p3 : null,
-          r.p4 !== null ? r.p4 : null
+          r.p0 !== null && r.p0 !== undefined ? Number(r.p0) : 0,
+          r.p1 !== null && r.p1 !== undefined ? Number(r.p1) : 0,
+          r.p2 !== null && r.p2 !== undefined ? Number(r.p2) : 0,
+          r.p3 !== null && r.p3 !== undefined ? Number(r.p3) : 0,
+          r.p4 !== null && r.p4 !== undefined ? Number(r.p4) : 0
         ]
       });
     });
@@ -5408,12 +5409,13 @@ function saveBatteriesPrix(){
   var rows = [];
   ['t1','t2'].forEach(function(tbl){
     (batteriesPrix[tbl]||[]).forEach(function(ligne){
+      var p0 = ligne.prix[0] !== null && ligne.prix[0] !== undefined ? Number(ligne.prix[0]) : 0;
+      var p1 = ligne.prix[1] !== null && ligne.prix[1] !== undefined ? Number(ligne.prix[1]) : 0;
+      var p2 = ligne.prix[2] !== null && ligne.prix[2] !== undefined ? Number(ligne.prix[2]) : 0;
       rows.push({
         tableau: tbl,
         modele: ligne.modele,
-        p0: ligne.prix[0]||null,
-        p1: ligne.prix[1]||null,
-        p2: ligne.prix[2]||null
+        p0: p0, p1: p1, p2: p2
       });
     });
   });
@@ -5444,7 +5446,11 @@ async function loadBatteriesFromSupabase(){
       if(!newPrix[tbl]) newPrix[tbl] = [];
       newPrix[tbl].push({
         modele: r.modele,
-        prix: [r.p0, r.p1, r.p2]
+        prix: [
+          r.p0 !== null && r.p0 !== undefined ? Number(r.p0) : 0,
+          r.p1 !== null && r.p1 !== undefined ? Number(r.p1) : 0,
+          r.p2 !== null && r.p2 !== undefined ? Number(r.p2) : 0
+        ]
       });
     });
     if(newPrix.t1.length || newPrix.t2.length){
@@ -5492,12 +5498,24 @@ function renderBatteriesTable(tbodyId, data, tableKey){
 }
 
 function updateBatteriePrix(tableKey, ri, ci, val){
-  var v = parseInt(val);
-  if(isNaN(v)||v<0) return;
+  var v = parseFloat(val);
+  if(isNaN(v)||v<0) v = 0;
   var key = tableKey==='bt1'?'t1':'t2';
+  if(!batteriesPrix[key] || !batteriesPrix[key][ri]) return;
   batteriesPrix[key][ri].prix[ci] = v;
   saveBatteriesPrix();
-  showNotif('Prix mis à jour !','success');
+  // Feedback visuel discret
+  var status = document.getElementById('bat-save-status');
+  if(status){ status.innerHTML='✅ Sauvegardé — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
+}
+
+function manuelleSauvegardeBatteries(){
+  saveBatteriesPrix();
+  var btn = document.getElementById('btn-save-bat');
+  var status = document.getElementById('bat-save-status');
+  if(btn){ btn.textContent='✅ Sauvegardé !'; setTimeout(function(){ btn.textContent='💾 Sauvegarder'; }, 2000); }
+  if(status){ status.innerHTML='✅ Sauvegardé sur Supabase — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
+  showNotif('Prix batteries sauvegardés !','success');
 }
 
 function updateBatterieModele(tableKey, ri, val){
