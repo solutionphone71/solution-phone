@@ -5027,13 +5027,14 @@ var ECRANS_DEFAULT = {
     {modele:'X/XS/XS MAX',        prix:[30,40,55,70,85]},
     {modele:'XR',                  prix:[30,40,55,null,70]},
     {modele:'11',                  prix:[30,40,55,null,70]},
+    {modele:'11 Pro Max',          prix:[30,40,55,70,85]},
     {modele:'12 mini',             prix:[null,40,null,null,60]},
     {modele:'12/12 PRO',           prix:[40,50,65,90,115]},
-    {modele:'12 Pro Max',          prix:[30,40,55,null,70]},
+    {modele:'12 Pro Max',          prix:[40,50,65,90,115]},
     {modele:'13 mini',             prix:[null,40,null,50,60]},
     {modele:'13',                  prix:[45,50,65,90,115]},
-    {modele:'13 Pro',              prix:[30,40,55,null,70]},
-    {modele:'13 Pro Max',          prix:[40,50,65,90,115]},
+    {modele:'13 Pro',              prix:[45,50,65,90,115]},
+    {modele:'13 Pro Max',          prix:[45,50,65,90,115]},
     {modele:'14',                  prix:[45,50,65,90,115]},
     {modele:'14 Pro',              prix:[45,50,65,90,115]},
     {modele:'14 Pro Max',          prix:[45,50,65,90,115]},
@@ -5041,7 +5042,8 @@ var ECRANS_DEFAULT = {
     {modele:'15 Pro',              prix:[50,60,null,155,185]},
     {modele:'15 Pro Max',          prix:[null,70,null,165,215]},
     {modele:'16',                  prix:[null,70,null,165,215]},
-    {modele:'11 Pro Max',          prix:[30,40,55,70,85]}
+    {modele:'16 Pro',              prix:[null,70,null,165,215]},
+    {modele:'16 Pro Max',          prix:[null,70,null,165,215]}
   ],
   t2: []
 };
@@ -5140,7 +5142,28 @@ async function loadEcransFromSupabase(){
 }
 
 
+var IPHONE_ORDER = [
+  '5S/SE/5C/6/6S/6S+','7/7+/8/8+','X/XS/XS MAX','XR',
+  '11','11 Pro Max',
+  '12 mini','12/12 PRO','12 Pro Max',
+  '13 mini','13','13 Pro','13 Pro Max',
+  '14','14 Pro','14 Pro Max',
+  '15','15 Pro','15 Pro Max',
+  '16','16 Pro','16 Pro Max'
+];
+
+function sortEcrans(liste){
+  return (liste||[]).sort(function(a,b){
+    var ia = IPHONE_ORDER.indexOf(a.modele);
+    var ib = IPHONE_ORDER.indexOf(b.modele);
+    if(ia < 0) ia = 999;
+    if(ib < 0) ib = 999;
+    return ia - ib;
+  });
+}
+
 function renderEcrans(){
+  ecransPrix.t1 = sortEcrans(ecransPrix.t1);
   renderEcransTable('ecrans-tbody-1', ecransPrix.t1||[], 't1');
 }
 
@@ -5247,7 +5270,7 @@ function printEcransA4(){
   }).join('');
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
-    '<title>Prix Écrans iPhone — Solution Phone</title>'+
+    '<title>Prix Écrans iPhone 2026 — Solution Phone</title>'+
     '<style>'+
       '*{margin:0;padding:0;box-sizing:border-box;}'+
       'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}'+
@@ -5271,7 +5294,7 @@ function printEcransA4(){
           '<div style="font-size:10px;color:#555;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
         '</div>'+
       '</div>'+
-      '<div style="font-size:26px;font-weight:900;color:#1a1a1a;margin-bottom:5px;line-height:1;">PRIX ÉCRAN IPHONE 2025</div>'+
+      '<div style="font-size:26px;font-weight:900;color:#1a1a1a;margin-bottom:5px;line-height:1;">PRIX ÉCRAN IPHONE 2026</div>'+
       '<div style="background:linear-gradient(135deg,#1a5c30,#27ae60);border-radius:5px;padding:5px 12px;margin-bottom:8px;font-size:9px;color:#fff;font-weight:700;letter-spacing:.3px;">'+
         '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT &nbsp;·&nbsp; PRIX TTC PIÈCE + MAIN D\'ŒUVRE &nbsp;·&nbsp; GARANTIE 3 MOIS SAUF CASSE OU RAYURE &nbsp;·&nbsp; RÉPARATION EN 30 MIN - 1H MAX'+
       '</div>'+
@@ -5306,6 +5329,7 @@ var BATTERIES_DEFAULT = {
     {modele:'X/XS/XS MAX',        prix:[0,0,0]},
     {modele:'XR',                  prix:[0,0,0]},
     {modele:'11',                  prix:[0,0,0]},
+    {modele:'11 Pro Max',          prix:[0,0,0]},
     {modele:'12 mini',             prix:[0,0,0]},
     {modele:'12/12 PRO',           prix:[0,0,0]},
     {modele:'12 Pro Max',          prix:[0,0,0]},
@@ -5321,8 +5345,7 @@ var BATTERIES_DEFAULT = {
     {modele:'15 Pro Max',          prix:[0,0,0]},
     {modele:'16',                  prix:[0,0,0]},
     {modele:'16 Pro',              prix:[0,0,0]},
-    {modele:'16 Pro Max',          prix:[0,0,0]},
-    {modele:'11 Pro Max',          prix:[0,0,0]}
+    {modele:'16 Pro Max',          prix:[0,0,0]}
   ],
   t2: []
 };
