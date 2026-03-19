@@ -1918,7 +1918,7 @@ var supabaseReady = false;
 var realtimeChannel = null;
 
 function initRealtime() {
-  // Polling toutes les 30 secondes pour synchro multiposte
+  // Polling toutes les 90 secondes pour synchro multiposte
   setInterval(async function() {
     if (!supabaseReady) return;
     try {
@@ -1933,26 +1933,24 @@ function initRealtime() {
         renderPhones(); renderDashboard();
       }
     } catch(e) { console.log('Sync error:', e); }
-  }, 30000);
+  }, 90000);
   console.log('🔄 Synchronisation temps réel activée (30s)');
 }
 
 async function loadFromSupabase() {
   try {
-    showNotif('Chargement...','info');
+    // Chargement silencieux
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
-      supaFetch('factures','GET',null,'?order=id.asc'),
+      supaFetch('factures','GET',null,'?order=id.desc&limit=200'),
       supaFetch('caisse','GET',null,'?order=date.asc'),
       supaFetch('reports_mois','GET',null,'')
     ]);
-    var p=results[0], f=results[1], c=results[2], r=results[3];
+    var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
     if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
-    // Charger clients
-    var cl = await supaFetch('clients','GET',null,'?order=nom.asc&limit=10000');
     if(cl) clients = cl.map(function(x){
       var nomComplet = '';
       if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
@@ -1962,7 +1960,7 @@ async function loadFromSupabase() {
     });
     supabaseReady=true;
     initRealtime();
-    showNotif('Données chargées !','success');
+    showNotif('✅ Connecté','success');
   } catch(e){console.error(e);showNotif('Mode local actif','error');}
 }
 
@@ -2053,24 +2051,24 @@ function checkPin(){
     if(window.innerWidth <= 768){
       document.getElementById('mobile-nav').style.display='block';
     }
+    // Charger uniquement les données essentielles au démarrage
     loadFromSupabase().then(function(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
       loadApiKeyFromSupabase();
-      loadBonsCommande();
-      loadBonsDepot();
-      loadPhonilabData();
+      // Chargement secondaire en arrière-plan (non bloquant)
+      setTimeout(function(){
+        loadBonsCommande();
+        loadBonsDepot();
+        loadPhonilabData();
+      }, 3000);
     });
+    // Écrans, batteries et android = chargement lazy à l'ouverture des onglets uniquement
     renderEcrans();
     renderBatteries();
     androidInit();
-    renderBonsDepot();
-    renderBonsCommande();
     _pin = '';
     updatePinDisplay();
     setTimeout(appliquerRole, 100);
-    // Charger écrans et batteries depuis Supabase au démarrage
-    loadEcransFromSupabase().then(function(){ renderEcrans(); });
-    loadBatteriesFromSupabase().then(function(){ renderBatteries(); });
   } else {
     document.getElementById('pin-msg').textContent = '❌ Code incorrect';
     var box = document.querySelector('.login-box');
@@ -2100,7 +2098,22 @@ function showPage(id,el){
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
   if(id==='devis')renderDevis();
-  if(id==='clients')renderClients();
+  if(id==='clients'){
+    if(supabaseReady && clients.length === 0){
+      supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
+        if(cl) clients = cl.map(function(x){
+          var nomComplet = '';
+          if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
+          else if(x.prenom) nomComplet = x.prenom;
+          else nomComplet = x.nom||'';
+          return{id:x.id,nom:nomComplet,tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation};
+        });
+        renderClients();
+      });
+    } else {
+      renderClients();
+    }
+  }
   if(id==='rachat')calculerRachat();
   if(id==='instagram'){renderInstagram();}
   if(id==='ecrans'){loadEcransFromSupabase().then(function(){ renderEcrans(); });}
