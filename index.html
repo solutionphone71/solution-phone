@@ -2128,7 +2128,8 @@ function checkPin(){
     _pin = '';
     updatePinDisplay();
     setTimeout(appliquerRole, 100);
-    // Charger batteries depuis Supabase au démarrage
+    // Charger écrans et batteries depuis Supabase au démarrage
+    loadEcransFromSupabase().then(function(){ renderEcrans(); });
     loadBatteriesFromSupabase().then(function(){ renderBatteries(); });
   } else {
     document.getElementById('pin-msg').textContent = '❌ Code incorrect';
@@ -2162,7 +2163,7 @@ function showPage(id,el){
   if(id==='clients')renderClients();
   if(id==='rachat')calculerRachat();
   if(id==='instagram'){renderInstagram();}
-  if(id==='ecrans'){renderEcrans();}
+  if(id==='ecrans'){loadEcransFromSupabase().then(function(){ renderEcrans(); });}
   if(id==='batteries'){loadBatteriesFromSupabase().then(function(){ renderBatteries(); });}
   if(id==='factures')renderFactures();
   if(id==='phones')renderPhones();
@@ -5111,7 +5112,7 @@ if(!ecransPrix){ ecransPrix = JSON.parse(JSON.stringify(ECRANS_DEFAULT)); }
 
 function saveEcransPrix(){
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-  // Sync Supabase
+  // Sync Supabase : DELETE toutes les lignes puis re-INSERT (évite les doublons)
   if(!SUPA_URL || !SUPA_KEY) return;
   var rows = [];
   ['t1','t2'].forEach(function(tbl){
@@ -5119,24 +5120,66 @@ function saveEcransPrix(){
       rows.push({
         tableau: tbl,
         modele: ligne.modele,
-        p0: ligne.prix[0]||null, p1: ligne.prix[1]||null,
-        p2: ligne.prix[2]||null, p3: ligne.prix[3]||null,
-        p4: ligne.prix[4]||null
+        p0: ligne.prix[0] !== undefined ? ligne.prix[0] : null,
+        p1: ligne.prix[1] !== undefined ? ligne.prix[1] : null,
+        p2: ligne.prix[2] !== undefined ? ligne.prix[2] : null,
+        p3: ligne.prix[3] !== undefined ? ligne.prix[3] : null,
+        p4: ligne.prix[4] !== undefined ? ligne.prix[4] : null
       });
     });
   });
-  fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-    body: JSON.stringify(rows)
-  }).catch(function(){});
+  // DELETE puis INSERT pour éviter doublons
+  fetch(SUPA_URL+'/rest/v1/ecrans_prix?tableau=in.(t1,t2)', {
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(){
+    return fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify(rows)
+    });
+  }).then(function(r){
+    if(r && r.ok) console.log('Écrans sauvegardés Supabase : '+rows.length+' lignes');
+    else r && r.text().then(function(t){ console.error('Supabase écrans error:', t); });
+  }).catch(function(e){ console.error('Supabase écrans save error:', e); });
+}
+
+async function loadEcransFromSupabase(){
+  if(!SUPA_URL || !SUPA_KEY) return;
+  try {
+    var res = await fetch(SUPA_URL+'/rest/v1/ecrans_prix?select=*', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!res.ok) return;
+    var rows = await res.json();
+    if(!rows || !rows.length) return;
+    // Reconstruire depuis Supabase
+    var newPrix = {t1:[], t2:[]};
+    rows.forEach(function(r){
+      var tbl = r.tableau;
+      if(!newPrix[tbl]) newPrix[tbl] = [];
+      newPrix[tbl].push({
+        modele: r.modele,
+        prix: [
+          r.p0 !== null ? r.p0 : null,
+          r.p1 !== null ? r.p1 : null,
+          r.p2 !== null ? r.p2 : null,
+          r.p3 !== null ? r.p3 : null,
+          r.p4 !== null ? r.p4 : null
+        ]
+      });
+    });
+    if(newPrix.t1.length || newPrix.t2.length){
+      ecransPrix = newPrix;
+      localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
+      console.log('Écrans chargés depuis Supabase : t1='+newPrix.t1.length+' t2='+newPrix.t2.length+' lignes');
+    }
+  } catch(e){ console.log('Écrans Supabase load error:', e); }
 }
 
 function renderEcrans(){
   renderEcransTable('ecrans-tbody-1', ecransPrix.t1, 't1');
   renderEcransTable('ecrans-tbody-2', ecransPrix.t2, 't2');
-  renderBatTable('bat-tbody-1', batPrix.t1, 't1');
-  renderBatTable('bat-tbody-2', batPrix.t2, 't2');
 }
 
 function renderEcransTable(tbodyId, data, tableKey){
@@ -5379,11 +5422,19 @@ function saveBatteriesPrix(){
       });
     });
   });
-  fetch(SUPA_URL+'/rest/v1/batteries_prix', {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
-    body: JSON.stringify(rows)
-  }).catch(function(){});
+  // DELETE puis INSERT pour éviter doublons
+  fetch(SUPA_URL+'/rest/v1/batteries_prix?tableau=in.(t1,t2)', {
+    method:'DELETE',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+  }).then(function(){
+    return fetch(SUPA_URL+'/rest/v1/batteries_prix', {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify(rows)
+    });
+  }).then(function(r){
+    if(r && r.ok) console.log('Batteries sauvegardées Supabase : '+rows.length+' lignes');
+  }).catch(function(e){ console.error('Supabase batteries save error:', e); });
 }
 
 async function loadBatteriesFromSupabase(){
