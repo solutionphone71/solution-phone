@@ -5381,70 +5381,35 @@ if(!batteriesPrix){ batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT)
 function saveBatteriesPrix(){
   localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
   if(!SUPA_URL || !SUPA_KEY) return;
-  // Construire les lignes (uniquement t1 — tableau unique)
-  var rows = [];
-  (batteriesPrix.t1||[]).forEach(function(ligne){
-    rows.push({
-      tableau: 't1',
-      modele: ligne.modele,
-      p0: Number(ligne.prix[0])||0,
-      p1: Number(ligne.prix[1])||0,
-      p2: Number(ligne.prix[2])||0
-    });
-  });
-  // DELETE toutes les lignes existantes puis INSERT (100% fiable, sans dépendre de UNIQUE)
-  fetch(SUPA_URL+'/rest/v1/batteries_prix?id=gte.0', {
-    method:'DELETE',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(){
-    return fetch(SUPA_URL+'/rest/v1/batteries_prix', {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify(rows)
-    });
+  var jsonData = JSON.stringify(batteriesPrix.t1||[]);
+  // Sauvegarde dans la table settings (clé = batteries_prix_json)
+  supaFetch('settings','GET',null,'?key=eq.batteries_prix_json').then(function(rows){
+    var exists = rows && rows.length > 0;
+    var method = exists ? 'PATCH' : 'POST';
+    var query  = exists ? '?key=eq.batteries_prix_json' : '';
+    return supaFetch('settings', method, {key:'batteries_prix_json', value: jsonData}, query);
   }).then(function(r){
     var status = document.getElementById('bat-save-status');
-    if(r && r.ok){
-      console.log('Batteries sauvegardées : '+rows.length+' lignes');
-      if(status){ status.textContent='✅ Sauvegardé sur Supabase — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
-    } else {
-      r && r.text().then(function(t){
-        console.error('Supabase batteries error:', t);
-        if(status){ status.textContent='⚠️ Erreur sauvegarde : '+t.substring(0,60); status.style.color='var(--red)'; }
-      });
-    }
+    if(status){ status.textContent='✅ Sauvegardé — '+new Date().toLocaleTimeString('fr-FR'); status.style.color='var(--green)'; }
+    console.log('Batteries sauvegardées dans settings');
   }).catch(function(e){
-    console.error('Supabase batteries save error:', e);
+    console.error('Batteries save error:', e);
     var status = document.getElementById('bat-save-status');
-    if(status){ status.textContent='⚠️ Erreur réseau'; status.style.color='var(--red)'; }
+    if(status){ status.textContent='⚠️ Erreur sauvegarde'; status.style.color='var(--red)'; }
   });
 }
-
 
 async function loadBatteriesFromSupabase(){
   if(!SUPA_URL || !SUPA_KEY) return;
   try {
-    var res = await fetch(SUPA_URL+'/rest/v1/batteries_prix?select=*&order=id.asc', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
-    if(!res.ok){ console.log('Batteries load HTTP error:', res.status); return; }
-    var rows = await res.json();
-    if(!rows || !rows.length){ console.log('Batteries Supabase vide'); return; }
-    // Tout dans t1 (tableau unique)
-    var lignes = rows.map(function(r){
-      return {
-        modele: r.modele,
-        prix: [
-          r.p0 !== null && r.p0 !== undefined ? Number(r.p0) : 0,
-          r.p1 !== null && r.p1 !== undefined ? Number(r.p1) : 0,
-          r.p2 !== null && r.p2 !== undefined ? Number(r.p2) : 0
-        ]
-      };
-    });
+    var rows = await supaFetch('settings','GET',null,'?key=eq.batteries_prix_json');
+    if(!rows || !rows.length || !rows[0].value) { console.log('Batteries: rien dans settings'); return; }
+    var lignes = JSON.parse(rows[0].value);
+    if(!Array.isArray(lignes) || !lignes.length) return;
     batteriesPrix = { t1: lignes, t2: [] };
     localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
-    console.log('Batteries chargées depuis Supabase : '+lignes.length+' modèles');
-  } catch(e){ console.log('Batteries Supabase load error:', e); }
+    console.log('Batteries chargées depuis settings: '+lignes.length+' modèles');
+  } catch(e){ console.log('Batteries load error:', e); }
 }
 
 
@@ -5499,13 +5464,12 @@ function updateBatteriePrix(tableKey, ri, ci, val){
 function manuelleSauvegardeBatteries(){
   var btn = document.getElementById('btn-save-bat');
   var status = document.getElementById('bat-save-status');
-  if(btn){ btn.textContent='⏳ Sauvegarde...'; btn.disabled=true; }
-  if(status){ status.textContent='Sauvegarde en cours...'; status.style.color='var(--text-muted)'; }
+  if(btn){ btn.innerHTML='⏳ Sauvegarde...'; btn.disabled=true; btn.style.opacity='0.7'; }
+  if(status){ status.textContent='Connexion Supabase...'; status.style.color='var(--text-muted)'; }
   saveBatteriesPrix();
-  // Le feedback visuel est géré dans saveBatteriesPrix
   setTimeout(function(){
-    if(btn){ btn.textContent='💾 Sauvegarder'; btn.disabled=false; }
-  }, 3000);
+    if(btn){ btn.innerHTML='💾 Sauvegarder'; btn.disabled=false; btn.style.opacity='1'; }
+  }, 4000);
 }
 
 function updateBatterieModele(tableKey, ri, val){
@@ -5539,54 +5503,71 @@ function resetBatteriesPrix(){
 
 function printBatteriesA4(){
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var data = batteriesPrix.t1 || [];
 
-  function buildBatHTML(data){
-    var rows = data.map(function(row, ri){
-      var isOdd = ri % 2 === 0;
-      var cells = row.prix.map(function(p, ci){
-        var colors = ['#555','#d35400','#27ae60'];
-        return '<td style="padding:9px 10px;text-align:center;border:1px solid #ddd;font-size:14px;font-weight:700;color:'+colors[ci]+';">'+
-          (p>0?p+'€':'—')+'</td>';
-      }).join('');
-      return '<tr style="background:'+(isOdd?'#fff5f5':'#fff')+'">'+
-        '<td style="padding:9px 12px;font-weight:700;font-size:13px;border:1px solid #ddd;background:'+(isOdd?'#c0392b':'#e8e8e8')+';color:'+(isOdd?'#fff':'#333')+';">'+row.modele+'</td>'+
-        cells+'</tr>';
+  var rows = data.map(function(row, ri){
+    var isOdd = ri % 2 === 0;
+    var colors = ['#444','#d35400','#27ae60'];
+    var cells = row.prix.map(function(p, ci){
+      return '<td style="padding:5px 8px;text-align:center;border:1px solid #ddd;font-size:13px;font-weight:700;color:'+colors[ci]+';">'+
+        (p>0?p+' €':'—')+'</td>';
     }).join('');
-    return '<table style="width:100%;border-collapse:collapse;margin-bottom:18px;">'+
-      '<thead><tr>'+
-        '<th style="padding:10px 12px;background:#2c2c2c;color:#fff;font-size:12px;border:1px solid #555;text-align:left;">Modèle</th>'+
-        '<th style="padding:10px 12px;background:#555;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐<br>Compatible</th>'+
-        '<th style="padding:10px 12px;background:#d35400;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐<br>TI (Reconnue Apple)</th>'+
-        '<th style="padding:10px 12px;background:#27ae60;color:#fff;font-size:12px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐⭐<br>Original</th>'+
-      '</tr></thead><tbody>'+rows+'</tbody></table>';
-  }
+    return '<tr style="background:'+(isOdd?'#fff5f5':'#fff')+'">'+
+      '<td style="padding:5px 10px;font-weight:700;font-size:12px;border:1px solid #ddd;background:'+(isOdd?'#c0392b':'#ececec')+';color:'+(isOdd?'#fff':'#222')+';">'+row.modele+'</td>'+
+      cells+'</tr>';
+  }).join('');
+
+  var table = '<table style="width:100%;border-collapse:collapse;">'+
+    '<thead><tr>'+
+      '<th style="padding:7px 10px;background:#2c2c2c;color:#fff;font-size:11px;border:1px solid #555;text-align:left;width:38%;">Modèle</th>'+
+      '<th style="padding:7px 8px;background:#555;color:#fff;font-size:11px;border:1px solid #555;text-align:center;">⭐⭐⭐<br><span style="font-size:10px;">Compatible</span></th>'+
+      '<th style="padding:7px 8px;background:#d35400;color:#fff;font-size:11px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐<br><span style="font-size:10px;">TI Reconnue Apple</span></th>'+
+      '<th style="padding:7px 8px;background:#27ae60;color:#fff;font-size:11px;border:1px solid #555;text-align:center;">⭐⭐⭐⭐⭐<br><span style="font-size:10px;">Original</span></th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table>';
 
   var html='<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Prix Batteries iPhone — Solution Phone</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}}@page{size:A4;margin:0;}</style>'+
+    '<style>'+
+      '*{margin:0;padding:0;box-sizing:border-box;}'+
+      'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}'+
+      '.page{width:210mm;margin:0 auto;padding:7mm 10mm;}'+
+      '.no-print{text-align:right;padding:8px;}'+
+      '@media print{.no-print{display:none!important;}@page{size:A4 portrait;margin:0;}}'+
+    '</style>'+
     '</head><body>'+
-    '<div class="no-print" style="text-align:right;padding:10px;"><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
+    '<div class="no-print"><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:8px 22px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
     '<div class="page">'+
-      '<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
-        (logo?'<img src="'+logo+'" style="height:60px;width:auto;">':'')+
-        '<div><div style="font-size:22px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-        '<div style="font-size:12px;color:#555;">Réparation SMARTPHONE · TABLETTE · PC</div></div>'+
+      /* En-tête */
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c0392b;padding-bottom:6px;margin-bottom:8px;">'+
+        '<div style="display:flex;align-items:center;gap:12px;">'+
+          (logo?'<img src="'+logo+'" style="height:48px;width:auto;">':'')+
+          '<div>'+
+            '<div style="font-size:18px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+            '<div style="font-size:10px;color:#555;">Réparation SMARTPHONE · TABLETTE · PC</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="text-align:right;">'+
+          '<div style="font-size:22px;font-weight:900;color:#1a1a1a;">PRIX BATTERIES iPHONE</div>'+
+          '<div style="font-size:11px;color:#888;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
+        '</div>'+
       '</div>'+
-      '<div style="font-size:34px;font-weight:900;color:#1a1a1a;margin-bottom:6px;">PRIX BATTERIE IPHONE 2025</div>'+
-      '<div style="background:rgba(72,187,120,0.15);border:1px solid #27ae60;border-radius:6px;padding:7px 14px;margin-bottom:14px;font-size:11px;color:#27ae60;font-weight:700;">'+
-        '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT · PRIX TTC PIÈCE ET MAIN D\'ŒUVRE · GARANTIE 3 MOIS · RÉPARATION EN 30 MIN - 1H MAX'+
+      /* Bandeau QualiRépar */
+      '<div style="background:#e8f8ef;border:1px solid #27ae60;border-radius:5px;padding:5px 12px;margin-bottom:10px;font-size:10px;color:#27ae60;font-weight:700;">'+
+        '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT · PRIX TTC PIÈCE ET MAIN D'ŒUVRE · GARANTIE 3 MOIS · RÉPARATION EN 30 MIN - 1H MAX'+
       '</div>'+
-      buildBatHTML(batteriesPrix.t1||[])+
-      '<div style="border-top:2px solid #c0392b;padding-top:8px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#888;">'+
+      /* Tableau */
+      table+
+      /* Pied de page */
+      '<div style="border-top:2px solid #c0392b;padding-top:6px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#888;">'+
         '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · Tél : 03 85 33 06 89</div>'+
-        '<div style="display:flex;gap:12px;">'+
-          '<div style="background:#c0392b;color:#fff;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">RÉPARATEUR LABELLISÉ</div>'+
-          '<div style="border:2px solid #27ae60;color:#27ae60;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;">LABEL QUALI RÉPAR</div>'+
+        '<div style="display:flex;gap:8px;">'+
+          '<div style="background:#c0392b;color:#fff;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:700;">RÉPARATEUR LABELLISÉ</div>'+
+          '<div style="border:2px solid #27ae60;color:#27ae60;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:700;">LABEL QUALI RÉPAR</div>'+
         '</div>'+
       '</div>'+
     '</div></body></html>';
 
-  var w=window.open('','_blank','width=900,height=1100');
+  var w=window.open('','_blank','width=850,height=1050');
   w.document.write(html);
   w.document.close();
 }
