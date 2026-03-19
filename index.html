@@ -2871,10 +2871,20 @@ function renderPhones(){
     var bar=document.createElement('div');
     bar.id='phones-recap-bar';
     bar.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;';
-    bar.innerHTML=
-      '<div style="background:rgba(72,187,120,0.12);border:1px solid var(--green);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--green);">✅ Disponibles : '+nbDispo+'</div>'+
-      (nbRepa?'<div style="background:rgba(66,153,225,0.12);border:1px solid var(--blue);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--blue);">🔧 En répa : '+nbRepa+'</div>':'')+
-      '<div style="background:rgba(229,62,62,0.08);border:1px solid rgba(229,62,62,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--text-muted);">💹 Vendus : '+nbVendus+' — <span style="cursor:pointer;text-decoration:underline;color:var(--red);" onclick="showPage('ventes-smart',null);renderVentesSmartphones();">Voir le rapport →</span></div>';
+    var d1=document.createElement('div');
+    d1.style.cssText='background:rgba(72,187,120,0.12);border:1px solid var(--green);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--green);';
+    d1.textContent='✅ Disponibles : '+nbDispo;
+    bar.appendChild(d1);
+    if(nbRepa){
+      var d2=document.createElement('div');
+      d2.style.cssText='background:rgba(66,153,225,0.12);border:1px solid var(--blue);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:var(--blue);';
+      d2.textContent='🔧 En répa : '+nbRepa;
+      bar.appendChild(d2);
+    }
+    var d3=document.createElement('div');
+    d3.style.cssText='background:rgba(229,62,62,0.08);border:1px solid rgba(229,62,62,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--text-muted);';
+    d3.innerHTML='💹 Vendus : <b>'+nbVendus+'</b> — <span style="cursor:pointer;text-decoration:underline;color:var(--red);" onclick="goToVentesSmartphones()">Voir le rapport →</span>';
+    bar.appendChild(d3);
     card.insertBefore(bar,card.firstChild);
   }
 
@@ -2947,6 +2957,11 @@ function marquerVendu(id){
   showNotif('✅ '+p.modele+' vendu — visible dans Ventes Smartphones','success');
 }
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
+
+function goToVentesSmartphones(){
+  showPage('ventes-smart', null);
+  renderVentesSmartphones();
+}
 
 function annulerVente(id){
   var p=phones.find(function(x){return x.id===id;});
