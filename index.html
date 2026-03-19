@@ -5128,16 +5128,11 @@ function saveEcransPrix(){
       });
     });
   });
-  // DELETE puis INSERT pour éviter doublons
-  fetch(SUPA_URL+'/rest/v1/ecrans_prix?tableau=in.(t1,t2)', {
-    method:'DELETE',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(){
-    return fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify(rows)
-    });
+  // UPSERT avec contrainte UNIQUE (tableau, modele)
+  fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body: JSON.stringify(rows)
   }).then(function(r){
     if(r && r.ok) console.log('Écrans sauvegardés Supabase : '+rows.length+' lignes');
     else r && r.text().then(function(t){ console.error('Supabase écrans error:', t); });
@@ -5422,18 +5417,14 @@ function saveBatteriesPrix(){
       });
     });
   });
-  // DELETE puis INSERT pour éviter doublons
-  fetch(SUPA_URL+'/rest/v1/batteries_prix?tableau=in.(t1,t2)', {
-    method:'DELETE',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-  }).then(function(){
-    return fetch(SUPA_URL+'/rest/v1/batteries_prix', {
-      method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify(rows)
-    });
+  // UPSERT avec contrainte UNIQUE (tableau, modele)
+  fetch(SUPA_URL+'/rest/v1/batteries_prix', {
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
+    body: JSON.stringify(rows)
   }).then(function(r){
     if(r && r.ok) console.log('Batteries sauvegardées Supabase : '+rows.length+' lignes');
+    else r && r.text().then(function(t){ console.error('Supabase batteries error:', t); });
   }).catch(function(e){ console.error('Supabase batteries save error:', e); });
 }
 
