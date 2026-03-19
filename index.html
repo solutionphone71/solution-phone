@@ -5626,9 +5626,9 @@ function androidInit(){
 }
 
 async function androidLoadSupabase(){
-  if(!SUPABASE_URL || !SUPABASE_KEY) return;
+  if(!SUPA_URL || !SUPA_KEY) return;
   try{
-    var r = await fetch(SUPABASE_URL+'/rest/v1/prix_reparation_android?select=*', {headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}});
+    var r = await fetch(SUPA_URL+'/rest/v1/prix_reparation_android?select=*', {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
     if(!r.ok) return;
     var rows = await r.json();
     rows.forEach(function(row){
@@ -5648,7 +5648,7 @@ async function androidLoadSupabase(){
 
 async function androidSauvegarder(){
   localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
-  if(!SUPABASE_URL || !SUPABASE_KEY){ showToast('Sauvegardé localement'); return; }
+  if(!SUPA_URL || !SUPA_KEY){ showNotif('Sauvegardé localement','info'); return; }
   var rows = [];
   ANDROID_MARQUES.forEach(function(m){
     Object.keys(androidData[m]||{}).forEach(function(mod){
@@ -5662,13 +5662,13 @@ async function androidSauvegarder(){
     });
   });
   try{
-    await fetch(SUPABASE_URL+'/rest/v1/prix_reparation_android', {
+    await fetch(SUPA_URL+'/rest/v1/prix_reparation_android', {
       method:'POST',
-      headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
       body: JSON.stringify(rows)
     });
-    showToast('✅ Prix Android sauvegardés !');
-  }catch(e){ showToast('Sauvegardé localement'); }
+    showNotif('✅ Prix Android sauvegardés !','success');
+  }catch(e){ showNotif('Sauvegardé localement','info'); }
 }
 
 function androidShowTab(marque){
