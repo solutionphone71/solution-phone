@@ -1441,27 +1441,21 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="page-title">🖥️ Prix Écrans iPhone</div>
     <div class="page-sub">Modifiez vos tarifs directement — sauvegarde automatique</div>
 
-    <!-- Actions -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;">
-      <button class="btn btn-primary" onclick="printEcransA4()">🖨️ Imprimer Écrans A4</button>
-      <button class="btn" onclick="printBatA4()" style="border-color:var(--blue);color:var(--blue);">🖨️ Imprimer Batteries A4</button>
-      <button class="btn" onclick="resetEcransPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser écrans</button>
-      <div style="font-size:12px;color:var(--text-muted);padding:8px;">
-        💡 Cliquez sur n'importe quel prix pour le modifier · ✗ = non disponible
-      </div>
+      <button class="btn btn-primary" onclick="printEcransA4()">🖨️ Imprimer A4</button>
+      <button class="btn" onclick="ajouterLigneEcran()" style="border-color:var(--blue);color:var(--blue);">➕ Ajouter un modèle</button>
+      <button class="btn" onclick="resetEcransPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
+      <div style="font-size:12px;color:var(--text-muted);padding:8px;">💡 Cliquez sur un prix pour le modifier · ✗ = non disponible</div>
     </div>
 
-    <!-- Mention QualiRépar -->
     <div style="background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🏆</span>
-      <span><b>-25€ QualiRépar déjà déduit</b> sur le prix indiqué · Prix TTC pièce et main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
+      <span><b>-25€ QualiRépar déjà déduit</b> · Prix TTC pièce + main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
     </div>
 
-    <!-- Tableau iPhone -->
-    <div class="card" style="margin-bottom:18px;">
+    <div class="card">
       <div class="card-header">
-        <div class="card-title">📱 iPhone Écrans — Tableau 1</div>
-        <button class="btn btn-sm btn-primary" onclick="ajouterLigneEcran('t1')">➕ Ajouter un modèle</button>
+        <div class="card-title">📱 Prix Écrans iPhone</div>
       </div>
       <div style="overflow-x:auto;">
         <table id="ecrans-table-1" style="width:100%;border-collapse:collapse;">
@@ -1473,34 +1467,10 @@ tr:hover td{background:rgba(255,255,255,0.02);}
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>LPTS PRIME</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>SOFT OLED BOLT</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐⭐<br>ORIGINAL</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
+              <th style="padding:4px;"></th>
             </tr>
           </thead>
           <tbody id="ecrans-tbody-1"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Tableau Pro/Mini/Max -->
-    <div class="card" style="margin-bottom:18px;">
-      <div class="card-header">
-        <div class="card-title">📱 iPhone Écrans — Tableau 2</div>
-        <button class="btn btn-sm btn-primary" onclick="ajouterLigneEcran('t2')">➕ Ajouter un modèle</button>
-      </div>
-      <div style="overflow-x:auto;">
-        <table id="ecrans-table-2" style="width:100%;border-collapse:collapse;">
-          <thead>
-            <tr style="background:var(--red);">
-              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:140px;">Modèle</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐<br>HD ECO+</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>LPTS</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>LPTS PRIME</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>SOFT OLED BOLT</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐⭐<br>ORIGINAL RECON.</th>
-              <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;"></th>
-            </tr>
-          </thead>
-          <tbody id="ecrans-tbody-2"></tbody>
         </table>
       </div>
     </div>
@@ -5057,24 +5027,23 @@ var ECRANS_DEFAULT = {
     {modele:'X/XS/XS MAX',        prix:[30,40,55,70,85]},
     {modele:'XR',                  prix:[30,40,55,null,70]},
     {modele:'11',                  prix:[30,40,55,null,70]},
-    {modele:'12/12 PRO',           prix:[40,50,65,90,115]},
-    {modele:'13',                  prix:[45,50,65,90,115]},
-    {modele:'14',                  prix:[45,50,65,90,115]},
-    {modele:'15',                  prix:[50,60,null,140,185]},
-    {modele:'16',                  prix:[null,70,null,165,215]}
-  ],
-  t2: [
     {modele:'12 mini',             prix:[null,40,null,null,60]},
-    {modele:'13 mini',             prix:[null,40,null,50,60]},
-    {modele:'11 Pro Max',          prix:[30,40,55,70,85]},
+    {modele:'12/12 PRO',           prix:[40,50,65,90,115]},
     {modele:'12 Pro Max',          prix:[30,40,55,null,70]},
+    {modele:'13 mini',             prix:[null,40,null,50,60]},
+    {modele:'13',                  prix:[45,50,65,90,115]},
     {modele:'13 Pro',              prix:[30,40,55,null,70]},
     {modele:'13 Pro Max',          prix:[40,50,65,90,115]},
+    {modele:'14',                  prix:[45,50,65,90,115]},
     {modele:'14 Pro',              prix:[45,50,65,90,115]},
     {modele:'14 Pro Max',          prix:[45,50,65,90,115]},
+    {modele:'15',                  prix:[50,60,null,140,185]},
     {modele:'15 Pro',              prix:[50,60,null,155,185]},
-    {modele:'15 Pro Max',          prix:[null,70,null,165,215]}
-  ]
+    {modele:'15 Pro Max',          prix:[null,70,null,165,215]},
+    {modele:'16',                  prix:[null,70,null,165,215]},
+    {modele:'11 Pro Max',          prix:[30,40,55,70,85]}
+  ],
+  t2: []
 };
 
 var ecransPrix = JSON.parse(localStorage.getItem('sp_ecrans_prix') || 'null');
@@ -5082,77 +5051,37 @@ if(!ecransPrix){ ecransPrix = JSON.parse(JSON.stringify(ECRANS_DEFAULT)); }
 
 function saveEcransPrix(){
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-  // Sync Supabase : DELETE toutes les lignes puis re-INSERT (évite les doublons)
   if(!SUPA_URL || !SUPA_KEY) return;
-  var rows = [];
-  ['t1','t2'].forEach(function(tbl){
-    (ecransPrix[tbl]||[]).forEach(function(ligne){
-      rows.push({
-        tableau: tbl,
-        modele: ligne.modele,
-        p0: ligne.prix[0] !== null && ligne.prix[0] !== undefined ? Number(ligne.prix[0]) : 0,
-        p1: ligne.prix[1] !== null && ligne.prix[1] !== undefined ? Number(ligne.prix[1]) : 0,
-        p2: ligne.prix[2] !== null && ligne.prix[2] !== undefined ? Number(ligne.prix[2]) : 0,
-        p3: ligne.prix[3] !== null && ligne.prix[3] !== undefined ? Number(ligne.prix[3]) : 0,
-        p4: ligne.prix[4] !== null && ligne.prix[4] !== undefined ? Number(ligne.prix[4]) : 0
-      });
-    });
-  });
-  // UPSERT avec contrainte UNIQUE (tableau, modele)
-  fetch(SUPA_URL+'/rest/v1/ecrans_prix', {
-    method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'},
-    body: JSON.stringify(rows)
-  }).then(function(r){
-    if(r && r.ok){
-      console.log('Écrans sauvegardés Supabase : '+rows.length+' lignes');
-    } else {
-      r && r.text().then(function(t){
-        console.error('Supabase écrans error:', t);
-        showNotif('⚠️ Erreur Supabase écrans : '+t.substring(0,80),'error');
-      });
-    }
+  // Même méthode que batteries : JSON dans la table settings
+  var jsonData = JSON.stringify(ecransPrix);
+  supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json').then(function(rows){
+    var exists = rows && rows.length > 0;
+    var method = exists ? 'PATCH' : 'POST';
+    var query  = exists ? '?key=eq.ecrans_prix_json' : '';
+    return supaFetch('settings', method, {key:'ecrans_prix_json', value: jsonData}, query);
+  }).then(function(){
+    console.log('Écrans sauvegardés dans settings');
   }).catch(function(e){
-    console.error('Supabase écrans save error:', e);
+    console.error('Écrans save error:', e);
   });
 }
 
 async function loadEcransFromSupabase(){
   if(!SUPA_URL || !SUPA_KEY) return;
   try {
-    var res = await fetch(SUPA_URL+'/rest/v1/ecrans_prix?select=*', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
-    if(!res.ok) return;
-    var rows = await res.json();
-    if(!rows || !rows.length) return;
-    // Reconstruire depuis Supabase
-    var newPrix = {t1:[], t2:[]};
-    rows.forEach(function(r){
-      var tbl = r.tableau;
-      if(!newPrix[tbl]) newPrix[tbl] = [];
-      newPrix[tbl].push({
-        modele: r.modele,
-        prix: [
-          r.p0 !== null && r.p0 !== undefined ? Number(r.p0) : 0,
-          r.p1 !== null && r.p1 !== undefined ? Number(r.p1) : 0,
-          r.p2 !== null && r.p2 !== undefined ? Number(r.p2) : 0,
-          r.p3 !== null && r.p3 !== undefined ? Number(r.p3) : 0,
-          r.p4 !== null && r.p4 !== undefined ? Number(r.p4) : 0
-        ]
-      });
-    });
-    if(newPrix.t1.length || newPrix.t2.length){
-      ecransPrix = newPrix;
-      localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-      console.log('Écrans chargés depuis Supabase : t1='+newPrix.t1.length+' t2='+newPrix.t2.length+' lignes');
-    }
-  } catch(e){ console.log('Écrans Supabase load error:', e); }
+    var rows = await supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json');
+    if(!rows || !rows.length || !rows[0].value){ console.log('Écrans: rien dans settings'); return; }
+    var data = JSON.parse(rows[0].value);
+    if(!data || (!data.t1 && !data.t2)){ return; }
+    ecransPrix = data;
+    localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
+    console.log('Écrans chargés depuis settings: t1='+( data.t1||[]).length+' t2='+(data.t2||[]).length);
+  } catch(e){ console.log('Écrans load error:', e); }
 }
 
+
 function renderEcrans(){
-  renderEcransTable('ecrans-tbody-1', ecransPrix.t1, 't1');
-  renderEcransTable('ecrans-tbody-2', ecransPrix.t2, 't2');
+  renderEcransTable('ecrans-tbody-1', ecransPrix.t1||[], 't1');
 }
 
 function renderEcransTable(tbodyId, data, tableKey){
@@ -5198,40 +5127,31 @@ function renderEcransTable(tbodyId, data, tableKey){
 }
 
 function updateEcranPrix(tableKey, ri, ci, val){
-  var v = parseInt(val);
-  if(isNaN(v) || v < 0) return;
-  ecransPrix[tableKey][ri].prix[ci] = v;
+  var p = val===''?null:Number(val);
+  if(p !== null && isNaN(p)) return;
+  if(!ecransPrix.t1[ri]) return;
+  ecransPrix.t1[ri].prix[ci] = p;
   saveEcransPrix();
-  showNotif('Prix mis à jour !','success');
 }
-
 function updateEcranModele(tableKey, ri, val){
-  ecransPrix[tableKey][ri].modele = val.trim()||'Nouveau modèle';
+  if(!ecransPrix.t1[ri]) return;
+  ecransPrix.t1[ri].modele = val.trim()||'Modèle';
   saveEcransPrix();
 }
-
-function ajouterLigneEcran(tableKey){
-  ecransPrix[tableKey].push({modele:'Nouveau modèle', prix:[null,null,null,null,null]});
+function ajouterLigneEcran(){
+  if(!ecransPrix.t1) ecransPrix.t1=[];
+  ecransPrix.t1.push({modele:'Nouveau modèle', prix:[null,null,null,null,null]});
   saveEcransPrix();
   renderEcrans();
   showNotif('Ligne ajoutée !','success');
 }
-
 function supprimerLigneEcran(tableKey, ri){
   if(!confirm('Supprimer cette ligne ?')) return;
-  ecransPrix[tableKey].splice(ri, 1);
+  (ecransPrix.t1||[]).splice(ri, 1);
   saveEcransPrix();
   renderEcrans();
   showNotif('Ligne supprimée','success');
 }
-
-function toggleEcran(tableKey, ri, ci){
-  var current = ecransPrix[tableKey][ri].prix[ci];
-  ecransPrix[tableKey][ri].prix[ci] = (current === null) ? 0 : null;
-  saveEcransPrix();
-  renderEcrans();
-}
-
 function resetEcransPrix(){
   if(!confirm('Réinitialiser tous les prix aux valeurs d\'origine ?')) return;
   ecransPrix = JSON.parse(JSON.stringify(ECRANS_DEFAULT));
@@ -5242,106 +5162,78 @@ function resetEcransPrix(){
 
 function printEcransA4(){
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var data = ecransPrix.t1 || [];
 
-  // Étoiles HTML pour chaque qualité
-  var qualHeaders = [
-    {label:'Qualité écran →', stars:'', bg:'#3a3a3a'},
-    {label:'HD ECO+',         stars:'★★', bg:'#5a5a5a'},
-    {label:'LPTS',            stars:'★★★', bg:'#8e6b00'},
-    {label:'LPTS PRIME',      stars:'★★★★', bg:'#b8860b'},
-    {label:'SOFT OLED BOLT',  stars:'★★★★★', bg:'#c0392b'},
-    {label:'ORIGINAL',        stars:'★★★★★★', bg:'#922b21'}
-  ];
+  var headerRow =
+    '<th style="padding:7px 10px;text-align:left;background:#2c2c2c;color:#fff;font-size:10px;font-weight:800;border-right:1px solid rgba(255,255,255,0.2);">Modèle</th>'+
+    '<th style="padding:7px 6px;text-align:center;background:#5a5a5a;color:#fff;font-size:9px;font-weight:800;border-right:1px solid rgba(255,255,255,0.2);">⭐⭐<br>HD ECO+</th>'+
+    '<th style="padding:7px 6px;text-align:center;background:#8e6b00;color:#fff;font-size:9px;font-weight:800;border-right:1px solid rgba(255,255,255,0.2);">⭐⭐⭐<br>LPTS</th>'+
+    '<th style="padding:7px 6px;text-align:center;background:#b8860b;color:#fff;font-size:9px;font-weight:800;border-right:1px solid rgba(255,255,255,0.2);">⭐⭐⭐⭐<br>LPTS PRIME</th>'+
+    '<th style="padding:7px 6px;text-align:center;background:#c0392b;color:#fff;font-size:9px;font-weight:800;border-right:1px solid rgba(255,255,255,0.2);">⭐⭐⭐⭐⭐<br>SOFT OLED</th>'+
+    '<th style="padding:7px 6px;text-align:center;background:#922b21;color:#fff;font-size:9px;font-weight:800;">⭐⭐⭐⭐⭐⭐<br>ORIGINAL</th>';
 
-  function buildTableHTML(data){
-    var headerRow = qualHeaders.map(function(q, i){
-      return '<th style="padding:9px 6px;text-align:center;background:'+q.bg+';color:#fff;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;border-right:1px solid rgba(255,255,255,0.15);">'+
-        (q.stars?'<div style="font-size:9px;color:#ffd700;letter-spacing:1px;margin-bottom:2px;">'+q.stars+'</div>':'')+
-        q.label+'</th>';
+  var rows = data.map(function(row, ri){
+    var isOdd = ri % 2 === 0;
+    var rowBg = isOdd ? '#fff5f5' : '#fff';
+    var modBg = isOdd ? '#c0392b' : '#e0e0e0';
+    var modColor = isOdd ? '#fff' : '#333';
+    var cells = row.prix.map(function(p){
+      var cellBg = isOdd ? '#ffe8e8' : '#f5f5f5';
+      return '<td style="padding:7px 5px;text-align:center;background:'+cellBg+';border-right:1px solid #e0e0e0;border-bottom:1px solid #eee;font-size:'+(p===null?'14':'12')+'px;font-weight:'+(p===null?'400':'800')+';color:'+(p===null?'#ccc':'#1a1a1a')+';">'+(p===null?'✗':p+'<span style="font-size:9px;">€</span>')+'</td>';
     }).join('');
-
-    var rows = data.map(function(row, ri){
-      var isOdd = ri % 2 === 0;
-      var rowBg = isOdd ? '#fff5f5' : '#fff';
-      var cells = row.prix.map(function(p){
-        var isNull = (p === null);
-        var cellBg = isOdd ? '#ffe8e8' : '#f9f9f9';
-        return '<td style="padding:9px 8px;text-align:center;background:'+cellBg+';border-right:1px solid #e0e0e0;border-bottom:1px solid #e8e8e8;font-size:'+(isNull?'16':'14')+'px;font-weight:'+(isNull?'400':'800')+';color:'+(isNull?'#ccc':'#1a1a1a')+';">'+
-          (isNull ? '✗' : p+'<span style="font-size:10px;font-weight:600;">€</span>')+
-          '</td>';
-      }).join('');
-      return '<tr>'+
-        '<td style="padding:9px 12px;font-weight:800;font-size:12px;background:'+(isOdd?'#c0392b':'#d5d5d5')+';color:'+(isOdd?'#fff':'#333')+';border-right:2px solid rgba(0,0,0,0.15);border-bottom:1px solid rgba(0,0,0,0.1);white-space:nowrap;">'+row.modele+'</td>'+
-        cells+'</tr>';
-    }).join('');
-
-    return '<table style="width:100%;border-collapse:collapse;margin-bottom:12px;border:1px solid #ddd;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">'+
-      '<thead><tr>'+headerRow+'</tr></thead><tbody>'+rows+'</tbody></table>';
-  }
+    return '<tr style="background:'+rowBg+';">'+
+      '<td style="padding:7px 10px;font-weight:800;font-size:11px;background:'+modBg+';color:'+modColor+';border-right:2px solid rgba(0,0,0,0.1);border-bottom:1px solid rgba(0,0,0,0.08);white-space:nowrap;">'+row.modele+'</td>'+
+      cells+'</tr>';
+  }).join('');
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Prix Écrans iPhone — Solution Phone</title>'+
     '<style>'+
       '*{margin:0;padding:0;box-sizing:border-box;}'+
-      'body{font-family:"Arial",sans-serif;background:#fff;color:#1a1a1a;}'+
-      '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;background:#fff;}'+
-      '@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;margin:0;width:100%;}}'+
-      '@page{size:A4;margin:0;}'+
+      'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}'+
+      '.page{width:210mm;min-height:297mm;margin:0 auto;padding:7mm 9mm;}'+
+      'table{page-break-inside:avoid;}'+
+      '@media print{.no-print{display:none!important;}.page{padding:5mm 7mm;}'+
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
+      '@page{size:A4 portrait;margin:0;}'+
     '</style></head><body>'+
-
-    // Bouton imprimer
-    '<div class="no-print" style="text-align:right;padding:10px 14px;">'+
-      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(192,57,43,0.4);">🖨️ Imprimer / PDF</button>'+
+    '<div class="no-print" style="text-align:right;padding:8px 14px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:9px 24px;border-radius:7px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
     '</div>'+
-
     '<div class="page">'+
-
-      // HEADER
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:8px;border-bottom:3px solid #c0392b;">'+
-        '<div style="display:flex;align-items:center;gap:12px;">'+
-          (logo?'<img src="'+logo+'" style="height:56px;width:auto;">':'')+
-          '<div>'+
-            '<div style="font-size:20px;font-weight:900;color:#c0392b;letter-spacing:-0.5px;">SOLUTION PHONE</div>'+
-            '<div style="font-size:10px;color:#777;margin-top:1px;">Réparation SMARTPHONE · TABLETTE · PC</div>'+
-          '</div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding-bottom:6px;border-bottom:3px solid #c0392b;">'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          (logo?'<img src="'+logo+'" style="height:50px;width:auto;">':'')+
+          '<div><div style="font-size:18px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:9px;color:#777;">Réparation SMARTPHONE · TABLETTE · PC</div></div>'+
         '</div>'+
         '<div style="text-align:right;">'+
-          '<div style="font-size:11px;color:#555;">21 Rue Gambetta · 71000 Mâcon</div>'+
-          '<div style="font-size:11px;color:#555;">Tél : 03 85 33 06 89</div>'+
+          '<div style="font-size:10px;color:#555;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
         '</div>'+
       '</div>'+
-
-      // TITRE
-      '<div style="margin-bottom:8px;">'+
-        '<div style="font-size:30px;font-weight:900;color:#1a1a1a;letter-spacing:-1px;line-height:1;">PRIX ÉCRAN IPHONE 2025</div>'+
+      '<div style="font-size:26px;font-weight:900;color:#1a1a1a;margin-bottom:5px;line-height:1;">PRIX ÉCRAN IPHONE 2025</div>'+
+      '<div style="background:linear-gradient(135deg,#1a5c30,#27ae60);border-radius:5px;padding:5px 12px;margin-bottom:8px;font-size:9px;color:#fff;font-weight:700;letter-spacing:.3px;">'+
+        '🏆 -25€ QUALIREPAR DÉJÀ DÉDUIT &nbsp;·&nbsp; PRIX TTC PIÈCE + MAIN D'ŒUVRE &nbsp;·&nbsp; GARANTIE 3 MOIS SAUF CASSE OU RAYURE &nbsp;·&nbsp; RÉPARATION EN 30 MIN - 1H MAX'+
       '</div>'+
-
-      // BANDEAU QUALIREPAR
-      '<div style="background:linear-gradient(135deg,#1a5c30,#27ae60);border-radius:6px;padding:6px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;">'+
-        '<span style="font-size:14px;">🏆</span>'+
-        '<span style="font-size:10px;color:#fff;font-weight:700;letter-spacing:.3px;">-25€ QUALIREPAR DÉJÀ DÉDUIT &nbsp;·&nbsp; PRIX TTC PIÈCE + MAIN D\'ŒUVRE &nbsp;·&nbsp; GARANTIE 3 MOIS SAUF CASSE OU RAYURE &nbsp;·&nbsp; RÉPARATION EN 30 MIN - 1H MAX</span>'+
-      '</div>'+
-
-      buildTableHTML(ecransPrix.t1)+
-      buildTableHTML(ecransPrix.t2)+
-
-      // PIED DE PAGE
-      '<div style="margin-top:8px;padding-top:8px;border-top:2px solid #c0392b;display:flex;justify-content:space-between;align-items:center;">'+
-        '<div style="font-size:9px;color:#888;">Solution Phone · 21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89 &nbsp;·&nbsp; TVA non applicable Art. 297 A CGI (régime de la marge)</div>'+
-        '<div style="display:flex;gap:8px;align-items:center;">'+
-          '<div style="background:#c0392b;color:#fff;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.5px;">RÉPARATEUR LABELLISÉ</div>'+
-          '<div style="border:1.5px solid #27ae60;color:#27ae60;padding:3px 8px;border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.5px;">LABEL QUALI RÉPAR</div>'+
+      '<table style="width:100%;border-collapse:collapse;border:1px solid #ddd;font-size:11px;">'+
+        '<thead><tr>'+headerRow+'</tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table>'+
+      '<div style="margin-top:6px;padding-top:6px;border-top:2px solid #c0392b;display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-size:8px;color:#888;">Solution Phone · 21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89 &nbsp;·&nbsp; TVA non applicable Art. 297 A CGI</div>'+
+        '<div style="display:flex;gap:6px;">'+
+          '<div style="background:#c0392b;color:#fff;padding:3px 7px;border-radius:3px;font-size:8px;font-weight:800;">RÉPARATEUR LABELLISÉ</div>'+
+          '<div style="border:1.5px solid #27ae60;color:#27ae60;padding:3px 7px;border-radius:3px;font-size:8px;font-weight:800;">LABEL QUALI RÉPAR</div>'+
         '</div>'+
       '</div>'+
-
     '</div>'+
-    '<script>window.onload=function(){};<\/script>'+
-    '</body></html>';
+    '<script>window.onload=function(){};<\/script></body></html>';
 
   var w = window.open('','_blank','width=900,height=1100');
   w.document.write(html);
   w.document.close();
 }
+
 
 // ============================================================
 //  MODULE PRIX BATTERIES IPHONE
