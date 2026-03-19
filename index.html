@@ -5046,8 +5046,22 @@ var ECRANS_DEFAULT = {
   t2: []
 };
 
-var ecransPrix = JSON.parse(localStorage.getItem('sp_ecrans_prix') || 'null');
-if(!ecransPrix){ ecransPrix = JSON.parse(JSON.stringify(ECRANS_DEFAULT)); }
+var ecransPrix = (function(){
+  var saved = JSON.parse(localStorage.getItem('sp_ecrans_prix') || 'null');
+  if(!saved) return JSON.parse(JSON.stringify(ECRANS_DEFAULT));
+  // Si l'ancien format avait t1+t2, les fusionner en t1 unique
+  if(saved.t2 && saved.t2.length > 0){
+    var modelesDansT1 = (saved.t1||[]).map(function(x){ return x.modele; });
+    saved.t2.forEach(function(ligne){
+      if(modelesDansT1.indexOf(ligne.modele) < 0){
+        saved.t1.push(ligne);
+      }
+    });
+    saved.t2 = [];
+    localStorage.setItem('sp_ecrans_prix', JSON.stringify(saved));
+  }
+  return saved;
+})();
 
 function saveEcransPrix(){
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
@@ -5069,13 +5083,59 @@ function saveEcransPrix(){
 async function loadEcransFromSupabase(){
   if(!SUPA_URL || !SUPA_KEY) return;
   try {
+    // 1. Essayer la table settings (nouvelle méthode)
     var rows = await supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json');
-    if(!rows || !rows.length || !rows[0].value){ console.log('Écrans: rien dans settings'); return; }
-    var data = JSON.parse(rows[0].value);
-    if(!data || (!data.t1 && !data.t2)){ return; }
-    ecransPrix = data;
-    localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-    console.log('Écrans chargés depuis settings: t1='+( data.t1||[]).length+' t2='+(data.t2||[]).length);
+    if(rows && rows.length && rows[0].value){
+      var data = JSON.parse(rows[0].value);
+      if(data && (data.t1||[]).length > 0){
+        // Fusionner t2 si présent
+        if(data.t2 && data.t2.length > 0){
+          var modeles = (data.t1||[]).map(function(x){ return x.modele; });
+          data.t2.forEach(function(l){ if(modeles.indexOf(l.modele)<0) data.t1.push(l); });
+          data.t2 = [];
+        }
+        ecransPrix = data;
+        localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
+        console.log('Écrans chargés depuis settings: '+ecransPrix.t1.length+' modèles');
+        return;
+      }
+    }
+    // 2. Fallback : ancienne table ecrans_prix
+    console.log('Écrans: settings vide, fallback sur ecrans_prix');
+    var res = await fetch(SUPA_URL+'/rest/v1/ecrans_prix?select=*', {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    if(!res.ok) return;
+    var lignes = await res.json();
+    if(!lignes || !lignes.length) return;
+    var newPrix = {t1:[], t2:[]};
+    lignes.forEach(function(r){
+      var tbl = r.tableau||'t1';
+      if(!newPrix[tbl]) newPrix[tbl]=[];
+      newPrix[tbl].push({
+        modele: r.modele,
+        prix:[
+          r.p0!==null&&r.p0!==undefined?Number(r.p0):null,
+          r.p1!==null&&r.p1!==undefined?Number(r.p1):null,
+          r.p2!==null&&r.p2!==undefined?Number(r.p2):null,
+          r.p3!==null&&r.p3!==undefined?Number(r.p3):null,
+          r.p4!==null&&r.p4!==undefined?Number(r.p4):null
+        ]
+      });
+    });
+    // Fusionner t1+t2 en t1 unique
+    if(newPrix.t2.length > 0){
+      var modeles = newPrix.t1.map(function(x){ return x.modele; });
+      newPrix.t2.forEach(function(l){ if(modeles.indexOf(l.modele)<0) newPrix.t1.push(l); });
+      newPrix.t2 = [];
+    }
+    if(newPrix.t1.length > 0){
+      ecransPrix = newPrix;
+      localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
+      // Migrer vers settings pour la prochaine fois
+      saveEcransPrix();
+      console.log('Écrans migrés depuis ecrans_prix: '+ecransPrix.t1.length+' modèles');
+    }
   } catch(e){ console.log('Écrans load error:', e); }
 }
 
