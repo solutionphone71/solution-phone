@@ -1984,8 +1984,23 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 // ── SYSTÈME PIN ──
 var _pin = '';
-var _pinCode      = '1609'; // Patron — accès complet
-var _pinEmployee  = '5555'; // Employé — modules financiers cachés
+var _pinCode      = ''; // Chargé depuis Supabase
+var _pinEmployee  = ''; // Chargé depuis Supabase
+var _pinsLoaded   = false;
+
+async function loadPinsFromSupabase() {
+  try {
+    var rows = await supaFetch('settings', 'GET', null, '?key=eq.pins_config&select=value');
+    if (rows && rows.length && rows[0].value) {
+      var data = JSON.parse(rows[0].value);
+      if (data.patron) _pinCode = data.patron;
+      if (data.employe) _pinEmployee = data.employe;
+      _pinsLoaded = true;
+    }
+  } catch(e) {
+    console.warn('Erreur chargement PINs:', e);
+  }
+}
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
@@ -2022,7 +2037,7 @@ function pinPress(n){
   if(_pin.length >= 4) return;
   _pin += String(n);
   updatePinDisplay();
-  if(_pin.length === 4) setTimeout(checkPin, 150);
+  if(_pin.length === 4) setTimeout(function(){ checkPin(); }, 150);
 }
 
 function pinClear(){
@@ -2040,7 +2055,11 @@ function updatePinDisplay(){
   }
 }
 
-function checkPin(){
+async function checkPin(){
+  // Charger les PINs depuis Supabase si pas encore fait
+  if (!_pinsLoaded) {
+    await loadPinsFromSupabase();
+  }
   var pinSaisi = _pin;
   if(pinSaisi === _pinCode || pinSaisi === _pinEmployee){
     _userRole = (pinSaisi === _pinEmployee) ? 'employe' : 'patron';
