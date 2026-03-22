@@ -7563,11 +7563,10 @@ async function generateGmbPost(){
 // ============================================================
 
 // ============================================================
-//  MODULE ROUE CADEAUX
+//  MODULE ROUE CADEAUX — Supabase
 // ============================================================
 
-const ROULETTE_KEY = 'sp_roulette_config';
-const RL_DEFAULT_PRIZES = [
+var RL_DEFAULT_PRIZES = [
   { label: "Protection d'écran offerte", emoji: '🛡️', color: '#b91c1c', weight: 20 },
   { label: 'Nettoyant écran offert',      emoji: '🧴', color: '#991b1b', weight: 15 },
   { label: '-10% prochaine réparation',   emoji: '⚡', color: '#7f1d1d', weight: 15 },
@@ -7579,31 +7578,28 @@ var rlPrizes = [];
 var rlGoogleUrl = '';
 
 function initRouletteAdmin() {
-  try {
-    var saved = JSON.parse(localStorage.getItem(ROULETTE_KEY) || '{}');
-    rlPrizes    = saved.prizes    ? JSON.parse(JSON.stringify(saved.prizes)) : JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
-    rlGoogleUrl = saved.googleUrl || '';
-  } catch(e) {
+  supaFetch('roulette_config','GET',null,'?id=eq.1').then(function(res){
+    if(res && res[0]){
+      rlGoogleUrl = res[0].google_url || '';
+      rlPrizes    = res[0].prizes    || JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
+    } else {
+      rlPrizes    = JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
+      rlGoogleUrl = 'https://g.page/r/CbyQ_wiFpddjEBM/review';
+    }
+    document.getElementById('rl-google-url').value = rlGoogleUrl;
+    var rouletteUrl = 'https://app.solution-phone.fr/roulette.html';
+    var lnk = document.getElementById('rl-preview-link');
+    if(lnk){ lnk.href = rouletteUrl; }
+    var qrDiv = document.getElementById('rl-qr');
+    if(qrDiv){
+      qrDiv.innerHTML = '<img id="rl-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(rouletteUrl)+'&bgcolor=1a1a1a&color=f0f0f0&format=png" style="border-radius:8px;width:160px;height:160px;" crossorigin="anonymous">';
+    }
+    rlRenderPrizes();
+  }).catch(function(){
     rlPrizes    = JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
     rlGoogleUrl = '';
-  }
-  document.getElementById('rl-google-url').value = rlGoogleUrl;
-
-  // Lien preview — pointe vers le site public GitHub Pages avec le lien Google en paramètre
-  var rouletteUrl = 'https://app.solution-phone.fr/roulette.html';
-  var lnk = document.getElementById('rl-preview-link');
-  if(lnk){
-    var fullUrl = rouletteUrl + (rlGoogleUrl ? '?g=' + encodeURIComponent(rlGoogleUrl) : '');
-    lnk.href = fullUrl;
-  }
-
-  // QR Code
-  var qrDiv = document.getElementById('rl-qr');
-  if(qrDiv){
-    qrDiv.innerHTML = '<img id="rl-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(rouletteUrl)+'&bgcolor=1a1a1a&color=f0f0f0&format=png" style="border-radius:8px;width:160px;height:160px;" crossorigin="anonymous">';
-  }
-
-  rlRenderPrizes();
+    rlRenderPrizes();
+  });
 }
 
 function rlRenderPrizes() {
@@ -7611,7 +7607,6 @@ function rlRenderPrizes() {
   if(!tbody) return;
   tbody.innerHTML = '';
   var total = rlPrizes.reduce(function(s,p){ return s + p.weight; }, 0);
-
   rlPrizes.forEach(function(p, i) {
     var pct = total > 0 ? ((p.weight / total) * 100).toFixed(0) : 0;
     var tr = document.createElement('tr');
@@ -7623,7 +7618,6 @@ function rlRenderPrizes() {
       '<td><button class="btn btn-sm" style="color:var(--red);border-color:rgba(229,62,62,0.3);" onclick="rlRemovePrize('+i+')">✕</button></td>';
     tbody.appendChild(tr);
   });
-
   var tot = document.getElementById('rl-total-display');
   if(tot) tot.textContent = 'Total : '+rlPrizes.length+' lots';
 }
@@ -7641,8 +7635,12 @@ function rlRemovePrize(i) {
 
 function rlSaveConfig() {
   rlGoogleUrl = document.getElementById('rl-google-url').value.trim();
-  localStorage.setItem(ROULETTE_KEY, JSON.stringify({ googleUrl: rlGoogleUrl, prizes: rlPrizes }));
-  showNotif('✅ Configuration roulette enregistrée !', 'success');
+  var data = { google_url: rlGoogleUrl, prizes: rlPrizes, updated_at: new Date().toISOString() };
+  supaFetch('roulette_config','PATCH',data,'?id=eq.1').then(function(){
+    showNotif('✅ Configuration roulette enregistrée !', 'success');
+  }).catch(function(){
+    showNotif('❌ Erreur sauvegarde Supabase', 'error');
+  });
 }
 
 function rlDownloadQR() {
