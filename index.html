@@ -227,6 +227,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
   <div class="mob-menu-item" onclick="showPageMobile('ecrans','');closeMobileMenu()"><span class="mob-menu-icon">🖥️</span>Prix Écrans iPhone</div>
   <div class="mob-menu-item" onclick="showPageMobile('batteries','');closeMobileMenu()"><span class="mob-menu-icon">🔋</span>Prix Batteries iPhone</div>
+  <div class="mob-menu-item" onclick="showPageMobile('roulette','');initRouletteAdmin();closeMobileMenu()"><span class="mob-menu-icon">🎡</span>Roue Cadeaux</div>
 </div>
 
 <div id="login-screen">
@@ -290,6 +291,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" onclick="showPage('batteries',this)"><span class="nav-icon">🔋</span><span>Prix Batteries iPhone</span></div>
     <div class="nav-item" onclick="showPage('prix-android',this);androidInit();"><span class="nav-icon">🤖</span><span>Prix Réparations Android</span></div>
     <div class="nav-item" onclick="showPage('docs-comptable',this);docsComptableInit();"><span class="nav-icon">📂</span><span>Documents Comptable</span></div>
+    <div class="nav-item" onclick="showPage('roulette',this);initRouletteAdmin();"><span class="nav-icon">🎡</span><span>Roue Cadeaux</span></div>
   </div>
   <div class="main">
 
@@ -1638,6 +1640,61 @@ tr:hover td{background:rgba(255,255,255,0.02);}
   </div>
   <!-- ========== FIN PAGE DOCUMENTS COMPTABLE ========== -->
 
+    <!-- ══════════════ PAGE ROUE CADEAUX ══════════════ -->
+    <div class="page" id="page-roulette">
+      <div class="page-title">🎡 Roue Cadeaux</div>
+      <div class="page-sub">Gérez les lots et incitez vos clients à laisser des avis Google</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚙️ Configuration</span></div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>Lien Google Avis</label>
+            <input id="rl-google-url" type="url" placeholder="https://g.page/r/votre-lien-google" style="width:100%;padding:9px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+            <a id="rl-preview-link" href="#" target="_blank" class="btn btn-sm" style="text-decoration:none;border-color:var(--blue);color:var(--blue);">🎡 Voir la roue →</a>
+          </div>
+          <button class="btn btn-primary" onclick="rlSaveConfig()">💾 Enregistrer</button>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div class="card-header"><span class="card-title">📱 QR Code caisse</span></div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Imprimez ce QR code et posez-le en caisse</p>
+          <div id="rl-qr" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
+          <button class="btn btn-sm" onclick="rlDownloadQR()">⬇️ Télécharger le QR</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎁 Lots de la roue</span>
+          <button class="btn btn-primary btn-sm" onclick="rlAddPrize()">+ Ajouter un lot</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th style="width:70px;">Emoji</th><th>Nom du lot</th><th style="width:60px;">Couleur</th><th style="width:160px;">Probabilité</th><th style="width:50px;"></th></tr></thead>
+            <tbody id="rl-prizes-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span id="rl-total-display" style="font-size:13px;color:var(--text-muted);"></span>
+          <button class="btn btn-primary" onclick="rlSaveConfig()">💾 Enregistrer les lots</button>
+        </div>
+      </div>
+
+      <div class="card" style="background:rgba(66,153,225,0.07);border-color:rgba(66,153,225,0.25);">
+        <div class="card-title" style="margin-bottom:10px;color:var(--blue);">💡 Comment ça marche ?</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.9;">
+          <b style="color:var(--text);">1.</b> Après chaque réparation, montrez le QR code ou partagez le lien au client<br>
+          <b style="color:var(--text);">2.</b> Il laisse un avis Google 5 ⭐ sur votre fiche<br>
+          <b style="color:var(--text);">3.</b> Il tourne la roue et gagne un cadeau<br>
+          <b style="color:var(--text);">4.</b> Il montre l'écran à votre équipe pour récupérer son lot<br><br>
+          <span style="color:var(--warning);">⚡ La config (lots + lien Google) est partagée automatiquement avec la page roulette dès que vous cliquez sur Enregistrer.</span>
+        </div>
+      </div>
+    </div>
+    <!-- ══════════════ FIN PAGE ROUE CADEAUX ══════════════ -->
+
 </div>
 </div>
 </div>
@@ -2114,8 +2171,7 @@ function showPage(id,el){
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
-  if(id==='devis')renderDevis();
-  if(id==='clients'){
+  if(id==='devis')renderDevis();  if(id==='clients'){
     if(false && supabaseReady && clients.length === 0){
       supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
         if(cl) clients = cl.map(function(x){
@@ -7504,6 +7560,100 @@ async function generateGmbPost(){
 
 // ============================================================
 //  FIN MODULE GOOGLE MY BUSINESS
+// ============================================================
+
+// ============================================================
+//  MODULE ROUE CADEAUX
+// ============================================================
+
+const ROULETTE_KEY = 'sp_roulette_config';
+const RL_DEFAULT_PRIZES = [
+  { label: "Protection d'écran offerte", emoji: '🛡️', color: '#b91c1c', weight: 20 },
+  { label: 'Nettoyant écran offert',      emoji: '🧴', color: '#991b1b', weight: 15 },
+  { label: '-10% prochaine réparation',   emoji: '⚡', color: '#7f1d1d', weight: 15 },
+  { label: 'Housse de protection offerte',emoji: '🎁', color: '#c0392b', weight: 20 },
+  { label: 'Câble de charge offert',      emoji: '🔌', color: '#a93226', weight: 20 },
+  { label: '-5€ prochaine réparation',    emoji: '💶', color: '#922b21', weight: 10 },
+];
+var rlPrizes = [];
+var rlGoogleUrl = '';
+
+function initRouletteAdmin() {
+  try {
+    var saved = JSON.parse(localStorage.getItem(ROULETTE_KEY) || '{}');
+    rlPrizes    = saved.prizes    ? JSON.parse(JSON.stringify(saved.prizes)) : JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
+    rlGoogleUrl = saved.googleUrl || '';
+  } catch(e) {
+    rlPrizes    = JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
+    rlGoogleUrl = '';
+  }
+  document.getElementById('rl-google-url').value = rlGoogleUrl;
+
+  // Lien preview
+  var base = window.location.href.split('?')[0].replace(/\/?index\.html$/, '').replace(/\/$/, '');
+  var rouletteUrl = base + '/roulette.html';
+  var lnk = document.getElementById('rl-preview-link');
+  if(lnk){ lnk.href = rouletteUrl; }
+
+  // QR Code
+  var qrDiv = document.getElementById('rl-qr');
+  if(qrDiv){
+    qrDiv.innerHTML = '<img id="rl-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(rouletteUrl)+'&bgcolor=1a1a1a&color=f0f0f0&format=png" style="border-radius:8px;width:160px;height:160px;" crossorigin="anonymous">';
+  }
+
+  rlRenderPrizes();
+}
+
+function rlRenderPrizes() {
+  var tbody = document.getElementById('rl-prizes-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  var total = rlPrizes.reduce(function(s,p){ return s + p.weight; }, 0);
+
+  rlPrizes.forEach(function(p, i) {
+    var pct = total > 0 ? ((p.weight / total) * 100).toFixed(0) : 0;
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input value="'+p.emoji+'" style="width:52px;text-align:center;font-size:20px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);" onchange="rlPrizes['+i+'].emoji=this.value"></td>'+
+      '<td><input value="'+p.label.replace(/"/g,'&quot;')+'" style="width:100%;background:var(--dark3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;" onchange="rlPrizes['+i+'].label=this.value"></td>'+
+      '<td><input type="color" value="'+p.color+'" style="width:44px;height:32px;border:none;border-radius:6px;cursor:pointer;background:none;" onchange="rlPrizes['+i+'].color=this.value"></td>'+
+      '<td><div style="display:flex;align-items:center;gap:8px;"><input type="range" min="1" max="50" value="'+p.weight+'" style="width:90px;" oninput="rlPrizes['+i+'].weight=+this.value;rlRenderPrizes()"><span style="font-size:13px;color:var(--text-muted);min-width:40px;">'+pct+'%</span></div></td>'+
+      '<td><button class="btn btn-sm" style="color:var(--red);border-color:rgba(229,62,62,0.3);" onclick="rlRemovePrize('+i+')">✕</button></td>';
+    tbody.appendChild(tr);
+  });
+
+  var tot = document.getElementById('rl-total-display');
+  if(tot) tot.textContent = 'Total : '+rlPrizes.length+' lots';
+}
+
+function rlAddPrize() {
+  rlPrizes.push({ label: 'Nouveau lot', emoji: '🎁', color: '#c0392b', weight: 10 });
+  rlRenderPrizes();
+}
+
+function rlRemovePrize(i) {
+  if(rlPrizes.length <= 2){ showNotif('Minimum 2 lots requis','error'); return; }
+  rlPrizes.splice(i, 1);
+  rlRenderPrizes();
+}
+
+function rlSaveConfig() {
+  rlGoogleUrl = document.getElementById('rl-google-url').value.trim();
+  localStorage.setItem(ROULETTE_KEY, JSON.stringify({ googleUrl: rlGoogleUrl, prizes: rlPrizes }));
+  showNotif('✅ Configuration roulette enregistrée !', 'success');
+}
+
+function rlDownloadQR() {
+  var img = document.getElementById('rl-qr-img');
+  if(!img){ showNotif('QR introuvable','error'); return; }
+  var a = document.createElement('a');
+  a.href = img.src;
+  a.download = 'qr-roulette-solution-phone.png';
+  a.click();
+}
+
+// ============================================================
+//  FIN MODULE ROUE CADEAUX
 // ============================================================
 
 </script>
