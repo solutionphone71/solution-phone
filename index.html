@@ -999,6 +999,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
             <button class="btn btn-primary btn-sm" onclick="printComptable()">🖨️ Imprimer</button>
           <button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" onclick="exportComptableEmail()">📧 Envoyer au comptable</button>
             <button class="btn btn-sm" onclick="exportComptableCSV()">📥 Export CSV</button>
+            <button class="btn btn-sm" style="border-color:#ed8936;color:#ed8936;" onclick="exportAchatsEspecesCSV()">💵 Export Achats Espèces</button>
           </div>
         </div>
       </div>
@@ -4024,6 +4025,26 @@ function renderComptable() {
     '</tbody></table>' +
     '</div>' +
 
+    // Section Achats espèces smartphones
+    (function(){
+      var achatsEsp = phones.filter(function(p){return p.dateAchat&&p.dateAchat.startsWith(mois)&&p.mode==='ESPECES';});
+      if(!achatsEsp.length) return '';
+      var totalEspSmarts = achatsEsp.reduce(function(s,p){return s+p.achat;},0);
+      var rows = achatsEsp.map(function(p){
+        var vendeur=p.typeAchat==='FOURNISSEUR'?'🏢 '+(p.fournisseur||'Fournisseur'):'👤 '+(p.vendeurNom||'—');
+        return '<tr><td>'+fmtDate(p.dateAchat)+'</td><td>'+vendeur+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px;color:var(--text-muted);">'+(p.imei||'—')+'</td><td style="text-align:right;font-weight:700;color:#ed8936;">'+p.achat.toFixed(2)+' €</td></tr>';
+      }).join('');
+      return '<div style="margin-bottom:20px;">'+
+        '<div style="font-size:13px;font-weight:700;color:#ed8936;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:2px solid #ed8936;padding-bottom:6px;">💵 Achats smartphones en espèces</div>'+
+        '<div style="overflow-x:auto;"><table><thead><tr>'+
+        '<th>Date</th><th>Vendeur / Fournisseur</th><th>Appareil</th><th>IMEI</th><th style="text-align:right">Montant espèces</th>'+
+        '</tr></thead><tbody>'+rows+
+        '<tr style="background:rgba(237,137,54,0.12)"><td colspan="4" style="font-weight:700;">TOTAL espèces sortantes</td>'+
+        '<td style="text-align:right;font-weight:800;font-size:16px;color:#ed8936;">'+totalEspSmarts.toFixed(2)+' €</td></tr>'+
+        '</tbody></table></div>'+
+        '</div>';
+    })() +
+
     // Détail journalier +
     '<div>' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
@@ -4109,7 +4130,55 @@ function exportComptableCSV() {
   showNotif('Export comptable téléchargé !','success');
 }
 
-function renderDashboard(){
+function exportAchatsEspecesCSV() {
+  var mois = document.getElementById('compta-mois').value;
+  var parts = mois.split('-');
+  var moisNoms = {'01':'Janvier','02':'Fevrier','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Aout','09':'Septembre','10':'Octobre','11':'Novembre','12':'Decembre'};
+  var moisLabel = moisNoms[parts[1]] + '_' + parts[0];
+
+  // Filtrer les achats espèces du mois
+  var achatsEsp = phones.filter(function(p) {
+    return p.dateAchat && p.dateAchat.startsWith(mois) && p.mode === 'ESPECES';
+  });
+
+  if (achatsEsp.length === 0) {
+    showNotif('Aucun achat en espèces ce mois-ci', 'info');
+    return;
+  }
+
+  var headers = ['Date', 'Vendeur / Fournisseur', 'Type', 'Modele', 'Stockage (Go)', 'IMEI', 'Couleur', 'Grade', 'Montant especes (EUR)'];
+  var rows = achatsEsp.map(function(p) {
+    var vendeur = p.typeAchat === 'FOURNISSEUR'
+      ? (p.fournisseur || 'Fournisseur')
+      : (p.vendeurNom || '—');
+    var type = p.typeAchat === 'FOURNISSEUR' ? 'Fournisseur' : 'Particulier';
+    return [
+      p.dateAchat,
+      vendeur,
+      type,
+      p.modele || '',
+      p.stockage || '',
+      p.imei || '',
+      p.couleur || '',
+      p.grade || '',
+      p.achat.toFixed(2)
+    ].map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(';');
+  });
+
+  // Ligne total
+  var total = achatsEsp.reduce(function(s,p){return s+p.achat;},0);
+  rows.push('"TOTAL";"";"";"";"";"";"";"";' + '"' + total.toFixed(2) + '"');
+
+  var csv = [headers.join(';')].concat(rows).join('\n');
+  var blob = new Blob(['\ufeff' + csv], {type: 'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Achats_Especes_' + moisLabel + '.csv';
+  a.click();
+  showNotif('Export achats espèces téléchargé (' + achatsEsp.length + ' lignes) !', 'success');
+}
+
   // Alertes stock anciens
   var anciens = phones.filter(function(p){
     if(p.etat !== 'DISPONIBLE' || !p.dateAchat) return false;
