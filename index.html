@@ -2289,25 +2289,38 @@ function renderCaisse(){
 function importPhonilabCSV(input) {
   var file = input.files[0];
   if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var text = e.target.result;
+
+  // Normalise un header : minuscules + suppression des accents
+  function normalizeHeader(h) {
+    return h.replace(/"/g,'').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function parseCSV(text) {
     // Détecter le séparateur (virgule ou point-virgule)
     var sep = text.indexOf(';') >= 0 ? ';' : ',';
     var lines = text.split('\n').filter(function(l) { return l.trim(); });
     if (lines.length < 2) { showNotif('Fichier CSV vide ou invalide', 'error'); return; }
-    
-    // Lire les headers
-    var headers = lines[0].split(sep).map(function(h) { return h.replace(/"/g,'').trim().toLowerCase(); });
-    console.log('Headers Phonilab:', headers);
-    
-    // Index des colonnes importantes
-    var iDate = headers.findIndex(function(h) { return h.includes('date'); });
-    var iMontant = headers.findIndex(function(h) { return h.includes('montant'); });
-    var iMethode = headers.findIndex(function(h) { return h.includes('m') && h.includes('thode'); });
-    var iType = headers.findIndex(function(h) { return h.includes('r') && h.includes('paration'); });
-    
-    if (iDate < 0 || iMontant < 0) { showNotif('Format CSV non reconnu', 'error'); return; }
+
+    // Lire les headers normalisés (sans accents)
+    var headers = lines[0].split(sep).map(normalizeHeader);
+    console.log('Headers Phonilab (normalisés):', headers);
+
+    // Index des colonnes importantes — détection robuste sans accents
+    var iDate    = headers.findIndex(function(h) { return h.includes('date'); });
+    var iMontant = headers.findIndex(function(h) { return h.includes('montant') || h.includes('prix') || h.includes('total'); });
+    var iMethode = headers.findIndex(function(h) {
+      return h.includes('methode') || h.includes('mode') || h.includes('paiement') || h.includes('reglement') || (h.includes('m') && h.includes('thode'));
+    });
+    var iType    = headers.findIndex(function(h) {
+      return h.includes('reparation') || h.includes('type') || h.includes('prestation') || h.includes('libelle') || (h.includes('r') && h.includes('paration'));
+    });
+
+    if (iDate < 0 || iMontant < 0) {
+      showNotif('Format CSV non reconnu — colonnes trouvées : ' + headers.join(', '), 'error');
+      console.error('Colonnes CSV Phonilab:', headers);
+      return;
+    }
     
     // Grouper par date
     var byDate = {};
@@ -2385,7 +2398,30 @@ function importPhonilabCSV(input) {
     
     renderCaisse(); renderDashboard();
     showNotif('Import Phonilab : ' + imported + ' ajoutés, ' + updated + ' mis à jour ✅', 'success');
-    input.value = '';
+  } // fin parseCSV
+
+  // Lire en UTF-8 d'abord. Si les colonnes clés sont absentes (accents corrompus),
+  // retenter en ISO-8859-1 (encodage fréquent des exports Phonilab / logiciels français)
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var sep = text.indexOf(';') >= 0 ? ';' : ',';
+    var firstLine = (text.split('\n')[0] || '');
+    var testH = firstLine.split(sep).map(function(h) {
+      return h.replace(/"/g,'').trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    });
+    var ok = testH.some(function(h){return h.includes('date');}) &&
+             testH.some(function(h){return h.includes('montant')||h.includes('prix')||h.includes('total');});
+    if (ok) {
+      parseCSV(text);
+      input.value = '';
+    } else {
+      // Retenter en Latin-1
+      var r2 = new FileReader();
+      r2.onload = function(ev) { parseCSV(ev.target.result); input.value = ''; };
+      r2.readAsText(file, 'ISO-8859-1');
+    }
   };
   reader.readAsText(file, 'UTF-8');
 }
@@ -2653,7 +2689,7 @@ async function importClientsPhonilab(input) {
     }
     input.value = '';
   };
-  reader.readAsText(file, 'UTF-8');
+  reader.readAsText(file, 'ISO-8859-1');
 }
 
 async function addClient() {
