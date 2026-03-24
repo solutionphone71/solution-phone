@@ -316,7 +316,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           <div class="card-title">Stock</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
-            <button class="btn btn-primary" onclick="openModal('modal-add-phone')">➕ Ajouter</button>
+            <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -1757,12 +1757,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="form-group" id="p-fournisseur-group" style="display:none;">
         <label>Fournisseur</label>
-        <select id="p-fournisseur">
-          <option value="Wegacell">Wegacell</option>
-          <option value="Mobilax">Mobilax</option>
-          <option value="Utopya">Utopya</option>
-          <option value="Autre">Autre</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="p-fournisseur" style="flex:1;"></select>
+          <button type="button" class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);white-space:nowrap;padding:7px 10px;" onclick="ajouterFournisseur()" title="Ajouter un fournisseur">➕ Nouveau</button>
+          <button type="button" class="btn btn-sm" style="border-color:var(--red);color:var(--red);padding:7px 10px;" onclick="supprimerFournisseur()" title="Supprimer ce fournisseur">🗑️</button>
+        </div>
       </div>
       <div class="form-group"><label>Mode paiement</label>
         <select id="p-mode">
@@ -1842,12 +1841,11 @@ tr:hover td{background:rgba(255,255,255,0.02);}
       </div>
       <div class="form-group" id="edit-p-fournisseur-group" style="display:none;">
         <label>Fournisseur</label>
-        <select id="edit-p-fournisseur">
-          <option value="Wegacell">Wegacell</option>
-          <option value="Mobilax">Mobilax</option>
-          <option value="Utopya">Utopya</option>
-          <option value="Autre">Autre</option>
-        </select>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <select id="edit-p-fournisseur" style="flex:1;"></select>
+          <button type="button" class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);white-space:nowrap;padding:7px 10px;" onclick="ajouterFournisseur()" title="Ajouter un fournisseur">➕ Nouveau</button>
+          <button type="button" class="btn btn-sm" style="border-color:var(--red);color:var(--red);padding:7px 10px;" onclick="supprimerFournisseur()" title="Supprimer ce fournisseur">🗑️</button>
+        </div>
       </div>
     </div>
     <div id="edit-marge-preview" style="margin-top:12px;padding:10px;background:var(--dark3);border-radius:8px;font-size:13px;color:var(--text-muted);">💡 Marge calculée automatiquement</div>
@@ -2129,6 +2127,7 @@ async function checkPin(){
     // Charger uniquement les données essentielles au démarrage
     loadFromSupabase().then(function(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
+      populateFournisseurSelects();
       loadApiKeyFromSupabase();
       // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
@@ -2435,6 +2434,63 @@ function exportCaisseCSV(){
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='Z_Caisse.csv';a.click();
   showNotif('Export téléchargé !','success');
+}
+
+// ============================================================
+//  GESTION DES FOURNISSEURS
+// ============================================================
+var fournisseursList = JSON.parse(localStorage.getItem('sp_fournisseurs') || '["Wegacell","Mobilax","Utopya","Autre"]');
+
+function saveFournisseurs() {
+  localStorage.setItem('sp_fournisseurs', JSON.stringify(fournisseursList));
+}
+
+function populateFournisseurSelects(selectedValue) {
+  var selects = ['p-fournisseur', 'edit-p-fournisseur'];
+  selects.forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var current = selectedValue !== undefined ? selectedValue : sel.value;
+    sel.innerHTML = fournisseursList.map(function(f) {
+      return '<option value="' + f + '"' + (f === current ? ' selected' : '') + '>' + f + '</option>';
+    }).join('');
+  });
+}
+
+function ajouterFournisseur() {
+  var nom = prompt('Nom du nouveau fournisseur :');
+  if (!nom) return;
+  nom = nom.trim();
+  if (!nom) return;
+  if (fournisseursList.indexOf(nom) >= 0) {
+    showNotif('Ce fournisseur existe déjà', 'info');
+    return;
+  }
+  // Insérer avant "Autre" si présent, sinon à la fin
+  var idxAutre = fournisseursList.indexOf('Autre');
+  if (idxAutre >= 0) {
+    fournisseursList.splice(idxAutre, 0, nom);
+  } else {
+    fournisseursList.push(nom);
+  }
+  saveFournisseurs();
+  populateFournisseurSelects(nom);
+  showNotif('Fournisseur "' + nom + '" ajouté ✅', 'success');
+}
+
+function supprimerFournisseur() {
+  // Trouver quel select est visible
+  var sel = document.getElementById('p-fournisseur-group').style.display !== 'none'
+    ? document.getElementById('p-fournisseur')
+    : document.getElementById('edit-p-fournisseur');
+  var nom = sel ? sel.value : '';
+  if (!nom) return;
+  if (nom === 'Autre') { showNotif('Impossible de supprimer "Autre"', 'error'); return; }
+  if (!confirm('Supprimer le fournisseur "' + nom + '" de la liste ?')) return;
+  fournisseursList = fournisseursList.filter(function(f) { return f !== nom; });
+  saveFournisseurs();
+  populateFournisseurSelects(fournisseursList[0] || 'Autre');
+  showNotif('Fournisseur "' + nom + '" supprimé', 'success');
 }
 
 function toggleFournisseur() {
@@ -2861,7 +2917,7 @@ function editPhone(id) {
   document.getElementById('edit-p-date-achat').value = p.dateAchat||'';
   document.getElementById('edit-p-couleur').value = p.couleur||'';
   document.getElementById('edit-p-type-achat').value = p.typeAchat||'PARTICULIER';
-  document.getElementById('edit-p-fournisseur').value = p.fournisseur||'Wegacell';
+  populateFournisseurSelects(p.fournisseur||'Wegacell');
   toggleEditFournisseur();
   updateEditMarge();
   openModal('modal-edit-phone');
