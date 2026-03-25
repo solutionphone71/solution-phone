@@ -5496,14 +5496,13 @@ function exportAchatsEspecesCSV() {
 
 function renderDashboard(){
   var today = new Date();
-  var joursSemaine = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-  var moisNoms = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  var mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   var dateEl = document.getElementById('dash-date');
-  if(dateEl) dateEl.textContent = joursSemaine[today.getDay()]+' '+today.getDate()+' '+moisNoms[today.getMonth()]+' '+today.getFullYear();
+  if(dateEl) dateEl.textContent = jours[today.getDay()]+' '+today.getDate()+' '+mois[today.getMonth()]+' '+today.getFullYear();
 
   var isEmploye = _userRole === 'employe';
   var moisCourant = getMoisActuel();
-  var todayISO = today.toISOString().split('T')[0];
 
   // ── Alerte smartphones anciens ──
   var anciens = phones.filter(function(p){
@@ -5517,7 +5516,7 @@ function renderDashboard(){
       : '';
   }
 
-  // ── KPI du mois ──
+  // ── KPI ──
   var dispo = phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
   var caSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+p.vente;},0);
   var mgSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
@@ -5525,52 +5524,58 @@ function renderDashboard(){
   var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
   var caTotal = caSmartMois + caReparMois;
 
-  if(isEmploye){
-    document.getElementById('dash-cards').innerHTML =
-      '<div class="dash-card" onclick="showPage('phones',null)"><div class="dash-label">Stock dispo</div><div class="dash-value">'+dispo+' tél.</div></div>'+
-      '<div class="dash-card" onclick="showPage('ventes-smart',null);renderVentesSmartphones();"><div class="dash-label">CA smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartMois.toFixed(0)+' €</div><div class="dash-sub">Marge : '+mgSmartMois.toFixed(0)+' €</div></div>';
-  } else {
-    document.getElementById('dash-cards').innerHTML =
-      '<div class="dash-card" onclick="showPage('reparations',null)"><div class="dash-label">CA réparations</div><div class="dash-value">'+caReparMois.toFixed(0)+' €</div><div class="dash-sub">dont QR : '+bonusQRMois.toFixed(0)+' €</div></div>'+
-      '<div class="dash-card" onclick="showPage('ventes-smart',null);renderVentesSmartphones();"><div class="dash-label">CA smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartMois.toFixed(0)+' €</div><div class="dash-sub">Marge : '+mgSmartMois.toFixed(0)+' €</div></div>'+
-      '<div class="dash-card"><div class="dash-label">CA total du mois</div><div class="dash-value" style="color:var(--red)">'+caTotal.toFixed(0)+' €</div></div>'+
-      '<div class="dash-card" onclick="showPage('phones',null)"><div class="dash-label">Stock dispo</div><div class="dash-value">'+dispo+' tél.</div><div class="dash-sub">Smartphones</div></div>'+
-      '<div class="dash-card" onclick="showPage('qualirepar',null);qrInit();"><div class="dash-label">Bonus QR encaissé</div><div class="dash-value" style="color:var(--green)">'+bonusQRMois.toFixed(0)+' €</div><div class="dash-sub">ce mois</div></div>';
+  function dashCard(label, val, sub, page, extra){
+    var d = document.createElement('div');
+    d.className = 'dash-card';
+    d.innerHTML = '<div class="dash-label">'+label+'</div><div class="dash-value"'+(extra?' style="'+extra+'"':'')+'>'+val+'</div>'+(sub?'<div class="dash-sub">'+sub+'</div>':'');
+    if(page) d.onclick = function(){ showPage(page, null); if(page==='ventes-smart') renderVentesSmartphones(); if(page==='qualirepar') qrInit(); };
+    return d;
+  }
+
+  var cards = document.getElementById('dash-cards');
+  if(cards){
+    cards.innerHTML = '';
+    if(isEmploye){
+      cards.appendChild(dashCard('Stock dispo', dispo+' tél.', '', 'phones', ''));
+      cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
+    } else {
+      cards.appendChild(dashCard('CA réparations', caReparMois.toFixed(0)+' €', 'dont QR : '+bonusQRMois.toFixed(0)+' €', 'reparations', ''));
+      cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
+      cards.appendChild(dashCard('CA total du mois', caTotal.toFixed(0)+' €', '', null, 'color:var(--red)'));
+      cards.appendChild(dashCard('Stock dispo', dispo+' tél.', 'Smartphones', 'phones', ''));
+      cards.appendChild(dashCard('Bonus QR encaissé', bonusQRMois.toFixed(0)+' €', 'ce mois', 'qualirepar', 'color:var(--green)'));
+    }
   }
 
   // ── Réparations récentes ──
   var dashRep = document.getElementById('dash-reparations');
-  var dashRepCard = document.getElementById('dash-rep-card');
   if(dashRep){
     var repRecentes = reparations.slice(-6).reverse();
-    if(repRecentes.length > 0){
-      dashRep.innerHTML = repRecentes.map(function(r){
-        return '<tr><td><b>'+r.clientNom+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+r.appareil+'</td><td>'+r.prix.toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>';
-      }).join('');
-    } else {
-      dashRep.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune réparation</td></tr>';
-    }
+    dashRep.innerHTML = repRecentes.length > 0
+      ? repRecentes.map(function(r){ return '<tr><td><b>'+r.clientNom+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+r.appareil+'</td><td>'+r.prix.toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>'; }).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune réparation</td></tr>';
   }
 
   // ── Clients récents ──
   var dashClients = document.getElementById('dash-clients-list');
   if(dashClients){
     var clientsRecents = clients.slice(-6).reverse();
-    if(clientsRecents.length > 0){
-      dashClients.innerHTML = clientsRecents.map(function(c){
-        var nbRep = reparations.filter(function(r){return r.clientNom && c.nom && r.clientNom.toLowerCase()===c.nom.toLowerCase();}).length;
-        return '<tr><td><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b></td><td style="font-size:12px;color:var(--text-muted);">'+(c.tel||'—')+'</td><td style="font-size:12px;text-align:center;">'+nbRep+'</td></tr>';
-      }).join('');
-    } else {
-      dashClients.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun client</td></tr>';
-    }
+    dashClients.innerHTML = clientsRecents.length > 0
+      ? clientsRecents.map(function(c){
+          var nbRep = reparations.filter(function(r){return r.clientNom&&c.nom&&r.clientNom.toLowerCase()===c.nom.toLowerCase();}).length;
+          return '<tr><td><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b></td><td style="font-size:12px;color:var(--text-muted);">'+(c.tel||'—')+'</td><td style="font-size:12px;text-align:center;">'+nbRep+'</td></tr>';
+        }).join('')
+      : '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun client</td></tr>';
   }
 
   // ── Derniers smartphones ──
-  var recent = phones.slice(-4).reverse();
-  document.getElementById('dash-phones').innerHTML = recent.map(function(p){
-    return '<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';
-  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun smartphone</td></tr>';
+  var dashPhones = document.getElementById('dash-phones');
+  if(dashPhones){
+    var recent = phones.slice(-4).reverse();
+    dashPhones.innerHTML = recent.map(function(p){
+      return '<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun smartphone</td></tr>';
+  }
 
   // ── Z de caisse ──
   var dashCaisse = document.getElementById('dash-caisse');
@@ -5581,51 +5586,28 @@ function renderDashboard(){
     if(dashCaisseCard) dashCaisseCard.style.display='';
     if(dashCaisse){
       var fin = calcFinales();
-      var rc = caisse.slice(-4).reverse();
-      dashCaisse.innerHTML = rc.map(function(c){
+      dashCaisse.innerHTML = caisse.slice(-4).reverse().map(function(c){
         var i = caisse.indexOf(c);
         return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(0)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(0)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(0)+' €':'—')+'</td></tr>';
       }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune saisie</td></tr>';
     }
   }
 
-  // ── QualiRépar dossiers statut ──
-  var qrCard = document.getElementById('dash-qr-card');
-  var qrEmpty = document.getElementById('dash-qr-empty');
-  if(qrCard){
-    // Lire les dossiers QR depuis Supabase (variable globale qrDossiers si disponible)
-    var dossiers = (typeof qrDossiersList !== 'undefined') ? qrDossiersList : [];
-    var nonConf = dossiers.filter(function(d){return d.statut==='NonConform';});
-    var waiting = dossiers.filter(function(d){return d.statut==='Waiting';});
-    var qrAlerts = document.getElementById('dash-qr-alerts');
-    if(qrAlerts && nonConf.length > 0){
-      qrAlerts.innerHTML = '<div style="background:#fef2f2;border:1px solid var(--red);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--red);font-size:13px;">🔴 <b>'+nonConf.length+' dossier(s) QualiRépar</b> nécessitent une correction → <a href="#" onclick="showPage('qualirepar',null);qrInit();" style="color:var(--red);">Corriger maintenant</a></div>';
-    } else if(qrAlerts){
-      qrAlerts.innerHTML='';
-    }
-    var tbody = qrCard.querySelector('tbody');
-    if(dossiers.length > 0 && tbody){
-      if(qrEmpty) qrEmpty.style.display='none';
-      tbody.innerHTML = dossiers.slice(0,5).map(function(d){
-        var cls = d.statut==='NonConform'?'qrs-nonconf':d.statut==='Accepted'?'qrs-ok':'qrs-waiting';
-        var label = d.statut==='NonConform'?'À corriger':d.statut==='Accepted'?'Remboursé':'En attente';
-        return '<tr class="dash-qr-row"><td style="flex:1;">'+d.nom+'</td><td><span class="dash-qr-status '+cls+'">'+label+'</span></td><td style="color:var(--green);font-weight:700;font-size:12px;">25 €</td></tr>';
-      }).join('');
-    } else {
-      if(qrEmpty) qrEmpty.style.display='block';
-      if(tbody) tbody.innerHTML='';
-    }
+  // ── QualiRépar alertes ──
+  var qrAlerts = document.getElementById('dash-qr-alerts');
+  var dossiers = (typeof qrDossiersList !== 'undefined') ? qrDossiersList : [];
+  var nonConf = dossiers.filter(function(d){return d.statut==='NonConform';});
+  if(qrAlerts){
+    qrAlerts.innerHTML = nonConf.length > 0
+      ? '<div style="background:#fef2f2;border:1px solid var(--red);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--red);font-size:13px;">🔴 <b>'+nonConf.length+' dossier(s) QualiRépar</b> à corriger</div>'
+      : '';
   }
 
-  // ── Masquer cards non-patron ──
-  var dashRepCard2 = document.getElementById('dash-rep-card');
-  var dashClientsCard = document.getElementById('dash-clients-card');
+  // ── Masquer sections employé ──
   if(isEmploye){
-    if(dashRepCard2) dashRepCard2.style.display='none';
-    if(dashClientsCard) dashClientsCard.style.display='none';
-    if(qrCard) qrCard.style.display='none';
-    var bottomGrid = document.getElementById('dash-bottom-grid');
-    if(bottomGrid) bottomGrid.style.gridTemplateColumns='1fr 1fr';
+    ['dash-rep-card','dash-clients-card','dash-qr-card'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.style.display='none';
+    });
   }
 }
 
