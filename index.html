@@ -347,7 +347,6 @@ tr:hover td{background:#fafafa;}
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
-  <div class="mob-menu-item" onclick="showPageMobile('qualirepar','');qrInit();closeMobileMenu()"><span class="mob-menu-icon">🏷️</span>QualiRépar</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
   <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Smartphones</div>
@@ -424,7 +423,6 @@ tr:hover td{background:#fafafa;}
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
-    <div class="nav-item" onclick="showPage('qualirepar',this);qrInit();"><span class="nav-icon">🏷️</span><span>QualiRépar</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; neufs</div>
@@ -518,7 +516,7 @@ tr:hover td{background:#fafafa;}
         <div class="card" id="dash-qr-card">
           <div class="card-header">
             <div class="card-title">🏷️ QualiRépar</div>
-            <button class="btn btn-sm" onclick="showPage('qualirepar',null);qrInit();">Gérer →</button>
+            <button class="btn btn-sm" onclick="showPage('reparations',null);repLoadDossiers();">Voir →</button>
           </div>
           <tbody id="dash-qr-dossiers"></tbody>
           <div id="dash-qr-empty" style="padding:14px;text-align:center;font-size:12px;color:var(--text-muted);">Aucun dossier en cours</div>
@@ -530,7 +528,7 @@ tr:hover td{background:#fafafa;}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;">
         <button class="btn btn-primary" onclick="showPage('reparations',null)">➕ Nouvelle réparation</button>
         <button class="btn" style="border-color:var(--blue);color:var(--blue);" onclick="showPage('phones',null)">📱 Achat smartphone</button>
-        <button class="btn" onclick="showPage('qualirepar',null);qrInit();">🏷️ Dossier QualiRépar</button>
+        <button class="btn" onclick="showPage('reparations',null);repLoadDossiers();repNewDossier();">🏷️ Nouvelle répa QualiRépar</button>
       </div>
     </div>
 
@@ -1161,7 +1159,7 @@ tr:hover td{background:#fafafa;}
         <div class="page-title" style="margin-bottom:0;">Réparations</div>
         <button class="btn btn-primary" onclick="repNewDossier()" style="font-size:14px;padding:10px 18px;">➕ Nouveau dossier</button>
       </div>
-      <div class="page-sub">Parcours complet : Client → Prise en charge → Devis → Facture QualiRépar → Organisme</div>
+      <div class="page-sub">Parcours complet : Client → Prise en charge → Devis → Facture (+Bonus QualiRépar intégré) → Organisme</div>
 
       <!-- ── LISTE DES DOSSIERS ── -->
       <div id="rep-liste-view">
@@ -1262,7 +1260,13 @@ tr:hover td{background:#fafafa;}
                     <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repAutoSave()"></div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <div class="form-group"><label>IMEI / N° Série</label><input type="text" id="dep-imei" placeholder="352099..." oninput="repAutoSave()"></div>
+                    <div class="form-group"><label>IMEI / N° Série</label>
+                      <div style="display:flex;gap:6px;align-items:center;">
+                        <input type="text" id="dep-imei" placeholder="352099..." oninput="repAutoSave();repCheckIMEI(this.value);" style="flex:1;">
+                        <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 OCR</button>
+                      </div>
+                      <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
+                    </div>
                     <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSave()"></div>
                   </div>
                   <div class="form-group"><label>Code / Mot de passe</label>
@@ -8187,6 +8191,11 @@ function repLoadFormFromDossier(){
   var etAlt=document.getElementById('dep-etat-autre'); if(etAlt) etAlt.value=d.etatAutre||'';
   var accAlt=document.getElementById('dep-acc-autre-txt'); if(accAlt) accAlt.value=d.accAutre||'';
   // Step 3 — devis
+  // Vérifier IMEI après chargement
+  setTimeout(function(){
+    var imeiEl=document.getElementById('dep-imei');
+    if(imeiEl&&imeiEl.value) repCheckIMEI(imeiEl.value);
+  },300);
   var dp=document.getElementById('dep-panne'); if(dp) dp.value=d.panne||'';
   var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
   var dr=document.getElementById('dep-date-retour'); if(dr) dr.value=d.dateRetour||'';
@@ -8557,6 +8566,155 @@ function repReprintDepot(id){
 }
 
 function repUpdateFacturePreview(){ /* alias */ }
+
+// ── Vérification IMEI — alerte 6 mois QualiRépar ──────────────
+function repCheckIMEI(imei){
+  imei = (imei||'').trim().replace(/\s/g,'');
+  var alertBox = document.getElementById('rep-imei-alert');
+  if(!alertBox) return;
+
+  if(!imei || imei.length < 10){
+    alertBox.style.display='none';
+    return;
+  }
+
+  // Chercher dans tous les dossiers fermés avec le même IMEI et un bonus QR
+  var sixMoisAgo = new Date();
+  sixMoisAgo.setMonth(sixMoisAgo.getMonth() - 6);
+
+  // Chercher dans bonsDepot (dossiers réparation)
+  var conflits = repDossiers.filter(function(d){
+    if(!d.appareil || !d.appareil.imei) return false;
+    var imeiD = d.appareil.imei.replace(/\s/g,'');
+    if(imeiD !== imei) return false;
+    // Même dossier courant → ignorer
+    if(repDossierCourant && String(d.id) === String(repDossierCourant.id)) return false;
+    return true;
+  });
+
+  // Chercher aussi dans reparations (factures)
+  var facConflits = reparations.filter(function(r){
+    if(!r.imei) return false;
+    if(r.imei.replace(/\s/g,'') !== imei) return false;
+    return true;
+  });
+
+  // QR conflits = réparations avec bonus dans les 6 derniers mois
+  var qrConflits = facConflits.filter(function(r){
+    if(!r.bonusQR) return false;
+    var d = new Date(r.date);
+    return d >= sixMoisAgo;
+  });
+
+  // Alerte si réparation récente avec bonus QR
+  if(qrConflits.length > 0){
+    var r = qrConflits[0];
+    alertBox.style.display = 'block';
+    alertBox.innerHTML =
+      '⚠️ <b>ATTENTION — Bonus QualiRépar déjà utilisé !</b><br>' +
+      'Cet IMEI a bénéficié d\'un bonus de −25€ le <b>' + fmtDate(r.date) + '</b> (facture '+r.numero+').<br>' +
+      '<b>Délai minimum : 6 mois entre deux bonus.</b><br>' +
+      'Prochaine date éligible : <b>' + fmtDateEligible(r.date) + '</b><br>' +
+      '<span style="font-size:11px;color:#991b1b;">Ne pas appliquer le bonus QualiRépar sur cette réparation.</span>';
+    // Décocher et désactiver le bonus QR
+    var cbQR = document.getElementById('rep-qr-actif');
+    if(cbQR){ cbQR.checked = false; cbQR.disabled = true; repToggleQR(); }
+    var blocQR = document.getElementById('rep-qr-bloc');
+    if(blocQR) blocQR.style.display='none';
+    return;
+  }
+
+  // Alerte douce si réparation récente sans bonus (info seulement)
+  var repRecentes = conflits.filter(function(d){
+    var date = new Date(d.date);
+    return date >= sixMoisAgo;
+  });
+  if(repRecentes.length > 0){
+    var dr = repRecentes[0];
+    alertBox.style.display = 'block';
+    alertBox.style.background = '#fef3c7';
+    alertBox.style.borderColor = '#f59e0b';
+    alertBox.style.color = '#92400e';
+    alertBox.innerHTML =
+      'ℹ️ <b>Appareil déjà déposé récemment</b> — '+
+      (dr.client?dr.client.prenom+' '+dr.client.nom:'client')+ ' · ' + fmtDate(dr.date) + ' ('+dr.numero+')<br>' +
+      'Vérifiez si un bonus QualiRépar a déjà été appliqué.';
+    var cbQR = document.getElementById('rep-qr-actif');
+    if(cbQR) cbQR.disabled = false;
+    return;
+  }
+
+  // Aucun conflit
+  alertBox.style.display='none';
+  var cbQR = document.getElementById('rep-qr-actif');
+  if(cbQR) cbQR.disabled = false;
+}
+
+function fmtDateEligible(dateStr){
+  var d = new Date(dateStr);
+  d.setMonth(d.getMonth() + 6);
+  return d.toLocaleDateString('fr-FR');
+}
+
+// ── OCR IMEI depuis caméra (réutilise la fonction Claude Vision) ──
+async function repOCRImei(){
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    // Créer une modal caméra temporaire
+    var modal = document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+    var video = document.createElement('video');
+    video.autoplay = true; video.playsInline = true;
+    video.style.cssText='max-width:100%;max-height:60vh;border-radius:12px;';
+    video.srcObject = stream;
+    var hint = document.createElement('div');
+    hint.style.cssText='color:#fff;font-size:14px;text-align:center;padding:0 20px;';
+    hint.textContent='Pointez vers l\'IMEI ou la plaque signalétique';
+    var btnCapture = document.createElement('button');
+    btnCapture.style.cssText='padding:14px 32px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;';
+    btnCapture.textContent='📸 Capturer';
+    var btnCancel = document.createElement('button');
+    btnCancel.style.cssText='padding:10px 24px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;';
+    btnCancel.textContent='Annuler';
+    modal.appendChild(video);
+    modal.appendChild(hint);
+    modal.appendChild(btnCapture);
+    modal.appendChild(btnCancel);
+    document.body.appendChild(modal);
+
+    btnCancel.onclick = function(){
+      stream.getTracks().forEach(function(t){t.stop();});
+      document.body.removeChild(modal);
+    };
+
+    btnCapture.onclick = async function(){
+      var canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video,0,0);
+      stream.getTracks().forEach(function(t){t.stop();});
+      document.body.removeChild(modal);
+      var dataUrl = canvas.toDataURL('image/jpeg',0.8);
+      hint.textContent = '⏳ Lecture IMEI...';
+      try {
+        var base64 = dataUrl.split(',')[1];
+        var imei = await qrExtractIMEI(base64);
+        if(imei){
+          document.getElementById('dep-imei').value = imei;
+          repAutoSave();
+          repCheckIMEI(imei);
+          showNotif('IMEI lu : '+imei,'success');
+        } else {
+          showNotif('IMEI non trouvé — saisissez-le manuellement','error');
+        }
+      } catch(e){
+        showNotif('Erreur OCR : '+e.message,'error');
+      }
+    };
+  } catch(e){
+    showNotif('Caméra non disponible — saisissez l\'IMEI manuellement','error');
+  }
+}
+
 // ============================================================
 //  FIN MODULE RÉPARATIONS PARCOURS CLIENT
 // ============================================================
