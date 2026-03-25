@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260325_backup_sha256_pin -->
+<!-- v20260325_salaries_pin6 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -237,11 +237,13 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="login-sub">21 Rue Gambetta · Mâcon</div>
 
     <!-- Affichage code -->
-    <div style="display:flex;gap:12px;justify-content:center;margin:20px 0 8px;">
-      <div id="pin-d1" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d2" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d3" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d4" style="width:48px;height:48px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--red);transition:all .15s;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin:20px 0 8px;">
+      <div id="pin-d1" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d2" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d3" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d4" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d5" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d6" style="width:42px;height:42px;border-radius:50%;background:var(--dark3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
     </div>
     <div id="pin-msg" style="height:18px;font-size:12px;color:var(--red);text-align:center;margin-bottom:12px;"></div>
 
@@ -283,6 +285,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
     <div class="nav-item" id="nav-depenses" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
     <div class="nav-item" id="nav-comparaison" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
     <div class="nav-item" id="nav-bilan" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan Annuel</span></div>
+    <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👥</span><span>Salariés</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur Rachat</span></div>
@@ -629,6 +632,110 @@ tr:hover td{background:rgba(255,255,255,0.02);}
         </div>
       </div>
     </div>
+
+  <!-- ═══ PAGE SALARIÉS ═══ -->
+  <div class="page" id="page-salaries">
+    <div class="page-title">👥 Salariés</div>
+    <div class="page-sub">Gestion de la paie — Convention collective N°3251</div>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)">➕ Nouveau salarié</button>
+      <select id="sal-mois-sel" onchange="renderFichesPaie()" style="padding:8px 12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+        <option value="2026-01">Janvier 2026</option>
+        <option value="2026-02" selected>Février 2026</option>
+        <option value="2026-03">Mars 2026</option>
+        <option value="2026-04">Avril 2026</option>
+        <option value="2026-05">Mai 2026</option>
+        <option value="2026-06">Juin 2026</option>
+        <option value="2026-07">Juillet 2026</option>
+        <option value="2026-08">Août 2026</option>
+        <option value="2026-09">Septembre 2026</option>
+        <option value="2026-10">Octobre 2026</option>
+        <option value="2026-11">Novembre 2026</option>
+        <option value="2026-12">Décembre 2026</option>
+      </select>
+      <button class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);" onclick="exportRecapTESE()">📋 Export TESE</button>
+      <button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" onclick="exportPayslipsPDF()">📄 Toutes les fiches PDF</button>
+    </div>
+
+    <!-- Cartes résumé -->
+    <div id="sal-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+    <!-- Liste salariés -->
+    <div id="sal-list" style="display:grid;gap:14px;"></div>
+
+    <!-- Modal Salarié -->
+    <div id="modal-salarie" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto;padding:20px;">
+      <div style="background:var(--dark2);border-radius:14px;max-width:700px;margin:auto;padding:28px;border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div style="font-size:18px;font-weight:700;" id="modal-sal-title">Nouveau salarié</div>
+          <button onclick="fermerModalSalarie()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group"><label>Prénom *</label><input id="sal-prenom" type="text" placeholder="Evan"></div>
+          <div class="form-group"><label>Nom *</label><input id="sal-nom" type="text" placeholder="ANGOSTO"></div>
+          <div class="form-group"><label>N° Sécurité Sociale</label><input id="sal-secu" type="text" placeholder="1 03 02 69 384 052 77"></div>
+          <div class="form-group"><label>Matricule</label><input id="sal-matricule" type="text" placeholder="00004"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>Adresse</label><input id="sal-adresse" type="text" placeholder="289 Route des Goguelins, 69820 Fleurie"></div>
+          <div class="form-group"><label>Date d'entrée</label><input id="sal-entree" type="date"></div>
+          <div class="form-group"><label>Type de contrat</label>
+            <select id="sal-type">
+              <option value="cdi">CDI</option>
+              <option value="cdd">CDD</option>
+              <option value="apprenti">Apprenti</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Catégorie</label>
+            <select id="sal-categorie">
+              <option value="employe">Employé(e)</option>
+              <option value="apprenti">Apprenti</option>
+              <option value="cadre">Cadre</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Niveau / Échelon</label><input id="sal-niveau" type="text" placeholder="Niveau 3 / Vendeur"></div>
+          <div class="form-group"><label>Salaire base brut (€)</label><input id="sal-salaire" type="number" step="0.01" placeholder="1823.07"></div>
+          <div class="form-group"><label>% Apprentissage (si apprenti)</label><input id="sal-apprenti-pct" type="number" step="1" placeholder="51" min="0" max="100"></div>
+          <div class="form-group"><label>Ancienneté (années)</label><input id="sal-anciennete" type="number" step="0.1" placeholder="4"></div>
+          <div class="form-group"><label>Taux PAS (%)</label><input id="sal-pas" type="number" step="0.1" placeholder="0"></div>
+          <div class="form-group"><label>IBAN (virement)</label><input id="sal-iban" type="text" placeholder="FR76..."></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+          <button class="btn" onclick="fermerModalSalarie()">Annuler</button>
+          <button class="btn btn-primary" onclick="sauvegarderSalarie()">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Fiche de paie mensuelle -->
+    <div id="modal-paie" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto;padding:20px;">
+      <div style="background:var(--dark2);border-radius:14px;max-width:750px;margin:auto;padding:28px;border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div style="font-size:18px;font-weight:700;" id="modal-paie-title">Fiche de paie</div>
+          <button onclick="fermerModalPaie()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;">✕</button>
+        </div>
+
+        <!-- Éléments variables -->
+        <div style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:16px;">
+          <div style="font-weight:600;margin-bottom:12px;color:var(--blue);">📝 Éléments variables du mois</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group"><label>Jours CP pris</label><input id="paie-cp-pris" type="number" step="1" min="0" value="0" onchange="calculerPaie()"></div>
+            <div class="form-group"><label>Jours absence (non payés)</label><input id="paie-absences" type="number" step="1" min="0" value="0" onchange="calculerPaie()"></div>
+            <div class="form-group"><label>Heures supplémentaires</label><input id="paie-heures-sup" type="number" step="0.5" min="0" value="0" onchange="calculerPaie()"></div>
+            <div class="form-group"><label>Prime exceptionnelle (€)</label><input id="paie-prime" type="number" step="0.01" min="0" value="0" onchange="calculerPaie()"></div>
+          </div>
+        </div>
+
+        <!-- Résultat calcul -->
+        <div id="paie-calcul-result" style="background:var(--dark3);border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px;"></div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="btn" onclick="fermerModalPaie()">Annuler</button>
+          <button class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);" onclick="genererFichePDF()">📄 Générer PDF</button>
+          <button class="btn btn-primary" onclick="sauvegarderPaie()">💾 Valider ce mois</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="page" id="page-comparaison">
       <div class="page-title">Comparaison Mensuelle</div>
@@ -2065,36 +2172,56 @@ async function loadPinsFromSupabase() {
       var needsMigration = false;
       var migrated = Object.assign({}, data);
 
-      // Migration automatique : si les PINs sont en clair, on les hache et sauvegarde
-      if (data.patron) {
-        if (!isSha256Hash(data.patron)) {
+      // Migration v2 : nouveaux PINs 6 chiffres
+      if (!data.version || data.version !== 'v2') {
+        migrated.patron  = await sha256('160978');
+        migrated.employe = await sha256('555555');
+        migrated.version = 'v2';
+        needsMigration = true;
+      } else {
+        // Migration SHA-256 si encore en clair
+        if (data.patron && !isSha256Hash(data.patron)) {
           migrated.patron = await sha256(data.patron);
           needsMigration = true;
         }
-        _pinCode = migrated.patron;
-      }
-      if (data.employe) {
-        if (!isSha256Hash(data.employe)) {
+        if (data.employe && !isSha256Hash(data.employe)) {
           migrated.employe = await sha256(data.employe);
           needsMigration = true;
         }
-        _pinEmployee = migrated.employe;
       }
+
+      _pinCode     = migrated.patron  || await sha256('160978');
+      _pinEmployee = migrated.employe || await sha256('555555');
 
       if (needsMigration) {
-        // Sauvegarde les hashes dans Supabase (migration silencieuse)
         try {
           await supaFetch('settings', 'PATCH', {value: JSON.stringify(migrated)}, '?key=eq.pins_config');
-          console.info('✅ PINs migrés vers SHA-256 avec succès');
+          console.info('✅ PINs migrés v2 avec succès');
         } catch(e) {
-          console.warn('Migration SHA-256 impossible (droits insuffisants?) :', e);
+          console.warn('Migration PIN impossible :', e);
         }
       }
-
+      _pinsLoaded = true;
+    } else {
+      // Aucun PIN en base → créer avec les nouvelles valeurs
+      var newData = {
+        patron:  await sha256('160978'),
+        employe: await sha256('555555'),
+        version: 'v2'
+      };
+      _pinCode     = newData.patron;
+      _pinEmployee = newData.employe;
+      try {
+        await supaFetch('settings', 'POST', {key:'pins_config', value: JSON.stringify(newData)});
+      } catch(e) {}
       _pinsLoaded = true;
     }
   } catch(e) {
     console.warn('Erreur chargement PINs:', e);
+    // Fallback : hashes des PINs par défaut
+    _pinCode     = await sha256('160978');
+    _pinEmployee = await sha256('555555');
+    _pinsLoaded  = true;
   }
 }
 var _userRole     = 'patron'; // 'patron' ou 'employe'
@@ -2104,7 +2231,7 @@ var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison',
 
 function appliquerRole(){
   var isEmploye = _userRole === 'employe';
-  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-ventes-smart'];
+  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-ventes-smart','nav-salaries'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = isEmploye ? 'none' : '';
@@ -2130,10 +2257,10 @@ function appliquerRole(){
 
 function pinPress(n){
   if(n === '') return;
-  if(_pin.length >= 4) return;
+  if(_pin.length >= 6) return;
   _pin += String(n);
   updatePinDisplay();
-  if(_pin.length === 4) setTimeout(function(){ checkPin(); }, 150);
+  if(_pin.length === 6) setTimeout(function(){ checkPin(); }, 150);
 }
 
 function pinClear(){
@@ -2143,7 +2270,7 @@ function pinClear(){
 }
 
 function updatePinDisplay(){
-  for(var i=1;i<=4;i++){
+  for(var i=1;i<=6;i++){
     var el = document.getElementById('pin-d'+i);
     el.textContent = _pin.length >= i ? '●' : '';
     el.style.borderColor = _pin.length >= i ? 'var(--red)' : 'var(--border)';
@@ -2175,6 +2302,7 @@ async function checkPin(){
         loadBonsCommande();
         loadBonsDepot();
         loadPhonilabData();
+        loadSalariesFromSupabase().then(function(){ renderSalaries(); });
       }, 3000);
     });
     // Écrans, batteries et android = chargement lazy à l'ouverture des onglets uniquement
@@ -3651,6 +3779,487 @@ function renderBilan() {
     '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>QualiRépar</th><th>Jours</th><th>Moy/jour</th></tr></thead>' +
     '<tbody>' + tableRows + '</tbody>';
 }
+
+// ══════════════════════════════════════════════
+// ── MODULE SALARIÉS ──
+// ══════════════════════════════════════════════
+var salaries = [];
+var paieEnCours = null; // salarié sélectionné pour la fiche de paie
+
+// Constantes paie CC 3251
+var SAL_TAUX_HORAIRE    = 12.02;
+var SAL_BASE_HEURES     = 151.67;
+var SAL_SALAIRE_BASE    = 1823.07;
+var SAL_PRIME_ANC_BASE  = 1802.00;
+
+// Taux cotisations (approximatifs CC 3251)
+var COTIS = {
+  mal_pat:        0.1300,  // Maladie patronal ~13%
+  comp_sal:       0.0034,  // Complémentaire II/D salarié
+  comp_pat:       0.0034,
+  at_pat:         0.0109,  // AT/MP patronal
+  ret_plaf_sal:   0.0690,  // Retraite SS plafonnée salarié
+  ret_plaf_pat:   0.0855,
+  ret_deplaf_sal: 0.0040,
+  ret_deplaf_pat: 0.0211,
+  ret_comp_sal:   0.0401,  // Retraite complémentaire T1
+  ret_comp_pat:   0.0601,
+  fam_pat:        0.0525,  // Famille
+  chom_pat:       0.0425,  // Chômage
+  autres_pat:     0.0097,  // Autres contributions
+  csg_ded:        0.0680,  // CSG déductible
+  csg_crds:       0.0290   // CSG/CRDS non déd
+};
+
+async function loadSalariesFromSupabase() {
+  try {
+    var rows = await supaFetch('settings', 'GET', null, '?key=eq.salaries_data&select=value');
+    if (rows && rows.length && rows[0].value) {
+      salaries = JSON.parse(rows[0].value) || [];
+    }
+  } catch(e) {
+    console.warn('Erreur chargement salariés:', e);
+    salaries = [];
+  }
+}
+
+async function saveSalariesToSupabase() {
+  try {
+    var existing = await supaFetch('settings', 'GET', null, '?key=eq.salaries_data');
+    var data = JSON.stringify(salaries);
+    if (existing && existing.length > 0) {
+      await supaFetch('settings', 'PATCH', {value: data}, '?key=eq.salaries_data');
+    } else {
+      await supaFetch('settings', 'POST', {key: 'salaries_data', value: data});
+    }
+  } catch(e) {
+    console.warn('Erreur sauvegarde salariés:', e);
+  }
+}
+
+function renderSalaries() {
+  renderSalSummary();
+  renderSalList();
+}
+
+function renderSalSummary() {
+  var mois = document.getElementById('sal-mois-sel') ? document.getElementById('sal-mois-sel').value : '';
+  var totalBrut = 0, totalNet = 0, totalCout = 0;
+  salaries.forEach(function(s) {
+    var calc = calculerBulletin(s, 0, 0, 0, 0);
+    totalBrut += calc.brutTotal;
+    totalNet  += calc.netAPayer;
+    totalCout += calc.coutEmployeur;
+  });
+  var el = document.getElementById('sal-summary-cards');
+  if (!el) return;
+  el.innerHTML =
+    '<div class="dash-card"><div class="dash-card-label">Salariés</div><div class="dash-card-value">' + salaries.length + '</div></div>' +
+    '<div class="dash-card"><div class="dash-card-label">Masse salariale brute</div><div class="dash-card-value">' + totalBrut.toFixed(0) + ' €</div></div>' +
+    '<div class="dash-card"><div class="dash-card-label">Net à payer total</div><div class="dash-card-value" style="color:var(--green);">' + totalNet.toFixed(0) + ' €</div></div>' +
+    '<div class="dash-card"><div class="dash-card-label">Coût employeur total</div><div class="dash-card-value" style="color:var(--red);">' + totalCout.toFixed(0) + ' €</div></div>';
+}
+
+function renderSalList() {
+  var el = document.getElementById('sal-list');
+  if (!el) return;
+  if (salaries.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Aucun salarié — cliquez ➕ pour commencer</div>';
+    return;
+  }
+  var mois = document.getElementById('sal-mois-sel') ? document.getElementById('sal-mois-sel').value : '';
+  el.innerHTML = salaries.map(function(s, i) {
+    var calc = calculerBulletin(s, 0, 0, 0, 0);
+    var ancreStr = getAncienneteStr(s.dateEntree);
+    var paieValide = s.paies && s.paies[mois];
+    return '<div class="card" style="border-left:4px solid ' + (s.type==='apprenti'?'var(--blue)':'var(--green)') + ';">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:16px;">' + s.prenom + ' ' + s.nom.toUpperCase() + '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' +
+            (s.type==='apprenti'?'🎓 Apprenti':'👔 ' + (s.categorie||'Employé')) + ' · ' + (s.niveau||'') + ' · ' + ancreStr +
+          '</div>' +
+          '<div style="font-size:12px;color:var(--text-muted);">Matricule ' + (s.matricule||'—') + ' · Entré le ' + formatDateFR(s.dateEntree) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-size:18px;font-weight:700;color:var(--green);">' + calc.netAPayer.toFixed(2) + ' €</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);">net · brut ' + calc.brutTotal.toFixed(2) + ' €</div>' +
+          '<div style="font-size:11px;color:var(--red);">coût employeur ' + calc.coutEmployeur.toFixed(2) + ' €</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">' +
+        '<button class="btn btn-sm btn-primary" onclick="ouvrirModalPaie(' + i + ')">💰 Fiche de paie ' + (mois||'') + (paieValide?' ✅':'') + '</button>' +
+        '<button class="btn btn-sm" onclick="ouvrirModalSalarie(' + i + ')" style="border-color:var(--blue);color:var(--blue);">✏️ Modifier</button>' +
+        '<button class="btn btn-sm" onclick="supprimerSalarie(' + i + ')" style="border-color:var(--red);color:var(--red);">🗑️</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function getAncienneteStr(dateEntree) {
+  if (!dateEntree) return '';
+  var d = new Date(dateEntree);
+  var now = new Date();
+  var mois = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+  var ans = Math.floor(mois / 12);
+  var m = mois % 12;
+  if (ans > 0 && m > 0) return ans + ' an' + (ans>1?'s':'') + ' et ' + m + ' mois';
+  if (ans > 0) return ans + ' an' + (ans>1?'s':'');
+  return m + ' mois';
+}
+
+function formatDateFR(d) {
+  if (!d) return '—';
+  var p = d.split('-');
+  if (p.length !== 3) return d;
+  return p[2] + '/' + p[1] + '/' + p[0];
+}
+
+// ── Calcul bulletin de paie ──
+function calculerBulletin(sal, cpPris, absJours, heuresSup, prime) {
+  var isApprenti = sal.type === 'apprenti';
+  var tauxHoraire = SAL_TAUX_HORAIRE;
+  var baseHeures  = SAL_BASE_HEURES;
+
+  // Salaire de base
+  var salBase = parseFloat(sal.salaire) || SAL_SALAIRE_BASE;
+  if (isApprenti) {
+    var pctApprenti = parseFloat(sal.apprentiPct) || 51;
+    tauxHoraire = (pctApprenti / 100) * SAL_TAUX_HORAIRE;
+    salBase = baseHeures * tauxHoraire;
+  }
+
+  // Prime ancienneté (CC 3251)
+  var anc = parseFloat(sal.anciennete) || 0;
+  var txAnc = 0;
+  if (anc >= 15) txAnc = 0.12;
+  else if (anc >= 12) txAnc = 0.10;
+  else if (anc >= 9)  txAnc = 0.08;
+  else if (anc >= 6)  txAnc = 0.06;
+  else if (anc >= 3)  txAnc = 0.04;
+  else if (anc >= 1)  txAnc = 0.03;
+  var primeAnc = isApprenti ? 0 : SAL_PRIME_ANC_BASE * txAnc;
+
+  // Congés payés
+  var tauxJournalier = salBase / 21.67;
+  var absCP     = isApprenti ? (tauxJournalier * (pctApprenti||51) / 100 * cpPris) : (tauxJournalier * cpPris);
+  var indemCP   = absCP; // maintien salaire simplifié
+  var absNP     = tauxJournalier * absJours; // absences non payées
+
+  // Heures supplémentaires (25% de majoration)
+  var montantHSup = heuresSup * tauxHoraire * 1.25;
+
+  // Brut total
+  var brutTotal = salBase + primeAnc - absCP + indemCP + montantHSup + (parseFloat(prime)||0) - (tauxJournalier * absJours);
+  brutTotal = Math.max(0, brutTotal);
+
+  // Assiette CSG (98.5% du brut)
+  var assietteCsg = brutTotal * 0.985;
+
+  var cotSal = 0, cotPat = 0;
+
+  if (isApprenti) {
+    // Apprentis : quasi-exonération
+    cotSal = brutTotal * 0.0034; // Seule complémentaire II/D
+    cotPat = brutTotal * (0.1287 + 0.0034 + 0.0109 + 0.0855 + 0.0211 + 0.0601 + 0.0525 + 0.0425 + 0.0097);
+    // Exonération totale apprenti
+    var exoApprenti = cotPat - (brutTotal * 0.0318);
+    cotPat = cotPat - exoApprenti;
+    cotPat = Math.max(0, cotPat);
+  } else {
+    // Cotisations salariales
+    cotSal += brutTotal * COTIS.comp_sal;
+    cotSal += brutTotal * COTIS.ret_plaf_sal;
+    cotSal += brutTotal * COTIS.ret_deplaf_sal;
+    cotSal += brutTotal * COTIS.ret_comp_sal;
+    cotSal += assietteCsg * COTIS.csg_ded;
+    cotSal += assietteCsg * COTIS.csg_crds;
+
+    // Cotisations patronales
+    cotPat += brutTotal * COTIS.mal_pat;
+    cotPat += brutTotal * COTIS.comp_pat;
+    cotPat += brutTotal * COTIS.at_pat;
+    cotPat += brutTotal * COTIS.ret_plaf_pat;
+    cotPat += brutTotal * COTIS.ret_deplaf_pat;
+    cotPat += brutTotal * COTIS.ret_comp_pat;
+    cotPat += brutTotal * COTIS.fam_pat;
+    cotPat += brutTotal * COTIS.chom_pat;
+    cotPat += brutTotal * COTIS.autres_pat;
+
+    // Réduction Fillon (simplifiée)
+    var smicMensuel = 1801.80;
+    var coeff = (0.3199 / 0.6) * (1.6 * smicMensuel / brutTotal - 1);
+    coeff = Math.min(Math.max(coeff, 0), 0.3199);
+    var reductionFillon = brutTotal * coeff;
+    cotPat = Math.max(0, cotPat - reductionFillon);
+  }
+
+  var netAvantIR = brutTotal - cotSal;
+  var ir = netAvantIR * ((parseFloat(sal.pas)||0) / 100);
+  var netAPayer = netAvantIR - ir;
+  var coutEmployeur = brutTotal + cotPat;
+
+  return {
+    brutTotal:      Math.round(brutTotal * 100) / 100,
+    primeAnc:       Math.round(primeAnc * 100) / 100,
+    cotSal:         Math.round(cotSal * 100) / 100,
+    cotPat:         Math.round(cotPat * 100) / 100,
+    netAvantIR:     Math.round(netAvantIR * 100) / 100,
+    ir:             Math.round(ir * 100) / 100,
+    netAPayer:      Math.round(netAPayer * 100) / 100,
+    coutEmployeur:  Math.round(coutEmployeur * 100) / 100,
+    tauxJournalier: Math.round(tauxJournalier * 100) / 100,
+    heuresSup:      heuresSup,
+    montantHSup:    Math.round(montantHSup * 100) / 100,
+    cpPris:         cpPris,
+    absJours:       absJours,
+    prime:          parseFloat(prime)||0
+  };
+}
+
+// ── Modals Salarié ──
+function ouvrirModalSalarie(idx) {
+  var s = idx !== null ? salaries[idx] : null;
+  document.getElementById('modal-sal-title').textContent = s ? 'Modifier ' + s.prenom + ' ' + s.nom : 'Nouveau salarié';
+  document.getElementById('sal-prenom').value        = s ? s.prenom : '';
+  document.getElementById('sal-nom').value           = s ? s.nom : '';
+  document.getElementById('sal-secu').value          = s ? (s.secu||'') : '';
+  document.getElementById('sal-matricule').value     = s ? (s.matricule||'') : '';
+  document.getElementById('sal-adresse').value       = s ? (s.adresse||'') : '';
+  document.getElementById('sal-entree').value        = s ? (s.dateEntree||'') : '';
+  document.getElementById('sal-type').value          = s ? (s.type||'cdi') : 'cdi';
+  document.getElementById('sal-categorie').value     = s ? (s.categorie||'employe') : 'employe';
+  document.getElementById('sal-niveau').value        = s ? (s.niveau||'') : '';
+  document.getElementById('sal-salaire').value       = s ? (s.salaire||1823.07) : 1823.07;
+  document.getElementById('sal-apprenti-pct').value  = s ? (s.apprentiPct||51) : 51;
+  document.getElementById('sal-anciennete').value    = s ? (s.anciennete||0) : 0;
+  document.getElementById('sal-pas').value           = s ? (s.pas||0) : 0;
+  document.getElementById('sal-iban').value          = s ? (s.iban||'') : '';
+  document.getElementById('modal-salarie').setAttribute('data-idx', idx !== null ? idx : -1);
+  document.getElementById('modal-salarie').style.display = 'block';
+}
+
+function fermerModalSalarie() {
+  document.getElementById('modal-salarie').style.display = 'none';
+}
+
+async function sauvegarderSalarie() {
+  var prenom = document.getElementById('sal-prenom').value.trim();
+  var nom    = document.getElementById('sal-nom').value.trim();
+  if (!prenom || !nom) { showNotif('Prénom et nom obligatoires','error'); return; }
+  var idx = parseInt(document.getElementById('modal-salarie').getAttribute('data-idx'));
+  var obj = {
+    id:          idx >= 0 ? salaries[idx].id : Date.now(),
+    prenom:      prenom,
+    nom:         nom,
+    secu:        document.getElementById('sal-secu').value.trim(),
+    matricule:   document.getElementById('sal-matricule').value.trim(),
+    adresse:     document.getElementById('sal-adresse').value.trim(),
+    dateEntree:  document.getElementById('sal-entree').value,
+    type:        document.getElementById('sal-type').value,
+    categorie:   document.getElementById('sal-categorie').value,
+    niveau:      document.getElementById('sal-niveau').value.trim(),
+    salaire:     parseFloat(document.getElementById('sal-salaire').value)||1823.07,
+    apprentiPct: parseFloat(document.getElementById('sal-apprenti-pct').value)||51,
+    anciennete:  parseFloat(document.getElementById('sal-anciennete').value)||0,
+    pas:         parseFloat(document.getElementById('sal-pas').value)||0,
+    iban:        document.getElementById('sal-iban').value.trim(),
+    paies:       idx >= 0 ? (salaries[idx].paies || {}) : {}
+  };
+  if (idx >= 0) { salaries[idx] = obj; }
+  else { salaries.push(obj); }
+  await saveSalariesToSupabase();
+  fermerModalSalarie();
+  renderSalaries();
+  showNotif('Salarié enregistré ✅','success');
+}
+
+async function supprimerSalarie(idx) {
+  if (!confirm('Supprimer ' + salaries[idx].prenom + ' ' + salaries[idx].nom + ' ?')) return;
+  salaries.splice(idx, 1);
+  await saveSalariesToSupabase();
+  renderSalaries();
+  showNotif('Salarié supprimé','success');
+}
+
+// ── Modal Fiche de paie ──
+function ouvrirModalPaie(idx) {
+  var s = salaries[idx];
+  var mois = document.getElementById('sal-mois-sel').value;
+  paieEnCours = { salIdx: idx, mois: mois };
+  document.getElementById('modal-paie-title').textContent = '💰 Fiche de paie — ' + s.prenom + ' ' + s.nom + ' — ' + mois;
+  // Charger données existantes si déjà saisies
+  var paieExist = s.paies && s.paies[mois];
+  document.getElementById('paie-cp-pris').value    = paieExist ? (paieExist.cpPris||0) : 0;
+  document.getElementById('paie-absences').value   = paieExist ? (paieExist.absJours||0) : 0;
+  document.getElementById('paie-heures-sup').value = paieExist ? (paieExist.heuresSup||0) : 0;
+  document.getElementById('paie-prime').value      = paieExist ? (paieExist.prime||0) : 0;
+  calculerPaie();
+  document.getElementById('modal-paie').style.display = 'block';
+}
+
+function fermerModalPaie() {
+  document.getElementById('modal-paie').style.display = 'none';
+  paieEnCours = null;
+}
+
+function calculerPaie() {
+  if (!paieEnCours) return;
+  var s   = salaries[paieEnCours.salIdx];
+  var cp  = parseFloat(document.getElementById('paie-cp-pris').value)||0;
+  var abs = parseFloat(document.getElementById('paie-absences').value)||0;
+  var hs  = parseFloat(document.getElementById('paie-heures-sup').value)||0;
+  var pr  = parseFloat(document.getElementById('paie-prime').value)||0;
+  var c   = calculerBulletin(s, cp, abs, hs, pr);
+
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Salaire de base (' + SAL_BASE_HEURES + 'h)</td><td style="text-align:right;font-weight:600;">' + (parseFloat(s.salaire)||SAL_SALAIRE_BASE).toFixed(2) + ' €</td></tr>';
+  if (c.primeAnc > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Prime ancienneté</td><td style="text-align:right;">+ ' + c.primeAnc.toFixed(2) + ' €</td></tr>';
+  if (cp > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Congés payés pris (' + cp + 'j)</td><td style="text-align:right;color:var(--orange);">maintien salaire</td></tr>';
+  if (abs > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Absences non payées (' + abs + 'j)</td><td style="text-align:right;color:var(--red);">- ' + (c.tauxJournalier * abs).toFixed(2) + ' €</td></tr>';
+  if (hs > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Heures supp. (' + hs + 'h × 25%)</td><td style="text-align:right;color:var(--green);">+ ' + c.montantHSup.toFixed(2) + ' €</td></tr>';
+  if (c.prime > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Prime exceptionnelle</td><td style="text-align:right;color:var(--green);">+ ' + c.prime.toFixed(2) + ' €</td></tr>';
+  html += '<tr style="border-bottom:2px solid var(--border);font-weight:700;"><td style="padding:8px 0;">TOTAL BRUT</td><td style="text-align:right;font-size:15px;">' + c.brutTotal.toFixed(2) + ' €</td></tr>';
+  html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Cotisations salariales</td><td style="text-align:right;color:var(--red);">- ' + c.cotSal.toFixed(2) + ' €</td></tr>';
+  if (c.ir > 0) html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:5px 0;color:var(--text-muted);">Impôt à la source (' + (s.pas||0) + '%)</td><td style="text-align:right;color:var(--red);">- ' + c.ir.toFixed(2) + ' €</td></tr>';
+  html += '<tr style="font-weight:700;font-size:15px;background:rgba(46,204,113,0.1);"><td style="padding:8px;border-radius:6px 0 0 6px;">NET À PAYER</td><td style="text-align:right;color:var(--green);padding:8px;border-radius:0 6px 6px 0;">' + c.netAPayer.toFixed(2) + ' €</td></tr>';
+  html += '<tr><td style="padding:5px 0;color:var(--text-muted);">Cotisations patronales</td><td style="text-align:right;color:var(--text-muted);">' + c.cotPat.toFixed(2) + ' €</td></tr>';
+  html += '<tr style="font-weight:600;"><td style="padding:5px 0;">Coût total employeur</td><td style="text-align:right;color:var(--red);">' + c.coutEmployeur.toFixed(2) + ' €</td></tr>';
+  html += '</table>';
+  html += '<div style="margin-top:10px;padding:8px;background:rgba(255,165,0,0.1);border-radius:6px;font-size:11px;color:var(--text-muted);">⚠️ Calcul indicatif — réduction Fillon simplifiée. Utilisez ces chiffres comme base pour votre saisie TESE.</div>';
+  document.getElementById('paie-calcul-result').innerHTML = html;
+}
+
+async function sauvegarderPaie() {
+  if (!paieEnCours) return;
+  var s   = salaries[paieEnCours.salIdx];
+  var cp  = parseFloat(document.getElementById('paie-cp-pris').value)||0;
+  var abs = parseFloat(document.getElementById('paie-absences').value)||0;
+  var hs  = parseFloat(document.getElementById('paie-heures-sup').value)||0;
+  var pr  = parseFloat(document.getElementById('paie-prime').value)||0;
+  var c   = calculerBulletin(s, cp, abs, hs, pr);
+  if (!s.paies) s.paies = {};
+  s.paies[paieEnCours.mois] = { cpPris:cp, absJours:abs, heuresSup:hs, prime:pr, calc:c };
+  await saveSalariesToSupabase();
+  fermerModalPaie();
+  renderSalaries();
+  showNotif('Fiche de paie validée ✅','success');
+}
+
+function genererFichePDF() {
+  if (!paieEnCours) return;
+  var s   = salaries[paieEnCours.salIdx];
+  var cp  = parseFloat(document.getElementById('paie-cp-pris').value)||0;
+  var abs = parseFloat(document.getElementById('paie-absences').value)||0;
+  var hs  = parseFloat(document.getElementById('paie-heures-sup').value)||0;
+  var pr  = parseFloat(document.getElementById('paie-prime').value)||0;
+  var c   = calculerBulletin(s, cp, abs, hs, pr);
+  var mois = paieEnCours.mois;
+  var w = window.open('','_blank','width=850,height=1100');
+  w.document.write(genererHTMLFiche(s, c, mois));
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
+function genererHTMLFiche(s, c, mois) {
+  var dateParts = mois.split('-');
+  var moisNoms = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var moisLabel = moisNoms[parseInt(dateParts[1])] + ' ' + dateParts[0];
+  var jours = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]), 0).getDate();
+  return '<!DOCTYPE html><html><head><title>Bulletin de Paie - ' + s.prenom + ' ' + s.nom + '</title>' +
+  '<style>body{font-family:Arial,sans-serif;font-size:11px;color:#1a1a1a;padding:20px;max-width:800px;margin:auto;}' +
+  'table{width:100%;border-collapse:collapse;margin-bottom:8px;}' +
+  'th{background:#f5f5f5;padding:5px 8px;text-align:left;border-bottom:1px solid #ccc;font-size:10px;text-transform:uppercase;}' +
+  'td{padding:4px 8px;border-bottom:1px solid #eee;}' +
+  '.header{display:flex;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #333;}' +
+  '.bold{font-weight:700;}.right{text-align:right;}.green{color:#27ae60;}.red{color:#c0392b;}.gray{color:#777;}' +
+  '.total-row{background:#f0f7ff;font-weight:700;font-size:12px;}' +
+  '.net-row{background:#e8f8f0;font-weight:700;font-size:13px;}' +
+  '@media print{body{padding:10px;}}' +
+  '</style></head><body>' +
+  '<div class="header">' +
+    '<div><div class="bold" style="font-size:14px;">SARL SOLUTION PHONE</div>' +
+    '<div>21 Rue Gambetta — 71000 MÂCON</div>' +
+    '<div>SIRET : 80104478500021 — APE : 4719B</div>' +
+    '<div>CC N°3251 — Commerces Détail non alimentaires</div></div>' +
+    '<div style="text-align:right;"><div class="bold" style="font-size:13px;">BULLETIN DE PAIE</div>' +
+    '<div>' + moisLabel + '</div>' +
+    '<div class="gray">Payé le ' + jours + '/' + dateParts[1] + '/' + dateParts[0] + ' par virement</div></div>' +
+  '</div>' +
+  '<table style="margin-bottom:14px;"><tr><td><span class="bold">' + s.prenom + ' ' + s.nom.toUpperCase() + '</span><br>' +
+    '<span class="gray">' + (s.adresse||'') + '</span></td>' +
+    '<td class="right"><span class="gray">Matricule : </span>' + (s.matricule||'—') + '<br>' +
+    '<span class="gray">Entrée : </span>' + formatDateFR(s.dateEntree) + '<br>' +
+    '<span class="gray">N° Sécu : </span>' + (s.secu||'—') + '</td>' +
+    '<td class="right"><span class="gray">Emploi : </span>' + (s.niveau||'Vendeur') + '<br>' +
+    '<span class="gray">Catégorie : </span>' + (s.categorie||'Employé(e)') + '<br>' +
+    '<span class="gray">Ancienneté : </span>' + getAncienneteStr(s.dateEntree) + '</td></tr></table>' +
+  '<table><thead><tr><th>Désignation</th><th>Base</th><th>Taux</th><th class="right">Montant</th></tr></thead><tbody>' +
+    '<tr><td>Salaire de base</td><td>' + SAL_BASE_HEURES + ' h</td><td>' + (s.type==='apprenti'?((s.apprentiPct||51)/100*SAL_TAUX_HORAIRE).toFixed(4):SAL_TAUX_HORAIRE) + '</td><td class="right">' + (parseFloat(s.salaire)||SAL_SALAIRE_BASE).toFixed(2) + ' €</td></tr>' +
+    (c.primeAnc>0?'<tr><td>Prime d\'ancienneté CC3251</td><td>' + SAL_PRIME_ANC_BASE + '</td><td>' + (c.primeAnc/SAL_PRIME_ANC_BASE*100).toFixed(1)+'%</td><td class="right">'+c.primeAnc.toFixed(2)+' €</td></tr>':'') +
+    (c.cpPris>0?'<tr><td>Congés payés pris (' + c.cpPris + 'j) — maintien</td><td></td><td></td><td class="right" style="color:#e67e22;">inclus</td></tr>':'') +
+    (c.absJours>0?'<tr><td>Absences (' + c.absJours + 'j)</td><td></td><td></td><td class="right red">- '+(c.tauxJournalier*c.absJours).toFixed(2)+' €</td></tr>':'') +
+    (c.heuresSup>0?'<tr><td>Heures supplémentaires (' + c.heuresSup + 'h)</td><td></td><td>× 1.25</td><td class="right green">+ '+c.montantHSup.toFixed(2)+' €</td></tr>':'') +
+    (c.prime>0?'<tr><td>Prime exceptionnelle</td><td></td><td></td><td class="right green">+ '+c.prime.toFixed(2)+' €</td></tr>':'') +
+    '<tr class="total-row"><td colspan="3">TOTAL BRUT</td><td class="right">'+c.brutTotal.toFixed(2)+' €</td></tr>' +
+  '</tbody></table>' +
+  '<table style="margin-top:10px;"><thead><tr><th>Cotisations et contributions</th><th class="right">Part salarié</th><th class="right">Part employeur</th></tr></thead><tbody>' +
+    '<tr><td>Sécurité Sociale (maladie, retraite, famille...)</td><td class="right red">'+c.cotSal.toFixed(2)+' €</td><td class="right gray">'+c.cotPat.toFixed(2)+' €</td></tr>' +
+    (c.ir>0?'<tr><td>Impôt sur le revenu (PAS ' + (s.pas||0) + '%)</td><td class="right red">'+c.ir.toFixed(2)+' €</td><td></td></tr>':'') +
+    '<tr class="net-row"><td colspan="1">NET À PAYER AU SALARIÉ</td><td class="right" style="color:#27ae60;font-size:14px;">'+c.netAPayer.toFixed(2)+' €</td><td></td></tr>' +
+    '<tr><td>Coût total employeur</td><td></td><td class="right red bold">'+c.coutEmployeur.toFixed(2)+' €</td></tr>' +
+  '</tbody></table>' +
+  '<div style="margin-top:16px;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:8px;">Dans votre intérêt, conservez ce bulletin de salaire sans limitation de durée. Calculs indicatifs basés sur CC N°3251.</div>' +
+  '</body></html>';
+}
+
+function exportPayslipsPDF() {
+  var mois = document.getElementById('sal-mois-sel').value;
+  salaries.forEach(function(s) {
+    var paieData = s.paies && s.paies[mois];
+    var cp  = paieData ? (paieData.cpPris||0) : 0;
+    var abs = paieData ? (paieData.absJours||0) : 0;
+    var hs  = paieData ? (paieData.heuresSup||0) : 0;
+    var pr  = paieData ? (paieData.prime||0) : 0;
+    var c   = calculerBulletin(s, cp, abs, hs, pr);
+    var w   = window.open('','_blank','width=850,height=1100');
+    if (w) { w.document.write(genererHTMLFiche(s, c, mois)); w.document.close(); setTimeout(function(){ w.print(); }, 500); }
+  });
+}
+
+function exportRecapTESE() {
+  var mois = document.getElementById('sal-mois-sel').value;
+  var lignes = ['RÉCAPITULATIF PAIE POUR TESE — ' + mois, '','NOM;PRENOM;BRUT;COT.SAL;NET;COT.PAT;COUT EMPLOYEUR;CP PRIS;ABS'];
+  salaries.forEach(function(s) {
+    var paieData = s.paies && s.paies[mois];
+    var cp  = paieData ? (paieData.cpPris||0) : 0;
+    var abs = paieData ? (paieData.absJours||0) : 0;
+    var hs  = paieData ? (paieData.heuresSup||0) : 0;
+    var pr  = paieData ? (paieData.prime||0) : 0;
+    var c   = calculerBulletin(s, cp, abs, hs, pr);
+    lignes.push([s.nom,s.prenom,c.brutTotal,c.cotSal,c.netAPayer,c.cotPat,c.coutEmployeur,cp,abs].join(';'));
+  });
+  var total = salaries.reduce(function(acc, s) {
+    var pd = s.paies && s.paies[mois];
+    var c = calculerBulletin(s, pd?(pd.cpPris||0):0, pd?(pd.absJours||0):0, pd?(pd.heuresSup||0):0, pd?(pd.prime||0):0);
+    acc.brut += c.brutTotal; acc.net += c.netAPayer; acc.cout += c.coutEmployeur;
+    return acc;
+  }, {brut:0, net:0, cout:0});
+  lignes.push('');
+  lignes.push('TOTAUX;;'+total.brut.toFixed(2)+';;'+total.net.toFixed(2)+';;'+total.cout.toFixed(2));
+  var blob = new Blob([lignes.join('\n')], {type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'TESE_' + mois + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showNotif('Export TESE téléchargé ✅','success');
+}
+
+function renderFichesPaie() { renderSalaries(); }
+
+// ── FIN MODULE SALARIÉS ──
 
 // ── BACKUP COMPLET SUPABASE ──
 async function backupComplet() {
