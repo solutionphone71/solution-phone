@@ -8508,9 +8508,9 @@ function repStep4Next(){
     var panne  = (document.getElementById('rep-qr-panne')||{value:''}).value;
     if(!marque || !panne){ showNotif('Sélectionnez la marque et le type de panne pour le bonus QR','error'); return; }
     var imei = repDossierCourant && repDossierCourant.appareil && repDossierCourant.appareil.imei;
-    if(!imei){ showNotif('L'IMEI est obligatoire pour le bonus QualiRépar — retournez à l'étape 2','error'); return; }
+    if(!imei){ showNotif('IMEI obligatoire pour le bonus QR — retournez à l\'étape 2','error'); return; }
     var cp = repDossierCourant && repDossierCourant.client && repDossierCourant.client.cp;
-    if(!cp){ showNotif('Le code postal est obligatoire pour le bonus QualiRépar — retournez à l'étape 1','error'); return; }
+    if(!cp){ showNotif('Code postal obligatoire pour le bonus QR — retournez à l\'étape 1','error'); return; }
   }
   repUpdateChecklist();
   repGoStep(5);
