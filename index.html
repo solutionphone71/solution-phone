@@ -962,8 +962,9 @@ tr:hover td{background:#fafafa;}
               <div class="card-header"><div class="card-title">👤 Informations client</div></div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <div class="form-group"><label>Nom *</label><input type="text" id="dep-nom" placeholder="Dupont"></div>
-                  <div class="form-group"><label>Prénom *</label><input type="text" id="dep-prenom" placeholder="Jean"></div>
+                  <div class="form-group"><label>Civilité *</label><select id="dep-civilite" style="width:100%;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;" oninput="checkBonDepotReady()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
+                  <div class="form-group"><label>Nom *</label><input type="text" id="dep-nom" placeholder="Dupont" oninput="checkBonDepotReady()"></div>
+                  <div class="form-group"><label>Prénom *</label><input type="text" id="dep-prenom" placeholder="Jean" oninput="checkBonDepotReady()"></div>
                 </div>
                 <div class="form-group"><label>Téléphone *</label><input type="tel" id="dep-tel" placeholder="06 XX XX XX XX"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="dep-email" placeholder="client@gmail.com"></div>
@@ -1920,6 +1921,7 @@ tr:hover td{background:#fafafa;}
         </div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group" style="grid-column:1/-1"><label>Civilité *</label><select id="cl-civilite-tablet" style="width:100%;padding:12px 16px;background:#fff;border:2px solid #e2e8f0;border-radius:12px;color:#1a202c;font-size:20px;" oninput="qrClientValidate()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
             <div class="form-group"><label>Prénom *</label>
               <input type="text" id="cl-prenom-tablet" placeholder="Jean" autocomplete="given-name" oninput="qrClientValidate()"></div>
             <div class="form-group"><label>Nom *</label>
@@ -1972,6 +1974,7 @@ tr:hover td{background:#fafafa;}
           <div class="qr-panel">
             <div class="qr-panel-title">👤 Coordonnées client</div>
             <div class="form-grid" style="gap:12px;">
+              <div class="form-group"><label>Civilité *</label><select id="qr-civilite" style="width:100%;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;" oninput="qrValidStep1()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
               <div class="form-group"><label>Prénom *</label><input type="text" id="qr-prenom" placeholder="Jean" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Nom *</label><input type="text" id="qr-nom" placeholder="Dupont" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Téléphone *</label><input type="tel" id="qr-tel" placeholder="06 XX XX XX XX" oninput="qrValidStep1()"></div>
@@ -2252,6 +2255,7 @@ tr:hover td{background:#fafafa;}
   <div class="modal">
     <div class="modal-title">➕ Nouveau client</div>
     <div class="form-grid">
+      <div class="form-group"><label>Civilité</label><select id="cl-civilite" style="width:100%;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"><option value="">--</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
       <div class="form-group"><label>Prénom *</label><input type="text" id="cl-prenom" placeholder="ex: Jean"></div>
       <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Dupont"></div>
       <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
@@ -8045,21 +8049,26 @@ function getDepotAccessoires(){
   return list;
 }
 
+function checkBonDepotReady(){
+  // Just triggers form field updates - actual validation is in genererBonDepot
+}
+
 function genererBonDepot(){
+  var civilite = document.getElementById('dep-civilite').value;
   var nom    = document.getElementById('dep-nom').value.trim();
   var prenom = document.getElementById('dep-prenom').value.trim();
   var tel    = document.getElementById('dep-tel').value.trim();
   var marque = document.getElementById('dep-marque').value;
   var modele = document.getElementById('dep-modele').value.trim();
   var panne  = document.getElementById('dep-panne').value.trim();
-  if(!nom || !tel || !marque || !modele || !panne){
-    showNotif('Remplissez les champs obligatoires *','error'); return;
+  if(!civilite || !nom || !tel || !marque || !modele || !panne){
+    showNotif('Remplissez les champs obligatoires * (y compris la civilité)','error'); return;
   }
   var num = 'DEP-'+new Date().getFullYear()+'-'+String(bonsDepot.length+1).padStart(3,'0');
   var depot = {
     id: Date.now(), numero: num,
     date: new Date().toISOString().split('T')[0],
-    client: { nom, prenom, tel,
+    client: { civilite, nom, prenom, tel,
       email: document.getElementById('dep-email').value.trim()
     },
     appareil: {
@@ -8081,6 +8090,7 @@ function genererBonDepot(){
   renderBonsDepot();
   printBonDepot(depot);
   // Reset
+  document.getElementById('dep-civilite').value='';
   ['dep-nom','dep-prenom','dep-tel','dep-email','dep-imei','dep-couleur','dep-code','dep-panne','dep-devis','dep-date-retour','dep-obs','dep-etat-autre','dep-acc-autre-txt'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('dep-marque').value='';
   document.getElementById('dep-modele').value='';
@@ -8911,6 +8921,7 @@ function qrInit() {
    'qr-modele','qr-imei','qr-prix-ht'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.value = '';
   });
+  var selCiv = document.getElementById('qr-civilite'); if(selCiv) selCiv.value = '';
   var sel = document.getElementById('qr-type-rep'); if(sel) sel.value = '';
   var imgPrev = document.getElementById('qr-imei-preview'); if(imgPrev){imgPrev.style.display='none';imgPrev.src='';}
   var ocrSt = document.getElementById('qr-ocr-status'); if(ocrSt) ocrSt.style.display='none';
@@ -9002,7 +9013,7 @@ function qrGoStep(n) {
 function qrValidStep1() {
   var btn = document.getElementById('qr-btn-1');
   if(!btn) return;
-  var ok = ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse'].every(function(id){
+  var ok = document.getElementById('qr-civilite').value !== '' && ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse'].every(function(id){
     var el = document.getElementById(id); return el && el.value.trim().length > 0;
   });
   btn.disabled = !ok;
@@ -9427,10 +9438,16 @@ async function qrSendAgora() {
 // ============================================================
 
 function qrOpenClientMode() {
+  // Reset form tablet
+  ['cl-prenom-tablet','cl-nom-tablet','cl-tel-tablet','cl-email-tablet','cl-panne-tablet','cl-appareil-tablet'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  var sel = document.getElementById('cl-civilite-tablet'); if(sel) sel.value = '';
   document.getElementById('qr-client-screen').style.display = 'block';
   document.body.style.overflow = 'hidden';
+  qrClientValidate();
   setTimeout(function(){
-    var el = document.getElementById('cl-prenom-tablet');
+    var el = document.getElementById('cl-civilite-tablet');
     if(el) el.focus();
   }, 300);
 }
@@ -9438,21 +9455,23 @@ function qrOpenClientMode() {
 function qrClientValidate() {
   var btn = document.getElementById('qr-client-validate-btn');
   if(!btn) return;
+  var civilite = (document.getElementById('cl-civilite-tablet')||{}).value||'';
   var prenom   = (document.getElementById('cl-prenom-tablet')||{}).value||'';
   var nom      = (document.getElementById('cl-nom-tablet')||{}).value||'';
   var tel      = (document.getElementById('cl-tel-tablet')||{}).value||'';
   var appareil = (document.getElementById('cl-appareil-tablet')||{}).value||'';
-  btn.disabled = !(prenom.trim() && nom.trim() && tel.trim() && appareil.trim());
+  btn.disabled = !(civilite && prenom.trim() && nom.trim() && tel.trim() && appareil.trim());
 }
 
 function qrClientSubmit() {
+  var civilite = document.getElementById('cl-civilite-tablet').value;
   var prenom   = document.getElementById('cl-prenom-tablet').value.trim();
   var nom      = document.getElementById('cl-nom-tablet').value.trim();
   var tel      = document.getElementById('cl-tel-tablet').value.trim();
   var email    = document.getElementById('cl-email-tablet').value.trim();
   var panne    = document.getElementById('cl-panne-tablet').value.trim();
   var appareil = document.getElementById('cl-appareil-tablet').value.trim();
-  window._qrClientPrefill = { prenom:prenom, nom:nom, tel:tel, email:email, panne:panne, appareil:appareil };
+  window._qrClientPrefill = { civilite:civilite, prenom:prenom, nom:nom, tel:tel, email:email, panne:panne, appareil:appareil };
   document.getElementById('qr-client-screen').style.display = 'none';
   var handover = document.getElementById('qr-handover-screen');
   handover.style.display = 'flex';
@@ -9469,6 +9488,11 @@ function qrTechnicienMode() {
     'qr-email':   d.email,
     'qr-modele':  d.appareil
   };
+  // Pré-remplir la civilité
+  if(d.civilite) {
+    var selCiv = document.getElementById('qr-civilite');
+    if(selCiv) selCiv.value = d.civilite;
+  }
   Object.keys(map).forEach(function(id){
     if(map[id]){ var el=document.getElementById(id); if(el) el.value=map[id]; }
   });
