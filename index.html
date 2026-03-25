@@ -80,6 +80,10 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 .rep-s-qr{background:#fef2f2;color:var(--red);}
 .rep-s-cloture{background:#f1f5f9;color:var(--text-muted);}
 
+.rep-desc-pill{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:20px;background:var(--color-background-secondary,#f8fafc);color:var(--text,#1a1a1a);cursor:pointer;transition:.1s;white-space:nowrap;}
+.rep-desc-pill:hover{background:var(--red);color:#fff;border-color:var(--red);}
+
+
 .dash-qr-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
 .dash-qr-row:last-child{border-bottom:none;}
 .dash-qr-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
@@ -1314,37 +1318,90 @@ tr:hover td{background:#fafafa;}
         <!-- ══ ÉTAPE 3 : DEVIS ══ -->
         <div id="rep-step-3" class="rep-step-content" style="display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-            <div class="card">
-              <div class="card-header"><div class="card-title">📝 Panne & Devis</div></div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div class="form-group"><label>Panne décrite par le client *</label>
-                  <textarea id="dep-panne" rows="3" placeholder="ex : L'écran est fissuré suite à une chute, le tactile ne répond plus..." oninput="repAutoSave()"></textarea>
+
+            <!-- Colonne gauche -->
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div class="card">
+                <div class="card-header"><div class="card-title">📝 Panne & Devis</div></div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Panne décrite par le client *</label>
+                    <textarea id="dep-panne" rows="3" placeholder="ex : L'écran est fissuré suite à une chute, le tactile ne répond plus..." oninput="repAutoSave();repCheckEligibilite()"></textarea>
+                  </div>
+
+                  <!-- Alerte inéligibilité -->
+                  <div id="rep-inelig-alert" style="display:none;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
+
+                  <div class="form-group"><label>Pièce à commander</label>
+                    <select id="dep-piece" oninput="repAutoSave()">
+                      <option value="">— Aucune —</option>
+                      <option>Écran</option><option>Batterie</option><option>Vitre arrière</option>
+                      <option>Connecteur de charge</option><option>Caméra arrière</option>
+                      <option>Caméra avant</option><option>Bouton power</option>
+                      <option>Haut-parleur</option><option>Micro</option><option>Autre</option>
+                    </select></div>
+
+                  <!-- Décomposition HT obligatoire pour QR -->
+                  <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;">
+                    <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
+                      Décomposition HT — obligatoire QualiRépar
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                      <div class="form-group" style="margin-bottom:0;"><label>Main d'œuvre HT (€)</label>
+                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;"><label>Pièces détachées HT (€)</label>
+                        <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
+                      </div>
+                    </div>
+                    <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#0369a1;"></div>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label>Total devis TTC (€) <span style="color:var(--text-muted);font-size:11px;">auto-calculé</span></label>
+                      <input type="number" id="dep-devis" placeholder="0.00" step="0.01" oninput="repAutoSave()" style="background:#f8fafc;">
+                    </div>
+                    <div class="form-group"><label>Date de restitution prévue</label>
+                      <input type="date" id="dep-date-retour" oninput="repAutoSave()">
+                    </div>
+                  </div>
+                  <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
+                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSave()"></textarea>
+                  </div>
                 </div>
-                <div class="form-group"><label>Bon de commande pièce</label>
-                  <select id="dep-piece" oninput="repAutoSave()">
-                    <option value="">— Aucune —</option>
-                    <option>Écran</option><option>Batterie</option><option>Vitre arrière</option>
-                    <option>Connecteur de charge</option><option>Caméra arrière</option>
-                    <option>Caméra avant</option><option>Bouton power</option>
-                    <option>Haut-parleur</option><option>Micro</option><option>Autre</option>
-                  </select></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <div class="form-group"><label>Devis estimatif TTC (€)</label><input type="number" id="dep-devis" placeholder="0.00" step="0.01" oninput="repAutoSave()"></div>
-                  <div class="form-group"><label>Date de restitution prévue</label><input type="date" id="dep-date-retour" oninput="repAutoSave()"></div>
+              </div>
+
+              <!-- Signature électronique -->
+              <div class="card" style="border:1.5px solid var(--green);">
+                <div class="card-header" style="background:#f0fdf4;">
+                  <div class="card-title">✍️ Signature client — Attestation hors garantie</div>
                 </div>
-                <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
-                  <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSave()"></textarea>
+                <div style="padding:0 0 4px;">
+                  <div style="font-size:12px;color:var(--text-muted);padding:10px 14px;line-height:1.6;background:#f8fafc;border-bottom:1px solid var(--border);">
+                    Je soussigné(e) <b id="rep-sig-nom-display">—</b>, certifie que l'appareil confié à Solution Phone est <b>hors garantie</b> (fabricant et commerciale) et consent à la réparation et à l'application du Bonus Réparation QualiRépar.
+                  </div>
+                  <div style="padding:10px 14px;">
+                    <canvas id="rep-sig-canvas" width="380" height="100"
+                      style="border:1.5px solid var(--border);border-radius:8px;background:#fff;touch-action:none;display:block;width:100%;cursor:crosshair;"></canvas>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                      <div id="rep-sig-hint" style="font-size:12px;color:var(--text-muted);">← Signez dans le cadre ci-dessus →</div>
+                      <button type="button" class="btn btn-sm" onclick="repClearSig()">🗑️ Effacer</button>
+                    </div>
+                    <div id="rep-sig-ok" style="display:none;margin-top:6px;font-size:12px;color:var(--green);font-weight:700;">✅ Signature enregistrée</div>
+                  </div>
                 </div>
               </div>
             </div>
+
+            <!-- Colonne droite : récap -->
             <div class="card" id="rep-devis-preview-card">
               <div class="card-header">
-                <div class="card-title">Aperçu bon de dépôt</div>
-                <button class="btn btn-primary btn-sm" onclick="repImprimerDepot()">🖨️ Imprimer</button>
+                <div class="card-title">Aperçu dossier</div>
+                <button class="btn btn-primary btn-sm" onclick="repImprimerDepot()">🖨️ Imprimer bon de dépôt</button>
               </div>
               <div id="rep-devis-recap" style="font-size:13px;line-height:1.8;"></div>
             </div>
           </div>
+
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
             <button class="btn" onclick="repGoStep(2)">← Retour</button>
             <div style="display:flex;gap:10px;">
@@ -1375,8 +1432,25 @@ tr:hover td{background:#fafafa;}
                       <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Modèle abrégé (ip = iPhone)</div>
                     </div>
                   </div>
-                  <div class="form-group"><label>Description réparation *</label>
-                    <input type="text" id="r-description" placeholder="ex: Remplacement écran" oninput="repUpdateFacturePreview()"></div>
+                  <div class="form-group">
+                    <label>Description réparation *
+                      <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:6px;">Doit mentionner la pièce remplacée</span>
+                    </label>
+                    <input type="text" id="r-description" placeholder="ex: Remplacement écran iPhone 13 Pro" oninput="repUpdateFacturePreview()" style="margin-bottom:6px;">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement écran')">Écran</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement batterie')">Batterie</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement connecteur de charge')">Connecteur</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement haut-parleur')">Haut-parleur</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement micro')">Micro</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement caméra')">Caméra</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement vitre arrière')">Vitre arrière</button>
+                      <button type="button" class="rep-desc-pill" onclick="repSetDesc('Remplacement bouton')">Bouton</button>
+                    </div>
+                    <div style="font-size:11px;color:var(--warning);margin-top:5px;line-height:1.5;">
+                      ⚠️ Toujours écrire <b>Remplacement + la pièce</b> (ex: "Remplacement écran") — requis par Ecosystem/Ecologic pour le remboursement
+                    </div>
+                  </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Prix TTC (€) *</label>
                       <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview()"></div>
@@ -8679,6 +8753,19 @@ function repSupprimerDossier(id){
   try{supaFetch('bons_depot','DELETE',null,'?id=eq.'+id);}catch(e){}
   renderRepListe();
   showNotif('Dossier supprimé','success');
+}
+
+
+function repSetDesc(val){
+  var el = document.getElementById('r-description');
+  if(!el) return;
+  // Ajouter le modèle si connu
+  var modele = '';
+  if(repDossierCourant && repDossierCourant.appareil)
+    modele = ((repDossierCourant.appareil.marque||'')+' '+(repDossierCourant.appareil.modele||'')).trim();
+  el.value = val + (modele ? ' ' + modele : '');
+  repUpdateFacturePreview();
+  repUpdateChecklist && repUpdateChecklist();
 }
 
 function repReprintDepot(id){
