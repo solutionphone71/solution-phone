@@ -8469,7 +8469,11 @@ function repUpdateStatutBadge(){
   var badge = document.getElementById('rep-dossier-statut-badge');
   if(!badge||!repDossierCourant) return;
   var s = REP_STATUTS[repDossierCourant.statut||'depot'];
-  badge.innerHTML = '<span class="rep-status-badge '+(s?s.cls:'')+'">'+(s?s.label:'')+'</span>';
+  badge.innerHTML = '';
+  var span = document.createElement('span');
+  span.className = 'rep-status-badge ' + (s ? s.cls : '');
+  span.textContent = s ? s.label : '';
+  badge.appendChild(span);
 }
 
 function repStep1Next(){
