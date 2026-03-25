@@ -481,7 +481,7 @@ tr:hover td{background:#fafafa;}
             <div class="form-group"><label>Smartphone</label>
               <select id="f-phone" onchange="updateFacturePreview()"><option value="">-- Sélectionner --</option></select></div>
             <div class="form-group"><label>Nom client</label><input type="text" id="f-client-nom" placeholder="ex: Jean Dupont" oninput="updateFacturePreview()"></div>
-            <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateFacturePreview()"></div>
+            <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateFacturePreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="f-client-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateFacturePreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="f-client-ville" placeholder="Mâcon" oninput="updateFacturePreview()"></div></div>
             <div class="form-group"><label>Email client</label><input type="email" id="f-client-email" placeholder="ex: client@gmail.com"></div>
             <button class="btn btn-primary" onclick="genererFacture()">🧾 Générer la facture</button>
           </div>
@@ -659,7 +659,7 @@ tr:hover td{background:#fafafa;}
           <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group"><label>Client *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
-            <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Mâcon" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
             <div class="form-group"><label>Appareil</label><input type="text" id="dv-appareil" placeholder="ex: iPhone 13" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Prestation *</label><input type="text" id="dv-prestation" placeholder="ex: Remplacement écran" oninput="updateDevisPreview()"></div>
@@ -780,7 +780,7 @@ tr:hover td{background:#fafafa;}
           <div class="form-group"><label>Nom *</label><input id="sal-nom" type="text" placeholder="ANGOSTO"></div>
           <div class="form-group"><label>N° Sécurité Sociale</label><input id="sal-secu" type="text" placeholder="1 03 02 69 384 052 77"></div>
           <div class="form-group"><label>Matricule</label><input id="sal-matricule" type="text" placeholder="00004"></div>
-          <div class="form-group" style="grid-column:1/-1;"><label>Adresse</label><input id="sal-adresse" type="text" placeholder="289 Route des Goguelins, 69820 Fleurie"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>Adresse</label><input id="sal-adresse" type="text" placeholder="289 Route des Goguelins"></div><div style="grid-column:1/-1;display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="sal-cp" placeholder="69820" maxlength="5" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="sal-ville" placeholder="Fleurie"></div></div>
           <div class="form-group"><label>Date d'entrée</label><input id="sal-entree" type="date"></div>
           <div class="form-group"><label>Type de contrat</label>
             <select id="sal-type">
@@ -1075,7 +1075,7 @@ tr:hover td{background:#fafafa;}
           <div class="card-header"><div class="card-title">🔧 Nouvelle facture réparation</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group"><label>Client *</label><input type="text" id="r-client-nom" placeholder="ex: Jean Dupont" oninput="updateRepPreview()"></div>
-            <div class="form-group"><label>Adresse client</label><input type="text" id="r-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateRepPreview()"></div>
+            <div class="form-group"><label>Adresse client</label><input type="text" id="r-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateRepPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="r-client-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateRepPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="r-client-ville" placeholder="Mâcon" oninput="updateRepPreview()"></div></div>
             <div class="form-group"><label>Email client</label><input type="email" id="r-client-email" placeholder="ex: client@gmail.com"></div>
             <div class="form-group"><label>Appareil *</label><input type="text" id="r-appareil" placeholder="ex: iPhone 13 Pro" oninput="updateRepPreview()"></div>
             <div class="form-group"><label>IMEI / N° Série</label><input type="text" id="r-imei" placeholder="ex: 354612..." oninput="updateRepPreview()"></div>
@@ -1979,7 +1979,7 @@ tr:hover td{background:#fafafa;}
               <div class="form-group"><label>Nom *</label><input type="text" id="qr-nom" placeholder="Dupont" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Téléphone *</label><input type="tel" id="qr-tel" placeholder="06 XX XX XX XX" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Email *</label><input type="email" id="qr-email" placeholder="client@gmail.com" oninput="qrValidStep1()"></div>
-              <div class="form-group" style="grid-column:1/-1;"><label>Adresse *</label><input type="text" id="qr-adresse" placeholder="12 rue de la Paix, 71000 Mâcon" oninput="qrValidStep1()"></div>
+              <div class="form-group" style="grid-column:1/-1;"><label>Adresse *</label><input type="text" id="qr-adresse" placeholder="12 rue de la Paix" oninput="qrValidStep1()"></div><div style="grid-column:1/-1;display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal *</label><input type="text" id="qr-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="qrValidStep1()"></div><div class="form-group"><label>Ville *</label><input type="text" id="qr-ville" placeholder="Mâcon" oninput="qrValidStep1()"></div></div>
             </div>
           </div>
           <button class="btn btn-primary" id="qr-btn-1" onclick="qrGoStep(2)" disabled style="width:100%;padding:14px;font-size:15px;">Continuer → Appareil</button>
@@ -2260,7 +2260,7 @@ tr:hover td{background:#fafafa;}
       <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Dupont"></div>
       <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
       <div class="form-group"><label>Email</label><input type="email" id="cl-email" placeholder="ex: client@gmail.com"></div>
-      <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div>
+      <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="cl-cp" placeholder="71000" maxlength="5" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="cl-ville" placeholder="Mâcon"></div></div>
     </div>
     <div class="form-group" style="margin-top:10px;"><label>Notes</label>
       <textarea id="cl-notes" placeholder="Notes sur ce client..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
@@ -2492,6 +2492,26 @@ async function saveCaisseRow(row) {
   var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
   if(ex&&ex.length>0){await supaFetch('caisse','PATCH',data,'?date=eq.'+row.date);}
   else{await supaFetch('caisse','POST',data);}
+}
+
+
+function getAdresse(prefixe) {
+  var a = (document.getElementById(prefixe+'-adresse')||{value:''}).value.trim();
+  var cp = (document.getElementById(prefixe+'-cp')||{value:''}).value.trim();
+  var v = (document.getElementById(prefixe+'-ville')||{value:''}).value.trim();
+  return [a, cp && v ? cp+' '+v : cp||v].filter(Boolean).join(', ');
+}
+function setAdresseFields(prefixe, adresseComplete) {
+  var parts = (adresseComplete||'').split(',');
+  var rue = parts[0] ? parts[0].trim() : '';
+  var rest = parts[1] ? parts[1].trim() : '';
+  var cpMatch = rest.match(/^(\d{4,5})\s*(.*)/);
+  var elA = document.getElementById(prefixe+'-adresse');
+  var elCP = document.getElementById(prefixe+'-cp');
+  var elV = document.getElementById(prefixe+'-ville');
+  if(elA) elA.value = rue;
+  if(elCP) elCP.value = cpMatch ? cpMatch[1] : '';
+  if(elV) elV.value = cpMatch ? cpMatch[2].trim() : rest;
 }
 
 function fmtDate(d){if(!d)return'—';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
@@ -3247,7 +3267,7 @@ async function addClient() {
     nom: nomComplet,
     tel: document.getElementById('cl-tel').value.trim(),
     email: document.getElementById('cl-email').value.trim(),
-    adresse: document.getElementById('cl-adresse').value.trim(),
+    adresse: getAdresse('cl'),
     notes: document.getElementById('cl-notes').value.trim(),
     dateCreation: new Date().toISOString().split('T')[0]
   };
@@ -3257,7 +3277,7 @@ async function addClient() {
     var res = await supaFetch('clients','POST',{prenom:prenom,nom:nom,tel:client.tel,email:client.email,adresse:client.adresse,notes:client.notes,date_creation:client.dateCreation});
     if(res&&res[0]) client.id = res[0].id;
   }
-  ['cl-prenom','cl-nom','cl-tel','cl-email','cl-adresse','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
+  ['cl-prenom','cl-nom','cl-tel','cl-email','cl-adresse','cl-cp','cl-ville','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
   closeModal('modal-add-client');
   renderClients();
   showNotif('Client '+nomComplet+' ajouté !','success');
@@ -3907,7 +3927,7 @@ function updateFacturePreview(){
   var p=phones.find(function(x){return x.id===pid;});
   if(!p){document.getElementById('facture-preview-card').style.display='none';return;}
   var client=document.getElementById('f-client-nom').value||'Client';
-  var adresse=document.getElementById('f-client-adresse').value||'';
+  var adresse=getAdresse('f-client');
   var num='FAC-'+new Date().getFullYear()+'-'+String(factures.length+1).padStart(3,'0');
   var desc=p.modele+(p.stockage?' '+p.stockage+'Go':'')+' Grade '+(p.grade||'A')+
     (p.imei?'\nIMEI : '+p.imei:'')+'\nSmartphone reconditionné certifié';
@@ -3930,7 +3950,7 @@ function genererFacture(){
   var date=new Date().toISOString().split('T')[0];
   var marge=p.vente-p.achat;var ht=marge/1.2;var tva=ht*0.2;
   var fac={id:Date.now(),numero:num,date:date,phoneId:p.id,
-    clientNom:client,clientAdresse:document.getElementById('f-client-adresse').value.trim(),
+    clientNom:client,clientAdresse:getAdresse('f-client'),
     clientEmail:document.getElementById('f-client-email').value.trim(),
     ttc:p.vente,ht:parseFloat(ht.toFixed(2)),tva:parseFloat(tva.toFixed(2))};
   factures.push(fac);p.etat='VENDU';p.dateVente=date;savePhone(p);
@@ -3938,7 +3958,7 @@ function genererFacture(){
     client_nom:fac.clientNom,client_adresse:fac.clientAdresse,montant_ttc:fac.ttc,montant_ht:fac.ht,tva:fac.tva});
   renderFactures();renderPhones();renderDashboard();
   imprimerFactureData(fac,p);
-  ['f-client-nom','f-client-adresse','f-client-email'].forEach(function(id){document.getElementById(id).value='';});
+  ['f-client-nom','f-client-adresse','f-client-cp','f-client-ville','f-client-email'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-phone').value='';
   document.getElementById('facture-preview-card').style.display='none';
   showNotif('Facture '+num+' créée !','success');
@@ -4344,7 +4364,7 @@ function ouvrirModalSalarie(idx) {
   document.getElementById('sal-nom').value           = s ? s.nom : '';
   document.getElementById('sal-secu').value          = s ? (s.secu||'') : '';
   document.getElementById('sal-matricule').value     = s ? (s.matricule||'') : '';
-  document.getElementById('sal-adresse').value       = s ? (s.adresse||'') : '';
+  setAdresseFields('sal', s ? (s.adresse||'') : '');
   document.getElementById('sal-entree').value        = s ? (s.dateEntree||'') : '';
   document.getElementById('sal-type').value          = s ? (s.type||'cdi') : 'cdi';
   document.getElementById('sal-categorie').value     = s ? (s.categorie||'employe') : 'employe';
@@ -4373,7 +4393,7 @@ async function sauvegarderSalarie() {
     nom:         nom,
     secu:        document.getElementById('sal-secu').value.trim(),
     matricule:   document.getElementById('sal-matricule').value.trim(),
-    adresse:     document.getElementById('sal-adresse').value.trim(),
+    adresse:     getAdresse('sal'),
     dateEntree:  document.getElementById('sal-entree').value,
     type:        document.getElementById('sal-type').value,
     categorie:   document.getElementById('sal-categorie').value,
@@ -4684,14 +4704,14 @@ function genererDevis() {
   if(!client||!prestation||!prix){showNotif('Client, prestation et prix requis','error');return;}
   var num='DEV-'+new Date().getFullYear()+'-'+String(devisList.length+1).padStart(3,'0');
   var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
-    clientNom:client,clientAdresse:document.getElementById('dv-adresse').value.trim(),
+    clientNom:client,clientAdresse:getAdresse('dv'),
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
   renderDevis();
   imprimerDevisData(dv);
-  ['dv-client','dv-adresse','dv-email','dv-appareil','dv-prestation','dv-prix'].forEach(function(id){document.getElementById(id).value='';});
+  ['dv-client','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
 }
@@ -4720,7 +4740,7 @@ function convertirDevisEnFacture() {
   // Copier dans la page réparations
   showPage('reparations',null);
   document.getElementById('r-client-nom').value=document.getElementById('dv-client').value;
-  document.getElementById('r-client-adresse').value=document.getElementById('dv-adresse').value;
+  setAdresseFields('r-client', getAdresse('dv'));
   document.getElementById('r-client-email').value=document.getElementById('dv-email').value;
   document.getElementById('r-appareil').value=document.getElementById('dv-appareil').value;
   document.getElementById('r-description').value=prestation;
@@ -4963,7 +4983,7 @@ function genererFactureRep() {
   var rep = {
     id: Date.now(), numero: num, date: date,
     clientNom: client,
-    clientAdresse: document.getElementById('r-client-adresse').value.trim(),
+    clientAdresse: getAdresse('r-client'),
     clientEmail: document.getElementById('r-client-email').value.trim(),
     appareil: appareil,
     imei: document.getElementById('r-imei').value.trim(),
@@ -4975,7 +4995,7 @@ function genererFactureRep() {
   reparations.push(rep);
   renderReparations();
   imprimerRepData(rep);
-  ['r-client-nom','r-client-adresse','r-client-email','r-appareil','r-imei','r-description','r-prix'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['r-client-nom','r-client-adresse','r-client-cp','r-client-ville','r-client-email','r-appareil','r-imei','r-description','r-prix'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('rep-preview-card').style.display = 'none';
   showNotif('Facture ' + num + ' créée !', 'success');
 }
@@ -8917,7 +8937,7 @@ function qrInit() {
     pennylaneOK: false, agoraOK: false, stream: null
   };
   // Reset fields
-  ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse',
+  ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse','qr-cp','qr-ville',
    'qr-modele','qr-imei','qr-prix-ht'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.value = '';
   });
@@ -9013,17 +9033,21 @@ function qrGoStep(n) {
 function qrValidStep1() {
   var btn = document.getElementById('qr-btn-1');
   if(!btn) return;
-  var ok = document.getElementById('qr-civilite').value !== '' && ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse'].every(function(id){
+  var ok = document.getElementById('qr-civilite').value !== '' && ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse','qr-cp','qr-ville','qr-cp','qr-ville'].every(function(id){
     var el = document.getElementById(id); return el && el.value.trim().length > 0;
   });
   btn.disabled = !ok;
   if(ok){
+    var adresseQR = getAdresse('qr');
     qrData.client = {
       prenom:  document.getElementById('qr-prenom').value.trim(),
       nom:     document.getElementById('qr-nom').value.trim(),
       tel:     document.getElementById('qr-tel').value.trim(),
       email:   document.getElementById('qr-email').value.trim(),
-      adresse: document.getElementById('qr-adresse').value.trim()
+      adresse: adresseQR,
+      adresse_rue: document.getElementById('qr-adresse').value.trim(),
+      cp:      document.getElementById('qr-cp').value.trim(),
+      ville:   document.getElementById('qr-ville').value.trim()
     };
   }
 }
