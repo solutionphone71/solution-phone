@@ -533,7 +533,7 @@ tr:hover td{background:#fafafa;}
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-caisse')">➕ Ajouter</button>
             <button class="btn btn-sm" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
             <button class="btn btn-sm" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-import').click()">📂 Import Phonilab CSV</button>
-            <input type="file" id="phonilab-import" accept=".csv" style="display:none" onchange="importPhonilabCSV(this)">
+            <input type="file" id="phonilab-import" accept=".csv" style="display:none" onchange="importPhonilabToCaisse(this)">
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -2809,144 +2809,105 @@ function renderCaisse(){
   }).join('')||'<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune saisie</td></tr>';
 }
 
-function importPhonilabCSV(input) {
+function importPhonilabToCaisse(input) {
   var file = input.files[0];
   if (!file) return;
 
-  // Normalise un header : minuscules + suppression des accents
-  function normalizeHeader(h) {
-    return h.replace(/"/g,'').trim().toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  }
+  function parseAndImport(text) {
+    var sep = ';';
+    var lines = text.split('\n').filter(function(l){ return l.trim(); });
+    if (lines.length < 2) { showNotif('Fichier CSV vide', 'error'); return; }
 
-  function parseCSV(text) {
-    // Détecter le séparateur (virgule ou point-virgule)
-    var sep = text.indexOf(';') >= 0 ? ';' : ',';
-    var lines = text.split('\n').filter(function(l) { return l.trim(); });
-    if (lines.length < 2) { showNotif('Fichier CSV vide ou invalide', 'error'); return; }
+    var rawHeaders = lines[0].split(sep).map(function(h){ return h.replace(/"/g,'').trim(); });
+    // Chercher les colonnes par nom exact (fichier lu en ISO-8859-1)
+    var iDate    = rawHeaders.indexOf('Date valeur');
+    var iMontant = rawHeaders.indexOf('Montant');
+    var iMethode = rawHeaders.indexOf('M\u00e9thode');   // Méthode
 
-    // Lire les headers normalisés (sans accents)
-    var headers = lines[0].split(sep).map(normalizeHeader);
-    console.log('Headers Phonilab (normalisés):', headers);
+    // Fallback si accents manquants (au cas où)
+    if(iDate    < 0) iDate    = rawHeaders.findIndex(function(h){ return h.toLowerCase().includes('date'); });
+    if(iMontant < 0) iMontant = rawHeaders.findIndex(function(h){ return h.toLowerCase().includes('montant'); });
+    if(iMethode < 0) iMethode = rawHeaders.findIndex(function(h){ return h.toLowerCase().replace(/[^\x00-\x7F]/g,'').includes('thode'); });
 
-    // Index des colonnes importantes — détection robuste sans accents
-    var iDate    = headers.findIndex(function(h) { return h.includes('date'); });
-    var iMontant = headers.findIndex(function(h) { return h.includes('montant') || h.includes('prix') || h.includes('total'); });
-    var iMethode = headers.findIndex(function(h) {
-      return h.includes('methode') || h.includes('mode') || h.includes('paiement') || h.includes('reglement') || (h.includes('m') && h.includes('thode'));
-    });
-    var iType    = headers.findIndex(function(h) {
-      return h.includes('reparation') || h.includes('type') || h.includes('prestation') || h.includes('libelle') || (h.includes('r') && h.includes('paration'));
-    });
-
-    if (iDate < 0 || iMontant < 0) {
-      showNotif('Format CSV non reconnu — colonnes trouvées : ' + headers.join(', '), 'error');
-      console.error('Colonnes CSV Phonilab:', headers);
+    if(iDate < 0 || iMontant < 0) {
+      showNotif('Format CSV non reconnu : ' + rawHeaders.join(', '), 'error');
       return;
     }
-    
-    // Grouper par date
+
     var byDate = {};
     for (var i = 1; i < lines.length; i++) {
-      var cols = lines[i].split(sep).map(function(c) { return c.replace(/"/g,'').trim(); });
+      var cols = lines[i].split(sep).map(function(c){ return c.replace(/^"|"$/g,'').trim(); });
       if (cols.length < 3) continue;
-      
-      // Parser la date (format DD-MM-YYYY ou DD/MM/YYYY)
-      var rawDate = cols[iDate];
+
+      // Date DD-MM-YYYY → YYYY-MM-DD
+      var rawDate = cols[iDate] || '';
       var dateISO = '';
-      if (rawDate) {
-        var parts = rawDate.split(/[-\/]/);
-        if (parts.length === 3) {
-          if (parts[0].length === 4) {
-            dateISO = rawDate; // déjà YYYY-MM-DD
-          } else {
-            dateISO = parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
-          }
-        }
+      var parts = rawDate.split('-');
+      if (parts.length === 3 && parts[0].length === 2) {
+        dateISO = parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+      } else if (parts.length === 3 && parts[0].length === 4) {
+        dateISO = rawDate;
       }
       if (!dateISO) continue;
-      
-      var montant = parseFloat((cols[iMontant]||'0').replace(',','.').replace('€','').trim()) || 0;
-      var methode = iMethode >= 0 ? (cols[iMethode]||'').toLowerCase() : '';
-      var isBonus = iType >= 0 && (cols[iType]||'').toLowerCase().includes('bonus');
-      
+
+      var montant = parseFloat((cols[iMontant]||'0').replace(',','.').replace('\u20ac','').trim()) || 0;
+      if (montant === 0) continue;
+
+      var methode = (iMethode >= 0 ? cols[iMethode] : '').trim();
+      // Normaliser les méthodes sans dépendre de l'encodage des accents
+      var methodeNorm = methode.toLowerCase().replace(/[^\x00-\x7F]/g,'').replace(/\s+/g,' ').trim();
+      // Détection bonus : colonne méthode contient "bonus" (Bonus Réparation = QualiRépar)
+      var isBonus = methodeNorm.includes('bonus');
+
       if (!byDate[dateISO]) {
         byDate[dateISO] = {date:dateISO, ttc:0, cb:0, especes:0, cheque:0, virement:0, quali:0, depotEsp:0, depotCheque:0, achatSmart:0};
       }
-      
       var d = byDate[dateISO];
-      
-      if (isBonus || methode.includes('bonus')) {
+
+      if (isBonus) {
         d.quali += montant;
+        // Ne pas ajouter au ttc commercial (c'est un bonus QualiRépar)
       } else {
         d.ttc += montant;
-        if (methode.includes('cb') || methode.includes('carte') || methode.includes('bank')) d.cb += montant;
-        else if (methode.includes('esp') || methode.includes('cash')) d.especes += montant;
-        else if (methode.includes('ch') && methode.includes('que')) d.cheque += montant;
-        else if (methode.includes('vir') || methode.includes('transfer')) d.virement += montant;
-        else d.cb += montant; // par défaut CB
+        if      (methodeNorm === 'cb' || methodeNorm.includes('carte') || methodeNorm.includes('bank')) d.cb       += montant;
+        else if (methodeNorm.includes('esp') || methodeNorm === 'cash')                                  d.especes  += montant;
+        else if (methodeNorm.includes('ch') && methodeNorm.includes('que'))                              d.cheque   += montant;
+        else if (methodeNorm.includes('vir') || methodeNorm.includes('transfer'))                        d.virement += montant;
+        else                                                                                              d.cb       += montant; // défaut
       }
     }
-    
-    // Importer les données
-    var imported = 0;
-    var updated = 0;
+
+    var imported = 0, updated = 0;
     Object.values(byDate).forEach(function(entry) {
-      // Arrondir
-      entry.ttc = Math.round(entry.ttc * 100) / 100;
-      entry.cb = Math.round(entry.cb * 100) / 100;
-      entry.especes = Math.round(entry.especes * 100) / 100;
-      entry.cheque = Math.round(entry.cheque * 100) / 100;
-      entry.virement = Math.round(entry.virement * 100) / 100;
-      entry.quali = Math.round(entry.quali * 100) / 100;
-      
-      var idx = caisse.findIndex(function(c) { return c.date === entry.date; });
+      ['ttc','cb','especes','cheque','virement','quali'].forEach(function(k){
+        entry[k] = Math.round((entry[k]||0) * 100) / 100;
+      });
+      var idx = caisse.findIndex(function(c){ return c.date === entry.date; });
       if (idx >= 0) {
-        // Mettre à jour en additionnant
-        caisse[idx].ttc = entry.ttc;
-        caisse[idx].cb = entry.cb;
-        caisse[idx].especes = entry.especes;
-        caisse[idx].cheque = entry.cheque;
+        caisse[idx].ttc      = entry.ttc;
+        caisse[idx].cb       = entry.cb;
+        caisse[idx].especes  = entry.especes;
+        caisse[idx].cheque   = entry.cheque;
         caisse[idx].virement = entry.virement;
-        caisse[idx].quali += entry.quali;
+        caisse[idx].quali    = (caisse[idx].quali||0) + entry.quali;
         saveCaisseRow(caisse[idx]);
         updated++;
       } else {
         caisse.push(entry);
-        caisse.sort(function(a,b){return a.date.localeCompare(b.date);});
+        caisse.sort(function(a,b){ return a.date.localeCompare(b.date); });
         saveCaisseRow(entry);
         imported++;
       }
     });
-    
-    renderCaisse(); renderDashboard();
-    showNotif('Import Phonilab : ' + imported + ' ajoutés, ' + updated + ' mis à jour ✅', 'success');
-  } // fin parseCSV
 
-  // Lire en UTF-8 d'abord. Si les colonnes clés sont absentes (accents corrompus),
-  // retenter en ISO-8859-1 (encodage fréquent des exports Phonilab / logiciels français)
+    renderCaisse(); renderDashboard();
+    showNotif('Import Z de Caisse : ' + imported + ' ajoutés, ' + updated + ' mis à jour ✅', 'success');
+  }
+
+  // Lire en ISO-8859-1 (encodage Phonilab)
   var reader = new FileReader();
-  reader.onload = function(e) {
-    var text = e.target.result;
-    var sep = text.indexOf(';') >= 0 ? ';' : ',';
-    var firstLine = (text.split('\n')[0] || '');
-    var testH = firstLine.split(sep).map(function(h) {
-      return h.replace(/"/g,'').trim().toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    });
-    var ok = testH.some(function(h){return h.includes('date');}) &&
-             testH.some(function(h){return h.includes('montant')||h.includes('prix')||h.includes('total');});
-    if (ok) {
-      parseCSV(text);
-      input.value = '';
-    } else {
-      // Retenter en Latin-1
-      var r2 = new FileReader();
-      r2.onload = function(ev) { parseCSV(ev.target.result); input.value = ''; };
-      r2.readAsText(file, 'ISO-8859-1');
-    }
-  };
-  reader.readAsText(file, 'UTF-8');
+  reader.onload = function(e) { parseAndImport(e.target.result); input.value = ''; };
+  reader.readAsText(file, 'ISO-8859-1');
 }
 
 function exportCaisseCSV(){
