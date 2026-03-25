@@ -1357,66 +1357,146 @@ tr:hover td{background:#fafafa;}
         <!-- ══ ÉTAPE 4 : FACTURE + QUALIREPAR ══ -->
         <div id="rep-step-4" class="rep-step-content" style="display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-            <div class="card">
-              <div class="card-header"><div class="card-title">🧾 Facture réparation</div></div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div class="form-group"><label>Description réparation *</label>
-                  <input type="text" id="r-description" placeholder="ex: Remplacement écran" oninput="repUpdateFacturePreview()"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                  <div class="form-group"><label>Prix TTC (€) *</label>
-                    <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview()"></div>
-                  <div class="form-group"><label>Mode règlement</label>
-                    <select id="r-mode" onchange="repUpdateFacturePreview()">
-                      <option value="CB">CB</option><option value="ESPECES">Espèces</option>
-                      <option value="CHEQUE">Chèque</option><option value="VIREMENT">Virement</option>
+
+            <!-- Colonne gauche : Facture + QualiRépar -->
+            <div style="display:flex;flex-direction:column;gap:14px;">
+
+              <!-- Facture -->
+              <div class="card">
+                <div class="card-header"><div class="card-title">🧾 Facture réparation</div></div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label>N° dossier interne</label>
+                      <input type="text" id="r-dossier-interne" placeholder="ex: SO_S008779" oninput="repUpdateFacturePreview()">
+                      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Obligatoire pour Ecosystem/Ecologic</div>
+                    </div>
+                    <div class="form-group"><label>Réf. commerciale mobile</label>
+                      <input type="text" id="r-ref-mobile" placeholder="ex: ip11, s24u" oninput="repUpdateFacturePreview()">
+                      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Modèle abrégé (ip = iPhone)</div>
+                    </div>
+                  </div>
+                  <div class="form-group"><label>Description réparation *</label>
+                    <input type="text" id="r-description" placeholder="ex: Remplacement écran" oninput="repUpdateFacturePreview()"></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group"><label>Prix TTC (€) *</label>
+                      <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview()"></div>
+                    <div class="form-group"><label>Mode règlement</label>
+                      <select id="r-mode" onchange="repUpdateFacturePreview()">
+                        <option value="CB">CB</option><option value="ESPECES">Espèces</option>
+                        <option value="CHEQUE">Chèque</option><option value="VIREMENT">Virement</option>
+                      </select></div>
+                  </div>
+                  <div class="form-group"><label>Garantie</label>
+                    <select id="r-garantie">
+                      <option value="3 mois">3 mois (QualiRépar)</option>
+                      <option value="6 mois">6 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
                     </select></div>
                 </div>
-                <div class="form-group"><label>Garantie</label>
-                  <select id="r-garantie">
-                    <option value="3 mois">3 mois (QualiRépar)</option>
-                    <option value="6 mois">6 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
-                  </select></div>
+              </div>
 
-                <!-- QualiRépar bloc -->
-                <div style="background:#f0fdf4;border:1.5px solid var(--green);border-radius:10px;padding:14px;">
-                  <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;">
+              <!-- QualiRépar bloc -->
+              <div class="card" style="border:1.5px solid var(--green);">
+                <div class="card-header" style="background:#f0fdf4;">
+                  <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;cursor:pointer;margin:0;">
                     <input type="checkbox" id="rep-qr-actif" onchange="repToggleQR()" style="width:18px;height:18px;accent-color:var(--green);">
                     <span>🏷️ Bonus QualiRépar (-25 €)</span>
                   </label>
-                  <div id="rep-qr-bloc" style="display:none;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                      <div class="form-group"><label>Marque (éco-organisme)</label>
-                        <select id="rep-qr-marque" onchange="repQRUpdateOrganisme()">
-                          <option value="">— Choisir —</option>
-                        </select></div>
-                      <div class="form-group"><label>Éco-organisme</label>
-                        <div id="rep-qr-organisme" style="padding:9px 12px;background:#e8f5e9;border-radius:8px;font-weight:700;font-size:13px;color:var(--green);">—</div>
+                </div>
+                <div id="rep-qr-bloc" style="display:none;padding:14px;">
+                  <!-- Marque + Éco-organisme -->
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <div class="form-group"><label>Marque appareil *</label>
+                      <select id="rep-qr-marque" onchange="repQRUpdateOrganisme();repQRAutoPanne();">
+                        <option value="">— Choisir —</option>
+                      </select></div>
+                    <div class="form-group"><label>Éco-organisme détecté</label>
+                      <div id="rep-qr-organisme" style="padding:9px 12px;background:#e8f5e9;border-radius:8px;font-weight:700;font-size:13px;color:var(--green);">—</div>
+                    </div>
+                  </div>
+
+                  <!-- Type de panne — sélecteur simplifié -->
+                  <div class="form-group" style="margin-bottom:10px;">
+                    <label>Type de panne *
+                      <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:6px;">Les codes IRIS sont remplis automatiquement</span>
+                    </label>
+                    <select id="rep-qr-panne" onchange="repQRSelectPanne(this.value);repUpdateFacturePreview();">
+                      <option value="">— Choisir la panne —</option>
+                      <option value="ecran-casse">Écran cassé (casse physique)</option>
+                      <option value="ecran-hors-casse">Écran défaillant (hors casse)</option>
+                      <option value="batterie">Batterie</option>
+                      <option value="haut-parleur">Haut-parleur</option>
+                      <option value="micro">Micro</option>
+                      <option value="connecteur">Connecteur de charge</option>
+                      <option value="camera">Caméra</option>
+                      <option value="bouton">Bouton(s)</option>
+                    </select>
+                  </div>
+
+                  <!-- Codes IRIS — affichage lecture seule + possibilité édition avancée -->
+                  <div id="rep-iris-bloc" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                      <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Codes IRIS (AgoraPlus)</span>
+                      <button type="button" onclick="repToggleIRISEdit()" style="font-size:11px;background:none;border:1px solid var(--border);padding:2px 8px;border-radius:6px;cursor:pointer;color:var(--text-muted);" id="rep-iris-edit-btn">✏️ Modifier</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" id="rep-iris-fields">
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Condition <span style="color:var(--text-muted);">(IRISCondition)</span></label>
+                        <input type="text" id="iris-condition" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="6">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Symptôme <span style="color:var(--text-muted);">(IRISSymptom)</span></label>
+                        <input type="text" id="iris-symptom" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="E7">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Section <span style="color:var(--text-muted);">(IRISSection)</span></label>
+                        <input type="text" id="iris-section" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="W10">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Défaut <span style="color:var(--text-muted);">(IRISDefault)</span></label>
+                        <input type="text" id="iris-default" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="08">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Réparation <span style="color:var(--text-muted);">(IRISRepair)</span></label>
+                        <input type="text" id="iris-repair" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="A">
+                      </div>
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Code réparation <span style="color:var(--text-muted);">(RepairCode)</span></label>
+                        <input type="text" id="iris-repaircode" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="ELE-DIS-001">
                       </div>
                     </div>
-                    <div class="form-group" style="margin-top:6px;"><label>Type de panne</label>
-                      <select id="rep-qr-panne" oninput="repUpdateFacturePreview()">
-                        <option value="">— Choisir —</option>
-                        <option>Écran (hors casse)</option><option>Batterie</option>
-                        <option>Connecteur de charge</option><option>Caméra</option>
-                        <option>Haut-parleur</option><option>Micro</option><option>Bouton</option><option>Autre</option>
-                      </select></div>
+                    <div style="margin-top:8px;">
+                      <div class="form-group" style="margin-bottom:0;">
+                        <label style="font-size:11px;">Description de la panne <span style="color:var(--text-muted);">(FailureDescription)</span></label>
+                        <input type="text" id="iris-failure-desc" style="background:#fff;font-size:13px;" placeholder="Description envoyée à l'éco-organisme">
+                      </div>
+                    </div>
+                    <div id="rep-iris-valid" style="margin-top:8px;font-size:12px;"></div>
                   </div>
                 </div>
+              </div>
 
-                <button class="btn btn-primary" onclick="repGenererFacture()" style="padding:14px;font-size:15px;font-weight:800;">🧾 Générer la facture</button>
+              <button class="btn btn-primary" onclick="repGenererFacture()" style="padding:14px;font-size:15px;font-weight:800;">🧾 Générer la facture</button>
+            </div>
+
+            <!-- Colonne droite : aperçu -->
+            <div>
+              <div class="card" id="rep-preview-card" style="display:none;">
+                <div class="card-header">
+                  <div class="card-title">Aperçu facture</div>
+                  <button class="btn btn-primary btn-sm" onclick="repImprimerFacture()">🖨️ Imprimer</button>
+                </div>
+                <div id="rep-preview-content" style="font-size:12px;background:#fff;color:#000;padding:12px;border-radius:8px;max-height:480px;overflow:auto;"></div>
+              </div>
+              <div class="card" id="rep-iris-checklist-card" style="display:none;margin-top:14px;">
+                <div class="card-header"><div class="card-title">✅ Checklist dossier</div></div>
+                <div id="rep-iris-checklist" style="font-size:13px;line-height:2;padding:4px 0;"></div>
               </div>
             </div>
-            <div class="card" id="rep-preview-card" style="display:none;">
-              <div class="card-header">
-                <div class="card-title">Aperçu facture</div>
-                <button class="btn btn-primary btn-sm" onclick="repImprimerFacture()">🖨️ Imprimer</button>
-              </div>
-              <div id="rep-preview-content" style="font-size:12px;background:#fff;color:#000;padding:12px;border-radius:8px;max-height:480px;overflow:auto;"></div>
-            </div>
+
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
             <button class="btn" onclick="repGoStep(3)">← Retour</button>
-            <button class="btn btn-primary" onclick="repGoStep(5)" style="padding:12px 28px;font-size:15px;">Suivant → Organisme</button>
+            <button class="btn btn-primary" id="rep-step4-next" onclick="repStep4Next()" style="padding:12px 28px;font-size:15px;">Suivant → Organisme</button>
           </div>
         </div>
 
@@ -8303,6 +8383,24 @@ function repStep3Next(){
   repGoStep(4);
 }
 
+function repStep4Next(){
+  // Valider les champs obligatoires pour l'envoi AgoraPlus
+  var prix = parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
+  if(!prix){ showNotif('Renseignez le prix TTC','error'); return; }
+  var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
+  if(bonusQR){
+    var marque = (document.getElementById('rep-qr-marque')||{value:''}).value;
+    var panne  = (document.getElementById('rep-qr-panne')||{value:''}).value;
+    if(!marque || !panne){ showNotif('Sélectionnez la marque et le type de panne pour le bonus QR','error'); return; }
+    var imei = repDossierCourant && repDossierCourant.appareil && repDossierCourant.appareil.imei;
+    if(!imei){ showNotif('L'IMEI est obligatoire pour le bonus QualiRépar — retournez à l'étape 2','error'); return; }
+    var cp = repDossierCourant && repDossierCourant.client && repDossierCourant.client.cp;
+    if(!cp){ showNotif('Le code postal est obligatoire pour le bonus QualiRépar — retournez à l'étape 1','error'); return; }
+  }
+  repUpdateChecklist();
+  repGoStep(5);
+}
+
 function repSauvegarderDossier(){
   if(!repDossierCourant) return;
   var idx = repDossiers.findIndex(function(d){ return String(d.id)===String(repDossierCourant.id); });
@@ -8455,6 +8553,20 @@ function repGenererFacture(){
   var garantie=(document.getElementById('r-garantie')||{value:'3 mois'}).value;
   var num='REP-'+new Date().getFullYear()+'-'+String(reparations.length+1).padStart(3,'0');
   var adresse=[(c.adresse||''),(c.cp&&c.ville)?c.cp+' '+c.ville:''].filter(Boolean).join(', ');
+  var dossierInterne = (document.getElementById('r-dossier-interne')||{value:''}).value.trim();
+  var refMobile = (document.getElementById('r-ref-mobile')||{value:''}).value.trim();
+  var irisData = bonusQR ? {
+    condition:    (document.getElementById('iris-condition')||{value:''}).value,
+    symptom:      (document.getElementById('iris-symptom')||{value:''}).value,
+    section:      (document.getElementById('iris-section')||{value:''}).value,
+    irisDefault:  (document.getElementById('iris-default')||{value:''}).value,
+    repair:       (document.getElementById('iris-repair')||{value:''}).value,
+    repairCode:   (document.getElementById('iris-repaircode')||{value:''}).value,
+    failureDesc:  (document.getElementById('iris-failure-desc')||{value:''}).value,
+    panne:        (document.getElementById('rep-qr-panne')||{value:''}).value,
+    marque:       (document.getElementById('rep-qr-marque')||{value:''}).value,
+    organisme:    (QR_BRAND_TYPE[(document.getElementById('rep-qr-marque')||{value:''}).value])||''
+  } : null;
   var rep={
     id:Date.now(),numero:num,date:repDossierCourant.date||new Date().toISOString().split('T')[0],
     clientNom:(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
@@ -8462,7 +8574,9 @@ function repGenererFacture(){
     appareil:a.marque+' '+a.modele,imei:a.imei||'',
     description:desc,prix:bonusQR?prix-25:prix,
     prixHorsBonus:prix,bonusQR:bonusQR,
-    mode:mode,garantie:garantie
+    mode:mode,garantie:garantie,
+    dossierInterne:dossierInterne, refMobile:refMobile,
+    iris: irisData
   };
   reparations.push(rep);
   // Mettre à jour dossier
@@ -8524,7 +8638,14 @@ function repUpdateStep5(){
       '<b>Marque :</b> '+marque+'<br>'+
       '<b>IMEI :</b> '+(a.imei||'À renseigner')+'<br>'+
       '<b>N° Facture :</b> '+(f?f.numero:'—')+'<br>'+
-      '<b>Montant TTC hors bonus :</b> '+(f?f.prix:0)+' €';
+      '<b>N° dossier interne :</b> '+((document.getElementById('r-dossier-interne')||{value:''}).value||'—')+'<br>'+
+      '<b>Réf. mobile :</b> '+((document.getElementById('r-ref-mobile')||{value:''}).value||'—')+'<br>'+
+      '<b>Montant TTC hors bonus :</b> '+(f?f.prix:0)+' €<br>'+
+      '<b>Codes IRIS :</b> <span style="font-family:monospace;font-size:12px;">'+
+        ((document.getElementById('iris-symptom')||{value:''}).value||'—')+
+        ' · '+((document.getElementById('iris-section')||{value:''}).value||'—')+
+        ' · '+((document.getElementById('iris-repaircode')||{value:''}).value||'—')+
+      '</span>';
   } else {
     if(qrRecap) qrRecap.style.display='none';
     if(qrNo) qrNo.style.display='block';
@@ -8714,6 +8835,281 @@ async function repOCRImei(){
     showNotif('Caméra non disponible — saisissez l\'IMEI manuellement','error');
   }
 }
+
+
+// ============================================================
+//  IRIS CODES — Table de correspondance panne → codes IRIS
+// ============================================================
+var IRIS_CODES = {
+  'ecran-casse': {
+    label:       'Remplacement écran (casse physique)',
+    description: 'Remplacement écran suite casse physique',
+    condition:   '6',   // Chute / impact
+    symptom:     'E7',  // Affichage défectueux / écran endommagé
+    section:     'W10', // Ensemble affichage (écran LCD/OLED + vitre)
+    irisDefault: '08',  // Cassé / fissuré
+    repair:      'A',   // Remplacement pièce
+    repairCode:  'ELE-DIS-001',
+    conditionEX: 'X47'  // Impact mécanique
+  },
+  'ecran-hors-casse': {
+    label:       'Remplacement écran (hors casse)',
+    description: 'Remplacement écran - défaillance électronique',
+    condition:   '5',   // Usure progressive
+    symptom:     'E7',  // Affichage défectueux
+    section:     'W10', // Ensemble affichage
+    irisDefault: '09',  // Défaillance fonctionnelle
+    repair:      'A',   // Remplacement
+    repairCode:  'ELE-DIS-001',
+    conditionEX: ''
+  },
+  'batterie': {
+    label:       'Remplacement batterie',
+    description: 'Remplacement batterie - usure / autonomie insuffisante',
+    condition:   '5',   // Usure normale
+    symptom:     'B4',  // Autonomie insuffisante / ne charge plus
+    section:     'W4',  // Batterie / alimentation
+    irisDefault: '09',  // Dégradation fonctionnelle
+    repair:      'A',   // Remplacement
+    repairCode:  'ELE-BAT-001',
+    conditionEX: ''
+  },
+  'haut-parleur': {
+    label:       'Remplacement haut-parleur',
+    description: 'Remplacement haut-parleur - son absent ou dégradé',
+    condition:   '5',
+    symptom:     'C5',  // Son défectueux / absent
+    section:     'W15', // Haut-parleur / audio
+    irisDefault: '09',
+    repair:      'A',
+    repairCode:  'ELE-SPK-001',
+    conditionEX: ''
+  },
+  'micro': {
+    label:       'Remplacement micro',
+    description: 'Remplacement microphone - micro défaillant',
+    condition:   '5',
+    symptom:     'C4',  // Microphone défectueux
+    section:     'W15', // Micro / audio entrée
+    irisDefault: '09',
+    repair:      'A',
+    repairCode:  'ELE-MIC-001',
+    conditionEX: ''
+  },
+  'connecteur': {
+    label:       'Remplacement connecteur de charge',
+    description: 'Remplacement connecteur de charge - charge impossible',
+    condition:   '5',
+    symptom:     'F4',  // Charge défectueuse
+    section:     'W7',  // Connecteur / port USB
+    irisDefault: '09',
+    repair:      'A',
+    repairCode:  'ELE-CON-001',
+    conditionEX: ''
+  },
+  'camera': {
+    label:       'Remplacement caméra',
+    description: 'Remplacement module caméra - photos/vidéos défectueuses',
+    condition:   '5',
+    symptom:     'D7',  // Image / caméra défectueuse
+    section:     'W17', // Module caméra
+    irisDefault: '09',
+    repair:      'A',
+    repairCode:  'ELE-CAM-001',
+    conditionEX: ''
+  },
+  'bouton': {
+    label:       'Remplacement bouton',
+    description: 'Remplacement bouton - bouton non fonctionnel',
+    condition:   '5',
+    symptom:     'G4',  // Bouton / commande défectueux
+    section:     'W8',  // Boutons / commandes
+    irisDefault: '09',
+    repair:      'A',
+    repairCode:  'ELE-BTN-001',
+    conditionEX: ''
+  }
+};
+
+// Remplir les codes IRIS selon la panne sélectionnée
+function repQRSelectPanne(panneKey){
+  var codes = IRIS_CODES[panneKey];
+  var validBox = document.getElementById('rep-iris-valid');
+  var checkCard = document.getElementById('rep-iris-checklist-card');
+
+  if(!codes){
+    // Vider les champs
+    ['iris-condition','iris-symptom','iris-section','iris-default','iris-repair','iris-repaircode','iris-failure-desc'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    if(validBox) validBox.innerHTML='';
+    return;
+  }
+
+  // Remplir automatiquement
+  document.getElementById('iris-condition').value  = codes.condition;
+  document.getElementById('iris-symptom').value    = codes.symptom;
+  document.getElementById('iris-section').value    = codes.section;
+  document.getElementById('iris-default').value    = codes.irisDefault;
+  document.getElementById('iris-repair').value     = codes.repair;
+  document.getElementById('iris-repaircode').value = codes.repairCode;
+  document.getElementById('iris-failure-desc').value = codes.description;
+
+  // Pré-remplir description facture si vide
+  var descEl = document.getElementById('r-description');
+  if(descEl && !descEl.value) {
+    descEl.value = codes.label;
+    repUpdateFacturePreview();
+  }
+
+  // Validation visuelle
+  if(validBox){
+    validBox.innerHTML = '<span style="color:var(--green);font-size:12px;">✅ Codes IRIS remplis automatiquement · Dossier conforme AgoraPlus</span>';
+  }
+
+  repUpdateChecklist();
+  repUpdateFacturePreview();
+}
+
+// Auto-remplir depuis la panne du dossier (étape 3)
+function repQRAutoPanne(){
+  if(!repDossierCourant) return;
+  var panne = (repDossierCourant.panne||'').toLowerCase();
+  var piece = (repDossierCourant.appareil && repDossierCourant.appareil.piece||'').toLowerCase();
+  var sel = document.getElementById('rep-qr-panne');
+  if(!sel || sel.value) return; // déjà sélectionné
+
+  // Détection automatique selon la panne décrite
+  var auto = '';
+  if(panne.includes('écran') || panne.includes('ecran') || piece.includes('écran')){
+    // Distinguer casse vs fonctionnel
+    if(panne.includes('cass') || panne.includes('fissu') || panne.includes('bris') || panne.includes('chut')){
+      auto = 'ecran-casse';
+    } else {
+      auto = 'ecran-hors-casse';
+    }
+  } else if(panne.includes('batterie') || piece.includes('batterie')){
+    auto = 'batterie';
+  } else if(panne.includes('haut-parleur') || panne.includes('son') || piece.includes('parleur')){
+    auto = 'haut-parleur';
+  } else if(panne.includes('micro')){
+    auto = 'micro';
+  } else if(panne.includes('charge') || panne.includes('connect') || piece.includes('connecteur')){
+    auto = 'connecteur';
+  } else if(panne.includes('cam') || piece.includes('cam')){
+    auto = 'camera';
+  } else if(panne.includes('bouton')){
+    auto = 'bouton';
+  }
+
+  if(auto){
+    sel.value = auto;
+    repQRSelectPanne(auto);
+    showNotif('Type de panne détecté automatiquement : '+IRIS_CODES[auto].label,'success');
+  }
+}
+
+// Générer le N° de dossier interne automatiquement
+function repGenereDossierInterne(){
+  var el = document.getElementById('r-dossier-interne');
+  if(!el || el.value) return;
+  if(!repDossierCourant) return;
+  // Format SO_S + numéro (compatible Phonilab)
+  var base = 'SO_S' + String(repDossiers.length + 8000).padStart(6,'0');
+  el.value = base;
+}
+
+// Générer la Réf. mobile automatiquement selon marque + modèle
+function repGenereRefMobile(){
+  var el = document.getElementById('r-ref-mobile');
+  if(!el || el.value) return;
+  if(!repDossierCourant || !repDossierCourant.appareil) return;
+  var marque = (repDossierCourant.appareil.marque||'').toLowerCase();
+  var modele = (repDossierCourant.appareil.modele||'').toLowerCase().replace(/\s+/g,'');
+  var prefix = {apple:'ip', samsung:'s', xiaomi:'mi', huawei:'hw', google:'px', oneplus:'op', oppo:'op', motorola:'moto', nokia:'nk', wiko:'wk', lg:'lg', sony:'sny'}[marque] || marque.substring(0,2);
+  // Extraire numéro du modèle
+  var num = modele.replace(/[a-z]/g,'').replace(/[^0-9]/g,'').substring(0,4);
+  if(num) el.value = prefix + num;
+  else el.value = prefix + modele.substring(0,6);
+}
+
+// Checklist de conformité dossier
+function repUpdateChecklist(){
+  var card = document.getElementById('rep-iris-checklist-card');
+  var box  = document.getElementById('rep-iris-checklist');
+  if(!card||!box||!repDossierCourant) return;
+
+  var c = repDossierCourant.client||{};
+  var a = repDossierCourant.appareil||{};
+  var items = [
+    { label: 'Nom du client',           ok: !!(c.nom), val: c.nom||'' },
+    { label: 'Prénom',                  ok: !!(c.prenom), val: c.prenom||'' },
+    { label: 'Téléphone',               ok: !!(c.tel), val: c.tel||'' },
+    { label: 'Email',                   ok: !!(c.email), val: c.email||'' },
+    { label: 'Code postal',             ok: !!(c.cp), val: c.cp||'' },
+    { label: 'Ville',                   ok: !!(c.ville), val: c.ville||'' },
+    { label: 'Marque appareil',         ok: !!(a.marque), val: a.marque||'' },
+    { label: 'Modèle',                  ok: !!(a.modele), val: a.modele||'' },
+    { label: 'IMEI / N° série',         ok: !!(a.imei), val: a.imei||'' },
+    { label: 'N° dossier interne',      ok: !!(document.getElementById('r-dossier-interne')||{value:''}).value, val: (document.getElementById('r-dossier-interne')||{value:''}).value },
+    { label: 'Réf. commerciale mobile', ok: !!(document.getElementById('r-ref-mobile')||{value:''}).value, val: (document.getElementById('r-ref-mobile')||{value:''}).value },
+    { label: 'Prix TTC renseigné',      ok: !!parseFloat((document.getElementById('r-prix')||{value:0}).value), val: '' },
+    { label: 'Type de panne sélectionné', ok: !!(document.getElementById('rep-qr-panne')||{value:''}).value, val: '' },
+    { label: 'Codes IRIS remplis',      ok: !!(document.getElementById('iris-symptom')||{value:''}).value, val: '' },
+  ];
+
+  var allOk = items.every(function(i){ return i.ok; });
+  card.style.display = 'block';
+  box.innerHTML = items.map(function(i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:2px 0;">'+
+      '<span style="font-size:14px;">'+(i.ok?'✅':'❌')+'</span>'+
+      '<span style="font-size:12px;'+(i.ok?'':'color:var(--red);font-weight:700;')+'">'+i.label+
+        (i.val?' <span style="color:var(--text-muted);font-weight:400;">('+i.val+')</span>':'')+'</span>'+
+    '</div>';
+  }).join('') +
+  (allOk ? '<div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:var(--green);font-weight:700;">✅ Dossier complet — Prêt pour l\'envoi AgoraPlus</div>'
+          : '<div style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:8px;font-size:12px;color:var(--red);font-weight:700;">⚠️ Complétez les champs manquants avant d\'envoyer</div>');
+}
+
+function repToggleIRISEdit(){
+  var fields = ['iris-condition','iris-symptom','iris-section','iris-default','iris-repair','iris-repaircode'];
+  var btn = document.getElementById('rep-iris-edit-btn');
+  var first = document.getElementById('iris-condition');
+  if(!first) return;
+  var isReadOnly = first.readOnly;
+  fields.forEach(function(id){
+    var el=document.getElementById(id); if(el) el.readOnly = !isReadOnly;
+  });
+  if(btn) btn.textContent = isReadOnly ? '🔒 Verrouiller' : '✏️ Modifier';
+}
+
+// Étendre repGoStep pour initialiser step 4
+var _repGoStepOrig = repGoStep;
+repGoStep = function(n){
+  _repGoStepOrig(n);
+  if(n === 4){
+    repQRPopulateMarques();
+    // Pré-remplir depuis l'appareil du dossier
+    if(repDossierCourant){
+      var a = repDossierCourant.appareil||{};
+      // Synchroniser la marque QR avec la marque du dossier
+      var selMarque = document.getElementById('rep-qr-marque');
+      if(selMarque && a.marque && !selMarque.value){
+        selMarque.value = a.marque;
+        repQRUpdateOrganisme();
+      }
+      // Générer dossier interne et ref mobile si vides
+      repGenereDossierInterne();
+      repGenereRefMobile();
+      // Auto-détecter la panne
+      setTimeout(repQRAutoPanne, 100);
+    }
+    repUpdateFacturePreview();
+  }
+};
+// ============================================================
+//  FIN IRIS CODES
+// ============================================================
 
 // ============================================================
 //  FIN MODULE RÉPARATIONS PARCOURS CLIENT
