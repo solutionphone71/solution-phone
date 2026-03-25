@@ -9538,25 +9538,20 @@ function showQrModeSelector() {
   if(ex) ex.remove();
   var div = document.createElement('div');
   div.id = 'qr-mode-selector';
-  div.style.cssText = 'margin-bottom:20px;';
-  div.innerHTML =
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
-      '<button onclick="qrOpenClientMode()" style="padding:18px 12px;background:#c0392b;color:#fff;' +
-        'border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;' +
-        'display:flex;flex-direction:column;align-items:center;gap:6px;-webkit-tap-highlight-color:transparent;">' +
-        '<span style="font-size:36px;">👤</span>' +
-        '<span>Mode Client</span>' +
-        '<span style="font-size:11px;font-weight:400;opacity:.8;">Le client saisit lui-même</span>' +
-      '</button>' +
-      '<button onclick="document.getElementById(\'qr-mode-selector\').remove()" style="padding:18px 12px;' +
-        'background:#f8fafc;color:#374151;border:2px solid #e2e8f0;border-radius:12px;font-size:16px;' +
-        'font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;' +
-        '-webkit-tap-highlight-color:transparent;">' +
-        '<span style="font-size:36px;">🔧</span>' +
-        '<span>Mode Technicien</span>' +
-        '<span style="font-size:11px;font-weight:400;color:#94a3b8;">Saisie directe</span>' +
-      '</button>' +
-    '</div>';
+  div.style.marginBottom = '20px';
+  var btnClient = document.createElement('button');
+  btnClient.style.cssText = 'padding:18px 12px;background:#c0392b;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
+  btnClient.innerHTML = '<span style="font-size:36px;">&#x1F464;</span><span>Mode Client</span><span style="font-size:11px;font-weight:400;opacity:.8;">Le client saisit lui-même</span>';
+  btnClient.onclick = function(){ qrOpenClientMode(); };
+  var btnTech = document.createElement('button');
+  btnTech.style.cssText = 'padding:18px 12px;background:#f8fafc;color:#374151;border:2px solid #e2e8f0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
+  btnTech.innerHTML = '<span style="font-size:36px;">&#x1F527;</span><span>Mode Technicien</span><span style="font-size:11px;font-weight:400;color:#94a3b8;">Saisie directe</span>';
+  btnTech.onclick = function(){ div.remove(); };
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+  grid.appendChild(btnClient);
+  grid.appendChild(btnTech);
+  div.appendChild(grid);
   wrap.insertBefore(div, wrap.firstChild);
 }
 
