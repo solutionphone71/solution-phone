@@ -58,10 +58,18 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
 .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .card-title{font-size:15px;font-weight:700;color:var(--text);}
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
-.dash-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
-.dash-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;}
-.dash-value{font-size:28px;font-weight:800;color:var(--text);}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.dash-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:.15s;}
+.dash-card:hover{border-color:var(--red);transform:translateY(-1px);}
+.dash-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.dash-value{font-size:26px;font-weight:800;color:var(--text);}
+.dash-sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
+.dash-qr-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.dash-qr-row:last-child{border-bottom:none;}
+.dash-qr-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.qrs-nonconf{background:#fef2f2;color:var(--red);}
+.qrs-waiting{background:#fef3c7;color:#92400e;}
+.qrs-ok{background:#f0fdf4;color:#166534;}
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{text-align:left;padding:9px 12px;background:#f8fafc;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
 td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text);}
@@ -439,15 +447,74 @@ tr:hover td{background:#fafafa;}
   <div class="main">
 
     <div class="page active" id="page-dashboard">
-      <div class="page-title">Tableau de bord</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="page-title" style="margin-bottom:0;">Tableau de bord</div>
+        <div id="dash-date" style="font-size:13px;color:var(--text-muted);"></div>
+      </div>
       <div class="page-sub">Solution Phone · Mâcon</div>
+
+      <!-- Alertes -->
       <div id="dash-alerts"></div>
-      <div class="dash-grid" id="dash-cards"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div id="dash-qr-alerts"></div>
+
+      <!-- KPI du jour -->
+      <div class="dash-grid" id="dash-cards" style="margin-bottom:18px;"></div>
+
+      <!-- Grille principale : réparations + clients -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;" id="dash-main-grid">
+
+        <!-- Réparations récentes -->
+        <div class="card" id="dash-rep-card">
+          <div class="card-header">
+            <div class="card-title">🔧 Réparations récentes</div>
+            <button class="btn btn-sm" onclick="showPage('reparations',null)">Tout voir →</button>
+          </div>
+          <table><thead><tr><th>Client</th><th>Appareil</th><th>Montant</th><th>Date</th></tr></thead>
+          <tbody id="dash-reparations"></tbody></table>
+        </div>
+
+        <!-- Clients récents -->
+        <div class="card" id="dash-clients-card">
+          <div class="card-header">
+            <div class="card-title">👥 Clients récents</div>
+            <button class="btn btn-sm" onclick="showPage('clients',null)">Tout voir →</button>
+          </div>
+          <table><thead><tr><th>Nom</th><th>Tél.</th><th>Réparations</th></tr></thead>
+          <tbody id="dash-clients-list"></tbody></table>
+        </div>
+
+      </div>
+
+      <!-- Ligne basse : smartphones + caisse + QR -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;" id="dash-bottom-grid">
+
         <div class="card"><div class="card-header"><div class="card-title">📱 Derniers smartphones</div></div>
-          <table><thead><tr><th>Modèle</th><th>Grade</th><th>Prix</th><th>État</th></tr></thead><tbody id="dash-phones"></tbody></table></div>
-        <div class="card"><div class="card-header"><div class="card-title">💰 Z de Caisse récent</div></div>
-          <table><thead><tr><th>Date</th><th>TTC</th><th>QualiRépar</th><th>Caisse</th></tr></thead><tbody id="dash-caisse"></tbody></table></div>
+          <table><thead><tr><th>Modèle</th><th>Grade</th><th>Prix</th><th>État</th></tr></thead>
+          <tbody id="dash-phones"></tbody></table>
+        </div>
+
+        <div class="card" id="dash-caisse-card">
+          <div class="card-header"><div class="card-title">💰 Z de caisse récent</div></div>
+          <table><thead><tr><th>Date</th><th>TTC</th><th>QR</th><th>Caisse</th></tr></thead>
+          <tbody id="dash-caisse"></tbody></table>
+        </div>
+
+        <div class="card" id="dash-qr-card">
+          <div class="card-header">
+            <div class="card-title">🏷️ QualiRépar</div>
+            <button class="btn btn-sm" onclick="showPage('qualirepar',null);qrInit();">Gérer →</button>
+          </div>
+          <tbody id="dash-qr-dossiers"></tbody>
+          <div id="dash-qr-empty" style="padding:14px;text-align:center;font-size:12px;color:var(--text-muted);">Aucun dossier en cours</div>
+        </div>
+
+      </div>
+
+      <!-- Actions rapides -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;">
+        <button class="btn btn-primary" onclick="showPage('reparations',null)">➕ Nouvelle réparation</button>
+        <button class="btn" style="border-color:var(--blue);color:var(--blue);" onclick="showPage('phones',null)">📱 Achat smartphone</button>
+        <button class="btn" onclick="showPage('qualirepar',null);qrInit();">🏷️ Dossier QualiRépar</button>
       </div>
     </div>
 
@@ -5334,58 +5401,137 @@ function exportAchatsEspecesCSV() {
 }
 
 function renderDashboard(){
-  // Alertes stock anciens
-  var anciens = phones.filter(function(p){
-    if(p.etat !== 'DISPONIBLE' || !p.dateAchat) return false;
-    var days = Math.floor((new Date() - new Date(p.dateAchat)) / 86400000);
-    return days > 30;
-  });
-  var alertZone = document.getElementById('dash-alerts');
-  if(alertZone) {
-    if(anciens.length > 0) {
-      alertZone.innerHTML = '<div style="background:rgba(237,137,54,0.15);border:1px solid var(--warning);border-radius:10px;padding:12px 16px;margin-bottom:16px;color:var(--warning);">⚠️ <b>'+anciens.length+' téléphone(s)</b> en stock depuis plus de 30 jours : '+anciens.map(function(p){return p.modele;}).join(', ')+'</div>';
-      alertZone.style.display='block';
-    } else {
-      alertZone.innerHTML='';
-    }
-  }
-  var dispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var caTotal=caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
-  var quali=caisse.reduce(function(s,c){return s+(c.quali||0);},0);
-  var moisCourant=getMoisActuel();
-  var caSmartphones=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+p.vente;},0);
-  var caReparations=caTotal-caSmartphones;
-  var ca=caTotal;
-  var mg=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
+  var today = new Date();
+  var joursSemaine = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  var moisNoms = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var dateEl = document.getElementById('dash-date');
+  if(dateEl) dateEl.textContent = joursSemaine[today.getDay()]+' '+today.getDate()+' '+moisNoms[today.getMonth()]+' '+today.getFullYear();
 
   var isEmploye = _userRole === 'employe';
+  var moisCourant = getMoisActuel();
+  var todayISO = today.toISOString().split('T')[0];
 
-  // Cartes dashboard — employé voit seulement stock + smartphones
-  if (isEmploye) {
-    document.getElementById('dash-cards').innerHTML=
-      '<div class="dash-card"><div class="dash-label">Stock disponible</div><div class="dash-value">'+dispo+' tél.</div></div>'+
-      '<div class="dash-card"><div class="dash-label">CA Vente Smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartphones.toFixed(0)+' €</div><div style="font-size:12px;color:var(--green);margin-top:4px;">Marge : '+mg.toFixed(0)+' €</div></div>';
-  } else {
-    document.getElementById('dash-cards').innerHTML=
-      '<div class="dash-card"><div class="dash-label">Stock disponible</div><div class="dash-value">'+dispo+' tél.</div></div>'+
-      '<div class="dash-card"><div class="dash-label">CA Réparations</div><div class="dash-value">'+caReparations.toFixed(0)+' €</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px;">dont QualiRépar : '+quali.toFixed(0)+' €</div></div>'+
-      '<div class="dash-card"><div class="dash-label">CA Vente Smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartphones.toFixed(0)+' €</div><div style="font-size:12px;color:var(--green);margin-top:4px;">Marge : '+mg.toFixed(0)+' €</div></div>'+
-      '<div class="dash-card"><div class="dash-label">CA Total du mois</div><div class="dash-value" style="color:var(--red)"><b>'+caTotal.toFixed(0)+' €</b></div></div>'+
-      '<div class="dash-card"><div class="dash-label">Factures</div><div class="dash-value">'+factures.length+'</div></div>';
+  // ── Alerte smartphones anciens ──
+  var anciens = phones.filter(function(p){
+    if(p.etat !== 'DISPONIBLE' || !p.dateAchat) return false;
+    return Math.floor((today - new Date(p.dateAchat)) / 86400000) > 30;
+  });
+  var alertZone = document.getElementById('dash-alerts');
+  if(alertZone){
+    alertZone.innerHTML = anciens.length > 0
+      ? '<div style="background:rgba(237,137,54,0.15);border:1px solid var(--warning);border-radius:10px;padding:12px 16px;margin-bottom:12px;color:var(--warning);">⚠️ <b>'+anciens.length+' téléphone(s)</b> en stock depuis plus de 30 jours : '+anciens.map(function(p){return p.modele;}).join(', ')+'</div>'
+      : '';
   }
 
-  var recent=phones.slice(-5).reverse();
-  document.getElementById('dash-phones').innerHTML=recent.map(function(p){return'<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucun smartphone</td></tr>';
+  // ── KPI du mois ──
+  var dispo = phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var caSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+p.vente;},0);
+  var mgSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
+  var caReparMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
+  var caTotal = caSmartMois + caReparMois;
 
-  // Z de Caisse récent — masqué pour les employés
-  var dashCaisse = document.getElementById('dash-caisse');
-  var dashCaisseCard = dashCaisse ? dashCaisse.closest('.card') : null;
-  if (isEmploye) {
-    if (dashCaisseCard) dashCaisseCard.style.display = 'none';
+  if(isEmploye){
+    document.getElementById('dash-cards').innerHTML =
+      '<div class="dash-card" onclick="showPage('phones',null)"><div class="dash-label">Stock dispo</div><div class="dash-value">'+dispo+' tél.</div></div>'+
+      '<div class="dash-card" onclick="showPage('ventes-smart',null);renderVentesSmartphones();"><div class="dash-label">CA smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartMois.toFixed(0)+' €</div><div class="dash-sub">Marge : '+mgSmartMois.toFixed(0)+' €</div></div>';
   } else {
-    if (dashCaisseCard) dashCaisseCard.style.display = '';
-    var fin=calcFinales();var rc=caisse.slice(-5).reverse();
-    if (dashCaisse) dashCaisse.innerHTML=rc.map(function(c){var i=caisse.indexOf(c);return'<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(2)+' €':'—')+'</td></tr>';}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:14px">Aucune saisie</td></tr>';
+    document.getElementById('dash-cards').innerHTML =
+      '<div class="dash-card" onclick="showPage('reparations',null)"><div class="dash-label">CA réparations</div><div class="dash-value">'+caReparMois.toFixed(0)+' €</div><div class="dash-sub">dont QR : '+bonusQRMois.toFixed(0)+' €</div></div>'+
+      '<div class="dash-card" onclick="showPage('ventes-smart',null);renderVentesSmartphones();"><div class="dash-label">CA smartphones</div><div class="dash-value" style="color:var(--blue)">'+caSmartMois.toFixed(0)+' €</div><div class="dash-sub">Marge : '+mgSmartMois.toFixed(0)+' €</div></div>'+
+      '<div class="dash-card"><div class="dash-label">CA total du mois</div><div class="dash-value" style="color:var(--red)">'+caTotal.toFixed(0)+' €</div></div>'+
+      '<div class="dash-card" onclick="showPage('phones',null)"><div class="dash-label">Stock dispo</div><div class="dash-value">'+dispo+' tél.</div><div class="dash-sub">Smartphones</div></div>'+
+      '<div class="dash-card" onclick="showPage('qualirepar',null);qrInit();"><div class="dash-label">Bonus QR encaissé</div><div class="dash-value" style="color:var(--green)">'+bonusQRMois.toFixed(0)+' €</div><div class="dash-sub">ce mois</div></div>';
+  }
+
+  // ── Réparations récentes ──
+  var dashRep = document.getElementById('dash-reparations');
+  var dashRepCard = document.getElementById('dash-rep-card');
+  if(dashRep){
+    var repRecentes = reparations.slice(-6).reverse();
+    if(repRecentes.length > 0){
+      dashRep.innerHTML = repRecentes.map(function(r){
+        return '<tr><td><b>'+r.clientNom+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+r.appareil+'</td><td>'+r.prix.toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>';
+      }).join('');
+    } else {
+      dashRep.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune réparation</td></tr>';
+    }
+  }
+
+  // ── Clients récents ──
+  var dashClients = document.getElementById('dash-clients-list');
+  if(dashClients){
+    var clientsRecents = clients.slice(-6).reverse();
+    if(clientsRecents.length > 0){
+      dashClients.innerHTML = clientsRecents.map(function(c){
+        var nbRep = reparations.filter(function(r){return r.clientNom && c.nom && r.clientNom.toLowerCase()===c.nom.toLowerCase();}).length;
+        return '<tr><td><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b></td><td style="font-size:12px;color:var(--text-muted);">'+(c.tel||'—')+'</td><td style="font-size:12px;text-align:center;">'+nbRep+'</td></tr>';
+      }).join('');
+    } else {
+      dashClients.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun client</td></tr>';
+    }
+  }
+
+  // ── Derniers smartphones ──
+  var recent = phones.slice(-4).reverse();
+  document.getElementById('dash-phones').innerHTML = recent.map(function(p){
+    return '<tr><td><b>'+p.modele+'</b></td><td>'+(p.grade||'—')+'</td><td>'+p.vente+' €</td><td><span class="badge '+(p.etat==='VENDU'?'badge-red':'badge-green')+'">'+p.etat+'</span></td></tr>';
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucun smartphone</td></tr>';
+
+  // ── Z de caisse ──
+  var dashCaisse = document.getElementById('dash-caisse');
+  var dashCaisseCard = document.getElementById('dash-caisse-card');
+  if(isEmploye){
+    if(dashCaisseCard) dashCaisseCard.style.display='none';
+  } else {
+    if(dashCaisseCard) dashCaisseCard.style.display='';
+    if(dashCaisse){
+      var fin = calcFinales();
+      var rc = caisse.slice(-4).reverse();
+      dashCaisse.innerHTML = rc.map(function(c){
+        var i = caisse.indexOf(c);
+        return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(0)+' €</b></td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(0)+' €</span>':'—')+'</td><td>'+(fin[i]?fin[i].toFixed(0)+' €':'—')+'</td></tr>';
+      }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune saisie</td></tr>';
+    }
+  }
+
+  // ── QualiRépar dossiers statut ──
+  var qrCard = document.getElementById('dash-qr-card');
+  var qrEmpty = document.getElementById('dash-qr-empty');
+  if(qrCard){
+    // Lire les dossiers QR depuis Supabase (variable globale qrDossiers si disponible)
+    var dossiers = (typeof qrDossiersList !== 'undefined') ? qrDossiersList : [];
+    var nonConf = dossiers.filter(function(d){return d.statut==='NonConform';});
+    var waiting = dossiers.filter(function(d){return d.statut==='Waiting';});
+    var qrAlerts = document.getElementById('dash-qr-alerts');
+    if(qrAlerts && nonConf.length > 0){
+      qrAlerts.innerHTML = '<div style="background:#fef2f2;border:1px solid var(--red);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--red);font-size:13px;">🔴 <b>'+nonConf.length+' dossier(s) QualiRépar</b> nécessitent une correction → <a href="#" onclick="showPage('qualirepar',null);qrInit();" style="color:var(--red);">Corriger maintenant</a></div>';
+    } else if(qrAlerts){
+      qrAlerts.innerHTML='';
+    }
+    var tbody = qrCard.querySelector('tbody');
+    if(dossiers.length > 0 && tbody){
+      if(qrEmpty) qrEmpty.style.display='none';
+      tbody.innerHTML = dossiers.slice(0,5).map(function(d){
+        var cls = d.statut==='NonConform'?'qrs-nonconf':d.statut==='Accepted'?'qrs-ok':'qrs-waiting';
+        var label = d.statut==='NonConform'?'À corriger':d.statut==='Accepted'?'Remboursé':'En attente';
+        return '<tr class="dash-qr-row"><td style="flex:1;">'+d.nom+'</td><td><span class="dash-qr-status '+cls+'">'+label+'</span></td><td style="color:var(--green);font-weight:700;font-size:12px;">25 €</td></tr>';
+      }).join('');
+    } else {
+      if(qrEmpty) qrEmpty.style.display='block';
+      if(tbody) tbody.innerHTML='';
+    }
+  }
+
+  // ── Masquer cards non-patron ──
+  var dashRepCard2 = document.getElementById('dash-rep-card');
+  var dashClientsCard = document.getElementById('dash-clients-card');
+  if(isEmploye){
+    if(dashRepCard2) dashRepCard2.style.display='none';
+    if(dashClientsCard) dashClientsCard.style.display='none';
+    if(qrCard) qrCard.style.display='none';
+    var bottomGrid = document.getElementById('dash-bottom-grid');
+    if(bottomGrid) bottomGrid.style.gridTemplateColumns='1fr 1fr';
   }
 }
 
