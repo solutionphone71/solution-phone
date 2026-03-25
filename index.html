@@ -598,6 +598,7 @@ tr:hover td{background:rgba(255,255,255,0.02);}
           </select>
         </div>
         <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="printBilan()">🖨️ Imprimer</button>
+        <button class="btn btn-sm" style="margin-top:18px;border-color:var(--green);color:var(--green);font-weight:700;" onclick="backupComplet()">💾 Backup complet</button>
         <!-- Import Phonilab -->
         <div style="margin-top:18px;display:flex;align-items:center;gap:8px;">
           <label class="btn btn-sm" style="background:var(--dark3);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
@@ -2038,19 +2039,58 @@ function showNotif(msg,type){var n=document.getElementById('notif');n.textConten
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
-// ── SYSTÈME PIN ──
+// ── SYSTÈME PIN (SHA-256) ──
 var _pin = '';
-var _pinCode      = ''; // Chargé depuis Supabase
-var _pinEmployee  = ''; // Chargé depuis Supabase
+var _pinCode      = ''; // Hash SHA-256 chargé depuis Supabase
+var _pinEmployee  = ''; // Hash SHA-256 chargé depuis Supabase
 var _pinsLoaded   = false;
+
+// Hache une chaîne en SHA-256 (retourne une promesse de chaîne hex)
+async function sha256(str) {
+  var buf = new TextEncoder().encode(str);
+  var hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hashBuf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
+// Détecte si une valeur est déjà un hash SHA-256 (64 caractères hex)
+function isSha256Hash(val) {
+  return typeof val === 'string' && /^[0-9a-f]{64}$/.test(val);
+}
 
 async function loadPinsFromSupabase() {
   try {
     var rows = await supaFetch('settings', 'GET', null, '?key=eq.pins_config&select=value');
     if (rows && rows.length && rows[0].value) {
       var data = JSON.parse(rows[0].value);
-      if (data.patron) _pinCode = data.patron;
-      if (data.employe) _pinEmployee = data.employe;
+      var needsMigration = false;
+      var migrated = Object.assign({}, data);
+
+      // Migration automatique : si les PINs sont en clair, on les hache et sauvegarde
+      if (data.patron) {
+        if (!isSha256Hash(data.patron)) {
+          migrated.patron = await sha256(data.patron);
+          needsMigration = true;
+        }
+        _pinCode = migrated.patron;
+      }
+      if (data.employe) {
+        if (!isSha256Hash(data.employe)) {
+          migrated.employe = await sha256(data.employe);
+          needsMigration = true;
+        }
+        _pinEmployee = migrated.employe;
+      }
+
+      if (needsMigration) {
+        // Sauvegarde les hashes dans Supabase (migration silencieuse)
+        try {
+          await supaFetch('settings', 'PATCH', {value: JSON.stringify(migrated)}, '?key=eq.pins_config');
+          console.info('✅ PINs migrés vers SHA-256 avec succès');
+        } catch(e) {
+          console.warn('Migration SHA-256 impossible (droits insuffisants?) :', e);
+        }
+      }
+
       _pinsLoaded = true;
     }
   } catch(e) {
@@ -2117,8 +2157,9 @@ async function checkPin(){
     await loadPinsFromSupabase();
   }
   var pinSaisi = _pin;
-  if(pinSaisi === _pinCode || pinSaisi === _pinEmployee){
-    _userRole = (pinSaisi === _pinEmployee) ? 'employe' : 'patron';
+  var hashSaisi = await sha256(pinSaisi);
+  if(hashSaisi === _pinCode || hashSaisi === _pinEmployee){
+    _userRole = (hashSaisi === _pinEmployee) ? 'employe' : 'patron';
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     if(window.innerWidth <= 768){
@@ -3609,6 +3650,79 @@ function renderBilan() {
   document.getElementById('bilan-table').innerHTML = +
     '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>QualiRépar</th><th>Jours</th><th>Moy/jour</th></tr></thead>' +
     '<tbody>' + tableRows + '</tbody>';
+}
+
+// ── BACKUP COMPLET SUPABASE ──
+async function backupComplet() {
+  var btn = document.querySelector('[onclick="backupComplet()"]');
+  var txtOriginal = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ Sauvegarde...'; btn.disabled = true; }
+
+  var tables = [
+    'phones', 'factures', 'caisse', 'clients',
+    'depenses', 'bons_commande', 'bons_depot',
+    'reports_mois', 'settings', 'phonilab_import',
+    'roulette_config'
+  ];
+
+  var backup = {
+    version: '1.0',
+    date: new Date().toISOString(),
+    boutique: 'Solution Phone - Mâcon',
+    tables: {}
+  };
+
+  var errors = [];
+  var totalRows = 0;
+
+  for (var i = 0; i < tables.length; i++) {
+    var t = tables[i];
+    try {
+      var rows = await supaFetch(t, 'GET', null, '?limit=100000');
+      backup.tables[t] = rows || [];
+      totalRows += (rows || []).length;
+    } catch(e) {
+      errors.push(t);
+      backup.tables[t] = [];
+    }
+  }
+
+  // Métadonnées du backup
+  backup.meta = {
+    total_lignes: totalRows,
+    tables_ok: tables.length - errors.length,
+    tables_erreur: errors,
+    app_version: '2.0'
+  };
+
+  // Génération du fichier JSON
+  var json = JSON.stringify(backup, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+
+  // Nom de fichier avec date
+  var now = new Date();
+  var dateStr = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0');
+  var filename = 'SolutionPhone_Backup_' + dateStr + '.json';
+
+  // Téléchargement automatique
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+
+  if (btn) { btn.textContent = txtOriginal; btn.disabled = false; }
+
+  if (errors.length > 0) {
+    showNotif('Backup partiel — ' + (tables.length - errors.length) + '/' + tables.length + ' tables (' + totalRows + ' lignes)', 'warning');
+  } else {
+    showNotif('✅ Backup complet — ' + totalRows + ' lignes exportées → ' + filename, 'success');
+  }
 }
 
 function printBilan() {
