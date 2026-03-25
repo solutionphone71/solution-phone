@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260325_salaries_pin6 -->
+<!-- v20260325_salaries_pin6_security -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -2227,7 +2227,7 @@ async function loadPinsFromSupabase() {
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
-var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart'];
+var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart','salaries'];
 
 function appliquerRole(){
   var isEmploye = _userRole === 'employe';
@@ -2238,7 +2238,7 @@ function appliquerRole(){
   });
   // Menu mobile items
   var mobItems = document.querySelectorAll('.mob-menu-item');
-  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats'];
+  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart','salaries'];
   mobItems.forEach(function(item){
     var txt = item.getAttribute('onclick')||'';
     var cacher = cacheMobile.some(function(m){ return txt.indexOf(m) !== -1; });
@@ -2328,6 +2328,11 @@ async function checkPin(){
 function doLogin(){ checkPin(); }
 
 function showPage(id,el){
+  // Sécurité : bloquer accès pages patron pour les employés
+  if(_userRole === 'employe' && _modulesPatronOnly.indexOf(id) !== -1){
+    showNotif('⛔ Accès réservé au patron','error');
+    return;
+  }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
