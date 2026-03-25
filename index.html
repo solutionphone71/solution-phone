@@ -330,14 +330,14 @@ tr:hover td{background:#fafafa;}
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
-  <div class="mob-menu-item" onclick="showPageMobile('factures','');closeMobileMenu()"><span class="mob-menu-icon">🧾</span>Factures</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
   <div class="mob-menu-item" onclick="showPageMobile('qualirepar','');qrInit();closeMobileMenu()"><span class="mob-menu-icon">🏷️</span>QualiRépar</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
-  <div class="mob-menu-item" onclick="showPageMobile('factures','');closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
+  <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Smartphones</div>
   <div class="mob-menu-item" onclick="showPageMobile('phones','');closeMobileMenu()"><span class="mob-menu-icon">📥</span>Achat smartphones</div>
   <div class="mob-menu-item" onclick="showPageMobile('ventes-smart','');renderVentesSmartphones();closeMobileMenu()"><span class="mob-menu-icon">📤</span>Vente smartphones</div>
+  <div class="mob-menu-item" onclick="showPageMobile('factures','');closeMobileMenu()"><span class="mob-menu-icon">🧾</span>Factures TVA marge</div>
   <div class="mob-menu-item" onclick="showPageMobile('police','');closeMobileMenu()"><span class="mob-menu-icon">👮</span>Livre de police</div>
   <div class="mob-menu-item" onclick="showPageMobile('rachat','');closeMobileMenu()"><span class="mob-menu-icon">🧮</span>Calculateur rachat</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Comptabilité</div>
@@ -407,18 +407,18 @@ tr:hover td{background:#fafafa;}
     <div class="nav-group-label">Réparations</div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
-    <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="showPage('qualirepar',this);qrInit();"><span class="nav-icon">🏷️</span><span>QualiRépar</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; neufs</div>
-    <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">📦</span><span>Tél. neufs &amp; access.</span></div>
+    <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Tél. neufs &amp; access.</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Smartphones</div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📥</span><span>Achat smartphones</span></div>
     <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">📤</span><span>Vente smartphones</span></div>
+    <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de police</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur rachat</span></div>
 
@@ -575,8 +575,8 @@ tr:hover td{background:#fafafa;}
     </div>
 
     <div class="page" id="page-factures">
-      <div class="page-title">Factures</div>
-      <div class="page-sub">Gestion des ventes</div>
+      <div class="page-title">Factures TVA marge</div>
+      <div class="page-sub">Ventes smartphones · TVA sur marge</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
         <div class="card">
           <div class="card-header"><div class="card-title">➕ Nouvelle facture</div></div>
@@ -604,7 +604,100 @@ tr:hover td{background:#fafafa;}
       </div>
     </div>
 
-    <div class="page" id="page-stats">
+        <div class="page" id="page-neufs-access">
+      <div class="page-title">Téléphones neufs &amp; Accessoires</div>
+      <div class="page-sub">Vente neuf · TVA 20% · Factures Pennylane</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+        <!-- Formulaire nouvelle vente -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">➕ Nouvelle vente</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group">
+              <label>Type *</label>
+              <select id="na-type" onchange="naUpdatePreview()">
+                <option value="">-- Sélectionner --</option>
+                <option value="telephone-neuf">Téléphone neuf</option>
+                <option value="accessoire">Accessoire</option>
+                <option value="coque">Coque / protection</option>
+                <option value="chargeur">Chargeur / câble</option>
+                <option value="autre">Autre accessoire</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Description *</label>
+              <input type="text" id="na-description" placeholder="ex: iPhone 16 128Go Noir, Coque Samsung S24..." oninput="naUpdatePreview()">
+            </div>
+            <div class="form-group">
+              <label>Client *</label>
+              <input type="text" id="na-client" placeholder="ex: Jean Dupont" oninput="naUpdatePreview()">
+            </div>
+            <div class="form-group">
+              <label>Adresse client</label>
+              <input type="text" id="na-adresse" placeholder="ex: 12 rue de la Paix" oninput="naUpdatePreview()">
+            </div>
+            <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+              <div class="form-group"><label>Code postal</label><input type="text" id="na-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="naUpdatePreview()"></div>
+              <div class="form-group"><label>Ville</label><input type="text" id="na-ville" placeholder="Mâcon" oninput="naUpdatePreview()"></div>
+            </div>
+            <div class="form-group">
+              <label>Email client</label>
+              <input type="email" id="na-email" placeholder="client@gmail.com">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-group">
+                <label>Prix TTC (€) *</label>
+                <input type="number" id="na-prix" step="0.01" placeholder="ex: 49.90" oninput="naUpdatePreview()">
+              </div>
+              <div class="form-group">
+                <label>Mode de règlement</label>
+                <select id="na-mode" onchange="naUpdatePreview()">
+                  <option value="CB">CB</option>
+                  <option value="Espèces">Espèces</option>
+                  <option value="Virement">Virement</option>
+                  <option value="Chèque">Chèque</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="naGenererFacture()">🧾 Générer la facture</button>
+              <button class="btn" onclick="naReset()">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aperçu facture -->
+        <div class="card" id="na-preview-card" style="display:none;">
+          <div class="card-header">
+            <div class="card-title">Aperçu</div>
+            <button class="btn btn-primary btn-sm" onclick="naImprimer()">🖨️ Imprimer</button>
+          </div>
+          <div id="na-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+        </div>
+
+      </div>
+
+      <!-- Historique ventes -->
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header">
+          <div class="card-title">📋 Historique ventes</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" id="na-search" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:13px;width:180px;" oninput="naRender()">
+            <button class="btn btn-sm" onclick="naExportCSV()">📥 Export CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>N°</th><th>Date</th><th>Type</th><th>Description</th><th>Client</th><th>Montant TTC</th><th>Mode</th><th>Actions</th></tr></thead>
+            <tbody id="na-table"></tbody>
+          </table>
+        </div>
+        <div id="na-total-bar" style="padding:10px 14px;font-size:13px;color:var(--text-muted);border-top:1px solid var(--border);"></div>
+      </div>
+    </div>
+
+<div class="page" id="page-stats">
       <div class="page-title">Statistiques</div>
       <div class="page-sub">CA, marges et performances</div>
       <div id="stats-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;"></div>
@@ -2818,6 +2911,7 @@ function showPage(id,el){
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
   if(id==='reparations')renderReparations();
+  if(id==='neufs-access'){naLoad();naRender();}
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
@@ -7744,6 +7838,179 @@ showPage = function(id, el){
   if(btnId){ var b=document.getElementById(btnId); if(b)b.classList.add('active'); }
   else { var more=document.getElementById('mob-btn-more'); if(more)more.classList.add('active'); }
 };
+
+
+// ============================================================
+//  MODULE TÉLÉPHONES NEUFS & ACCESSOIRES — TVA 20%
+// ============================================================
+var naVentes = [];
+var _naNumero = 1;
+
+async function naLoad(){
+  try {
+    var res = await supaFetch('ventes_neufs_access','GET',null,'?order=id.desc');
+    if(res && res.length >= 0){
+      naVentes = res.map(function(x){
+        return {id:x.id,numero:x.numero,date:x.date,type:x.type,description:x.description,
+          clientNom:x.client_nom,clientAdresse:x.client_adresse||'',clientEmail:x.client_email||'',
+          prix:Number(x.prix_ttc),mode:x.mode_reglement||'CB'};
+      });
+      if(naVentes.length) _naNumero = naVentes.length + 1;
+      naRender();
+    }
+  } catch(e){ console.log('naLoad error',e); }
+}
+
+async function naSave(vente){
+  try {
+    await supaFetch('ventes_neufs_access','POST',{
+      numero:vente.numero, date:vente.date, type:vente.type,
+      description:vente.description, client_nom:vente.clientNom,
+      client_adresse:vente.clientAdresse, client_email:vente.clientEmail,
+      prix_ttc:vente.prix, mode_reglement:vente.mode
+    });
+  } catch(e){ console.log('naSave error',e); }
+}
+
+function naGetAdresse(){
+  var a = (document.getElementById('na-adresse')||{value:''}).value.trim();
+  var cp = (document.getElementById('na-cp')||{value:''}).value.trim();
+  var v = (document.getElementById('na-ville')||{value:''}).value.trim();
+  return [a, cp&&v?cp+' '+v:cp||v].filter(Boolean).join(', ');
+}
+
+function naUpdatePreview(){
+  var desc = document.getElementById('na-description').value.trim();
+  var client = document.getElementById('na-client').value.trim();
+  var prixStr = document.getElementById('na-prix').value;
+  var prix = parseFloat(prixStr)||0;
+  var card = document.getElementById('na-preview-card');
+  if(!desc||!client||!prix){ if(card) card.style.display='none'; return; }
+  if(card) card.style.display='block';
+  var adresse = naGetAdresse();
+  var ht = prix/1.2;
+  var tva = prix-ht;
+  var num = 'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0');
+  var mode = document.getElementById('na-mode').value;
+  var content = document.getElementById('na-preview-content');
+  if(content){
+    content.innerHTML = buildA4HTML({
+      type:'reparation', numero:num, date:new Date().toISOString().split('T')[0],
+      clientNom:client, clientAdresse:adresse, clientEmail:'',
+      mode:mode, garantie:'',
+      lignes:[{desc:desc,qte:1,pu:prix}],
+      total:prix, isDevis:false
+    });
+  }
+}
+
+function naGenererFacture(){
+  var desc = document.getElementById('na-description').value.trim();
+  var client = document.getElementById('na-client').value.trim();
+  var type = document.getElementById('na-type').value;
+  var prix = parseFloat(document.getElementById('na-prix').value)||0;
+  if(!desc||!client||!type||!prix){ showNotif('Remplissez les champs obligatoires *','error'); return; }
+  var num = 'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0');
+  var date = new Date().toISOString().split('T')[0];
+  var vente = {
+    id:Date.now(), numero:num, date:date, type:type,
+    description:desc, clientNom:client,
+    clientAdresse:naGetAdresse(),
+    clientEmail:document.getElementById('na-email').value.trim(),
+    prix:prix, mode:document.getElementById('na-mode').value
+  };
+  naVentes.unshift(vente);
+  _naNumero++;
+  naSave(vente);
+  naRender();
+  // Imprimer
+  var html = buildA4HTML({
+    type:'reparation', numero:vente.numero, date:vente.date,
+    clientNom:vente.clientNom, clientAdresse:vente.clientAdresse, clientEmail:vente.clientEmail,
+    mode:vente.mode, garantie:'',
+    lignes:[{desc:vente.description,qte:1,pu:vente.prix}],
+    total:vente.prix, isDevis:false
+  });
+  ouvrirA4(html);
+  naReset();
+  showNotif('Facture '+vente.numero+' créée !','success');
+}
+
+function naImprimer(){
+  var desc = document.getElementById('na-description').value.trim();
+  var client = document.getElementById('na-client').value.trim();
+  var prix = parseFloat(document.getElementById('na-prix').value)||0;
+  if(!desc||!client||!prix) return;
+  var h = buildA4HTML({
+    type:'reparation', numero:'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0'),
+    date:new Date().toISOString().split('T')[0],
+    clientNom:client, clientAdresse:naGetAdresse(), clientEmail:'',
+    mode:document.getElementById('na-mode').value, garantie:'',
+    lignes:[{desc:desc,qte:1,pu:prix}], total:prix, isDevis:false
+  });
+  ouvrirA4(h);
+}
+
+function naReset(){
+  ['na-type','na-description','na-client','na-adresse','na-cp','na-ville','na-email','na-prix'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value='';
+  });
+  var card = document.getElementById('na-preview-card');
+  if(card) card.style.display='none';
+}
+
+function naRender(){
+  var search = (document.getElementById('na-search')||{value:''}).value.toLowerCase();
+  var filtered = naVentes.filter(function(v){
+    return !search || v.description.toLowerCase().includes(search) || v.clientNom.toLowerCase().includes(search) || v.numero.toLowerCase().includes(search);
+  });
+  var tbody = document.getElementById('na-table');
+  if(!tbody) return;
+  var typeLabels = {'telephone-neuf':'📱 Tél. neuf','accessoire':'📦 Accessoire','coque':'🛡️ Coque','chargeur':'🔌 Chargeur','autre':'📦 Autre'};
+  tbody.innerHTML = filtered.map(function(v){
+    return '<tr>'+
+      '<td><b>'+v.numero+'</b></td>'+
+      '<td>'+fmtDate(v.date)+'</td>'+
+      '<td>'+(typeLabels[v.type]||v.type||'—')+'</td>'+
+      '<td>'+v.description+'</td>'+
+      '<td>'+v.clientNom+'</td>'+
+      '<td><b>'+v.prix.toFixed(2)+' €</b></td>'+
+      '<td>'+v.mode+'</td>'+
+      '<td><button class="btn btn-sm" onclick="naReimprimer('+v.id+')">🖨️</button></td>'+
+      '</tr>';
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:16px;">Aucune vente</td></tr>';
+  var total = filtered.reduce(function(s,v){return s+v.prix;},0);
+  var totalBar = document.getElementById('na-total-bar');
+  if(totalBar) totalBar.innerHTML = filtered.length+' vente(s) · Total TTC : <b>'+total.toFixed(2)+' €</b> · HT : '+(total/1.2).toFixed(2)+' € · TVA 20% : '+(total-total/1.2).toFixed(2)+' €';
+}
+
+function naReimprimer(id){
+  var v = naVentes.find(function(x){return x.id===id;});
+  if(!v) return;
+  var h = buildA4HTML({
+    type:'reparation', numero:v.numero, date:v.date,
+    clientNom:v.clientNom, clientAdresse:v.clientAdresse, clientEmail:v.clientEmail||'',
+    mode:v.mode, garantie:'',
+    lignes:[{desc:v.description,qte:1,pu:v.prix}],
+    total:v.prix, isDevis:false
+  });
+  ouvrirA4(h);
+}
+
+function naExportCSV(){
+  var headers = ['Numéro','Date','Type','Description','Client','Adresse','Prix TTC','HT','TVA','Mode'];
+  var rows = naVentes.map(function(v){
+    return [v.numero,v.date,v.type,v.description,v.clientNom,v.clientAdresse,v.prix.toFixed(2),(v.prix/1.2).toFixed(2),(v.prix-v.prix/1.2).toFixed(2),v.mode].join(';');
+  });
+  var csv = [headers.join(';')].concat(rows).join('\n');
+  var blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download='Ventes_Neufs_Accessoires.csv'; a.click();
+  showNotif('Export téléchargé !','success');
+}
+// ============================================================
+//  FIN MODULE TÉLÉPHONES NEUFS & ACCESSOIRES
+// ============================================================
 
 // ============================================================
 //  IMPORT PHONILAB CSV
