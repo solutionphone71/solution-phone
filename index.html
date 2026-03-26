@@ -1475,8 +1475,54 @@ tr:hover td{background:#fafafa;}
               <div class="card">
                 <div class="card-header"><div class="card-title">📝 Panne & Devis</div></div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
-                  <div class="form-group"><label>Panne décrite par le client *</label>
-                    <textarea id="dep-panne" rows="3" placeholder="ex : L'écran est fissuré suite à une chute, le tactile ne répond plus..." oninput="repAutoSave();repCheckEligibilite()"></textarea>
+                  <div class="form-group">
+                    <label>Panne décrite par le client *</label>
+                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSave();repCheckEligibilite();"
+                      style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
+                      <option value="">-- Sélectionner la panne --</option>
+                      <optgroup label="📱 Écran">
+                        <option value="Remplacement écran suite à une casse (fissure / écran cassé)">Écran cassé / fissuré</option>
+                        <option value="Remplacement écran - défaillance électronique (affichage défectueux hors casse)">Écran défectueux (hors casse)</option>
+                        <option value="Remplacement vitre tactile - écran tactile ne répond plus">Tactile ne répond plus</option>
+                      </optgroup>
+                      <optgroup label="🔋 Batterie">
+                        <option value="Remplacement batterie - autonomie insuffisante, batterie usée">Batterie usée / autonomie insuffisante</option>
+                        <option value="Remplacement batterie - téléphone ne se charge plus">Ne se charge plus</option>
+                        <option value="Remplacement batterie - téléphone s'éteint inopinément">S'éteint inopinément</option>
+                      </optgroup>
+                      <optgroup label="🔌 Connecteur">
+                        <option value="Remplacement connecteur de charge - charge impossible ou intermittente">Connecteur de charge HS</option>
+                        <option value="Remplacement connecteur de charge - câble non reconnu">Câble non reconnu</option>
+                      </optgroup>
+                      <optgroup label="🔊 Audio">
+                        <option value="Remplacement haut-parleur - son absent ou distordu">Haut-parleur HS (son absent)</option>
+                        <option value="Remplacement microphone - interlocuteurs ne m'entendent pas">Micro HS (interlocuteurs ne entendent pas)</option>
+                        <option value="Remplacement écouteur interne - son absent lors des appels">Écouteur interne HS</option>
+                      </optgroup>
+                      <optgroup label="📷 Caméra">
+                        <option value="Remplacement caméra arrière - photos floues ou caméra non fonctionnelle">Caméra arrière HS</option>
+                        <option value="Remplacement caméra avant - selfie non fonctionnel">Caméra avant HS</option>
+                      </optgroup>
+                      <optgroup label="🔘 Boutons">
+                        <option value="Remplacement bouton power - bouton on/off non fonctionnel">Bouton power HS</option>
+                        <option value="Remplacement bouton volume - boutons volume non fonctionnels">Boutons volume HS</option>
+                        <option value="Remplacement bouton home - bouton accueil non fonctionnel">Bouton home HS</option>
+                      </optgroup>
+                      <optgroup label="📡 Réseau">
+                        <option value="Réparation antenne réseau - pas de réseau, pas de signal">Pas de réseau / signal</option>
+                        <option value="Remplacement lecteur SIM - carte SIM non détectée">Carte SIM non détectée</option>
+                        <option value="Réparation WiFi - connexion WiFi impossible">WiFi HS</option>
+                      </optgroup>
+                      <optgroup label="💧 Autres">
+                        <option value="Diagnostic et réparation dégât des eaux - téléphone tombé dans l'eau">Dégât des eaux</option>
+                        <option value="Remplacement vitre arrière - dos du téléphone cassé">Vitre arrière cassée</option>
+                        <option value="Autre panne - voir description">Autre (préciser ci-dessous)</option>
+                      </optgroup>
+                    </select>
+                    <textarea id="dep-panne" rows="2"
+                      placeholder="Précisions supplémentaires (optionnel)..."
+                      oninput="repAutoSave();repCheckEligibilite()"
+                      style="margin-top:6px;font-size:13px;"></textarea>
                   </div>
 
                   <!-- Alerte inéligibilité -->
@@ -9299,6 +9345,15 @@ function repLoadFormFromDossier(){
     if(imeiEl&&imeiEl.value) repCheckIMEI(imeiEl.value);
   },300);
   var dp=document.getElementById('dep-panne'); if(dp) dp.value=d.panne||'';
+  var dps=document.getElementById('dep-panne-select');
+  if(dps && d.panne){
+    var found=false;
+    for(var i=0;i<dps.options.length;i++){
+      if(dps.options[i].value===d.panne){dps.selectedIndex=i;found=true;break;}
+    }
+    if(found){ if(dp) dp.style.display='none'; }
+    else { dps.value='Autre panne - voir description'; if(dp) dp.style.display='block'; }
+  }
   var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
   var dmo=document.getElementById('dep-mo-ht'); if(dmo) dmo.value=d.moHT||'';
   var dpi=document.getElementById('dep-pieces-ht'); if(dpi) dpi.value=d.piecesHT||'';
@@ -9313,6 +9368,43 @@ function repLoadFormFromDossier(){
     var rm=document.getElementById('r-mode'); if(rm) rm.value=f.mode||'CB';
     var rg=document.getElementById('r-garantie'); if(rg) rg.value=f.garantie||'3 mois';
     var rqr=document.getElementById('rep-qr-actif'); if(rqr){ rqr.checked=!!f.bonusQR; repToggleQR(); }
+  }
+}
+
+
+function repPanneSelect(val){
+  var ta = document.getElementById('dep-panne');
+  if(!ta) return;
+  if(val && val !== 'Autre panne - voir description'){
+    ta.value = val;
+    ta.style.display = 'none'; // Masquer le textarea si panne standard
+  } else {
+    ta.value = '';
+    ta.style.display = 'block'; // Afficher pour saisie libre
+    if(val === 'Autre panne - voir description') ta.focus();
+  }
+  repAutoSave();
+  // Auto-détecter la pièce Ecosystem selon la panne
+  repPanneToEcosystem(val);
+}
+
+function repPanneToEcosystem(panne){
+  if(!panne) return;
+  var p = panne.toLowerCase();
+  var piece = '';
+  if(p.includes('écran') || p.includes('ecran') || p.includes('tactile')) piece = 'Écran';
+  else if(p.includes('batterie') || p.includes('charge') || p.includes('éteint')) piece = 'Batterie';
+  else if(p.includes('connecteur')) piece = 'Connecteur';
+  else if(p.includes('haut-parleur') || p.includes('son')) piece = 'Haut-parleur';
+  else if(p.includes('micro')) piece = 'Micro';
+  else if(p.includes('caméra') || p.includes('camera')) piece = 'Caméra';
+  else if(p.includes('bouton')) piece = 'Bouton';
+  // Pré-sélectionner la pièce dans le select Pièce à commander
+  var sel = document.getElementById('dep-piece-select');
+  if(sel && piece){
+    for(var i=0;i<sel.options.length;i++){
+      if(sel.options[i].value === piece){ sel.selectedIndex = i; break; }
+    }
   }
 }
 
