@@ -9221,22 +9221,31 @@ function repShowListe(){
 }
 
 function repNewDossier(){
-  repDossierCourant = {
-    id: Date.now(),
-    numero: 'DEP-'+new Date().getFullYear()+'-'+String(repDossiers.length+1).padStart(3,'0'),
-    date: new Date().toISOString().split('T')[0],
-    statut: 'depot',
-    client: {}, appareil: {}, panne:'', devis:0, dateRetour:'', obs:'',
-    etat:[], accessoires:[], etatAutre:'',
-    facture: null, qrEnvoi: null
-  };
-  repClearForm();
-  document.getElementById('rep-dossier-titre').textContent = 'Nouveau dossier';
-  document.getElementById('rep-dossier-num').textContent = repDossierCourant.numero;
-  repUpdateStatutBadge();
-  document.getElementById('rep-liste-view').style.display='none';
-  document.getElementById('rep-dossier-view').style.display='block';
-  repGoStep(1);
+  try {
+    repDossierCourant = {
+      id: Date.now(),
+      numero: 'SO_S'+String(Date.now()).slice(-6),
+      date: new Date().toISOString().split('T')[0],
+      statut: 'depot',
+      client: {}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, obs:'',
+      etat:[], accessoires:[], etatAutre:'',
+      facture: null, qrEnvoi: null, signature: null, photoImeiUrl: null
+    };
+    repClearForm();
+    var titre = document.getElementById('rep-dossier-titre');
+    if(titre) titre.textContent = 'Nouveau dossier';
+    var num = document.getElementById('rep-dossier-num');
+    if(num) num.textContent = repDossierCourant.numero;
+    repUpdateStatutBadge();
+    var liste = document.getElementById('rep-liste-view');
+    var dossier = document.getElementById('rep-dossier-view');
+    if(liste) liste.style.display='none';
+    if(dossier) dossier.style.display='block';
+    repGoStep(1);
+  } catch(e) {
+    console.error('repNewDossier error:', e);
+    showNotif('Erreur ouverture dossier : '+e.message, 'error');
+  }
 }
 
 
