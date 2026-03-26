@@ -374,6 +374,7 @@ tr:hover td{background:#fafafa;}
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Administration</div>
   <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés</div>
   <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
+  <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
 </div>
 
 <div id="login-screen">
@@ -461,6 +462,7 @@ tr:hover td{background:#fafafa;}
     <div class="nav-group-label">Administration</div>
     <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés</span></div>
     <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
+    <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
   </div>
   <div class="main">
 
@@ -991,6 +993,115 @@ tr:hover td{background:#fafafa;}
     </div>
 
   <!-- ═══ PAGE SALARIÉS ═══ -->
+  <div class="page" id="page-params">
+    <div class="page-title">⚙️ Paramètres API</div>
+    <div class="page-sub">Connexions aux services externes — AgoraPlus · Ecosystem · Ecologic · Pennylane</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;">
+
+      <!-- AgoraPlus -->
+      <div class="card" style="border:1.5px solid #6366f1;">
+        <div class="card-header" style="background:#f5f3ff;">
+          <div class="card-title" style="color:#4f46e5;">🔌 AgoraPlus API</div>
+          <div id="params-agora-status" style="font-size:12px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>Clé API AgoraPlus <span style="color:var(--red);">*</span></label>
+            <input type="password" id="params-agora-key" placeholder="Reçue par email de support@agoraplus.com">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Envoyée par AgoraPlus après votre inscription</div>
+          </div>
+          <div class="form-group">
+            <label>URL API AgoraPlus</label>
+            <input type="text" id="params-agora-url" placeholder="https://api.agoraplus.com" value="https://api.agoraplus.com">
+          </div>
+          <button class="btn btn-primary" onclick="paramsSaveAgora()" style="width:100%;">💾 Enregistrer</button>
+          <button class="btn btn-sm" onclick="paramsTestAgora()" style="border-color:#6366f1;color:#6366f1;">🧪 Tester la connexion</button>
+          <div id="params-agora-test-result" style="font-size:12px;"></div>
+        </div>
+      </div>
+
+      <!-- Ecosystem -->
+      <div class="card" style="border:1.5px solid var(--green);">
+        <div class="card-header" style="background:#f0fdf4;">
+          <div class="card-title" style="color:var(--green);">🟢 Ecosystem</div>
+          <div id="params-eco-status" style="font-size:12px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>Identifiant réparateur (Repairer ID)</label>
+            <input type="text" id="params-eco-repairer-id" placeholder="ex: 2002535">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Visible dans Phonilab → Paramètres Ecosystem</div>
+          </div>
+          <div class="form-group">
+            <label>Utilisateur Ecosystem</label>
+            <input type="text" id="params-eco-user" placeholder="ex: 501710">
+          </div>
+          <div class="form-group">
+            <label>Mot de passe Ecosystem</label>
+            <input type="password" id="params-eco-pass" placeholder="••••••••">
+          </div>
+          <button class="btn btn-primary" style="background:var(--green);border-color:var(--green);width:100%;" onclick="paramsSaveEcosystem()">💾 Enregistrer</button>
+        </div>
+      </div>
+
+      <!-- Ecologic -->
+      <div class="card" style="border:1.5px solid var(--blue);">
+        <div class="card-header" style="background:#eff6ff;">
+          <div class="card-title" style="color:var(--blue);">🔵 Ecologic</div>
+          <div id="params-ecologic-status" style="font-size:12px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>Token Ecologic</label>
+            <input type="text" id="params-ecologic-token" placeholder="8121d135-4635-412d-b7ab-3b4dd61cbdb8">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Visible dans Phonilab → Paramètres Ecologic</div>
+          </div>
+          <div class="form-group">
+            <label>Site ID Ecologic</label>
+            <input type="text" id="params-ecologic-siteid" placeholder="f3f52871-5be0-4c26-9082-002479b9cf4e">
+          </div>
+          <button class="btn btn-primary" style="background:var(--blue);border-color:var(--blue);width:100%;" onclick="paramsSaveEcologic()">💾 Enregistrer</button>
+        </div>
+      </div>
+
+      <!-- VosFactures -->
+      <div class="card" style="border:1.5px solid #0ea5e9;">
+        <div class="card-header" style="background:#f0f9ff;">
+          <div class="card-title" style="color:#0369a1;">🧾 VosFactures</div>
+          <div id="params-vf-status" style="font-size:12px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>Token API <span style="color:var(--red);">*</span></label>
+            <input type="password" id="params-vf-token" placeholder="Paramètres → Paramètres du compte → Intégration → Code API">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Depuis votre compte VosFactures.fr</div>
+          </div>
+          <div class="form-group">
+            <label>Sous-domaine compte <span style="color:var(--red);">*</span></label>
+            <input type="text" id="params-vf-domain" placeholder="ex: solutionphone (pour solutionphone.vosfactures.fr)">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Le préfixe de votre URL VosFactures</div>
+          </div>
+          <button class="btn btn-primary" style="background:#0369a1;border-color:#0369a1;width:100%;" onclick="paramsSaveVosFactures()">💾 Enregistrer</button>
+          <button class="btn btn-sm" onclick="paramsTestVosFactures()" style="border-color:#0369a1;color:#0369a1;">🧪 Tester la connexion</button>
+          <div id="params-vf-test-result" style="font-size:12px;"></div>
+          <div style="font-size:12px;color:var(--text-muted);padding:8px;background:#f0f9ff;border-radius:8px;line-height:1.6;">
+            ℹ️ <b>8€ HT/mois</b> · Factures illimitées · API complète · Facture électronique PEPPOL incluse<br>
+            Créez votre compte sur <b>vosfactures.fr</b> → 30 jours gratuits
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Récap des connexions actives -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-header"><div class="card-title">📡 Statut des connexions</div></div>
+      <div id="params-connexions-status" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:8px 0;"></div>
+    </div>
+
+  </div>
+
   <div class="page" id="page-salaries">
     <div class="page-title">👥 Salariés</div>
     <div class="page-sub">Gestion de la paie — Convention collective N°3251</div>
@@ -1633,6 +1744,7 @@ tr:hover td{background:#fafafa;}
               <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
                 <button class="btn" onclick="repImprimerDepot()" style="font-size:13px;">📋 Réimprimer bon de dépôt</button>
                 <button class="btn" onclick="repImprimerFacture()" style="font-size:13px;">🧾 Réimprimer facture</button>
+                <button class="btn btn-sm" id="btn-vf-link" style="display:none;border-color:#0369a1;color:#0369a1;font-size:13px;" onclick="repOuvrirVosFactures()">🔗 Voir sur VosFactures</button>
               </div>
             </div>
           </div>
@@ -3181,6 +3293,7 @@ function showPage(id,el){
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
   if(id==='reparations'){repLoadDossiers();}
+  if(id==='params'){paramsLoad();}
   if(id==='neufs-access'){naLoad();naRender();}
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
@@ -8255,6 +8368,218 @@ showPage = function(id, el){
 
 
 
+
+// ============================================================
+//  PARAMÈTRES API — AgoraPlus · Ecosystem · Ecologic · Pennylane
+// ============================================================
+
+// Clés localStorage
+var PARAMS_KEYS = {
+  agoraKey:       'sp_agora_api_key',
+  agoraUrl:       'sp_agora_url',
+  ecoRepairerId:  'sp_eco_repairer_id',
+  ecoUser:        'sp_eco_user',
+  ecoPass:        'sp_eco_pass',
+  ecologicToken:  'sp_ecologic_token',
+  ecologicSiteId: 'sp_ecologic_siteid',
+  vfToken:        'sp_vf_token',
+  vfDomain:       'sp_vf_domain'
+};
+
+
+// Pré-remplir les identifiants connus
+(function(){
+  if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
+  if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
+  if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token','8121d135-4635-412d-b7ab-3b4dd61cbdb8');
+  if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
+  if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
+  if(!localStorage.getItem('sp_vf_domain'))       localStorage.setItem('sp_vf_domain','solution-phone71');
+})();
+
+function paramsLoad(){
+  var el;
+  el=document.getElementById('params-agora-key');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.agoraKey)||'';
+  el=document.getElementById('params-agora-url');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com';
+  el=document.getElementById('params-eco-repairer-id'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoRepairerId)||'';
+  el=document.getElementById('params-eco-user');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoUser)||'';
+  el=document.getElementById('params-eco-pass');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
+  el=document.getElementById('params-ecologic-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicToken)||'';
+  el=document.getElementById('params-ecologic-siteid'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||'';
+  el=document.getElementById('params-vf-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.vfToken)||'';
+  el=document.getElementById('params-vf-domain'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.vfDomain)||'';
+  paramsUpdateStatus();
+}
+
+function paramsSaveAgora(){
+  var key = (document.getElementById('params-agora-key')||{value:''}).value.trim();
+  var url = (document.getElementById('params-agora-url')||{value:''}).value.trim()||'https://api.agoraplus.com';
+  if(!key){ showNotif('Entrez la clé API AgoraPlus','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.agoraKey, key);
+  localStorage.setItem(PARAMS_KEYS.agoraUrl, url);
+  showNotif('✅ Clé AgoraPlus enregistrée !','success');
+  paramsUpdateStatus();
+}
+
+function paramsSaveEcosystem(){
+  var id   = (document.getElementById('params-eco-repairer-id')||{value:''}).value.trim();
+  var user = (document.getElementById('params-eco-user')||{value:''}).value.trim();
+  var pass = (document.getElementById('params-eco-pass')||{value:''}).value.trim();
+  if(!id){ showNotif('Entrez le Repairer ID Ecosystem','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.ecoRepairerId, id);
+  localStorage.setItem(PARAMS_KEYS.ecoUser, user);
+  localStorage.setItem(PARAMS_KEYS.ecoPass, pass);
+  showNotif('✅ Identifiants Ecosystem enregistrés !','success');
+  paramsUpdateStatus();
+}
+
+function paramsSaveEcologic(){
+  var token  = (document.getElementById('params-ecologic-token')||{value:''}).value.trim();
+  var siteid = (document.getElementById('params-ecologic-siteid')||{value:''}).value.trim();
+  if(!token){ showNotif('Entrez le Token Ecologic','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.ecologicToken, token);
+  localStorage.setItem(PARAMS_KEYS.ecologicSiteId, siteid);
+  showNotif('✅ Identifiants Ecologic enregistrés !','success');
+  paramsUpdateStatus();
+}
+
+function paramsSaveVosFactures(){
+  var token  = (document.getElementById('params-vf-token')||{value:''}).value.trim();
+  var domain = (document.getElementById('params-vf-domain')||{value:''}).value.trim();
+  if(!token||!domain){ showNotif('Token et sous-domaine sont obligatoires','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.vfToken, token);
+  localStorage.setItem(PARAMS_KEYS.vfDomain, domain);
+  showNotif('✅ VosFactures configuré !','success');
+  paramsUpdateStatus();
+}
+
+async function paramsTestVosFactures(){
+  var token  = localStorage.getItem(PARAMS_KEYS.vfToken);
+  var domain = localStorage.getItem(PARAMS_KEYS.vfDomain);
+  var resultEl = document.getElementById('params-vf-test-result');
+  if(!token||!domain){ showNotif('Enregistrez d'abord les paramètres VosFactures','error'); return; }
+  if(resultEl) resultEl.innerHTML='⏳ Test en cours...';
+  try {
+    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json?api_token='+token+'&per_page=1',{
+      method:'GET', headers:{'Accept':'application/json'}
+    });
+    if(res.ok){
+      if(resultEl) resultEl.innerHTML='<span style="color:var(--green);">✅ Connexion VosFactures OK !</span>';
+      showNotif('VosFactures connecté !','success');
+    } else {
+      if(resultEl) resultEl.innerHTML='<span style="color:var(--red);">❌ Erreur '+res.status+' — Vérifiez token et sous-domaine</span>';
+    }
+  } catch(err){
+    if(resultEl) resultEl.innerHTML='<span style="color:var(--red);">❌ Erreur de connexion — vérifiez le sous-domaine</span>';
+  }
+}
+
+function getVFToken(){ return localStorage.getItem(PARAMS_KEYS.vfToken)||''; }
+function getVFDomain(){ return localStorage.getItem(PARAMS_KEYS.vfDomain)||''; }
+
+// Créer une facture dans VosFactures depuis une réparation
+async function creerFactureVosFactures(rep){
+  var token = getVFToken();
+  var domain = getVFDomain();
+  if(!token||!domain){ showNotif('Configurez VosFactures dans Paramètres API','error'); return null; }
+
+  var payload = {
+    api_token: token,
+    invoice: {
+      kind: 'vat',
+      sell_date: rep.date||new Date().toISOString().split('T')[0],
+      issue_date: new Date().toISOString().split('T')[0],
+      buyer_name: rep.clientNom||'',
+      buyer_email: rep.clientEmail||'',
+      buyer_street: rep.clientAdresse||'',
+      description: rep.description||'Réparation smartphone',
+      positions: [
+        {
+          name: rep.description||'Réparation',
+          tax: 20,
+          total_price_gross: rep.prix||0,
+          quantity: 1
+        }
+      ].concat(rep.bonusQR ? [{
+        name: 'Bonus Réparation QualiRépar',
+        tax: 20,
+        total_price_gross: -25,
+        quantity: 1
+      }] : [])
+    }
+  };
+
+  try {
+    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if(res.ok){
+      var data = await res.json();
+      return data; // contient data.id, data.number, data.view_url
+    }
+  } catch(e){ console.error('VosFactures:', e); }
+  return null;
+}
+
+async function paramsTestAgora(){
+  var key = localStorage.getItem(PARAMS_KEYS.agoraKey);
+  var url = localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com';
+  var resultEl = document.getElementById('params-agora-test-result');
+  if(!key){ showNotif('Enregistrez d\'abord la clé AgoraPlus','error'); return; }
+  if(resultEl) resultEl.innerHTML = '⏳ Test en cours...';
+  try {
+    var res = await fetch(url+'/PrintBrandList', {
+      method: 'GET',
+      headers: { 'x-api-key': key, 'Content-Type': 'application/json' }
+    });
+    if(res.ok){
+      var data = await res.json();
+      var nb = data.ResponseData ? data.ResponseData.length : '?';
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--green);">✅ Connexion OK — '+nb+' marques disponibles</span>';
+      showNotif('AgoraPlus connecté !','success');
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--red);">❌ Erreur '+res.status+' — Vérifiez la clé API</span>';
+    }
+  } catch(err){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--red);">❌ Impossible de contacter AgoraPlus</span>';
+  }
+}
+
+function paramsUpdateStatus(){
+  var box = document.getElementById('params-connexions-status');
+  if(!box) return;
+
+  var connexions = [
+    { label: 'AgoraPlus',  ok: !!localStorage.getItem(PARAMS_KEYS.agoraKey),       icon: '🔌', color: '#6366f1' },
+    { label: 'Ecosystem',  ok: !!localStorage.getItem(PARAMS_KEYS.ecoRepairerId),   icon: '🟢', color: 'var(--green)' },
+    { label: 'Ecologic',   ok: !!localStorage.getItem(PARAMS_KEYS.ecologicToken),   icon: '🔵', color: 'var(--blue)' },
+    { label: 'VosFactures', ok: !!localStorage.getItem(PARAMS_KEYS.vfToken),         icon: '🧾', color: '#0369a1' },
+  ];
+
+  box.innerHTML = '';
+  connexions.forEach(function(c){
+    var div = document.createElement('div');
+    div.style.cssText = 'padding:12px;border-radius:10px;text-align:center;background:'+(c.ok?'#f0fdf4':'#f8fafc')+';border:1.5px solid '+(c.ok?c.color:'var(--border)')+';';
+    div.innerHTML = '<div style="font-size:22px;margin-bottom:4px;">'+c.icon+'</div>'+
+      '<div style="font-size:12px;font-weight:700;">'+c.label+'</div>'+
+      '<div style="font-size:11px;margin-top:4px;color:'+(c.ok?c.color:'var(--text-muted)')+';font-weight:700;">'+(c.ok?'✅ Configuré':'⏳ En attente')+'</div>';
+    box.appendChild(div);
+  });
+}
+
+// Fonctions d'accès aux paramètres depuis le reste de l'app
+function getAgoraKey(){ return localStorage.getItem(PARAMS_KEYS.agoraKey)||''; }
+function getAgoraUrl(){ return localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com'; }
+function getEcoRepairerId(){ return localStorage.getItem(PARAMS_KEYS.ecoRepairerId)||''; }
+function getEcologicToken(){ return localStorage.getItem(PARAMS_KEYS.ecologicToken)||''; }
+function getEcologicSiteId(){ return localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||''; }
+function getPennylaneKey(){ return localStorage.getItem(PARAMS_KEYS.pennylaneKey)||''; }
+// ============================================================
+//  FIN PARAMÈTRES API
+// ============================================================
+
 // ============================================================
 //  CLIENTS EN ATTENTE — Tablette accueil
 // ============================================================
@@ -8910,6 +9235,12 @@ function repNewDossier(){
   repGoStep(1);
 }
 
+
+function repOuvrirVosFactures(){
+  if(!repDossierCourant||!repDossierCourant.facture||!repDossierCourant.facture.vfUrl) return;
+  window.open(repDossierCourant.facture.vfUrl,'_blank');
+}
+
 function repOuvrirDossier(id){
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) return;
@@ -9058,6 +9389,10 @@ function repStep2Next(){
   repAutoSave();
   var a=repDossierCourant.appareil;
   if(!a.marque||!a.modele){showNotif('Marque et Modèle sont obligatoires','error');return;}
+  // Rappel photo IMEI si pas encore prise
+  if(!repDossierCourant.photoImeiUrl && a.imei){
+    showNotif('💡 Pensez à prendre la photo de la plaque signalétique (bouton 📷 OCR) pour Ecosystem !','success');
+  }
   repGoStep(3);
 }
 
@@ -9328,7 +9663,36 @@ function repGenererFacture(){
   repUpdateStatutBadge();
   // Imprimer
   repImprimerFacture();
-  showNotif('Facture '+num+' créée !','success');
+
+  // Envoyer à VosFactures si configuré
+  if(getVFToken() && getVFDomain()){
+    var vfData = {
+      date: repDossierCourant.date||new Date().toISOString().split('T')[0],
+      clientNom: (c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
+      clientEmail: c.email||'',
+      clientAdresse: adresse,
+      description: desc,
+      prix: prix,
+      bonusQR: bonusQR,
+      mode: mode
+    };
+    creerFactureVosFactures(vfData).then(function(result){
+      if(result && result.id){
+        showNotif('✅ Facture '+num+' créée + envoyée à VosFactures !','success');
+        // Sauvegarder l'ID VosFactures dans le dossier
+        if(repDossierCourant && repDossierCourant.facture){
+          repDossierCourant.facture.vfId  = result.id;
+          repDossierCourant.facture.vfNum = result.number;
+          repDossierCourant.facture.vfUrl = result.view_url;
+          repSauvegarderDossier();
+        }
+      } else {
+        showNotif('Facture '+num+' créée · VosFactures non connecté','success');
+      }
+    });
+  } else {
+    showNotif('Facture '+num+' créée !','success');
+  }
 }
 
 function repImprimerFacture(){
@@ -9368,6 +9732,9 @@ function repUpdateStep5(){
     '<b>Panne :</b> '+(d.panne||'—')+'<br>'+
     (f?'<b>Facture :</b> '+f.numero+' · '+(f.bonusQR?f.prix-25:f.prix)+' € TTC':'<b>Facture :</b> Non générée');
   // QR recap
+  // Afficher lien VosFactures si dossier a un ID VF
+  var btnVF = document.getElementById('btn-vf-link');
+  if(btnVF) btnVF.style.display = (d.facture&&d.facture.vfId)?'block':'none';
   var qrRecap=document.getElementById('rep-qr-recap');
   var qrNo=document.getElementById('rep-qr-no-bonus');
   var qrActions=document.getElementById('rep-qr-actions');
@@ -9387,6 +9754,7 @@ function repUpdateStep5(){
       '<b>N° dossier interne :</b> '+((document.getElementById('r-dossier-interne')||{value:''}).value||'—')+'<br>'+
       '<b>Réf. mobile :</b> '+((document.getElementById('r-ref-mobile')||{value:''}).value||'—')+'<br>'+
       '<b>Montant TTC hors bonus :</b> '+(f?f.prix:0)+' €<br>'+
+      (d.photoImeiUrl ? '<b>📷 Photo IMEI :</b> <a href="'+d.photoImeiUrl+'" target="_blank" style="color:var(--blue);">Voir la photo</a><br>' : '<b>📷 Photo IMEI :</b> <span style="color:var(--warning);">Non prise — utilisez le bouton 📷 OCR</span><br>')+
       '<b>Codes IRIS :</b> <span style="font-family:monospace;font-size:12px;">'+
         ((document.getElementById('iris-symptom')||{value:''}).value||'—')+
         ' · '+((document.getElementById('iris-section')||{value:''}).value||'—')+
@@ -9404,7 +9772,11 @@ function repEnvoyerOrganisme(){
   var statut=document.getElementById('rep-qr-envoi-statut');
   if(statut) statut.innerHTML='<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;color:var(--green);font-size:13px;">✅ Dossier envoyé · En attente de remboursement (sous 15 jours)</div>';
   repDossierCourant.statut='qr';
-  repDossierCourant.qrEnvoi={date:new Date().toISOString(),statut:'Waiting'};
+  repDossierCourant.qrEnvoi={
+    date:new Date().toISOString(),
+    statut:'Waiting',
+    photoImeiUrl: repDossierCourant.photoImeiUrl||null
+  };
   repSauvegarderDossier();
   repUpdateStatutBadge();
   showNotif('Dossier envoyé à l\'éco-organisme','success');
@@ -9539,27 +9911,32 @@ function fmtDateEligible(dateStr){
 // ── OCR IMEI depuis caméra (réutilise la fonction Claude Vision) ──
 async function repOCRImei(){
   try {
-    var stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
-    // Créer une modal caméra temporaire
+    var stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
+
     var modal = document.createElement('div');
-    modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+    modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+
     var video = document.createElement('video');
-    video.autoplay = true; video.playsInline = true;
-    video.style.cssText='max-width:100%;max-height:60vh;border-radius:12px;';
+    video.autoplay=true; video.playsInline=true;
+    video.style.cssText='max-width:100%;max-height:55vh;border-radius:12px;border:2px solid rgba(255,255,255,0.3);';
     video.srcObject = stream;
+
     var hint = document.createElement('div');
-    hint.style.cssText='color:#fff;font-size:14px;text-align:center;padding:0 20px;';
-    hint.textContent='Pointez vers l\'IMEI ou la plaque signalétique';
+    hint.style.cssText='color:#fff;font-size:14px;text-align:center;padding:0 20px;line-height:1.6;';
+    hint.innerHTML='📱 Pointez vers la <b>plaque signalétique</b> ou l\'<b>IMEI</b> du téléphone<br><span style="font-size:12px;opacity:.7;">La photo sera aussi sauvegardée pour Ecosystem</span>';
+
     var btnCapture = document.createElement('button');
-    btnCapture.style.cssText='padding:14px 32px;background:var(--red);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;';
+    btnCapture.style.cssText='padding:14px 32px;background:#e53e3e;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;';
     btnCapture.textContent='📸 Capturer';
+
     var btnCancel = document.createElement('button');
     btnCancel.style.cssText='padding:10px 24px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;';
     btnCancel.textContent='Annuler';
-    modal.appendChild(video);
-    modal.appendChild(hint);
-    modal.appendChild(btnCapture);
-    modal.appendChild(btnCancel);
+
+    var status = document.createElement('div');
+    status.style.cssText='color:#fff;font-size:13px;min-height:20px;text-align:center;';
+
+    [video,hint,btnCapture,btnCancel,status].forEach(function(el){modal.appendChild(el);});
     document.body.appendChild(modal);
 
     btnCancel.onclick = function(){
@@ -9568,30 +9945,115 @@ async function repOCRImei(){
     };
 
     btnCapture.onclick = async function(){
+      btnCapture.disabled=true; btnCapture.textContent='⏳ Traitement...';
+
+      // Capturer l'image
       var canvas = document.createElement('canvas');
       canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       canvas.getContext('2d').drawImage(video,0,0);
       stream.getTracks().forEach(function(t){t.stop();});
-      document.body.removeChild(modal);
-      var dataUrl = canvas.toDataURL('image/jpeg',0.8);
-      hint.textContent = '⏳ Lecture IMEI...';
+
+      // Compresser la photo pour Ecosystem (< 500 Ko)
+      status.textContent='🗜️ Compression en cours...';
+      var compressedUrl = await compresserPhoto(canvas, 500);
+      var base64Full    = compressedUrl.split(',')[1];
+
+      // 1. Lire l'IMEI avec Claude Vision
+      status.textContent='🤖 Lecture IMEI par IA...';
       try {
-        var base64 = dataUrl.split(',')[1];
-        var imei = await qrExtractIMEI(base64);
+        var imei = await qrExtractIMEI(base64Full);
         if(imei){
           document.getElementById('dep-imei').value = imei;
           repAutoSave();
           repCheckIMEI(imei);
-          showNotif('IMEI lu : '+imei,'success');
+          status.textContent='✅ IMEI lu : '+imei;
         } else {
-          showNotif('IMEI non trouvé — saisissez-le manuellement','error');
+          status.textContent='⚠️ IMEI non détecté — saisissez-le manuellement';
         }
       } catch(e){
-        showNotif('Erreur OCR : '+e.message,'error');
+        status.textContent='⚠️ Erreur OCR — saisissez l\'IMEI manuellement';
       }
+
+      // 2. Uploader la photo dans Supabase Storage
+      status.textContent=(status.textContent.includes('✅')?status.textContent+' · ':'')+'⏳ Sauvegarde photo...';
+      try {
+        var photoUrl = await uploaderPhotoIMEI(base64Full, compressedUrl);
+        if(photoUrl && repDossierCourant){
+          repDossierCourant.photoImeiUrl = photoUrl;
+          repSauvegarderDossier();
+          status.textContent = (imei?'✅ IMEI : '+imei+' · ':'')+' 📷 Photo sauvegardée';
+          showNotif('IMEI lu + photo sauvegardée pour Ecosystem !','success');
+        }
+      } catch(e){
+        console.error('Upload photo:', e);
+      }
+
+      setTimeout(function(){ document.body.removeChild(modal); }, 2000);
     };
   } catch(e){
     showNotif('Caméra non disponible — saisissez l\'IMEI manuellement','error');
+  }
+}
+
+// ── Compresser une photo pour Ecosystem (< maxKo Ko) ─────────
+async function compresserPhoto(canvas, maxKo){
+  var qualite = 0.85;
+  var dataUrl = canvas.toDataURL('image/jpeg', qualite);
+
+  // Réduire jusqu'à atteindre la taille cible
+  while(dataUrl.length * 0.75 > maxKo * 1024 && qualite > 0.1){
+    qualite -= 0.1;
+    // Si trop grand, réduire aussi les dimensions
+    if(qualite < 0.5 && canvas.width > 1280){
+      var c2 = document.createElement('canvas');
+      c2.width  = Math.round(canvas.width * 0.75);
+      c2.height = Math.round(canvas.height * 0.75);
+      c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
+      canvas = c2;
+    }
+    dataUrl = canvas.toDataURL('image/jpeg', qualite);
+  }
+  var taille = Math.round(dataUrl.length * 0.75 / 1024);
+  console.log('Photo compressée : '+taille+' Ko (qualité '+Math.round(qualite*100)+'%)');
+  return dataUrl;
+}
+
+// ── Uploader la photo dans Supabase Storage ──────────────────
+async function uploaderPhotoIMEI(base64, dataUrl){
+  try {
+    var dossierNum = repDossierCourant ? repDossierCourant.numero : 'unknown';
+    var fileName   = dossierNum.replace(/[^a-zA-Z0-9-]/g,'_')+'_imei_'+Date.now()+'.jpg';
+    var bucket     = 'imei-photos';
+
+    // Convertir base64 en Blob
+    var byteStr = atob(base64);
+    var arr = new Uint8Array(byteStr.length);
+    for(var i=0;i<byteStr.length;i++) arr[i]=byteStr.charCodeAt(i);
+    var blob = new Blob([arr], {type:'image/jpeg'});
+
+    var res = await fetch(SUPA_URL+'/storage/v1/object/'+bucket+'/'+fileName, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer '+SUPA_KEY,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: blob
+    });
+
+    if(res.ok){
+      var url = SUPA_URL+'/storage/v1/object/public/'+bucket+'/'+fileName;
+      console.log('Photo uploadée :', url);
+      return url;
+    } else {
+      var err = await res.text();
+      console.error('Upload error:', res.status, err);
+      return null;
+    }
+  } catch(e){
+    console.error('Upload exception:', e);
+    return null;
   }
 }
 
