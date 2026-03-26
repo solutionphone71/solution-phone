@@ -3126,7 +3126,7 @@ async function checkPin(){
       loadClientsEnAttente();
       loadHistoriqueReparations();
       // Charger la base clients complète au démarrage (pagination 1000 par batch)
-      loadAllClients();
+      // Clients : chargés à la demande (onglet ou recherche)
       // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
         loadBonsCommande();
@@ -8980,17 +8980,56 @@ function repSauvegarderDossier(){
 function repSearchClient(q){
   var box = document.getElementById('rep-client-results');
   if(!box) return;
-  if(!q||q.length<2){box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">Tapez au moins 2 caractères</div>';return;}
+  if(!q||q.length<2){
+    box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">Tapez au moins 2 caractères</div>';
+    return;
+  }
+
+  // Cache local en premier (rapide)
   var results = clients.filter(function(c){
-    return (c.nom+' '+(c.prenom||'')).toLowerCase().includes(q.toLowerCase()) ||
-           (c.tel||'').includes(q);
+    var full = ((c.prenom||'')+' '+(c.nom||'')).toLowerCase();
+    var full2 = ((c.nom||'')+' '+(c.prenom||'')).toLowerCase();
+    return full.includes(q.toLowerCase())||full2.includes(q.toLowerCase())||(c.tel||'').includes(q);
   }).slice(0,8);
-  box.innerHTML = results.length ? results.map(function(c){
-    return '<div style="padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;" onclick="repSelectClient(\''+c.id+'\')">'+
-      '<b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br>'+
-      '<span style="color:var(--text-muted);">'+(c.tel||'—')+' · '+(c.email||'—')+'</span>'+
-    '</div>';
-  }).join('') : '<div style="color:var(--text-muted);font-size:12px;padding:8px;">Aucun client trouvé</div>';
+
+  if(results.length>0){ repAfficherResultatsClients(results,box); return; }
+
+  // Sinon : chercher dans Supabase directement (sans tout charger)
+  box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">🔍 Recherche...</div>';
+  var qp = encodeURIComponent(q);
+  supaFetch('clients','GET',null,'?or=(nom.ilike.*'+qp+'*,prenom.ilike.*'+qp+'*,tel.ilike.*'+qp+'*)&limit=8')
+  .then(function(res){
+    if(res&&res.length>0){
+      res.forEach(function(x){
+        if(!clients.find(function(c){return c.id===x.id;})){
+          clients.push({id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',civilite:x.civilite||''});
+        }
+      });
+      repAfficherResultatsClients(res.map(function(x){
+        return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||''};
+      }),box);
+    } else {
+      box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">Aucun client trouvé</div>';
+    }
+  }).catch(function(){
+    box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">Aucun client trouvé</div>';
+  });
+}
+
+function repAfficherResultatsClients(results,box){
+  box.innerHTML='';
+  results.forEach(function(c){
+    var div=document.createElement('div');
+    div.style.cssText='padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;';
+    div.onmouseover=function(){this.style.background='#f8fafc';};
+    div.onmouseout=function(){this.style.background='';};
+    var nom=document.createElement('b'); nom.textContent=(c.prenom?c.prenom+' ':'')+c.nom;
+    var info=document.createElement('span'); info.style.cssText='color:var(--text-muted);display:block;font-size:12px;';
+    info.textContent=(c.tel||'—')+' · '+(c.email||'—');
+    div.appendChild(nom); div.appendChild(info);
+    div.onclick=(function(id){return function(){repSelectClient(id);};})(c.id);
+    box.appendChild(div);
+  });
 }
 
 function repSelectClient(id){
