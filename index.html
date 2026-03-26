@@ -3929,22 +3929,46 @@ function clientVersReparation(id){
 function voirClientDetail(id){
   var c = clients.find(function(x){ return String(x.id)===String(id); });
   if(!c) return;
-  var nbRep = reparations.filter(function(r){
-    return r.clientNom && c.nom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
-  }).length;
   var card = document.getElementById('client-detail-card');
   var content = document.getElementById('client-detail-content');
   if(!card||!content) return;
-  content.innerHTML =
-    '<div class="card-header"><div class="card-title">👤 '+(c.prenom||'')+' '+c.nom+'</div>'+
-    '<button class="btn btn-sm" onclick="document.getElementById('client-detail-card').style.display='none'">✕</button></div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;padding:4px 0;">'+
-    '<div><b>Téléphone :</b> '+(c.tel||'—')+'</div>'+
-    '<div><b>Email :</b> '+(c.email||'—')+'</div>'+
-    '<div><b>Adresse :</b> '+(c.adresse||'—')+'</div>'+
-    '<div><b>Notes :</b> '+(c.notes||'—')+'</div>'+
-    '<div><b>Réparations :</b> '+nbRep+'</div>'+
-    '</div>';
+  content.innerHTML = '';
+
+  var header = document.createElement('div');
+  header.className = 'card-header';
+
+  var title = document.createElement('div');
+  title.className = 'card-title';
+  title.textContent = '👤 '+(c.prenom||'')+' '+c.nom;
+
+  var btnClose = document.createElement('button');
+  btnClose.className = 'btn btn-sm';
+  btnClose.textContent = '✕';
+  btnClose.onclick = function(){ card.style.display='none'; };
+
+  header.appendChild(title);
+  header.appendChild(btnClose);
+  content.appendChild(header);
+
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;padding:4px 0;';
+
+  var infos = [
+    ['Téléphone', c.tel||'—'],
+    ['Email', c.email||'—'],
+    ['Adresse', c.adresse||'—'],
+    ['Notes', c.notes||'—'],
+  ];
+  infos.forEach(function(info){
+    var d = document.createElement('div');
+    var b = document.createElement('b');
+    b.textContent = info[0]+' : ';
+    d.appendChild(b);
+    d.appendChild(document.createTextNode(info[1]));
+    grid.appendChild(d);
+  });
+  content.appendChild(grid);
+
   card.style.display = 'block';
   card.scrollIntoView({behavior:'smooth'});
 }
