@@ -8716,10 +8716,10 @@ async function importReparationsPhonilab(input){
   if(statusEl) statusEl.textContent = '⏳ Lecture réparations...';
 
   var reader = new FileReader();
-  reader.onload = function(e){
+  reader.onload = async function(e){
     var text = e.target.result;
-    var lines = text.split('\n').filter(function(l){return l.trim();});
-    if(lines.length < 2){ showNotif('Fichier vide','error'); return; }
+    var rawLines = text.split('\n').filter(function(l){return l.trim();});
+    if(rawLines.length < 2){ showNotif('Fichier vide','error'); return; }
 
     function parseCSVLine(line){
       var result=[]; var cur=''; var inQ=false;
@@ -8732,18 +8732,16 @@ async function importReparationsPhonilab(input){
       return result;
     }
 
-    var headers = parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
+    var headers = parseCSVLine(rawLines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
 
-    // Recherche EXACTE en priorité, puis partielle
     function fiExact(terms){
       var idx = headers.findIndex(function(h){return terms.some(function(t){return h===t;});});
       if(idx>=0) return idx;
       return headers.findIndex(function(h){return terms.some(function(t){return h.includes(t);});});
     }
 
-    // Phonilab columns: 'date réparation','réparation','client','email','téléphone','modèle','technicien','statut','suivi','point vente','emplacement','priorité','facture','paiement'
     var iDate    = fiExact(['date réparation','date']);
-    var iNum     = fiExact(['réparation','reparation']);  // colonne exacte 'réparation' = SO_S008786
+    var iNum     = headers.indexOf('réparation') >= 0 ? headers.indexOf('réparation') : fiExact(['reparation']);
     var iClient  = fiExact(['client']);
     var iEmail   = fiExact(['email']);
     var iTel     = fiExact(['téléphone','telephone']);
@@ -8753,32 +8751,21 @@ async function importReparationsPhonilab(input){
     var iPaie    = fiExact(['paiement']);
     var iTech    = fiExact(['technicien']);
 
-    // Vérifier que iNum ne pointe pas vers iDate
-    if(iNum === iDate && iDate >= 0){
-      // Chercher la colonne exactement nommée 'réparation'
-      iNum = headers.indexOf('réparation');
-      if(iNum < 0) iNum = headers.indexOf('reparation');
-    }
+    if(iNum === iDate) iNum = headers.indexOf('réparation');
 
-    var imported=0; var skipped=0; var newReps=[];
+    var newReps = []; var skipped = 0;
 
-    for(var i=1; i<lines.length; i++){
-      if(statusEl && i%200===0) statusEl.textContent='⏳ Ligne '+i+'/'+lines.length+'...';
-      var cols = parseCSVLine(lines[i]);
+    for(var i=1; i<rawLines.length; i++){
+      var cols = parseCSVLine(rawLines[i]);
       if(cols.length < 3) continue;
-
       var num    = (iNum>=0?cols[iNum]:'').replace(/"/g,'').trim();
       var client = (iClient>=0?cols[iClient]:'').replace(/"/g,'').trim();
       if(!client && !num) continue;
-
-      // Déduplication par numéro dossier
       var existe = historiqueReparations.find(function(r){return r.numero===num;});
       if(existe){ skipped++; continue; }
-
       var tel = (iTel>=0?cols[iTel]:'').replace(/"/g,'').trim();
       if(tel && !tel.startsWith('0') && !tel.startsWith('+')) tel='0'+tel;
-
-      var rec = {
+      newReps.push({
         numero:       num,
         date_rep:     (iDate>=0?cols[iDate]:'').replace(/"/g,'').trim(),
         client_nom:   client,
@@ -8790,46 +8777,45 @@ async function importReparationsPhonilab(input){
         paiement:     (iPaie>=0?cols[iPaie]:'').replace(/"/g,'').trim(),
         technicien:   (iTech>=0?cols[iTech]:'').replace(/"/g,'').trim(),
         source:       'phonilab'
-      };
-      historiqueReparations.push(rec);
-      newReps.push(rec);
-      imported++;
+      });
     }
 
     if(newReps.length === 0){
-      var msg = skipped > 0 ? '✅ Toutes les réparations sont déjà importées ('+skipped+' ignorées)' : '⚠️ Aucune réparation trouvée dans le fichier';
+      var msg = skipped > 0 ? '✅ Toutes déjà importées ('+skipped+' ignorées)' : '⚠️ Aucune réparation trouvée';
       showNotif(msg, skipped>0?'success':'error');
       if(statusEl) statusEl.textContent = msg;
       input.value=''; return;
     }
 
-    if(supabaseReady){
-      if(statusEl) statusEl.textContent='⏳ Sauvegarde '+newReps.length+' réparations...';
-      var batches=[]; var batchSize=50;
-      for(var b=0; b<newReps.length; b+=batchSize){
-        batches.push(supaFetch('historique_reparations','POST',newReps.slice(b,b+batchSize)));
-      }
-      Promise.all(batches).then(function(results){
-        // Vérifier si erreur Supabase (table inexistante etc.)
-        var hasError = results.some(function(r){ return r && r.error; });
-        if(hasError){
-          showNotif('❌ Erreur Supabase — La table historique_reparations existe-t-elle ?','error');
-          if(statusEl) statusEl.textContent='❌ Erreur — exécutez le SQL reparations_import_SQL.sql dans Supabase';
-          return;
+    // ── Envoi SÉQUENTIEL par batch de 50 ──
+    var batchSize = 50;
+    var imported = 0;
+    var errors = 0;
+
+    for(var b=0; b<newReps.length; b+=batchSize){
+      var batch = newReps.slice(b, b+batchSize);
+      var pct = Math.round((b/newReps.length)*100);
+      if(statusEl) statusEl.textContent = '⏳ Sauvegarde... '+pct+'% ('+b+'/'+newReps.length+')';
+      try {
+        var res = await supaFetch('historique_reparations','POST', batch);
+        if(res && !res.error){
+          imported += batch.length;
+          historiqueReparations = historiqueReparations.concat(batch);
+        } else {
+          errors += batch.length;
+          console.error('Batch error:', res);
         }
-        var msg='✅ '+imported+' réparations importées, '+skipped+' déjà présentes';
-        showNotif(msg,'success');
-        if(statusEl) statusEl.textContent=msg;
-        cacheHRep(historiqueReparations);
-      }).catch(function(err){
-        showNotif('❌ Erreur Supabase : '+err,'error');
-        if(statusEl) statusEl.textContent='❌ Erreur — vérifiez que la table historique_reparations existe dans Supabase';
-      });
-    } else {
-      var msg='✅ '+imported+' réparations en mémoire (Supabase non connecté)';
-      showNotif(msg,'success');
-      if(statusEl) statusEl.textContent=msg;
+      } catch(err){
+        errors += batch.length;
+        console.error('Batch exception:', err);
+      }
     }
+
+    cacheHRep(historiqueReparations);
+
+    var msg = '✅ '+imported+' réparations importées'+(skipped?' · '+skipped+' déjà présentes':'')+(errors?' · ⚠️ '+errors+' erreurs':'');
+    showNotif(msg, errors>0?'error':'success');
+    if(statusEl) statusEl.textContent = msg;
     input.value='';
   };
   reader.readAsText(file,'ISO-8859-1');
