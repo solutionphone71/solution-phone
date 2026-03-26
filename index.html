@@ -528,6 +528,25 @@ tr:hover td{background:#fafafa;}
 
       </div>
 
+      <!-- Clients en attente (tablette accueil) -->
+      <div class="card" style="margin-top:18px;border:1.5px solid var(--green);" id="attente-card">
+        <div class="card-header" style="background:#f0fdf4;">
+          <div class="card-title" style="color:var(--green);">
+            🙋 Clients en attente
+            <span id="badge-attente" style="display:none;background:#e53e3e;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:8px;"></span>
+          </div>
+          <button class="btn btn-sm" onclick="loadClientsEnAttente()" style="font-size:12px;">🔄 Actualiser</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Ville</th><th>Heure</th><th>Action</th></tr></thead>
+            <tbody id="attente-table">
+              <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun client en attente</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Actions rapides -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;">
         <button class="btn btn-primary" onclick="showPage('reparations',null)">➕ Nouvelle réparation</button>
@@ -3087,6 +3106,7 @@ async function checkPin(){
       renderDashboard();renderPhones();renderFactures();renderCaisse();
       populateFournisseurSelects();
       loadApiKeyFromSupabase();
+      loadClientsEnAttente();
       // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
         loadBonsCommande();
@@ -8076,6 +8096,103 @@ showPage = function(id, el){
   else { var more=document.getElementById('mob-btn-more'); if(more)more.classList.add('active'); }
 };
 
+
+
+// ============================================================
+//  CLIENTS EN ATTENTE — Tablette accueil
+// ============================================================
+var clientsEnAttente = [];
+
+async function loadClientsEnAttente(){
+  try {
+    var res = await fetch(SUPA_URL + '/rest/v1/clients_en_attente?traite=eq.false&order=date_inscription.desc', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
+    if(res.ok){
+      clientsEnAttente = await res.json();
+      renderClientsEnAttente();
+      updateBadgeAttente();
+    }
+  } catch(e){ console.log('Clients attente:', e); }
+}
+
+function updateBadgeAttente(){
+  var n = clientsEnAttente.length;
+  var badge = document.getElementById('badge-attente');
+  if(!badge) return;
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'inline-flex' : 'none';
+}
+
+function renderClientsEnAttente(){
+  var tbody = document.getElementById('attente-table');
+  if(!tbody) return;
+  if(!clientsEnAttente.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun client en attente</td></tr>';
+    return;
+  }
+  tbody.innerHTML = clientsEnAttente.map(function(c){
+    var dt = new Date(c.date_inscription);
+    var heure = dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    var date  = dt.toLocaleDateString('fr-FR');
+    return '<tr>'+
+      '<td><b>'+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'</b></td>'+
+      '<td>'+c.tel+'</td>'+
+      '<td style="font-size:12px;color:var(--text-muted);">'+(c.email||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text-muted);">'+(c.cp?c.cp+' '+c.ville:'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text-muted);">'+date+' '+heure+'</td>'+
+      '<td style="display:flex;gap:6px;">'+
+        '<button class="btn btn-primary btn-sm" onclick="chargerClientEnAttente(\''+c.id+'\')" title="Créer une réparation">🔧 Réparation</button>'+
+        '<button class="btn btn-sm" onclick="marquerClientTraite(\''+c.id+'\')" title="Marquer comme traité" style="color:var(--text-muted)">✓</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function chargerClientEnAttente(id){
+  var c = clientsEnAttente.find(function(x){ return String(x.id)===String(id); });
+  if(!c) return;
+  // Aller dans Réparations et pré-remplir étape 1
+  showPage('reparations', null);
+  repNewDossier();
+  setTimeout(function(){
+    document.getElementById('rep-civilite').value = c.civilite||'';
+    document.getElementById('rep-nom').value      = c.nom||'';
+    document.getElementById('rep-prenom').value   = c.prenom||'';
+    document.getElementById('rep-tel').value      = c.tel||'';
+    document.getElementById('rep-email').value    = c.email||'';
+    document.getElementById('rep-adresse').value  = c.adresse||'';
+    document.getElementById('rep-cp').value       = c.cp||'';
+    document.getElementById('rep-ville').value    = c.ville||'';
+    repAutoSave();
+    showNotif((c.prenom||'')+' '+(c.nom||'')+' chargé dans Réparations — Passez à l\'étape 2 !', 'success');
+    marquerClientTraite(id);
+  }, 300);
+}
+
+async function marquerClientTraite(id){
+  try {
+    await fetch(SUPA_URL + '/rest/v1/clients_en_attente?id=eq.'+id, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({traite: true})
+    });
+    clientsEnAttente = clientsEnAttente.filter(function(x){ return String(x.id)!==String(id); });
+    renderClientsEnAttente();
+    updateBadgeAttente();
+  } catch(e){ console.log('marquer traite:', e); }
+}
+
+// Polling toutes les 30 secondes pour détecter nouveaux clients
+setInterval(function(){
+  if(supabaseReady) loadClientsEnAttente();
+}, 30000);
+// ============================================================
+//  FIN CLIENTS EN ATTENTE
+// ============================================================
 
 // ============================================================
 //  MODULE TÉLÉPHONES NEUFS & ACCESSOIRES — TVA 20%
