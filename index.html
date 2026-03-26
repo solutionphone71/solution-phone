@@ -11221,32 +11221,35 @@ function supprimerDepot(id){
 function printBonDepot(d){
   if(!d) return;
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
-  var dateRetour = d.dateRetour ? new Date(d.dateRetour).toLocaleDateString('fr-FR') : '—';
-  var dateDepot  = new Date(d.date).toLocaleDateString('fr-FR');
+  var dateDepot = new Date(d.date).toLocaleDateString('fr-FR');
+  var c = d.client||{};
+  var a = d.appareil||{};
 
   function checkRow(label, checked){
-    return '<tr>'+
-      '<td style="padding:5px 10px;font-size:12px;color:#333;border-bottom:1px solid #eee;">'+label+'</td>'+
-      '<td style="padding:5px 10px;text-align:center;font-size:16px;border-bottom:1px solid #eee;">'+(checked?'☑':'☐')+'</td>'+
-    '</tr>';
+    return '<tr><td style="padding:4px 8px;font-size:11px;color:#333;border-bottom:1px solid #f0f0f0;">'+label+'</td>'+
+      '<td style="padding:4px 8px;text-align:center;font-size:14px;border-bottom:1px solid #f0f0f0;">'+(checked?'☑':'☐')+'</td></tr>';
   }
 
-  var etatsAll = [
-    'Écran fissuré/cassé','Rayures écran','Rayures dos','Vitre arrière cassée',
-    'Bouton(s) HS','Haut-parleur HS','Micro HS','Caméra HS',
-    'Connecteur charge HS','Batterie défaillante'
-  ];
+  var etatsAll = ['Écran fissuré/cassé','Rayures écran','Rayures dos','Vitre arrière cassée',
+    'Bouton(s) HS','Haut-parleur HS','Micro HS','Caméra HS','Connecteur charge HS','Batterie défaillante'];
   var accAll = ['Coque/Étui','Chargeur','Câble','Boîte d\'origine','Protection écran','Autre'];
 
-  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
-    '<title>Bon de Dépôt '+d.numero+' — Solution Phone</title>'+
-    '<style>'+
-    '*{margin:0;padding:0;box-sizing:border-box;}'+
-    'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:13px;}'+
-    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}'+
-    '@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;}}'+
-    '@page{size:A4;margin:0;}'+
-    'table{border-collapse:collapse;}'+
+  // Décomposition HT
+  var devis  = d.devis||0;
+  var moHT   = d.moHT||25;
+  var pieHT  = d.piecesHT||(devis>0 ? Math.max(0,(devis/1.2)-25) : 0);
+  var htTot  = moHT + pieHT;
+  var tva    = htTot * 0.2;
+  var ttc    = htTot * 1.2;
+
+  // Signature image
+  var sigHtml = d.signature
+    ? '<img src="'+d.signature+'" style="max-height:60px;max-width:200px;object-fit:contain;">'
+    : '<div style="height:50px;border-bottom:1.5px solid #333;margin-top:8px;"></div>';
+
+  var html2 = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>DEVIS '+d.numero+' — Solution Phone</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:12px;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;}}@page{size:A4;margin:0;}table{border-collapse:collapse;width:100%;}th,td{padding:6px 10px;}'+
     '</style></head><body>'+
 
     '<div class="no-print" style="text-align:right;padding:10px;">'+
@@ -11256,120 +11259,133 @@ function printBonDepot(d){
     '<div class="page">'+
 
     // EN-TÊTE
-    '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
-      '<div style="display:flex;align-items:center;gap:12px;">'+
-        (logo?'<img src="'+logo+'" style="height:50px;width:auto;">':'')+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        (logo?'<img src="'+logo+'" style="height:45px;width:auto;">':'')+
         '<div>'+
-          '<div style="font-size:18px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-          '<div style="font-size:10px;color:#777;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
+          '<div style="font-size:16px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · solution.phone71@gmail.com<br>SIREN : 801 044 785 · TVA : FR10801044785</div>'+
         '</div>'+
       '</div>'+
       '<div style="text-align:right;">'+
-        '<div style="font-size:22px;font-weight:900;color:#1a1a1a;letter-spacing:-1px;">BON DE DÉPÔT</div>'+
-        '<div style="font-size:14px;font-weight:700;color:#c0392b;">'+d.numero+'</div>'+
+        '<div style="font-size:22px;font-weight:900;color:#1a1a1a;">DEVIS</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c0392b;">'+d.numero+'</div>'+
+        '<div style="font-size:11px;color:#888;">Date : '+dateDepot+'</div>'+
       '</div>'+
     '</div>'+
 
-    // DATES
-    '<div style="display:flex;gap:16px;margin-bottom:10px;">'+
-      '<div style="flex:1;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:8px 12px;">'+
-        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Date de dépôt</div>'+
-        '<div style="font-size:16px;font-weight:800;color:#1a1a1a;">'+dateDepot+'</div>'+
-      '</div>'+
-      '<div style="flex:1;background:#fff8f8;border:1px solid #f5c6c6;border-radius:6px;padding:8px 12px;">'+
-        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Restitution prévue</div>'+
-        '<div style="font-size:16px;font-weight:800;color:#c0392b;">'+dateRetour+'</div>'+
-      '</div>'+
-      '<div style="flex:1;background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;">'+
-        '<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Devis estimatif</div>'+
-        '<div style="font-size:16px;font-weight:800;color:#1a5c30;">'+(d.devis?d.devis.toFixed(2)+' €':'À établir')+'</div>'+
-      '</div>'+
-    '</div>'+
-
-    // BLOC CLIENT + APPAREIL côte à côte
+    // CLIENT + APPAREIL
     '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
 
-      // CLIENT
-      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:8px;overflow:hidden;">'+
-        '<div style="background:#c0392b;padding:6px 12px;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">👤 Client</div>'+
-        '<div style="padding:10px 12px;">'+
-          '<table style="width:100%;">'+
-            '<tr><td style="font-size:11px;color:#888;width:80px;">Nom</td><td style="font-size:13px;font-weight:700;">'+d.client.prenom+' '+d.client.nom+'</td></tr>'+
-            '<tr><td style="font-size:11px;color:#888;">Téléphone</td><td style="font-size:13px;font-weight:700;color:#c0392b;">'+d.client.tel+'</td></tr>'+
-            '<tr><td style="font-size:11px;color:#888;">Email</td><td style="font-size:12px;">'+(d.client.email||'—')+'</td></tr>'+
-          '</table>'+
+      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">👤 Client</div>'+
+        '<div style="padding:8px 10px;line-height:1.8;font-size:12px;">'+
+          '<b>'+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'</b><br>'+
+          (c.adresse?c.adresse+'<br>':'')+
+          (c.cp||c.ville?(c.cp||'')+' '+(c.ville||'')+'<br>':'')+
+          '📞 '+c.tel+'<br>'+
+          (c.email?'✉️ '+c.email:'')+'<br>'+
         '</div>'+
       '</div>'+
 
-      // APPAREIL
-      '<div style="flex:1;border:1.5px solid #2c2c2c;border-radius:8px;overflow:hidden;">'+
-        '<div style="background:var(--red);padding:6px 12px;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">📱 Appareil</div>'+
-        '<div style="padding:10px 12px;">'+
-          '<table style="width:100%;">'+
-            '<tr><td style="font-size:11px;color:#888;width:80px;">Modèle</td><td style="font-size:13px;font-weight:700;">'+d.appareil.marque+' '+d.appareil.modele+'</td></tr>'+
-            '<tr><td style="font-size:11px;color:#888;">IMEI</td><td style="font-size:12px;font-family:monospace;">'+(d.appareil.imei||'—')+'</td></tr>'+
-            '<tr><td style="font-size:11px;color:#888;">Couleur</td><td style="font-size:12px;">'+(d.appareil.couleur||'—')+'</td></tr>'+
-            '<tr><td style="font-size:11px;color:#888;">Code</td><td style="font-size:13px;font-weight:700;color:var(--text);">'+(d.appareil.code||'Non communiqué')+'</td></tr>'+
-          '</table>'+
+      '<div style="flex:1;border:1.5px solid #333;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.5px;">📱 Appareil</div>'+
+        '<div style="padding:8px 10px;line-height:1.8;font-size:12px;">'+
+          '<b>'+a.marque+' '+a.modele+'</b><br>'+
+          'IMEI : <b style="font-family:monospace;">'+(a.imei||'—')+'</b><br>'+
+          'Réf. commerciale : '+(d.refMobile||a.modele||'—')+'<br>'+
+          'Réception : '+dateDepot+'<br>'+
+          (a.couleur?'Couleur : '+a.couleur+'<br>':'')+
         '</div>'+
       '</div>'+
     '</div>'+
 
     // PANNE
-    '<div style="border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;margin-bottom:10px;">'+
-      '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🔧 Panne décrite par le client</div>'+
-      '<div style="padding:10px 12px;font-size:13px;min-height:40px;">'+d.panne+'</div>'+
+    '<div style="border:1px solid #e8e8e8;border-radius:6px;margin-bottom:10px;overflow:hidden;">'+
+      '<div style="background:#f5f5f5;padding:5px 10px;font-size:10px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🔧 Panne décrite par le client</div>'+
+      '<div style="padding:8px 10px;font-size:12px;min-height:30px;">'+(d.panne||'—')+'</div>'+
     '</div>'+
 
-    // ÉTAT + ACCESSOIRES côte à côte
+    // DÉCOMPOSITION HT (conforme Ecosystem)
+    '<div style="margin-bottom:10px;">'+
+      '<table style="border:1.5px solid #2b6cb0;border-radius:6px;overflow:hidden;">'+
+        '<thead><tr style="background:#2b6cb0;color:#fff;">'+
+          '<th style="text-align:left;font-size:11px;text-transform:uppercase;">Article</th>'+
+          '<th style="text-align:right;font-size:11px;">P.U. HT</th>'+
+          '<th style="text-align:center;font-size:11px;">Qté</th>'+
+          '<th style="text-align:right;font-size:11px;">Total HT</th>'+
+          '<th style="text-align:right;font-size:11px;">TVA</th>'+
+          '<th style="text-align:right;font-size:11px;">Total TTC</th>'+
+        '</tr></thead>'+
+        '<tbody>'+
+          '<tr><td>Remplacement<br><span style="font-size:10px;color:#666;">'+(d.panne||'Réparation')+'</span></td>'+
+            '<td style="text-align:right;">'+moHT.toFixed(2)+' €</td>'+
+            '<td style="text-align:center;">1</td>'+
+            '<td style="text-align:right;">'+htTot.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;">'+tva.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;font-weight:700;">'+ttc.toFixed(2)+' €</td>'+
+          '</tr>'+
+          '<tr style="background:#f0fff4;"><td><b>Bonus Réparation</b><br><span style="font-size:10px;color:#666;">Remise Ecosystem / Ecologic</span></td>'+
+            '<td style="text-align:right;">0,00 €</td>'+
+            '<td style="text-align:center;">1</td>'+
+            '<td style="text-align:right;">0,00 €</td>'+
+            '<td style="text-align:right;">—</td>'+
+            '<td style="text-align:right;font-weight:700;color:#c0392b;">-25,00 €</td>'+
+          '</tr>'+
+        '</tbody>'+
+        '<tfoot>'+
+          '<tr style="background:#f8f8f8;">'+
+            '<td colspan="4"><b>Sous-total HT : '+htTot.toFixed(2)+' € · TVA 20% : '+tva.toFixed(2)+' €</b></td>'+
+            '<td colspan="2" style="text-align:right;font-size:14px;font-weight:900;color:#c0392b;">TOTAL TTC : '+(ttc-25).toFixed(2)+' €</td>'+
+          '</tr>'+
+        '</tfoot>'+
+      '</table>'+
+    '</div>'+
+
+    // ÉTAT + ACCESSOIRES
     '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
-
-      // ÉTAT
-      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;">'+
-        '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🔍 État à la remise</div>'+
-        '<table style="width:100%;">'+
-        etatsAll.map(function(e){ return checkRow(e, d.etat.includes(e)); }).join('')+
-        '</table>'+
-        (d.etatAutre?'<div style="padding:6px 10px;font-size:11px;color:#666;border-top:1px solid #eee;"><i>'+d.etatAutre+'</i></div>':'')+
+      '<div style="flex:1;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#f5f5f5;padding:5px 10px;font-size:10px;font-weight:800;color:#333;text-transform:uppercase;">🔍 État à la remise</div>'+
+        '<table>'+etatsAll.map(function(e){ return checkRow(e, d.etat&&d.etat.includes(e)); }).join('')+'</table>'+
+        (d.etatAutre?'<div style="padding:5px 8px;font-size:10px;color:#666;"><i>'+d.etatAutre+'</i></div>':'')+
       '</div>'+
-
-      // ACCESSOIRES
-      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;overflow:hidden;">'+
-        '<div style="background:#f5f5f5;padding:6px 12px;font-size:11px;font-weight:800;color:#333;text-transform:uppercase;letter-spacing:.5px;">🎁 Accessoires remis</div>'+
-        '<table style="width:100%;">'+
-        accAll.map(function(a){ return checkRow(a, d.accessoires.includes(a)||d.accessoires.includes(a.replace("Autre","").trim())||(a==="Autre"&&d.accessoires.some(function(x){return x!=="Coque/Étui"&&x!=="Chargeur"&&x!=="Câble"&&x!=="Boîte d\'origine"&&x!=="Protection écran";}))); }).join('')+
-        '</table>'+
+      '<div style="flex:1;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#f5f5f5;padding:5px 10px;font-size:10px;font-weight:800;color:#333;text-transform:uppercase;">🎁 Accessoires remis</div>'+
+        '<table>'+accAll.map(function(a2){ return checkRow(a2, d.accessoires&&d.accessoires.includes(a2)); }).join('')+'</table>'+
       '</div>'+
     '</div>'+
 
-    // SIGNATURES
-    '<div style="display:flex;gap:10px;margin-top:12px;">'+
-      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;padding:10px 12px;min-height:80px;">'+
-        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Signature du client</div>'+
-        '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">"Je certifie déposer l\'appareil tel que décrit ci-dessus"</div>'+
-        '<div style="height:45px;border-bottom:1.5px solid #333;margin-top:8px;"></div>'+
+    // MENTIONS LÉGALES + SIGNATURE
+    '<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:10px;color:#92400e;line-height:1.6;">'+
+      '<b>Attestation hors garantie :</b> Le client certifie que l\'appareil est hors garantie fabricant et commerciale. '+
+      'Garantie réparation : 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale). '+
+      'Le Bonus Réparation (-25€) est accordé dans le cadre du dispositif QualiRépar (loi AGEC).'+
+    '</div>'+
+
+    '<div style="display:flex;gap:20px;margin-top:8px;">'+
+      '<div style="flex:1;border:1px solid #ddd;border-radius:6px;padding:10px;min-height:70px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Signature du client — Bon pour accord</div>'+
+        sigHtml+
+        '<div style="font-size:9px;color:#aaa;margin-top:4px;">Date : '+dateDepot+'</div>'+
       '</div>'+
-      '<div style="flex:1;border:1.5px solid #e8e8e8;border-radius:8px;padding:10px 12px;min-height:80px;">'+
-        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Signature du technicien</div>'+
-        '<div style="font-size:10px;color:#aaa;margin-bottom:4px;">Solution Phone</div>'+
-        '<div style="height:45px;border-bottom:1.5px solid #333;margin-top:8px;"></div>'+
+      '<div style="flex:1;border:1px solid #ddd;border-radius:6px;padding:10px;min-height:70px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet Solution Phone</div>'+
+        '<div style="height:45px;border-bottom:1px dashed #ddd;"></div>'+
       '</div>'+
     '</div>'+
 
-    // PIED DE PAGE
-    '<div style="border-top:1.5px solid #ddd;margin-top:12px;padding-top:8px;display:flex;justify-content:space-between;font-size:9px;color:#aaa;">'+
-      '<div>Solution Phone · 21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
-      '<div>Bon de dépôt '+d.numero+' · '+dateDepot+'</div>'+
-      '<div style="color:#c0392b;font-weight:700;">Garantie 3 mois sauf casse ou dégât des eaux</div>'+
+    '<div style="text-align:center;margin-top:12px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:8px;">'+
+      'SOLUTION PHONE · RCS Mâcon B 801 044 785 · www.solution-phone.fr'+
     '</div>'+
 
-    '</div>'+
-    '</body></html>';
+    '</div></body></html>';
 
-  var w = window.open('','_blank','width=900,height=1100');
-  w.document.write(html);
+  var w = window.open('','_blank');
+  w.document.write(html2);
   w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
 }
+
 
 // ============================================================
 //  FIN MODULE BON DE DÉPÔT
