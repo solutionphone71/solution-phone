@@ -874,8 +874,13 @@ tr:hover td{background:#fafafa;}
 
       <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
         <input type="text" id="client-search" placeholder="🔍 Nom, téléphone, email..." oninput="renderClients()"
-          style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:300px;">
+          style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
         <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
+        <label class="btn btn-sm" style="cursor:pointer;border-color:var(--blue);color:var(--blue);">
+          📥 Import Phonilab CSV
+          <input type="file" id="clients-phonilab-csv" accept=".csv" style="display:none;" onchange="importClientsPhonilab(this)">
+        </label>
+        <span id="clients-import-status" style="font-size:12px;color:var(--text-muted);"></span>
       </div>
 
       <div class="card">
@@ -3119,7 +3124,7 @@ async function checkPin(){
       supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
         if(cl) clients = cl.map(function(x){
           var nc = x.prenom&&x.nom?(x.prenom+' '+x.nom).trim():(x.prenom||x.nom||'');
-          return{id:x.id,nom:x.nom||nc,prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
+          return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
         });
       });
       // Chargement secondaire en arrière-plan (non bloquant)
@@ -3626,93 +3631,105 @@ var selectedClientId = null;
 async function importClientsPhonilab(input) {
   var file = input.files[0];
   if (!file) return;
+  var statusEl = document.getElementById('clients-import-status') || document.getElementById('phonilab-status');
+  if(statusEl) statusEl.textContent = '⏳ Lecture du fichier...';
+
   var reader = new FileReader();
   reader.onload = function(e) {
     var text = e.target.result;
     var lines = text.split('\n').filter(function(l){return l.trim();});
     if (lines.length < 2) { showNotif('Fichier vide', 'error'); return; }
-    
+
     var sep = ';';
-    var headers = lines[0].split(sep).map(function(h){return h.replace(/"/g,'').trim().toLowerCase();});
-    
-    // Index colonnes
-    var iPrenom = headers.findIndex(function(h){return h==='prénom'||h==='prenom'||h.includes('prenom')||h.includes('prénom');});
-    var iNom = headers.findIndex(function(h){return h==='nom'||h==='name'||h==='lastname';});
-    var iEmail = headers.findIndex(function(h){return h==='email';});
-    var iTel = headers.findIndex(function(h){return h.includes('mobile')||h.includes('téléphone');});
-    var iAdresse = headers.findIndex(function(h){return h==='adresse';});
-    var iCP = headers.findIndex(function(h){return h.includes('postal');});
-    var iVille = headers.findIndex(function(h){return h==='ville';});
-    
-    var imported = 0;
-    var skipped = 0;
-    var newClients = [];
-    
+    // Parser CSV en tenant compte des guillemets
+    function parseCSVLine(line){
+      var result = []; var cur = ''; var inQ = false;
+      for(var i=0;i<line.length;i++){
+        if(line[i]==='"'){ inQ=!inQ; }
+        else if(line[i]===sep&&!inQ){ result.push(cur.trim()); cur=''; }
+        else { cur+=line[i]; }
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    var headers = parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
+
+    // Mapping colonnes Phonilab
+    function fi(terms){ return headers.findIndex(function(h){ return terms.some(function(t){return h.includes(t);}); }); }
+    var iPrenom  = fi(['prénom','prenom']);
+    var iNom     = fi(['nom']);
+    var iEmail   = fi(['email']);
+    var iTel     = fi(['mobile','téléphone','telephone']);
+    var iAdresse = fi(['adresse']);
+    var iCP      = fi(['postal','code p']);
+    var iVille   = fi(['ville']);
+    var iTitre   = fi(['titre','civilit']);
+
+    var imported = 0; var skipped = 0; var newClients = []; var now = new Date().toISOString().split('T')[0];
+
     for (var i = 1; i < lines.length; i++) {
-      var cols = lines[i].split(sep).map(function(c){return c.replace(/"/g,'').trim();});
+      if(statusEl && i % 100 === 0) statusEl.textContent = '⏳ Traitement ligne '+i+'/'+lines.length+'...';
+      var cols = parseCSVLine(lines[i]);
       if (cols.length < 2) continue;
-      
-      var prenom = iPrenom >= 0 ? cols[iPrenom] : '';
-      var nom = iNom >= 0 ? cols[iNom] : '';
-      var nomComplet = (prenom + ' ' + nom).trim();
-      // Si prénom vide, essayer d inverser
-      if (!prenom && nom) nomComplet = nom;
-      if (!nomComplet) continue;
-      
-      // Vérifier si client existe déjà
+
+      var prenom = (iPrenom >= 0 ? cols[iPrenom] : '').replace(/"/g,'').trim();
+      var nom    = (iNom >= 0 ? cols[iNom] : '').replace(/"/g,'').trim();
+      if (!prenom && !nom) continue;
+
+      // Déduplication par tel ou email
+      var tel = (iTel >= 0 ? cols[iTel] : '').replace(/"/g,'').trim();
+      if (tel && !tel.startsWith('0') && !tel.startsWith('+')) tel = '0' + tel;
+      if (tel && tel.length > 10) tel = tel.slice(tel.length-10);
+      var email = (iEmail >= 0 ? cols[iEmail] : '').replace(/"/g,'').trim();
+
       var existe = clients.find(function(c){
-        return c.nom.toLowerCase() === nomComplet.toLowerCase();
+        if(tel && c.tel && c.tel.replace(/\s/g,'') === tel.replace(/\s/g,'')) return true;
+        if(email && c.email && c.email.toLowerCase() === email.toLowerCase()) return true;
+        return false;
       });
       if (existe) { skipped++; continue; }
-      
-      var tel = iTel >= 0 ? cols[iTel] : '';
-      // Formater le téléphone
-      if (tel && !tel.startsWith('0') && !tel.startsWith('+')) {
-        tel = '0' + tel;
-      }
-      
-      var adresse = iAdresse >= 0 ? cols[iAdresse] : '';
-      var cp = iCP >= 0 ? cols[iCP] : '';
-      var ville = iVille >= 0 ? cols[iVille] : '';
-      var adresseComplete = [adresse, cp, ville].filter(Boolean).join(' ');
-      
-      var email = iEmail >= 0 ? cols[iEmail] : '';
-      
+
+      var adresse = (iAdresse >= 0 ? cols[iAdresse] : '').replace(/"/g,'').trim();
+      var cp      = (iCP >= 0 ? cols[iCP] : '').replace(/"/g,'').trim();
+      var ville   = (iVille >= 0 ? cols[iVille] : '').replace(/"/g,'').trim();
+      var civilite = (iTitre >= 0 ? cols[iTitre] : '').replace(/"/g,'').trim();
+      var adresseComplete = [adresse, cp && ville ? cp+' '+ville : (cp||ville)].filter(Boolean).join(', ');
+
       var newClient = {
         id: Date.now() + i,
-        nom: nomComplet,
-        tel: tel,
-        email: email,
+        nom: nom, prenom: prenom, civilite: civilite,
+        tel: tel, email: email,
         adresse: adresseComplete,
-        notes: 'Importé depuis Phonilab',
-        dateCreation: new Date().toISOString().split('T')[0]
+        notes: 'Importé Phonilab',
+        dateCreation: now
       };
       clients.push(newClient);
       newClients.push(newClient);
       imported++;
     }
-    
-    clients.sort(function(a,b){return a.nom.localeCompare(b.nom);});
+
+    clients.sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
     renderClients();
-    var countEl = document.getElementById('clients-count');
-    if (countEl) countEl.textContent = clients.length + ' clients au total';
-    
-    // Sauvegarder dans Supabase par batch de 100
+
     if(supabaseReady && newClients.length > 0) {
-      showNotif('Sauvegarde en cours...','info');
-      var batches = [];
-      var batchSize = 100;
+      if(statusEl) statusEl.textContent = '⏳ Sauvegarde Supabase ('+newClients.length+' clients)...';
+      var batches = []; var batchSize = 50;
       for(var b = 0; b < newClients.length; b += batchSize) {
         var batch = newClients.slice(b, b+batchSize).map(function(c){
-          return {nom:c.nom,tel:c.tel,email:c.email,adresse:c.adresse,notes:c.notes,date_creation:c.dateCreation};
+          return {nom:c.nom, prenom:c.prenom, tel:c.tel, email:c.email, adresse:c.adresse, notes:c.notes, date_creation:c.dateCreation};
         });
         batches.push(supaFetch('clients','POST',batch));
       }
       Promise.all(batches).then(function(){
-        showNotif('Import : ' + imported + ' clients sauvegardés ✅', 'success');
+        var msg = '✅ Import terminé : '+imported+' clients importés, '+skipped+' déjà présents';
+        showNotif(msg, 'success');
+        if(statusEl) statusEl.textContent = msg;
       });
     } else {
-      showNotif('Import Phonilab : ' + imported + ' clients importés, ' + skipped + ' existants ignorés ✅', 'success');
+      var msg = '✅ '+imported+' clients importés, '+skipped+' ignorés';
+      showNotif(msg, 'success');
+      if(statusEl) statusEl.textContent = msg;
     }
     input.value = '';
   };
