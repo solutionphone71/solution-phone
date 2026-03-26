@@ -9563,7 +9563,12 @@ function repUpdateDevisRecap(){
 function repImprimerDepot(){
   repAutoSave();
   var d = repDossierCourant;
-  if(!d) return;
+  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+  // S'assurer que etat et accessoires sont des tableaux
+  if(!d.etat || !Array.isArray(d.etat)) d.etat = getDepotEtat ? getDepotEtat() : [];
+  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = getDepotAccessoires ? getDepotAccessoires() : [];
+  if(!d.panne) d.panne = (document.getElementById('dep-panne')||{value:''}).value || '';
+  if(!d.devis) d.devis = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
   printBonDepot(d);
 }
 
@@ -10184,9 +10189,11 @@ function repInitSig(){
 
   // Redimensionner le canvas à sa vraie taille affichée (évite le décalage)
   var rect = canvas.getBoundingClientRect();
-  if(rect.width > 0){
-    canvas.width  = Math.round(rect.width);
-    canvas.height = Math.round(rect.height) || 100;
+  var w = rect.width || canvas.offsetWidth || canvas.parentElement.offsetWidth || 380;
+  var h = rect.height || 100;
+  if(w > 0){
+    canvas.width  = Math.round(w);
+    canvas.height = Math.round(h);
   }
 
   if(canvas._repInitDone) return;
@@ -10262,42 +10269,7 @@ function repUpdateSigNom(){
   el.textContent = [(c.civilite||''),(c.prenom||''),(c.nom||'')].filter(Boolean).join(' ') || '—';
 }
 
-// Initialiser sig quand on arrive en step 3
-var _repGoStepOrig2 = repGoStep;
-repGoStep = function(n){
-  _repGoStepOrig2(n);
-  if(n===3){
-    setTimeout(function(){
-      // Forcer réinitialisation canvas si déjà visible (changement taille)
-      var cv = document.getElementById('rep-sig-canvas');
-      if(cv) cv._repInitDone = false;
-      repInitSig();
-      repUpdateSigNom();
-      repCheckEligibilite();
-      // Relancer le calcul HT si devis déjà renseigné
-      var devisEl = document.getElementById('dep-devis');
-      if(devisEl && devisEl.value) repAutoDecompose(devisEl.value);
-      // Recharger signature si dossier existant
-      if(repDossierCourant && repDossierCourant.signature){
-        var canvas = document.getElementById('rep-sig-canvas');
-        if(canvas){
-          var img = new Image();
-          img.onload = function(){ canvas.getContext('2d').drawImage(img,0,0); };
-          img.src = repDossierCourant.signature;
-          _repSigData = repDossierCourant.signature;
-          var ok = document.getElementById('rep-sig-ok'); if(ok) ok.style.display='block';
-          var hint = document.getElementById('rep-sig-hint'); if(hint) hint.style.display='none';
-        }
-      }
-      // Recharger décomposition HT
-      if(repDossierCourant){
-        var mo = document.getElementById('dep-mo-ht'); if(mo&&repDossierCourant.moHT) mo.value=repDossierCourant.moHT;
-        var pi = document.getElementById('dep-pieces-ht'); if(pi&&repDossierCourant.piecesHT) pi.value=repDossierCourant.piecesHT;
-        if(repDossierCourant.moHT||repDossierCourant.piecesHT) repCalcDevis();
-      }
-    },100);
-  }
-};
+
 
 // Sauvegarder MO/pièces dans repAutoSave
 var _repAutoSaveOrig = repAutoSave;
@@ -10601,25 +10573,62 @@ function repToggleIRISEdit(){
   if(btn) btn.textContent = isReadOnly ? '🔒 Verrouiller' : '✏️ Modifier';
 }
 
-// Étendre repGoStep pour initialiser step 4
-var _repGoStepOrig = repGoStep;
+// Override unique repGoStep — step 3 (signature) + step 4 (IRIS/QR)
+var _repGoStepBase = repGoStep;
 repGoStep = function(n){
-  _repGoStepOrig(n);
-  if(n === 4){
+  _repGoStepBase(n);
+
+  // ── STEP 3 : Signature + Décomposition HT ──
+  if(n===3){
+    setTimeout(function(){
+      var cv = document.getElementById('rep-sig-canvas');
+      if(cv) cv._repInitDone = false;
+      repInitSig();
+      repUpdateSigNom();
+      repCheckEligibilite();
+      // Auto-décomposition HT si prix déjà saisi
+      setTimeout(function(){
+        var devisEl = document.getElementById('dep-devis');
+        var moEl = document.getElementById('dep-mo-ht');
+        if(devisEl && parseFloat(devisEl.value) > 0 && moEl){
+          repAutoDecompose(devisEl.value);
+        }
+      }, 200);
+      // Recharger signature existante
+      if(repDossierCourant && repDossierCourant.signature){
+        var canvas = document.getElementById('rep-sig-canvas');
+        if(canvas){
+          var img = new Image();
+          img.onload = function(){ canvas.getContext('2d').drawImage(img,0,0); };
+          img.src = repDossierCourant.signature;
+          _repSigData = repDossierCourant.signature;
+          var ok   = document.getElementById('rep-sig-ok');   if(ok)   ok.style.display='block';
+          var hint = document.getElementById('rep-sig-hint'); if(hint) hint.style.display='none';
+        }
+      }
+      // Recharger MO/pièces
+      if(repDossierCourant){
+        var mo = document.getElementById('dep-mo-ht');
+        var pi = document.getElementById('dep-pieces-ht');
+        if(mo && repDossierCourant.moHT)     mo.value = repDossierCourant.moHT;
+        if(pi && repDossierCourant.piecesHT) pi.value = repDossierCourant.piecesHT;
+        if(repDossierCourant.moHT || repDossierCourant.piecesHT) repCalcDevis();
+      }
+    },150);
+  }
+
+  // ── STEP 4 : IRIS / QualiRépar ──
+  if(n===4){
     repQRPopulateMarques();
-    // Pré-remplir depuis l'appareil du dossier
     if(repDossierCourant){
       var a = repDossierCourant.appareil||{};
-      // Synchroniser la marque QR avec la marque du dossier
       var selMarque = document.getElementById('rep-qr-marque');
       if(selMarque && a.marque && !selMarque.value){
         selMarque.value = a.marque;
         repQRUpdateOrganisme();
       }
-      // Générer dossier interne et ref mobile si vides
       repGenereDossierInterne();
       repGenereRefMobile();
-      // Auto-détecter la panne
       setTimeout(repQRAutoPanne, 100);
     }
     repUpdateFacturePreview();
@@ -11346,12 +11355,12 @@ function printBonDepot(d){
     '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
       '<div style="flex:1;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">'+
         '<div style="background:#f5f5f5;padding:5px 10px;font-size:10px;font-weight:800;color:#333;text-transform:uppercase;">🔍 État à la remise</div>'+
-        '<table>'+etatsAll.map(function(e){ return checkRow(e, d.etat&&d.etat.includes(e)); }).join('')+'</table>'+
+        '<table>'+etatsAll.map(function(e){ return checkRow(e, d.etat&&Array.isArray(d.etat)&&d.etat.includes(e)); }).join('')+'</table>'+
         (d.etatAutre?'<div style="padding:5px 8px;font-size:10px;color:#666;"><i>'+d.etatAutre+'</i></div>':'')+
       '</div>'+
       '<div style="flex:1;border:1px solid #e8e8e8;border-radius:6px;overflow:hidden;">'+
         '<div style="background:#f5f5f5;padding:5px 10px;font-size:10px;font-weight:800;color:#333;text-transform:uppercase;">🎁 Accessoires remis</div>'+
-        '<table>'+accAll.map(function(a2){ return checkRow(a2, d.accessoires&&d.accessoires.includes(a2)); }).join('')+'</table>'+
+        '<table>'+accAll.map(function(a2){ return checkRow(a2, d.accessoires&&Array.isArray(d.accessoires)&&d.accessoires.includes(a2)); }).join('')+'</table>'+
       '</div>'+
     '</div>'+
 
