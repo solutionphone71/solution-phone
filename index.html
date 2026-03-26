@@ -8733,18 +8733,32 @@ async function importReparationsPhonilab(input){
     }
 
     var headers = parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
-    function fi(terms){ return headers.findIndex(function(h){return terms.some(function(t){return h.includes(t);});}); }
 
-    var iDate   = fi(['date']);
-    var iNum    = fi(['réparation','reparation','numéro','numero']);
-    var iClient = fi(['client']);
-    var iEmail  = fi(['email']);
-    var iTel    = fi(['téléphone','telephone']);
-    var iModele = fi(['modèle','modele']);
-    var iStatut = fi(['statut']);
-    var iFacture= fi(['facture']);
-    var iPaie   = fi(['paiement']);
-    var iTech   = fi(['technicien']);
+    // Recherche EXACTE en priorité, puis partielle
+    function fiExact(terms){
+      var idx = headers.findIndex(function(h){return terms.some(function(t){return h===t;});});
+      if(idx>=0) return idx;
+      return headers.findIndex(function(h){return terms.some(function(t){return h.includes(t);});});
+    }
+
+    // Phonilab columns: 'date réparation','réparation','client','email','téléphone','modèle','technicien','statut','suivi','point vente','emplacement','priorité','facture','paiement'
+    var iDate    = fiExact(['date réparation','date']);
+    var iNum     = fiExact(['réparation','reparation']);  // colonne exacte 'réparation' = SO_S008786
+    var iClient  = fiExact(['client']);
+    var iEmail   = fiExact(['email']);
+    var iTel     = fiExact(['téléphone','telephone']);
+    var iModele  = fiExact(['modèle','modele']);
+    var iStatut  = fiExact(['statut']);
+    var iFacture = fiExact(['facture']);
+    var iPaie    = fiExact(['paiement']);
+    var iTech    = fiExact(['technicien']);
+
+    // Vérifier que iNum ne pointe pas vers iDate
+    if(iNum === iDate && iDate >= 0){
+      // Chercher la colonne exactement nommée 'réparation'
+      iNum = headers.indexOf('réparation');
+      if(iNum < 0) iNum = headers.indexOf('reparation');
+    }
 
     var imported=0; var skipped=0; var newReps=[];
 
@@ -8782,20 +8796,37 @@ async function importReparationsPhonilab(input){
       imported++;
     }
 
-    if(supabaseReady && newReps.length > 0){
+    if(newReps.length === 0){
+      var msg = skipped > 0 ? '✅ Toutes les réparations sont déjà importées ('+skipped+' ignorées)' : '⚠️ Aucune réparation trouvée dans le fichier';
+      showNotif(msg, skipped>0?'success':'error');
+      if(statusEl) statusEl.textContent = msg;
+      input.value=''; return;
+    }
+
+    if(supabaseReady){
       if(statusEl) statusEl.textContent='⏳ Sauvegarde '+newReps.length+' réparations...';
       var batches=[]; var batchSize=50;
       for(var b=0; b<newReps.length; b+=batchSize){
         batches.push(supaFetch('historique_reparations','POST',newReps.slice(b,b+batchSize)));
       }
-      Promise.all(batches).then(function(){
+      Promise.all(batches).then(function(results){
+        // Vérifier si erreur Supabase (table inexistante etc.)
+        var hasError = results.some(function(r){ return r && r.error; });
+        if(hasError){
+          showNotif('❌ Erreur Supabase — La table historique_reparations existe-t-elle ?','error');
+          if(statusEl) statusEl.textContent='❌ Erreur — exécutez le SQL reparations_import_SQL.sql dans Supabase';
+          return;
+        }
         var msg='✅ '+imported+' réparations importées, '+skipped+' déjà présentes';
         showNotif(msg,'success');
         if(statusEl) statusEl.textContent=msg;
-        cacheHRep(historiqueReparations); // Mettre à jour le cache
+        cacheHRep(historiqueReparations);
+      }).catch(function(err){
+        showNotif('❌ Erreur Supabase : '+err,'error');
+        if(statusEl) statusEl.textContent='❌ Erreur — vérifiez que la table historique_reparations existe dans Supabase';
       });
     } else {
-      var msg='✅ '+imported+' réparations importées';
+      var msg='✅ '+imported+' réparations en mémoire (Supabase non connecté)';
       showNotif(msg,'success');
       if(statusEl) statusEl.textContent=msg;
     }
