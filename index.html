@@ -9326,7 +9326,7 @@ function repClearForm(){
   ['dep-acc-coque','dep-acc-chargeur','dep-acc-cable','dep-acc-boite','dep-acc-verre','dep-acc-autre','dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos','dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera','dep-etat-charge','dep-etat-batterie'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.checked=false;
   });
-  var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=false; repToggleQR(); }
+  var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=false; if(typeof repToggleQR==='function') repToggleQR(); }
 }
 
 function repAutoSave(){
