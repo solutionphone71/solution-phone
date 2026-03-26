@@ -3855,24 +3855,49 @@ function renderClients(){
     return;
   }
 
-  tbody.innerHTML = liste.map(function(c){
-    var nbRep = reparations.filter(function(r){
-      return r.clientNom && c.nom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
-    }).length;
-    return '<tr>'+
-      '<td><b>'+(c.nom||'—')+'</b></td>'+
-      '<td>'+(c.prenom||'—')+'</td>'+
-      '<td>'+(c.tel?'<a href="tel:'+c.tel.replace(/\s/g,'')+'" style="color:var(--blue);text-decoration:none;">'+c.tel+'</a>':'—')+'</td>'+
-      '<td style="font-size:12px;">'+(c.email||'—')+'</td>'+
-      '<td style="font-size:12px;color:var(--text-muted);">'+(c.adresse||'—')+'</td>'+
-      '<td style="font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(c.notes||'—')+'</td>'+
-      '<td style="display:flex;gap:4px;">'+
-        '<button class="btn btn-primary btn-sm" onclick="clientVersReparation(''+c.id+'')" title="Nouvelle réparation">🔧</button>'+
-        '<button class="btn btn-sm" onclick="voirClientDetail(''+c.id+'')" title="Détail">👁️</button>'+
-        '<button class="btn btn-sm" onclick="supprimerClient(''+c.id+'')" title="Supprimer" style="color:var(--text-dim)">🗑️</button>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
+  tbody.innerHTML = '';
+  liste.forEach(function(c){
+    var tr = document.createElement('tr');
+
+    var tdNom = document.createElement('td');
+    var b = document.createElement('b');
+    b.textContent = c.nom||'—';
+    tdNom.appendChild(b);
+
+    var tdPrenom = document.createElement('td');
+    tdPrenom.textContent = c.prenom||'—';
+
+    var tdTel = document.createElement('td');
+    if(c.tel){
+      var a = document.createElement('a');
+      a.href = 'tel:'+c.tel.replace(/\s/g,'');
+      a.style.cssText='color:var(--blue);text-decoration:none;';
+      a.textContent = c.tel;
+      tdTel.appendChild(a);
+    } else { tdTel.textContent='—'; }
+
+    var tdEmail = document.createElement('td');
+    tdEmail.style.fontSize='12px';
+    tdEmail.textContent = c.email||'—';
+
+    var tdAdr = document.createElement('td');
+    tdAdr.style.cssText='font-size:12px;color:var(--text-muted);';
+    tdAdr.textContent = c.adresse||'—';
+
+    var tdNotes = document.createElement('td');
+    tdNotes.style.cssText='font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    tdNotes.textContent = c.notes||'—';
+
+    var tdAct = document.createElement('td');
+    tdAct.style.cssText='display:flex;gap:4px;';
+    var btnR=document.createElement('button'); btnR.className='btn btn-primary btn-sm'; btnR.textContent='🔧'; btnR.title='Nouvelle réparation'; (function(id){btnR.onclick=function(){clientVersReparation(id);};})(c.id);
+    var btnV=document.createElement('button'); btnV.className='btn btn-sm'; btnV.textContent='👁️'; btnV.title='Détail'; (function(id){btnV.onclick=function(){voirClientDetail(id);};})(c.id);
+    var btnD=document.createElement('button'); btnD.className='btn btn-sm'; btnD.textContent='🗑️'; btnD.title='Supprimer'; btnD.style.color='var(--text-dim)'; (function(id){btnD.onclick=function(){supprimerClient(id);};})(c.id);
+    tdAct.appendChild(btnR); tdAct.appendChild(btnV); tdAct.appendChild(btnD);
+
+    [tdNom,tdPrenom,tdTel,tdEmail,tdAdr,tdNotes,tdAct].forEach(function(td){tr.appendChild(td);});
+    tbody.appendChild(tr);
+  });
 }
 
 function clientVersReparation(id){
