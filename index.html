@@ -10573,65 +10573,75 @@ function repToggleIRISEdit(){
   if(btn) btn.textContent = isReadOnly ? '🔒 Verrouiller' : '✏️ Modifier';
 }
 
-// Override unique repGoStep — step 3 (signature) + step 4 (IRIS/QR)
+// Override unique repGoStep — step 3 (signature + HT) + step 4 (IRIS/QR)
 var _repGoStepBase = repGoStep;
 repGoStep = function(n){
-  _repGoStepBase(n);
+  _repGoStepBase(n);  // D'abord afficher le step (display:block)
 
   // ── STEP 3 : Signature + Décomposition HT ──
   if(n===3){
+    // Délai 300ms pour que le DOM soit visible et que getBoundingClientRect() fonctionne
     setTimeout(function(){
-      var cv = document.getElementById('rep-sig-canvas');
-      if(cv) cv._repInitDone = false;
-      repInitSig();
-      repUpdateSigNom();
-      repCheckEligibilite();
-      // Auto-décomposition HT si prix déjà saisi
-      setTimeout(function(){
-        var devisEl = document.getElementById('dep-devis');
-        var moEl = document.getElementById('dep-mo-ht');
-        if(devisEl && parseFloat(devisEl.value) > 0 && moEl){
-          repAutoDecompose(devisEl.value);
-        }
-      }, 200);
-      // Recharger signature existante
-      if(repDossierCourant && repDossierCourant.signature){
-        var canvas = document.getElementById('rep-sig-canvas');
-        if(canvas){
-          var img = new Image();
-          img.onload = function(){ canvas.getContext('2d').drawImage(img,0,0); };
-          img.src = repDossierCourant.signature;
-          _repSigData = repDossierCourant.signature;
-          var ok   = document.getElementById('rep-sig-ok');   if(ok)   ok.style.display='block';
-          var hint = document.getElementById('rep-sig-hint'); if(hint) hint.style.display='none';
-        }
+
+      // --- Signature canvas ---
+      var canvas = document.getElementById('rep-sig-canvas');
+      if(canvas){
+        // Forcer les dimensions réelles maintenant que le step est visible
+        canvas._repInitDone = false;
+        var w = canvas.offsetWidth || canvas.parentElement ? canvas.parentElement.offsetWidth : 380;
+        if(w > 10){ canvas.width = w; canvas.height = 100; }
+        repInitSig();
+        repUpdateSigNom();
       }
-      // Recharger MO/pièces
+
+      // --- Eligibilité ---
+      repCheckEligibilite();
+
+      // --- Décomposition HT ---
+      var devisEl = document.getElementById('dep-devis');
+      if(devisEl && parseFloat(devisEl.value) > 0){
+        repAutoDecompose(devisEl.value);
+      }
+
+      // --- Recharger MO/pièces si déjà saisis ---
       if(repDossierCourant){
         var mo = document.getElementById('dep-mo-ht');
         var pi = document.getElementById('dep-pieces-ht');
-        if(mo && repDossierCourant.moHT)     mo.value = repDossierCourant.moHT;
-        if(pi && repDossierCourant.piecesHT) pi.value = repDossierCourant.piecesHT;
+        if(mo && repDossierCourant.moHT > 0)     mo.value = repDossierCourant.moHT;
+        if(pi && repDossierCourant.piecesHT > 0) pi.value = repDossierCourant.piecesHT;
         if(repDossierCourant.moHT || repDossierCourant.piecesHT) repCalcDevis();
       }
-    },150);
+
+      // --- Recharger signature existante ---
+      if(repDossierCourant && repDossierCourant.signature && canvas){
+        var img = new Image();
+        img.onload = function(){ canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height); };
+        img.src = repDossierCourant.signature;
+        _repSigData = repDossierCourant.signature;
+        var ok   = document.getElementById('rep-sig-ok');   if(ok)   ok.style.display='block';
+        var hint = document.getElementById('rep-sig-hint'); if(hint) hint.style.display='none';
+      }
+
+    }, 300);
   }
 
   // ── STEP 4 : IRIS / QualiRépar ──
   if(n===4){
-    repQRPopulateMarques();
-    if(repDossierCourant){
-      var a = repDossierCourant.appareil||{};
-      var selMarque = document.getElementById('rep-qr-marque');
-      if(selMarque && a.marque && !selMarque.value){
-        selMarque.value = a.marque;
-        repQRUpdateOrganisme();
+    setTimeout(function(){
+      repQRPopulateMarques();
+      if(repDossierCourant){
+        var a = repDossierCourant.appareil||{};
+        var selMarque = document.getElementById('rep-qr-marque');
+        if(selMarque && a.marque && !selMarque.value){
+          selMarque.value = a.marque;
+          repQRUpdateOrganisme();
+        }
+        repGenereDossierInterne();
+        repGenereRefMobile();
+        setTimeout(repQRAutoPanne, 200);
       }
-      repGenereDossierInterne();
-      repGenereRefMobile();
-      setTimeout(repQRAutoPanne, 100);
-    }
-    repUpdateFacturePreview();
+      repUpdateFacturePreview();
+    }, 100);
   }
 };
 // ============================================================
