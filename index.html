@@ -9985,11 +9985,7 @@ function repCalcDevis(){
   } else if(calcBox){
     calcBox.innerHTML = '';
   }
-  // Auto-remplir le champ devis TTC
-  if(ttc > 0){
-    var devisEl = document.getElementById('dep-devis');
-    if(devisEl) devisEl.value = ttc.toFixed(2);
-  }
+  // Ne PAS écraser dep-devis — c'est l'utilisateur qui saisit le prix
   repAutoSave();
 
   // Alerte si TTC < 25€ et bonus QR potentiel
