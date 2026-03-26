@@ -252,6 +252,20 @@ function checkForm(){
   document.getElementById('btn-submit').disabled = !ok;
 }
 
+async function supaPost(table, data){
+  var res = await fetch(SUPA_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  });
+  return res;
+}
+
 async function submitForm(){
   var nom    = document.getElementById('cl-nom').value.trim();
   var prenom = document.getElementById('cl-prenom').value.trim();
@@ -265,35 +279,42 @@ async function submitForm(){
   btn.disabled = true;
   btn.textContent = '⏳ Envoi en cours...';
 
-  var payload = {
-    civilite: civSelected,
+  var now = new Date().toISOString();
+
+  // 1. Sauvegarder dans clients_en_attente (pour notification dashboard)
+  var payloadAttente = {
+    civilite: civSelected, nom: nom, prenom: prenom,
+    tel: tel, email: email, adresse: adresse,
+    cp: cp, ville: ville,
+    date_inscription: now, traite: false
+  };
+
+  // 2. Sauvegarder dans la table clients principale
+  var adresseComplete = [adresse, cp && ville ? cp + ' ' + ville : (cp||ville)].filter(Boolean).join(', ');
+  var payloadClient = {
     nom: nom,
     prenom: prenom,
     tel: tel,
     email: email,
-    adresse: adresse,
-    cp: cp,
-    ville: ville,
-    date_inscription: new Date().toISOString(),
-    traite: false
+    adresse: adresseComplete,
+    notes: 'Inscrit via tablette accueil · Civilité : ' + (civSelected||'—'),
+    date_creation: now
   };
 
   try {
-    var res = await fetch(SUPA_URL + '/rest/v1/clients_en_attente', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
+    // Envoi en parallèle dans les deux tables
+    var results = await Promise.allSettled([
+      supaPost('clients_en_attente', payloadAttente),
+      supaPost('clients', payloadClient)
+    ]);
 
-    if(res.ok || res.status === 201){
+    var ok = results[0].status === 'fulfilled' &&
+             (results[0].value.ok || results[0].value.status === 201);
+
+    if(ok){
       showSucces(civSelected + ' ' + prenom + ' ' + nom);
     } else {
-      throw new Error('Erreur serveur ' + res.status);
+      throw new Error('Erreur serveur');
     }
   } catch(e) {
     document.getElementById('submit-error').style.display = 'block';
