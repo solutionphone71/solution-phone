@@ -877,8 +877,12 @@ tr:hover td{background:#fafafa;}
           style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
         <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
         <label class="btn btn-sm" style="cursor:pointer;border-color:var(--blue);color:var(--blue);">
-          📥 Import Phonilab CSV
+          👥 Import clients Phonilab
           <input type="file" id="clients-phonilab-csv" accept=".csv" style="display:none;" onchange="importClientsPhonilab(this)">
+        </label>
+        <label class="btn btn-sm" style="cursor:pointer;border-color:var(--green);color:var(--green);">
+          🔧 Import réparations Phonilab
+          <input type="file" id="reps-phonilab-csv" accept=".csv" style="display:none;" onchange="importReparationsPhonilab(this)">
         </label>
         <span id="clients-import-status" style="font-size:12px;color:var(--text-muted);"></span>
       </div>
@@ -3120,6 +3124,7 @@ async function checkPin(){
       populateFournisseurSelects();
       loadApiKeyFromSupabase();
       loadClientsEnAttente();
+      loadHistoriqueReparations();
       // Charger la base clients complète au démarrage
       supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
         if(cl) clients = cl.map(function(x){
@@ -3952,40 +3957,74 @@ function voirClientDetail(id){
   if(!card||!content) return;
   content.innerHTML = '';
 
+  // En-tête
   var header = document.createElement('div');
   header.className = 'card-header';
-
   var title = document.createElement('div');
   title.className = 'card-title';
-  title.textContent = '👤 '+(c.prenom||'')+' '+c.nom;
-
+  title.textContent = '👤 '+(c.prenom?c.prenom+' ':'')+c.nom;
   var btnClose = document.createElement('button');
   btnClose.className = 'btn btn-sm';
   btnClose.textContent = '✕';
   btnClose.onclick = function(){ card.style.display='none'; };
-
-  header.appendChild(title);
-  header.appendChild(btnClose);
+  var btnRep = document.createElement('button');
+  btnRep.className = 'btn btn-primary btn-sm';
+  btnRep.textContent = '🔧 Nouvelle réparation';
+  btnRep.onclick = function(){ clientVersReparation(c.id); };
+  var btnDiv = document.createElement('div');
+  btnDiv.style.display='flex'; btnDiv.style.gap='8px';
+  btnDiv.appendChild(btnRep); btnDiv.appendChild(btnClose);
+  header.appendChild(title); header.appendChild(btnDiv);
   content.appendChild(header);
 
+  // Infos client
   var grid = document.createElement('div');
-  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;padding:4px 0;';
-
-  var infos = [
-    ['Téléphone', c.tel||'—'],
-    ['Email', c.email||'—'],
-    ['Adresse', c.adresse||'—'],
-    ['Notes', c.notes||'—'],
-  ];
-  infos.forEach(function(info){
-    var d = document.createElement('div');
-    var b = document.createElement('b');
-    b.textContent = info[0]+' : ';
-    d.appendChild(b);
-    d.appendChild(document.createTextNode(info[1]));
+  grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;';
+  [['Téléphone',c.tel||'—'],['Email',c.email||'—'],['Adresse',c.adresse||'—'],['Notes',c.notes||'—']].forEach(function(info){
+    var d=document.createElement('div');
+    var b=document.createElement('b'); b.textContent=info[0]+' : ';
+    d.appendChild(b); d.appendChild(document.createTextNode(info[1]));
     grid.appendChild(d);
   });
   content.appendChild(grid);
+
+  // Historique réparations
+  var searchKey = (c.prenom?c.prenom+' ':'')+c.nom;
+  var hist = getHistoriqueClient(searchKey);
+  if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
+
+  var histTitle = document.createElement('div');
+  histTitle.style.cssText = 'font-weight:800;font-size:13px;margin-bottom:10px;';
+  histTitle.textContent = '🔧 Historique réparations ('+hist.length+')';
+  content.appendChild(histTitle);
+
+  if(!hist.length){
+    var noHist = document.createElement('div');
+    noHist.style.cssText = 'font-size:13px;color:var(--text-muted);padding:12px 0;';
+    noHist.textContent = 'Aucune réparation trouvée';
+    content.appendChild(noHist);
+  } else {
+    var table = document.createElement('table');
+    table.style.width='100%';
+    var thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>N°</th><th>Date</th><th>Appareil</th><th>Statut</th><th>Paiement</th><th>Source</th></tr>';
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    hist.forEach(function(r){
+      var tr = document.createElement('tr');
+      var dateStr = (r.date_rep||'').substring(0,10);
+      var statusColor = r.statut && r.statut.includes('ermin') ? 'var(--green)' : 'var(--warning)';
+      tr.innerHTML = '<td><b>'+(r.numero||'—')+'</b></td>'+
+        '<td style="font-size:12px;color:var(--text-muted);">'+dateStr+'</td>'+
+        '<td><b>'+(r.modele||r.appareil||'—')+'</b></td>'+
+        '<td style="font-size:12px;color:'+statusColor+';">'+(r.statut||'—')+'</td>'+
+        '<td style="font-size:12px;">'+(r.paiement||'—')+'</td>'+
+        '<td><span style="font-size:11px;padding:2px 6px;border-radius:10px;background:'+(r.source==='app'?'#e0f2fe':'#f0fdf4')+';color:'+(r.source==='app'?'#0369a1':'#166534')+';">'+(r.source==='app'?'App':'Phonilab')+'</span></td>';
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    content.appendChild(table);
+  }
 
   card.style.display = 'block';
   card.scrollIntoView({behavior:'smooth'});
@@ -8505,6 +8544,140 @@ function naShowBonCommande(){
   },200);
 }
 
+
+// ============================================================
+//  IMPORT RÉPARATIONS PHONILAB
+// ============================================================
+var historiqueReparations = [];
+
+async function loadHistoriqueReparations(){
+  try {
+    var res = await supaFetch('historique_reparations','GET',null,'?order=date_rep.desc&limit=2000');
+    if(res) historiqueReparations = res;
+  } catch(e){ console.log('historique:', e); }
+}
+
+function getHistoriqueClient(nomOuTel){
+  if(!nomOuTel) return [];
+  var q = nomOuTel.toLowerCase().trim();
+  // Chercher dans historique Phonilab
+  var hist = historiqueReparations.filter(function(r){
+    return (r.client_nom||'').toLowerCase().includes(q) ||
+           (r.client_tel||'').replace(/\s/g,'').includes(q.replace(/\s/g,''));
+  });
+  // Chercher aussi dans les réparations app
+  var appReps = reparations.filter(function(r){
+    return (r.clientNom||'').toLowerCase().includes(q);
+  }).map(function(r){
+    return {
+      numero: r.numero, date_rep: r.date,
+      client_nom: r.clientNom, modele: r.appareil,
+      statut: 'Terminé', paiement: r.mode||'—',
+      source: 'app'
+    };
+  });
+  return hist.concat(appReps).sort(function(a,b){
+    return (b.date_rep||'').localeCompare(a.date_rep||'');
+  });
+}
+
+async function importReparationsPhonilab(input){
+  var file = input.files[0];
+  if(!file) return;
+  var statusEl = document.getElementById('clients-import-status');
+  if(statusEl) statusEl.textContent = '⏳ Lecture réparations...';
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var text = e.target.result;
+    var lines = text.split('\n').filter(function(l){return l.trim();});
+    if(lines.length < 2){ showNotif('Fichier vide','error'); return; }
+
+    function parseCSVLine(line){
+      var result=[]; var cur=''; var inQ=false;
+      for(var i=0;i<line.length;i++){
+        if(line[i]==='"'){inQ=!inQ;}
+        else if(line[i]===';'&&!inQ){result.push(cur.trim());cur='';}
+        else{cur+=line[i];}
+      }
+      result.push(cur.trim());
+      return result;
+    }
+
+    var headers = parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
+    function fi(terms){ return headers.findIndex(function(h){return terms.some(function(t){return h.includes(t);});}); }
+
+    var iDate   = fi(['date']);
+    var iNum    = fi(['réparation','reparation','numéro','numero']);
+    var iClient = fi(['client']);
+    var iEmail  = fi(['email']);
+    var iTel    = fi(['téléphone','telephone']);
+    var iModele = fi(['modèle','modele']);
+    var iStatut = fi(['statut']);
+    var iFacture= fi(['facture']);
+    var iPaie   = fi(['paiement']);
+    var iTech   = fi(['technicien']);
+
+    var imported=0; var skipped=0; var newReps=[];
+
+    for(var i=1; i<lines.length; i++){
+      if(statusEl && i%200===0) statusEl.textContent='⏳ Ligne '+i+'/'+lines.length+'...';
+      var cols = parseCSVLine(lines[i]);
+      if(cols.length < 3) continue;
+
+      var num    = (iNum>=0?cols[iNum]:'').replace(/"/g,'').trim();
+      var client = (iClient>=0?cols[iClient]:'').replace(/"/g,'').trim();
+      if(!client && !num) continue;
+
+      // Déduplication par numéro dossier
+      var existe = historiqueReparations.find(function(r){return r.numero===num;});
+      if(existe){ skipped++; continue; }
+
+      var tel = (iTel>=0?cols[iTel]:'').replace(/"/g,'').trim();
+      if(tel && !tel.startsWith('0') && !tel.startsWith('+')) tel='0'+tel;
+
+      var rec = {
+        numero:       num,
+        date_rep:     (iDate>=0?cols[iDate]:'').replace(/"/g,'').trim(),
+        client_nom:   client,
+        client_email: (iEmail>=0?cols[iEmail]:'').replace(/"/g,'').trim(),
+        client_tel:   tel,
+        modele:       (iModele>=0?cols[iModele]:'').replace(/"/g,'').trim(),
+        statut:       (iStatut>=0?cols[iStatut]:'').replace(/"/g,'').trim(),
+        facture:      (iFacture>=0?cols[iFacture]:'').replace(/"/g,'').trim(),
+        paiement:     (iPaie>=0?cols[iPaie]:'').replace(/"/g,'').trim(),
+        technicien:   (iTech>=0?cols[iTech]:'').replace(/"/g,'').trim(),
+        source:       'phonilab'
+      };
+      historiqueReparations.push(rec);
+      newReps.push(rec);
+      imported++;
+    }
+
+    if(supabaseReady && newReps.length > 0){
+      if(statusEl) statusEl.textContent='⏳ Sauvegarde '+newReps.length+' réparations...';
+      var batches=[]; var batchSize=50;
+      for(var b=0; b<newReps.length; b+=batchSize){
+        batches.push(supaFetch('historique_reparations','POST',newReps.slice(b,b+batchSize)));
+      }
+      Promise.all(batches).then(function(){
+        var msg='✅ '+imported+' réparations importées, '+skipped+' déjà présentes';
+        showNotif(msg,'success');
+        if(statusEl) statusEl.textContent=msg;
+      });
+    } else {
+      var msg='✅ '+imported+' réparations importées';
+      showNotif(msg,'success');
+      if(statusEl) statusEl.textContent=msg;
+    }
+    input.value='';
+  };
+  reader.readAsText(file,'ISO-8859-1');
+}
+// ============================================================
+//  FIN IMPORT RÉPARATIONS
+// ============================================================
+
 // ============================================================
 //  FIN MODULE TÉLÉPHONES NEUFS & ACCESSOIRES
 // ============================================================
@@ -8813,9 +8986,7 @@ function repSelectClient(id){
   Object.keys(fields).forEach(function(f){
     var el=document.getElementById('rep-'+f); if(el) el.value=fields[f];
   });
-  // Civilité
   var civ=document.getElementById('rep-civilite'); if(civ) civ.value=c.civilite||'';
-  // Adresse split
   if(c.adresse){
     var parts=c.adresse.split(',');
     var rue=parts[0]?parts[0].trim():'';
@@ -8825,8 +8996,28 @@ function repSelectClient(id){
     var elCP=document.getElementById('rep-cp'); if(elCP) elCP.value=cpMatch?cpMatch[1]:'';
     var elV=document.getElementById('rep-ville'); if(elV) elV.value=cpMatch?cpMatch[2].trim():rest;
   }
-  document.getElementById('rep-client-results').innerHTML='<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;font-size:13px;color:var(--green);">✅ Client sélectionné : '+(c.prenom?c.prenom+' ':'')+c.nom+'</div>';
-  showNotif('Client chargé : '+(c.prenom||'')+' '+c.nom,'success');
+  repAutoSave();
+
+  // Afficher historique réparations
+  var searchKey = (c.prenom?c.prenom+' ':'')+c.nom;
+  var hist = getHistoriqueClient(searchKey);
+  if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
+
+  var box = document.getElementById('rep-client-results');
+  var html2 = '<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;font-size:13px;color:var(--green);margin-bottom:8px;">✅ '+(c.prenom?c.prenom+' ':'')+c.nom+' chargé</div>';
+  if(hist.length > 0){
+    html2 += '<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">🔧 '+hist.length+' réparation(s) précédente(s) :</div>';
+    html2 += '<div style="max-height:180px;overflow-y:auto;">';
+    hist.slice(0,10).forEach(function(r){
+      html2 += '<div style="padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;">'+
+        '<b>'+(r.modele||r.appareil||'—')+'</b> · '+(r.date_rep||'').substring(0,10)+
+        ' · <span style="color:var(--green);">'+(r.statut||'—')+'</span>'+
+        ' <span style="float:right;font-size:11px;color:var(--text-muted);">'+(r.numero||'')+'</span></div>';
+    });
+    html2 += '</div>';
+  }
+  box.innerHTML = html2;
+  showNotif('Client chargé : '+(c.prenom||'')+' '+c.nom+(hist.length?' · '+hist.length+' réparations':''),'success');
 }
 
 function repUpdateDevisRecap(){
