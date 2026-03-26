@@ -3656,9 +3656,10 @@ async function importClientsPhonilab(input) {
     var headers = parseCSVLine(lines[0]).map(function(h){return h.toLowerCase().replace(/"/g,'').trim();});
 
     // Mapping colonnes Phonilab
-    function fi(terms){ return headers.findIndex(function(h){ return terms.some(function(t){return h.includes(t);}); }); }
+    function fi(terms){ return headers.findIndex(function(h){ return terms.some(function(t){return h===t||h.includes(t);}); }); }
+    function fiExact(terms){ return headers.findIndex(function(h){ return terms.some(function(t){return h===t;}); }); }
     var iPrenom  = fi(['prénom','prenom']);
-    var iNom     = fi(['nom']);
+    var iNom     = fiExact(['nom','name','lastname','nom client']);  // exact pour éviter 'prénom'
     var iEmail   = fi(['email']);
     var iTel     = fi(['mobile','téléphone','telephone']);
     var iAdresse = fi(['adresse']);
