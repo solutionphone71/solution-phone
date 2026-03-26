@@ -3713,6 +3713,7 @@ async function importClientsPhonilab(input) {
         var msg = '✅ Import terminé : '+imported+' clients importés, '+skipped+' déjà présents';
         showNotif(msg, 'success');
         if(statusEl) statusEl.textContent = msg;
+        cacheClients(clients); // Mettre à jour le cache
       });
     } else {
       var msg = '✅ '+imported+' clients importés, '+skipped+' ignorés';
@@ -3742,6 +3743,7 @@ async function addClient() {
   clients.sort(function(a,b){return a.nom.localeCompare(b.nom);});
   if(supabaseReady){
     var res = await supaFetch('clients','POST',{prenom:prenom,nom:nom,tel:client.tel,email:client.email,adresse:client.adresse,notes:client.notes,date_creation:client.dateCreation});
+    invaliderCacheClients(); cacheClients(clients);
     if(res&&res[0]) client.id = res[0].id;
   }
   ['cl-prenom','cl-nom','cl-tel','cl-email','cl-adresse','cl-cp','cl-ville','cl-notes'].forEach(function(id){document.getElementById(id).value='';});
@@ -8259,7 +8261,69 @@ showPage = function(id, el){
 var clientsEnAttente = [];
 
 
+
+// ============================================================
+//  CACHE localStorage — Clients + Historique réparations
+// ============================================================
+var CACHE_CLIENTS_KEY    = 'sp_clients_cache';
+var CACHE_CLIENTS_TS_KEY = 'sp_clients_cache_ts';
+var CACHE_HREP_KEY       = 'sp_hrep_cache';
+var CACHE_HREP_TS_KEY    = 'sp_hrep_cache_ts';
+var CACHE_TTL_MS         = 5 * 60 * 1000; // 5 minutes avant re-sync Supabase
+
+function cacheClients(data){
+  try {
+    localStorage.setItem(CACHE_CLIENTS_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_CLIENTS_TS_KEY, Date.now().toString());
+  } catch(e){ console.log('Cache clients trop grand:', e); }
+}
+
+function getCachedClients(){
+  try {
+    var ts = parseInt(localStorage.getItem(CACHE_CLIENTS_TS_KEY)||'0');
+    var data = localStorage.getItem(CACHE_CLIENTS_KEY);
+    if(data) return { data: JSON.parse(data), fresh: (Date.now()-ts) < CACHE_TTL_MS };
+  } catch(e){}
+  return null;
+}
+
+function cacheHRep(data){
+  try {
+    localStorage.setItem(CACHE_HREP_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_HREP_TS_KEY, Date.now().toString());
+  } catch(e){ console.log('Cache réparations trop grand:', e); }
+}
+
+function getCachedHRep(){
+  try {
+    var ts = parseInt(localStorage.getItem(CACHE_HREP_TS_KEY)||'0');
+    var data = localStorage.getItem(CACHE_HREP_KEY);
+    if(data) return { data: JSON.parse(data), fresh: (Date.now()-ts) < CACHE_TTL_MS };
+  } catch(e){}
+  return null;
+}
+
+// ── loadAllClients avec cache ────────────────────────────────
 async function loadAllClients(){
+  // 1. Charger depuis le cache instantanément
+  var cached = getCachedClients();
+  if(cached && cached.data.length > 0){
+    clients = cached.data;
+    if(document.getElementById('clients-liste')) renderClients();
+    console.log('Clients depuis cache : '+clients.length);
+
+    // 2. Si cache périmé → resync Supabase en arrière-plan
+    if(!cached.fresh){
+      setTimeout(syncClientsFromSupabase, 100);
+    }
+    return;
+  }
+
+  // 3. Pas de cache → charger depuis Supabase
+  await syncClientsFromSupabase();
+}
+
+async function syncClientsFromSupabase(){
   var allClients = [];
   var batchSize = 1000;
   var offset = 0;
@@ -8271,12 +8335,11 @@ async function loadAllClients(){
         '?order=nom.asc&limit='+batchSize+'&offset='+offset);
       if(res && res.length > 0){
         allClients = allClients.concat(res.map(function(x){
-          return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',
-                 email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',
-                 dateCreation:x.date_creation,civilite:x.civilite||''};
+          return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',
+                 tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',
+                 notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
         }));
         offset += batchSize;
-        // Si on a reçu moins que batchSize, on a tout
         if(res.length < batchSize) keepGoing = false;
       } else {
         keepGoing = false;
@@ -8284,11 +8347,67 @@ async function loadAllClients(){
     } catch(e){ keepGoing = false; }
   }
 
-  clients = allClients;
-  // Rafraîchir si on est sur la page clients
-  if(document.getElementById('clients-liste')) renderClients();
-  console.log('Clients chargés : '+clients.length);
+  if(allClients.length > 0){
+    clients = allClients;
+    cacheClients(clients); // Sauvegarder dans localStorage
+    if(document.getElementById('clients-liste')) renderClients();
+    console.log('Clients depuis Supabase : '+clients.length);
+  }
 }
+
+// ── loadHistoriqueReparations avec cache ─────────────────────
+async function loadHistoriqueReparations(){
+  // 1. Cache instantané
+  var cached = getCachedHRep();
+  if(cached && cached.data.length > 0){
+    historiqueReparations = cached.data;
+    console.log('Historique depuis cache : '+historiqueReparations.length);
+    if(!cached.fresh) setTimeout(syncHRepFromSupabase, 500);
+    return;
+  }
+  // 2. Supabase
+  await syncHRepFromSupabase();
+}
+
+async function syncHRepFromSupabase(){
+  try {
+    var allReps = [];
+    var batchSize = 1000;
+    var offset = 0;
+    var keepGoing = true;
+    while(keepGoing){
+      var res = await supaFetch('historique_reparations','GET',null,
+        '?order=date_rep.desc&limit='+batchSize+'&offset='+offset);
+      if(res && res.length > 0){
+        allReps = allReps.concat(res);
+        offset += batchSize;
+        if(res.length < batchSize) keepGoing = false;
+      } else { keepGoing = false; }
+    }
+    if(allReps.length > 0){
+      historiqueReparations = allReps;
+      cacheHRep(historiqueReparations);
+      console.log('Historique depuis Supabase : '+historiqueReparations.length);
+    }
+  } catch(e){ console.log('syncHRep:', e); }
+}
+
+// ── Invalider le cache quand un nouveau client est ajouté ────
+function invaliderCacheClients(){
+  localStorage.removeItem(CACHE_CLIENTS_TS_KEY); // Force re-sync au prochain chargement
+}
+
+// ── Invalider le cache quand une répa est importée ───────────
+function invaliderCacheHRep(){
+  localStorage.removeItem(CACHE_HREP_TS_KEY);
+}
+// ============================================================
+//  FIN CACHE
+// ============================================================
+
+// loadAllClients redéfini ci-dessus dans JS_CACHE
+// ──────────────────────────────────
+
 
 async function loadClientsEnAttente(){
   try {
@@ -8564,12 +8683,7 @@ function naShowBonCommande(){
 // ============================================================
 var historiqueReparations = [];
 
-async function loadHistoriqueReparations(){
-  try {
-    var res = await supaFetch('historique_reparations','GET',null,'?order=date_rep.desc&limit=2000');
-    if(res) historiqueReparations = res;
-  } catch(e){ console.log('historique:', e); }
-}
+
 
 function getHistoriqueClient(nomOuTel){
   if(!nomOuTel) return [];
@@ -8678,6 +8792,7 @@ async function importReparationsPhonilab(input){
         var msg='✅ '+imported+' réparations importées, '+skipped+' déjà présentes';
         showNotif(msg,'success');
         if(statusEl) statusEl.textContent=msg;
+        cacheHRep(historiqueReparations); // Mettre à jour le cache
       });
     } else {
       var msg='✅ '+imported+' réparations importées';
