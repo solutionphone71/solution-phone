@@ -3125,13 +3125,8 @@ async function checkPin(){
       loadApiKeyFromSupabase();
       loadClientsEnAttente();
       loadHistoriqueReparations();
-      // Charger la base clients complète au démarrage
-      supaFetch('clients','GET',null,'?order=nom.asc&limit=10000').then(function(cl){
-        if(cl) clients = cl.map(function(x){
-          var nc = x.prenom&&x.nom?(x.prenom+' '+x.nom).trim():(x.prenom||x.nom||'');
-          return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
-        });
-      });
+      // Charger la base clients complète au démarrage (pagination 1000 par batch)
+      loadAllClients();
       // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
         loadBonsCommande();
@@ -3190,23 +3185,10 @@ function showPage(id,el){
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
-  if(id==='devis')renderDevis();  if(id==='clients'){
-    if(supabaseReady){
-      supaFetch('clients','GET',null,'?order=nom.asc&limit=10000').then(function(cl){
-        if(cl) clients = cl.map(function(x){
-          var nomComplet = '';
-          if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
-          else if(x.prenom) nomComplet = x.prenom;
-          else nomComplet = x.nom||'';
-          return{id:x.id,nom:x.nom||nomComplet,prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
-        });
-        renderClients();
-      });
-    } else {
-      renderClients();
-    }
+  if(id==='devis')renderDevis();    if(id==='clients'){
+    loadAllClients().then(function(){ renderClients(); });
   }
-  if(id==='rachat')calculerRachat();
+    if(id==='rachat')calculerRachat();
   if(id==='instagram'){renderInstagram();}
   if(id==='ecrans'){loadEcransFromSupabase().then(function(){ renderEcrans(); });}
   if(id==='batteries'){loadBatteriesFromSupabase().then(function(){ renderBatteries(); });}
@@ -8275,6 +8257,38 @@ showPage = function(id, el){
 //  CLIENTS EN ATTENTE — Tablette accueil
 // ============================================================
 var clientsEnAttente = [];
+
+
+async function loadAllClients(){
+  var allClients = [];
+  var batchSize = 1000;
+  var offset = 0;
+  var keepGoing = true;
+
+  while(keepGoing){
+    try {
+      var res = await supaFetch('clients','GET',null,
+        '?order=nom.asc&limit='+batchSize+'&offset='+offset);
+      if(res && res.length > 0){
+        allClients = allClients.concat(res.map(function(x){
+          return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',
+                 email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',
+                 dateCreation:x.date_creation,civilite:x.civilite||''};
+        }));
+        offset += batchSize;
+        // Si on a reçu moins que batchSize, on a tout
+        if(res.length < batchSize) keepGoing = false;
+      } else {
+        keepGoing = false;
+      }
+    } catch(e){ keepGoing = false; }
+  }
+
+  clients = allClients;
+  // Rafraîchir si on est sur la page clients
+  if(document.getElementById('clients-liste')) renderClients();
+  console.log('Clients chargés : '+clients.length);
+}
 
 async function loadClientsEnAttente(){
   try {
