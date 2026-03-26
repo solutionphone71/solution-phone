@@ -9544,7 +9544,6 @@ function repSelectClient(id){
 }
 
 function repUpdateDevisRecap(){
-  repAutoSave();
   var d = repDossierCourant;
   if(!d) return;
   var box=document.getElementById('rep-devis-recap');
@@ -9564,11 +9563,21 @@ function repImprimerDepot(){
   repAutoSave();
   var d = repDossierCourant;
   if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
-  // S'assurer que etat et accessoires sont des tableaux
-  if(!d.etat || !Array.isArray(d.etat)) d.etat = getDepotEtat ? getDepotEtat() : [];
-  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = getDepotAccessoires ? getDepotAccessoires() : [];
+  // Lire l'état depuis les checkboxes directement (sans getDepotEtat pour éviter boucle)
+  if(!d.etat || !Array.isArray(d.etat)){
+    d.etat = [];
+    ['dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos',
+     'dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera',
+     'dep-etat-connecteur','dep-etat-batterie'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.checked) d.etat.push(el.dataset.label||id);
+    });
+  }
+  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = [];
   if(!d.panne) d.panne = (document.getElementById('dep-panne')||{value:''}).value || '';
   if(!d.devis) d.devis = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  if(!d.moHT) d.moHT = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
+  if(!d.piecesHT) d.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
   printBonDepot(d);
 }
 
