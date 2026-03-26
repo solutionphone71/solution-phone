@@ -10181,24 +10181,50 @@ var _repSigData = null;
 
 function repInitSig(){
   var canvas = document.getElementById('rep-sig-canvas');
-  if(!canvas || canvas._repInitDone) return;
+  if(!canvas) return;
+
+  // Redimensionner le canvas à sa vraie taille affichée (évite le décalage)
+  var rect = canvas.getBoundingClientRect();
+  if(rect.width > 0){
+    canvas.width  = Math.round(rect.width);
+    canvas.height = Math.round(rect.height) || 100;
+  }
+
+  if(canvas._repInitDone) return;
   canvas._repInitDone = true;
+
   var ctx = canvas.getContext('2d');
   ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
   function getPos(e){
     var r = canvas.getBoundingClientRect();
-    var scaleX = canvas.width / r.width;
-    var scaleY = canvas.height / r.height;
-    if(e.touches){ return {x:(e.touches[0].clientX-r.left)*scaleX, y:(e.touches[0].clientY-r.top)*scaleY}; }
-    return {x:(e.clientX-r.left)*scaleX, y:(e.clientY-r.top)*scaleY};
+    if(e.touches){ return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top}; }
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
   }
-  function start(e){ e.preventDefault(); _repSigDrawing=true; var p=getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); }
-  function move(e){ e.preventDefault(); if(!_repSigDrawing) return; var p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); }
-  function end(e){ e.preventDefault(); _repSigDrawing=false; repSigSave(); }
+  function start(e){
+    e.preventDefault();
+    _repSigDrawing=true;
+    var p=getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+  }
+  function move(e){
+    e.preventDefault();
+    if(!_repSigDrawing) return;
+    var p=getPos(e);
+    ctx.lineTo(p.x,p.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x,p.y);
+  }
+  function end(e){
+    e.preventDefault();
+    _repSigDrawing=false;
+    repSigSave();
+  }
 
   canvas.addEventListener('mousedown',start);
   canvas.addEventListener('mousemove',move);
@@ -10243,9 +10269,15 @@ repGoStep = function(n){
   _repGoStepOrig2(n);
   if(n===3){
     setTimeout(function(){
+      // Forcer réinitialisation canvas si déjà visible (changement taille)
+      var cv = document.getElementById('rep-sig-canvas');
+      if(cv) cv._repInitDone = false;
       repInitSig();
       repUpdateSigNom();
       repCheckEligibilite();
+      // Relancer le calcul HT si devis déjà renseigné
+      var devisEl = document.getElementById('dep-devis');
+      if(devisEl && devisEl.value) repAutoDecompose(devisEl.value);
       // Recharger signature si dossier existant
       if(repDossierCourant && repDossierCourant.signature){
         var canvas = document.getElementById('rep-sig-canvas');
