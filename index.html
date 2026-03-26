@@ -866,20 +866,28 @@ tr:hover td{background:#fafafa;}
     </div>
 
   <div class="page" id="page-clients">
-      <div class="page-title">👥 Clients</div>
-      <div class="page-sub">Clients associés aux factures smartphones</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="page-title" style="margin-bottom:0;">👥 Clients</div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-client')" style="font-size:14px;padding:9px 18px;">➕ Nouveau client</button>
+      </div>
+      <div class="page-sub">Tous vos clients — réparations, smartphones, tablette accueil</div>
 
       <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-        <input type="text" id="client-search" placeholder="🔍 Rechercher un client..." oninput="renderClients()"
-          style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
+        <input type="text" id="client-search" placeholder="🔍 Nom, téléphone, email..." oninput="renderClients()"
+          style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:300px;">
         <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">👥 Clients — Factures Smartphones</div>
+          <div class="card-title">👥 Base clients</div>
         </div>
-        <div id="clients-liste"></div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Nom</th><th>Prénom</th><th>Téléphone</th><th>Email</th><th>Ville</th><th>Notes</th><th>Actions</th></tr></thead>
+            <tbody id="clients-liste"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card" id="client-detail-card" style="display:none;margin-top:16px;">
@@ -3107,6 +3115,13 @@ async function checkPin(){
       populateFournisseurSelects();
       loadApiKeyFromSupabase();
       loadClientsEnAttente();
+      // Charger la base clients complète au démarrage
+      supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
+        if(cl) clients = cl.map(function(x){
+          var nc = x.prenom&&x.nom?(x.prenom+' '+x.nom).trim():(x.prenom||x.nom||'');
+          return{id:x.id,nom:x.nom||nc,prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
+        });
+      });
       // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
         loadBonsCommande();
@@ -3166,14 +3181,14 @@ function showPage(id,el){
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
   if(id==='devis')renderDevis();  if(id==='clients'){
-    if(false && supabaseReady && clients.length === 0){
+    if(supabaseReady){
       supaFetch('clients','GET',null,'?order=nom.asc&limit=500').then(function(cl){
         if(cl) clients = cl.map(function(x){
           var nomComplet = '';
           if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
           else if(x.prenom) nomComplet = x.prenom;
           else nomComplet = x.nom||'';
-          return{id:x.id,nom:nomComplet,tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation};
+          return{id:x.id,nom:x.nom||nomComplet,prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
         });
         renderClients();
       });
@@ -3818,43 +3833,95 @@ async function envoyerEmailClient(id) {
   showNotif('Email envoyé à '+c.email,'success');
 }
 
-function renderClients() {
-  // Construire la liste depuis les factures smartphones uniquement
-  var clientsMap = {};
-  factures.forEach(function(f){
-    if(!f.clientNom) return;
-    var nom = f.clientNom.trim();
-    if(!clientsMap[nom]) clientsMap[nom] = {nom:nom, tel:f.clientTel||'', email:f.clientEmail||'', factures:[]};
-    clientsMap[nom].factures.push(f);
+function renderClients(){
+  var search = ((document.getElementById('client-search')||{value:''}).value).toLowerCase();
+  var liste = clients.slice();
+  if(search) liste = liste.filter(function(c){
+    return (c.nom||'').toLowerCase().includes(search) ||
+           (c.prenom||'').toLowerCase().includes(search) ||
+           (c.tel||'').includes(search) ||
+           (c.email||'').toLowerCase().includes(search);
   });
-  var liste = Object.values(clientsMap).sort(function(a,b){return a.nom.localeCompare(b.nom);});
-
-  var search = (document.getElementById('client-search')?document.getElementById('client-search').value:'').toLowerCase();
-  if(search) liste = liste.filter(function(c){return c.nom.toLowerCase().includes(search)||(c.tel||'').includes(search);});
+  liste.sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
 
   var countEl = document.getElementById('clients-count');
   if(countEl) countEl.textContent = liste.length + ' client(s)';
 
-  var container = document.getElementById('clients-liste');
-  if(!container) return;
+  var tbody = document.getElementById('clients-liste');
+  if(!tbody) return;
 
-  if(liste.length === 0){
-    container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-dim)">📦 Aucun client trouvé dans les factures smartphones</div>';
+  if(!liste.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text-muted);">Aucun client — les clients de la tablette apparaissent ici automatiquement</td></tr>';
     return;
   }
 
-  container.innerHTML = '';
-  liste.forEach(function(c){
-    var div = document.createElement('div');
-    div.style.cssText = 'padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;';
-    div.innerHTML =
-      '<div>'+
-        '<div style="font-weight:700;font-size:14px;">'+c.nom+'</div>'+
-        '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">'+(c.tel?'📞 '+c.tel:'')+(c.tel&&c.email?' · ':'')+(c.email?'✉️ '+c.email:'')+'</div>'+
-      '</div>'+
-      '<div style="font-size:12px;color:var(--blue);font-weight:600;">'+c.factures.length+' facture'+(c.factures.length>1?'s':'')+'</div>';
-    container.appendChild(div);
-  });
+  tbody.innerHTML = liste.map(function(c){
+    var nbRep = reparations.filter(function(r){
+      return r.clientNom && c.nom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+    }).length;
+    return '<tr>'+
+      '<td><b>'+(c.nom||'—')+'</b></td>'+
+      '<td>'+(c.prenom||'—')+'</td>'+
+      '<td>'+(c.tel?'<a href="tel:'+c.tel.replace(/\s/g,'')+'" style="color:var(--blue);text-decoration:none;">'+c.tel+'</a>':'—')+'</td>'+
+      '<td style="font-size:12px;">'+(c.email||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text-muted);">'+(c.adresse||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(c.notes||'—')+'</td>'+
+      '<td style="display:flex;gap:4px;">'+
+        '<button class="btn btn-primary btn-sm" onclick="clientVersReparation(''+c.id+'')" title="Nouvelle réparation">🔧</button>'+
+        '<button class="btn btn-sm" onclick="voirClientDetail(''+c.id+'')" title="Détail">👁️</button>'+
+        '<button class="btn btn-sm" onclick="supprimerClient(''+c.id+'')" title="Supprimer" style="color:var(--text-dim)">🗑️</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function clientVersReparation(id){
+  var c = clients.find(function(x){ return String(x.id)===String(id); });
+  if(!c) return;
+  showPage('reparations', null);
+  repNewDossier();
+  setTimeout(function(){
+    document.getElementById('rep-civilite').value = c.civilite||'';
+    document.getElementById('rep-nom').value      = c.nom||'';
+    document.getElementById('rep-prenom').value   = c.prenom||'';
+    document.getElementById('rep-tel').value      = c.tel||'';
+    document.getElementById('rep-email').value    = c.email||'';
+    // Décomposer adresse si besoin
+    if(c.adresse){
+      var parts = c.adresse.split(',');
+      var rue = parts[0]?parts[0].trim():'';
+      var rest = parts[1]?parts[1].trim():'';
+      var cpMatch = rest.match(/^(\d{4,5})\s*(.*)/);
+      document.getElementById('rep-adresse').value = rue;
+      document.getElementById('rep-cp').value    = cpMatch?cpMatch[1]:'';
+      document.getElementById('rep-ville').value = cpMatch?cpMatch[2].trim():rest;
+    }
+    repAutoSave();
+    showNotif((c.prenom||'')+' '+(c.nom||'')+' chargé dans Réparations', 'success');
+  }, 300);
+}
+
+function voirClientDetail(id){
+  var c = clients.find(function(x){ return String(x.id)===String(id); });
+  if(!c) return;
+  var nbRep = reparations.filter(function(r){
+    return r.clientNom && c.nom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+  }).length;
+  var card = document.getElementById('client-detail-card');
+  var content = document.getElementById('client-detail-content');
+  if(!card||!content) return;
+  content.innerHTML =
+    '<div class="card-header"><div class="card-title">👤 '+(c.prenom||'')+' '+c.nom+'</div>'+
+    '<button class="btn btn-sm" onclick="document.getElementById('client-detail-card').style.display='none'">✕</button></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;padding:4px 0;">'+
+    '<div><b>Téléphone :</b> '+(c.tel||'—')+'</div>'+
+    '<div><b>Email :</b> '+(c.email||'—')+'</div>'+
+    '<div><b>Adresse :</b> '+(c.adresse||'—')+'</div>'+
+    '<div><b>Notes :</b> '+(c.notes||'—')+'</div>'+
+    '<div><b>Réparations :</b> '+nbRep+'</div>'+
+    '</div>';
+  card.style.display = 'block';
+  card.scrollIntoView({behavior:'smooth'});
 }
 
 function editPhone(id) {
