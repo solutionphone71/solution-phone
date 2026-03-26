@@ -9299,10 +9299,10 @@ function repLoadFormFromDossier(){
     if(imeiEl&&imeiEl.value) repCheckIMEI(imeiEl.value);
   },300);
   var dp=document.getElementById('dep-panne'); if(dp) dp.value=d.panne||'';
+  var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
   var dmo=document.getElementById('dep-mo-ht'); if(dmo) dmo.value=d.moHT||'';
   var dpi=document.getElementById('dep-pieces-ht'); if(dpi) dpi.value=d.piecesHT||'';
-  if(d.moHT||d.piecesHT) setTimeout(repCalcDevis,100);
-  var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
+  // Ne pas appeler repCalcDevis ici — dépend du prix saisi par l'utilisateur
   var dr=document.getElementById('dep-date-retour'); if(dr) dr.value=d.dateRetour||'';
   var do2=document.getElementById('dep-obs'); if(do2) do2.value=d.obs||'';
   // Step 4 — facture
@@ -10425,14 +10425,7 @@ repGoStep = function(n){
         repAutoDecompose(devisEl.value);
       }
 
-      // --- Recharger MO/pièces si déjà saisis ---
-      if(repDossierCourant){
-        var mo = document.getElementById('dep-mo-ht');
-        var pi = document.getElementById('dep-pieces-ht');
-        if(mo && repDossierCourant.moHT > 0)     mo.value = repDossierCourant.moHT;
-        if(pi && repDossierCourant.piecesHT > 0) pi.value = repDossierCourant.piecesHT;
-        if(repDossierCourant.moHT || repDossierCourant.piecesHT) repCalcDevis();
-      }
+      // --- MO/pièces déjà chargés dans repLoadFormFromDossier ---
 
       // --- Recharger signature existante ---
       if(repDossierCourant && repDossierCourant.signature && canvas){
