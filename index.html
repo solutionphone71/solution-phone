@@ -1604,7 +1604,7 @@ tr:hover td{background:#fafafa;}
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Prix TTC (€) *</label>
-                      <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview();repAutoDecompose(this.value);"></div>
+                      <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview();"></div>
                     <div class="form-group"><label>Mode règlement</label>
                       <select id="r-mode" onchange="repUpdateFacturePreview()">
                         <option value="CB">CB</option><option value="ESPECES">Espèces</option>
@@ -9934,19 +9934,20 @@ function repAutoDecompose(prixTTC){
   var ttc = parseFloat(prixTTC)||0;
   if(ttc <= 0) return;
 
-  // Si bonus QR actif : le prix saisi EST le prix client final (après -25€)
-  // → le prix réel de la réparation = prix client + 25€
   var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
-  var prixBase = bonusQR ? ttc + 25 : ttc;  // Prix avant déduction bonus
+  var prixBase = bonusQR ? ttc + 25 : ttc;
+  var ht     = prixBase / 1.2;
+  var mo     = 25;
+  var pieces = Math.max(0, ht - mo);
 
-  var ht     = prixBase / 1.2;              // HT du prix réel
-  var mo     = 25;                          // MO fixe 25€ HT
-  var pieces = Math.max(0, ht - mo);        // Reste = pièces HT
-
-  var elMO  = document.getElementById('dep-mo-ht');
-  var elPie = document.getElementById('dep-pieces-ht');
-  if(elMO)  elMO.value  = mo.toFixed(2);
-  if(elPie) elPie.value = pieces.toFixed(2);
+  // N'écrire dans dep-mo-ht/dep-pieces-ht QUE si on est en step 3
+  // (pas depuis r-prix de l'étape 4 qui écraserait les valeurs)
+  if(repCurrentStep === 3){
+    var elMO  = document.getElementById('dep-mo-ht');
+    var elPie = document.getElementById('dep-pieces-ht');
+    if(elMO)  elMO.value  = mo.toFixed(2);
+    if(elPie) elPie.value = pieces.toFixed(2);
+  }
 
   // Afficher le détail dans la zone calcul
   var calcBox = document.getElementById('rep-devis-calc');
