@@ -1498,13 +1498,14 @@ tr:hover td{background:#fafafa;}
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div class="form-group" style="margin-bottom:0;"><label>Main d'œuvre HT (€)</label>
-                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
+                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()" style="font-weight:600;">
                       </div>
                       <div class="form-group" style="margin-bottom:0;"><label>Pièces détachées HT (€)</label>
                         <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
                       </div>
                     </div>
                     <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#0369a1;"></div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Vous pouvez modifier MO et Pièces manuellement si besoin</div>
                   </div>
 
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -9550,208 +9551,14 @@ function repUpdateDevisRecap(){
   if(!box) return;
   var c=d.client||{};
   var a=d.appareil||{};
+  var f=d.facture||null;
   box.innerHTML=
     '<b>Client :</b> '+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'<br>'+
     '<b>Tél :</b> '+(c.tel||'—')+'<br>'+
     '<b>Appareil :</b> '+a.marque+' '+a.modele+(a.imei?'<br><b>IMEI :</b> '+a.imei:'')+'<br>'+
     '<b>Panne :</b> '+(d.panne||'—')+'<br>'+
-    '<b>Devis estimatif :</b> '+(d.devis?d.devis.toFixed(2)+' € TTC':'Non renseigné')+'<br>'+
-    '<b>Date retour prévue :</b> '+(d.dateRetour?fmtDate(d.dateRetour):'—');
-}
-
-function repImprimerDepot(){
-  repAutoSave();
-  var d = repDossierCourant;
-  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
-  // Lire l'état depuis les checkboxes directement (sans getDepotEtat pour éviter boucle)
-  if(!d.etat || !Array.isArray(d.etat)){
-    d.etat = [];
-    ['dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos',
-     'dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera',
-     'dep-etat-connecteur','dep-etat-batterie'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(el && el.checked) d.etat.push(el.dataset.label||id);
-    });
-  }
-  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = [];
-  if(!d.panne) d.panne = (document.getElementById('dep-panne')||{value:''}).value || '';
-  if(!d.devis) d.devis = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
-  if(!d.moHT) d.moHT = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
-  if(!d.piecesHT) d.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
-  printBonDepot(d);
-}
-
-// ── QualiRépar dans facture ──
-function repToggleQR(){
-  var actif=document.getElementById('rep-qr-actif');
-  var bloc=document.getElementById('rep-qr-bloc');
-  if(actif&&bloc) bloc.style.display=actif.checked?'block':'none';
-  // Recalculer la décomposition HT selon bonus QR actif ou non
-  var prix = (document.getElementById('r-prix')||{value:0}).value ||
-             (document.getElementById('dep-devis')||{value:0}).value;
-  if(prix) repAutoDecompose(prix);
-  repUpdateFacturePreview();
-}
-
-function repQRPopulateMarques(){
-  var sel=document.getElementById('rep-qr-marque');
-  if(!sel||sel.options.length>5) return;
-  var marques=Object.keys(QR_BRAND_TYPE||{});
-  sel.innerHTML='<option value="">— Choisir —</option>';
-  marques.sort().forEach(function(m){sel.innerHTML+='<option value="'+m+'">'+m+'</option>';});
-}
-
-function repQRUpdateOrganisme(){
-  var marque=(document.getElementById('rep-qr-marque')||{value:''}).value;
-  var box=document.getElementById('rep-qr-organisme');
-  if(!box) return;
-  var type=QR_BRAND_TYPE&&QR_BRAND_TYPE[marque];
-  if(type==='ecosystem') box.innerHTML='🟢 Ecosystem';
-  else if(type==='ecologic') box.innerHTML='🔵 Ecologic';
-  else box.innerHTML='—';
-}
-
-function repUpdateFacturePreview(){
-  repAutoSave();
-  var prix=parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
-  var desc=(document.getElementById('r-description')||{value:''}).value.trim();
-  var bonusQR=(document.getElementById('rep-qr-actif')||{checked:false}).checked;
-  var card=document.getElementById('rep-preview-card');
-  if(!prix||!desc){if(card)card.style.display='none';return;}
-  if(card)card.style.display='block';
-  if(!repDossierCourant)return;
-  var c=repDossierCourant.client||{};
-  var a=repDossierCourant.appareil||{};
-  var adresse=[(c.adresse||''),(c.cp&&c.ville)?c.cp+' '+c.ville:''].filter(Boolean).join(', ');
-  var mode=(document.getElementById('r-mode')||{value:'CB'}).value;
-  var garantie=(document.getElementById('r-garantie')||{value:'3 mois'}).value;
-  var lignes=[{desc:desc+'<br><span style="font-size:11px;color:#888;">Appareil : '+a.marque+' '+a.modele+(a.imei?' · IMEI : '+a.imei:'')+'</span>',qte:1,pu:prix}];
-  var bonusLigne=bonusQR?[{desc:'Bonus Réparation QualiRépar',qte:1,pu:-25}]:[];
-  var num='REP-'+new Date().getFullYear()+'-'+String(reparations.length+1).padStart(3,'0');
-  var content=document.getElementById('rep-preview-content');
-  if(content) content.innerHTML=buildA4HTML({
-    type:'reparation',numero:num,date:repDossierCourant.date||new Date().toISOString().split('T')[0],
-    clientNom:(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
-    clientAdresse:adresse,clientEmail:c.email||'',
-    mode:mode,garantie:garantie,
-    lignes:lignes.concat(bonusLigne),
-    total:bonusQR?prix-25:prix,isDevis:false
-  });
-}
-
-function repGenererFacture(){
-  repAutoSave();
-  var desc=(document.getElementById('r-description')||{value:''}).value.trim();
-  var prix=parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
-  if(!desc||!prix){showNotif('Description et prix sont obligatoires','error');return;}
-  var bonusQR=(document.getElementById('rep-qr-actif')||{checked:false}).checked;
-  var c=repDossierCourant.client||{};
-  var a=repDossierCourant.appareil||{};
-  var mode=(document.getElementById('r-mode')||{value:'CB'}).value;
-  var garantie=(document.getElementById('r-garantie')||{value:'3 mois'}).value;
-  var num='REP-'+new Date().getFullYear()+'-'+String(reparations.length+1).padStart(3,'0');
-  var adresse=[(c.adresse||''),(c.cp&&c.ville)?c.cp+' '+c.ville:''].filter(Boolean).join(', ');
-  var dossierInterne = (document.getElementById('r-dossier-interne')||{value:''}).value.trim();
-  var refMobile = (document.getElementById('r-ref-mobile')||{value:''}).value.trim();
-  var irisData = bonusQR ? {
-    condition:    (document.getElementById('iris-condition')||{value:''}).value,
-    symptom:      (document.getElementById('iris-symptom')||{value:''}).value,
-    section:      (document.getElementById('iris-section')||{value:''}).value,
-    irisDefault:  (document.getElementById('iris-default')||{value:''}).value,
-    repair:       (document.getElementById('iris-repair')||{value:''}).value,
-    repairCode:   (document.getElementById('iris-repaircode')||{value:''}).value,
-    failureDesc:  (document.getElementById('iris-failure-desc')||{value:''}).value,
-    panne:        (document.getElementById('rep-qr-panne')||{value:''}).value,
-    marque:       (document.getElementById('rep-qr-marque')||{value:''}).value,
-    organisme:    (QR_BRAND_TYPE[(document.getElementById('rep-qr-marque')||{value:''}).value])||''
-  } : null;
-  var rep={
-    id:Date.now(),numero:num,date:repDossierCourant.date||new Date().toISOString().split('T')[0],
-    clientNom:(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
-    clientAdresse:adresse,clientEmail:c.email||'',
-    appareil:a.marque+' '+a.modele,imei:a.imei||'',
-    description:desc,prix:bonusQR?prix-25:prix,
-    prixHorsBonus:prix,bonusQR:bonusQR,
-    mode:mode,garantie:garantie,
-    dossierInterne:dossierInterne, refMobile:refMobile,
-    iris: irisData
-  };
-  reparations.push(rep);
-  // Mettre à jour dossier
-  repDossierCourant.statut='facture';
-  repDossierCourant.facture={description:desc,prix:prix,mode:mode,garantie:garantie,bonusQR:bonusQR,numero:num};
-  repSauvegarderDossier();
-  repUpdateStatutBadge();
-  // Imprimer
-  repImprimerFacture();
-
-  // Envoyer à VosFactures si configuré
-  if(getVFToken() && getVFDomain()){
-    var vfData = {
-      date: repDossierCourant.date||new Date().toISOString().split('T')[0],
-      clientNom: (c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
-      clientEmail: c.email||'',
-      clientAdresse: adresse,
-      description: desc,
-      prix: prix,
-      bonusQR: bonusQR,
-      mode: mode
-    };
-    creerFactureVosFactures(vfData).then(function(result){
-      if(result && result.id){
-        showNotif('✅ Facture '+num+' créée + envoyée à VosFactures !','success');
-        // Sauvegarder l'ID VosFactures dans le dossier
-        if(repDossierCourant && repDossierCourant.facture){
-          repDossierCourant.facture.vfId  = result.id;
-          repDossierCourant.facture.vfNum = result.number;
-          repDossierCourant.facture.vfUrl = result.view_url;
-          repSauvegarderDossier();
-        }
-      } else {
-        showNotif('Facture '+num+' créée · VosFactures non connecté','success');
-      }
-    });
-  } else {
-    showNotif('Facture '+num+' créée !','success');
-  }
-}
-
-function repImprimerFacture(){
-  if(!repDossierCourant||!repDossierCourant.facture) return;
-  var c=repDossierCourant.client||{};
-  var a=repDossierCourant.appareil||{};
-  var f=repDossierCourant.facture;
-  var adresse=[(c.adresse||''),(c.cp&&c.ville)?c.cp+' '+c.ville:''].filter(Boolean).join(', ');
-  var lignes=[{desc:f.description+'<br><span style="font-size:11px;color:#888;">Appareil : '+a.marque+' '+a.modele+(a.imei?' · IMEI : '+a.imei:'')+'</span>',qte:1,pu:f.prix}];
-  if(f.bonusQR) lignes.push({desc:'Bonus Réparation QualiRépar',qte:1,pu:-25});
-  var d=repDossierCourant||{};
-  var h=buildA4HTML({
-    type:'reparation',numero:f.numero,date:d.date||f.date,
-    clientNom:(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom,
-    clientAdresse:adresse,clientEmail:c.email||'',
-    mode:f.mode,garantie:f.garantie,
-    moHT:d.moHT||0, piecesHT:d.piecesHT||0,
-    htTotal:(f.bonusQR?f.prix-25:f.prix)/1.2,
-    signature:d.signature||null,
-    lignes:lignes,total:f.bonusQR?f.prix-25:f.prix,isDevis:false
-  });
-  ouvrirA4(h);
-}
-
-function repUpdateStep5(){
-  var d=repDossierCourant;
-  if(!d) return;
-  var c=d.client||{};
-  var a=d.appareil||{};
-  var f=d.facture;
-  // Récap final
-  var recap=document.getElementById('rep-dossier-recap-final');
-  if(recap) recap.innerHTML=
-    '<b>Client :</b> '+(c.prenom||'')+' '+c.nom+'<br>'+
-    '<b>Téléphone :</b> '+(c.tel||'—')+'<br>'+
-    '<b>Appareil :</b> '+a.marque+' '+a.modele+(a.imei?'<br><b>IMEI :</b> '+a.imei:'')+'<br>'+
-    '<b>Panne :</b> '+(d.panne||'—')+'<br>'+
-    (f?'<b>Facture :</b> '+f.numero+' · '+(f.bonusQR?f.prix-25:f.prix)+' € TTC':'<b>Facture :</b> Non générée');
+    '<b>Devis TTC :</b> '+(d.devis?d.devis.toFixed(2)+' € TTC':'Non renseigné')+'<br>'+
+    (f?'<b>Facture :</b> '+f.numero+' · '+(f.bonusQR?f.prix-25:f.prix)+' € TTC':'');
   // QR recap
   // Afficher lien VosFactures si dossier a un ID VF
   var btnVF = document.getElementById('btn-vf-link');
