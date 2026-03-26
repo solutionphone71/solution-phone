@@ -9774,7 +9774,11 @@ function repUpdateStep5(){
 function repEnvoyerOrganisme(){
   // Simulation envoi — sera remplacé par API AgoraPlus
   var statut=document.getElementById('rep-qr-envoi-statut');
-  if(statut) statut.innerHTML='<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;color:var(--green);font-size:13px;">✅ Dossier envoyé · En attente de remboursement (sous 15 jours)</div>';
+  // Vérifier qu'on a bien les 3 lignes IRIS
+  var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
+  var codes = IRIS_CODES[panne];
+  var nbLignes = codes && codes.irisLines ? codes.irisLines.length : 0;
+  if(statut) statut.innerHTML='<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;color:var(--green);font-size:13px;">✅ Dossier envoyé avec '+nbLignes+' ligne(s) IRIS · En attente de remboursement (sous 15 jours)</div>';
   repDossierCourant.statut='qr';
   repDossierCourant.qrEnvoi={
     date:new Date().toISOString(),
@@ -10288,7 +10292,13 @@ var IRIS_CODES = {
     irisDefault: '08',  // Cassé / fissuré
     repair:      'A',   // Remplacement pièce
     repairCode:  'ELE-DIS-001',
-    conditionEX: 'X47'  // Impact mécanique
+    conditionEX: 'X47',  // Impact mécanique
+    // 3 lignes IRIS obligatoires pour AgoraPlus (comme les 3 coches Phonilab)
+    irisLines: [
+      { condition:'6', symptom:'E7', section:'W10', irisDefault:'08', repair:'A', repairCode:'ELE-DIS-001', description:'Ecran cassé - impact physique' },
+      { condition:'6', symptom:'E7', section:'W10', irisDefault:'08', repair:'A', repairCode:'ELE-DIS-001', description:'Remplacement ensemble affichage' },
+      { condition:'6', symptom:'E7', section:'W10', irisDefault:'08', repair:'A', repairCode:'ELE-DIS-001', description:'Ecran LCD/OLED + vitre tactile' }
+    ]
   },
   'ecran-hors-casse': {
     label:       'Remplacement écran (hors casse)',
@@ -10299,18 +10309,28 @@ var IRIS_CODES = {
     irisDefault: '09',  // Défaillance fonctionnelle
     repair:      'A',   // Remplacement
     repairCode:  'ELE-DIS-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'E7', section:'W10', irisDefault:'09', repair:'A', repairCode:'ELE-DIS-001', description:'Ecran défaillant hors casse' },
+      { condition:'5', symptom:'E7', section:'W10', irisDefault:'09', repair:'A', repairCode:'ELE-DIS-001', description:'Remplacement écran électronique' },
+      { condition:'5', symptom:'E7', section:'W10', irisDefault:'09', repair:'A', repairCode:'ELE-DIS-001', description:'Affichage défectueux' }
+    ]
   },
   'batterie': {
     label:       'Remplacement batterie',
     description: 'Remplacement batterie - usure / autonomie insuffisante',
-    condition:   '5',   // Usure normale
-    symptom:     'B4',  // Autonomie insuffisante / ne charge plus
-    section:     'W4',  // Batterie / alimentation
-    irisDefault: '09',  // Dégradation fonctionnelle
-    repair:      'A',   // Remplacement
+    condition:   '5',
+    symptom:     'B4',
+    section:     'W4',
+    irisDefault: '09',
+    repair:      'A',
     repairCode:  'ELE-BAT-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'B4', section:'W4', irisDefault:'09', repair:'A', repairCode:'ELE-BAT-001', description:'Batterie - autonomie insuffisante' },
+      { condition:'5', symptom:'B4', section:'W4', irisDefault:'09', repair:'A', repairCode:'ELE-BAT-001', description:'Remplacement batterie Li-ion' },
+      { condition:'5', symptom:'B4', section:'W4', irisDefault:'09', repair:'A', repairCode:'ELE-BAT-001', description:'Batterie usure normale' }
+    ]
   },
   'haut-parleur': {
     label:       'Remplacement haut-parleur',
@@ -10321,7 +10341,12 @@ var IRIS_CODES = {
     irisDefault: '09',
     repair:      'A',
     repairCode:  'ELE-SPK-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'C5', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-SPK-001', description:'Haut-parleur défaillant' },
+      { condition:'5', symptom:'C5', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-SPK-001', description:'Remplacement haut-parleur' },
+      { condition:'5', symptom:'C5', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-SPK-001', description:'Son absent ou dégradé' }
+    ]
   },
   'micro': {
     label:       'Remplacement micro',
@@ -10332,7 +10357,12 @@ var IRIS_CODES = {
     irisDefault: '09',
     repair:      'A',
     repairCode:  'ELE-MIC-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'C4', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-MIC-001', description:'Micro défaillant' },
+      { condition:'5', symptom:'C4', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-MIC-001', description:'Remplacement microphone' },
+      { condition:'5', symptom:'C4', section:'W15', irisDefault:'09', repair:'A', repairCode:'ELE-MIC-001', description:'Microphone hors service' }
+    ]
   },
   'connecteur': {
     label:       'Remplacement connecteur de charge',
@@ -10343,7 +10373,12 @@ var IRIS_CODES = {
     irisDefault: '09',
     repair:      'A',
     repairCode:  'ELE-CON-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'F4', section:'W7', irisDefault:'09', repair:'A', repairCode:'ELE-CON-001', description:'Connecteur charge défaillant' },
+      { condition:'5', symptom:'F4', section:'W7', irisDefault:'09', repair:'A', repairCode:'ELE-CON-001', description:'Remplacement connecteur USB' },
+      { condition:'5', symptom:'F4', section:'W7', irisDefault:'09', repair:'A', repairCode:'ELE-CON-001', description:'Charge impossible' }
+    ]
   },
   'camera': {
     label:       'Remplacement caméra',
@@ -10354,7 +10389,12 @@ var IRIS_CODES = {
     irisDefault: '09',
     repair:      'A',
     repairCode:  'ELE-CAM-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'D7', section:'W17', irisDefault:'09', repair:'A', repairCode:'ELE-CAM-001', description:'Caméra défaillante' },
+      { condition:'5', symptom:'D7', section:'W17', irisDefault:'09', repair:'A', repairCode:'ELE-CAM-001', description:'Remplacement module caméra' },
+      { condition:'5', symptom:'D7', section:'W17', irisDefault:'09', repair:'A', repairCode:'ELE-CAM-001', description:'Photos/vidéos défectueuses' }
+    ]
   },
   'bouton': {
     label:       'Remplacement bouton',
@@ -10365,7 +10405,12 @@ var IRIS_CODES = {
     irisDefault: '09',
     repair:      'A',
     repairCode:  'ELE-BTN-001',
-    conditionEX: ''
+    conditionEX: '',
+    irisLines: [
+      { condition:'5', symptom:'G4', section:'W8', irisDefault:'09', repair:'A', repairCode:'ELE-BTN-001', description:'Bouton défaillant' },
+      { condition:'5', symptom:'G4', section:'W8', irisDefault:'09', repair:'A', repairCode:'ELE-BTN-001', description:'Remplacement bouton' },
+      { condition:'5', symptom:'G4', section:'W8', irisDefault:'09', repair:'A', repairCode:'ELE-BTN-001', description:'Bouton non fonctionnel' }
+    ]
   }
 };
 
