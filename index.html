@@ -4087,9 +4087,16 @@ function renderClients(){
     tdEmail.textContent = c.email||'—';
 
     var tdAdr = document.createElement('td');
-    tdAdr.style.cssText='font-size:12px;color:var(--text-muted);max-width:180px;';
-    var adrParts = [c.adresse, [c.cp, c.ville].filter(Boolean).join(' ')].filter(Boolean);
-    tdAdr.textContent = adrParts.join(', ') || '—';
+    tdAdr.style.cssText='font-size:12px;color:var(--text-muted);max-width:160px;';
+    tdAdr.textContent = c.adresse||'—';
+
+    var tdCP = document.createElement('td');
+    tdCP.style.cssText='font-size:12px;color:var(--text-muted);';
+    tdCP.textContent = c.cp||'—';
+
+    var tdVille = document.createElement('td');
+    tdVille.style.cssText='font-size:12px;color:var(--text-muted);';
+    tdVille.textContent = c.ville||'—';
 
     var tdNotes = document.createElement('td');
     tdNotes.style.cssText='font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
@@ -4102,7 +4109,7 @@ function renderClients(){
     var btnD=document.createElement('button'); btnD.className='btn btn-sm'; btnD.textContent='🗑️'; btnD.title='Supprimer'; btnD.style.color='var(--text-dim)'; (function(id){btnD.onclick=function(){supprimerClient(id);};})(c.id);
     tdAct.appendChild(btnR); tdAct.appendChild(btnV); tdAct.appendChild(btnD);
 
-    [tdNom,tdPrenom,tdTel,tdEmail,tdAdr,tdNotes,tdAct].forEach(function(td){tr.appendChild(td);});
+    [tdNom,tdPrenom,tdTel,tdEmail,tdAdr,tdCP,tdVille,tdNotes,tdAct].forEach(function(td){tr.appendChild(td);});
     tbody.appendChild(tr);
   });
 }
