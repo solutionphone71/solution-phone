@@ -10001,7 +10001,51 @@ function repStep1Next(){
   if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
   if(!c.prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); return; }
   if(!c.tel || c.tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error'); return; }
+  // Sauvegarder le client dans Supabase automatiquement
+  repSauvegarderClientSupabase(c);
   repGoStep(2);
+}
+
+async function repSauvegarderClientSupabase(c){
+  if(!supabaseReady || !c.nom) return;
+  try {
+    // Vérifier si le client existe déjà (par tél ou email)
+    var query = '';
+    if(c.tel) query = '?tel=eq.'+encodeURIComponent(c.tel)+'&limit=1';
+    else if(c.email) query = '?email=eq.'+encodeURIComponent(c.email)+'&limit=1';
+    
+    if(query){
+      var existing = await supaFetch('clients','GET',null,query);
+      if(existing && existing.length > 0){
+        // Mettre à jour
+        var id = existing[0].id;
+        await supaFetch('clients','PATCH',{
+          nom: c.nom, prenom: c.prenom||'', civilite: c.civilite||'',
+          tel: c.tel||'', email: c.email||'',
+          adresse: c.adresse||'', cp: c.cp||'', ville: c.ville||''
+        },'?id=eq.'+id);
+        // Mettre à jour aussi dans la liste locale
+        var idx = clients.findIndex(function(x){ return String(x.id)===String(id); });
+        if(idx>=0) Object.assign(clients[idx], c);
+        showNotif('👤 Client mis à jour','success');
+        return;
+      }
+    }
+    // Créer nouveau client
+    var newClient = {
+      nom: c.nom, prenom: c.prenom||'', civilite: c.civilite||'',
+      tel: c.tel||'', email: c.email||'',
+      adresse: c.adresse||'', cp: c.cp||'', ville: c.ville||'',
+      notes: 'Créé via réparation'
+    };
+    var result = await supaFetch('clients','POST',newClient,'');
+    if(result && result[0]){
+      clients.push(result[0]);
+      showNotif('👤 Client sauvegardé dans la base','success');
+    }
+  } catch(e){
+    console.warn('repSauvegarderClientSupabase:', e);
+  }
 }
 
 function repStep2Next(){
@@ -10921,8 +10965,15 @@ function repAutoDecompose(prixTTC){
   if(repCurrentStep === 3){
     var elMO  = document.getElementById('dep-mo-ht');
     var elPie = document.getElementById('dep-pieces-ht');
-    if(elMO)  elMO.value  = mo.toFixed(2);
-    if(elPie) elPie.value = pieces.toFixed(2);
+    // setAttribute évite de déclencher les événements iOS
+    if(elMO){  elMO.setAttribute('value', mo.toFixed(2));     elMO.value  = mo.toFixed(2); }
+    if(elPie){ elPie.setAttribute('value', pieces.toFixed(2)); elPie.value = pieces.toFixed(2); }
+    // Afficher le total directement
+    var calcBox = document.getElementById('rep-devis-calc');
+    var ht = mo + pieces;
+    if(calcBox && (mo||pieces)){
+      calcBox.innerHTML = 'HT total : <b>'+ht.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+(Math.round(ht*1.2*100)/100).toFixed(2)+' €</b>';
+    }
   }
 
   // Afficher le détail dans la zone calcul
@@ -10935,7 +10986,6 @@ function repAutoDecompose(prixTTC){
     calcBox.innerHTML = '<span style="color:#0369a1;font-size:12px;">'+msg+'</span>';
   }
 
-  repCalcDevis();
   } catch(e){ console.warn('repAutoDecompose err:',e); }
   finally { _repAutoDecompRunning = false; }
 }
