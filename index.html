@@ -8757,6 +8757,14 @@ async function loadAllClients(){
   // 1. Charger depuis le cache instantanément
   var cached = getCachedClients();
   if(cached && cached.data.length > 0){
+    // Vérifier si le cache a bien cp et ville (sinon forcer rechargement)
+    var hasCpVille = cached.data.some(function(c){ return c.cp || c.ville; });
+    if(!hasCpVille){
+      console.log('Cache obsolète (pas de cp/ville) → rechargement Supabase');
+      localStorage.removeItem('sp_clients_cache');
+      syncClientsFromSupabase();
+      return;
+    }
     clients = cached.data;
     if(document.getElementById('clients-liste')) renderClients();
     console.log('Clients depuis cache : '+clients.length);
