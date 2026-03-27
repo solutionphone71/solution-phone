@@ -8462,6 +8462,7 @@ var PARAMS_KEYS = {
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
+  if(!localStorage.getItem('sp_eco_pass'))        localStorage.setItem('sp_eco_pass','Coincoin71?!');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token','8121d135-4635-412d-b7ab-3b4dd61cbdb8');
   if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
   if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
@@ -10213,22 +10214,246 @@ function repUpdateDevisRecap(){
 }
 
 function repEnvoyerOrganisme(){
-  // Simulation envoi — sera remplacé par API AgoraPlus
-  var statut=document.getElementById('rep-qr-envoi-statut');
-  // Vérifier qu'on a bien les 3 lignes IRIS
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier','error'); return; }
+
+  var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
+  var marque   = (d.appareil||{}).marque||'';
+  var organisme = marque.toLowerCase()==='apple' ? 'ecosystem' : 'ecologic';
+
+  if(organisme === 'ecologic'){
+    repEnvoyerEcologic();
+  } else {
+    repEnvoyerEcosystem();
+  }
+}
+
+
+async function repEnvoyerEcosystem(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier','error'); return; }
+
+  var statut = document.getElementById('rep-qr-envoi-statut');
+  if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Connexion Ecosystem en cours...</div>';
+
+  var user       = localStorage.getItem('sp_eco_user') || '501710';
+  var password   = localStorage.getItem('sp_eco_pass') || 'Coincoin71?!';
+  var repairerId = localStorage.getItem('sp_eco_repairer_id') || '2002535';
+
   var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
-  var codes = IRIS_CODES[panne];
-  var nbLignes = codes && codes.irisLines ? codes.irisLines.length : 0;
-  if(statut) statut.innerHTML='<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;color:var(--green);font-size:13px;">✅ Dossier envoyé avec '+nbLignes+' ligne(s) IRIS · En attente de remboursement (sous 15 jours)</div>';
-  repDossierCourant.statut='qr';
-  repDossierCourant.qrEnvoi={
-    date:new Date().toISOString(),
-    statut:'Waiting',
-    photoImeiUrl: repDossierCourant.photoImeiUrl||null
+  var codes = IRIS_CODES[panne]||{};
+  var iris  = codes.irisLines||[];
+  var a     = d.appareil||{};
+  var c     = d.client||{};
+  var f     = d.facture||{};
+
+  var baseUrl = 'https://api.repairerportal.ecosystem.eco';
+
+  try {
+    // Étape 1 : Authentification
+    if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Authentification Ecosystem...</div>';
+
+    var authRes = await fetch(baseUrl+'/api/authenticate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: user, password: password})
+    });
+
+    if(!authRes.ok) throw new Error('Authentification échouée ('+authRes.status+')');
+    var authData = await authRes.json();
+    var jwt = authData.id_token || authData.token || authData.access_token;
+    if(!jwt) throw new Error('Token JWT non reçu');
+
+    console.log('Ecosystem auth OK');
+    if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Création du dossier Ecosystem...</div>';
+
+    // Étape 2 : Créer le dossier de remboursement
+    var repairDate = f.date || new Date().toISOString().split('T')[0];
+    var prixReel   = (f.prix||0) + 25; // Prix réel = prix client + bonus
+
+    var dossierPayload = {
+      repairerId:       parseInt(repairerId),
+      repairerSiteId:   parseInt(repairerId),
+      serialNumber:     a.imei||'',
+      brand:            a.marque||'Apple',
+      model:            a.modele||'',
+      commercialRef:    d.refMobile||'',
+      repairDate:       repairDate,
+      invoiceReference: d.numero||'',
+      invoiceAmount:    prixReel,
+      bonusAmount:      25,
+      consumerLastName:  c.nom||'',
+      consumerFirstName: c.prenom||'',
+      consumerEmail:     c.email||'',
+      consumerPhone:     c.tel||'',
+      consumerAddress:   c.adresse||'',
+      consumerZipCode:   c.cp||'',
+      consumerCity:      c.ville||'',
+      spareParts: iris.map(function(l){
+        return {
+          irisConditionCode: l.condition,
+          irisSymptomCode:   l.symptom,
+          irisSectionCode:   l.section,
+          irisDefaultCode:   l.irisDefault,
+          irisRepairCode:    l.repair,
+          partReference:     l.repairCode,
+          description:       l.description||''
+        };
+      }),
+      invoiceFileUrl:    d.photoImeiUrl||'',
+      imeiFileUrl:       d.photoImeiUrl||''
+    };
+
+    var repairRes = await fetch(baseUrl+'/api/repair-reimbursements', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer '+jwt
+      },
+      body: JSON.stringify(dossierPayload)
+    });
+
+    var repairData = await repairRes.json();
+    console.log('Ecosystem repair response:', repairData);
+
+    if(repairRes.ok && (repairData.id || repairData.reimbursementId)){
+      var dossierId = repairData.id || repairData.reimbursementId;
+      d.qrEnvoi = {date:new Date().toISOString(), statut:'Sent', ecosystemId: dossierId};
+      d.statut = 'qr';
+      repSauvegarderDossier();
+      repUpdateStatutBadge();
+      if(statut) statut.innerHTML = '<div style="background:#f0fdf4;padding:12px;border-radius:8px;color:var(--green);font-size:13px;">'+
+        '✅ Dossier envoyé à Ecosystem !<br>'+
+        '<b>ID Ecosystem :</b> '+dossierId+'<br>'+
+        '<b>Remboursement :</b> 25€ sous 15 jours ouvrés</div>';
+      showNotif('✅ Dossier QualiRépar envoyé à Ecosystem !','success');
+    } else {
+      throw new Error(repairData.message || repairData.error || JSON.stringify(repairData).slice(0,100));
+    }
+
+  } catch(err){
+    console.error('Ecosystem error:', err);
+    if(statut) statut.innerHTML = '<div style="background:#fff5f5;padding:12px;border-radius:8px;color:var(--red);font-size:13px;">'+
+      '❌ Erreur Ecosystem : '+err.message+'<br>'+
+      '<small>Vérifiez les credentials ou envoyez manuellement.</small></div>';
+    showNotif('Erreur Ecosystem : '+err.message,'error');
+  }
+}
+
+async function repEnvoyerEcologic(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier','error'); return; }
+
+  var statut = document.getElementById('rep-qr-envoi-statut');
+  if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Envoi vers Ecologic en cours...</div>';
+
+  var token  = localStorage.getItem('sp_ecologic_token') || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
+  var siteId = localStorage.getItem('sp_ecologic_siteid') || 'f3f52871-5be0-4c26-9082-002479b9cf4e';
+
+  var panne  = (document.getElementById('rep-qr-panne')||{value:''}).value;
+  var codes  = IRIS_CODES[panne]||{};
+  var iris   = codes.irisLines||[];
+  var a      = d.appareil||{};
+  var c      = d.client||{};
+  var f      = d.facture||{};
+
+  // Étape 1 : CreateSupportRequest
+  var payload1 = {
+    action: 'CreateSupportRequest',
+    token: token,
+    siteId: siteId,
+    repairSiteRef: d.numero,
+    imei: a.imei||'',
+    brand: a.marque||'',
+    model: a.modele||'',
+    consumerFirstName: c.prenom||'',
+    consumerLastName: c.nom||'',
+    consumerEmail: c.email||'',
+    consumerPhone: c.tel||'',
+    consumerAddress: c.adresse||'',
+    consumerZipCode: c.cp||'',
+    consumerCity: c.ville||'',
+    repairDate: (f.date||new Date().toISOString().split('T')[0]),
+    repairDescription: f.descBase||d.panne||'',
+    repairAmount: ((f.prix||0)+25).toFixed(2), // prix réel = prix client + bonus
+    bonusAmount: '25.00',
+    spareParts: iris.map(function(l){
+      return {
+        irisCondition: l.condition,
+        irisSymptom: l.symptom,
+        irisSection: l.section,
+        irisDefault: l.irisDefault,
+        irisRepair: l.repair,
+        sparePartRef: l.repairCode
+      };
+    }),
+    invoicePhotoUrl: d.photoImeiUrl||'',
+    imeiPhotoUrl: d.photoImeiUrl||''
   };
-  repSauvegarderDossier();
-  repUpdateStatutBadge();
-  showNotif('Dossier envoyé à l\'éco-organisme','success');
+
+  try {
+    var res1 = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify(payload1)
+    });
+
+    var data1 = await res1.json();
+    console.log('Ecologic CreateSupportRequest:', data1);
+
+    if(data1.status === 'success' || data1.ResponseCode === '00'){
+      var supportId = data1.supportRequestId || data1.ResponseData;
+
+      // Étape 2 : CreateClaim
+      var payload2 = {
+        action: 'CreateClaim',
+        token: token,
+        siteId: siteId,
+        supportRequestId: supportId,
+        invoiceRef: d.numero,
+        invoiceAmount: (f.prix||0).toFixed(2),
+        invoicePhotoUrl: d.photoImeiUrl||''
+      };
+
+      var res2 = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify(payload2)
+      });
+      var data2 = await res2.json();
+      console.log('Ecologic CreateClaim:', data2);
+
+      if(data2.status === 'success' || data2.ResponseCode === '00'){
+        d.qrEnvoi = {date:new Date().toISOString(), statut:'Sent', supportId:supportId, claimId:data2.claimId||''};
+        d.statut = 'qr';
+        repSauvegarderDossier();
+        repUpdateStatutBadge();
+        if(statut) statut.innerHTML = '<div style="background:#f0fdf4;padding:12px;border-radius:8px;color:var(--green);font-size:13px;">'+
+          '✅ Dossier envoyé à Ecologic !<br>'+
+          '<b>Support ID :</b> '+supportId+'<br>'+
+          '<b>Remboursement :</b> sous 15 jours ouvrés</div>';
+        showNotif('✅ Dossier QualiRépar envoyé à Ecologic !','success');
+      } else {
+        throw new Error(data2.message||data2.ResponseMessage||'Erreur CreateClaim');
+      }
+    } else {
+      // Erreur IMEI déjà utilisé ?
+      var msg = data1.message||data1.ResponseMessage||'Erreur';
+      if(msg.toLowerCase().includes('imei')){
+        if(statut) statut.innerHTML = '<div style="background:#fff8e1;padding:12px;border-radius:8px;color:#92400e;font-size:13px;">'+
+          '⚠️ IMEI déjà utilisé pour une demande Ecologic.<br>'+
+          'Ce téléphone a déjà bénéficié du bonus dans les 6 derniers mois.</div>';
+      } else {
+        throw new Error(msg);
+      }
+    }
+  } catch(err){
+    console.error('Ecologic error:', err);
+    if(statut) statut.innerHTML = '<div style="background:#fff5f5;padding:12px;border-radius:8px;color:var(--red);font-size:13px;">'+
+      '❌ Erreur envoi Ecologic : '+err.message+'<br>'+
+      'Vérifiez votre connexion ou envoyez manuellement sur le portail.</div>';
+    showNotif('Erreur Ecologic : '+err.message,'error');
+  }
 }
 
 function repCloturerDossier(){
