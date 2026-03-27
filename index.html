@@ -10251,6 +10251,19 @@ function repSelectClient(id){
   }
   var elCP     = document.getElementById('rep-cp');    if(elCP)    elCP.value    = cpVal;
   var elVille  = document.getElementById('rep-ville'); if(elVille) elVille.value = villeVal;
+  // Sauvegarder DIRECTEMENT dans repDossierCourant.client sans passer par le DOM
+  if(repDossierCourant){
+    repDossierCourant.client = {
+      civilite: c.civilite||'M.',
+      nom:      c.nom||'',
+      prenom:   c.prenom||'',
+      tel:      c.tel||'',
+      email:    c.email||'',
+      adresse:  c.adresse||'',
+      cp:       cpVal,
+      ville:    villeVal
+    };
+  }
   repAutoSave();
   showNotif('👤 '+(c.prenom||'')+' '+(c.nom||'')+' chargé','success');
   return;
