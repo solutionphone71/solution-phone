@@ -4006,7 +4006,9 @@ function showClientDetail(id) {
     '<div style="font-size:22px;font-weight:800;">'+c.nom+'</div>' +
     (c.tel?'<div style="color:var(--text-muted);font-size:14px;">📞 '+c.tel+'</div>':'') +
     (c.email?'<div style="color:var(--text-muted);font-size:14px;">✉️ '+c.email+'</div>':'') +
-    (c.adresse?'<div style="color:var(--text-muted);font-size:14px;">📍 '+c.adresse+'</div>':'') +
+    (c.adresse?'<div style="color:var(--text-muted);font-size:14px;">📍 '+c.adresse+(c.cp||c.ville?' — '+(c.cp||'')+' '+(c.ville||''):'')+'</div>':'') +
+    '<div style="font-size:13px;color:var(--text-muted);">'+
+      (c.cp?'<b>CP :</b> '+c.cp+' ':'')+(c.ville?'<b>Ville :</b> '+c.ville:'')+'</div>' +
     '</div>' +
     '<div style="display:flex;gap:8px;">' +
     '<button class="btn btn-sm btn-primary" onclick="envoyerEmailClient('+id+')">📧 Email</button>' +
