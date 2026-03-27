@@ -10908,24 +10908,32 @@ repGoStep = function(n){
       var d2 = repDossierCourant||{};
       var appareil2 = ((d2.appareil||{}).marque||'')+' '+((d2.appareil||{}).modele||'');
 
-      // 1. Prix → depuis devis
-      var devisVal = (document.getElementById('dep-devis')||{value:''}).value;
+      // 1. Prix → depuis devis (champ ou dossier)
+      var devisVal = (document.getElementById('dep-devis')||{value:''}).value ||
+                     (d2.devis ? String(d2.devis) : '');
       var rPrix = document.getElementById('r-prix');
-      if(rPrix) rPrix.value = devisVal||'';
+      if(rPrix && (!rPrix.value || rPrix.value === '0')) rPrix.value = devisVal;
 
-      // 2. Description officielle depuis la panne sélectionnée
-      var panneVal = (document.getElementById('dep-panne')||{value:''}).value;
-      var descOfficielle = repPanneToDescriptionFacture(panneVal)+' '+appareil2.trim();
+      // 2. Description officielle depuis panne (champ ou dossier)
+      var panneVal = (document.getElementById('dep-panne')||{value:''}).value || d2.panne || '';
+      // Aussi vérifier le select de panne
+      var panneSelect = document.getElementById('dep-panne-select');
+      if(panneSelect && panneSelect.value && !panneVal) panneVal = panneSelect.value;
+      var descOfficielle = panneVal ? repPanneToDescriptionFacture(panneVal)+' '+appareil2.trim() : '';
       var rDesc = document.getElementById('r-description');
-      if(rDesc) rDesc.value = descOfficielle;
+      if(rDesc && (!rDesc.value)) rDesc.value = descOfficielle;
 
-      // 3. N° dossier interne = REP-2026-042
+      // 3. N° dossier = REP-2026-042
       var rDoss = document.getElementById('r-dossier-interne');
-      if(rDoss) rDoss.value = d2.numero||'';
+      if(rDoss && (!rDoss.value)) rDoss.value = d2.numero||'';
 
-      // 4. QR toujours actif — toute réparation bénéficie du bonus
+      // 4. Ref commerciale mobile
+      var rRef = document.getElementById('r-ref-mobile');
+      if(rRef && (!rRef.value) && d2.refMobile) rRef.value = d2.refMobile;
+
+      // 5. QR toujours actif
       var qrActif = document.getElementById('rep-qr-actif');
-      if(qrActif){ qrActif.checked = true; repToggleQR(); }
+      if(qrActif){ qrActif.checked = true; if(typeof repToggleQR==='function') repToggleQR(); }
 
       // 4. IRIS / Marque
       repQRPopulateMarques();
