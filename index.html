@@ -9482,6 +9482,9 @@ function repGetIrisLinesForFacture(){
 }
 
 async function repGenererFacture(){
+  if(repGenererFacture._running) return;
+  repGenererFacture._running = true;
+  setTimeout(function(){ repGenererFacture._running=false; }, 3000);
   var d = repDossierCourant;
   if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
 
@@ -10856,8 +10859,8 @@ function repUpdateChecklist(){
     { label: 'Prénom',                  ok: !!(c.prenom), val: c.prenom||'' },
     { label: 'Téléphone',               ok: !!(c.tel), val: c.tel||'' },
     { label: 'Email',                   ok: !!(c.email), val: c.email||'' },
-    { label: 'Code postal',             ok: !!(c.cp), val: c.cp||'' },
-    { label: 'Ville',                   ok: !!(c.ville), val: c.ville||'' },
+    { label: 'Code postal',             ok: true, val: c.cp||'(facultatif)' },
+    { label: 'Ville',                   ok: true, val: c.ville||'(facultatif)' },
     { label: 'Marque appareil',         ok: !!(a.marque), val: a.marque||'' },
     { label: 'Modèle',                  ok: !!(a.modele), val: a.modele||'' },
     { label: 'IMEI / N° série',         ok: !!(a.imei), val: a.imei||'' },
