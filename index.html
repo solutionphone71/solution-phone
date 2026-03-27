@@ -9812,18 +9812,54 @@ function repStep2Next(){
   repGoStep(3);
 }
 
+function repAutoFillStep4(){
+  var d = repDossierCourant;
+  if(!d) return;
+
+  // N° dossier
+  var el = document.getElementById('r-dossier-interne');
+  if(el) el.value = d.numero || '';
+
+  // Ref mobile
+  repGenereRefMobile();
+
+  // Prix depuis devis
+  var prix = d.devis || parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  var rPrix = document.getElementById('r-prix');
+  if(rPrix) rPrix.value = prix > 0 ? prix.toFixed(2) : '';
+
+  // Description officielle
+  var panne = d.panne || (document.getElementById('dep-panne')||{value:''}).value || '';
+  if(!panne){ var ps = document.getElementById('dep-panne-select'); if(ps) panne = ps.value; }
+  var appareil = ((d.appareil||{}).marque||'')+' '+((d.appareil||{}).modele||'');
+  var desc = panne ? repPanneToDescriptionFacture(panne)+' '+appareil.trim() : '';
+  var rDesc = document.getElementById('r-description');
+  if(rDesc) rDesc.value = desc;
+
+  // QR coché
+  var qr = document.getElementById('rep-qr-actif');
+  if(qr){ qr.checked = true; if(typeof repToggleQR==='function') repToggleQR(); }
+
+  // Marque IRIS
+  repQRPopulateMarques();
+  var sel = document.getElementById('rep-qr-marque');
+  if(sel && (d.appareil||{}).marque) sel.value = d.appareil.marque;
+  if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
+  setTimeout(function(){ if(typeof repQRAutoPanne==='function') repQRAutoPanne(); }, 300);
+}
+
 function repStep3Next(){
   repAutoSave();
   if(!repDossierCourant.panne){showNotif('Décrivez la panne','error');return;}
   if(!repDossierCourant.devis||repDossierCourant.devis<=0){showNotif('Saisissez le prix TTC du devis','error');return;}
-  // Signature optionnelle — pas de blocage si pas signée
   if(!repDossierCourant.signature){
-    showNotif('💡 Pas de signature — vous pourrez la recueillir plus tard','success');
+    showNotif('💡 Pas de signature — continuez','success');
   }
-  // Générer le devis silencieusement pour Ecosystem
   repGenererDevisPDF();
   repSauvegarderDossier();
   repGoStep(4);
+  // Remplir directement APRÈS avoir changé de step
+  setTimeout(repAutoFillStep4, 300);
 }
 
 function repGenererDevisPDF(){
