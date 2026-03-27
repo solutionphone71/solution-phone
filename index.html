@@ -1417,7 +1417,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             </div>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:flex-end;">
-            <button class="btn btn-primary" onclick="repStep1Next()" style="padding:12px 28px;font-size:15px;">Suivant → Prise en charge</button>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <button class="btn" onclick="repSauvegarderClientManuel()" style="padding:12px 20px;font-size:15px;border-color:var(--green);color:var(--green);" title="Sauvegarder le client dans la base">💾 Enregistrer client</button>
+              <button class="btn btn-primary" onclick="repStep1Next()" style="padding:12px 28px;font-size:15px;">Suivant → Prise en charge</button>
+            </div>
           </div>
         </div>
 
@@ -10021,6 +10024,35 @@ function repStep1Next(){
 
   repSauvegarderClientSupabase(repDossierCourant.client);
   repGoStep(2);
+}
+
+
+function repSauvegarderClientManuel(){
+  if(!repDossierCourant) return;
+
+  // Lire les champs directement
+  var c = {
+    civilite: (document.getElementById('rep-civilite')||{value:''}).value,
+    nom:      (document.getElementById('rep-nom')||{value:''}).value.trim(),
+    prenom:   (document.getElementById('rep-prenom')||{value:''}).value.trim(),
+    tel:      (document.getElementById('rep-tel')||{value:''}).value.trim(),
+    email:    (document.getElementById('rep-email')||{value:''}).value.trim(),
+    adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim(),
+    cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
+    ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
+  };
+
+  if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
+
+  // Sauvegarder dans le dossier courant
+  repDossierCourant.client = c;
+
+  // Sauvegarder dans Supabase
+  repSauvegarderClientSupabase(c).then(function(){
+    // Rafraîchir le cache clients
+    syncClientsFromSupabase();
+  });
+  showNotif('💾 Client enregistré !','success');
 }
 
 async function repSauvegarderClientSupabase(c){
