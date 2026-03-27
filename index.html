@@ -9995,14 +9995,31 @@ function repUpdateStatutBadge(){
 
 function repStep1Next(){
   if(!repDossierCourant) return;
-  repAutoSave();
-  var c = repDossierCourant.client;
-  if(!c.civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); return; }
-  if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
-  if(!c.prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); return; }
-  if(!c.tel || c.tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error'); return; }
-  // Sauvegarder le client dans Supabase automatiquement
-  repSauvegarderClientSupabase(c);
+
+  // Lire DIRECTEMENT les champs HTML maintenant (synchrone, avant que les champs soient cachés)
+  var civilite = (document.getElementById('rep-civilite')||{value:''}).value;
+  var nom      = (document.getElementById('rep-nom')||{value:''}).value.trim();
+  var prenom   = (document.getElementById('rep-prenom')||{value:''}).value.trim();
+  var tel      = (document.getElementById('rep-tel')||{value:''}).value.trim();
+  var email    = (document.getElementById('rep-email')||{value:''}).value.trim();
+  var adresse  = (document.getElementById('rep-adresse')||{value:''}).value.trim();
+  var cp       = (document.getElementById('rep-cp')||{value:''}).value.trim();
+  var ville    = (document.getElementById('rep-ville')||{value:''}).value.trim();
+
+  // Validation
+  if(!civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); return; }
+  if(!nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
+  if(!prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); return; }
+  if(!tel || tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error'); return; }
+
+  // Sauvegarder IMMÉDIATEMENT dans repDossierCourant (synchrone)
+  repDossierCourant.client = {
+    civilite: civilite, nom: nom, prenom: prenom,
+    tel: tel, email: email, adresse: adresse,
+    cp: cp, ville: ville
+  };
+
+  repSauvegarderClientSupabase(repDossierCourant.client);
   repGoStep(2);
 }
 
