@@ -9322,19 +9322,24 @@ function renderRepListe(){
   var tbody = document.getElementById('rep-liste-table');
   if(!tbody) return;
   var list = repDossiers.filter(function(d){
+    if(!d) return false;
+    var c = d.client||{}; var a = d.appareil||{};
     return !search ||
-      (d.client.nom+' '+d.client.prenom).toLowerCase().includes(search) ||
-      (d.appareil.marque+' '+d.appareil.modele).toLowerCase().includes(search);
+      ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
+      ((a.marque||'')+' '+(a.modele||'')).toLowerCase().includes(search) ||
+      (d.numero||'').toLowerCase().includes(search);
   }).slice().reverse();
 
   var statusMap = {'depot':'🟡 Dépôt','devis':'🔵 Devis','facture':'🟢 Facturé','qr':'🔴 QR envoyé','cloture':'⚫ Clôturé'};
   tbody.innerHTML = list.map(function(d){
+    if(!d) return '';
+    var c = d.client||{}; var a = d.appareil||{};
     var s = REP_STATUTS[d.statut||'depot'];
     return '<tr onclick="repOuvrirDossier(\''+d.id+'\')" style="cursor:pointer;">'+
-      '<td><b>'+d.numero+'</b></td>'+
+      '<td><b>'+(d.numero||'')+'</b></td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
-      '<td>'+(d.client.prenom?d.client.prenom+' ':'')+d.client.nom+'</td>'+
-      '<td>'+d.appareil.marque+' '+d.appareil.modele+'</td>'+
+      '<td>'+((c.prenom?c.prenom+' ':'')+c.nom)+'</td>'+
+      '<td>'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
       '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(d.panne||'—')+'</td>'+
       '<td><span class="rep-status-badge '+(s?s.cls:'')+'">'+((s?s.label:d.statut))+'</span></td>'+
       '<td style="display:flex;gap:4px;" onclick="event.stopPropagation()">'+
