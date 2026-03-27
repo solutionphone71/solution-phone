@@ -8864,8 +8864,15 @@ async function chargerClientEnAttente(id){
     document.getElementById('rep-tel').value      = c.tel||'';
     document.getElementById('rep-email').value    = c.email||'';
     document.getElementById('rep-adresse').value  = c.adresse||'';
-    document.getElementById('rep-cp').value       = c.cp||'';
-    document.getElementById('rep-ville').value    = c.ville||'';
+    // Charger cp/ville — extraire depuis adresse si nécessaire
+    var cpVal = c.cp||'';
+    var villeVal = c.ville||'';
+    if(!cpVal && c.adresse){
+      var cpM = c.adresse.match(/(\d{4,5})\s+([\w\s-]+)$/);
+      if(cpM){ cpVal=cpM[1]; villeVal=villeVal||cpM[2].trim(); }
+    }
+    document.getElementById('rep-cp').value       = cpVal;
+    document.getElementById('rep-ville').value    = villeVal;
     repAutoSave();
     showNotif((c.prenom||'')+' '+(c.nom||'')+' chargé dans Réparations — Passez à l\'étape 2 !', 'success');
     marquerClientTraite(id);
@@ -11860,7 +11867,7 @@ function printBonDepot(d){
         '<tfoot>'+
           '<tr style="background:#f8f8f8;">'+
             '<td colspan="4"><b>Sous-total HT : '+htTot.toFixed(2)+' € · TVA 20% : '+tva.toFixed(2)+' €</b></td>'+
-            '<td colspan="2" style="text-align:right;font-size:14px;font-weight:900;color:#c0392b;">TOTAL TTC : '+(ttc-25).toFixed(2)+' €</td>'+
+            '<td colspan="2" style="text-align:right;font-size:14px;font-weight:900;color:#c0392b;">TOTAL TTC : '+(d.devis||ttc).toFixed(2)+' €</td>'+
           '</tr>'+
         '</tfoot>'+
       '</table>'+
