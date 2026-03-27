@@ -9701,7 +9701,7 @@ function repImprimerFacture(d){
   if(f.irisLines && f.irisLines.length > 0){
     irisHtml = '<tr style="background:#f0f9ff;"><td colspan="6" style="padding:6px 10px;font-size:10px;color:#0369a1;">'+
       '<b>Codes IRIS (QualiRépar) :</b> ';
-    irisHtml += f.irisLines.map(function(l,i){
+    irisHtml += (f.irisLines||[]).map(function(l,i){
       return 'L'+(i+1)+': Cond.'+l.condition+' / Sym.'+l.symptom+' / Sec.'+l.section+' / Réf.'+l.repairCode;
     }).join(' | ');
     irisHtml += '</td></tr>';
@@ -10348,7 +10348,7 @@ async function repEnvoyerEcosystem(){
       consumerAddress:   c.adresse||'',
       consumerZipCode:   c.cp||'',
       consumerCity:      c.ville||'',
-      spareParts: iris.map(function(l){
+      spareParts: (iris||[]).map(function(l){
         return {
           irisConditionCode: l.condition,
           irisSymptomCode:   l.symptom,
@@ -10436,7 +10436,7 @@ async function repEnvoyerEcologic(){
     repairDescription: f.descBase||d.panne||'',
     repairAmount: ((f.prix||0)+25).toFixed(2), // prix réel = prix client + bonus
     bonusAmount: '25.00',
-    spareParts: iris.map(function(l){
+    spareParts: (iris||[]).map(function(l){
       return {
         irisCondition: l.condition,
         irisSymptom: l.symptom,
