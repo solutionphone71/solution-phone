@@ -9814,11 +9814,14 @@ function repStep2Next(){
 
 function repAutoFillStep4(){
   var d = repDossierCourant;
+  console.log('=== repAutoFillStep4 ===', d ? d.numero : 'PAS DE DOSSIER');
   if(!d) return;
 
   // N° dossier
   var el = document.getElementById('r-dossier-interne');
+  console.log('r-dossier-interne:', el ? 'OK' : 'INTROUVABLE');
   if(el) el.value = d.numero || '';
+  console.log('numero:', d.numero, '| devis:', d.devis, '| panne:', d.panne);
 
   // Ref mobile
   repGenereRefMobile();
@@ -9840,8 +9843,8 @@ function repAutoFillStep4(){
   var qr = document.getElementById('rep-qr-actif');
   if(qr){ qr.checked = true; if(typeof repToggleQR==='function') repToggleQR(); }
 
-  // Marque IRIS
-  repQRPopulateMarques();
+  // Marque IRIS — appel sécurisé
+  if(typeof repQRPopulateMarques==='function') repQRPopulateMarques();
   var sel = document.getElementById('rep-qr-marque');
   if(sel && (d.appareil||{}).marque) sel.value = d.appareil.marque;
   if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
@@ -10973,12 +10976,12 @@ repGoStep = function(n){
       if(qrActif){ qrActif.checked = true; if(typeof repToggleQR==='function') repToggleQR(); }
 
       // 4. IRIS / Marque
-      repQRPopulateMarques();
+      if(typeof repQRPopulateMarques==='function') repQRPopulateMarques();
       var a = d.appareil||{};
       var selMarque = document.getElementById('rep-qr-marque');
       if(selMarque && a.marque && !selMarque.value){
         selMarque.value = a.marque;
-        repQRUpdateOrganisme();
+        if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
       }
 
       // 5. Générer N° dossier interne + ref mobile
