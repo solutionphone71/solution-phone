@@ -9307,7 +9307,12 @@ var REP_STATUTS = {
 // Charger les dossiers = bonsDepot enrichis
 function repLoadDossiers(){
   repDossiers = bonsDepot.map(function(d){
-    return Object.assign({ statut: d.statut||'depot', facture: d.facture||null, qrEnvoi: d.qrEnvoi||null }, d);
+    var safe = Object.assign({ statut: d.statut||'depot', facture: d.facture||null, qrEnvoi: d.qrEnvoi||null }, d);
+    if(!Array.isArray(safe.etat)) safe.etat = [];
+    if(!Array.isArray(safe.accessoires)) safe.accessoires = [];
+    if(!safe.client) safe.client = {};
+    if(!safe.appareil) safe.appareil = {};
+    return safe;
   });
   renderRepListe();
 }
@@ -9351,9 +9356,9 @@ function repShowListe(){
 
 function repGenererNumero(){
   var annee = new Date().getFullYear();
-  // Trouver le dernier numéro de l'année courante
   var prefix = 'REP-'+annee+'-';
   var max = 0;
+  if(!Array.isArray(repDossiers)) repDossiers = [];
   repDossiers.forEach(function(d){
     if(d.numero && d.numero.startsWith(prefix)){
       var n = parseInt(d.numero.replace(prefix,''))||0;
@@ -9365,6 +9370,8 @@ function repGenererNumero(){
 
 function repNewDossier(){
   try {
+    // S'assurer que repDossiers est synchronisé
+    if(!Array.isArray(repDossiers) || repDossiers.length === 0) repLoadDossiers();
     repDossierCourant = {
       id: Date.now(),
       numero: repGenererNumero(),
@@ -9453,9 +9460,16 @@ function repOuvrirVosFactures(){
 }
 
 function repOuvrirDossier(id){
+  if(!Array.isArray(repDossiers)) repDossiers = [];
+  if(repDossiers.length === 0) repLoadDossiers();
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) return;
   repDossierCourant = JSON.parse(JSON.stringify(d));
+  // Sécuriser les propriétés manquantes
+  if(!repDossierCourant.client) repDossierCourant.client = {};
+  if(!repDossierCourant.appareil) repDossierCourant.appareil = {};
+  if(!Array.isArray(repDossierCourant.etat)) repDossierCourant.etat = [];
+  if(!Array.isArray(repDossierCourant.accessoires)) repDossierCourant.accessoires = [];
   repLoadFormFromDossier();
   document.getElementById('rep-dossier-titre').textContent = (repDossierCourant.client.prenom||'')+' '+(repDossierCourant.client.nom||'');
   document.getElementById('rep-dossier-num').textContent = repDossierCourant.numero+' · '+fmtDate(repDossierCourant.date);
@@ -9479,12 +9493,12 @@ function repLoadFormFromDossier(){
   ['dep-marque','dep-modele','dep-imei','dep-couleur','dep-code'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value=a[id.replace('dep-','')]||'';
   });
-  var etat = d.etat||[];
+  var etat = Array.isArray(d.etat) ? d.etat : [];
   var etatMap = {ecran:'etat-ecran','ray-ecran':'etat-ray-ecran','ray-dos':'etat-ray-dos','vitre-dos':'etat-vitre-dos',bouton:'etat-bouton',hp:'etat-hp',micro:'etat-micro',camera:'etat-camera',charge:'etat-charge',batterie:'etat-batterie'};
   Object.keys(etatMap).forEach(function(k){
     var el = document.getElementById('dep-'+etatMap[k]); if(el) el.checked = etat.indexOf(k)>=0;
   });
-  var acc = d.accessoires||[];
+  var acc = Array.isArray(d.accessoires) ? d.accessoires : [];
   ['coque','chargeur','cable','boite','verre','autre'].forEach(function(k){
     var el=document.getElementById('dep-acc-'+k); if(el) el.checked=acc.indexOf(k)>=0;
   });
@@ -10287,7 +10301,7 @@ async function repEnvoyerEcosystem(){
 
   var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var codes = IRIS_CODES[panne]||{};
-  var iris  = codes.irisLines||[];
+  var iris  = Array.isArray(codes.irisLines) ? codes.irisLines : [];
   var a     = d.appareil||{};
   var c     = d.client||{};
   var f     = d.facture||{};
