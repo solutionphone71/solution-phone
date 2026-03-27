@@ -9870,16 +9870,16 @@ function repClearForm(){
 function repAutoSave(){
   if(!repDossierCourant) return;
   // Lire client
-  // Lire les champs client — ne pas écraser si le champ est vide (step caché sur iOS)
-  var _prevClient = repDossierCourant.client||{};
-  function _getVal(id){ var el=document.getElementById(id); return (el&&el.offsetParent!==null&&el.value.trim())||_prevClient[id.replace('rep-','')]||''; }
-  repDossierCourant.client = {
-    civilite: (document.getElementById('rep-civilite')||{value:''}).value || _prevClient.civilite || 'M.',
-    nom:      _getVal('rep-nom'),
-    prenom:   _getVal('rep-prenom'),
-    tel:      _getVal('rep-tel'),
-    email:    _getVal('rep-email'),
-    adresse:  _getVal('rep-adresse'),
+  // Ne lire les champs client QUE si on est sur le step 1 (champs visibles)
+  // Sinon garder ce qui est déjà dans repDossierCourant.client
+  if(repCurrentStep === 1){
+    repDossierCourant.client = {
+      civilite: (document.getElementById('rep-civilite')||{value:''}).value || (repDossierCourant.client||{}).civilite || 'M.',
+      nom:      (document.getElementById('rep-nom')||{value:''}).value.trim() || (repDossierCourant.client||{}).nom || '',
+      prenom:   (document.getElementById('rep-prenom')||{value:''}).value.trim() || (repDossierCourant.client||{}).prenom || '',
+      tel:      (document.getElementById('rep-tel')||{value:''}).value.trim() || (repDossierCourant.client||{}).tel || '',
+      email:    (document.getElementById('rep-email')||{value:''}).value.trim() || (repDossierCourant.client||{}).email || '',
+      adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim() || (repDossierCourant.client||{}).adresse || '',
     cp:       _getVal('rep-cp'),
     ville:    _getVal('rep-ville')
   };
@@ -10043,6 +10043,7 @@ function repSauvegarderClientManuel(){
     cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
     ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
   };
+  } // fin if(repCurrentStep === 1)
 
   if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
 
