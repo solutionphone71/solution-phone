@@ -10234,11 +10234,27 @@ function repAfficherResultatsClients(results,box){
 function repSelectClient(id){
   var c = clients.find(function(x){ return String(x.id)===String(id); });
   if(!c) return;
-  var fields = {nom:c.nom||'',prenom:c.prenom||'',tel:c.tel||'',email:c.email||''};
-  Object.keys(fields).forEach(function(f){
-    var el=document.getElementById('rep-'+f); if(el) el.value=fields[f];
-  });
-  var civ=document.getElementById('rep-civilite'); if(civ) civ.value=c.civilite||'';
+  // Remplir tous les champs client incluant cp et ville
+  var elNom    = document.getElementById('rep-nom');    if(elNom)    elNom.value    = c.nom||'';
+  var elPrenom = document.getElementById('rep-prenom'); if(elPrenom) elPrenom.value = c.prenom||'';
+  var elTel    = document.getElementById('rep-tel');    if(elTel)    elTel.value    = c.tel||'';
+  var elEmail  = document.getElementById('rep-email');  if(elEmail)  elEmail.value  = c.email||'';
+  var elCiv    = document.getElementById('rep-civilite'); if(elCiv)  elCiv.value    = c.civilite||'M.';
+  var elAdr    = document.getElementById('rep-adresse'); if(elAdr)   elAdr.value    = c.adresse||'';
+  // CP et Ville — depuis les colonnes séparées en priorité
+  var cpVal    = c.cp||'';
+  var villeVal = c.ville||'';
+  // Si pas de cp/ville séparés → extraire depuis adresse
+  if(!cpVal && c.adresse){
+    var cpM = c.adresse.match(/(\d{4,5})\s+([\w\s-]+)$/);
+    if(cpM){ cpVal = cpM[1]; villeVal = villeVal || cpM[2].trim(); }
+  }
+  var elCP     = document.getElementById('rep-cp');    if(elCP)    elCP.value    = cpVal;
+  var elVille  = document.getElementById('rep-ville'); if(elVille) elVille.value = villeVal;
+  repAutoSave();
+  showNotif('👤 '+(c.prenom||'')+' '+(c.nom||'')+' chargé','success');
+  return;
+  // Code legacy ci-dessous (non exécuté)
   if(c.adresse){
     var parts=c.adresse.split(',');
     var rue=parts[0]?parts[0].trim():'';
