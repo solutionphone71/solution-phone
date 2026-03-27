@@ -10506,13 +10506,20 @@ function repInitSig(){
     repSigSave();
   }
 
-  canvas.addEventListener('mousedown',start);
-  canvas.addEventListener('mousemove',move);
-  canvas.addEventListener('mouseup',end);
-  canvas.addEventListener('mouseleave',end);
-  canvas.addEventListener('touchstart',start,{passive:false});
-  canvas.addEventListener('touchmove',move,{passive:false});
-  canvas.addEventListener('touchend',end,{passive:false});
+  // mouseleave ne stoppe PAS le dessin (permet de sortir et revenir)
+  // Seul mouseup/touchend arrête le dessin
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup',   end);
+  // Sur mobile : continuer même si le doigt sort légèrement du canvas
+  document.addEventListener('touchend', end, {passive:false});
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove',  move,  {passive:false});
+
+  // mouseup global : arrêter même si souris relâchée hors canvas
+  document.addEventListener('mouseup', function(e){
+    if(_repSigDrawing){ _repSigDrawing=false; repSigSave(); }
+  });
 }
 
 function repSigSave(){
