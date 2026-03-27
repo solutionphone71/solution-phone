@@ -10841,9 +10841,12 @@ function repCheckEligibilite(){
 }
 
 
+var _repAutoDecompRunning = false;
 function repAutoDecompose(prixTTC){
+  if(_repAutoDecompRunning) return;
+  _repAutoDecompRunning = true;
   var ttc = parseFloat(prixTTC)||0;
-  if(ttc <= 0) return;
+  if(ttc <= 0){ _repAutoDecompRunning=false; return; }
 
   var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
   var prixBase = bonusQR ? ttc + 25 : ttc;
@@ -10871,6 +10874,7 @@ function repAutoDecompose(prixTTC){
   }
 
   repCalcDevis();
+  _repAutoDecompRunning = false;
 }
 
 function repCalcDevis(){
@@ -11004,8 +11008,12 @@ function repUpdateSigNom(){
 
 // Sauvegarder MO/pièces dans repAutoSave
 var _repAutoSaveOrig = repAutoSave;
+var _repAutoSaveRunning = false;
 repAutoSave = function(){
-  _repAutoSaveOrig();
+  if(_repAutoSaveRunning) return;
+  _repAutoSaveRunning = true;
+  try { _repAutoSaveOrig(); } catch(e){}
+  _repAutoSaveRunning = false;
   if(repDossierCourant){
     repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
     repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
