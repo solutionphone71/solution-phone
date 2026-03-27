@@ -8554,6 +8554,18 @@ async function creerFactureVosFactures(rep){
   var domain = getVFDomain();
   if(!token||!domain){ showNotif('Configurez VosFactures dans Paramètres API','error'); return null; }
 
+  // Prix réel = prix client + 25€ si bonus QR
+  var prixClient = rep.prix||0;
+  var prixReel   = rep.bonusQR ? prixClient + 25 : prixClient;
+
+  // Adresse client depuis le dossier courant (champs HTML en priorité)
+  var d = repDossierCourant;
+  var c = (d&&d.client)||{};
+  var adresse  = (document.getElementById('rep-adresse')||{value:''}).value || c.adresse || rep.clientAdresse || '';
+  var cp       = (document.getElementById('rep-cp')||{value:''}).value     || c.cp      || '';
+  var ville    = (document.getElementById('rep-ville')||{value:''}).value  || c.ville   || '';
+  var cpVille  = [cp, ville].filter(Boolean).join(' ');
+
   var payload = {
     api_token: token,
     invoice: {
@@ -8562,18 +8574,21 @@ async function creerFactureVosFactures(rep){
       issue_date: new Date().toISOString().split('T')[0],
       buyer_name: rep.clientNom||'',
       buyer_email: rep.clientEmail||'',
-      buyer_street: rep.clientAdresse||'',
-      description: rep.description||'Réparation smartphone',
+      buyer_street: adresse,
+      buyer_post_code: cp,
+      buyer_city: ville,
+      description: (rep.description||'Réparation smartphone') + (rep.dossier?' — N° '+rep.dossier:''),
+      number_with_year_template: null,
       positions: [
         {
           name: rep.description||'Réparation',
           tax: 20,
-          total_price_gross: rep.prix||0,
+          total_price_gross: prixReel,
           quantity: 1
         }
       ].concat(rep.bonusQR ? [{
-        name: 'Bonus Réparation QualiRépar',
-        tax: 20,
+        name: 'Bonus Réparation QualiRépar (dispositif QualiRépar - Loi AGEC)',
+        tax: 'zw',
         total_price_gross: -25,
         quantity: 1
       }] : [])
@@ -9563,7 +9578,8 @@ async function repGenererFacture(){
       prix: prix,
       bonusQR: bonusQR,
       irisLines: irisLines,
-      mode: mode
+      mode: mode,
+      dossier: d.numero||''
     };
     creerFactureVosFactures(vfData).then(function(result){
       if(result && result.id){
