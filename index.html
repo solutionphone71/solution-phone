@@ -3823,8 +3823,7 @@ function calculerRachat(){ calculerRachatIA(); }
 var clients = []; // Base clients vide - alimentée uniquement via factures smartphones
 var selectedClientId = null;
 
-async 
-function viderCacheClients(){
+async function viderCacheClients(){
   if(!confirm('Vider le cache clients et recharger depuis Supabase ?')) return;
   localStorage.removeItem('sp_clients_cache');
   localStorage.removeItem('sp_hrep_cache');
@@ -6196,7 +6195,7 @@ function renderDashboard(){
   // ── Réparations récentes ──
   var dashRep = document.getElementById('dash-reparations');
   if(dashRep){
-    var repRecentes = reparations.slice(-6).reverse();
+    var repRecentes = Array.isArray(reparations) ? reparations.slice(-6).reverse() : [];
     dashRep.innerHTML = repRecentes.length > 0
       ? repRecentes.map(function(r){ return '<tr><td><b>'+r.clientNom+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+r.appareil+'</td><td>'+r.prix.toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>'; }).join('')
       : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune réparation</td></tr>';
@@ -7404,7 +7403,8 @@ function sortEcrans(liste){
 }
 
 function renderEcrans(){
-  ecransPrix.t1 = sortEcrans(ecransPrix.t1);
+  if(!ecransPrix) return;
+  if(ecransPrix.t1) ecransPrix.t1 = sortEcrans(ecransPrix.t1);
   renderEcransTable('ecrans-tbody-1', ecransPrix.t1||[], 't1');
 }
 
@@ -9335,7 +9335,7 @@ function renderRepListe(){
   tbody.innerHTML = list.map(function(d){
     if(!d) return '';
     var c = d.client||{}; var a = d.appareil||{};
-    var s = REP_STATUTS[d.statut||'depot'];
+    var s = (typeof REP_STATUTS !== 'undefined' ? REP_STATUTS[d.statut||'depot'] : null) || {label: d.statut||'depot', cls: 'rep-s-depot'};
     return '<tr onclick="repOuvrirDossier(\''+d.id+'\')" style="cursor:pointer;">'+
       '<td><b>'+(d.numero||'')+'</b></td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
@@ -9984,7 +9984,8 @@ function repUpdateStep5(){
 function repUpdateStatutBadge(){
   var badge = document.getElementById('rep-dossier-statut-badge');
   if(!badge||!repDossierCourant) return;
-  var s = REP_STATUTS[repDossierCourant.statut||'depot'];
+  if(typeof REP_STATUTS === 'undefined') return;
+  var s = (typeof REP_STATUTS !== 'undefined' ? REP_STATUTS[repDossierCourant.statut||'depot'] : null) || {label: repDossierCourant.statut||'depot', cls: 'rep-s-depot'};
   badge.innerHTML = '';
   var span = document.createElement('span');
   span.className = 'rep-status-badge ' + (s ? s.cls : '');
