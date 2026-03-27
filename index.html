@@ -1602,7 +1602,10 @@ tr:hover td{background:#fafafa;}
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
             <button class="btn" onclick="repGoStep(2)">← Retour</button>
             <div style="display:flex;gap:10px;">
-              <button class="btn" onclick="repImprimerDepot()" style="border-color:var(--blue);color:var(--blue);">📋 Générer & Imprimer le devis</button>
+              <div style="display:flex;gap:8px;">
+                <button class="btn" onclick="repImprimerDepot()" style="border-color:var(--blue);color:var(--blue);">📋 Devis A4</button>
+                <button class="btn" onclick="repImprimerTicket()" style="border-color:var(--green);color:var(--green);">🎫 Ticket Epson</button>
+              </div>
               <button class="btn btn-primary" onclick="repStep3Next()" style="padding:12px 28px;font-size:15px;">Suivant → Facture</button>
             </div>
           </div>
@@ -9295,6 +9298,61 @@ function repNewDossier(){
 }
 
 
+
+function repImprimerTicket(){
+  repAutoSave();
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+  var c = d.client||{};
+  var a = d.appareil||{};
+  var dateDepot = new Date(d.date).toLocaleDateString('fr-FR');
+  var devis = d.devis ? d.devis.toFixed(2)+' \u20ac TTC' : '\u00c0 \u00e9tablir';
+  var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
+
+  var t = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>'+
+    '<style>*{margin:0;padding:0;}body{font-family:"Courier New",monospace;font-size:12px;width:80mm;}.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:3px 0;}.big{font-size:14px;font-weight:bold;}@media print{@page{size:80mm auto;margin:1mm;}.no-print{display:none;}}</style>'+
+    '</head><body>'+
+    '<p class="no-print" style="padding:4px;"><button onclick="window.print()" style="width:100%;padding:6px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;">Imprimer</button></p>'+
+    '<div style="padding:2mm;">'+
+    '<p class="center bold" style="font-size:14px;">SOLUTION PHONE</p>'+
+    '<p class="center" style="font-size:10px;">21 Rue Gambetta - 71000 Macon - 03 85 33 06 89</p>'+
+    '<p class="line"></p>'+
+    '<p class="center bold">BON DE DEPOT</p>'+
+    '<p class="center">'+d.numero+'</p>'+
+    '<p class="center" style="font-size:10px;">'+dateDepot+'</p>'+
+    '<p class="line"></p>'+
+    '<p class="bold">CLIENT</p>'+
+    '<p>'+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'</p>'+
+    '<p>Tel: '+c.tel+'</p>'+
+    '<p class="line"></p>'+
+    '<p class="bold">APPAREIL</p>'+
+    '<p>'+a.marque+' '+a.modele+'</p>'+
+    (a.imei?'<p style="font-size:10px;">IMEI: '+a.imei+'</p>':'')+
+    '<p class="line"></p>'+
+    '<p class="bold">PANNE</p>'+
+    '<p style="font-size:11px;word-break:break-word;">'+(d.panne||'—')+'</p>'+
+    '<p class="line"></p>'+
+    '<p class="bold">DEVIS ESTIMATIF</p>'+
+    '<p class="center big">'+devis+'</p>'+
+    (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -25.00 \u20ac inclus</p>':'')+
+    '<p class="line"></p>'+
+    '<p class="center" style="font-size:10px;">Hors garantie fabricant.</p>'+
+    '<p class="center" style="font-size:10px;">Garantie reparation 3 mois.</p>'+
+    '<p class="line"></p>'+
+    '<p class="bold">Signature client :</p>'+
+    (d.signature?'<p><img src="'+d.signature+'" style="max-width:70mm;max-height:18mm;"></p>':
+     '<p style="height:14mm;border-bottom:1px solid #000;margin:2mm 0;"></p>')+
+    '<p class="line"></p>'+
+    '<p class="center" style="font-size:10px;">Merci de votre confiance !</p>'+
+    '</div></body></html>';
+
+  var w = window.open('','_blank','width=380,height=650');
+  if(!w){ showNotif('Autorisez les popups pour imprimer','error'); return; }
+  w.document.write(t);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 400);
+}
+
 function repOuvrirVosFactures(){
   if(!repDossierCourant||!repDossierCourant.facture||!repDossierCourant.facture.vfUrl) return;
   window.open(repDossierCourant.facture.vfUrl,'_blank');
@@ -9400,7 +9458,7 @@ function repPanneToEcosystem(panne){
   else if(p.includes('caméra') || p.includes('camera')) piece = 'Caméra';
   else if(p.includes('bouton')) piece = 'Bouton';
   // Pré-sélectionner la pièce dans le select Pièce à commander
-  var sel = document.getElementById('dep-piece-select');
+  var sel = document.getElementById('dep-piece');
   if(sel && piece){
     for(var i=0;i<sel.options.length;i++){
       if(sel.options[i].value === piece){ sel.selectedIndex = i; break; }
@@ -9743,6 +9801,26 @@ function repSetDesc(val){
   el.value = val + (modele ? ' ' + modele : '');
   repUpdateFacturePreview();
   repUpdateChecklist && repUpdateChecklist();
+}
+
+
+function repImprimerDepot(){
+  repAutoSave();
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+  if(!d.etat || !Array.isArray(d.etat)){
+    d.etat = [];
+    ['ecran','ray-ecran','ray-dos','vitre-dos','bouton','hp','micro','camera','charge','batterie'].forEach(function(k){
+      var el=document.getElementById('dep-etat-'+k);
+      if(el && el.checked) d.etat.push(k);
+    });
+  }
+  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = [];
+  if(!d.panne) d.panne = (document.getElementById('dep-panne')||{value:''}).value||'';
+  if(!d.devis) d.devis = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  if(!d.moHT) d.moHT = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
+  if(!d.piecesHT) d.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
+  printBonDepot(d);
 }
 
 function repReprintDepot(id){
@@ -10532,23 +10610,45 @@ repGoStep = function(n){
     }, 300);
   }
 
-  // ── STEP 4 : IRIS / QualiRépar ──
+  // ── STEP 4 : Facture + IRIS / QualiRépar ──
   if(n===4){
     setTimeout(function(){
-      repQRPopulateMarques();
-      if(repDossierCourant){
-        var a = repDossierCourant.appareil||{};
-        var selMarque = document.getElementById('rep-qr-marque');
-        if(selMarque && a.marque && !selMarque.value){
-          selMarque.value = a.marque;
-          repQRUpdateOrganisme();
-        }
-        repGenereDossierInterne();
-        repGenereRefMobile();
-        setTimeout(repQRAutoPanne, 200);
+      var d = repDossierCourant;
+      if(!d) return;
+
+      // 1. Copier le prix du devis → r-prix
+      var devisVal = (document.getElementById('dep-devis')||{value:''}).value;
+      var rPrix = document.getElementById('r-prix');
+      if(rPrix && devisVal && !rPrix.value) rPrix.value = devisVal;
+
+      // 2. Copier la description de panne → r-description
+      var panneVal = (document.getElementById('dep-panne')||{value:''}).value;
+      var rDesc = document.getElementById('r-description');
+      if(rDesc && panneVal && !rDesc.value) rDesc.value = panneVal;
+
+      // 3. Activer automatiquement le bonus QR (toute réparation = QualiRépar)
+      var qrActif = document.getElementById('rep-qr-actif');
+      if(qrActif && !qrActif.checked){
+        qrActif.checked = true;
+        repToggleQR();
       }
+
+      // 4. IRIS / Marque
+      repQRPopulateMarques();
+      var a = d.appareil||{};
+      var selMarque = document.getElementById('rep-qr-marque');
+      if(selMarque && a.marque && !selMarque.value){
+        selMarque.value = a.marque;
+        repQRUpdateOrganisme();
+      }
+
+      // 5. Générer N° dossier interne + ref mobile
+      repGenereDossierInterne();
+      repGenereRefMobile();
+      setTimeout(repQRAutoPanne, 200);
+
       repUpdateFacturePreview();
-    }, 100);
+    }, 150);
   }
 };
 // ============================================================
