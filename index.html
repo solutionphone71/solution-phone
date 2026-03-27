@@ -316,6 +316,22 @@ tr:hover td{background:#fafafa;}
 .qr-scan-btn .qr-scan-icon{font-size:30px;}
 /* ══════ FIN MODE CLIENT TABLETTE ══════ */
 
+
+/* === FIX iOS TOUCH === */
+select, input, textarea, button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+/* Éviter le zoom sur focus iOS */
+input[type="text"], input[type="number"], input[type="email"], 
+input[type="tel"], select, textarea {
+  font-size: 16px !important;
+}
 </style>
 <script>
 // ── Tampon + Signature Solution Phone ───────────────────────
@@ -1552,10 +1568,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div class="form-group" style="margin-bottom:0;"><label>Main d'œuvre HT (€)</label>
-                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()" style="font-weight:600;">
+                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()" onchange="repCalcDevis()" style="font-weight:600;">
                       </div>
                       <div class="form-group" style="margin-bottom:0;"><label>Pièces détachées HT (€)</label>
-                        <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
+                        <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()" onchange="repCalcDevis()">
                       </div>
                     </div>
                     <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#0369a1;"></div>
@@ -1565,7 +1581,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group">
                       <label>Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span></label>
-                      <input type="number" id="dep-devis" placeholder="ex: 45.00 (prix client final)" step="0.01" oninput="repAutoSave();repAutoDecompose(this.value);" style="font-size:16px;font-weight:700;">
+                      <input type="number" id="dep-devis" placeholder="ex: 45.00 (prix client final)" step="0.01" oninput="repAutoSave();repAutoDecompose(this.value);" onchange="repAutoSave();repAutoDecompose(this.value);" style="font-size:16px;font-weight:700;">
                       <div style="font-size:11px;color:#0369a1;margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                     </div>
                   </div>
@@ -10869,8 +10885,9 @@ var _repAutoDecompRunning = false;
 function repAutoDecompose(prixTTC){
   if(_repAutoDecompRunning) return;
   _repAutoDecompRunning = true;
+  try {
   var ttc = parseFloat(prixTTC)||0;
-  if(ttc <= 0){ _repAutoDecompRunning=false; return; }
+  if(ttc <= 0){ return; }
 
   var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
   var prixBase = bonusQR ? ttc + 25 : ttc;
@@ -10898,7 +10915,8 @@ function repAutoDecompose(prixTTC){
   }
 
   repCalcDevis();
-  _repAutoDecompRunning = false;
+  } catch(e){ console.warn('repAutoDecompose err:',e); }
+  finally { _repAutoDecompRunning = false; }
 }
 
 function repCalcDevis(){
@@ -11036,8 +11054,8 @@ var _repAutoSaveRunning = false;
 repAutoSave = function(){
   if(_repAutoSaveRunning) return;
   _repAutoSaveRunning = true;
-  try { _repAutoSaveOrig(); } catch(e){}
-  _repAutoSaveRunning = false;
+  try { _repAutoSaveOrig(); } catch(e){ console.warn('repAutoSave err:',e); }
+  finally { _repAutoSaveRunning = false; }
   if(repDossierCourant){
     repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
     repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
