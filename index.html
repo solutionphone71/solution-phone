@@ -3871,13 +3871,13 @@ async function importClientsPhonilab(input) {
       var cp      = (iCP >= 0 ? cols[iCP] : '').replace(/"/g,'').trim();
       var ville   = (iVille >= 0 ? cols[iVille] : '').replace(/"/g,'').trim();
       var civilite = (iTitre >= 0 ? cols[iTitre] : '').replace(/"/g,'').trim();
-      var adresseComplete = [adresse, cp && ville ? cp+' '+ville : (cp||ville)].filter(Boolean).join(', ');
-
       var newClient = {
         id: Date.now() + i,
         nom: nom, prenom: prenom, civilite: civilite,
         tel: tel, email: email,
-        adresse: adresseComplete,
+        adresse: adresse,
+        cp: cp,
+        ville: ville,
         notes: 'Importé Phonilab',
         dateCreation: now
       };
