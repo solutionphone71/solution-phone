@@ -3240,18 +3240,18 @@ async function loadPinsFromSupabase() {
 var _userRole     = 'patron'; // 'patron' ou 'employe'
 
 // Modules cachés pour les employés
-var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart','salaries'];
+var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries'];
 
 function appliquerRole(){
   var isEmploye = _userRole === 'employe';
-  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-ventes-smart','nav-salaries'];
+  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-salaries'];
   ids.forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = isEmploye ? 'none' : '';
   });
   // Menu mobile items
   var mobItems = document.querySelectorAll('.mob-menu-item');
-  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats','ventes-smart','salaries'];
+  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries'];
   mobItems.forEach(function(item){
     var txt = item.getAttribute('onclick')||'';
     var cacher = cacheMobile.some(function(m){ return txt.indexOf(m) !== -1; });
@@ -4694,7 +4694,7 @@ function buildA4HTML(opts){
       '</div>'+
       '<div style="border:1px solid #eee;border-radius:6px;padding:10px;text-align:center;">'+
         '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Cachet Solution Phone</div>'+
-        (typeof SP_TAMPON!=="undefined"?'<img src="'+SP_TAMPON+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;"></div>')+
+        (window.SP_TAMPON?'<img src="'+window.SP_TAMPON+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;border-bottom:1px solid #ccc;"></div>')+
       '</div>'+
     '</div>'+
 
@@ -9717,7 +9717,7 @@ function repImprimerFacture(d){
     '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'+
       '<div style="text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px 16px;min-width:160px;">'+
         '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet Solution Phone</div>'+
-        (typeof SP_TAMPON!=="undefined"?'<img src="'+SP_TAMPON+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;"></div>')+
+        (window.SP_TAMPON?'<img src="'+window.SP_TAMPON+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;"></div>')+
       '</div>'+
     '</div>'+
     '<div style="text-align:center;margin-top:10px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:8px;">'+
