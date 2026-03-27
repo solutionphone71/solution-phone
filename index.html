@@ -9306,6 +9306,7 @@ var REP_STATUTS = {
 
 // Charger les dossiers = bonsDepot enrichis
 function repLoadDossiers(){
+  if(!Array.isArray(bonsDepot)) { repDossiers = []; renderRepListe(); return; }
   repDossiers = bonsDepot.map(function(d){
     var safe = Object.assign({ statut: d.statut||'depot', facture: d.facture||null, qrEnvoi: d.qrEnvoi||null }, d);
     if(!Array.isArray(safe.etat)) safe.etat = [];
