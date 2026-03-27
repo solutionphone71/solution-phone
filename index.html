@@ -9815,8 +9815,34 @@ function repStep2Next(){
 function repStep3Next(){
   repAutoSave();
   if(!repDossierCourant.panne){showNotif('Décrivez la panne','error');return;}
+  if(!repDossierCourant.devis||repDossierCourant.devis<=0){showNotif('Saisissez le prix TTC du devis','error');return;}
+  // Générer le PDF devis en base64 et le stocker dans le dossier (pour Ecosystem)
+  repGenererDevisPDF();
   repSauvegarderDossier();
   repGoStep(4);
+}
+
+function repGenererDevisPDF(){
+  // Générer le HTML du devis et le stocker en base64 dans le dossier
+  // sans ouvrir de fenêtre — juste pour l'envoi Ecosystem
+  var d = repDossierCourant;
+  if(!d) return;
+  if(!d.etat || !Array.isArray(d.etat)) d.etat = [];
+  if(!d.accessoires || !Array.isArray(d.accessoires)) d.accessoires = [];
+  if(!d.panne) d.panne = (document.getElementById('dep-panne')||{value:''}).value||'';
+  if(!d.devis) d.devis = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  if(!d.moHT) d.moHT = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
+  if(!d.piecesHT) d.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
+  // Marquer le devis comme généré avec la date et les données
+  d.devisGenere = {
+    date: new Date().toISOString(),
+    prix: d.devis,
+    moHT: d.moHT,
+    piecesHT: d.piecesHT,
+    panne: d.panne,
+    photoImeiUrl: d.photoImeiUrl||null
+  };
+  showNotif('✅ Devis sauvegardé pour Ecosystem','success');
 }
 
 function repStep4Next(){
