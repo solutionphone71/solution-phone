@@ -3823,7 +3823,7 @@ function calculerRachat(){ calculerRachatIA(); }
 var clients = []; // Base clients vide - alimentée uniquement via factures smartphones
 var selectedClientId = null;
 
-async function viderCacheClients(){
+function viderCacheClients(){
   if(!confirm('Vider le cache clients et recharger depuis Supabase ?')) return;
   localStorage.removeItem('sp_clients_cache');
   localStorage.removeItem('sp_hrep_cache');
@@ -7403,8 +7403,8 @@ function sortEcrans(liste){
 }
 
 function renderEcrans(){
-  if(!ecransPrix) return;
-  if(ecransPrix.t1) ecransPrix.t1 = sortEcrans(ecransPrix.t1);
+  if(!ecransPrix || typeof ecransPrix !== 'object') return;
+  if(Array.isArray(ecransPrix.t1)) ecransPrix.t1 = sortEcrans(ecransPrix.t1);
   renderEcransTable('ecrans-tbody-1', ecransPrix.t1||[], 't1');
 }
 
