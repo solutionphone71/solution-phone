@@ -1568,10 +1568,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div class="form-group" style="margin-bottom:0;"><label>Main d'œuvre HT (€)</label>
-                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()" style="font-weight:600;">
+                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="repCalcDevisDebounced()" style="font-weight:600;">
                       </div>
                       <div class="form-group" style="margin-bottom:0;"><label>Pièces détachées HT (€)</label>
-                        <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevis()">
+                        <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" oninput="repCalcDevisDebounced()">
                       </div>
                     </div>
                     <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#0369a1;"></div>
@@ -10940,6 +10940,12 @@ function repAutoDecompose(prixTTC){
   finally { _repAutoDecompRunning = false; }
 }
 
+
+var _repCalcTimer = null;
+function repCalcDevisDebounced(){
+  if(_repCalcTimer) clearTimeout(_repCalcTimer);
+  _repCalcTimer = setTimeout(repCalcDevis, 200);
+}
 function repCalcDevis(){
   var mo     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
   var pieces = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
@@ -11072,11 +11078,16 @@ function repUpdateSigNom(){
 // Sauvegarder MO/pièces dans repAutoSave
 var _repAutoSaveOrig = repAutoSave;
 var _repAutoSaveRunning = false;
+var _repAutoSaveTimer = null;
 repAutoSave = function(){
-  if(_repAutoSaveRunning) return;
-  _repAutoSaveRunning = true;
-  try { _repAutoSaveOrig(); } catch(e){ console.warn('repAutoSave err:',e); }
-  finally { _repAutoSaveRunning = false; }
+  // Debounce : exécuter seulement après 250ms sans appel
+  if(_repAutoSaveTimer) clearTimeout(_repAutoSaveTimer);
+  _repAutoSaveTimer = setTimeout(function(){
+    if(_repAutoSaveRunning) return;
+    _repAutoSaveRunning = true;
+    try { _repAutoSaveOrig(); } catch(e){ console.warn('repAutoSave err:',e); }
+    finally { _repAutoSaveRunning = false; _repAutoSaveTimer = null; }
+  }, 250);
   if(repDossierCourant){
     repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
     repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
