@@ -9562,14 +9562,43 @@ function repImprimerFacture(d){
   var c = d.client||{};
   var a = d.appareil||{};
   var f = d.facture;
+
+  // Extraire CP et Ville depuis l'adresse si non renseignés séparément
+  // Aussi lire depuis les champs HTML (step 1) si disponibles
+  if(!c.cp || !c.ville){
+    var elCp    = document.getElementById('rep-cp');
+    var elVille = document.getElementById('rep-ville');
+    if(elCp && elCp.value)    c.cp    = elCp.value.trim();
+    if(elVille && elVille.value) c.ville = elVille.value.trim();
+    // Sinon extraire depuis adresse "12 rue ..., 71000 Mâcon"
+    if((!c.cp || !c.ville) && c.adresse){
+      var cpMatch = c.adresse.match(/(\d{5})\s+([^,]+)$/);
+      if(cpMatch){ c.cp = cpMatch[1]; c.ville = cpMatch[2].trim(); }
+      else {
+        var parts = c.adresse.split(',');
+        if(parts.length > 1){
+          var rest = parts[parts.length-1].trim();
+          var m2 = rest.match(/(\d{4,5})\s*(.*)/);
+          if(m2){ c.cp = m2[1]; c.ville = m2[2].trim(); }
+        }
+      }
+    }
+  }
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
   var dateStr = new Date(f.date).toLocaleDateString('fr-FR');
   var mo   = d.moHT||25;
   var pie  = d.piecesHT||0;
-  var ht   = mo+pie;
-  var tva  = ht*0.2;
-  var ttc  = ht*1.2;
-  var prixFinal = f.bonusQR ? ttc-25 : ttc;
+  // Si bonus QR : le prix saisi = prix client final APRÈS déduction
+  // Recalculer le vrai prix HT depuis le prix réel (prix client + 25€)
+  var prixClient = f.prix||0;
+  var prixReel   = f.bonusQR ? prixClient + 25 : prixClient;
+  var ht   = Math.round(prixReel / 1.2 * 100) / 100;
+  var tva  = Math.round(ht * 0.2 * 100) / 100;
+  var ttc  = Math.round(ht * 1.2 * 100) / 100;
+  var prixFinal = f.bonusQR ? ttc - 25 : ttc;
+  // Recalculer MO/pièces depuis le prix réel
+  mo  = 25;
+  pie = Math.max(0, Math.round((ht - mo) * 100) / 100);
 
   var irisHtml = '';
   if(f.irisLines && f.irisLines.length > 0){
@@ -9745,8 +9774,8 @@ function repAutoSave(){
     tel:      (document.getElementById('rep-tel')||{value:''}).value.trim(),
     email:    (document.getElementById('rep-email')||{value:''}).value.trim(),
     adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim(),
-    cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
-    ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
+    cp:       (document.getElementById('rep-cp')||{value:''}).value.trim() || (repDossierCourant&&repDossierCourant.client?repDossierCourant.client.cp||'':''),
+    ville:    (document.getElementById('rep-ville')||{value:''}).value.trim() || (repDossierCourant&&repDossierCourant.client?repDossierCourant.client.ville||'':'')
   };
   // Lire appareil
   repDossierCourant.appareil = {
