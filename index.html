@@ -10783,11 +10783,10 @@ function repQRAutoPanne(){
 // Générer le N° de dossier interne automatiquement
 function repGenereDossierInterne(){
   var el = document.getElementById('r-dossier-interne');
-  if(!el || el.value) return;
+  if(!el) return;
   if(!repDossierCourant) return;
-  // Format SO_S + numéro (compatible Phonilab)
-  var base = 'SO_S' + String(repDossiers.length + 8000).padStart(6,'0');
-  el.value = base;
+  // Utiliser le numéro REP-2026-042 du dossier courant
+  el.value = repDossierCourant.numero || '';
 }
 
 // Générer la Réf. mobile automatiquement selon marque + modèle
@@ -10904,6 +10903,7 @@ repGoStep = function(n){
     setTimeout(function(){
       var d = repDossierCourant;
       if(!d) return;
+      repAutoSave(); // S'assurer que toutes les valeurs sont sauvegardées
 
       var d2 = repDossierCourant||{};
       var appareil2 = ((d2.appareil||{}).marque||'')+' '+((d2.appareil||{}).modele||'');
@@ -10950,7 +10950,7 @@ repGoStep = function(n){
       setTimeout(repQRAutoPanne, 200);
 
       repUpdateFacturePreview();
-    }, 150);
+    }, 400);
   }
 };
 // ============================================================
