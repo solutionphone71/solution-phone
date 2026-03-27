@@ -9430,6 +9430,234 @@ function repLoadFormFromDossier(){
 }
 
 
+
+// ── Mapping panne → description facture officielle ───────────
+var PANNE_TO_DESCRIPTION = {
+  'ecran': 'Remplacement écran',
+  'casse': 'Remplacement écran (casse physique)',
+  'fissu': 'Remplacement écran (casse physique)',
+  'tactile': 'Remplacement écran (tactile)',
+  'batterie': 'Remplacement batterie',
+  'charge': 'Remplacement connecteur de charge',
+  'connecteur': 'Remplacement connecteur de charge',
+  'haut-parleur': 'Remplacement haut-parleur',
+  'micro': 'Remplacement microphone',
+  'camera': 'Remplacement caméra',
+  'caméra': 'Remplacement caméra',
+  'bouton': 'Remplacement bouton',
+  'reseau': 'Réparation antenne réseau',
+  'réseau': 'Réparation antenne réseau',
+  'sim': 'Remplacement lecteur SIM',
+  'wifi': 'Réparation module WiFi',
+  'eau': 'Diagnostic et nettoyage dégât des eaux',
+  'vitre arrière': 'Remplacement vitre arrière'
+};
+
+function repPanneToDescriptionFacture(panne){
+  if(!panne) return 'Réparation smartphone';
+  var p = panne.toLowerCase();
+  for(var key in PANNE_TO_DESCRIPTION){
+    if(p.includes(key)) return PANNE_TO_DESCRIPTION[key];
+  }
+  return panne; // Garder la description originale si pas de match
+}
+
+function repGetIrisLinesForFacture(){
+  var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
+  if(!panne || !IRIS_CODES[panne] || !IRIS_CODES[panne].irisLines) return [];
+  return IRIS_CODES[panne].irisLines;
+}
+
+async function repGenererFacture(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+
+  var prix     = parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
+  var panneVal = (document.getElementById('dep-panne')||{value:''}).value;
+  var modele   = ((d.appareil||{}).marque||'')+' '+((d.appareil||{}).modele||'');
+  var imei     = (d.appareil||{}).imei||'';
+  var mode     = (document.getElementById('r-mode')||{value:'CB'}).value;
+  var dossierN = (document.getElementById('r-dossier-interne')||{value:''}).value;
+  var bonusQR  = (document.getElementById('rep-qr-actif')||{checked:true}).checked;
+
+  // Description officielle pour la facture
+  var descBase = repPanneToDescriptionFacture(panneVal);
+  var descFull = descBase + ' ' + modele.trim();
+  if(imei) descFull += ' (IMEI: '+imei+')';
+
+  // Lignes IRIS (les 3 lignes obligatoires = les 3 "coches" Phonilab)
+  var irisLines = repGetIrisLinesForFacture();
+
+  if(!prix){ showNotif('Saisissez le prix TTC','error'); return; }
+
+  // Sauvegarder dans le dossier
+  d.facture = {
+    numero: dossierN || d.numero,
+    date: new Date().toISOString().split('T')[0],
+    description: descFull,
+    descBase: descBase,
+    prix: prix,
+    mode: mode,
+    bonusQR: bonusQR,
+    irisLines: irisLines,
+    prixFinal: bonusQR ? prix - 25 : prix
+  };
+  d.statut = 'facture';
+  repSauvegarderDossier();
+  repUpdateStatutBadge();
+
+  // Imprimer la facture
+  repImprimerFacture(d);
+
+  // Envoyer à VosFactures
+  if(getVFToken() && getVFDomain()){
+    var vfData = {
+      date: d.facture.date,
+      clientNom: (d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom,
+      clientEmail: d.client.email||'',
+      clientAdresse: d.client.adresse||'',
+      description: descFull,
+      prix: prix,
+      bonusQR: bonusQR,
+      irisLines: irisLines,
+      mode: mode
+    };
+    creerFactureVosFactures(vfData).then(function(result){
+      if(result && result.id){
+        d.facture.vfId  = result.id;
+        d.facture.vfNum = result.number;
+        d.facture.vfUrl = result.view_url;
+        repSauvegarderDossier();
+        showNotif('✅ Facture créée + envoyée à VosFactures !','success');
+        var btnVF = document.getElementById('btn-vf-link');
+        if(btnVF) btnVF.style.display='block';
+      } else {
+        showNotif('✅ Facture créée !','success');
+      }
+    });
+  } else {
+    showNotif('✅ Facture '+d.facture.numero+' créée !','success');
+  }
+  repUpdateDevisRecap();
+}
+
+function repImprimerFacture(d){
+  if(!d||!d.facture) return;
+  var c = d.client||{};
+  var a = d.appareil||{};
+  var f = d.facture;
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var dateStr = new Date(f.date).toLocaleDateString('fr-FR');
+  var mo   = d.moHT||25;
+  var pie  = d.piecesHT||0;
+  var ht   = mo+pie;
+  var tva  = ht*0.2;
+  var ttc  = ht*1.2;
+  var prixFinal = f.bonusQR ? ttc-25 : ttc;
+
+  var irisHtml = '';
+  if(f.irisLines && f.irisLines.length > 0){
+    irisHtml = '<tr style="background:#f0f9ff;"><td colspan="6" style="padding:6px 10px;font-size:10px;color:#0369a1;">'+
+      '<b>Codes IRIS (QualiRépar) :</b> ';
+    irisHtml += f.irisLines.map(function(l,i){
+      return 'L'+(i+1)+': Cond.'+l.condition+' / Sym.'+l.symptom+' / Sec.'+l.section+' / Réf.'+l.repairCode;
+    }).join(' | ');
+    irisHtml += '</td></tr>';
+  }
+
+  var w = window.open('','_blank');
+  if(!w){ showNotif('Autorisez les popups','error'); return; }
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture '+f.numero+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}'+
+    '@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}table{border-collapse:collapse;width:100%;}'+
+    'th,td{padding:6px 10px;}</style></head><body>'+
+    '<div class="no-print" style="text-align:right;padding:8px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '</div>'+
+    '<div class="page">'+
+    // EN-TÊTE
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        (logo?'<img src="'+logo+'" style="height:45px;">':'')+
+        '<div><div style="font-size:16px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+        '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · solution.phone71@gmail.com<br>SIREN : 801 044 785 · TVA : FR10801044785</div></div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="font-size:22px;font-weight:900;">FACTURE</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c0392b;">'+f.numero+'</div>'+
+        '<div style="font-size:11px;color:#888;">Date : '+dateStr+'</div>'+
+      '</div>'+
+    '</div>'+
+    // CLIENT + APPAREIL
+    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
+          '<b>'+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'</b><br>'+
+          c.tel+'<br>'+(c.email||'')+'<br>'+(c.adresse||'')+(c.cp?' · '+c.cp:'')+' '+(c.ville||'')+
+        '</div>'+
+      '</div>'+
+      '<div style="flex:1;border:1.5px solid #333;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil réparé</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
+          '<b>'+a.marque+' '+a.modele+'</b><br>'+
+          'IMEI : <b style="font-family:monospace;">'+(a.imei||'—')+'</b><br>'+
+          'N° dossier : '+f.numero+'<br>'+
+          'Mode règlement : '+f.mode+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    // TABLEAU FACTURE
+    '<table style="border:1.5px solid #2b6cb0;border-radius:6px;overflow:hidden;margin-bottom:10px;">'+
+      '<thead><tr style="background:#2b6cb0;color:#fff;">'+
+        '<th style="text-align:left;">Description</th>'+
+        '<th style="text-align:right;">P.U. HT</th>'+
+        '<th style="text-align:center;">Qté</th>'+
+        '<th style="text-align:right;">HT</th>'+
+        '<th style="text-align:right;">TVA</th>'+
+        '<th style="text-align:right;">TTC</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td><b>'+f.descBase+'</b><br>'+
+            '<span style="font-size:10px;color:#666;">'+a.marque+' '+a.modele+(a.imei?' · IMEI '+a.imei:'')+'</span></td>'+
+          '<td style="text-align:right;">'+mo.toFixed(2)+' €</td>'+
+          '<td style="text-align:center;">1</td>'+
+          '<td style="text-align:right;">'+ht.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;">'+tva.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;font-weight:700;">'+ttc.toFixed(2)+' €</td>'+
+        '</tr>'+
+        (f.bonusQR?'<tr style="background:#f0fff4;">'+
+          '<td><b>Bonus Réparation QualiRépar</b><br>'+
+            '<span style="font-size:10px;color:#166534;">Dispositif Loi AGEC - Remise Ecosystem/Ecologic</span></td>'+
+          '<td style="text-align:right;">0,00 €</td>'+
+          '<td style="text-align:center;">1</td>'+
+          '<td style="text-align:right;">0,00 €</td>'+
+          '<td style="text-align:right;">—</td>'+
+          '<td style="text-align:right;font-weight:700;color:#c0392b;">-25,00 €</td>'+
+        '</tr>':'')+
+        irisHtml+
+      '</tbody>'+
+      '<tfoot>'+
+        '<tr style="background:#f8f8f8;">'+
+          '<td colspan="3"><b>Total HT : '+ht.toFixed(2)+' € · TVA 20% : '+tva.toFixed(2)+' €</b></td>'+
+          '<td colspan="3" style="text-align:right;font-size:16px;font-weight:900;color:#c0392b;">NET À PAYER : '+prixFinal.toFixed(2)+' €</td>'+
+        '</tr>'+
+      '</tfoot>'+
+    '</table>'+
+    // MENTIONS
+    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#166534;line-height:1.6;margin-bottom:10px;">'+
+      '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale).<br>'+
+      (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -25€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.':'')+'</div>'+
+    '<div style="text-align:center;margin-top:16px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:8px;">'+
+      'SOLUTION PHONE · RCS Mâcon B 801 044 785 · solution.phone71@gmail.com · www.solution-phone.fr'+
+    '</div>'+
+    '</div></body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
 function repPanneSelect(val){
   var ta = document.getElementById('dep-panne');
   if(!ta) return;
