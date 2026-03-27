@@ -8765,11 +8765,12 @@ async function syncClientsFromSupabase(){
   while(keepGoing){
     try {
       var res = await supaFetch('clients','GET',null,
-        '?order=nom.asc&limit='+batchSize+'&offset='+offset);
+        '?select=id,nom,prenom,civilite,tel,email,adresse,cp,ville,notes,date_creation&order=nom.asc&limit='+batchSize+'&offset='+offset);
       if(res && res.length > 0){
         allClients = allClients.concat(res.map(function(x){
           return{id:x.id,nom:x.nom||'',prenom:x.prenom||'',
                  tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',
+                 cp:x.cp||'',ville:x.ville||'',
                  notes:x.notes||'',dateCreation:x.date_creation,civilite:x.civilite||''};
         }));
         offset += batchSize;
