@@ -3853,9 +3853,6 @@ function importClientsPhonilab(input) {
     var iVille   = fi(['ville']);
     var iTitre   = fi(['titre','civilit']);
 
-    // Supprimer les anciens clients Phonilab pour éviter doublons avec mauvaise adresse
-    clients = clients.filter(function(c){ return c.notes !== 'Importé Phonilab'; });
-
     var imported = 0; var skipped = 0; var newClients = []; var now = new Date().toISOString().split('T')[0];
 
     for (var i = 1; i < lines.length; i++) {
@@ -3901,13 +3898,6 @@ function importClientsPhonilab(input) {
 
     clients.sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
     renderClients();
-
-    // Supprimer en Supabase les anciens clients Phonilab
-    if(supabaseReady){
-      supabase.from('clients').delete().eq('notes','Importé Phonilab').then(function(){
-        console.log('Anciens clients Phonilab supprimés de Supabase');
-      });
-    }
 
     if(supabaseReady && newClients.length > 0) {
       if(statusEl) statusEl.textContent = '⏳ Sauvegarde Supabase ('+newClients.length+' clients)...';
