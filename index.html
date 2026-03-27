@@ -1686,6 +1686,24 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div class="form-group"><label>Marque appareil *</label>
                       <select id="rep-qr-marque" onchange="repQRUpdateOrganisme();repQRAutoPanne();">
                         <option value="">— Choisir —</option>
+                        <optgroup label="🟢 Ecosystem (Apple)">
+                          <option value="Apple">Apple</option>
+                        </optgroup>
+                        <optgroup label="🔵 Ecologic">
+                          <option value="Samsung">Samsung</option>
+                          <option value="Huawei">Huawei</option>
+                          <option value="Xiaomi">Xiaomi</option>
+                          <option value="Oppo">Oppo</option>
+                          <option value="OnePlus">OnePlus</option>
+                          <option value="Google">Google</option>
+                          <option value="Sony">Sony</option>
+                          <option value="Nokia">Nokia</option>
+                          <option value="Motorola">Motorola</option>
+                          <option value="Wiko">Wiko</option>
+                          <option value="Honor">Honor</option>
+                          <option value="Realme">Realme</option>
+                          <option value="Autre">Autre</option>
+                        </optgroup>
                       </select></div>
                     <div class="form-group"><label>Éco-organisme détecté</label>
                       <div id="rep-qr-organisme" style="padding:9px 12px;background:#e8f5e9;border-radius:8px;font-weight:700;font-size:13px;color:var(--green);">—</div>
@@ -9876,11 +9894,10 @@ function repAutoFillStep4(){
   if(qr){ qr.checked = true; if(typeof repToggleQR==='function') repToggleQR(); }
 
   // Marque IRIS — appel sécurisé
-  if(typeof repQRPopulateMarques==='function') repQRPopulateMarques();
-  var sel = document.getElementById('rep-qr-marque');
-  if(sel && (d.appareil||{}).marque) sel.value = d.appareil.marque;
-  if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
-  setTimeout(function(){ if(typeof repQRAutoPanne==='function') repQRAutoPanne(); }, 300);
+  repQRPopulateMarques();
+  setTimeout(function(){
+    if(typeof repQRAutoPanne==='function') repQRAutoPanne();
+  }, 400);
 }
 
 function repStep3Next(){
@@ -10815,6 +10832,25 @@ function repQRSelectPanne(panneKey){
 }
 
 // Auto-remplir depuis la panne du dossier (étape 3)
+
+function repQRPopulateMarques(){
+  // Les marques sont déjà dans le HTML du select
+  // Auto-sélectionner la marque du dossier
+  if(!repDossierCourant) return;
+  var marque = (repDossierCourant.appareil||{}).marque||'';
+  if(!marque) return;
+  var sel = document.getElementById('rep-qr-marque');
+  if(!sel || sel.value) return;
+  // Chercher correspondance
+  for(var i=0;i<sel.options.length;i++){
+    if(sel.options[i].value.toLowerCase() === marque.toLowerCase()){
+      sel.value = sel.options[i].value;
+      if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
+      break;
+    }
+  }
+}
+
 function repQRAutoPanne(){
   if(!repDossierCourant) return;
   var panne = (repDossierCourant.panne||'').toLowerCase();
