@@ -1377,7 +1377,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
                     <select id="rep-civilite" oninput="repAutoSave()">
-                      <option value="">--</option><option value="M.">M.</option><option value="Mme">Mme</option>
+                      <option value="">--</option><option value="M." selected>M.</option><option value="Mme">Mme</option>
                     </select></div>
                   <div class="form-group"><label>Nom *</label><input type="text" id="rep-nom" placeholder="Dupont" oninput="repAutoSave()"></div>
                   <div class="form-group"><label>Prénom</label><input type="text" id="rep-prenom" placeholder="Jean" oninput="repAutoSave()"></div>
@@ -9289,7 +9289,7 @@ function repNewDossier(){
       numero: repGenererNumero(),
       date: new Date().toISOString().split('T')[0],
       statut: 'depot',
-      client: {}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, obs:'',
+      client: {civilite:'M.'}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, obs:'',
       etat:[], accessoires:[], etatAutre:'',
       facture: null, qrEnvoi: null, signature: null, photoImeiUrl: null
     };
@@ -9719,9 +9719,10 @@ function repPanneToEcosystem(panne){
 }
 
 function repClearForm(){
-  ['rep-civilite','rep-nom','rep-prenom','rep-tel','rep-email','rep-adresse','rep-cp','rep-ville'].forEach(function(id){
+  ['rep-nom','rep-prenom','rep-tel','rep-email','rep-adresse','rep-cp','rep-ville'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
+  var civ=document.getElementById('rep-civilite'); if(civ) civ.value='M.';
   ['dep-marque','dep-modele','dep-imei','dep-couleur','dep-code','dep-etat-autre','dep-acc-autre-txt','dep-panne','dep-devis','dep-date-retour','dep-obs','r-description','r-prix','dep-mo-ht','dep-pieces-ht'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
