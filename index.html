@@ -631,7 +631,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div class="form-group"><label>Smartphone</label>
               <select id="f-phone" onchange="updateFacturePreview()"><option value="">-- Sélectionner --</option></select></div>
             <div class="form-group"><label>Nom client</label><input type="text" id="f-client-nom" placeholder="ex: Jean Dupont" oninput="updateFacturePreview()"></div>
-            <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateFacturePreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="f-client-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateFacturePreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="f-client-ville" placeholder="Mâcon" oninput="updateFacturePreview()"></div></div>
+            <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateFacturePreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="f-client-cp" maxlength="5" inputmode="numeric" oninput="updateFacturePreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="f-client-ville" placeholder="Ville" oninput="updateFacturePreview()"></div></div>
             <div class="form-group"><label>Email client</label><input type="email" id="f-client-email" placeholder="ex: client@gmail.com"></div>
             <button class="btn btn-primary" onclick="genererFacture()">🧾 Générer la facture</button>
           </div>
@@ -689,7 +689,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             </div>
             <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
               <div class="form-group"><label>Code postal</label><input type="text" id="na-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="naUpdatePreview()"></div>
-              <div class="form-group"><label>Ville</label><input type="text" id="na-ville" placeholder="Mâcon" oninput="naUpdatePreview()"></div>
+              <div class="form-group"><label>Ville</label><input type="text" id="na-ville" placeholder="Ville" oninput="naUpdatePreview()"></div>
             </div>
             <div class="form-group">
               <label>Email client</label>
@@ -922,7 +922,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group"><label>Client *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
-            <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Mâcon" oninput="updateDevisPreview()"></div></div>
+            <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="ex: 12 rue de la Paix" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
             <div class="form-group"><label>Appareil</label><input type="text" id="dv-appareil" placeholder="ex: iPhone 13" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Prestation *</label><input type="text" id="dv-prestation" placeholder="ex: Remplacement écran" oninput="updateDevisPreview()"></div>
@@ -1376,7 +1376,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
-                    <select id="rep-civilite" oninput="repAutoSave()">
+                    <select id="rep-civilite" oninput="repAutoSave()" onchange="repAutoSave()">
                       <option value="">--</option><option value="M." selected>M.</option><option value="Mme">Mme</option>
                     </select></div>
                   <div class="form-group"><label>Nom *</label><input type="text" id="rep-nom" placeholder="Dupont" oninput="repAutoSave()"></div>
@@ -1387,7 +1387,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div class="form-group"><label>Adresse</label><input type="text" id="rep-adresse" placeholder="12 rue de la Paix" oninput="repAutoSave()"></div>
                 <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
                   <div class="form-group"><label>Code postal</label><input type="text" id="rep-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="repAutoSave()"></div>
-                  <div class="form-group"><label>Ville</label><input type="text" id="rep-ville" placeholder="Mâcon" oninput="repAutoSave()"></div>
+                  <div class="form-group"><label>Ville</label><input type="text" id="rep-ville" placeholder="Ville" oninput="repAutoSave()"></div>
                 </div>
               </div>
             </div>
@@ -1422,8 +1422,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <div style="display:flex;gap:6px;align-items:center;">
                         <input type="text" id="dep-imei" placeholder="352099..." oninput="repAutoSave();repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
-                        <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 OCR</button>
+                        <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
+                      <div id="dep-photo-status" style="margin-top:6px;font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;">📷 Photo IMEI : <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour Ecosystem</span></div>
                       <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
                     </div>
                     <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSave()"></div>
@@ -2619,7 +2620,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div class="form-group"><label>Nom *</label><input type="text" id="qr-nom" placeholder="Dupont" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Téléphone *</label><input type="tel" id="qr-tel" placeholder="06 XX XX XX XX" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Email *</label><input type="email" id="qr-email" placeholder="client@gmail.com" oninput="qrValidStep1()"></div>
-              <div class="form-group" style="grid-column:1/-1;"><label>Adresse *</label><input type="text" id="qr-adresse" placeholder="12 rue de la Paix" oninput="qrValidStep1()"></div><div style="grid-column:1/-1;display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal *</label><input type="text" id="qr-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="qrValidStep1()"></div><div class="form-group"><label>Ville *</label><input type="text" id="qr-ville" placeholder="Mâcon" oninput="qrValidStep1()"></div></div>
+              <div class="form-group" style="grid-column:1/-1;"><label>Adresse *</label><input type="text" id="qr-adresse" placeholder="12 rue de la Paix" oninput="qrValidStep1()"></div><div style="grid-column:1/-1;display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal *</label><input type="text" id="qr-cp" placeholder="71000" maxlength="5" inputmode="numeric" oninput="qrValidStep1()"></div><div class="form-group"><label>Ville *</label><input type="text" id="qr-ville" placeholder="Ville" oninput="qrValidStep1()"></div></div>
             </div>
           </div>
           <button class="btn btn-primary" id="qr-btn-1" onclick="qrGoStep(2)" disabled style="width:100%;padding:14px;font-size:15px;">Continuer → Appareil</button>
@@ -2900,7 +2901,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Dupont"></div>
       <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
       <div class="form-group"><label>Email</label><input type="email" id="cl-email" placeholder="ex: client@gmail.com"></div>
-      <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="cl-cp" placeholder="71000" maxlength="5" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="cl-ville" placeholder="Mâcon"></div></div>
+      <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="ex: 12 rue de la Paix"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="cl-cp" placeholder="71000" maxlength="5" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="cl-ville" placeholder="Ville"></div></div>
     </div>
     <div class="form-group" style="margin-top:10px;"><label>Notes</label>
       <textarea id="cl-notes" placeholder="Notes sur ce client..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
@@ -9935,14 +9936,18 @@ function repStep1Next(){
   if(!repDossierCourant) return;
   repAutoSave();
   var c = repDossierCourant.client;
-  if(!c.civilite||!c.nom||!c.tel){showNotif('Civilité, Nom et Téléphone sont obligatoires','error');return;}
+  if(!c.civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); return; }
+  if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
+  if(!c.prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); return; }
+  if(!c.tel || c.tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error'); return; }
   repGoStep(2);
 }
 
 function repStep2Next(){
   repAutoSave();
   var a=repDossierCourant.appareil;
-  if(!a.marque||!a.modele){showNotif('Marque et Modèle sont obligatoires','error');return;}
+  if(!a.marque||!a.modele){showNotif('⚠️ Marque et Modèle sont obligatoires','error');return;}
+  if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
   // Rappel photo IMEI si pas encore prise
   if(!repDossierCourant.photoImeiUrl && a.imei){
     showNotif('💡 Pensez à prendre la photo de la plaque signalétique (bouton 📷 OCR) pour Ecosystem !','success');
@@ -10640,7 +10645,7 @@ async function repOCRImei(){
 
     var hint = document.createElement('div');
     hint.style.cssText='color:#fff;font-size:14px;text-align:center;padding:0 20px;line-height:1.6;';
-    hint.innerHTML='📱 Pointez vers la <b>plaque signalétique</b> ou l\'<b>IMEI</b> du téléphone<br><span style="font-size:12px;opacity:.7;">La photo sera aussi sauvegardée pour Ecosystem</span>';
+    hint.innerHTML='📱 Pointez vers la <b>plaque signalétique</b> (IMEI visible)';
 
     var btnCapture = document.createElement('button');
     btnCapture.style.cssText='padding:14px 32px;background:#e53e3e;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;';
@@ -10651,7 +10656,7 @@ async function repOCRImei(){
     btnCancel.textContent='Annuler';
 
     var status = document.createElement('div');
-    status.style.cssText='color:#fff;font-size:13px;min-height:20px;text-align:center;';
+    status.style.cssText='color:#fff;font-size:13px;min-height:24px;text-align:center;padding:0 20px;';
 
     [video,hint,btnCapture,btnCancel,status].forEach(function(el){modal.appendChild(el);});
     document.body.appendChild(modal);
@@ -10662,51 +10667,72 @@ async function repOCRImei(){
     };
 
     btnCapture.onclick = async function(){
-      btnCapture.disabled=true; btnCapture.textContent='⏳ Traitement...';
+      btnCapture.disabled=true;
+      btnCapture.textContent='⏳ Traitement...';
 
-      // Capturer l'image
+      // Capture
       var canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
       canvas.getContext('2d').drawImage(video,0,0);
       stream.getTracks().forEach(function(t){t.stop();});
 
-      // Compresser la photo pour Ecosystem (< 500 Ko)
-      status.textContent='🗜️ Compression en cours...';
+      // Compresser
+      status.textContent='🗜️ Compression...';
       var compressedUrl = await compresserPhoto(canvas, 500);
-      var base64Full    = compressedUrl.split(',')[1];
+      var base64Full = compressedUrl.split(',')[1];
 
-      // 1. Lire l'IMEI avec Claude Vision
-      status.textContent='🤖 Lecture IMEI par IA...';
+      // Upload photo Supabase
+      status.textContent='☁️ Sauvegarde photo...';
+      var photoUrl = null;
       try {
-        var imei = await qrExtractIMEI(base64Full);
-        if(imei){
-          document.getElementById('dep-imei').value = imei;
-          repAutoSave();
-          repCheckIMEI(imei);
-          status.textContent='✅ IMEI lu : '+imei;
-        } else {
-          status.textContent='⚠️ IMEI non détecté — saisissez-le manuellement';
-        }
-      } catch(e){
-        status.textContent='⚠️ Erreur OCR — saisissez l\'IMEI manuellement';
-      }
-
-      // 2. Uploader la photo dans Supabase Storage
-      status.textContent=(status.textContent.includes('✅')?status.textContent+' · ':'')+'⏳ Sauvegarde photo...';
-      try {
-        var photoUrl = await uploaderPhotoIMEI(base64Full, compressedUrl);
+        photoUrl = await uploaderPhotoIMEI(base64Full, compressedUrl);
         if(photoUrl && repDossierCourant){
           repDossierCourant.photoImeiUrl = photoUrl;
           repSauvegarderDossier();
-          status.textContent = (imei?'✅ IMEI : '+imei+' · ':'')+' 📷 Photo sauvegardée';
-          showNotif('IMEI lu + photo sauvegardée pour Ecosystem !','success');
+          // Badge photo validée
+          var badge = document.getElementById('dep-photo-badge');
+          var statusDiv = document.getElementById('dep-photo-status');
+          if(badge){ badge.textContent='✅ Photo validée — prête pour Ecosystem'; badge.style.color='var(--green)'; }
+          if(statusDiv){ statusDiv.style.background='#f0fdf4'; statusDiv.style.borderColor='#22c55e'; }
         }
+      } catch(e){ console.log('Upload photo:', e); }
+
+      // OCR IMEI avec Claude Vision
+      status.textContent='🤖 Lecture IMEI par IA...';
+      var imeiLu = null;
+      try {
+        imeiLu = await qrExtractIMEI(base64Full);
       } catch(e){
-        console.error('Upload photo:', e);
+        console.log('OCR error:', e);
       }
 
-      setTimeout(function(){ document.body.removeChild(modal); }, 2000);
+      // Afficher résultat
+      if(imeiLu){
+        var imeiEl = document.getElementById('dep-imei');
+        if(imeiEl){ imeiEl.value = imeiLu; repAutoSave(); repCheckIMEI(imeiLu); repValidateIMEI(imeiLu); }
+        status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">✅ IMEI lu : '+imeiLu+'</span>';
+      } else {
+        status.innerHTML = '<span style="color:#fbbf24;">⚠️ IMEI non détecté — saisissez-le manuellement</span>';
+      }
+
+      // Afficher confirmation photo
+      var photoConfirm = document.createElement('div');
+      photoConfirm.style.cssText = 'background:rgba(0,255,0,0.15);border:1px solid #4ade80;border-radius:10px;padding:10px 16px;text-align:center;color:#fff;font-size:13px;max-width:340px;';
+      photoConfirm.innerHTML = (photoUrl
+        ? '📷 <b>Photo sauvegardée ✅</b><br><span style="font-size:11px;color:#a3e635;">Prête pour l\'envoi Ecosystem/Ecologic</span>'
+        : '📷 <b>Photo non sauvegardée</b><br><span style="font-size:11px;color:#fca5a5;">Vérifiez votre connexion</span>');
+      modal.appendChild(photoConfirm);
+
+      // Bouton fermer après 3 secondes
+      setTimeout(function(){
+        var btnClose = document.createElement('button');
+        btnClose.style.cssText='padding:10px 28px;background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;';
+        btnClose.textContent='✓ Fermer';
+        btnClose.onclick = function(){ if(document.body.contains(modal)) document.body.removeChild(modal); };
+        modal.appendChild(btnClose);
+      }, 1500);
     };
+
   } catch(e){
     showNotif('Caméra non disponible — saisissez l\'IMEI manuellement','error');
   }
@@ -10984,6 +11010,15 @@ repAutoSave = function(){
     repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
     repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
     if(_repSigData) repDossierCourant.signature = _repSigData;
+    // Mettre à jour indicateur photo IMEI
+    var photoEl = document.getElementById('dep-photo-status');
+    if(photoEl){
+      if(repDossierCourant.photoImeiUrl){
+        photoEl.innerHTML = '✅ <span style="color:var(--green);">Photo prise — prête pour Ecosystem</span>';
+      } else {
+        photoEl.innerHTML = '📷 <span style="color:var(--text-muted);">Aucune photo prise</span>';
+      }
+    }
   }
 };
 
