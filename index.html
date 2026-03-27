@@ -549,7 +549,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Ville</th><th>Heure</th><th>Action</th></tr></thead>
+            <thead><tr><th>Client</th><th>Téléphone</th><th>Email</th><th>Adresse</th><th>Heure</th><th>Action</th></tr></thead>
             <tbody id="attente-table">
               <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun client en attente</td></tr>
             </tbody>
@@ -895,6 +895,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <input type="file" id="reps-phonilab-csv" accept=".csv" style="display:none;" onchange="importReparationsPhonilab(this)">
         </label>
         <span id="clients-import-status" style="font-size:12px;color:var(--text-muted);"></span>
+        <button class="btn btn-sm" style="border-color:#e11d48;color:#e11d48;" onclick="viderCacheClients()">🔄 Vider cache clients</button>
       </div>
 
       <div class="card">
@@ -3804,7 +3805,16 @@ function calculerRachat(){ calculerRachatIA(); }
 var clients = []; // Base clients vide - alimentée uniquement via factures smartphones
 var selectedClientId = null;
 
-async function importClientsPhonilab(input) {
+async 
+function viderCacheClients(){
+  if(!confirm('Vider le cache clients et recharger depuis Supabase ?')) return;
+  localStorage.removeItem('sp_clients_cache');
+  localStorage.removeItem('sp_hrep_cache');
+  showNotif('Cache vidé — rechargement...','success');
+  setTimeout(function(){ location.reload(); }, 800);
+}
+
+function importClientsPhonilab(input) {
   var file = input.files[0];
   if (!file) return;
   var statusEl = document.getElementById('clients-import-status') || document.getElementById('phonilab-status');
@@ -3842,6 +3852,9 @@ async function importClientsPhonilab(input) {
     var iCP      = fi(['postal','code p']);
     var iVille   = fi(['ville']);
     var iTitre   = fi(['titre','civilit']);
+
+    // Supprimer les anciens clients Phonilab pour éviter doublons avec mauvaise adresse
+    clients = clients.filter(function(c){ return c.notes !== 'Importé Phonilab'; });
 
     var imported = 0; var skipped = 0; var newClients = []; var now = new Date().toISOString().split('T')[0];
 
@@ -3888,6 +3901,13 @@ async function importClientsPhonilab(input) {
 
     clients.sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
     renderClients();
+
+    // Supprimer en Supabase les anciens clients Phonilab
+    if(supabaseReady){
+      supabase.from('clients').delete().eq('notes','Importé Phonilab').then(function(){
+        console.log('Anciens clients Phonilab supprimés de Supabase');
+      });
+    }
 
     if(supabaseReady && newClients.length > 0) {
       if(statusEl) statusEl.textContent = '⏳ Sauvegarde Supabase ('+newClients.length+' clients)...';
@@ -4077,8 +4097,9 @@ function renderClients(){
     tdEmail.textContent = c.email||'—';
 
     var tdAdr = document.createElement('td');
-    tdAdr.style.cssText='font-size:12px;color:var(--text-muted);';
-    tdAdr.textContent = c.adresse||'—';
+    tdAdr.style.cssText='font-size:12px;color:var(--text-muted);max-width:180px;';
+    var adrParts = [c.adresse, [c.cp, c.ville].filter(Boolean).join(' ')].filter(Boolean);
+    tdAdr.textContent = adrParts.join(', ') || '—';
 
     var tdNotes = document.createElement('td');
     tdNotes.style.cssText='font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
