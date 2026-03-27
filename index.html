@@ -10977,46 +10977,42 @@ function repCheckEligibilite(){
 
 var _repAutoDecompRunning = false;
 function repAutoDecompose(prixTTC){
+  // Entièrement async → ne bloque jamais l'UI thread iPad
   if(_repAutoDecompRunning) return;
   _repAutoDecompRunning = true;
-  try {
-  var ttc = parseFloat(prixTTC)||0;
-  if(ttc <= 0){ return; }
+  setTimeout(function(){
+    try {
+      var ttc = parseFloat(prixTTC)||0;
+      if(ttc <= 0){ return; }
 
-  var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
-  var prixBase = bonusQR ? ttc + 25 : ttc;
-  var ht     = prixBase / 1.2;
-  var mo     = 25;
-  var pieces = Math.max(0, ht - mo);
+      var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
+      var prixBase = bonusQR ? ttc + 25 : ttc;
+      var ht     = prixBase / 1.2;
+      var mo     = 25;
+      var pieces = Math.max(0, ht - mo);
 
-  // N'écrire dans dep-mo-ht/dep-pieces-ht QUE si on est en step 3
-  // (pas depuis r-prix de l'étape 4 qui écraserait les valeurs)
-  if(repCurrentStep === 3){
-    var elMO  = document.getElementById('dep-mo-ht');
-    var elPie = document.getElementById('dep-pieces-ht');
-    // setAttribute évite de déclencher les événements iOS
-    if(elMO){  elMO.setAttribute('value', mo.toFixed(2));     elMO.value  = mo.toFixed(2); }
-    if(elPie){ elPie.setAttribute('value', pieces.toFixed(2)); elPie.value = pieces.toFixed(2); }
-    // Afficher le total directement
-    var calcBox = document.getElementById('rep-devis-calc');
-    var ht = mo + pieces;
-    if(calcBox && (mo||pieces)){
-      calcBox.innerHTML = 'HT total : <b>'+ht.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+(Math.round(ht*1.2*100)/100).toFixed(2)+' €</b>';
-    }
-  }
+      if(repCurrentStep === 3){
+        var elMO  = document.getElementById('dep-mo-ht');
+        var elPie = document.getElementById('dep-pieces-ht');
+        if(elMO)  elMO.value  = mo.toFixed(2);
+        if(elPie) elPie.value = pieces.toFixed(2);
+        var calcBox = document.getElementById('rep-devis-calc');
+        var htTot = mo + pieces;
+        if(calcBox){
+          calcBox.innerHTML = 'HT total : <b>'+htTot.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+(Math.round(htTot*1.2*100)/100).toFixed(2)+' €</b>';
+        }
+      }
 
-  // Afficher le détail dans la zone calcul
-  var calcBox = document.getElementById('rep-devis-calc');
-  if(calcBox && ttc > 0){
-    var msg = 'MO : '+mo.toFixed(2)+' € HT · Pièces : '+pieces.toFixed(2)+' € HT';
-    if(bonusQR){
-      msg += ' · Prix réel : '+(prixBase).toFixed(2)+'€ TTC ('+ttc.toFixed(2)+'€ + 25€ QR)';
-    }
-    calcBox.innerHTML = '<span style="color:#0369a1;font-size:12px;">'+msg+'</span>';
-  }
+      // Mettre à jour dossier courant
+      if(repDossierCourant){
+        repDossierCourant.devis    = ttc;
+        repDossierCourant.moHT    = 25;
+        repDossierCourant.piecesHT = pieces;
+      }
 
-  } catch(e){ console.warn('repAutoDecompose err:',e); }
-  finally { _repAutoDecompRunning = false; }
+    } catch(e){ console.warn('repAutoDecompose:', e); }
+    finally { _repAutoDecompRunning = false; }
+  }, 10);
 }
 
 
@@ -11166,7 +11162,7 @@ repAutoSave = function(){
     _repAutoSaveRunning = true;
     try { _repAutoSaveOrig(); } catch(e){ console.warn('repAutoSave err:',e); }
     finally { _repAutoSaveRunning = false; _repAutoSaveTimer = null; }
-  }, 250);
+  }, 150);
   if(repDossierCourant){
     repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
     repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
