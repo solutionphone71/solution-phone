@@ -4686,14 +4686,15 @@ function buildA4HTML(opts){
 
     // ZONE SIGNATURE
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:10mm;margin-top:4mm;">'+
-      '<div>'+
+      '<div style="border:1px solid #eee;border-radius:6px;padding:10px;">'+
         '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Signature du client</div>'+
         (opts.signature
-          ? '<img src="'+opts.signature+'" style="max-width:100%;height:70px;object-fit:contain;border:1px solid #eee;border-radius:6px;background:#fff;">'
-          : '')+      '<div>'+
-        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Cachet Solution Phone</div>'+
-        '<img src="'+SP_TAMPON+'" style="max-height:60px;max-width:180px;object-fit:contain;">'+
-        '<div style="font-size:10px;color:#aaa;margin-top:6px;">Date et signature :</div>'+
+          ? '<img src="'+opts.signature+'" style="max-width:100%;height:70px;object-fit:contain;border:1px solid #eee;border-radius:6px;">'
+          : '<div style="height:60px;border-bottom:1px solid #ccc;"></div>')+
+      '</div>'+
+      '<div style="border:1px solid #eee;border-radius:6px;padding:10px;text-align:center;">'+
+        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Cachet Solution Phone</div>'+
+        (typeof SP_TAMPON!=="undefined"?'<img src="'+SP_TAMPON+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;"></div>')+
       '</div>'+
     '</div>'+
 
@@ -9720,12 +9721,6 @@ function repImprimerFacture(d){
       '</div>'+
     '</div>'+
     '<div style="text-align:center;margin-top:10px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:8px;">'+
-      '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'+
-      '<div style="text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px 16px;">'+
-        '<div style="font-size:10px;color:#888;margin-bottom:4px;">Signature & Cachet</div>'+
-        '<img src="'+SP_TAMPON+'" style="max-height:60px;max-width:180px;object-fit:contain;">'+
-      '</div>'+
-    '</div>'+
     'SOLUTION PHONE · RCS Mâcon B 801 044 785 · solution.phone71@gmail.com · www.solution-phone.fr'+
     '</div>'+
     '</div></body></html>');
@@ -9830,6 +9825,72 @@ function repGoStep(n){
   if(n===3) repUpdateDevisRecap();
   if(n===4){ setTimeout(repAutoFillStep4, 400); repUpdateFacturePreview(); }
   if(n===5) repUpdateStep5();
+}
+
+
+function repUpdateStep5(){
+  var d = repDossierCourant;
+  if(!d) return;
+
+  var f = d.facture||{};
+  var bonusQR = f.bonusQR || (document.getElementById('rep-qr-actif')||{checked:false}).checked;
+
+  var noBonus  = document.getElementById('rep-qr-no-bonus');
+  var qrRecap  = document.getElementById('rep-qr-recap');
+  var qrActions= document.getElementById('rep-qr-actions');
+
+  if(!bonusQR){
+    if(noBonus)  noBonus.style.display  = 'block';
+    if(qrRecap)  qrRecap.style.display  = 'none';
+    if(qrActions)qrActions.style.display= 'none';
+    return;
+  }
+
+  // Bonus QR actif → afficher récap
+  if(noBonus)  noBonus.style.display  = 'none';
+  if(qrRecap)  qrRecap.style.display  = 'block';
+  if(qrActions)qrActions.style.display= 'block';
+
+  // Afficher lien VosFactures si disponible
+  var btnVF = document.getElementById('btn-vf-link');
+  if(btnVF) btnVF.style.display = (f.vfUrl) ? 'block' : 'none';
+
+  // Organisme selon la marque
+  var marque = (d.appareil||{}).marque||'';
+  var organisme = marque.toLowerCase()==='apple' ? 'Ecosystem' : 'Ecologic';
+  var btnLabel = document.getElementById('rep-qr-btn-label');
+  if(btnLabel) btnLabel.textContent = organisme;
+
+  // Récap dossier final
+  var recap = document.getElementById('rep-dossier-recap-final');
+  if(recap){
+    var c = d.client||{};
+    var a = d.appareil||{};
+    var html2 = '<b>Client :</b> '+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'<br>'+
+      '<b>Tél :</b> '+(c.tel||'—')+'<br>'+
+      '<b>Appareil :</b> '+a.marque+' '+a.modele+'<br>'+
+      '<b>IMEI :</b> '+(a.imei||'—')+'<br>'+
+      '<b>Panne :</b> '+(d.panne||'—')+'<br>'+
+      '<b>N° dossier :</b> '+(d.numero||'—')+'<br>'+
+      '<b>Prix net client :</b> '+(f.prixFinal||f.prix||'—')+' € TTC<br>'+
+      '<b>Organisme :</b> '+organisme+'<br>'+
+      (d.photoImeiUrl?'<b>📷 Photo IMEI :</b> <a href="'+d.photoImeiUrl+'" target="_blank">Voir</a><br>':'<b>📷 Photo IMEI :</b> <span style="color:var(--warning);">Non prise</span><br>')+
+      (d.qrEnvoi?'<b>Envoi :</b> ✅ Dossier envoyé':'<b>Envoi :</b> En attente');
+    recap.innerHTML = html2;
+  }
+
+  // Récap QR
+  if(qrRecap){
+    var panne = document.getElementById('rep-qr-panne');
+    var panneLabel = panne && panne.options[panne.selectedIndex] ? panne.options[panne.selectedIndex].text : (d.panne||'—');
+    qrRecap.innerHTML =
+      '<b>Dossier :</b> '+(d.numero||'—')+'<br>'+
+      '<b>Appareil :</b> '+marque+' '+((d.appareil||{}).modele||'')+'<br>'+
+      '<b>IMEI :</b> '+((d.appareil||{}).imei||'—')+'<br>'+
+      '<b>Panne :</b> '+panneLabel+'<br>'+
+      '<b>Bonus QualiRépar :</b> <span style="color:var(--green);font-weight:700;">-25 €</span><br>'+
+      '<b>Organisme :</b> <span style="color:var(--blue);font-weight:700;">'+organisme+'</span>';
+  }
 }
 
 function repUpdateStatutBadge(){
