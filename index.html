@@ -1704,7 +1704,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div class="form-group"><label>Marque appareil *</label>
                       <select id="rep-qr-marque" onchange="repQRUpdateOrganisme();repQRAutoPanne();">
                         <option value="">— Choisir —</option>
-                        <optgroup label="🟢 Ecosystem (Apple)">
+                        <optgroup label="🔵 Ecologic (Apple)">
                           <option value="Apple">Apple</option>
                         </optgroup>
                         <optgroup label="🔵 Ecologic">
@@ -9953,7 +9953,7 @@ function repUpdateStep5(){
 
   // Organisme selon la marque
   var marque = (d.appareil||{}).marque||'';
-  var organisme = marque.toLowerCase()==='apple' ? 'Ecosystem' : 'Ecologic';
+  var organisme = 'Ecologic';
   var btnLabel = document.getElementById('rep-qr-btn-label');
   if(btnLabel) btnLabel.textContent = organisme;
 
@@ -10047,15 +10047,23 @@ function repSauvegarderClientManuel(){
     ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
   };
   } // fin if(repCurrentStep === 1)
+}
 
+function repSauvegarderClientManuel(){
+  if(!repDossierCourant) return;
+  var c = {
+    civilite: (document.getElementById('rep-civilite')||{value:''}).value,
+    nom:      (document.getElementById('rep-nom')||{value:''}).value.trim(),
+    prenom:   (document.getElementById('rep-prenom')||{value:''}).value.trim(),
+    tel:      (document.getElementById('rep-tel')||{value:''}).value.trim(),
+    email:    (document.getElementById('rep-email')||{value:''}).value.trim(),
+    adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim(),
+    cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
+    ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
+  };
   if(!c.nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
-
-  // Sauvegarder dans le dossier courant
   repDossierCourant.client = c;
-
-  // Sauvegarder dans Supabase
   repSauvegarderClientSupabase(c).then(function(){
-    // Rafraîchir le cache clients
     syncClientsFromSupabase();
   });
   showNotif('💾 Client enregistré !','success');
@@ -10413,7 +10421,7 @@ function repEnvoyerOrganisme(){
 
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var marque   = (d.appareil||{}).marque||'';
-  var organisme = marque.toLowerCase()==='apple' ? 'ecosystem' : 'ecologic';
+  var organisme = 'ecologic';
 
   if(organisme === 'ecologic'){
     repEnvoyerEcologic();
@@ -11414,6 +11422,18 @@ function repQRSelectPanne(panneKey){
 }
 
 // Auto-remplir depuis la panne du dossier (étape 3)
+
+
+function repQRUpdateOrganisme(){
+  var sel = document.getElementById('rep-qr-marque');
+  if(!sel) return;
+  var marque = sel.value;
+  // Toutes les marques → Ecologic
+  var orgLabel = document.getElementById('rep-qr-btn-label');
+  if(orgLabel) orgLabel.textContent = 'Ecologic';
+  var orgEl = document.getElementById('rep-qr-organisme');
+  if(orgEl) orgEl.textContent = 'Ecologic';
+}
 
 function repQRPopulateMarques(){
   // Les marques sont déjà dans le HTML du select
@@ -13015,7 +13035,7 @@ function rlDownloadQR() {
 // ============================================================
 
 var QR_BRAND_TYPE = {
-  Apple:    'ecosystem',
+  Apple:    'ecologic',
   Samsung:  'ecologic', Huawei:   'ecologic', Xiaomi:   'ecologic',
   Oppo:     'ecologic', OnePlus:  'ecologic', Honor:    'ecologic',
   Wiko:     'ecologic', Nokia:    'ecologic', Sony:     'ecologic',
@@ -13097,7 +13117,7 @@ function qrSelectMarque(marque) {
     if(qrData.appareil.bonusType){
       var isEco = qrData.appareil.bonusType === 'ecosystem';
       badge.style.display = '';
-      badge.innerHTML = '<span class="badge '+(isEco?'badge-blue':'badge-green')+'">'+(isEco?'🔵 Ecosystem (Apple)':'🟢 Ecologic')+'</span>'+
+      badge.innerHTML = '<span class="badge '+(isEco?'badge-blue':'badge-green')+'">'+(isEco?'🔵 Ecologic (Apple)':'🟢 Ecologic')+'</span>'+
         '<span style="font-size:12px;color:var(--text-muted);margin-left:8px;">Bonus -25€ applicable</span>';
     } else {
       badge.style.display = 'none';
@@ -13196,7 +13216,7 @@ function qrCalcTotal() {
   if(bonusTog){
     bonusTog.style.display = bonusType ? '' : 'none';
     var lbl = document.getElementById('qr-bonus-type-label');
-    if(lbl) lbl.textContent = bonusType==='ecosystem' ? '(Ecosystem — Apple)' : '(Ecologic)';
+    if(lbl) lbl.textContent = '(Ecologic)';
   }
 
   // Render tableau
