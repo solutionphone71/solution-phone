@@ -13037,7 +13037,10 @@ function printMoisVentes(mois){
       <div class="page-title">🔄 Suivi QualiRépar</div>
       <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
     </div>
-    <button class="btn btn-primary" onclick="renderSuiviQR()" style="gap:6px;">🔄 Actualiser</button>
+    <div style="display:flex;gap:10px;">
+      <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
+      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
+    </div>
   </div>
 
   <!-- Statistiques rapides -->
@@ -14179,6 +14182,146 @@ function qrChangerStatut(dossierId){
   saveBonDepotSupabase(d);
   renderSuiviQR();
   showNotif('Statut → '+labels[statuts.indexOf(newStatut)], 'success');
+}
+// ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+//  SUIVI QR — Vérification automatique statut via API
+// ══════════════════════════════════════════════════════════════════
+
+async function qrVerifierStatutEcosystem(dossier){
+  var q = dossier.qrEnvoi || {};
+  var ecosystemId = q.ecosystemId;
+  if(!ecosystemId) return null;
+
+  var user      = localStorage.getItem('sp_eco_user') || '501710';
+  var password  = localStorage.getItem('sp_eco_pass') || 'Coincoin71?!';
+  var baseUrl   = 'https://api.repairerportal.ecosystem.eco';
+
+  try {
+    // Auth
+    var authRes = await fetch(baseUrl+'/api/authenticate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:user, password:password})
+    });
+    var authData = await authRes.json();
+    var jwt = authData.id_token || authData.token || authData.access_token;
+    if(!jwt) return null;
+
+    // GET statut du dossier
+    var res = await fetch(baseUrl+'/api/repair-reimbursements/'+ecosystemId, {
+      method:'GET',
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'}
+    });
+    if(!res.ok) return null;
+    var data = await res.json();
+    console.log('Ecosystem status:', data);
+
+    // Mapper le statut API → statut interne
+    var apiStatut = data.status || data.state || data.reimbursementStatus || '';
+    var map = {
+      'SUBMITTED':'Sent', 'PENDING':'Pending', 'PROCESSING':'Processing',
+      'VALIDATED':'Approved', 'APPROVED':'Approved',
+      'PAID':'Paid', 'REIMBURSED':'Paid',
+      'REJECTED':'Rejected', 'REFUSED':'Rejected'
+    };
+    return map[apiStatut.toUpperCase()] || apiStatut || 'Sent';
+  } catch(e){
+    console.warn('Ecosystem status check error:', e);
+    return null;
+  }
+}
+
+async function qrVerifierStatutEcologic(dossier){
+  var q = dossier.qrEnvoi || {};
+  var supportId = q.supportId;
+  if(!supportId) return null;
+
+  var token  = localStorage.getItem('sp_ecologic_token') || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
+  var siteId = localStorage.getItem('sp_ecologic_siteid') || 'f3f52871-5be0-4c26-9082-002479b9cf4e';
+
+  try {
+    var res = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({
+        action: 'GetSupportRequest',
+        token: token,
+        siteId: siteId,
+        supportRequestId: supportId
+      })
+    });
+    var data = await res.json();
+    console.log('Ecologic status:', data);
+
+    var apiStatut = data.status || data.ResponseData && data.ResponseData.status || '';
+    var map = {
+      'pending':'Sent', 'submitted':'Sent', 'processing':'Processing',
+      'validated':'Approved', 'approved':'Approved',
+      'paid':'Paid', 'reimbursed':'Paid',
+      'rejected':'Rejected', 'refused':'Rejected'
+    };
+    return map[apiStatut.toLowerCase()] || (data.status === 'success' ? 'Sent' : null);
+  } catch(e){
+    console.warn('Ecologic status check error:', e);
+    return null;
+  }
+}
+
+async function qrVerifierUnDossier(dossierId){
+  var d = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(dossierId); });
+  if(!d || !d.qrEnvoi) return;
+
+  var btn = document.querySelector('[onclick="qrVerifierUnDossier(\''+dossierId+'\')"]');
+  if(btn){ btn.disabled=true; btn.textContent='⏳'; }
+
+  var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
+  var newStatut = isEcosystem
+    ? await qrVerifierStatutEcosystem(d)
+    : await qrVerifierStatutEcologic(d);
+
+  if(btn){ btn.disabled=false; btn.textContent='🔄'; }
+
+  if(newStatut && newStatut !== d.qrEnvoi.statut){
+    d.qrEnvoi.statut = newStatut;
+    saveBonsDepot();
+    saveBonDepotSupabase(d);
+    renderSuiviQR();
+    showNotif('Statut mis à jour : '+newStatut, 'success');
+  } else if(newStatut){
+    showNotif('Statut inchangé : '+newStatut, 'success');
+  } else {
+    showNotif('Impossible de récupérer le statut — API non disponible', 'error');
+  }
+}
+
+async function qrVerifierTousLesStatuts(){
+  var dossiers = (window.bonsDepot||[]).filter(function(d){ return d.qrEnvoi && d.qrEnvoi.statut !== 'Paid' && d.qrEnvoi.statut !== 'Rejected'; });
+  if(!dossiers.length){ showNotif('Aucun dossier en attente', 'success'); return; }
+
+  var btnAll = document.getElementById('btn-qr-verif-all');
+  if(btnAll){ btnAll.disabled=true; btnAll.textContent='⏳ Vérification ('+dossiers.length+' dossiers)...'; }
+
+  var updated = 0;
+  for(var i=0; i<dossiers.length; i++){
+    var d = dossiers[i];
+    var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
+    var newStatut = isEcosystem
+      ? await qrVerifierStatutEcosystem(d)
+      : await qrVerifierStatutEcologic(d);
+    if(newStatut && newStatut !== d.qrEnvoi.statut){
+      d.qrEnvoi.statut = newStatut;
+      saveBonsDepot();
+      saveBonDepotSupabase(d);
+      updated++;
+    }
+    // Petite pause entre les appels
+    await new Promise(function(r){ setTimeout(r, 300); });
+  }
+
+  if(btnAll){ btnAll.disabled=false; btnAll.textContent='🔄 Tout vérifier'; }
+  renderSuiviQR();
+  showNotif(updated > 0 ? updated+' statut(s) mis à jour ✅' : 'Tous les statuts sont à jour', 'success');
 }
 // ══════════════════════════════════════════════════════════════════
 </script>
