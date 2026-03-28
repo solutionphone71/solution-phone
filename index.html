@@ -1402,18 +1402,18 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
-                    <select id="rep-civilite" onchange="repAutoSave()">
+                    <select id="rep-civilite">
                       <option value="">--</option><option value="M." selected>M.</option><option value="Mme">Mme</option>
                     </select></div>
-                  <div class="form-group"><label>Nom *</label><input type="text" id="rep-nom" placeholder="Dupont" oninput="repAutoSave()"></div>
-                  <div class="form-group"><label>Prénom</label><input type="text" id="rep-prenom" placeholder="Jean" oninput="repAutoSave()"></div>
+                  <div class="form-group"><label>Nom *</label><input type="text" id="rep-nom" placeholder="Dupont"></div>
+                  <div class="form-group"><label>Prénom</label><input type="text" id="rep-prenom" placeholder="Jean"></div>
                 </div>
-                <div class="form-group"><label>Téléphone *</label><input type="tel" id="rep-tel" placeholder="06 XX XX XX XX" oninput="repAutoSave()"></div>
-                <div class="form-group"><label>Email</label><input type="email" id="rep-email" placeholder="client@gmail.com" oninput="repAutoSave()"></div>
-                <div class="form-group"><label>Adresse</label><input type="text" id="rep-adresse" placeholder="Adresse" oninput="repAutoSave()"></div>
+                <div class="form-group"><label>Téléphone *</label><input type="tel" id="rep-tel" placeholder="06 XX XX XX XX"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="rep-email" placeholder="client@gmail.com"></div>
+                <div class="form-group"><label>Adresse</label><input type="text" id="rep-adresse" placeholder="Adresse"></div>
                 <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
-                  <div class="form-group"><label>Code postal</label><input type="text" id="rep-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="repAutoSave()"></div>
-                  <div class="form-group"><label>Ville</label><input type="text" id="rep-ville" placeholder="Ville" oninput="repAutoSave()"></div>
+                  <div class="form-group"><label>Code postal</label><input type="text" id="rep-cp" maxlength="5" placeholder="CP" inputmode="numeric"></div>
+                  <div class="form-group"><label>Ville</label><input type="text" id="rep-ville" placeholder="Ville"></div>
                 </div>
               </div>
             </div>
@@ -1441,17 +1441,17 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Marque *</label>
-                      <select id="dep-marque" onchange="repAutoSaveDebounced();repMajOrganismePhoto();">
+                      <select id="dep-marque" onchange="repMajOrganismePhoto();">
                         <option value="">— Choisir —</option>
                         <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
                         <option>Huawei</option><option>OnePlus</option><option>Google</option><option>Autre</option>
                       </select></div>
-                    <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repAutoSaveDebounced()"></div>
+                    <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro"></div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="352099..." oninput="repAutoSave();repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
+                        <input type="text" id="dep-imei" placeholder="352099..." oninput="repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
@@ -1475,10 +1475,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       </div>
                       <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
                     </div>
-                    <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSaveDebounced()"></div>
+                    <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit"></div>
                   </div>
                   <div class="form-group"><label>Code / Mot de passe</label>
-                    <input type="text" id="dep-code" placeholder="ex : 1234 (si le client le souhaite)" oninput="repAutoSaveDebounced()">
+                    <input type="text" id="dep-code" placeholder="ex : 1234 (si le client le souhaite)">
                     <div style="font-size:11px;color:var(--warning);margin-top:4px;">⚠️ Renseigné uniquement si le client le souhaite</div>
                   </div>
                 </div>
@@ -1493,7 +1493,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-verre"> Protection écran</label>
                   <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-autre"> Autre</label>
                 </div>
-                <div class="form-group" style="margin-top:8px;"><label>Préciser</label><input type="text" id="dep-acc-autre-txt" placeholder="ex : AirPods, carte SIM..." oninput="repAutoSaveDebounced()"></div>
+                <div class="form-group" style="margin-top:8px;"><label>Préciser</label><input type="text" id="dep-acc-autre-txt" placeholder="ex : AirPods, carte SIM..."></div>
               </div>
             </div>
             <div class="card">
@@ -1510,7 +1510,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-charge"> Connecteur charge HS</label>
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-batterie"> Batterie défaillante</label>
               </div>
-              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." oninput="repAutoSaveDebounced()" style="font-size:16px;"></textarea></div>
+              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." style="font-size:16px;"></textarea></div>
             </div>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
@@ -1530,7 +1530,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
-                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSaveDebounced();repCheckEligibiliteDebounced();"
+                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repCheckEligibiliteDebounced();"
                       style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
                       <option value="">-- Sélectionner la panne --</option>
                       <optgroup label="📱 Écran">
@@ -1574,7 +1574,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </select>
                     <textarea id="dep-panne" rows="2"
                       placeholder="Précisions supplémentaires (optionnel)..."
-                      oninput="repAutoSaveDebounced();repCheckEligibiliteDebounced()"
+                      oninput="repCheckEligibiliteDebounced()"
                       style="margin-top:6px;font-size:16px;"></textarea>
                   </div>
 
@@ -1582,7 +1582,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div id="rep-inelig-alert" style="display:none;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
 
                   <div class="form-group"><label>Pièce à commander</label>
-                    <select id="dep-piece" onchange="repAutoSaveDebounced()">
+                    <select id="dep-piece">
                       <option value="">— Aucune —</option>
                       <option value="Écran">Écran</option><option value="Batterie">Batterie</option><option value="Vitre arrière">Vitre arrière</option>
                       <option value="Connecteur de charge">Connecteur de charge</option><option value="Caméra arrière">Caméra arrière</option>
@@ -1615,7 +1615,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </div>
                   </div>
                   <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
-                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSaveDebounced()" style="font-size:16px;"></textarea>
+                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." style="font-size:16px;"></textarea>
                   </div>
                 </div>
               </div>
@@ -9910,7 +9910,6 @@ function repPanneSelect(val){
     ta.style.display = 'block'; // Afficher pour saisie libre
     if(val === 'Autre panne - voir description') ta.focus();
   }
-  repAutoSaveDebounced();
   // Auto-détecter la pièce Ecosystem selon la panne
   repPanneToEcosystem(val);
 }
@@ -9930,7 +9929,6 @@ function repPanneToEcosystem(panne){
   var sel = document.getElementById('dep-piece');
   if(sel && piece){
     sel.value = piece;
-    repAutoSaveDebounced();
   }
 }
 
@@ -10111,6 +10109,8 @@ function repAutoSave(){
 }
 
 function repGoStep(n){
+  // Sauvegarder le step courant avant de changer (remplace l'autosave temps réel)
+  if(repDossierCourant && typeof _repGoStepSave === 'function') _repGoStepSave();
   repCurrentStep = n;
   [1,2,3,4,5].forEach(function(i){
     var s=document.getElementById('rep-step-'+i);
@@ -10358,7 +10358,7 @@ async function repSauvegarderClientSupabase(c){
 }
 
 function repStep2Next(){
-  repAutoSave();
+  repAutoSave(); // lit tous les champs step 2
   var a=repDossierCourant.appareil;
   if(!a.marque||!a.modele){showNotif('⚠️ Marque et Modèle sont obligatoires','error');return;}
   if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
