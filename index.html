@@ -384,6 +384,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
+  <div class="mob-menu-item" onclick="showPageMobile('suivi-qr','');renderSuiviQR();closeMobileMenu()"><span class="mob-menu-icon">🔄</span>Suivi QualiRépar</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
   <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
@@ -465,6 +466,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-group-label">Réparations</div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
+    <div class="nav-item" onclick="showPage('suivi-qr',this);renderSuiviQR()"><span class="nav-icon">🔄</span><span>Suivi QR</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
 
     <div class="nav-sep"></div>
@@ -3443,6 +3445,7 @@ function showPage(id,el){
       repLoadDossiers(); // vue liste normale
     }
   }
+  if(id==='suivi-qr'){renderSuiviQR();}
   if(id==='params'){paramsLoad();}
   if(id==='neufs-access'){naLoad();naRender();}
   if(id==='depenses'){renderDepenses();}
@@ -3545,8 +3548,11 @@ function renderCaisse(){
     '<div class="caisse-card"><div class="caisse-label">QualiRépar</div><div class="caisse-value" style="color:var(--green)">'+tot.quali.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">Achats Smart.</div><div class="caisse-value">'+tot.aS.toFixed(2)+' €</div></div>';
   document.getElementById('caisse-table').innerHTML=caisse.map(function(c,i){
-    var ht=(c.ttc/1.2).toFixed(2);var tva=(c.ttc-c.ttc/1.2).toFixed(2);
-    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+c.ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="editCaisse(\''+c.date+'\')">✏️</button><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
+    // TTC réel = ttc stocké + quali (si l'ancien import n'incluait pas le bonus)
+    // Détection : si ttc < quali*4, le bonus n'était probablement pas inclus (ancien format)
+    var ttcTotal = c.ttc; // nouveau format : bonus déjà dans ttc
+    var ht=(ttcTotal/1.2).toFixed(2);var tva=(ttcTotal-ttcTotal/1.2).toFixed(2);
+    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+ttcTotal.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="editCaisse(\''+c.date+'\')">✏️</button><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
   }).join('')||'<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune saisie</td></tr>';
 }
 
@@ -3560,20 +3566,36 @@ function importPhonilabToCaisse(input) {
     if (lines.length < 2) { showNotif('Fichier CSV vide', 'error'); return; }
 
     var rawHeaders = lines[0].split(sep).map(function(h){ return h.replace(/"/g,'').trim(); });
-    // Chercher les colonnes par nom exact (fichier lu en ISO-8859-1)
-    var iDate    = rawHeaders.indexOf('Date valeur');
-    var iMontant = rawHeaders.indexOf('Montant');
-    var iMethode = rawHeaders.indexOf('M\u00e9thode');   // Méthode
+    console.log('CSV headers:', rawHeaders); // debug
 
-    // Fallback si accents manquants (au cas où)
+    // Chercher les colonnes par nom — Phonilab a plusieurs formats selon la version
+    var iDate    = rawHeaders.indexOf('Date valeur');
+    var iMethode = rawHeaders.indexOf('M\u00e9thode'); // Méthode
+
+    // Détection colonne montant : priorité à "Montant TTC", sinon "Montant"
+    var iMontantTTC = rawHeaders.findIndex(function(h){ return h.toLowerCase().replace(/[^a-z0-9]/g,'').includes('montantttc') || h.toLowerCase() === 'montant ttc'; });
+    var iMontantHT  = rawHeaders.findIndex(function(h){ return h.toLowerCase().replace(/[^a-z0-9]/g,'').includes('montanths') || h.toLowerCase() === 'montant ht'; });
+    var iMontantBrut = rawHeaders.indexOf('Montant');
+
+    // Si colonne TTC explicite → l'utiliser directement (valeur déjà TTC)
+    // Si colonne HT explicite → multiplier par 1.2 pour obtenir TTC
+    // Si juste "Montant" → comportement selon format (TTC avant le 25/03/2026)
+    var iMontant = iMontantTTC >= 0 ? iMontantTTC
+                 : iMontantBrut >= 0 ? iMontantBrut
+                 : -1;
+    var montantEstHT = iMontantTTC < 0 && iMontantHT >= 0;
+    if(montantEstHT) iMontant = iMontantHT;
+
+    // Fallback accents manquants
     if(iDate    < 0) iDate    = rawHeaders.findIndex(function(h){ return h.toLowerCase().includes('date'); });
     if(iMontant < 0) iMontant = rawHeaders.findIndex(function(h){ return h.toLowerCase().includes('montant'); });
     if(iMethode < 0) iMethode = rawHeaders.findIndex(function(h){ return h.toLowerCase().replace(/[^\x00-\x7F]/g,'').includes('thode'); });
 
     if(iDate < 0 || iMontant < 0) {
-      showNotif('Format CSV non reconnu : ' + rawHeaders.join(', '), 'error');
+      showNotif('Format CSV non reconnu. Colonnes trouvées : ' + rawHeaders.join(', '), 'error');
       return;
     }
+    if(montantEstHT) showNotif('ℹ️ Import : colonne "Montant HT" détectée — conversion HT→TTC (×1.2)', 'success');
 
     var byDate = {};
     for (var i = 1; i < lines.length; i++) {
@@ -3593,6 +3615,8 @@ function importPhonilabToCaisse(input) {
 
       var montant = parseFloat((cols[iMontant]||'0').replace(',','.').replace('\u20ac','').trim()) || 0;
       if (montant === 0) continue;
+      // Si la colonne est HT, convertir en TTC
+      if(montantEstHT) montant = Math.round(montant * 1.2 * 100) / 100;
 
       var methode = (iMethode >= 0 ? cols[iMethode] : '').trim();
       // Normaliser les méthodes sans dépendre de l'encodage des accents
@@ -3607,7 +3631,7 @@ function importPhonilabToCaisse(input) {
 
       if (isBonus) {
         d.quali += montant;
-        // Ne pas ajouter au ttc commercial (c'est un bonus QualiRépar)
+        d.ttc   += montant; // Bonus QualiRépar = CA avec TVA → inclus dans TTC
       } else {
         d.ttc += montant;
         if      (methodeNorm === 'cb' || methodeNorm.includes('carte') || methodeNorm.includes('bank')) d.cb       += montant;
@@ -3654,7 +3678,7 @@ function importPhonilabToCaisse(input) {
 function exportCaisseCSV(){
   var cc=getReport(getMoisActuel());
   var headers=['Date','TTC','HT','TVA','QualiRepar','Cheque','CB','Especes','Virement','Depot Esp','Depot Cheque','Achats Smart','Caisse Finale'];
-  var rows=caisse.map(function(c){var ht=(c.ttc/1.2).toFixed(2);var tva=(c.ttc-c.ttc/1.2).toFixed(2);cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));return[fmtDate(c.date),c.ttc,ht,tva,c.quali||0,c.cheque||0,c.cb||0,c.especes||0,c.virement||0,c.depotEsp||0,c.depotCheque||0,c.achatSmart||0,cc.toFixed(2)].join(';');});
+  var rows=caisse.map(function(c){var ttcTotal=c.ttc;var ht=(ttcTotal/1.2).toFixed(2);var tva=(ttcTotal-ttcTotal/1.2).toFixed(2);cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));return[fmtDate(c.date),c.ttc,ht,tva,c.quali||0,c.cheque||0,c.cb||0,c.especes||0,c.virement||0,c.depotEsp||0,c.depotCheque||0,c.achatSmart||0,cc.toFixed(2)].join(';');});
   var csv=[headers.join(';')].concat(rows).join('\n');
   var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='Z_Caisse.csv';a.click();
@@ -13005,7 +13029,73 @@ function printMoisVentes(mois){
         '<div>Document généré le '+new Date().toLocaleDateString('fr-FR')+' · Solution Phone · 21 Rue Gambetta · 71000 Mâcon</div>'+
         '<div style="color:#c0392b;font-weight:700;">CONFIDENTIEL — USAGE COMPTABLE</div>'+
       '</div>'+
-    '</div><script>window.onload=function(){};<\/script></body></html>';
+    '</div><script>window.onload=function(){};<\/script>
+<!-- ══ PAGE SUIVI QUALIREPAR ══ -->
+<div class="page" id="page-suivi-qr">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🔄 Suivi QualiRépar</div>
+      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
+    </div>
+    <button class="btn btn-primary" onclick="renderSuiviQR()" style="gap:6px;">🔄 Actualiser</button>
+  </div>
+
+  <!-- Statistiques rapides -->
+  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+  <!-- Ecosystem -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
+      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#f0fdf4;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecosystem-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ecologic -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
+      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#eff6ff;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">Support ID</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecologic-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body></html>';
 
   var w = window.open('','_blank','width=1100,height=850');
   w.document.write(html);
@@ -14003,4 +14093,92 @@ qrInit = function() {
 //  FIN PARCOURS CLIENT TABLETTE
 // ============================================================
 
+
+// ══════════════════════════════════════════════════════════════════
+//  SUIVI QUALIREPAR
+// ══════════════════════════════════════════════════════════════════
+var QR_STATUTS_LABELS = {
+  'Sent':       { label: '📤 En cours vérification', cls: '#92400e', bg: '#fef3c7' },
+  'Approved':   { label: '✅ Approuvé',               cls: '#166534', bg: '#f0fdf4' },
+  'Paid':       { label: '💶 Remboursé',               cls: '#1d4ed8', bg: '#eff6ff' },
+  'Rejected':   { label: '❌ Refusé',                  cls: '#dc2626', bg: '#fef2f2' },
+  'Pending':    { label: '⏳ En attente',              cls: '#92400e', bg: '#fef3c7' },
+  'Processing': { label: '🔄 En traitement',           cls: '#6d28d9', bg: '#f5f3ff' },
+};
+
+function qrStatutBadge(statut){
+  var s = QR_STATUTS_LABELS[statut] || { label: statut||'—', cls: '#6b7280', bg: '#f8fafc' };
+  return '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:'+s.cls+';background:'+s.bg+';">'+s.label+'</span>';
+}
+
+function renderSuiviQR(){
+  var dossiers = (window.bonsDepot||[]).filter(function(d){ return d.qrEnvoi; });
+  var isEcosystem = function(d){ var m=d.appareil&&d.appareil.marque; return typeof QR_BRAND_TYPE!=='undefined'&&QR_BRAND_TYPE[m]==='ecosystem'; };
+  var ecosystem = dossiers.filter(isEcosystem);
+  var ecologic  = dossiers.filter(function(d){ return !isEcosystem(d); });
+
+  // Stats
+  var stats = document.getElementById('qr-suivi-stats');
+  if(stats){
+    var paid     = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Paid'; }).length;
+    var approved = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Approved'; }).length;
+    var sent     = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Sent'||!d.qrEnvoi.statut; }).length;
+    var rejected = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Rejected'; }).length;
+    stats.innerHTML =
+      '<div class="card" style="text-align:center;padding:12px 8px;"><div style="font-size:11px;color:var(--text-muted);">Total</div><div style="font-size:22px;font-weight:800;">'+dossiers.length+'</div><div style="font-size:11px;color:var(--text-muted);">'+(dossiers.length*25)+' € attendus</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:#fef3c7;border-color:#f59e0b;"><div style="font-size:11px;color:#92400e;">En vérification</div><div style="font-size:22px;font-weight:800;color:#92400e;">'+sent+'</div><div style="font-size:11px;color:#92400e;">'+(sent*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:#f0fdf4;border-color:#22c55e;"><div style="font-size:11px;color:#166534;">Approuvés</div><div style="font-size:22px;font-weight:800;color:#166534;">'+approved+'</div><div style="font-size:11px;color:#166534;">'+(approved*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:#eff6ff;border-color:#3b82f6;"><div style="font-size:11px;color:#1d4ed8;">Remboursés</div><div style="font-size:22px;font-weight:800;color:#1d4ed8;">'+paid+'</div><div style="font-size:11px;color:#1d4ed8;">'+(paid*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:#fef2f2;border-color:#fca5a5;"><div style="font-size:11px;color:#dc2626;">Refusés</div><div style="font-size:22px;font-weight:800;color:#dc2626;">'+rejected+'</div><div style="font-size:11px;color:#dc2626;">'+(rejected*25)+' €</div></div>';
+  }
+
+  function buildRows(list, idCol){
+    if(!list.length) return '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier</td></tr>';
+    return list.sort(function(a,b){ return (b.qrEnvoi.date||'').localeCompare(a.qrEnvoi.date||''); }).map(function(d){
+      var c=d.client||{}, a=d.appareil||{}, q=d.qrEnvoi||{};
+      var dateEnvoi = q.date ? new Date(q.date).toLocaleDateString('fr-FR') : '—';
+      var refId = idCol==='ecosystem' ? (q.ecosystemId||'—') : (q.supportId||q.claimId||'—');
+      return '<tr style="border-bottom:1px solid var(--border);">'+
+        '<td style="padding:8px 10px;"><b>'+d.numero+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+fmtDate(d.date)+'</span></td>'+
+        '<td style="padding:8px 10px;">'+(c.prenom||'')+' '+c.nom+'<br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
+        '<td style="padding:8px 10px;">'+(a.marque||'')+' '+(a.modele||'')+'<br><span style="font-size:11px;color:var(--text-muted);">'+(a.imei||'—')+'</span></td>'+
+        '<td style="padding:8px 10px;">'+dateEnvoi+'</td>'+
+        '<td style="padding:8px 10px;font-family:monospace;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="'+refId+'">'+refId+'</td>'+
+        '<td style="padding:8px 10px;">'+qrStatutBadge(q.statut||'Sent')+'</td>'+
+        '<td style="padding:8px 10px;"><button class="btn btn-sm" onclick="qrChangerStatut(''+d.id+'')">✏️</button></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  var ecoCount = document.getElementById('qr-eco-count');
+  var ecolCount = document.getElementById('qr-ecol-count');
+  var ecoTbody = document.getElementById('qr-ecosystem-tbody');
+  var ecolTbody = document.getElementById('qr-ecologic-tbody');
+  if(ecoCount)  ecoCount.textContent  = ecosystem.length+' dossier(s)';
+  if(ecolCount) ecolCount.textContent = ecologic.length+' dossier(s)';
+  if(ecoTbody)  ecoTbody.innerHTML    = buildRows(ecosystem,'ecosystem');
+  if(ecolTbody) ecolTbody.innerHTML   = buildRows(ecologic,'ecologic');
+}
+
+function qrChangerStatut(dossierId){
+  var statuts = ['Sent','Approved','Paid','Rejected','Pending','Processing'];
+  var labels  = ['📤 En cours vérification','✅ Approuvé','💶 Remboursé','❌ Refusé','⏳ En attente','🔄 En traitement'];
+  var d = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(dossierId); });
+  if(!d||!d.qrEnvoi) return;
+  var current = d.qrEnvoi.statut||'Sent';
+  var idx = window.prompt(
+    'Statut de '+d.numero+'\nActuel : '+current+'\n\n'+
+    statuts.map(function(s,i){ return (i+1)+'. '+labels[i]+(s===current?' ←':''); }).join('\n')+
+    '\n\nEntrez le numéro :'
+  );
+  if(!idx) return;
+  var newStatut = statuts[parseInt(idx)-1];
+  if(!newStatut) return;
+  d.qrEnvoi.statut = newStatut;
+  saveBonsDepot();
+  saveBonDepotSupabase(d);
+  renderSuiviQR();
+  showNotif('Statut → '+labels[statuts.indexOf(newStatut)], 'success');
+}
+// ══════════════════════════════════════════════════════════════════
 </script>
