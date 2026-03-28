@@ -1441,7 +1441,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Marque *</label>
-                      <select id="dep-marque" oninput="repAutoSave()">
+                      <select id="dep-marque" oninput="repAutoSave();repMajOrganismePhoto();">
                         <option value="">— Choisir —</option>
                         <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
                         <option>Huawei</option><option>OnePlus</option><option>Google</option><option>Autre</option>
@@ -1456,7 +1456,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
                         <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;display:flex;align-items:center;gap:8px;">
-                          📷 <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour Ecosystem</span>
+                          📷 <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour QualiRépar</span>
                         </div>
                         <div id="dep-photo-thumb" style="display:none;margin-top:4px;">
                           <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f0fdf4;border:1.5px solid #22c55e;border-radius:10px;">
@@ -9949,6 +9949,21 @@ function repClearForm(){
 }
 
 
+
+// Met à jour le label organisme dans la miniature photo quand la marque change
+function repMajOrganismePhoto(){
+  if(!repDossierCourant) return;
+  var marqueEl = document.getElementById('dep-marque');
+  var marque = marqueEl ? marqueEl.value : '';
+  var org = document.getElementById('dep-photo-org');
+  if(!org) return;
+  if(!marque){ org.textContent = 'Prête pour QualiRépar'; org.style.color='#16a34a'; return; }
+  var ecosystemBrands = ['Samsung','Huawei','Oppo','Honor','Blackview','Vivo','TCL'];
+  var isEco = ecosystemBrands.indexOf(marque) >= 0;
+  org.textContent = isEco ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
+  org.style.color  = isEco ? '#16a34a' : '#2563eb';
+}
+
 // ── Miniature photo IMEI ─────────────────────────────────────
 function repAfficherPhotoThumb(url, marque){
   var empty = document.getElementById('dep-photo-empty');
@@ -11073,35 +11088,31 @@ async function repOCRImei(){
     };
 
     btnCapture.onclick = async function(){
-      btnCapture.disabled=true;
-
       // ── ÉTAPE 1 : Capture instantanée ──
       var canvas = document.createElement('canvas');
       canvas.width=video.videoWidth; canvas.height=video.videoHeight;
       canvas.getContext('2d').drawImage(video,0,0);
       stream.getTracks().forEach(function(t){t.stop();});
 
+      // → Bouton change IMMÉDIATEMENT après la prise de vue
+      btnCapture.disabled = true;
+      btnCapture.style.background = '#16a34a';
+      btnCapture.textContent = '✅ Photo prise !';
+
       // Afficher la miniature IMMÉDIATEMENT dans la modale
       var previewUrl = canvas.toDataURL('image/jpeg', 0.7);
       video.style.display='none';
       hint.style.display='none';
-      btnCapture.style.display='none';
       var thumbPreview = document.createElement('img');
       thumbPreview.src = previewUrl;
-      thumbPreview.style.cssText='width:180px;height:135px;object-fit:cover;border-radius:10px;border:3px solid #4ade80;';
-      modal.insertBefore(thumbPreview, status);
+      thumbPreview.style.cssText='width:180px;height:135px;object-fit:cover;border-radius:10px;border:3px solid #4ade80;margin-top:8px;';
+      modal.insertBefore(thumbPreview, btnCapture);
 
       // Afficher aussi dans le formulaire dès la capture
       var marque = repDossierCourant && repDossierCourant.appareil && repDossierCourant.appareil.marque;
       repAfficherPhotoThumb(previewUrl, marque);
       status.style.display='block';
-      status.textContent='📸 Photo capturée !';
-
-      // Capture
-      var canvas = document.createElement('canvas');
-      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-      canvas.getContext('2d').drawImage(video,0,0);
-      stream.getTracks().forEach(function(t){t.stop();});
+      status.textContent='🗜️ Traitement en cours...';
 
       // ── ÉTAPE 2 : Compression + Upload ──
       status.textContent='🗜️ Compression...';
