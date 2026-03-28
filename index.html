@@ -3398,43 +3398,12 @@ function showPage(id,el){
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
   if(id==='reparations'){
-    // Restaurer le dossier courant depuis localStorage si nécessaire
-    if(!window.repDossierCourant){
-      try {
-        var saved = localStorage.getItem('sp_rep_dossier_courant');
-        if(saved){
-          window.repDossierCourant = JSON.parse(saved);
-          repLoadDossiers();
-          // Réouvrir le dossier
-          var dc = window.repDossierCourant;
-          if(dc && dc.id){
-            var dosView = document.getElementById('rep-dossier-view');
-            var listeView = document.getElementById('rep-liste-view');
-            if(dosView) dosView.style.display='block';
-            if(listeView) listeView.style.display='none';
-            repLoadFormFromDossier();
-            var tit = document.getElementById('rep-dossier-titre');
-            var num = document.getElementById('rep-dossier-num');
-            if(tit) tit.textContent=(dc.client.prenom||'')+' '+(dc.client.nom||'');
-            if(num) num.textContent=dc.numero+' · '+fmtDate(dc.date);
-            repUpdateStatutBadge();
-            var stepMap={depot:1,devis:3,facture:4,qr:5,cloture:5};
-            repGoStep(stepMap[dc.statut]||1);
-          }
-        } else { repLoadDossiers(); }
-      } catch(e){ repLoadDossiers(); }
+    // Si un dossier est déjà ouvert en mémoire, maintenir la vue dossier
+    var _dosView = document.getElementById('rep-dossier-view');
+    if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
+      repLoadFormFromDossier(); // recharger les champs depuis repDossierCourant
     } else {
-      // Dossier déjà en mémoire : juste mettre à jour la liste en arrière-plan
-      repLoadDossiers();
-      // Maintenir le dossier visible
-      var dosView = document.getElementById('rep-dossier-view');
-      var listeView = document.getElementById('rep-liste-view');
-      if(dosView && dosView.style.display==='none' && window.repDossierCourant){
-        dosView.style.display='block';
-        if(listeView) listeView.style.display='none';
-        repLoadFormFromDossier();
-        repUpdateStatutBadge();
-      }
+      repLoadDossiers(); // vue liste normale
     }
   }
   if(id==='params'){paramsLoad();}
@@ -9420,7 +9389,6 @@ function repShowListe(){
   document.getElementById('rep-liste-view').style.display='block';
   document.getElementById('rep-dossier-view').style.display='none';
   repDossierCourant = null;
-  try { localStorage.removeItem('sp_rep_dossier_courant'); } catch(e){}
   renderRepListe();
 }
 
@@ -10382,8 +10350,7 @@ function repSauvegarderSupabaseDebounced(depot){
 
 function repSauvegarderDossier(){
   if(!repDossierCourant) return;
-  // Sauvegarder aussi dans localStorage pour restauration au retour sur l'onglet
-  try { localStorage.setItem('sp_rep_dossier_courant', JSON.stringify(repDossierCourant)); } catch(e){}
+
   var idx = repDossiers.findIndex(function(d){ return String(d.id)===String(repDossierCourant.id); });
   if(idx>=0){ repDossiers[idx]=JSON.parse(JSON.stringify(repDossierCourant)); }
   else { repDossiers.push(JSON.parse(JSON.stringify(repDossierCourant))); }
@@ -12255,39 +12222,30 @@ function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(b
 
 async function loadBonsDepot(){
   try {
-    // Charger l'existant localStorage AVANT Supabase pour préserver adresse/cp/ville
-    // (les colonnes peuvent ne pas exister côté Supabase)
-    var _localRaw = localStorage.getItem('sp_bons_depot');
-    var _localMap = {};
-    if(_localRaw){ try{ JSON.parse(_localRaw).forEach(function(b){ _localMap[String(b.id)]=b; }); }catch(e){} }
-    var _dcRaw = localStorage.getItem('sp_rep_dossier_courant');
-    var _dc = null;
-    if(_dcRaw){ try{ _dc=JSON.parse(_dcRaw); }catch(e){} }
-
     var res = await supaFetch('bons_depot','GET',null,'?order=id.desc');
     if(res && res.length >= 0){
       bonsDepot = res.map(function(x){
-        var loc = _localMap[String(x.id)] || {};
-        var locC = loc.client || {};
-        // Priorité : dossier courant en mémoire > localStorage > Supabase (peut manquer les colonnes)
-        var dcC = (_dc && String(_dc.id)===String(x.id) && _dc.client) ? _dc.client : null;
         return {
           id: x.id, numero: x.numero, date: x.date,
-          statut: x.statut || loc.statut || 'depot',
-          facture: loc.facture || null,
-          qrEnvoi: loc.qrEnvoi || null,
-          _clientLocked: loc._clientLocked,
+          statut: x.statut || 'depot',
+          facture: null, qrEnvoi: null,
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
             tel:      x.client_tel||'',
             email:    x.client_email||'',
-            civilite: locC.civilite || (dcC&&dcC.civilite) || '',
-            adresse:  x.client_adresse || (dcC&&dcC.adresse) || locC.adresse || '',
-            cp:       x.client_cp      || (dcC&&dcC.cp)      || locC.cp      || '',
-            ville:    x.client_ville   || (dcC&&dcC.ville)   || locC.ville   || ''
+            civilite: x.client_civilite||'',
+            adresse:  x.client_adresse||'',
+            cp:       x.client_cp||'',
+            ville:    x.client_ville||''
           },
-          appareil: { marque: x.appareil_marque||'', modele: x.appareil_modele||'', imei: x.appareil_imei||'', couleur: x.appareil_couleur||'', code: x.appareil_code||'' },
+          appareil: {
+            marque:  x.appareil_marque||'',
+            modele:  x.appareil_modele||'',
+            imei:    x.appareil_imei||'',
+            couleur: x.appareil_couleur||'',
+            code:    x.appareil_code||''
+          },
           etat: x.etat||[], etatAutre: x.etat_autre||'',
           accessoires: x.accessoires||[],
           panne: x.panne||'',
@@ -12296,11 +12254,12 @@ async function loadBonsDepot(){
           obs: x.obs||''
         };
       });
-      saveBonsDepot();
+      saveBonsDepot(); // cache local en fallback
     }
   } catch(e){
+    // Fallback offline : lire le cache localStorage
     var local = localStorage.getItem('sp_bons_depot');
-    if(local) bonsDepot = JSON.parse(local);
+    if(local){ try{ bonsDepot = JSON.parse(local); }catch(e2){} }
   }
   renderBonsDepot();
   repLoadDossiers();
@@ -12309,7 +12268,7 @@ async function loadBonsDepot(){
 async function saveBonDepotSupabase(d){
   var data = {
     id: d.id, numero: d.numero, date: d.date,
-    client_nom: d.client.nom, client_prenom: d.client.prenom,
+    client_nom: d.client.nom, client_prenom: d.client.prenom, client_civilite: d.client.civilite||'',
     client_tel: d.client.tel, client_email: d.client.email||'',
     client_adresse: d.client.adresse||'', client_cp: d.client.cp||'', client_ville: d.client.ville||'',
     appareil_marque: d.appareil.marque, appareil_modele: d.appareil.modele,
