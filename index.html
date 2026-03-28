@@ -10708,6 +10708,121 @@ function repUpdateDevisRecap(){
   }
 }
 
+
+// ── Gestion intelligente des erreurs AgoraPlus ───────────────────
+// Analyse l'erreur, identifie le champ défaillant, propose la correction
+
+var QR_CHAMPS_LABELS = {
+  imei:       { label: 'IMEI', champ: 'dep-imei',    etape: 2 },
+  model:      { label: 'Modèle', champ: 'dep-modele', etape: 2 },
+  brand:      { label: 'Marque', champ: 'dep-marque', etape: 2 },
+  email:      { label: 'Email client', champ: 'rep-email', etape: 1 },
+  phone:      { label: 'Téléphone', champ: 'rep-tel', etape: 1 },
+  zip:        { label: 'Code postal', champ: 'rep-cp', etape: 1 },
+  city:       { label: 'Ville', champ: 'rep-ville', etape: 1 },
+  address:    { label: 'Adresse', champ: 'rep-adresse', etape: 1 },
+  firstname:  { label: 'Prénom client', champ: 'rep-prenom', etape: 1 },
+  lastname:   { label: 'Nom client', champ: 'rep-nom', etape: 1 },
+  description:{ label: 'Description panne', champ: 'dep-panne', etape: 2 },
+  amount:     { label: 'Montant', champ: 'dep-devis', etape: 2 },
+  photo:      { label: 'Photo IMEI', champ: null, etape: 2 },
+  iris:       { label: 'Codes IRIS', champ: null, etape: 3 },
+};
+
+function qrAnalyserErreur(msg, organisme){
+  // Normaliser le message
+  var m = (msg||'').toLowerCase();
+  var champs = [];
+
+  if(m.includes('imei') && m.includes('déjà'))
+    return { type:'imei_double', titre:'IMEI déjà utilisé', detail:'Cet IMEI a déjà bénéficié du bonus dans les 6 derniers mois.', champs:[], rectifiable:false };
+  if(m.includes('imei'))
+    champs.push('imei');
+  if(m.includes('model') || m.includes('modèle'))
+    champs.push('model');
+  if(m.includes('brand') || m.includes('marque'))
+    champs.push('brand');
+  if(m.includes('email'))
+    champs.push('email');
+  if(m.includes('phone') || m.includes('téléphone') || m.includes('tel'))
+    champs.push('phone');
+  if(m.includes('zip') || m.includes('postal') || m.includes('cp'))
+    champs.push('zip');
+  if(m.includes('city') || m.includes('ville'))
+    champs.push('city');
+  if(m.includes('address') || m.includes('adresse'))
+    champs.push('address');
+  if(m.includes('photo') || m.includes('image') || m.includes('file'))
+    champs.push('photo');
+  if(m.includes('iris') || m.includes('spare') || m.includes('pièce'))
+    champs.push('iris');
+  if(m.includes('description') || m.includes('panne'))
+    champs.push('description');
+  if(m.includes('amount') || m.includes('montant'))
+    champs.push('amount');
+  if(m.includes('firstname') || m.includes('prénom'))
+    champs.push('firstname');
+  if(m.includes('lastname') || m.includes('nom'))
+    champs.push('lastname');
+
+  return {
+    type: 'champ',
+    titre: 'Erreur ' + organisme,
+    detail: msg,
+    champs: champs.length > 0 ? champs : [],
+    rectifiable: true
+  };
+}
+
+function qrAfficherErreurCorrection(erreur, organisme, statut){
+  if(!statut) return;
+  var couleurOrg = organisme === 'Ecosystem' ? '#16a34a' : '#2563eb';
+
+  if(erreur.type === 'imei_double'){
+    statut.innerHTML =
+      '<div style="background:#fff8e1;border:1.5px solid #f59e0b;padding:14px;border-radius:10px;">' +
+      '<div style="font-weight:700;color:#92400e;margin-bottom:6px;">⚠️ IMEI déjà utilisé</div>' +
+      '<div style="font-size:13px;color:#92400e;">'+erreur.detail+'</div>' +
+      '<div style="margin-top:8px;font-size:12px;color:#78350f;">Ce téléphone ne peut pas bénéficier du bonus QualiRépar avant 6 mois.</div>' +
+      '</div>';
+    return;
+  }
+
+  var champsHtml = '';
+  if(erreur.champs.length > 0){
+    var etape1 = erreur.champs.filter(function(k){ return QR_CHAMPS_LABELS[k] && QR_CHAMPS_LABELS[k].etape===1; });
+    var etape2 = erreur.champs.filter(function(k){ return QR_CHAMPS_LABELS[k] && QR_CHAMPS_LABELS[k].etape===2; });
+    var etape3 = erreur.champs.filter(function(k){ return QR_CHAMPS_LABELS[k] && QR_CHAMPS_LABELS[k].etape===3; });
+
+    var listeChamps = erreur.champs.map(function(k){
+      var info = QR_CHAMPS_LABELS[k];
+      if(!info) return '';
+      var val = info.champ ? ((document.getElementById(info.champ)||{value:''}).value || '—') : 'voir ci-dessus';
+      return '<li style="margin:3px 0;"><b>'+info.label+'</b> : <span style="color:#dc2626;">'+(val||'vide')+'</span></li>';
+    }).join('');
+
+    champsHtml = '<div style="margin:10px 0;"><b>Champs à corriger :</b><ul style="margin:6px 0 0 16px;font-size:13px;">'+listeChamps+'</ul></div>';
+
+    var btnsEtape = '';
+    if(etape1.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(1)" style="margin-right:6px;">✏️ Aller au step 1 (Client)</button>';
+    if(etape2.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(2)" style="margin-right:6px;">✏️ Aller au step 2 (Appareil)</button>';
+    if(etape3.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(3)">✏️ Aller au step 3 (Devis/Panne)</button>';
+    champsHtml += '<div style="margin-top:10px;">'+btnsEtape+'</div>';
+  }
+
+  statut.innerHTML =
+    '<div style="background:#fef2f2;border:1.5px solid #fca5a5;padding:14px;border-radius:10px;">' +
+    '<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">❌ Erreur '+organisme+'</div>' +
+    '<div style="font-size:13px;color:#991b1b;word-break:break-word;">'+erreur.detail+'</div>' +
+    champsHtml +
+    '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #fca5a5;display:flex;gap:8px;flex-wrap:wrap;">' +
+    '<button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="background:#dc2626;border-color:#dc2626;font-size:13px;">🔄 Renvoyer après correction</button>' +
+    '<button class="btn btn-sm" onclick="window.open('https://www.agoraplus.fr','_blank')" style="font-size:12px;">🌐 Portail AgoraPlus</button>' +
+    '</div>' +
+    '</div>';
+}
+// ─────────────────────────────────────────────────────────────────
+
 function repEnvoyerOrganisme(){
   var d = repDossierCourant;
   if(!d){ showNotif('Aucun dossier','error'); return; }
@@ -10823,15 +10938,15 @@ async function repEnvoyerEcosystem(){
         '<b>Remboursement :</b> 25€ sous 15 jours ouvrés</div>';
       showNotif('✅ Dossier QualiRépar envoyé à Ecosystem !','success');
     } else {
-      throw new Error(repairData.message || repairData.error || JSON.stringify(repairData).slice(0,100));
+      var rawMsg = repairData.message || repairData.error || repairData.detail || JSON.stringify(repairData).slice(0,300);
+      throw new Error(rawMsg);
     }
 
   } catch(err){
     console.error('Ecosystem error:', err);
-    if(statut) statut.innerHTML = '<div style="background:#fff5f5;padding:12px;border-radius:8px;color:var(--red);font-size:13px;">'+
-      '❌ Erreur Ecosystem : '+err.message+'<br>'+
-      '<small>Vérifiez les credentials ou envoyez manuellement.</small></div>';
-    showNotif('Erreur Ecosystem : '+err.message,'error');
+    var errAnalysee = qrAnalyserErreur(err.message, 'Ecosystem');
+    qrAfficherErreurCorrection(errAnalysee, 'Ecosystem', statut);
+    showNotif('❌ Erreur Ecosystem — corrigez et renvoyez','error');
   }
 }
 
@@ -10933,21 +11048,16 @@ async function repEnvoyerEcologic(){
       }
     } else {
       // Erreur IMEI déjà utilisé ?
-      var msg = data1.message||data1.ResponseMessage||'Erreur';
-      if(msg.toLowerCase().includes('imei')){
-        if(statut) statut.innerHTML = '<div style="background:#fff8e1;padding:12px;border-radius:8px;color:#92400e;font-size:13px;">'+
-          '⚠️ IMEI déjà utilisé pour une demande Ecologic.<br>'+
-          'Ce téléphone a déjà bénéficié du bonus dans les 6 derniers mois.</div>';
-      } else {
-        throw new Error(msg);
-      }
+      var msg = data1.message||data1.ResponseMessage||JSON.stringify(data1).slice(0,200)||'Erreur';
+      var errAnalysee = qrAnalyserErreur(msg, 'Ecologic');
+      qrAfficherErreurCorrection(errAnalysee, 'Ecologic', statut);
+      showNotif('❌ Erreur Ecologic — '+errAnalysee.titre,'error');
     }
   } catch(err){
     console.error('Ecologic error:', err);
-    if(statut) statut.innerHTML = '<div style="background:#fff5f5;padding:12px;border-radius:8px;color:var(--red);font-size:13px;">'+
-      '❌ Erreur envoi Ecologic : '+err.message+'<br>'+
-      'Vérifiez votre connexion ou envoyez manuellement sur le portail.</div>';
-    showNotif('Erreur Ecologic : '+err.message,'error');
+    var errAnalysee = qrAnalyserErreur(err.message, 'Ecologic');
+    qrAfficherErreurCorrection(errAnalysee, 'Ecologic', statut);
+    showNotif('❌ Erreur Ecologic — corrigez et renvoyez','error');
   }
 }
 
