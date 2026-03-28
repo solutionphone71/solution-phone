@@ -1386,7 +1386,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div id="rep-step-1" class="rep-step-content">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
             <div class="card">
-              <div class="card-header"><div class="card-title">👤 Fiche client</div></div>
+              <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                <div class="card-title">👤 Fiche client</div>
+                <div id="rep-client-lock-btns" style="display:flex;gap:8px;">
+                  <button id="rep-btn-valider-client" class="btn btn-sm" onclick="repValiderClient()" style="background:var(--green);color:#fff;border-color:var(--green);font-size:12px;padding:5px 12px;display:none;">✅ Valider</button>
+                  <button id="rep-btn-modifier-client" class="btn btn-sm" onclick="repModifierClient()" style="font-size:12px;padding:5px 12px;display:none;">✏️ Modifier</button>
+                </div>
+              </div>
+              <div id="rep-client-locked-banner" style="display:none;padding:7px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12px;color:#166534;margin-bottom:6px;">🔒 Fiche client verrouillée — cliquez <b>✏️ Modifier</b> pour éditer</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
@@ -1415,6 +1422,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div style="display:flex;gap:10px;align-items:center;">
               <button class="btn" onclick="repSauvegarderClientManuel()" style="padding:12px 20px;font-size:15px;border-color:var(--green);color:var(--green);" title="Sauvegarder le client dans la base">💾 Enregistrer client</button>
               <button class="btn btn-primary" onclick="repStep1Next()" style="padding:12px 28px;font-size:15px;">Suivant → Prise en charge</button>
+              <button class="btn" id="rep-btn-valider-client-bottom" onclick="repValiderClient()" style="padding:12px 20px;font-size:15px;background:var(--green);color:#fff;border-color:var(--green);">✅ Valider la fiche</button>
             </div>
           </div>
         </div>
@@ -9410,8 +9418,7 @@ function repNewDossier(){
     if(liste) liste.style.display='none';
     if(dossier) dossier.style.display='block';
     repGoStep(1);
-  } catch(e) {
-    console.error('repNewDossier error:', e);
+    repApplyClientLock(false); // nouveau dossier = champs déverrouillés
     showNotif('Erreur ouverture dossier : '+e.message, 'error');
   }
 }
@@ -9497,6 +9504,11 @@ function repOuvrirDossier(id){
   // Ouvrir sur la bonne étape selon statut
   var stepMap = {depot:1,devis:3,facture:4,qr:5,cloture:5};
   repGoStep(stepMap[repDossierCourant.statut]||1);
+  // Auto-verrouiller la fiche client si elle est déjà remplie
+  var c = repDossierCourant.client||{};
+  var clientRempli = !!(c.nom && c.tel);
+  var locked = repDossierCourant._clientLocked !== false && clientRempli;
+  repApplyClientLock(locked);
 }
 
 function repLoadFormFromDossier(){
@@ -9874,8 +9886,60 @@ function repClearForm(){
   var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=false; if(typeof repToggleQR==='function') repToggleQR(); }
 }
 
+// ── VERROU FICHE CLIENT ────────────────────────────────────────────
+var REP_CLIENT_FIELDS = ['rep-civilite','rep-nom','rep-prenom','rep-tel','rep-email','rep-adresse','rep-cp','rep-ville'];
+
+function repApplyClientLock(locked){
+  REP_CLIENT_FIELDS.forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    if(locked){
+      el.setAttribute('readonly','');
+      if(el.tagName==='SELECT') el.setAttribute('disabled','');
+      el.style.background = 'var(--bg-secondary,#f8f9fa)';
+      el.style.color = 'var(--text-muted,#6b7280)';
+      el.style.cursor = 'not-allowed';
+      el.style.pointerEvents = 'none';
+    } else {
+      el.removeAttribute('readonly');
+      el.removeAttribute('disabled');
+      el.style.background = '';
+      el.style.color = '';
+      el.style.cursor = '';
+      el.style.pointerEvents = '';
+    }
+  });
+  var banner  = document.getElementById('rep-client-locked-banner');
+  var btnVal  = document.getElementById('rep-btn-valider-client');
+  var btnMod  = document.getElementById('rep-btn-modifier-client');
+  var btnValB = document.getElementById('rep-btn-valider-client-bottom');
+  if(banner)  banner.style.display  = locked ? 'block' : 'none';
+  if(btnVal)  btnVal.style.display  = locked ? 'none'  : 'inline-flex';
+  if(btnMod)  btnMod.style.display  = locked ? 'inline-flex' : 'none';
+  if(btnValB) btnValB.style.display = locked ? 'none'  : '';
+  if(repDossierCourant) repDossierCourant._clientLocked = locked;
+}
+
+function repValiderClient(){
+  if(repDossierCourant && repCurrentStep === 1){
+    var c = repDossierCourant.client || {};
+    ['nom','prenom','tel','email','adresse','cp','ville'].forEach(function(k){
+      var el = document.getElementById('rep-'+k); if(el) c[k] = el.value.trim();
+    });
+    var civ = document.getElementById('rep-civilite'); if(civ) c.civilite = civ.value;
+    repDossierCourant.client = c;
+  }
+  repApplyClientLock(true);
+  showNotif('✅ Fiche client verrouillée','success');
+}
+
+function repModifierClient(){
+  repApplyClientLock(false);
+  setTimeout(function(){ var el=document.getElementById('rep-nom'); if(el) el.focus(); },100);
+}
+// ───────────────────────────────────────────────────────────────────
+
 function repAutoSave(){
-  if(!repDossierCourant) return;
   // Lire client
   // Ne lire les champs client QUE si on est sur le step 1 (champs visibles)
   // Sinon garder ce qui est déjà dans repDossierCourant.client
@@ -10033,6 +10097,7 @@ function repStep1Next(){
   };
 
   repSauvegarderClientSupabase(repDossierCourant.client);
+  repApplyClientLock(true); // verrouiller la fiche au passage au step suivant
   repGoStep(2);
 }
 
