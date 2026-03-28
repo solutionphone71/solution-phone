@@ -1441,7 +1441,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                         <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
                         <option>Huawei</option><option>OnePlus</option><option>Google</option><option>Autre</option>
                       </select></div>
-                    <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repAutoSave()"></div>
+                    <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repAutoSaveDebounced()"></div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
@@ -1452,10 +1452,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       <div id="dep-photo-status" style="margin-top:6px;font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;">📷 Photo IMEI : <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour Ecosystem</span></div>
                       <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
                     </div>
-                    <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSave()"></div>
+                    <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSaveDebounced()"></div>
                   </div>
                   <div class="form-group"><label>Code / Mot de passe</label>
-                    <input type="text" id="dep-code" placeholder="ex : 1234 (si le client le souhaite)" oninput="repAutoSave()">
+                    <input type="text" id="dep-code" placeholder="ex : 1234 (si le client le souhaite)" oninput="repAutoSaveDebounced()">
                     <div style="font-size:11px;color:var(--warning);margin-top:4px;">⚠️ Renseigné uniquement si le client le souhaite</div>
                   </div>
                 </div>
@@ -1470,7 +1470,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-verre"> Protection écran</label>
                   <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-acc-autre"> Autre</label>
                 </div>
-                <div class="form-group" style="margin-top:8px;"><label>Préciser</label><input type="text" id="dep-acc-autre-txt" placeholder="ex : AirPods, carte SIM..." oninput="repAutoSave()"></div>
+                <div class="form-group" style="margin-top:8px;"><label>Préciser</label><input type="text" id="dep-acc-autre-txt" placeholder="ex : AirPods, carte SIM..." oninput="repAutoSaveDebounced()"></div>
               </div>
             </div>
             <div class="card">
@@ -1487,7 +1487,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-charge"> Connecteur charge HS</label>
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-batterie"> Batterie défaillante</label>
               </div>
-              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." oninput="repAutoSave()"></textarea></div>
+              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." oninput="repAutoSaveDebounced()"></textarea></div>
             </div>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
@@ -1551,7 +1551,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </select>
                     <textarea id="dep-panne" rows="2"
                       placeholder="Précisions supplémentaires (optionnel)..."
-                      oninput="repAutoSave();repCheckEligibiliteDebounced()"
+                      oninput="repAutoSaveDebounced();repCheckEligibiliteDebounced()"
                       style="margin-top:6px;font-size:13px;"></textarea>
                   </div>
 
@@ -1592,7 +1592,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </div>
                   </div>
                   <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
-                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSave()"></textarea>
+                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSaveDebounced()"></textarea>
                   </div>
                 </div>
               </div>
@@ -10002,6 +10002,13 @@ function repModifierClient(){
 }
 // ───────────────────────────────────────────────────────────────────
 
+// ── Debounce repAutoSave pour iPad (évite freeze sur textareas) ──
+var _repAutoSaveTimer = null;
+function repAutoSaveDebounced(){
+  clearTimeout(_repAutoSaveTimer);
+  _repAutoSaveTimer = setTimeout(repAutoSave, 250);
+}
+
 // Debounce eligibilite (iPad friendly – évite le freeze)
 var _repEligTimer = null;
 function repCheckEligibiliteDebounced(){
@@ -10366,6 +10373,13 @@ function repStep4Next(){
   repGoStep(5);
 }
 
+// Debounce Supabase save (évite un appel réseau à chaque frappe sur iPad)
+var _repSupaSaveTimer = null;
+function repSauvegarderSupabaseDebounced(depot){
+  clearTimeout(_repSupaSaveTimer);
+  _repSupaSaveTimer = setTimeout(function(){ saveBonDepotSupabase(depot); }, 2000);
+}
+
 function repSauvegarderDossier(){
   if(!repDossierCourant) return;
   // Sauvegarder aussi dans localStorage pour restauration au retour sur l'onglet
@@ -10388,7 +10402,7 @@ function repSauvegarderDossier(){
   var bidx = bonsDepot.findIndex(function(d){ return String(d.id)===String(depot.id); });
   if(bidx>=0) bonsDepot[bidx]=depot; else bonsDepot.push(depot);
   saveBonsDepot();
-  saveBonDepotSupabase(depot);
+  repSauvegarderSupabaseDebounced(depot); // debounced - évite spam réseau sur iPad
 }
 
 function repSearchClient(q){
@@ -12241,12 +12255,38 @@ function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(b
 
 async function loadBonsDepot(){
   try {
+    // Charger l'existant localStorage AVANT Supabase pour préserver adresse/cp/ville
+    // (les colonnes peuvent ne pas exister côté Supabase)
+    var _localRaw = localStorage.getItem('sp_bons_depot');
+    var _localMap = {};
+    if(_localRaw){ try{ JSON.parse(_localRaw).forEach(function(b){ _localMap[String(b.id)]=b; }); }catch(e){} }
+    var _dcRaw = localStorage.getItem('sp_rep_dossier_courant');
+    var _dc = null;
+    if(_dcRaw){ try{ _dc=JSON.parse(_dcRaw); }catch(e){} }
+
     var res = await supaFetch('bons_depot','GET',null,'?order=id.desc');
     if(res && res.length >= 0){
       bonsDepot = res.map(function(x){
+        var loc = _localMap[String(x.id)] || {};
+        var locC = loc.client || {};
+        // Priorité : dossier courant en mémoire > localStorage > Supabase (peut manquer les colonnes)
+        var dcC = (_dc && String(_dc.id)===String(x.id) && _dc.client) ? _dc.client : null;
         return {
           id: x.id, numero: x.numero, date: x.date,
-          client: { nom: x.client_nom, prenom: x.client_prenom||'', tel: x.client_tel, email: x.client_email||'', adresse: x.client_adresse||'', cp: x.client_cp||'', ville: x.client_ville||'' },
+          statut: x.statut || loc.statut || 'depot',
+          facture: loc.facture || null,
+          qrEnvoi: loc.qrEnvoi || null,
+          _clientLocked: loc._clientLocked,
+          client: {
+            nom:      x.client_nom||'',
+            prenom:   x.client_prenom||'',
+            tel:      x.client_tel||'',
+            email:    x.client_email||'',
+            civilite: locC.civilite || (dcC&&dcC.civilite) || '',
+            adresse:  x.client_adresse || (dcC&&dcC.adresse) || locC.adresse || '',
+            cp:       x.client_cp      || (dcC&&dcC.cp)      || locC.cp      || '',
+            ville:    x.client_ville   || (dcC&&dcC.ville)   || locC.ville   || ''
+          },
           appareil: { marque: x.appareil_marque||'', modele: x.appareil_modele||'', imei: x.appareil_imei||'', couleur: x.appareil_couleur||'', code: x.appareil_code||'' },
           etat: x.etat||[], etatAutre: x.etat_autre||'',
           accessoires: x.accessoires||[],
