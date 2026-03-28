@@ -1507,7 +1507,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
-                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSave();repCheckEligibilite();"
+                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSave();repCheckEligibiliteDebounced();"
                       style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
                       <option value="">-- Sélectionner la panne --</option>
                       <optgroup label="📱 Écran">
@@ -1551,7 +1551,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </select>
                     <textarea id="dep-panne" rows="2"
                       placeholder="Précisions supplémentaires (optionnel)..."
-                      oninput="repAutoSave();repCheckEligibilite()"
+                      oninput="repAutoSave();repCheckEligibiliteDebounced()"
                       style="margin-top:6px;font-size:13px;"></textarea>
                   </div>
 
@@ -9962,20 +9962,28 @@ function repModifierClient(){
 }
 // ───────────────────────────────────────────────────────────────────
 
+// Debounce eligibilite (iPad friendly – évite le freeze)
+var _repEligTimer = null;
+function repCheckEligibiliteDebounced(){
+  clearTimeout(_repEligTimer);
+  _repEligTimer = setTimeout(repCheckEligibilite, 400);
+}
+
 function repAutoSave(){
-  // Lire client
-  // Ne lire les champs client QUE si on est sur le step 1 (champs visibles)
-  // Sinon garder ce qui est déjà dans repDossierCourant.client
+  if(!repDossierCourant) return;
+  // Lire client UNIQUEMENT sur step 1 — fusion douce : jamais écraser une valeur existante par vide
   if(repCurrentStep === 1){
+    var prev = repDossierCourant.client || {};
+    var getV = function(id){ var el=document.getElementById(id); return el ? el.value.trim() : ''; };
     repDossierCourant.client = {
-      civilite: (document.getElementById('rep-civilite')||{value:''}).value || (repDossierCourant.client||{}).civilite || 'M.',
-      nom:      (document.getElementById('rep-nom')||{value:''}).value.trim() || (repDossierCourant.client||{}).nom || '',
-      prenom:   (document.getElementById('rep-prenom')||{value:''}).value.trim() || (repDossierCourant.client||{}).prenom || '',
-      tel:      (document.getElementById('rep-tel')||{value:''}).value.trim() || (repDossierCourant.client||{}).tel || '',
-      email:    (document.getElementById('rep-email')||{value:''}).value.trim() || (repDossierCourant.client||{}).email || '',
-      adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim() || (repDossierCourant.client||{}).adresse || '',
-      cp:       (document.getElementById('rep-cp')||{value:''}).value.trim() || (repDossierCourant.client||{}).cp || '',
-      ville:    (document.getElementById('rep-ville')||{value:''}).value.trim() || (repDossierCourant.client||{}).ville || ''
+      civilite: (document.getElementById('rep-civilite')||{value:''}).value || prev.civilite || 'M.',
+      nom:      getV('rep-nom')     || prev.nom     || '',
+      prenom:   getV('rep-prenom')  || prev.prenom  || '',
+      tel:      getV('rep-tel')     || prev.tel     || '',
+      email:    getV('rep-email')   || prev.email   || '',
+      adresse:  getV('rep-adresse') || prev.adresse || '',
+      cp:       getV('rep-cp')      || prev.cp      || '',
+      ville:    getV('rep-ville')   || prev.ville   || ''
     };
   } // fin if(repCurrentStep === 1)
   // Lire appareil
@@ -12196,7 +12204,7 @@ async function loadBonsDepot(){
       bonsDepot = res.map(function(x){
         return {
           id: x.id, numero: x.numero, date: x.date,
-          client: { nom: x.client_nom, prenom: x.client_prenom||'', tel: x.client_tel, email: x.client_email||'' },
+          client: { nom: x.client_nom, prenom: x.client_prenom||'', tel: x.client_tel, email: x.client_email||'', adresse: x.client_adresse||'', cp: x.client_cp||'', ville: x.client_ville||'' },
           appareil: { marque: x.appareil_marque||'', modele: x.appareil_modele||'', imei: x.appareil_imei||'', couleur: x.appareil_couleur||'', code: x.appareil_code||'' },
           etat: x.etat||[], etatAutre: x.etat_autre||'',
           accessoires: x.accessoires||[],
@@ -12221,6 +12229,7 @@ async function saveBonDepotSupabase(d){
     id: d.id, numero: d.numero, date: d.date,
     client_nom: d.client.nom, client_prenom: d.client.prenom,
     client_tel: d.client.tel, client_email: d.client.email||'',
+    client_adresse: d.client.adresse||'', client_cp: d.client.cp||'', client_ville: d.client.ville||'',
     appareil_marque: d.appareil.marque, appareil_modele: d.appareil.modele,
     appareil_imei: d.appareil.imei, appareil_couleur: d.appareil.couleur,
     appareil_code: d.appareil.code,
