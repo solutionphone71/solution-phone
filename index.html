@@ -11362,29 +11362,37 @@ function repUpdateSigNom(){
 var _repAutoSaveOrig = repAutoSave;
 var _repAutoSaveRunning = false;
 var _repAutoSaveTimer = null;
+// Cache pour éviter les mises à jour DOM inutiles
+var _repPhotoStatus = null;
 repAutoSave = function(){
-  // Debounce : exécuter seulement après 250ms sans appel
+  // Tout est debounced — RIEN ne s'exécute de façon synchrone (fix freeze iPad)
   if(_repAutoSaveTimer) clearTimeout(_repAutoSaveTimer);
   _repAutoSaveTimer = setTimeout(function(){
     if(_repAutoSaveRunning) return;
     _repAutoSaveRunning = true;
-    try { _repAutoSaveOrig(); } catch(e){ console.warn('repAutoSave err:',e); }
+    try {
+      if(repDossierCourant){
+        repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
+        repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
+        if(_repSigData) repDossierCourant.signature = _repSigData;
+        // Mettre à jour indicateur photo IMEI seulement si changement
+        var hasPhoto = !!repDossierCourant.photoImeiUrl;
+        if(hasPhoto !== _repPhotoStatus){
+          _repPhotoStatus = hasPhoto;
+          var photoEl = document.getElementById('dep-photo-status');
+          if(photoEl){
+            if(hasPhoto){
+              photoEl.innerHTML = '✅ <span style="color:var(--green);">Photo prise — prête pour Ecosystem</span>';
+            } else {
+              photoEl.innerHTML = '📷 <span style="color:var(--text-muted);">Aucune photo prise</span>';
+            }
+          }
+        }
+      }
+      _repAutoSaveOrig();
+    } catch(e){ console.warn('repAutoSave err:',e); }
     finally { _repAutoSaveRunning = false; _repAutoSaveTimer = null; }
   }, 150);
-  if(repDossierCourant){
-    repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
-    repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
-    if(_repSigData) repDossierCourant.signature = _repSigData;
-    // Mettre à jour indicateur photo IMEI
-    var photoEl = document.getElementById('dep-photo-status');
-    if(photoEl){
-      if(repDossierCourant.photoImeiUrl){
-        photoEl.innerHTML = '✅ <span style="color:var(--green);">Photo prise — prête pour Ecosystem</span>';
-      } else {
-        photoEl.innerHTML = '📷 <span style="color:var(--text-muted);">Aucune photo prise</span>';
-      }
-    }
-  }
 };
 
 // ============================================================
