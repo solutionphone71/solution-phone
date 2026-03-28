@@ -11074,7 +11074,28 @@ async function repOCRImei(){
 
     btnCapture.onclick = async function(){
       btnCapture.disabled=true;
-      btnCapture.textContent='⏳ Traitement...';
+
+      // ── ÉTAPE 1 : Capture instantanée ──
+      var canvas = document.createElement('canvas');
+      canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+      canvas.getContext('2d').drawImage(video,0,0);
+      stream.getTracks().forEach(function(t){t.stop();});
+
+      // Afficher la miniature IMMÉDIATEMENT dans la modale
+      var previewUrl = canvas.toDataURL('image/jpeg', 0.7);
+      video.style.display='none';
+      hint.style.display='none';
+      btnCapture.style.display='none';
+      var thumbPreview = document.createElement('img');
+      thumbPreview.src = previewUrl;
+      thumbPreview.style.cssText='width:180px;height:135px;object-fit:cover;border-radius:10px;border:3px solid #4ade80;';
+      modal.insertBefore(thumbPreview, status);
+
+      // Afficher aussi dans le formulaire dès la capture
+      var marque = repDossierCourant && repDossierCourant.appareil && repDossierCourant.appareil.marque;
+      repAfficherPhotoThumb(previewUrl, marque);
+      status.style.display='block';
+      status.textContent='📸 Photo capturée !';
 
       // Capture
       var canvas = document.createElement('canvas');
@@ -11082,7 +11103,7 @@ async function repOCRImei(){
       canvas.getContext('2d').drawImage(video,0,0);
       stream.getTracks().forEach(function(t){t.stop();});
 
-      // Compresser
+      // ── ÉTAPE 2 : Compression + Upload ──
       status.textContent='🗜️ Compression...';
       var compressedUrl = await compresserPhoto(canvas, 500);
       var base64Full = compressedUrl.split(',')[1];
@@ -11095,9 +11116,10 @@ async function repOCRImei(){
         if(photoUrl && repDossierCourant){
           repDossierCourant.photoImeiUrl = photoUrl;
           repSauvegarderDossier();
-          // Afficher la miniature avec l'organisme correct
-          var marque = repDossierCourant.appareil && repDossierCourant.appareil.marque;
+          // Remplacer la preview locale par l'URL Supabase définitive
           repAfficherPhotoThumb(photoUrl, marque);
+          thumbPreview.src = photoUrl;
+          status.innerHTML='<span style="color:#4ade80;">☁️ Sauvegardé ✅</span>';
         }
       } catch(e){ console.log('Upload photo:', e); }
 
@@ -11119,22 +11141,12 @@ async function repOCRImei(){
         status.innerHTML = '<span style="color:#fbbf24;">⚠️ IMEI non détecté — saisissez-le manuellement</span>';
       }
 
-      // Afficher confirmation photo
-      var photoConfirm = document.createElement('div');
-      photoConfirm.style.cssText = 'background:rgba(0,255,0,0.15);border:1px solid #4ade80;border-radius:10px;padding:10px 16px;text-align:center;color:#fff;font-size:13px;max-width:340px;';
-      photoConfirm.innerHTML = (photoUrl
-        ? '📷 <b>Photo sauvegardée ✅</b><br><span style="font-size:11px;color:#a3e635;">Prête pour l\'envoi Ecosystem/Ecologic</span>'
-        : '📷 <b>Photo non sauvegardée</b><br><span style="font-size:11px;color:#fca5a5;">Vérifiez votre connexion</span>');
-      modal.appendChild(photoConfirm);
-
-      // Bouton fermer après 3 secondes
-      setTimeout(function(){
-        var btnClose = document.createElement('button');
-        btnClose.style.cssText='padding:10px 28px;background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;';
-        btnClose.textContent='✓ Fermer';
-        btnClose.onclick = function(){ if(document.body.contains(modal)) document.body.removeChild(modal); };
-        modal.appendChild(btnClose);
-      }, 1500);
+      // Bouton fermer disponible immédiatement
+      var btnClose = document.createElement('button');
+      btnClose.style.cssText='padding:10px 28px;background:rgba(255,255,255,0.2);color:#fff;border:none;border-radius:10px;font-size:14px;cursor:pointer;margin-top:8px;';
+      btnClose.textContent='✓ Fermer';
+      btnClose.onclick = function(){ if(document.body.contains(modal)) document.body.removeChild(modal); };
+      modal.appendChild(btnClose);
     };
 
   } catch(e){
