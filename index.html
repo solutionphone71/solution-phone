@@ -3089,45 +3089,6 @@ select, input, textarea, button {
     <div style="display:flex;gap:10px;">
       <button class="btn btn-primary" style="flex:1;" onclick="printEtiquetteBrother()">🖨️ Imprimer sur Brother</button>
       <button class="btn" onclick="closeModal('modal-etiquette')">Fermer</button>
-    </div>
-  </div>
-</div>
-
-<script src="js/core.js"></script>
-<script>
-// Chargement différé des modules lourds
-function loadModule(src, callback) {
-  var s = document.createElement('script');
-  s.src = src;
-  s.onload = callback || function(){};
-  document.head.appendChild(s);
-}
-
-// Charger réparations seulement quand on clique sur l'onglet
-var _repLoaded = false, _qrLoaded = false;
-var _origShowPage = null;
-
-window.addEventListener('DOMContentLoaded', function() {
-  _origShowPage = window.showPage;
-  window.showPage = function(id, el) {
-    if ((id === 'reparations') && !_repLoaded) {
-      _repLoaded = true;
-      loadModule('js/reparations.js', function() {
-        if (_origShowPage) _origShowPage(id, el);
-      });
-      return;
-    }
-    if ((id === 'qualirepar' || id === 'suivi-qr') && !_qrLoaded) {
-      _qrLoaded = true;
-      loadModule('js/qualirepar.js', function() {
-        if (_origShowPage) _origShowPage(id, el);
-      });
-      return;
-    }
-    if (_origShowPage) _origShowPage(id, el);
-  };
-});
-</script>
 
 <!-- ══ PAGE SUIVI QUALIREPAR ══ -->
 <div class="page" id="page-suivi-qr">
@@ -3197,3 +3158,52 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+
+
+
+  </div>
+</div>
+
+<script>
+// Chargement différé des modules lourds
+function loadModule(src, callback) {
+  var s = document.createElement('script');
+  s.src = src;
+  s.onload = callback || function(){};
+  document.head.appendChild(s);
+}
+
+// Charger réparations seulement quand on clique sur l'onglet
+var _repLoaded = false, _qrLoaded = false;
+var _origShowPage = null;
+
+window.addEventListener('DOMContentLoaded', function() {
+  _origShowPage = window.showPage;
+  window.showPage = function(id, el) {
+    if ((id === 'reparations') && !_repLoaded) {
+      _repLoaded = true;
+      loadModule('js/reparations.js', function() {
+        if (_origShowPage) _origShowPage(id, el);
+      });
+      return;
+    }
+    if ((id === 'qualirepar' || id === 'suivi-qr') && !_qrLoaded) {
+      _qrLoaded = true;
+      loadModule('js/qualirepar.js', function() {
+        if (_origShowPage) _origShowPage(id, el);
+      });
+      return;
+    }
+    if (_origShowPage) _origShowPage(id, el);
+  };
+});
+</script>
+
+</body>
+</html>
