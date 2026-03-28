@@ -9522,6 +9522,22 @@ function repLoadFormFromDossier(){
   var d = repDossierCourant;
   // Step 1 — client
   var c = d.client||{};
+
+  // Si cp/ville manquants dans le dossier (anciens dossiers), chercher dans clients[]
+  if((!c.cp || !c.ville) && (c.tel || c.nom)){
+    var found = clients.find(function(x){
+      return (c.tel && x.tel && x.tel === c.tel) ||
+             (c.nom && x.nom && x.nom.toLowerCase() === (c.nom||'').toLowerCase() &&
+              x.prenom && x.prenom.toLowerCase() === (c.prenom||'').toLowerCase());
+    });
+    if(found){
+      if(!c.cp)    c.cp    = found.cp    || '';
+      if(!c.ville) c.ville = found.ville || '';
+      // Sauvegarder dans le dossier pour éviter de re-chercher
+      d.client = c;
+    }
+  }
+
   ['civilite','nom','prenom','tel','email','adresse','cp','ville'].forEach(function(f){
     var el=document.getElementById('rep-'+f); if(el) el.value=c[f]||'';
   });
@@ -9994,6 +10010,16 @@ function repGoStep(n){
       else if(i<n) b.classList.add('done');
     }
   });
+  // Recharger les champs client au retour sur le step 1
+  if(n===1 && repDossierCourant){
+    var c = repDossierCourant.client||{};
+    ['civilite','nom','prenom','tel','email','adresse','cp','ville'].forEach(function(f){
+      var el=document.getElementById('rep-'+f); if(el) el.value=c[f]||'';
+    });
+    var clientRempli = !!(c.nom && c.tel);
+    var locked = repDossierCourant._clientLocked !== false && clientRempli;
+    repApplyClientLock(locked);
+  }
   if(n===3) repUpdateDevisRecap();
   if(n===4){ setTimeout(repAutoFillStep4, 400); repUpdateFacturePreview(); }
   if(n===5) repUpdateStep5();
