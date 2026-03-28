@@ -115,7 +115,7 @@ tr:hover td{background:#fafafa;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.form-group input,.form-group select{padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;}
+.form-group input,.form-group select{padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.open{display:flex;}
 .modal{background:#fff;border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
@@ -327,6 +327,11 @@ select, input, textarea, button {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+
+  /* iOS Safari — empêche le zoom automatique (freeze) sur les champs < 16px */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
 </style>
 <script>
 // ── Tampon + Signature Solution Phone ───────────────────────
@@ -1487,7 +1492,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-charge"> Connecteur charge HS</label>
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="dep-etat-batterie"> Batterie défaillante</label>
               </div>
-              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." oninput="repAutoSaveDebounced()"></textarea></div>
+              <div class="form-group" style="margin-top:8px;"><label>Autres observations</label><textarea id="dep-etat-autre" rows="2" placeholder="ex : chocs sur les coins..." oninput="repAutoSaveDebounced()" style="font-size:16px;"></textarea></div>
             </div>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
@@ -1507,7 +1512,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
-                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSave();repCheckEligibiliteDebounced();"
+                    <select id="dep-panne-select" onchange="repPanneSelect(this.value);repAutoSaveDebounced();repCheckEligibiliteDebounced();"
                       style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
                       <option value="">-- Sélectionner la panne --</option>
                       <optgroup label="📱 Écran">
@@ -1552,7 +1557,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <textarea id="dep-panne" rows="2"
                       placeholder="Précisions supplémentaires (optionnel)..."
                       oninput="repAutoSaveDebounced();repCheckEligibiliteDebounced()"
-                      style="margin-top:6px;font-size:13px;"></textarea>
+                      style="margin-top:6px;font-size:16px;"></textarea>
                   </div>
 
                   <!-- Alerte inéligibilité -->
@@ -1592,7 +1597,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     </div>
                   </div>
                   <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
-                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSaveDebounced()"></textarea>
+                    <textarea id="dep-obs" rows="2" placeholder="Notes internes..." oninput="repAutoSaveDebounced()" style="font-size:16px;"></textarea>
                   </div>
                 </div>
               </div>
