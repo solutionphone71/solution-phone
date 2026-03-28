@@ -1720,6 +1720,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                           <option value="Wiko">Wiko</option>
                           <option value="Honor">Honor</option>
                           <option value="Realme">Realme</option>
+                          <option value="Blackview">Blackview</option>
+                          <option value="Vivo">Vivo</option>
+                          <option value="TCL">TCL</option>
+                          <option value="Crosscall">Crosscall</option>
                           <option value="Autre">Autre</option>
                         </optgroup>
                       </select></div>
@@ -9953,7 +9957,7 @@ function repUpdateStep5(){
 
   // Organisme selon la marque
   var marque = (d.appareil||{}).marque||'';
-  var organisme = 'Ecologic';
+  var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque] === 'ecosystem') ? 'Ecosystem' : 'Ecologic';
   var btnLabel = document.getElementById('rep-qr-btn-label');
   if(btnLabel) btnLabel.textContent = organisme;
 
@@ -10420,8 +10424,8 @@ function repEnvoyerOrganisme(){
   if(!d){ showNotif('Aucun dossier','error'); return; }
 
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
-  var marque   = (d.appareil||{}).marque||'';
-  var organisme = 'ecologic';
+  var marque    = (d.appareil||{}).marque||'';
+  var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
 
   if(organisme === 'ecologic'){
     repEnvoyerEcologic();
@@ -11428,11 +11432,12 @@ function repQRUpdateOrganisme(){
   var sel = document.getElementById('rep-qr-marque');
   if(!sel) return;
   var marque = sel.value;
-  // Toutes les marques → Ecologic
+  var type = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
+  var label = type === 'ecosystem' ? 'Ecosystem' : 'Ecologic';
   var orgLabel = document.getElementById('rep-qr-btn-label');
-  if(orgLabel) orgLabel.textContent = 'Ecologic';
+  if(orgLabel) orgLabel.textContent = label;
   var orgEl = document.getElementById('rep-qr-organisme');
-  if(orgEl) orgEl.textContent = 'Ecologic';
+  if(orgEl) orgEl.textContent = label;
 }
 
 function repQRPopulateMarques(){
@@ -13035,11 +13040,14 @@ function rlDownloadQR() {
 // ============================================================
 
 var QR_BRAND_TYPE = {
-  Apple:    'ecologic',
-  Samsung:  'ecologic', Huawei:   'ecologic', Xiaomi:   'ecologic',
-  Oppo:     'ecologic', OnePlus:  'ecologic', Honor:    'ecologic',
-  Wiko:     'ecologic', Nokia:    'ecologic', Sony:     'ecologic',
-  LG:       'ecologic', Motorola: 'ecologic'
+  Apple:     'ecologic',
+  Samsung:   'ecosystem', Huawei:    'ecosystem', Oppo:      'ecosystem',
+  Honor:     'ecosystem', Blackview: 'ecosystem', Vivo:      'ecosystem',
+  TCL:       'ecosystem',
+  Xiaomi:    'ecologic',  OnePlus:   'ecologic',  Google:    'ecologic',
+  Sony:      'ecologic',  Nokia:     'ecologic',  Motorola:  'ecologic',
+  Wiko:      'ecologic',  Realme:    'ecologic',  Crosscall: 'ecologic',
+  LG:        'ecologic'
 };
 var QR_BRANDS = Object.keys(QR_BRAND_TYPE);
 
