@@ -9424,6 +9424,8 @@ function repNewDossier(){
     if(dossier) dossier.style.display='block';
     repGoStep(1);
     repApplyClientLock(false); // nouveau dossier = champs déverrouillés
+  } catch(e) {
+    console.error('repNewDossier error:', e);
     showNotif('Erreur ouverture dossier : '+e.message, 'error');
   }
 }
