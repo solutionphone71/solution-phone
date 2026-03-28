@@ -4200,7 +4200,12 @@ function voirClientDetail(id){
   // Infos client
   var grid = document.createElement('div');
   grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:14px;';
-  [['Téléphone',c.tel||'—'],['Email',c.email||'—'],['Adresse',c.adresse||'—'],['Notes',c.notes||'—']].forEach(function(info){
+  // Adresse complète
+  var adresseFull = c.adresse || '';
+  var cpVille = [(c.cp||'').trim(),(c.ville||'').trim()].filter(Boolean).join(' ');
+  if(cpVille) adresseFull = adresseFull ? adresseFull+', '+cpVille : cpVille;
+
+  [['Téléphone',c.tel||'—'],['Email',c.email||'—'],['Adresse',adresseFull||'—'],['Notes',c.notes||'—']].forEach(function(info){
     var d=document.createElement('div');
     var b=document.createElement('b'); b.textContent=info[0]+' : ';
     d.appendChild(b); d.appendChild(document.createTextNode(info[1]));
@@ -10328,12 +10333,12 @@ function repSearchClient(q){
   // Sinon : chercher dans Supabase directement (sans tout charger)
   box.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:8px;">🔍 Recherche...</div>';
   var qp = encodeURIComponent(q);
-  supaFetch('clients','GET',null,'?or=(nom.ilike.*'+qp+'*,prenom.ilike.*'+qp+'*,tel.ilike.*'+qp+'*)&limit=8')
+  supaFetch('clients','GET',null,'?select=id,nom,prenom,civilite,tel,email,adresse,cp,ville,notes&or=(nom.ilike.*'+qp+'*,prenom.ilike.*'+qp+'*,tel.ilike.*'+qp+'*)&limit=8')
   .then(function(res){
     if(res&&res.length>0){
       res.forEach(function(x){
         if(!clients.find(function(c){return c.id===x.id;})){
-          clients.push({id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',notes:x.notes||'',civilite:x.civilite||''});
+          clients.push({id:x.id,nom:x.nom||'',prenom:x.prenom||'',tel:x.tel||'',email:x.email||'',adresse:x.adresse||'',cp:x.cp||'',ville:x.ville||'',notes:x.notes||'',civilite:x.civilite||''});
         }
       });
       repAfficherResultatsClients(res.map(function(x){
