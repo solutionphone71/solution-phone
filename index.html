@@ -10817,7 +10817,7 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
     champsHtml +
     '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #fca5a5;display:flex;gap:8px;flex-wrap:wrap;">' +
     '<button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="background:#dc2626;border-color:#dc2626;font-size:13px;">🔄 Renvoyer après correction</button>' +
-    '<button class="btn btn-sm" onclick="window.open('https://www.agoraplus.fr','_blank')" style="font-size:12px;">🌐 Portail AgoraPlus</button>' +
+    '<button class="btn btn-sm" onclick="window.open(\'https://www.agoraplus.fr\',\'_blank\')" style="font-size:12px;">🌐 Portail AgoraPlus</button>' +
     '</div>' +
     '</div>';
 }
@@ -13139,76 +13139,7 @@ function printMoisVentes(mois){
         '<div>Document généré le '+new Date().toLocaleDateString('fr-FR')+' · Solution Phone · 21 Rue Gambetta · 71000 Mâcon</div>'+
         '<div style="color:#c0392b;font-weight:700;">CONFIDENTIEL — USAGE COMPTABLE</div>'+
       '</div>'+
-    '</div><script>window.onload=function(){};<\/script>
-<!-- ══ PAGE SUIVI QUALIREPAR ══ -->
-<div class="page" id="page-suivi-qr">
-  <div class="page-header">
-    <div>
-      <div class="page-title">🔄 Suivi QualiRépar</div>
-      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
-      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
-    </div>
-  </div>
-
-  <!-- Statistiques rapides -->
-  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
-
-  <!-- Ecosystem -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header">
-      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
-      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:#f0fdf4;">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecosystem-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Ecologic -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
-      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:#eff6ff;">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">Support ID</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecologic-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-</body></html>';
+    '</div><script>window.onload=function(){};<\/script></body></html>';
 
   var w = window.open('','_blank','width=1100,height=850');
   w.document.write(html);
@@ -14258,7 +14189,7 @@ function renderSuiviQR(){
         '<td style="padding:8px 10px;">'+dateEnvoi+'</td>'+
         '<td style="padding:8px 10px;font-family:monospace;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="'+refId+'">'+refId+'</td>'+
         '<td style="padding:8px 10px;">'+qrStatutBadge(q.statut||'Sent')+'</td>'+
-        '<td style="padding:8px 10px;"><button class="btn btn-sm" onclick="qrChangerStatut(''+d.id+'')">✏️</button></td>'+
+        '<td style="padding:8px 10px;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')">🔄</button> <button class="btn btn-sm" onclick="qrChangerStatut(\''+d.id+'\')" >✏️</button></td>'+
       '</tr>';
     }).join('');
   }
@@ -14435,3 +14366,72 @@ async function qrVerifierTousLesStatuts(){
 }
 // ══════════════════════════════════════════════════════════════════
 </script>
+
+<!-- ══ PAGE SUIVI QUALIREPAR ══ -->
+<div class="page" id="page-suivi-qr">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🔄 Suivi QualiRépar</div>
+      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
+      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <!-- Statistiques rapides -->
+  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+  <!-- Ecosystem -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
+      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#f0fdf4;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecosystem-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ecologic -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
+      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#eff6ff;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">Support ID</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecologic-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
