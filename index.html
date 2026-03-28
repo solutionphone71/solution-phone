@@ -9928,7 +9928,9 @@ function repApplyClientLock(locked){
       el.setAttribute('readonly','');
       if(el.tagName==='SELECT') el.setAttribute('disabled','');
       el.style.background = 'var(--bg-secondary,#f8f9fa)';
-      el.style.color = 'var(--text-muted,#6b7280)';
+      el.style.color = '#374151';
+      el.style.webkitTextFillColor = '#374151'; // iOS Safari fix
+      el.style.opacity = '1'; // iOS Safari fix
       el.style.cursor = 'not-allowed';
       el.style.pointerEvents = 'none';
     } else {
@@ -9936,6 +9938,8 @@ function repApplyClientLock(locked){
       el.removeAttribute('disabled');
       el.style.background = '';
       el.style.color = '';
+      el.style.webkitTextFillColor = '';
+      el.style.opacity = '';
       el.style.cursor = '';
       el.style.pointerEvents = '';
     }
@@ -9960,6 +9964,7 @@ function repValiderClient(){
     var civ = document.getElementById('rep-civilite'); if(civ) c.civilite = civ.value;
     repDossierCourant.client = c;
   }
+  repSauvegarderDossier(); // ← persiste immédiatement dans bons_depot
   repApplyClientLock(true);
   showNotif('✅ Fiche client verrouillée','success');
 }
@@ -10153,6 +10158,7 @@ function repStep1Next(){
   };
 
   repSauvegarderClientSupabase(repDossierCourant.client);
+  repSauvegarderDossier(); // ← persiste adresse/cp/ville dans bons_depot Supabase
   repApplyClientLock(true); // verrouiller la fiche au passage au step suivant
   repGoStep(2);
 }
@@ -10245,6 +10251,7 @@ function repStep2Next(){
   if(!repDossierCourant.photoImeiUrl && a.imei){
     showNotif('💡 Pensez à prendre la photo de la plaque signalétique (bouton 📷 OCR) pour Ecosystem !','success');
   }
+  repSauvegarderDossier(); // persiste l'appareil/panne/devis
   repGoStep(3);
 }
 
