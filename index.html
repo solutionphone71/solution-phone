@@ -9975,12 +9975,12 @@ function repAfficherPhotoThumb(url, marque){
   if(url){
     img.src  = url;
     if(link) link.href = url;
-    // Indiquer l'organisme selon la marque
+    // Indiquer l'organisme selon QR_BRAND_TYPE (source de vérité)
     if(org){
-      var ecosystemBrands = ['Samsung','Huawei','Oppo','Honor','Blackview','Vivo','TCL'];
-      var isEco = marque && ecosystemBrands.indexOf(marque) >= 0;
-      org.textContent = isEco ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
-      org.style.color = isEco ? '#16a34a' : '#2563eb';
+      var orgType = (typeof QR_BRAND_TYPE !== 'undefined' && marque) ? QR_BRAND_TYPE[marque] : null;
+      var isEcosystem = orgType === 'ecosystem';
+      org.textContent = isEcosystem ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
+      org.style.color  = isEcosystem ? '#16a34a' : '#2563eb';
     }
     empty.style.display = 'none';
     thumb.style.display = 'block';
@@ -10189,17 +10189,48 @@ function repUpdateStep5(){
     recap.innerHTML = html2;
   }
 
-  // Récap QR
+  // Checklist pré-envoi
   if(qrRecap){
-    var panne = document.getElementById('rep-qr-panne');
-    var panneLabel = panne && panne.options[panne.selectedIndex] ? panne.options[panne.selectedIndex].text : (d.panne||'—');
+    var a = d.appareil||{};
+    var imeiOk  = a.imei && a.imei.replace(/\s/g,'').length === 15;
+    var panneOk = !!(d.panne && d.panne.trim());
+    var devisOk = !!(d.devis && d.devis > 0);
+    var photoOk = !!d.photoImeiUrl;
+    var sigOk   = !!(d.signature || d.facture);
+    var orgKey  = organisme === 'Ecosystem' ? 'ecoRepairerId' : 'ecologicToken';
+    var credOk  = !!(typeof PARAMS_KEYS !== 'undefined' && localStorage.getItem(PARAMS_KEYS[orgKey]));
+
+    var allOk = imeiOk && panneOk && devisOk && photoOk && sigOk && credOk;
+
+    function chk(ok, label){ 
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">'
+        +(ok ? '<span style="color:#16a34a;font-size:16px;">✅</span>' : '<span style="color:#dc2626;font-size:16px;">❌</span>')
+        +'<span style="font-size:13px;color:'+(ok?'#166534':'#dc2626')+';">'+label+'</span>'
+        +'</div>';
+    }
+
+    var orgColor = organisme === 'Ecosystem' ? '#16a34a' : '#2563eb';
     qrRecap.innerHTML =
-      '<b>Dossier :</b> '+(d.numero||'—')+'<br>'+
-      '<b>Appareil :</b> '+marque+' '+((d.appareil||{}).modele||'')+'<br>'+
-      '<b>IMEI :</b> '+((d.appareil||{}).imei||'—')+'<br>'+
-      '<b>Panne :</b> '+panneLabel+'<br>'+
-      '<b>Bonus QualiRépar :</b> <span style="color:var(--green);font-weight:700;">-25 €</span><br>'+
-      '<b>Organisme :</b> <span style="color:var(--blue);font-weight:700;">'+organisme+'</span>';
+      '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:'+orgColor+';">'
+      +(organisme === 'Ecosystem' ? '🟢' : '🔵')+' Envoi vers '+organisme+'</div>'
+      +chk(imeiOk,  'IMEI valide (15 chiffres)'+(imeiOk?' — '+a.imei:''))
+      +chk(panneOk, 'Panne renseignée'+(panneOk?' — '+(d.panne.length>40?d.panne.substring(0,40)+'…':d.panne):''))
+      +chk(devisOk, 'Devis saisi'+(devisOk?' — '+d.devis.toFixed(2)+' € TTC':''))
+      +chk(photoOk, 'Photo IMEI / plaque signalétique')
+      +chk(sigOk,   'Signature client + facture')
+      +chk(credOk,  'Identifiants '+organisme+' configurés')
+      +(allOk
+        ? '<div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #22c55e;font-size:13px;font-weight:700;color:#166534;">✅ Dossier complet — prêt à envoyer</div>'
+        : '<div style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;font-size:13px;font-weight:700;color:#dc2626;">❌ Compléter les points manquants avant l'envoi</div>'
+      );
+    
+    // Désactiver le bouton si pas prêt
+    var btnEnvoyer = document.querySelector('[onclick="repEnvoyerOrganisme()"]');
+    if(btnEnvoyer){
+      btnEnvoyer.disabled = !allOk;
+      btnEnvoyer.style.opacity = allOk ? '1' : '0.5';
+      btnEnvoyer.style.cursor = allOk ? 'pointer' : 'not-allowed';
+    }
   }
 }
 
@@ -11449,6 +11480,7 @@ var _repAutoSaveRunning = false;
 var _repAutoSaveTimer = null;
 // Cache pour éviter les mises à jour DOM inutiles
 var _repPhotoStatus = null;
+var _repPhotoMarque = null;
 repAutoSave = function(){
   // Tout est debounced — RIEN ne s'exécute de façon synchrone (fix freeze iPad)
   if(_repAutoSaveTimer) clearTimeout(_repAutoSaveTimer);
@@ -11462,10 +11494,11 @@ repAutoSave = function(){
         if(_repSigData) repDossierCourant.signature = _repSigData;
         // Mettre à jour miniature photo seulement si changement
         var hasPhoto = !!repDossierCourant.photoImeiUrl;
-        if(hasPhoto !== _repPhotoStatus){
+        var curMarque = repDossierCourant.appareil && repDossierCourant.appareil.marque;
+        if(hasPhoto !== _repPhotoStatus || curMarque !== _repPhotoMarque){
           _repPhotoStatus = hasPhoto;
-          var marque = repDossierCourant.appareil && repDossierCourant.appareil.marque;
-          repAfficherPhotoThumb(hasPhoto ? repDossierCourant.photoImeiUrl : null, marque);
+          _repPhotoMarque = curMarque;
+          repAfficherPhotoThumb(hasPhoto ? repDossierCourant.photoImeiUrl : null, curMarque);
         }
       }
       _repAutoSaveOrig();
