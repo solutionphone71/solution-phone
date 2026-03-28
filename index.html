@@ -9887,9 +9887,10 @@ function repAutoSave(){
       tel:      (document.getElementById('rep-tel')||{value:''}).value.trim() || (repDossierCourant.client||{}).tel || '',
       email:    (document.getElementById('rep-email')||{value:''}).value.trim() || (repDossierCourant.client||{}).email || '',
       adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim() || (repDossierCourant.client||{}).adresse || '',
-    cp:       _getVal('rep-cp'),
-    ville:    _getVal('rep-ville')
-  };
+      cp:       (document.getElementById('rep-cp')||{value:''}).value.trim() || (repDossierCourant.client||{}).cp || '',
+      ville:    (document.getElementById('rep-ville')||{value:''}).value.trim() || (repDossierCourant.client||{}).ville || ''
+    };
+  } // fin if(repCurrentStep === 1)
   // Lire appareil
   repDossierCourant.appareil = {
     marque:  (document.getElementById('dep-marque')||{value:''}).value,
@@ -10050,7 +10051,6 @@ function repSauvegarderClientManuel(){
     cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
     ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
   };
-  } // fin if(repCurrentStep === 1)
 }
 
 function repSauvegarderClientManuel(){
