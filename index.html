@@ -1042,28 +1042,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;">
 
-      <!-- AgoraPlus -->
-      <div class="card" style="border:1.5px solid #6366f1;">
-        <div class="card-header" style="background:#f5f3ff;">
-          <div class="card-title" style="color:#4f46e5;">🔌 AgoraPlus API</div>
-          <div id="params-agora-status" style="font-size:12px;"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="form-group">
-            <label>Clé API AgoraPlus <span style="color:var(--red);">*</span></label>
-            <input type="password" id="params-agora-key" placeholder="Reçue par email de support@agoraplus.com">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Envoyée par AgoraPlus après votre inscription</div>
-          </div>
-          <div class="form-group">
-            <label>URL API AgoraPlus</label>
-            <input type="text" id="params-agora-url" placeholder="https://api.agoraplus.com" value="https://api.agoraplus.com">
-          </div>
-          <button class="btn btn-primary" onclick="paramsSaveAgora()" style="width:100%;">💾 Enregistrer</button>
-          <button class="btn btn-sm" onclick="paramsTestAgora()" style="border-color:#6366f1;color:#6366f1;">🧪 Tester la connexion</button>
-          <div id="params-agora-test-result" style="font-size:12px;"></div>
-        </div>
-      </div>
-
       <!-- Ecosystem -->
       <div class="card" style="border:1.5px solid var(--green);">
         <div class="card-header" style="background:#f0fdf4;">
@@ -1878,7 +1856,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="width:100%;padding:14px;font-size:15px;">
                   📤 Envoyer à <span id="rep-qr-btn-label">Ecosystem</span>
                 </button>
-                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">Via AgoraPlus API · Remboursement sous 15 jours</div>
+                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">Remboursement sous 15 jours ouvrés</div>
                 <div id="rep-qr-envoi-statut" style="margin-top:10px;"></div>
               </div>
             </div>
@@ -8569,8 +8547,7 @@ showPage = function(id, el){
 
 // Clés localStorage
 var PARAMS_KEYS = {
-  agoraKey:       'sp_agora_api_key',
-  agoraUrl:       'sp_agora_url',
+  // agoraKey/agoraUrl supprimés — APIs Ecosystem et Ecologic directes
   ecoRepairerId:  'sp_eco_repairer_id',
   ecoUser:        'sp_eco_user',
   ecoPass:        'sp_eco_pass',
@@ -8594,8 +8571,7 @@ var PARAMS_KEYS = {
 
 function paramsLoad(){
   var el;
-  el=document.getElementById('params-agora-key');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.agoraKey)||'';
-  el=document.getElementById('params-agora-url');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com';
+
   el=document.getElementById('params-eco-repairer-id'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoRepairerId)||'';
   el=document.getElementById('params-eco-user');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoUser)||'';
   el=document.getElementById('params-eco-pass');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
@@ -8606,15 +8582,7 @@ function paramsLoad(){
   paramsUpdateStatus();
 }
 
-function paramsSaveAgora(){
-  var key = (document.getElementById('params-agora-key')||{value:''}).value.trim();
-  var url = (document.getElementById('params-agora-url')||{value:''}).value.trim()||'https://api.agoraplus.com';
-  if(!key){ showNotif('Entrez la clé API AgoraPlus','error'); return; }
-  localStorage.setItem(PARAMS_KEYS.agoraKey, key);
-  localStorage.setItem(PARAMS_KEYS.agoraUrl, url);
-  showNotif('✅ Clé AgoraPlus enregistrée !','success');
-  paramsUpdateStatus();
-}
+
 
 function paramsSaveEcosystem(){
   var id   = (document.getElementById('params-eco-repairer-id')||{value:''}).value.trim();
@@ -8733,36 +8701,13 @@ async function creerFactureVosFactures(rep){
   return null;
 }
 
-async function paramsTestAgora(){
-  var key = localStorage.getItem(PARAMS_KEYS.agoraKey);
-  var url = localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com';
-  var resultEl = document.getElementById('params-agora-test-result');
-  if(!key){ showNotif('Enregistrez d\'abord la clé AgoraPlus','error'); return; }
-  if(resultEl) resultEl.innerHTML = '⏳ Test en cours...';
-  try {
-    var res = await fetch(url+'/PrintBrandList', {
-      method: 'GET',
-      headers: { 'x-api-key': key, 'Content-Type': 'application/json' }
-    });
-    if(res.ok){
-      var data = await res.json();
-      var nb = data.ResponseData ? data.ResponseData.length : '?';
-      if(resultEl) resultEl.innerHTML = '<span style="color:var(--green);">✅ Connexion OK — '+nb+' marques disponibles</span>';
-      showNotif('AgoraPlus connecté !','success');
-    } else {
-      if(resultEl) resultEl.innerHTML = '<span style="color:var(--red);">❌ Erreur '+res.status+' — Vérifiez la clé API</span>';
-    }
-  } catch(err){
-    if(resultEl) resultEl.innerHTML = '<span style="color:var(--red);">❌ Impossible de contacter AgoraPlus</span>';
-  }
-}
+async 
 
 function paramsUpdateStatus(){
   var box = document.getElementById('params-connexions-status');
   if(!box) return;
 
   var connexions = [
-    { label: 'AgoraPlus',  ok: !!localStorage.getItem(PARAMS_KEYS.agoraKey),       icon: '🔌', color: '#6366f1' },
     { label: 'Ecosystem',  ok: !!localStorage.getItem(PARAMS_KEYS.ecoRepairerId),   icon: '🟢', color: 'var(--green)' },
     { label: 'Ecologic',   ok: !!localStorage.getItem(PARAMS_KEYS.ecologicToken),   icon: '🔵', color: 'var(--blue)' },
     { label: 'VosFactures', ok: !!localStorage.getItem(PARAMS_KEYS.vfToken),         icon: '🧾', color: '#0369a1' },
@@ -8780,8 +8725,6 @@ function paramsUpdateStatus(){
 }
 
 // Fonctions d'accès aux paramètres depuis le reste de l'app
-function getAgoraKey(){ return localStorage.getItem(PARAMS_KEYS.agoraKey)||''; }
-function getAgoraUrl(){ return localStorage.getItem(PARAMS_KEYS.agoraUrl)||'https://api.agoraplus.com'; }
 function getEcoRepairerId(){ return localStorage.getItem(PARAMS_KEYS.ecoRepairerId)||''; }
 function getEcologicToken(){ return localStorage.getItem(PARAMS_KEYS.ecologicToken)||''; }
 function getEcologicSiteId(){ return localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||''; }
@@ -10816,8 +10759,7 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
     '<div style="font-size:13px;color:#991b1b;word-break:break-word;">'+erreur.detail+'</div>' +
     champsHtml +
     '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #fca5a5;display:flex;gap:8px;flex-wrap:wrap;">' +
-    '<button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="background:#dc2626;border-color:#dc2626;font-size:13px;">🔄 Renvoyer après correction</button>' +
-    '<button class="btn btn-sm" onclick="window.open(\'https://www.agoraplus.fr\',\'_blank\')" style="font-size:12px;">🌐 Portail AgoraPlus</button>' +
+    '<button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="background:#dc2626;border-color:#dc2626;font-size:13px;">🔄 Renvoyer après correction</button>'
     '</div>' +
     '</div>';
 }
