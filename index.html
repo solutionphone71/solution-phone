@@ -1454,7 +1454,25 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                         <input type="text" id="dep-imei" placeholder="352099..." oninput="repAutoSave();repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
-                      <div id="dep-photo-status" style="margin-top:6px;font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;">📷 Photo IMEI : <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour Ecosystem</span></div>
+                      <div id="dep-photo-status" style="margin-top:6px;">
+                        <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;display:flex;align-items:center;gap:8px;">
+                          📷 <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour Ecosystem</span>
+                        </div>
+                        <div id="dep-photo-thumb" style="display:none;margin-top:4px;">
+                          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f0fdf4;border:1.5px solid #22c55e;border-radius:10px;">
+                            <a id="dep-photo-link" href="#" target="_blank" style="flex-shrink:0;">
+                              <img id="dep-photo-img" src="" alt="Photo IMEI"
+                                style="width:72px;height:72px;object-fit:cover;border-radius:7px;border:2px solid #22c55e;display:block;cursor:zoom-in;"
+                                title="Cliquer pour agrandir">
+                            </a>
+                            <div style="flex:1;min-width:0;">
+                              <div style="font-size:12px;font-weight:700;color:#166534;">✅ Photo chargée</div>
+                              <div id="dep-photo-org" style="font-size:11px;color:#16a34a;margin-top:2px;">Prête pour Ecosystem / Ecologic</div>
+                              <button onclick="repSupprimerPhotoImei()" style="margin-top:5px;font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;">🗑 Supprimer</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
                     </div>
                     <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit" oninput="repAutoSaveDebounced()"></div>
@@ -9571,10 +9589,18 @@ function repLoadFormFromDossier(){
   var etAlt=document.getElementById('dep-etat-autre'); if(etAlt) etAlt.value=d.etatAutre||'';
   var accAlt=document.getElementById('dep-acc-autre-txt'); if(accAlt) accAlt.value=d.accAutre||'';
   // Step 3 — devis
-  // Vérifier IMEI après chargement
+  // Vérifier IMEI après chargement + restaurer miniature photo
   setTimeout(function(){
     var imeiEl=document.getElementById('dep-imei');
     if(imeiEl&&imeiEl.value) repCheckIMEI(imeiEl.value);
+    // Restaurer la miniature photo si elle existe
+    var d2 = repDossierCourant;
+    if(d2 && d2.photoImeiUrl){
+      var marque = d2.appareil && d2.appareil.marque;
+      repAfficherPhotoThumb(d2.photoImeiUrl, marque);
+    } else {
+      repAfficherPhotoThumb(null, null);
+    }
   },300);
   var dp=document.getElementById('dep-panne'); if(dp) dp.value=d.panne||'';
   var dps=document.getElementById('dep-panne-select');
@@ -9921,6 +9947,44 @@ function repClearForm(){
   });
   var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=false; if(typeof repToggleQR==='function') repToggleQR(); }
 }
+
+
+// ── Miniature photo IMEI ─────────────────────────────────────
+function repAfficherPhotoThumb(url, marque){
+  var empty = document.getElementById('dep-photo-empty');
+  var thumb = document.getElementById('dep-photo-thumb');
+  var img   = document.getElementById('dep-photo-img');
+  var link  = document.getElementById('dep-photo-link');
+  var org   = document.getElementById('dep-photo-org');
+  if(!empty || !thumb || !img) return;
+  if(url){
+    img.src  = url;
+    if(link) link.href = url;
+    // Indiquer l'organisme selon la marque
+    if(org){
+      var ecosystemBrands = ['Samsung','Huawei','Oppo','Honor','Blackview','Vivo','TCL'];
+      var isEco = marque && ecosystemBrands.indexOf(marque) >= 0;
+      org.textContent = isEco ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
+      org.style.color = isEco ? '#16a34a' : '#2563eb';
+    }
+    empty.style.display = 'none';
+    thumb.style.display = 'block';
+  } else {
+    empty.style.display = 'flex';
+    thumb.style.display = 'none';
+    img.src = '';
+  }
+}
+
+function repSupprimerPhotoImei(){
+  if(!repDossierCourant) return;
+  if(!confirm('Supprimer la photo IMEI ?')) return;
+  repDossierCourant.photoImeiUrl = null;
+  repAfficherPhotoThumb(null, null);
+  repSauvegarderDossier();
+  showNotif('Photo supprimée','success');
+}
+// ──────────────────────────────────────────────────────────────
 
 // ── VERROU FICHE CLIENT ────────────────────────────────────────────
 var REP_CLIENT_FIELDS = ['rep-civilite','rep-nom','rep-prenom','rep-tel','rep-email','rep-adresse','rep-cp','rep-ville'];
@@ -11031,11 +11095,9 @@ async function repOCRImei(){
         if(photoUrl && repDossierCourant){
           repDossierCourant.photoImeiUrl = photoUrl;
           repSauvegarderDossier();
-          // Badge photo validée
-          var badge = document.getElementById('dep-photo-badge');
-          var statusDiv = document.getElementById('dep-photo-status');
-          if(badge){ badge.textContent='✅ Photo validée — prête pour Ecosystem'; badge.style.color='var(--green)'; }
-          if(statusDiv){ statusDiv.style.background='#f0fdf4'; statusDiv.style.borderColor='#22c55e'; }
+          // Afficher la miniature avec l'organisme correct
+          var marque = repDossierCourant.appareil && repDossierCourant.appareil.marque;
+          repAfficherPhotoThumb(photoUrl, marque);
         }
       } catch(e){ console.log('Upload photo:', e); }
 
@@ -11375,18 +11437,12 @@ repAutoSave = function(){
         repDossierCourant.moHT     = parseFloat((document.getElementById('dep-mo-ht')||{value:0}).value)||0;
         repDossierCourant.piecesHT = parseFloat((document.getElementById('dep-pieces-ht')||{value:0}).value)||0;
         if(_repSigData) repDossierCourant.signature = _repSigData;
-        // Mettre à jour indicateur photo IMEI seulement si changement
+        // Mettre à jour miniature photo seulement si changement
         var hasPhoto = !!repDossierCourant.photoImeiUrl;
         if(hasPhoto !== _repPhotoStatus){
           _repPhotoStatus = hasPhoto;
-          var photoEl = document.getElementById('dep-photo-status');
-          if(photoEl){
-            if(hasPhoto){
-              photoEl.innerHTML = '✅ <span style="color:var(--green);">Photo prise — prête pour Ecosystem</span>';
-            } else {
-              photoEl.innerHTML = '📷 <span style="color:var(--text-muted);">Aucune photo prise</span>';
-            }
-          }
+          var marque = repDossierCourant.appareil && repDossierCourant.appareil.marque;
+          repAfficherPhotoThumb(hasPhoto ? repDossierCourant.photoImeiUrl : null, marque);
         }
       }
       _repAutoSaveOrig();
