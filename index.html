@@ -3397,7 +3397,46 @@ function showPage(id,el){
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
-  if(id==='reparations'){repLoadDossiers();}
+  if(id==='reparations'){
+    // Restaurer le dossier courant depuis localStorage si nécessaire
+    if(!window.repDossierCourant){
+      try {
+        var saved = localStorage.getItem('sp_rep_dossier_courant');
+        if(saved){
+          window.repDossierCourant = JSON.parse(saved);
+          repLoadDossiers();
+          // Réouvrir le dossier
+          var dc = window.repDossierCourant;
+          if(dc && dc.id){
+            var dosView = document.getElementById('rep-dossier-view');
+            var listeView = document.getElementById('rep-liste-view');
+            if(dosView) dosView.style.display='block';
+            if(listeView) listeView.style.display='none';
+            repLoadFormFromDossier();
+            var tit = document.getElementById('rep-dossier-titre');
+            var num = document.getElementById('rep-dossier-num');
+            if(tit) tit.textContent=(dc.client.prenom||'')+' '+(dc.client.nom||'');
+            if(num) num.textContent=dc.numero+' · '+fmtDate(dc.date);
+            repUpdateStatutBadge();
+            var stepMap={depot:1,devis:3,facture:4,qr:5,cloture:5};
+            repGoStep(stepMap[dc.statut]||1);
+          }
+        } else { repLoadDossiers(); }
+      } catch(e){ repLoadDossiers(); }
+    } else {
+      // Dossier déjà en mémoire : juste mettre à jour la liste en arrière-plan
+      repLoadDossiers();
+      // Maintenir le dossier visible
+      var dosView = document.getElementById('rep-dossier-view');
+      var listeView = document.getElementById('rep-liste-view');
+      if(dosView && dosView.style.display==='none' && window.repDossierCourant){
+        dosView.style.display='block';
+        if(listeView) listeView.style.display='none';
+        repLoadFormFromDossier();
+        repUpdateStatutBadge();
+      }
+    }
+  }
   if(id==='params'){paramsLoad();}
   if(id==='neufs-access'){naLoad();naRender();}
   if(id==='depenses'){renderDepenses();}
@@ -9381,6 +9420,7 @@ function repShowListe(){
   document.getElementById('rep-liste-view').style.display='block';
   document.getElementById('rep-dossier-view').style.display='none';
   repDossierCourant = null;
+  try { localStorage.removeItem('sp_rep_dossier_courant'); } catch(e){}
   renderRepListe();
 }
 
@@ -10328,6 +10368,8 @@ function repStep4Next(){
 
 function repSauvegarderDossier(){
   if(!repDossierCourant) return;
+  // Sauvegarder aussi dans localStorage pour restauration au retour sur l'onglet
+  try { localStorage.setItem('sp_rep_dossier_courant', JSON.stringify(repDossierCourant)); } catch(e){}
   var idx = repDossiers.findIndex(function(d){ return String(d.id)===String(repDossierCourant.id); });
   if(idx>=0){ repDossiers[idx]=JSON.parse(JSON.stringify(repDossierCourant)); }
   else { repDossiers.push(JSON.parse(JSON.stringify(repDossierCourant))); }
