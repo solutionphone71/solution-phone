@@ -9698,10 +9698,7 @@ async function repGenererFacture(){
   repSauvegarderDossier();
   repUpdateStatutBadge();
 
-  // Imprimer la facture
-  repImprimerFacture(d);
-
-  // Envoyer à VosFactures
+  // Envoyer à VosFactures D'ABORD (avant l'impression)
   if(getVFToken() && getVFDomain()){
     var vfData = {
       date: d.facture.date,
@@ -9725,12 +9722,17 @@ async function repGenererFacture(){
         var btnVF = document.getElementById('btn-vf-link');
         if(btnVF) btnVF.style.display='block';
       } else {
-        showNotif('✅ Facture créée !','success');
+        showNotif('⚠️ Facture créée mais VosFactures a retourné une erreur','error');
       }
+      // Imprimer après VosFactures
+      repImprimerFacture(d);
     });
+    return; // L'impression se fait dans le .then()
   } else {
     showNotif('✅ Facture '+d.facture.numero+' créée !','success');
   }
+  // Imprimer (si pas VosFactures)
+  repImprimerFacture(d);
   repUpdateDevisRecap();
 }
 
