@@ -12800,14 +12800,24 @@ function printBonDepot(d){
           '<th style="text-align:right;font-size:11px;">Total TTC</th>'+
         '</tr></thead>'+
         '<tbody>'+
-          '<tr><td>Remplacement<br><span style="font-size:10px;color:#666;">'+(d.panne||'Réparation')+'</span></td>'+
+          // Ligne Main d'œuvre
+          '<tr><td>Main d'œuvre<br><span style="font-size:10px;color:#666;">'+(d.panne||'Réparation')+'</span></td>'+
             '<td style="text-align:right;">'+moHT.toFixed(2)+' €</td>'+
             '<td style="text-align:center;">1</td>'+
-            '<td style="text-align:right;">'+htTot.toFixed(2)+' €</td>'+
-            '<td style="text-align:right;">'+tva.toFixed(2)+' €</td>'+
-            '<td style="text-align:right;font-weight:700;">'+ttc.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;">'+moHT.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;">'+(moHT*0.2).toFixed(2)+' €</td>'+
+            '<td style="text-align:right;font-weight:700;">'+(moHT*1.2).toFixed(2)+' €</td>'+
           '</tr>'+
-          (bonusQRActif ? '<tr style="background:#f0fff4;"><td><b>Bonus Réparation</b><br><span style="font-size:10px;color:#666;">Remise Ecosystem / Ecologic</span></td>'+
+          // Ligne Pièces détachées
+          '<tr style="background:#f8fafc;"><td>Pièces détachées<br><span style="font-size:10px;color:#666;">'+(d.panne||'Réparation')+'</span></td>'+
+            '<td style="text-align:right;">'+pieHT.toFixed(2)+' €</td>'+
+            '<td style="text-align:center;">1</td>'+
+            '<td style="text-align:right;">'+pieHT.toFixed(2)+' €</td>'+
+            '<td style="text-align:right;">'+(pieHT*0.2).toFixed(2)+' €</td>'+
+            '<td style="text-align:right;font-weight:700;">'+(pieHT*1.2).toFixed(2)+' €</td>'+
+          '</tr>'+
+          // Ligne Bonus QR (conditionnelle)
+          (bonusQRActif ? '<tr style="background:#f0fff4;"><td><b>Bonus Réparation QualiRépar</b><br><span style="font-size:10px;color:#166534;">Remise Ecosystem / Ecologic — dispositif Loi AGEC</span></td>'+
             '<td style="text-align:right;">0,00 €</td>'+
             '<td style="text-align:center;">1</td>'+
             '<td style="text-align:right;">0,00 €</td>'+
