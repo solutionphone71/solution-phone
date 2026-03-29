@@ -1716,7 +1716,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div class="card" style="border:1.5px solid var(--green);">
                 <div class="card-header" style="background:#f0fdf4;">
                   <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;cursor:pointer;margin:0;">
-                    <input type="checkbox" id="rep-qr-actif" onchange="repToggleQR()" style="width:18px;height:18px;accent-color:var(--green);">
+                    <input type="checkbox" id="rep-qr-actif" onchange="repToggleQR()" checked style="width:18px;height:18px;accent-color:var(--green);">
                     <span>🏷️ Bonus QualiRépar (-25 €)</span>
                   </label>
                 </div>
@@ -9922,7 +9922,7 @@ function repClearForm(){
   ['dep-acc-coque','dep-acc-chargeur','dep-acc-cable','dep-acc-boite','dep-acc-verre','dep-acc-autre','dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos','dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera','dep-etat-charge','dep-etat-batterie'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.checked=false;
   });
-  var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=false; if(typeof repToggleQR==='function') repToggleQR(); }
+  var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=true; if(typeof repToggleQR==='function') repToggleQR(); }
 }
 
 
@@ -12713,11 +12713,13 @@ function printBonDepot(d){
   // prixReel = prix avant bonus (ce qu'on affiche dans le tableau)
   var devis  = d.devis||0; // prix client final (ex: 90€)
   // Détecter si le bonus QR est actif — vérifier toutes les sources
-  var bonusQRActif = !!(d.bonusQR)
-    || !!(d.facture && d.facture.bonusQR)
-    || !!(repDossierCourant && repDossierCourant.bonusQR)
-    || !!(repDossierCourant && repDossierCourant.facture && repDossierCourant.facture.bonusQR)
-    || !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
+  // bonusQR actif par défaut — sauf si explicitement désactivé (d.bonusQR === false)
+  var bonusQRActif = (d.bonusQR !== false)
+    && (d.bonusQR === true
+        || !!(d.facture && d.facture.bonusQR)
+        || !!(repDossierCourant && repDossierCourant.bonusQR !== false)
+        || !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked)
+        || true); // actif par défaut
   // prixReel = prix AVANT bonus (ce qui apparaît dans le tableau HT)
   var prixReel = bonusQRActif ? devis + 25 : devis; // ex: 90+25=115€
   var moHT = 25; // MO HT fixe
