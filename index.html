@@ -327,6 +327,11 @@ select, input, textarea, button {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+/* Canvas signature — DOIT rester touch-action:none pour capturer le dessin */
+#rep-sig-canvas, #qr-sig-canvas, canvas {
+  touch-action: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
 
   /* iOS Safari — empêche le zoom automatique (freeze) sur les champs < 16px */
   input, textarea, select {
@@ -341,10 +346,6 @@ select, input, textarea, button {
   .rep-step-content[style*="display:none"],
   .rep-step-content[style*="display: none"] {
     content-visibility: hidden;
-  }
-  /* Supprime le délai 300ms iOS sur tous les éléments interactifs */
-  * {
-    touch-action: manipulation;
   }
 </style>
 <script>
