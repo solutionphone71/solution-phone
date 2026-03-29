@@ -11387,6 +11387,19 @@ function repCheckEligibilite(){
 
 
 var _repAutoDecompRunning = false;
+function repToggleQR(){
+  var checked = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
+  // Afficher/masquer les sections bonus QR
+  var qrSection = document.getElementById('rep-qr-section');
+  if(qrSection) qrSection.style.display = checked ? 'block' : 'none';
+  // Recalculer la décomposition HT avec le nouveau statut bonus
+  var devisEl = document.getElementById('dep-devis');
+  if(devisEl && parseFloat(devisEl.value) > 0){
+    repAutoDecompose(devisEl.value);
+  }
+  repAutoSave();
+}
+
 function repAutoDecompose(prixTTC){
   // Entièrement async → ne bloque jamais l'UI thread iPad
   if(_repAutoDecompRunning) return;
@@ -11409,8 +11422,13 @@ function repAutoDecompose(prixTTC){
         if(elPie) elPie.value = pieces.toFixed(2);
         var calcBox = document.getElementById('rep-devis-calc');
         var htTot = mo + pieces;
+        var ttcAffiche = Math.round(htTot*1.2*100)/100; // = prixBase
         if(calcBox){
-          calcBox.innerHTML = 'HT total : <b>'+htTot.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+(Math.round(htTot*1.2*100)/100).toFixed(2)+' €</b>';
+          if(bonusQR){
+            calcBox.innerHTML = 'HT total : <b>'+htTot.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+ttcAffiche.toFixed(2)+' €</b> → <span style="color:var(--green)">Client paie : <b>'+ttc.toFixed(2)+' €</b> (-25€ bonus)</span>';
+          } else {
+            calcBox.innerHTML = 'HT total : <b>'+htTot.toFixed(2)+' €</b> (MO : '+mo.toFixed(2)+' € + Pièces : '+pieces.toFixed(2)+' €) → TTC 20% : <b>'+ttcAffiche.toFixed(2)+' €</b>';
+          }
         }
       }
 
@@ -12648,13 +12666,15 @@ function printBonDepot(d){
   // d.devis = prix saisi = prix CLIENT FINAL après déduction bonus
   // prixReel = prix avant bonus (ce qu'on affiche dans le tableau)
   var devis  = d.devis||0; // prix client final (ex: 90€)
-  // Détecter si le bonus QR est actif — chercher dans toutes les sources possibles
+  // Détecter si le bonus QR est actif
   var bonusQRActif = !!(d.facture && d.facture.bonusQR)
     || !!(repDossierCourant && repDossierCourant.facture && repDossierCourant.facture.bonusQR)
     || !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
+  // prixReel = prix AVANT bonus (ce qui apparaît dans le tableau HT)
   var prixReel = bonusQRActif ? devis + 25 : devis; // ex: 90+25=115€
-  var moHT   = d.moHT || 25;
-  var pieHT  = d.piecesHT || (prixReel > 0 ? Math.max(0, Math.round((prixReel/1.2 - moHT)*100)/100) : 0);
+  var moHT = 25; // MO HT fixe
+  // TOUJOURS recalculer depuis prixReel — les valeurs stockées peuvent être basées sur l'ancien prix
+  var pieHT  = Math.max(0, Math.round((prixReel/1.2 - moHT)*100)/100);
   var htTot  = Math.round((moHT + pieHT)*100)/100;
   var tva    = Math.round(htTot * 0.2 * 100)/100;
   var ttc    = Math.round(htTot * 1.2 * 100)/100; // = prixReel
