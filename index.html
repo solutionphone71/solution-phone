@@ -1622,7 +1622,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   </div>
                   <div style="padding:10px 14px;">
                     <canvas id="rep-sig-canvas" width="380" height="100"
-                      style="border:1.5px solid var(--border);border-radius:8px;background:#fff;touch-action:none;display:block;width:100%;cursor:crosshair;"></canvas>
+                      style="border:1.5px solid var(--border);border-radius:8px;background:#fff;touch-action:none !important;display:block;width:100%;cursor:crosshair;pointer-events:auto;position:relative;z-index:1;"></canvas>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
                       <div id="rep-sig-hint" style="font-size:12px;color:var(--text-muted);">← Signez dans le cadre ci-dessus →</div>
                       <button type="button" class="btn btn-sm" onclick="repClearSig()">🗑️ Effacer</button>
@@ -11346,12 +11346,14 @@ async function uploaderPhotoIMEI(base64, dataUrl){
       return url;
     } else {
       var err = await res.text();
-      console.error('Upload error:', res.status, err);
-      return null;
+      console.error('Upload Storage échoué ('+res.status+') — fallback base64');
+      // Fallback : retourner directement le dataUrl base64
+      return dataUrl || ('data:image/jpeg;base64,'+base64);
     }
   } catch(e){
     console.error('Upload exception:', e);
-    return null;
+    // Fallback : base64 direct
+    return dataUrl || null;
   }
 }
 
@@ -11512,9 +11514,14 @@ function repInitSig(){
   // Supprimer les anciens listeners pour éviter les doublons
   if(canvas._sigCleanup) canvas._sigCleanup();
 
-  // Redimensionner le canvas à sa vraie taille CSS
-  var w = canvas.offsetWidth || 380;
-  var h = canvas.offsetHeight || 100;
+  // Redimensionner le canvas — attendre que le DOM soit rendu
+  var w = canvas.offsetWidth || canvas.parentElement && canvas.parentElement.offsetWidth || 380;
+  var h = 100;
+  // Si le canvas n'est pas encore rendu (offsetWidth=0), attendre
+  if(w < 10){
+    setTimeout(repInitSig, 100);
+    return;
+  }
   canvas.width  = w;
   canvas.height = h;
 
@@ -11547,11 +11554,19 @@ function repInitSig(){
 
   function onDown(e){
     e.preventDefault();
+    e.stopPropagation();
     drawing = true;
     var p = getXY(e);
     lastX = p.x; lastY = p.y;
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth   = 2.5;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
+    // Point visible au premier clic
+    ctx.arc(lastX, lastY, 1.5, 0, Math.PI*2);
+    ctx.fill();
   }
   function onMove(e){
     e.preventDefault();
@@ -12503,7 +12518,7 @@ function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(b
 
 async function loadBonsDepot(){
   try {
-    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc');
+    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc&select=*');
     if(res && res.length >= 0){
       bonsDepot = res.map(function(x){
         return {
@@ -12564,9 +12579,9 @@ async function saveBonDepotSupabase(d){
     accessoires: d.accessoires,
     panne: d.panne, devis: d.devis,
     date_retour: d.dateRetour||null, obs: d.obs,
-    photo_imei_url: d.photoImeiUrl||null,
-    signature: d.signature||null,
-    bonus_qr: !!(d.facture && d.facture.bonusQR),
+    photo_imei_url: (d.photoImeiUrl && d.photoImeiUrl.length < 500000) ? d.photoImeiUrl : null,
+    signature: (d.signature && d.signature.length < 500000) ? d.signature : null,
+    bonus_qr: !!(d.bonusQR || (d.facture && d.facture.bonusQR)),
     mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null
   };
   try {
