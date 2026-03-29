@@ -8685,18 +8685,30 @@ async function creerFactureVosFactures(rep){
     }
   };
 
+  // Retirer api_token du body (VosFactures le veut en query param)
+  var payloadBody = JSON.parse(JSON.stringify(payload));
+  delete payloadBody.api_token;
+
   try {
-    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json', {
+    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json?api_token='+encodeURIComponent(token), {
       method: 'POST',
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payloadBody)
     });
+    var data = await res.json();
     if(res.ok){
-      var data = await res.json();
-      return data; // contient data.id, data.number, data.view_url
+      console.log('VosFactures OK:', data.id, data.number);
+      return data;
+    } else {
+      console.error('VosFactures erreur', res.status, JSON.stringify(data));
+      showNotif('VosFactures : '+res.status+' — '+(data.error||JSON.stringify(data).substring(0,100)),'error');
+      return null;
     }
-  } catch(e){ console.error('VosFactures:', e); }
-  return null;
+  } catch(e){
+    console.error('VosFactures exception:', e);
+    showNotif('VosFactures connexion impossible : '+e.message,'error');
+    return null;
+  }
 }
 
 function paramsUpdateStatus(){
