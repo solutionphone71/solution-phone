@@ -10026,6 +10026,12 @@ function repApplyClientLock(locked){
 }
 
 function repValiderClient(){
+  // Auto-créer un dossier si nécessaire
+  if(!repDossierCourant){
+    repNewDossier();
+    setTimeout(repValiderClient, 200);
+    return;
+  }
   if(repDossierCourant && repCurrentStep === 1){
     var c = repDossierCourant.client || {};
     ['nom','prenom','tel','email','adresse','cp','ville'].forEach(function(k){
@@ -10236,7 +10242,12 @@ function repUpdateStatutBadge(){
 }
 
 function repStep1Next(){
-  if(!repDossierCourant) return;
+  // Auto-créer un dossier si nécessaire
+  if(!repDossierCourant){
+    repNewDossier();
+    setTimeout(repStep1Next, 200); // retry après création
+    return;
+  }
 
   // Lire DIRECTEMENT les champs HTML maintenant (synchrone, avant que les champs soient cachés)
   var civilite = (document.getElementById('rep-civilite')||{value:''}).value;
@@ -10249,10 +10260,10 @@ function repStep1Next(){
   var ville    = (document.getElementById('rep-ville')||{value:''}).value.trim();
 
   // Validation
-  if(!civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); return; }
-  if(!nom){ showNotif('⚠️ Le nom est obligatoire','error'); return; }
-  if(!prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); return; }
-  if(!tel || tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error'); return; }
+  if(!civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); alert('Sélectionnez M. ou Mme'); return; }
+  if(!nom){ showNotif('⚠️ Le nom est obligatoire','error'); alert('Le nom est obligatoire'); return; }
+  if(!prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); alert('Le prénom est obligatoire'); return; }
+  if(!tel || tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide','error'); alert('Téléphone invalide (min. 10 chiffres)'); return; }
 
   // Sauvegarder IMMÉDIATEMENT dans repDossierCourant (synchrone)
   repDossierCourant.client = {
