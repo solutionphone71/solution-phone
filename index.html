@@ -9883,14 +9883,21 @@ function repPanneSelect(val){
   if(!ta) return;
   if(val && val !== 'Autre panne - voir description'){
     ta.value = val;
-    ta.style.display = 'none'; // Masquer le textarea si panne standard
+    ta.style.display = 'none';
   } else {
     ta.value = '';
-    ta.style.display = 'block'; // Afficher pour saisie libre
+    ta.style.display = 'block';
     if(val === 'Autre panne - voir description') ta.focus();
   }
   // Auto-détecter la pièce Ecosystem selon la panne
   repPanneToEcosystem(val);
+  // Réinitialiser les codes IRIS et les recalculer selon la nouvelle panne
+  var qrPanne = document.getElementById('rep-qr-panne');
+  if(qrPanne) {
+    qrPanne.value = ''; // Reset pour forcer la re-détection
+    if(repDossierCourant) repDossierCourant.panne = val || ta.value;
+    repQRAutoPanne(); // Re-détecter automatiquement
+  }
 }
 
 function repPanneToEcosystem(panne){
@@ -11866,7 +11873,7 @@ function repQRAutoPanne(){
   var panne = (repDossierCourant.panne||'').toLowerCase();
   var piece = (repDossierCourant.appareil && repDossierCourant.appareil.piece||'').toLowerCase();
   var sel = document.getElementById('rep-qr-panne');
-  if(!sel || sel.value) return; // déjà sélectionné
+  if(!sel) return; // Toujours recalculer quand la panne change
 
   // Détection automatique selon la panne décrite
   var auto = '';
