@@ -1783,27 +1783,27 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" id="rep-iris-fields">
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Condition <span style="color:var(--text-muted);">(IRISCondition)</span></label>
-                        <input type="text" id="iris-condition" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="6">
+                        <input type="text" id="iris-condition" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="6">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Symptôme <span style="color:var(--text-muted);">(IRISSymptom)</span></label>
-                        <input type="text" id="iris-symptom" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="E7">
+                        <input type="text" id="iris-symptom" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="E7">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Section <span style="color:var(--text-muted);">(IRISSection)</span></label>
-                        <input type="text" id="iris-section" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="W10">
+                        <input type="text" id="iris-section" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="W10">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Défaut <span style="color:var(--text-muted);">(IRISDefault)</span></label>
-                        <input type="text" id="iris-default" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="08">
+                        <input type="text" id="iris-default" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="08">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Réparation <span style="color:var(--text-muted);">(IRISRepair)</span></label>
-                        <input type="text" id="iris-repair" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="A">
+                        <input type="text" id="iris-repair" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="A">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Code réparation <span style="color:var(--text-muted);">(RepairCode)</span></label>
-                        <input type="text" id="iris-repaircode" readonly style="background:#fff;font-family:monospace;font-size:13px;" placeholder="ELE-DIS-001">
+                        <input type="text" id="iris-repaircode" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="ELE-DIS-001">
                       </div>
                     </div>
                     <div style="margin-top:8px;">
@@ -11804,14 +11804,22 @@ function repQRSelectPanne(panneKey){
     return;
   }
 
-  // Remplir automatiquement
-  document.getElementById('iris-condition').value  = codes.condition;
-  document.getElementById('iris-symptom').value    = codes.symptom;
-  document.getElementById('iris-section').value    = codes.section;
-  document.getElementById('iris-default').value    = codes.irisDefault;
-  document.getElementById('iris-repair').value     = codes.repair;
-  document.getElementById('iris-repaircode').value = codes.repairCode;
-  document.getElementById('iris-failure-desc').value = codes.description;
+  // Remplir automatiquement — forcer le rafraîchissement visuel
+  var irisMap = {
+    'iris-condition':   codes.condition,
+    'iris-symptom':     codes.symptom,
+    'iris-section':     codes.section,
+    'iris-default':     codes.irisDefault,
+    'iris-repair':      codes.repair,
+    'iris-repaircode':  codes.repairCode,
+    'iris-failure-desc': codes.description
+  };
+  Object.keys(irisMap).forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.value = ''; // reset d'abord pour forcer repaint
+    setTimeout((function(e, v){ return function(){ e.value = v; }; })(el, irisMap[id]), 10);
+  });
 
   // Pré-remplir description facture si vide
   var descEl = document.getElementById('r-description');
