@@ -1599,8 +1599,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group">
-                      <label>Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span></label>
-                      <input type="number" id="dep-devis" placeholder="ex: 45.00 (prix client final)" step="0.01" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:16px;font-weight:700;">
+                      <label id="dep-devis-label">Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span></label>
+                      <input type="number" id="dep-devis" placeholder="ex: 90 (prix payé par le client)" step="0.01" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:16px;font-weight:700;">
+                      <div id="dep-devis-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                       <div style="font-size:11px;color:#0369a1;margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                     </div>
                   </div>
@@ -11390,10 +11391,21 @@ var _repAutoDecompRunning = false;
 function repToggleQR(){
   var checked = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
   // Afficher/masquer les sections bonus QR
-  var qrSection = document.getElementById('rep-qr-section');
-  if(qrSection) qrSection.style.display = checked ? 'block' : 'none';
-  // Recalculer la décomposition HT avec le nouveau statut bonus
+  var qrBloc = document.getElementById('rep-qr-bloc');
+  if(qrBloc) qrBloc.style.display = checked ? 'block' : 'none';
+  // Mettre à jour le label du champ prix
+  var lbl = document.getElementById('dep-devis-label');
+  var hint = document.getElementById('dep-devis-hint');
   var devisEl = document.getElementById('dep-devis');
+  if(lbl){
+    if(checked){
+      lbl.innerHTML = 'Prix TTC <b>payé par le client</b> (€) <span style="color:var(--red);font-weight:700;">*</span> <span style="color:var(--green);font-size:12px;">= prix réel - 25€ bonus</span>';
+    } else {
+      lbl.innerHTML = 'Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span>';
+    }
+  }
+  if(devisEl) devisEl.placeholder = checked ? 'ex: 90 (= 115€ réel - 25€ bonus)' : 'ex: 45.00';
+  // Recalculer la décomposition HT avec le nouveau statut bonus
   if(devisEl && parseFloat(devisEl.value) > 0){
     repAutoDecompose(devisEl.value);
   }
