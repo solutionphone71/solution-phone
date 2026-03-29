@@ -10487,7 +10487,11 @@ function repSauvegarderDossier(){
     panne: repDossierCourant.panne, devis: repDossierCourant.devis,
     bonusQR: !!repDossierCourant.bonusQR,
     dateRetour: repDossierCourant.dateRetour, obs: repDossierCourant.obs,
-    facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi
+    facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi,
+    photoImeiUrl: repDossierCourant.photoImeiUrl||null,
+    signature: repDossierCourant.signature||null,
+    moHT: repDossierCourant.moHT||null,
+    piecesHT: repDossierCourant.piecesHT||null
   };
   var bidx = bonsDepot.findIndex(function(d){ return String(d.id)===String(depot.id); });
   if(bidx>=0) bonsDepot[bidx]=depot; else bonsDepot.push(depot);
