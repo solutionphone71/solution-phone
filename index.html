@@ -1761,7 +1761,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <label>Type de panne *
                       <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:6px;">Les codes IRIS sont remplis automatiquement</span>
                     </label>
-                    <select id="rep-qr-panne" onchange="repQRSelectPanne(this.value);repUpdateFacturePreview();">
+                    <select id="rep-qr-panne" onchange="var v=this.value;console.log('IRIS panne:',v);repQRSelectPanne(v);repUpdateFacturePreview();">
                       <option value="">— Choisir la panne —</option>
                       <option value="ecran-casse">Écran cassé (casse physique)</option>
                       <option value="ecran-hors-casse">Écran défaillant (hors casse)</option>
@@ -3414,12 +3414,11 @@ function showPage(id,el){
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
   if(id==='reparations'){
-    // Si un dossier est déjà ouvert en mémoire, maintenir la vue dossier
     var _dosView = document.getElementById('rep-dossier-view');
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
-      repLoadFormFromDossier(); // recharger les champs depuis repDossierCourant
+      repLoadFormFromDossier();
     } else {
-      repLoadDossiers(); // vue liste normale
+      repLoadDossiers();
     }
   }
   if(id==='suivi-qr'){renderSuiviQR();}
@@ -10242,12 +10241,19 @@ function repUpdateStatutBadge(){
 }
 
 function repStep1Next(){
+  // Fermer tout overlay mobile qui pourrait bloquer
+  var ov = document.getElementById('mobile-menu-overlay');
+  if(ov) ov.style.display = 'none';
+  var panel = document.getElementById('mobile-menu-panel');
+  if(panel) panel.classList.remove('open');
   // Auto-créer un dossier si nécessaire
   if(!repDossierCourant){
+    console.log('repStep1Next: repDossierCourant est null, création auto');
     repNewDossier();
-    setTimeout(repStep1Next, 200); // retry après création
+    setTimeout(repStep1Next, 300);
     return;
   }
+  console.log('repStep1Next: dossier=', repDossierCourant.numero);
 
   // Lire DIRECTEMENT les champs HTML maintenant (synchrone, avant que les champs soient cachés)
   var civilite = (document.getElementById('rep-civilite')||{value:''}).value;
@@ -10260,10 +10266,26 @@ function repStep1Next(){
   var ville    = (document.getElementById('rep-ville')||{value:''}).value.trim();
 
   // Validation
-  if(!civilite){ showNotif('⚠️ Sélectionnez M. ou Mme','error'); alert('Sélectionnez M. ou Mme'); return; }
-  if(!nom){ showNotif('⚠️ Le nom est obligatoire','error'); alert('Le nom est obligatoire'); return; }
-  if(!prenom){ showNotif('⚠️ Le prénom est obligatoire','error'); alert('Le prénom est obligatoire'); return; }
-  if(!tel || tel.replace(/\s/g,'').length < 10){ showNotif('⚠️ Téléphone invalide','error'); alert('Téléphone invalide (min. 10 chiffres)'); return; }
+  if(!civilite){
+    showNotif('⚠️ Sélectionnez M. ou Mme','error');
+    var el=document.getElementById('rep-civilite'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
+  if(!nom){
+    showNotif('⚠️ Le nom est obligatoire','error');
+    var el=document.getElementById('rep-nom'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
+  if(!prenom){
+    showNotif('⚠️ Le prénom est obligatoire','error');
+    var el=document.getElementById('rep-prenom'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
+  if(!tel || tel.replace(/\s/g,'').length < 10){
+    showNotif('⚠️ Téléphone invalide (min. 10 chiffres)','error');
+    var el=document.getElementById('rep-tel'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
 
   // Sauvegarder IMMÉDIATEMENT dans repDossierCourant (synchrone)
   repDossierCourant.client = {
@@ -11271,7 +11293,10 @@ async function repOCRImei(){
         photoUrl = await uploaderPhotoIMEI(base64Full, compressedUrl);
         if(photoUrl && repDossierCourant){
           repDossierCourant.photoImeiUrl = photoUrl;
-          repSauvegarderDossier();
+          repSauvegarderDossier(); // localStorage + debounce Supabase
+          // Sauvegarde Supabase immédiate pour la photo (sans debounce)
+          var depotAvecPhoto = Object.assign({}, repDossierCourant);
+          saveBonDepotSupabase(depotAvecPhoto);
           // Remplacer la preview locale par l'URL Supabase définitive
           repAfficherPhotoThumb(photoUrl, marque);
           thumbPreview.src = photoUrl;
@@ -11808,21 +11833,23 @@ function repQRSelectPanne(panneKey){
     return;
   }
 
-  // Remplir automatiquement — forcer le rafraîchissement visuel
+  // Remplir directement
   var irisMap = {
-    'iris-condition':   codes.condition,
-    'iris-symptom':     codes.symptom,
-    'iris-section':     codes.section,
-    'iris-default':     codes.irisDefault,
-    'iris-repair':      codes.repair,
-    'iris-repaircode':  codes.repairCode,
+    'iris-condition':    codes.condition,
+    'iris-symptom':      codes.symptom,
+    'iris-section':      codes.section,
+    'iris-default':      codes.irisDefault,
+    'iris-repair':       codes.repair,
+    'iris-repaircode':   codes.repairCode,
     'iris-failure-desc': codes.description
   };
   Object.keys(irisMap).forEach(function(id){
     var el = document.getElementById(id);
-    if(!el) return;
-    el.value = ''; // reset d'abord pour forcer repaint
-    setTimeout((function(e, v){ return function(){ e.value = v; }; })(el, irisMap[id]), 10);
+    if(el){
+      el.removeAttribute('readonly');
+      el.value = irisMap[id] || '';
+      el.setAttribute('readonly','');
+    }
   });
 
   // Pré-remplir description facture si vide
