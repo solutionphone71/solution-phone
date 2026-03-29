@@ -12648,12 +12648,16 @@ function printBonDepot(d){
   var accAll = ['Coque/Étui','Chargeur','Câble','Boîte d\'origine','Protection écran','Autre'];
 
   // Décomposition HT
+  // d.devis = prix saisi par le technicien (= prix client final APRÈS bonus)
+  // Pour le devis/bon de dépôt, afficher le prix RÉEL (+ 25€ si bonus QR)
   var devis  = d.devis||0;
+  var bonusQRActif = !!(d.facture && d.facture.bonusQR) || !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
+  var prixReel = bonusQRActif ? devis + 25 : devis; // prix réel = ce que paie le client + bonus remboursé
   var moHT   = d.moHT||25;
-  var pieHT  = d.piecesHT||(devis>0 ? Math.max(0,(devis/1.2)-25) : 0);
+  var pieHT  = d.piecesHT||(prixReel>0 ? Math.max(0,(prixReel/1.2)-moHT) : 0);
   var htTot  = moHT + pieHT;
   var tva    = htTot * 0.2;
-  var ttc    = htTot * 1.2;
+  var ttc    = htTot * 1.2; // = prixReel
 
   // Signature image
   var sigHtml = d.signature
@@ -12750,7 +12754,7 @@ function printBonDepot(d){
         '<tfoot>'+
           '<tr style="background:#f8f8f8;">'+
             '<td colspan="4"><b>Sous-total HT : '+htTot.toFixed(2)+' € · TVA 20% : '+tva.toFixed(2)+' €</b></td>'+
-            '<td colspan="2" style="text-align:right;font-size:14px;font-weight:900;color:#c0392b;">TOTAL TTC : '+(d.devis||ttc).toFixed(2)+' €</td>'+
+            '<td colspan="2" style="text-align:right;font-size:14px;font-weight:900;color:#c0392b;">TOTAL TTC : '+devis.toFixed(2)+' €</td>'+
           '</tr>'+
         '</tfoot>'+
       '</table>'+
