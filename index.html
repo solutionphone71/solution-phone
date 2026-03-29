@@ -10077,6 +10077,7 @@ function repAutoSave(){
   };
   repDossierCourant.panne      = (document.getElementById('dep-panne')||{value:''}).value.trim();
   repDossierCourant.devis      = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  repDossierCourant.bonusQR    = !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
   repDossierCourant.dateRetour = (document.getElementById('dep-date-retour')||{value:''}).value;
   repDossierCourant.obs        = (document.getElementById('dep-obs')||{value:''}).value.trim();
   repDossierCourant.etat       = getDepotEtat();
@@ -10464,6 +10465,7 @@ function repSauvegarderDossier(){
     etat: repDossierCourant.etat, etatAutre: repDossierCourant.etatAutre,
     accessoires: repDossierCourant.accessoires, accAutre: repDossierCourant.accAutre,
     panne: repDossierCourant.panne, devis: repDossierCourant.devis,
+    bonusQR: !!repDossierCourant.bonusQR,
     dateRetour: repDossierCourant.dateRetour, obs: repDossierCourant.obs,
     facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi
   };
@@ -12526,6 +12528,7 @@ async function loadBonsDepot(){
           obs: x.obs||'',
           photoImeiUrl: x.photo_imei_url||null,
           signature: x.signature||null,
+          bonusQR: !!x.bonus_qr,
           moHT: x.mo_ht||null,
           piecesHT: x.pieces_ht||null
         };
@@ -12709,8 +12712,10 @@ function printBonDepot(d){
   // d.devis = prix saisi = prix CLIENT FINAL après déduction bonus
   // prixReel = prix avant bonus (ce qu'on affiche dans le tableau)
   var devis  = d.devis||0; // prix client final (ex: 90€)
-  // Détecter si le bonus QR est actif
-  var bonusQRActif = !!(d.facture && d.facture.bonusQR)
+  // Détecter si le bonus QR est actif — vérifier toutes les sources
+  var bonusQRActif = !!(d.bonusQR)
+    || !!(d.facture && d.facture.bonusQR)
+    || !!(repDossierCourant && repDossierCourant.bonusQR)
     || !!(repDossierCourant && repDossierCourant.facture && repDossierCourant.facture.bonusQR)
     || !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
   // prixReel = prix AVANT bonus (ce qui apparaît dans le tableau HT)
