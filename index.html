@@ -12511,7 +12511,11 @@ async function loadBonsDepot(){
           panne: x.panne||'',
           devis: Number(x.devis)||0,
           dateRetour: x.date_retour||'',
-          obs: x.obs||''
+          obs: x.obs||'',
+          photoImeiUrl: x.photo_imei_url||null,
+          signature: x.signature||null,
+          moHT: x.mo_ht||null,
+          piecesHT: x.pieces_ht||null
         };
       });
       saveBonsDepot(); // cache local en fallback
@@ -12537,7 +12541,11 @@ async function saveBonDepotSupabase(d){
     etat: d.etat, etat_autre: d.etatAutre,
     accessoires: d.accessoires,
     panne: d.panne, devis: d.devis,
-    date_retour: d.dateRetour||null, obs: d.obs
+    date_retour: d.dateRetour||null, obs: d.obs,
+    photo_imei_url: d.photoImeiUrl||null,
+    signature: d.signature||null,
+    bonus_qr: !!(d.facture && d.facture.bonusQR),
+    mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null
   };
   try {
     var ex = await supaFetch('bons_depot','GET',null,'?id=eq.'+d.id);
