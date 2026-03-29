@@ -11488,65 +11488,88 @@ function repInitSig(){
   var canvas = document.getElementById('rep-sig-canvas');
   if(!canvas) return;
 
-  // Redimensionner le canvas à sa vraie taille affichée (évite le décalage)
-  var rect = canvas.getBoundingClientRect();
-  var w = rect.width || canvas.offsetWidth || canvas.parentElement.offsetWidth || 380;
-  var h = rect.height || 100;
-  if(w > 0){
-    canvas.width  = Math.round(w);
-    canvas.height = Math.round(h);
-  }
+  // Supprimer les anciens listeners pour éviter les doublons
+  if(canvas._sigCleanup) canvas._sigCleanup();
 
-  if(canvas._repInitDone) return;
-  canvas._repInitDone = true;
+  // Redimensionner le canvas à sa vraie taille CSS
+  var w = canvas.offsetWidth || 380;
+  var h = canvas.offsetHeight || 100;
+  canvas.width  = w;
+  canvas.height = h;
 
   var ctx = canvas.getContext('2d');
   ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
 
-  function getPos(e){
+  var drawing = false;
+  var lastX = 0, lastY = 0;
+
+  function getXY(e){
     var r = canvas.getBoundingClientRect();
-    if(e.touches){ return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top}; }
-    return {x:e.clientX-r.left, y:e.clientY-r.top};
+    var scaleX = canvas.width  / r.width;
+    var scaleY = canvas.height / r.height;
+    var clientX, clientY;
+    if(e.touches && e.touches.length > 0){
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    return {
+      x: (clientX - r.left) * scaleX,
+      y: (clientY - r.top)  * scaleY
+    };
   }
-  function start(e){
+
+  function onDown(e){
     e.preventDefault();
-    _repSigDrawing=true;
-    var p=getPos(e);
+    drawing = true;
+    var p = getXY(e);
+    lastX = p.x; lastY = p.y;
     ctx.beginPath();
-    ctx.moveTo(p.x,p.y);
+    ctx.moveTo(lastX, lastY);
   }
-  function move(e){
+  function onMove(e){
     e.preventDefault();
-    if(!_repSigDrawing) return;
-    var p=getPos(e);
-    ctx.lineTo(p.x,p.y);
+    if(!drawing) return;
+    var p = getXY(e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(p.x, p.y);
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(p.x,p.y);
+    lastX = p.x; lastY = p.y;
   }
-  function end(e){
-    e.preventDefault();
-    _repSigDrawing=false;
+  function onUp(e){
+    if(!drawing) return;
+    drawing = false;
     repSigSave();
   }
 
-  // mouseleave ne stoppe PAS le dessin (permet de sortir et revenir)
-  // Seul mouseup/touchend arrête le dessin
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  canvas.addEventListener('mouseup',   end);
-  // Sur mobile : continuer même si le doigt sort légèrement du canvas
-  document.addEventListener('touchend', end, {passive:false});
-  canvas.addEventListener('touchstart', start, {passive:false});
-  canvas.addEventListener('touchmove',  move,  {passive:false});
+  // PC — souris
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup',   onUp);
+  document.addEventListener('mouseup', onUp);
 
-  // mouseup global : arrêter même si souris relâchée hors canvas
-  document.addEventListener('mouseup', function(e){
-    if(_repSigDrawing){ _repSigDrawing=false; repSigSave(); }
-  });
+  // Tablette / mobile — touch
+  canvas.addEventListener('touchstart', onDown, {passive:false});
+  canvas.addEventListener('touchmove',  onMove, {passive:false});
+  canvas.addEventListener('touchend',   onUp,   {passive:false});
+
+  // Nettoyage pour le prochain appel
+  canvas._sigCleanup = function(){
+    canvas.removeEventListener('mousedown', onDown);
+    canvas.removeEventListener('mousemove', onMove);
+    canvas.removeEventListener('mouseup',   onUp);
+    document.removeEventListener('mouseup', onUp);
+    canvas.removeEventListener('touchstart', onDown);
+    canvas.removeEventListener('touchmove',  onMove);
+    canvas.removeEventListener('touchend',   onUp);
+  };
+  canvas._repInitDone = true;
 }
 
 function repSigSave(){
