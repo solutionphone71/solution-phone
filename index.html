@@ -51,8 +51,8 @@ body{background:var(--dark);color:var(--text);font-family:-apple-system,BlinkMac
 .nav-item:hover,.nav-item.active{background:#fef2f2;color:var(--red);border-left:3px solid var(--red);}
 .nav-icon{font-size:17px;width:22px;text-align:center;}
 .main{margin-left:210px;padding:24px;flex:1;background:var(--dark);}
-.page{display:none;content-visibility:hidden;}
-.page.active{display:block;content-visibility:visible;}
+.page{display:none;}
+.page.active{display:block;}
 .page-title{font-size:26px;font-weight:800;margin-bottom:4px;color:var(--text);}
 .page-sub{color:var(--text-muted);font-size:13px;margin-bottom:20px;}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
@@ -338,14 +338,9 @@ select, input, textarea, button {
     font-size: 16px !important;
   }
 
-  /* iOS Performance — limite les reflows au conteneur actif */
+  /* iOS Performance */
   #page-reparations .rep-step-content {
-    contain: layout style;
-  }
-  /* Évite le repaint des éléments cachés lors du focus */
-  .rep-step-content[style*="display:none"],
-  .rep-step-content[style*="display: none"] {
-    content-visibility: hidden;
+    /* contain retiré — bloquait les events souris */
   }
 </style>
 <script>
