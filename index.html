@@ -11086,6 +11086,7 @@ async function repGenererFacture(){
   };
   d.statut = 'facture';
   repSauvegarderDossier();
+  repSauvegarderDossierImmediatement(); // ← save immédiat du statut facturé
   repUpdateStatutBadge();
 
   // ── Alimenter automatiquement la caisse ──
@@ -11898,6 +11899,28 @@ var _repSupaSaveTimer = null;
 function repSauvegarderSupabaseDebounced(depot){
   clearTimeout(_repSupaSaveTimer);
   _repSupaSaveTimer = setTimeout(function(){ saveBonDepotSupabase(depot); }, 2000);
+}
+
+// Sauvegarde IMMÉDIATE (sans debounce) — pour statuts critiques comme la facturation
+function repSauvegarderDossierImmediatement(){
+  if(!repDossierCourant) return;
+  var depot = {
+    id: repDossierCourant.id, numero: repDossierCourant.numero,
+    date: repDossierCourant.date, statut: repDossierCourant.statut,
+    client: repDossierCourant.client, appareil: repDossierCourant.appareil,
+    etat: repDossierCourant.etat, etatAutre: repDossierCourant.etatAutre,
+    accessoires: repDossierCourant.accessoires, accAutre: repDossierCourant.accAutre,
+    panne: repDossierCourant.panne, devis: repDossierCourant.devis,
+    bonusQR: !!repDossierCourant.bonusQR,
+    dateRetour: repDossierCourant.dateRetour, obs: repDossierCourant.obs,
+    facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi,
+    photoImeiUrl: repDossierCourant.photoImeiUrl||null,
+    signature: repDossierCourant.signature||null,
+    moHT: repDossierCourant.moHT||null,
+    piecesHT: repDossierCourant.piecesHT||null
+  };
+  clearTimeout(_repSupaSaveTimer); // annuler le debounce en cours
+  saveBonDepotSupabase(depot);    // sauvegarder immédiatement
 }
 
 function repSauvegarderDossier(){
