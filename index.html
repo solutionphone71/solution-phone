@@ -3838,7 +3838,7 @@ function naRenderGrille(){
     var qteEnPanier = 0;
     _naPanier.forEach(function(p){ if(p.article.id===a.id) qteEnPanier=p.qte; });
     var active = qteEnPanier > 0;
-    return '<div onclick="naAddToPanier(''+a.id+'')" '+
+    return '<div data-id="'+a.id+'" onclick="naAddToPanier(this.dataset.id)" '+
       'style="background:'+(active?a.couleur:'#fff')+';'+
              'color:'+(active?'#fff':'var(--text)')+';'+
              'border:2px solid '+(active?a.couleur:'var(--border)')+';'+
@@ -3940,9 +3940,9 @@ function naRenderPanier(){
         '<div style="font-size:12px;color:var(--text-muted);">'+p.article.prix.toFixed(2)+' € × '+p.qte+' = '+(p.article.prix*p.qte).toFixed(2)+' €</div>'+
       '</div>'+
       '<div style="display:flex;align-items:center;gap:4px;">'+
-        '<button onclick="naRetireDuPanier(''+p.article.id+'')" style="width:26px;height:26px;border-radius:50%;border:1px solid #ddd;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:700;">−</button>'+
+        '<button data-id="'+p.article.id+'" onclick="naRetireDuPanier(this.dataset.id)" style="width:26px;height:26px;border-radius:50%;border:1px solid #ddd;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:700;">−</button>'+
         '<span style="font-size:14px;font-weight:700;min-width:20px;text-align:center;">'+p.qte+'</span>'+
-        '<button onclick="naAddToPanier(''+p.article.id+'')" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;font-size:14px;font-weight:700;">+</button>'+
+        '<button data-id="'+p.article.id+'" onclick="naAddToPanier(this.dataset.id)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;font-size:14px;font-weight:700;">+</button>'+
       '</div>'+
     '</div>';
   }).join('');
