@@ -778,22 +778,21 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <button onclick="naFilterCat('autre')" id="na-cat-autre" class="btn btn-sm">➕ Autres</button>
             </div>
 
+            <!-- Boutons config en haut à droite -->
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px;">
+              <button onclick="naConfigPrix()" class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);font-weight:700;">
+                ✏️ Modifier les prix
+              </button>
+              <button onclick="naShowAddArticle()" class="btn btn-sm" style="border-style:dashed;color:var(--text-muted);">
+                ➕ Ajouter
+              </button>
+            </div>
+
             <!-- Grille articles -->
             <div id="na-grille" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
             </div>
 
-            <!-- Boutons config -->
-            <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
-              <button onclick="naShowAddArticle()" class="btn btn-sm" style="border-style:dashed;color:var(--text-muted);">
-                ➕ Ajouter un article
-              </button>
-              <button onclick="naConfigPrix()" class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);">
-                ✏️ Modifier les prix
-              </button>
-              <button onclick="naResetPrix()" class="btn btn-sm" style="border-color:var(--warning);color:var(--warning);">
-                ↺ Réinitialiser
-              </button>
-            </div>
+
           </div>
 
           <!-- PANIER -->
@@ -829,21 +828,21 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <!-- Mode paiement -->
                 <div style="margin-bottom:12px;">
                   <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">💳 Mode de paiement</div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="na-mode-btns">
                     <button onclick="naSetMode('CB')" id="na-mode-cb"
-                      style="padding:10px;border-radius:8px;border:2px solid var(--primary);background:var(--primary);color:#fff;font-weight:700;cursor:pointer;font-size:13px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid #2563eb;background:#2563eb;color:#fff;font-weight:800;cursor:pointer;font-size:14px;">
                       💳 CB
                     </button>
                     <button onclick="naSetMode('ESPECES')" id="na-mode-especes"
-                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
                       💵 Espèces
                     </button>
                     <button onclick="naSetMode('CHEQUE')" id="na-mode-cheque"
-                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
                       📄 Chèque
                     </button>
                     <button onclick="naSetMode('VIREMENT')" id="na-mode-virement"
-                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
                       🏦 Virement
                     </button>
                   </div>
@@ -3805,7 +3804,7 @@ function naShowTab(tab){
       b.style.fontWeight = t===tab ? '800' : '600';
     }
   });
-  if(tab==='caisse') naRenderGrille();
+  if(tab==='caisse'){ naRenderGrille(); setTimeout(function(){ naSetMode('CB'); }, 50); }
 }
 
 function naFilterCat(cat){
