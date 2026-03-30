@@ -2759,6 +2759,42 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
     </div>
+
+      <!-- ══ STATISTIQUES PARTICIPATIONS ══ -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;" id="rl-stats-row">
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:28px;font-weight:900;color:var(--primary);" id="rl-stat-total">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Total participants</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:28px;font-weight:900;color:var(--success);" id="rl-stat-week">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Cette semaine</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px;">
+          <div style="font-size:20px;font-weight:700;color:var(--warning);" id="rl-stat-top">—</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Lot le + gagné</div>
+        </div>
+      </div>
+
+      <!-- ══ TABLEAU PARTICIPATIONS ══ -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Participations récentes</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="rl-filter-period" onchange="rlLoadParticipations()" style="padding:6px 10px;background:var(--bg-input,#f8fafc);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+              <option value="7">7 derniers jours</option>
+              <option value="30" selected>30 derniers jours</option>
+              <option value="90">3 mois</option>
+              <option value="365">1 an</option>
+            </select>
+            <button class="btn btn-sm" onclick="rlLoadParticipations()">🔄 Actualiser</button>
+          </div>
+        </div>
+        <div id="rl-participations-wrap">
+          <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">⏳ Chargement…</div>
+        </div>
+      </div>
+    </div>
     <!-- ══════════════ FIN PAGE ROUE CADEAUX ══════════════ -->
     <!-- ══ ÉCRAN CLIENT TABLETTE ══ -->
     <div id="qr-client-screen">
@@ -14873,10 +14909,12 @@ function initRouletteAdmin() {
       qrDiv.innerHTML = '<img id="rl-qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(rouletteUrl)+'&bgcolor=ffffff&color=1a1a1a&format=png" style="border-radius:8px;width:160px;height:160px;" crossorigin="anonymous">';
     }
     rlRenderPrizes();
+    rlLoadParticipations();
   }).catch(function(){
     rlPrizes    = JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
     rlGoogleUrl = '';
     rlRenderPrizes();
+    rlLoadParticipations();
   });
 }
 
@@ -14928,6 +14966,118 @@ function rlDownloadQR() {
   a.href = img.src;
   a.download = 'qr-roulette-solution-phone.png';
   a.click();
+}
+
+// ============================================================
+//  MODULE PARTICIPATIONS ROULETTE
+// ============================================================
+
+async function rlLoadParticipations() {
+  var wrap = document.getElementById('rl-participations-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:14px;">⏳ Chargement…</div>';
+
+  var days = parseInt(document.getElementById('rl-filter-period')?.value || '30');
+  var since = new Date(Date.now() - days * 86400000).toISOString();
+
+  try {
+    var res  = await supaFetch('roulette_participations','GET', null,
+      '?date_participation=gte.' + since + '&order=date_participation.desc&limit=200');
+    var rows = Array.isArray(res) ? res : [];
+
+    // ── Stats ──
+    var total = rows.length;
+    var weekAgo = new Date(Date.now() - 7*86400000).toISOString();
+    var week  = rows.filter(function(r){ return r.date_participation >= weekAgo; }).length;
+
+    // Lot le plus gagné
+    var lotCount = {};
+    rows.forEach(function(r){ if(r.lot_gagne){ lotCount[r.lot_gagne] = (lotCount[r.lot_gagne]||0)+1; } });
+    var topLot = Object.entries(lotCount).sort(function(a,b){ return b[1]-a[1]; })[0];
+
+    var elTotal = document.getElementById('rl-stat-total');
+    var elWeek  = document.getElementById('rl-stat-week');
+    var elTop   = document.getElementById('rl-stat-top');
+    if(elTotal) elTotal.textContent = total;
+    if(elWeek)  elWeek.textContent  = week;
+    if(elTop)   elTop.textContent   = topLot ? topLot[0].replace(/offerte?|offert/gi,'').trim() + ' ×'+topLot[1] : '—';
+
+    // ── Tableau ──
+    if (rows.length === 0) {
+      wrap.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:14px;">Aucune participation sur cette période.</div>';
+      return;
+    }
+
+    // Répartition par lot (mini chart)
+    var lotHtml = '';
+    var totalLots = rows.filter(function(r){return r.lot_gagne;}).length;
+    Object.entries(lotCount).sort(function(a,b){return b[1]-a[1];}).forEach(function(e){
+      var pct = totalLots > 0 ? ((e[1]/totalLots)*100).toFixed(0) : 0;
+      lotHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+        + '<div style="font-size:13px;color:var(--text);min-width:180px;flex:1;">'+e[0]+'</div>'
+        + '<div style="flex:0 0 120px;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">'
+        +   '<div style="height:100%;width:'+pct+'%;background:var(--primary);border-radius:4px;transition:width .4s;"></div>'
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--text-muted);min-width:52px;text-align:right;">'+e[1]+' ('+pct+'%)</div>'
+        + '</div>';
+    });
+
+    // Tableau principal
+    var tableRows = rows.slice(0, 100).map(function(r){
+      var d = new Date(r.date_participation);
+      var dateStr = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'})
+                  + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      // Masquer le numéro : 06 ** ** ** 78
+      var tel = r.telephone || '';
+      var telMasked = tel.length >= 10
+        ? tel.slice(0,2).replace(/(\d{2})/g,'$1') + ' ** ** ** ' + tel.slice(-2)
+        : tel;
+      var remis = r.remis ? '✅' : '—';
+      return '<tr>'
+        + '<td style="font-size:13px;color:var(--text-muted);">'+dateStr+'</td>'
+        + '<td style="font-size:13px;font-family:monospace;letter-spacing:1px;">'+telMasked+'</td>'
+        + '<td style="font-size:13px;">'+( r.lot_gagne || '—' )+'</td>'
+        + '<td style="text-align:center;">'
+        +   '<button class="btn btn-sm" onclick="rlToggleRemis('+r.id+','+(!r.remis)+',this)" '
+        +   'style="'+(r.remis?'background:rgba(72,187,120,0.15);border-color:rgba(72,187,120,0.4);color:var(--success);':'')+'font-size:11px;padding:4px 10px;" '
+        +   'title="Marquer comme remis">'
+        +   (r.remis ? '✅ Remis' : 'Remettre')
+        +   '</button>'
+        + '</td>'
+        + '</tr>';
+    }).join('');
+
+    wrap.innerHTML =
+      '<div style="padding:16px 0 10px;">'
+      + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:14px;">Répartition des lots</div>'
+      + lotHtml
+      + '</div>'
+      + '<div style="overflow-x:auto;margin-top:8px;">'
+      + '<table><thead><tr>'
+      + '<th>Date</th><th>Téléphone</th><th>Lot gagné</th><th style="width:90px;">Statut</th>'
+      + '</tr></thead><tbody>'
+      + tableRows
+      + '</tbody></table>'
+      + '</div>'
+      + (rows.length > 100 ? '<div style="text-align:center;padding:12px;font-size:13px;color:var(--text-muted);">Affichage des 100 dernières participations sur '+rows.length+'</div>' : '');
+
+  } catch(e) {
+    wrap.innerHTML = '<div style="text-align:center;padding:32px;color:var(--red);font-size:14px;">❌ Erreur chargement : '+e.message+'</div>';
+    console.error('rlLoadParticipations:', e);
+  }
+}
+
+async function rlToggleRemis(id, remisVal, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    await supaFetch('roulette_participations','PATCH',{ remis: remisVal },'?id=eq.'+id);
+    rlLoadParticipations();
+  } catch(e) {
+    showNotif('Erreur mise à jour','error');
+    btn.disabled = false;
+    btn.textContent = remisVal ? 'Remettre' : '✅ Remis';
+  }
 }
 
 // ============================================================
