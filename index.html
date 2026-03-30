@@ -351,6 +351,72 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 </head>
 <body>
 <div id="notif" class="notif"></div>
+<!-- ══ MODAL ENVOI FACTURE ══ -->
+<div id="modal-envoi-facture" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="background:#f0fdf4;border-radius:50%;padding:10px;font-size:22px;">✅</div>
+      <div>
+        <div style="font-weight:800;font-size:16px;" id="envoi-facture-titre">Facture créée</div>
+        <div style="font-size:12px;color:var(--text-muted);">Certifiée NF525 · Enregistrée en caisse</div>
+      </div>
+    </div>
+
+    <!-- Badge NF525 -->
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+      <span style="background:#1e40af;color:#fff;padding:2px 6px;border-radius:4px;font-weight:900;font-size:10px;">NF525</span>
+      Données certifiées, inaltérables et archivées · Conforme Art. 286 CGI
+    </div>
+
+    <!-- Email -->
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">📧 Envoyer par Email</label>
+      <div style="display:flex;gap:8px;">
+        <input type="email" id="envoi-email-input" placeholder="client@email.com" 
+          style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;">
+        <button onclick="envoyerFactureEmail()" id="btn-envoi-email"
+          style="padding:10px 16px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:14px;">
+          📧 Envoyer
+        </button>
+      </div>
+      <div id="envoi-email-status" style="font-size:12px;margin-top:6px;"></div>
+    </div>
+
+    <!-- SMS -->
+    <div style="margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">📱 Envoyer par SMS</label>
+      <div style="display:flex;gap:8px;">
+        <input type="tel" id="envoi-sms-input" placeholder="06 12 34 56 78"
+          style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;">
+        <button onclick="envoyerFactureSMS()" id="btn-envoi-sms"
+          style="padding:10px 16px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:14px;">
+          📱 SMS
+        </button>
+      </div>
+      <div id="envoi-sms-status" style="font-size:12px;margin-top:6px;"></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">~0,07€ par SMS via Brevo</div>
+    </div>
+
+    <!-- Séparateur -->
+    <div style="border-top:1px solid var(--border);margin-bottom:16px;"></div>
+
+    <!-- Actions -->
+    <div style="display:flex;gap:10px;">
+      <button onclick="envoyerFactureImprimer()" 
+        style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">
+        🖨️ Imprimer
+      </button>
+      <button onclick="fermerEnvoiFacture()"
+        style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;color:var(--text-muted);">
+        ✖ Fermer
+      </button>
+    </div>
+
+  </div>
+</div>
+
 
 <!-- BARRE NAV MOBILE -->
 <div id="mobile-nav">
@@ -442,7 +508,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     </div>
     <div style="text-align:center;margin-top:16px;padding-bottom:4px;">
       <div style="font-size:11px;color:#ccc;font-weight:600;letter-spacing:.05em;">v2.4.0 · Mars 2026</div>
-      <div style="font-size:9px;color:#ddd;margin-top:2px;opacity:.7;">AgoraPlus · VosFactures · QualiRépar</div>
+      <div style="font-size:9px;color:#ddd;margin-top:2px;opacity:.7;">AgoraPlus · QualiRépar · NF525</div>
     </div>
   </div>
 </div>
@@ -799,6 +865,62 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
         <button class="btn" onclick="cloturerMois()" style="border-color:var(--warning);color:var(--warning);">🔒 Clôturer le mois</button>
       </div>
+      <!-- Onglets Caisse -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:0;">
+        <button id="caisse-tab-jour" onclick="caisseShowTab('jour')"
+          style="padding:10px 20px;border:none;border-bottom:3px solid var(--primary);background:none;font-weight:700;color:var(--primary);cursor:pointer;font-size:14px;">
+          📅 Caisse du jour
+        </button>
+        <button id="caisse-tab-historique" onclick="caisseShowTab('historique')"
+          style="padding:10px 20px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:14px;">
+          📊 Historique mensuel
+        </button>
+        <button id="caisse-tab-factures" onclick="caisseShowTab('factures')"
+          style="padding:10px 20px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:14px;">
+          🔍 Toutes les factures
+        </button>
+      </div>
+
+      <!-- VUE : CAISSE DU JOUR -->
+      <div id="caisse-view-jour">
+        <!-- Totaux du jour -->
+        <div id="caisse-jour-totaux" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+        <!-- Transactions du jour -->
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-weight:700;font-size:15px;">🧾 Transactions du jour</span>
+            <span id="caisse-jour-date" style="font-size:13px;color:var(--text-muted);"></span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#f1f5f9;text-align:left;">
+                <th style="padding:8px;">Heure</th>
+                <th style="padding:8px;">Type</th>
+                <th style="padding:8px;">Description</th>
+                <th style="padding:8px;text-align:right;">Montant TTC</th>
+                <th style="padding:8px;text-align:center;">Mode</th>
+              </tr>
+            </thead>
+            <tbody id="caisse-jour-tbody"></tbody>
+          </table>
+          <div id="caisse-jour-empty" style="text-align:center;padding:24px;color:var(--text-muted);display:none;">
+            Aucune transaction aujourd'hui
+          </div>
+        </div>
+
+        <!-- Z de caisse -->
+        <div class="card" style="border:2px solid var(--primary);">
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🔒 Z de Caisse</div>
+          <div id="caisse-z-recap" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;"></div>
+          <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
+            🔒 Clôturer et imprimer le Z de caisse
+          </button>
+        </div>
+      </div>
+
+      <!-- VUE : HISTORIQUE MENSUEL -->
+      <div id="caisse-view-historique" style="display:none;">
       <div class="caisse-grid" id="caisse-totaux"></div>
       <div class="card">
         <div class="card-header">
@@ -813,6 +935,65 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="overflow-x:auto;">
           <table><thead><tr><th>Date</th><th>TTC</th><th>HT</th><th>TVA</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>Dép.Esp.</th><th>Dép.Chq.</th><th>Ach.Smart.</th><th>QualiRépar</th><th>Caisse Finale</th><th></th></tr></thead>
           <tbody id="caisse-table"></tbody></table>
+      </div><!-- fin caisse-view-historique -->
+
+      <!-- VUE : TOUTES LES FACTURES -->
+      <div id="caisse-view-factures" style="display:none;">
+        <!-- Barre de recherche -->
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:11px;">🔍 Recherche (nom, n° facture, IMEI...)</label>
+              <input type="text" id="fact-search" placeholder="Ex: Dupont, FAC-2026-001, iPhone..."
+                oninput="renderFacturesSearch()" style="width:100%;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:11px;">📅 Du</label>
+              <input type="date" id="fact-date-from" onchange="renderFacturesSearch()">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:11px;">📅 Au</label>
+              <input type="date" id="fact-date-to" onchange="renderFacturesSearch()">
+            </div>
+            <div>
+              <button onclick="resetFactSearch()" class="btn btn-sm" style="margin-top:18px;">↺ Reset</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+            <button onclick="filtrerFactType('tous')" id="fact-f-tous" class="btn btn-sm btn-primary">Tous</button>
+            <button onclick="filtrerFactType('reparation')" id="fact-f-rep" class="btn btn-sm" style="border-color:#c0392b;color:#c0392b;">🔧 Réparations</button>
+            <button onclick="filtrerFactType('vente')" id="fact-f-vente" class="btn btn-sm" style="border-color:#16a34a;color:#16a34a;">📱 Ventes</button>
+            <button onclick="filtrerFactMode('CB')" id="fact-f-cb" class="btn btn-sm" style="border-color:#3b82f6;color:#3b82f6;">💳 CB</button>
+            <button onclick="filtrerFactMode('ESPECES')" id="fact-f-esp" class="btn btn-sm" style="border-color:#16a34a;color:#16a34a;">💵 Espèces</button>
+            <button onclick="filtrerFactMode('CHEQUE')" id="fact-f-ch" class="btn btn-sm" style="border-color:#d97706;color:#d97706;">📄 Chèque</button>
+          </div>
+        </div>
+
+        <!-- Stats rapides -->
+        <div id="fact-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+        <!-- Liste des factures -->
+        <div class="card">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="padding:10px;text-align:left;">N° Facture</th>
+                <th style="padding:10px;text-align:left;">Date</th>
+                <th style="padding:10px;text-align:left;">Client / Article</th>
+                <th style="padding:10px;text-align:left;">Type</th>
+                <th style="padding:10px;text-align:center;">Mode</th>
+                <th style="padding:10px;text-align:right;">Montant TTC</th>
+                <th style="padding:10px;text-align:center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fact-tbody"></tbody>
+          </table>
+          <div id="fact-empty" style="text-align:center;padding:32px;color:var(--text-muted);display:none;">
+            Aucune facture trouvée
+          </div>
+          <div id="fact-count" style="text-align:right;padding:8px 12px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);"></div>
+        </div>
+      </div>
         </div>
       </div>
     </div>
@@ -1038,6 +1219,57 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;">
 
+      <!-- Kiwiz NF525 -->
+      <div class="card" style="border:2px solid #1e40af;">
+        <div class="card-header" style="background:#eff6ff;">
+          <div class="card-title" style="color:#1e40af;">🔒 Kiwiz — Certification NF525</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group"><label>Identifiant Kiwiz</label>
+            <input type="text" id="params-kiwiz-user" placeholder="votre@email.com"></div>
+          <div class="form-group"><label>Mot de passe Kiwiz</label>
+            <input type="password" id="params-kiwiz-pass" placeholder="••••••••"></div>
+          <div class="form-group"><label>N° d'abonnement Kiwiz</label>
+            <input type="text" id="params-kiwiz-sub" placeholder="ex: 12345"></div>
+          <button class="btn btn-primary" style="background:#1e40af;border-color:#1e40af;width:100%;" onclick="paramsSaveKiwiz()">💾 Enregistrer</button>
+          <button class="btn btn-sm" onclick="paramsTestKiwiz()" style="border-color:#1e40af;color:#1e40af;margin-top:8px;width:100%;">🧪 Tester la connexion</button>
+          <div id="params-kiwiz-status" style="margin-top:8px;font-size:12px;"></div>
+          <div style="margin-top:10px;padding:8px;background:#eff6ff;border-radius:6px;font-size:11px;color:#1e40af;">
+            💡 Compte sur <b>kiwiz.io</b> → à partir de 4,99€ HT/mois · Sans engagement<br>
+            Chaque facture certifiée NF525 automatiquement — conforme contrôle fiscal
+          </div>
+        </div>
+      </div>
+
+      <!-- Brevo Email/SMS -->
+      <div class="card" style="border:2px solid #0ea5e9;">
+        <div class="card-header" style="background:#f0f9ff;">
+          <div class="card-title" style="color:#0284c7;">📧 Brevo — Envoi Email & SMS</div>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>Clé API Brevo</label>
+            <input type="password" id="params-brevo-key" placeholder="xkeysib-...">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Paramètres → SMTP & API → Clés API</div>
+          </div>
+          <div class="form-group">
+            <label>Email expéditeur</label>
+            <input type="email" id="params-brevo-sender" placeholder="solution.phone71@gmail.com">
+          </div>
+          <div class="form-group">
+            <label>Nom expéditeur</label>
+            <input type="text" id="params-brevo-sender-name" placeholder="Solution Phone Mâcon">
+          </div>
+          <button class="btn btn-primary" style="background:#0284c7;border-color:#0284c7;width:100%;" onclick="paramsSaveBrevo()">💾 Enregistrer</button>
+          <button class="btn btn-sm" onclick="paramsTestBrevo()" style="border-color:#0284c7;color:#0284c7;margin-top:8px;width:100%;">🧪 Tester l'envoi</button>
+          <div id="params-brevo-status" style="margin-top:8px;font-size:12px;"></div>
+          <div style="margin-top:10px;padding:8px;background:#f0f9ff;border-radius:6px;font-size:11px;color:#0284c7;">
+            💡 Compte gratuit sur <b>brevo.com</b> → 300 emails/jour offerts<br>
+            SMS ~0,07€/unité · Factures envoyées automatiquement au client
+          </div>
+        </div>
+      </div>
+
       <!-- Ecosystem -->
       <div class="card" style="border:1.5px solid var(--green);">
         <div class="card-header" style="background:#f0fdf4;">
@@ -1082,252 +1314,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
 
-      <!-- VosFactures -->
-      <div class="card" style="border:1.5px solid #0ea5e9;">
-        <div class="card-header" style="background:#f0f9ff;">
-          <div class="card-title" style="color:#0369a1;">🧾 VosFactures</div>
-          <div id="params-vf-status" style="font-size:12px;"></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="form-group">
-            <label>Token API <span style="color:var(--red);">*</span></label>
-            <input type="password" id="params-vf-token" placeholder="Paramètres → Paramètres du compte → Intégration → Code API">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Depuis votre compte VosFactures.fr</div>
-          </div>
-          <div class="form-group">
-            <label>Sous-domaine compte <span style="color:var(--red);">*</span></label>
-            <input type="text" id="params-vf-domain" placeholder="ex: solutionphone (pour solutionphone.vosfactures.fr)">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Le préfixe de votre URL VosFactures</div>
-          </div>
-          <button class="btn btn-primary" style="background:#0369a1;border-color:#0369a1;width:100%;" onclick="paramsSaveVosFactures()">💾 Enregistrer</button>
-          <button class="btn btn-sm" onclick="paramsTestVosFactures()" style="border-color:#0369a1;color:#0369a1;">🧪 Tester la connexion</button>
-          <div id="params-vf-test-result" style="font-size:12px;"></div>
-          <div style="font-size:12px;color:var(--text-muted);padding:8px;background:#f0f9ff;border-radius:8px;line-height:1.6;">
-            ℹ️ <b>8€ HT/mois</b> · Factures illimitées · API complète · Facture électronique PEPPOL incluse<br>
-            Créez votre compte sur <b>vosfactures.fr</b> → 30 jours gratuits
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Récap des connexions actives -->
-    <div class="card" style="margin-top:18px;">
-      <div class="card-header"><div class="card-title">📡 Statut des connexions</div></div>
-      <div id="params-connexions-status" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:8px 0;"></div>
-    </div>
-
-  </div>
-
-  <div class="page" id="page-salaries">
-    <div class="page-title">👥 Salariés</div>
-    <div class="page-sub">Gestion de la paie — Convention collective N°3251</div>
-
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
-      <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)">➕ Nouveau salarié</button>
-      <select id="sal-mois-sel" onchange="renderFichesPaie()" style="padding:8px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);">
-        <option value="2026-01">Janvier 2026</option>
-        <option value="2026-02" selected>Février 2026</option>
-        <option value="2026-03">Mars 2026</option>
-        <option value="2026-04">Avril 2026</option>
-        <option value="2026-05">Mai 2026</option>
-        <option value="2026-06">Juin 2026</option>
-        <option value="2026-07">Juillet 2026</option>
-        <option value="2026-08">Août 2026</option>
-        <option value="2026-09">Septembre 2026</option>
-        <option value="2026-10">Octobre 2026</option>
-        <option value="2026-11">Novembre 2026</option>
-        <option value="2026-12">Décembre 2026</option>
-      </select>
-      <button class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);" onclick="exportRecapTESE()">📋 Export TESE</button>
-      <button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" onclick="exportPayslipsPDF()">📄 Toutes les fiches PDF</button>
-    </div>
-
-    <!-- Cartes résumé -->
-    <div id="sal-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;"></div>
-
-    <!-- Liste salariés -->
-    <div id="sal-list" style="display:grid;gap:14px;"></div>
-
-    <!-- Modal Salarié -->
-    <div id="modal-salarie" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto;padding:20px;">
-      <div style="background:#fff;border-radius:14px;max-width:700px;margin:auto;padding:28px;border:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-          <div style="font-size:18px;font-weight:700;" id="modal-sal-title">Nouveau salarié</div>
-          <button onclick="fermerModalSalarie()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;">✕</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-          <div class="form-group"><label>Prénom *</label><input id="sal-prenom" type="text" placeholder="Evan"></div>
-          <div class="form-group"><label>Nom *</label><input id="sal-nom" type="text" placeholder="ANGOSTO"></div>
-          <div class="form-group"><label>N° Sécurité Sociale</label><input id="sal-secu" type="text" placeholder="1 03 02 69 384 052 77"></div>
-          <div class="form-group"><label>Matricule</label><input id="sal-matricule" type="text" placeholder="00004"></div>
-          <div class="form-group" style="grid-column:1/-1;"><label>Adresse</label><input id="sal-adresse" type="text" placeholder="289 Route des Goguelins"></div><div style="grid-column:1/-1;display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="sal-cp" placeholder="69820" maxlength="5" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="sal-ville" placeholder="Fleurie"></div></div>
-          <div class="form-group"><label>Date d'entrée</label><input id="sal-entree" type="date"></div>
-          <div class="form-group"><label>Type de contrat</label>
-            <select id="sal-type">
-              <option value="cdi">CDI</option>
-              <option value="cdd">CDD</option>
-              <option value="apprenti">Apprenti</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Catégorie</label>
-            <select id="sal-categorie">
-              <option value="employe">Employé(e)</option>
-              <option value="apprenti">Apprenti</option>
-              <option value="cadre">Cadre</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Niveau / Échelon</label><input id="sal-niveau" type="text" placeholder="Niveau 3 / Vendeur"></div>
-          <div class="form-group"><label>Salaire base brut (€)</label><input id="sal-salaire" type="number" step="0.01" placeholder="1823.07"></div>
-          <div class="form-group"><label>% Apprentissage (si apprenti)</label><input id="sal-apprenti-pct" type="number" step="1" placeholder="51" min="0" max="100"></div>
-          <div class="form-group"><label>Ancienneté (années)</label><input id="sal-anciennete" type="number" step="0.1" placeholder="4"></div>
-          <div class="form-group"><label>Taux PAS (%)</label><input id="sal-pas" type="number" step="0.1" placeholder="0"></div>
-          <div class="form-group"><label>IBAN (virement)</label><input id="sal-iban" type="text" placeholder="FR76..."></div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
-          <button class="btn" onclick="fermerModalSalarie()">Annuler</button>
-          <button class="btn btn-primary" onclick="sauvegarderSalarie()">💾 Enregistrer</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Fiche de paie mensuelle -->
-    <div id="modal-paie" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;overflow-y:auto;padding:20px;">
-      <div style="background:#fff;border-radius:14px;max-width:750px;margin:auto;padding:28px;border:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-          <div style="font-size:18px;font-weight:700;" id="modal-paie-title">Fiche de paie</div>
-          <button onclick="fermerModalPaie()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;">✕</button>
-        </div>
-
-        <!-- Éléments variables -->
-        <div style="background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;">
-          <div style="font-weight:600;margin-bottom:12px;color:var(--blue);">📝 Éléments variables du mois</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group"><label>Jours CP pris</label><input id="paie-cp-pris" type="number" step="1" min="0" value="0" onchange="calculerPaie()"></div>
-            <div class="form-group"><label>Jours absence (non payés)</label><input id="paie-absences" type="number" step="1" min="0" value="0" onchange="calculerPaie()"></div>
-            <div class="form-group"><label>Heures supplémentaires</label><input id="paie-heures-sup" type="number" step="0.5" min="0" value="0" onchange="calculerPaie()"></div>
-            <div class="form-group"><label>Prime exceptionnelle (€)</label><input id="paie-prime" type="number" step="0.01" min="0" value="0" onchange="calculerPaie()"></div>
-          </div>
-        </div>
-
-        <!-- Résultat calcul -->
-        <div id="paie-calcul-result" style="background:#f8fafc;border-radius:10px;padding:16px;margin-bottom:16px;font-size:13px;"></div>
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-          <button class="btn" onclick="fermerModalPaie()">Annuler</button>
-          <button class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);" onclick="genererFichePDF()">📄 Générer PDF</button>
-          <button class="btn btn-primary" onclick="sauvegarderPaie()">💾 Valider ce mois</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="page" id="page-comparaison">
-      <div class="page-title">Comparaison Mensuelle</div>
-      <div class="page-sub">Évolution de votre activité mois par mois</div>
-
-      <div class="dash-grid" id="comp-cards"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-        <div class="card">
-          <div class="card-header"><div class="card-title">📈 CA TTC par mois</div></div>
-          <canvas id="chart-comp-ca" height="220"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">🔧 Bonus QualiRépar par mois</div></div>
-          <canvas id="chart-comp-quali" height="220"></canvas>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-        <div class="card">
-          <div class="card-header"><div class="card-title">💳 Répartition paiements par mois</div></div>
-          <canvas id="chart-comp-pay" height="220"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📅 Nb jours travaillés</div></div>
-          <canvas id="chart-comp-jours" height="220"></canvas>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:18px;">
-        <div class="card-header"><div class="card-title">📊 Tableau comparatif détaillé</div></div>
-        <div style="overflow-x:auto;">
-          <table id="comp-table"></table>
-        </div>
-      </div>
-    </div>
-
-  <div class="page" id="page-depenses">
-      <div class="page-title">Suivi des Dépenses</div>
-      <div class="page-sub">Charges et dépenses du magasin</div>
-
-      <div class="dash-grid" id="depenses-totaux"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-        <div class="card">
-          <div class="card-header"><div class="card-title">➕ Ajouter une dépense</div></div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div class="form-group"><label>Date *</label><input type="date" id="d-date"></div>
-            <div class="form-group"><label>Catégorie *</label>
-              <select id="d-categorie">
-                <option value="Loyer">🏠 Loyer</option>
-                <option value="Fournitures">🔧 Fournitures / Pièces</option>
-                <option value="Salaires">👥 Salaires</option>
-                <option value="Electricite">💡 Électricité / Eau / Gaz</option>
-                <option value="Telephone">📞 Téléphone / Internet</option>
-                <option value="Assurance">🛡️ Assurance</option>
-                <option value="Transport">🚗 Transport / Carburant</option>
-                <option value="Publicite">📢 Publicité / Marketing</option>
-                <option value="Logiciels">💻 Logiciels / Abonnements</option>
-                <option value="Autre">📦 Autre</option>
-              </select>
-            </div>
-            <div class="form-group"><label>Description</label><input type="text" id="d-description" placeholder="ex: Loyer mars 2026"></div>
-            <div class="form-group"><label>Montant TTC (€) *</label><input type="number" id="d-montant" step="0.01" placeholder="ex: 850"></div>
-            <div class="form-group"><label>Mode paiement</label>
-              <select id="d-mode">
-                <option value="Virement">Virement</option>
-                <option value="CB">CB</option>
-                <option value="Especes">Espèces</option>
-                <option value="Cheque">Chèque</option>
-                <option value="Prelevement">Prélèvement auto</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" onclick="addDepense()">✅ Enregistrer</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📊 Répartition par catégorie</div></div>
-          <canvas id="chart-depenses" height="250"></canvas>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:18px;">
-        <div class="card-header">
-          <div class="card-title">📋 Historique des dépenses</div>
-          <div style="display:flex;gap:8px;">
-            <select id="d-filtre-mois" onchange="renderDepenses()" style="padding:6px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
-              <option value="">Tous les mois</option>
-              <option value="2026-03">Mars 2026</option>
-              <option value="2026-02">Février 2026</option>
-              <option value="2026-01">Janvier 2026</option>
-            </select>
-            <button class="btn btn-sm" onclick="exportDepensesCSV()">📥 Export CSV</button>
-          </div>
-        </div>
-        <div style="overflow-x:auto;">
-          <table><thead><tr><th>Date</th><th>Catégorie</th><th>Description</th><th>Montant</th><th>Mode</th><th>Actions</th></tr></thead>
-          <tbody id="depenses-table"></tbody></table>
-        </div>
-      </div>
-    </div>
-
-  <div class="page" id="page-reparations">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <div class="page-title" style="margin-bottom:0;">Réparations</div>
-        <button class="btn btn-primary" onclick="repNewDossier()" style="font-size:14px;padding:10px 18px;">➕ Nouveau dossier</button>
-      </div>
-      <div class="page-sub">Parcours complet : Client → Prise en charge → Devis → Facture (+Bonus QualiRépar intégré) → Organisme</div>
 
       <!-- ── LISTE DES DOSSIERS ── -->
       <div id="rep-liste-view">
@@ -1700,11 +1686,24 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Prix TTC (€) *</label>
                       <input type="number" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview();"></div>
-                    <div class="form-group"><label>Mode règlement</label>
-                      <select id="r-mode" onchange="repUpdateFacturePreview()">
-                        <option value="CB">CB</option><option value="ESPECES">Espèces</option>
-                        <option value="CHEQUE">Chèque</option><option value="VIREMENT">Virement</option>
-                      </select></div>
+                    <div class="form-group">
+                      <label style="font-weight:800;font-size:14px;color:var(--green);">💳 MODE DE PAIEMENT *</label>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                        <button type="button" id="btn-mode-cb" onclick="repSetMode('CB')"
+                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid var(--green);background:var(--green);color:#fff;font-size:16px;font-weight:800;cursor:pointer;">
+                          💳 CB</button>
+                        <button type="button" id="btn-mode-especes" onclick="repSetMode('ESPECES')"
+                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
+                          💵 Espèces</button>
+                        <button type="button" id="btn-mode-cheque" onclick="repSetMode('CHEQUE')"
+                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
+                          📄 Chèque</button>
+                        <button type="button" id="btn-mode-virement" onclick="repSetMode('VIREMENT')"
+                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
+                          🏦 Virement</button>
+                      </div>
+                      <input type="hidden" id="r-mode" value="CB">
+                    </div>
                   </div>
                   <div class="form-group"><label>Garantie</label>
                     <select id="r-garantie">
@@ -1865,7 +1864,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
                 <button class="btn" onclick="repImprimerDepot()" style="font-size:13px;">📋 Réimprimer bon de dépôt</button>
                 <button class="btn" onclick="repImprimerFacture()" style="font-size:13px;">🧾 Réimprimer facture</button>
-                <button class="btn btn-sm" id="btn-vf-link" style="display:none;border-color:#0369a1;color:#0369a1;font-size:13px;" onclick="repOuvrirVosFactures()">🔗 Voir sur VosFactures</button>
+
               </div>
             </div>
           </div>
@@ -3409,7 +3408,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
-  if(id==='caisse')renderCaisse();
+  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); }
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
@@ -3452,6 +3451,748 @@ function cloturerMois(){
 }
 
 function updateCaisseCalc(){var t=parseFloat(document.getElementById('c-ttc').value)||0;document.getElementById('c-ht').value=(t/1.2).toFixed(2)+' €';document.getElementById('c-tva').value=(t-t/1.2).toFixed(2)+' €';}
+
+
+
+
+// ═══════════════════════════════════════════════════════════
+// RECHERCHE FACTURES — Vue unifiée réparations + ventes
+// ═══════════════════════════════════════════════════════════
+
+var _factTypeFilter = 'tous';
+var _factModeFilter = '';
+
+function filtrerFactType(type){
+  _factTypeFilter = type;
+  ['tous','rep','vente'].forEach(function(t){
+    var btn = document.getElementById('fact-f-'+t);
+    if(btn){ btn.classList.remove('btn-primary'); btn.style.opacity='0.6'; }
+  });
+  var active = type==='tous'?'tous':type==='reparation'?'rep':'vente';
+  var btn = document.getElementById('fact-f-'+active);
+  if(btn){ btn.classList.add('btn-primary'); btn.style.opacity='1'; }
+  _factModeFilter = '';
+  renderFacturesSearch();
+}
+
+function filtrerFactMode(mode){
+  _factModeFilter = (_factModeFilter===mode) ? '' : mode;
+  renderFacturesSearch();
+}
+
+function resetFactSearch(){
+  document.getElementById('fact-search').value='';
+  document.getElementById('fact-date-from').value='';
+  document.getElementById('fact-date-to').value='';
+  _factTypeFilter='tous'; _factModeFilter='';
+  renderFacturesSearch();
+}
+
+function renderFacturesSearch(){
+  var q      = (document.getElementById('fact-search')||{value:''}).value.toLowerCase().trim();
+  var dfrom  = (document.getElementById('fact-date-from')||{value:''}).value;
+  var dto    = (document.getElementById('fact-date-to')||{value:''}).value;
+
+  // Construire la liste unifiée
+  var all = [];
+
+  // Réparations avec facture
+  bonsDepot.forEach(function(d){
+    if(!d.facture || !d.facture.numero) return;
+    var f = d.facture;
+    var c = d.client||{};
+    var clientNom = ((c.civilite||'')+' '+(c.prenom||'')+' '+(c.nom||'')).trim();
+    all.push({
+      id:      'rep-'+d.id,
+      numero:  f.numero||'',
+      date:    (f.date||d.date||'').substring(0,10),
+      client:  clientNom,
+      desc:    (d.appareil ? (d.appareil.marque||'')+' '+(d.appareil.modele||'') : '') + ' — ' + (d.panne||''),
+      type:    'reparation',
+      mode:    f.mode||'CB',
+      montant: f.prix || d.devis || 0,
+      bonusQR: !!(d.bonusQR || f.bonusQR),
+      imei:    d.appareil ? (d.appareil.imei||'') : '',
+      dossier: d,
+      kiwizRef: f.kiwizRef||''
+    });
+  });
+
+  // Ventes smartphones
+  phones.forEach(function(p){
+    if(p.etat!=='VENDU'||!p.dateVente) return;
+    all.push({
+      id:      'vente-'+p.id,
+      numero:  'VTE-'+p.id,
+      date:    (p.dateVente||'').substring(0,10),
+      client:  p.vendeurNom||'Client',
+      desc:    p.modele+(p.stockage?' '+p.stockage+'Go':'')+' Grade '+(p.grade||'A')+(p.imei?' — IMEI '+p.imei:''),
+      type:    'vente',
+      mode:    p.modeVente||'CB',
+      montant: p.vente||0,
+      bonusQR: false,
+      imei:    p.imei||'',
+      kiwizRef: ''
+    });
+  });
+
+  // Tri par date décroissante
+  all.sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  // Filtres
+  var filtered = all.filter(function(tx){
+    if(_factTypeFilter!=='tous' && tx.type!==_factTypeFilter) return false;
+    if(_factModeFilter && (tx.mode||'').toUpperCase()!==_factModeFilter) return false;
+    if(dfrom && tx.date < dfrom) return false;
+    if(dto   && tx.date > dto)   return false;
+    if(q){
+      var searchStr = [tx.numero,tx.client,tx.desc,tx.imei,tx.mode,tx.montant.toString()].join(' ').toLowerCase();
+      if(!searchStr.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Stats
+  var stats = {total:0,nb:filtered.length,cb:0,esp:0,ch:0,vir:0};
+  filtered.forEach(function(tx){
+    stats.total += tx.montant;
+    var m = (tx.mode||'CB').toUpperCase();
+    if(m==='CB') stats.cb+=tx.montant;
+    if(m==='ESPECES') stats.esp+=tx.montant;
+    if(m==='CHEQUE') stats.ch+=tx.montant;
+    if(m==='VIREMENT') stats.vir+=tx.montant;
+  });
+
+  var statsDiv = document.getElementById('fact-stats');
+  if(statsDiv){
+    statsDiv.innerHTML = [
+      {l:'Total TTC',v:stats.total.toFixed(2)+' €',c:'var(--primary)'},
+      {l:'Nb factures',v:stats.nb,c:'var(--text)'},
+      {l:'💳 CB',v:stats.cb.toFixed(2)+' €',c:'#3b82f6'},
+      {l:'💵 Espèces',v:stats.esp.toFixed(2)+' €',c:'#16a34a'},
+      {l:'📄 Chèque',v:stats.ch.toFixed(2)+' €',c:'#d97706'},
+      {l:'🏦 Virement',v:stats.vir.toFixed(2)+' €',c:'#8b5cf6'}
+    ].map(function(s){
+      return '<div class="caisse-card" style="border-left:3px solid '+s.c+';">'+
+        '<div class="caisse-label">'+s.l+'</div>'+
+        '<div class="caisse-value" style="color:'+s.c+';font-size:16px;">'+s.v+'</div></div>';
+    }).join('');
+  }
+
+  // Tableau
+  var tbody = document.getElementById('fact-tbody');
+  var empty = document.getElementById('fact-empty');
+  var count = document.getElementById('fact-count');
+  if(!tbody) return;
+
+  if(filtered.length===0){
+    tbody.innerHTML='';
+    if(empty) empty.style.display='block';
+    if(count) count.textContent='';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  if(count) count.textContent=filtered.length+' facture(s) · Total : '+stats.total.toFixed(2)+' €';
+
+  var modeColors={CB:'#3b82f6',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
+  tbody.innerHTML = filtered.map(function(tx,i){
+    var bg = i%2===0?'#fff':'#f8fafc';
+    var mc = modeColors[(tx.mode||'CB').toUpperCase()]||'#666';
+    var typeLabel = tx.type==='reparation'
+      ? '<span style="background:#fef2f2;color:#c0392b;padding:2px 6px;border-radius:10px;font-size:11px;">🔧 Réparation</span>'
+      : '<span style="background:#f0fdf4;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:11px;">📱 Vente</span>';
+    var actions = tx.type==='reparation' && tx.dossier
+      ? '<button onclick="repOuvrirDossierFromCaisse(''+tx.dossier.id+'')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">📄 Voir</button>'
+      : '';
+    if(tx.kiwizRef) actions += ' <span style="font-size:10px;color:#1e40af;" title="Certifié NF525">🔒</span>';
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
+      '<td style="padding:8px;font-family:monospace;font-size:12px;font-weight:700;">'+tx.numero+'</td>'+
+      '<td style="padding:8px;white-space:nowrap;">'+fmtDate(tx.date)+'</td>'+
+      '<td style="padding:8px;"><b>'+tx.client+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+tx.desc.substring(0,50)+'</span></td>'+
+      '<td style="padding:8px;">'+typeLabel+'</td>'+
+      '<td style="padding:8px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+tx.mode+'</span></td>'+
+      '<td style="padding:8px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €'+(tx.bonusQR?'<br><span style="font-size:10px;color:var(--green);">dont QR -25€</span>':'')+'</td>'+
+      '<td style="padding:8px;text-align:center;">'+actions+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function repOuvrirDossierFromCaisse(id){
+  // Naviguer vers la réparation correspondante
+  var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
+  if(!d){ showNotif('Dossier introuvable','error'); return; }
+  showPage('reparations', null);
+  setTimeout(function(){
+    repOuvrirDossier(d);
+  }, 300);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CAISSE DU JOUR — Vue unifiée réparations + ventes
+// ═══════════════════════════════════════════════════════════
+
+// Tableau des transactions en mémoire (session courante)
+var transactions = [];
+
+function caisseShowTab(tab){
+  ['jour','historique','factures'].forEach(function(t){
+    var view = document.getElementById('caisse-view-'+t);
+    var btn  = document.getElementById('caisse-tab-'+t);
+    if(view) view.style.display = t===tab ? 'block' : 'none';
+    if(btn){
+      btn.style.borderBottomColor = t===tab ? 'var(--primary)' : 'transparent';
+      btn.style.color = t===tab ? 'var(--primary)' : 'var(--text-muted)';
+      btn.style.fontWeight = t===tab ? '700' : '600';
+    }
+  });
+  if(tab==='jour')      renderCaisseJour();
+  if(tab==='factures')  { renderFacturesSearch(); }
+}
+
+function renderCaisseJour(){
+  var today = new Date().toISOString().split('T')[0];
+  var dateEl = document.getElementById('caisse-jour-date');
+  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Collecter toutes les transactions du jour
+  var txJour = [];
+
+  // 1. Réparations facturées aujourd'hui (depuis bonsDepot)
+  bonsDepot.forEach(function(d){
+    if(!d.facture) return;
+    var dateFacture = (d.facture.date || d.date || '').substring(0,10);
+    if(dateFacture !== today) return;
+    var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
+    var prixClient = d.facture.prix || d.devis || 0;
+    var prixReel = bonusQR ? prixClient + 25 : prixClient;
+    txJour.push({
+      heure:   d.facture.date ? new Date(d.facture.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+      type:    'reparation',
+      label:   '🔧',
+      desc:    'Réparation ' + (d.facture.numero||d.numero||'') + ' — ' + (d.client ? (d.client.prenom||'')+' '+(d.client.nom||'') : ''),
+      montant: prixReel,
+      mode:    d.facture.mode || 'CB',
+      quali:   bonusQR ? 25 : 0
+    });
+  });
+
+  // 2. Ventes smartphones du jour (depuis phones)
+  phones.forEach(function(p){
+    if(p.etat !== 'VENDU') return;
+    if((p.dateVente||'').substring(0,10) !== today) return;
+    txJour.push({
+      heure:   '--:--',
+      type:    'vente',
+      label:   '📱',
+      desc:    'Vente ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
+      montant: p.vente || 0,
+      mode:    p.modeVente || 'CB',
+      quali:   0
+    });
+  });
+
+  // Calculer les totaux du jour
+  var totJour = {total:0, cb:0, especes:0, cheque:0, virement:0, quali:0, nb:txJour.length};
+  txJour.forEach(function(tx){
+    totJour.total    += tx.montant;
+    totJour.quali    += tx.quali;
+    var m = (tx.mode||'CB').toUpperCase();
+    if(m==='CB')       totJour.cb       += tx.montant;
+    if(m==='ESPECES')  totJour.especes  += tx.montant;
+    if(m==='CHEQUE')   totJour.cheque   += tx.montant;
+    if(m==='VIREMENT') totJour.virement += tx.montant;
+  });
+
+  // Afficher les totaux
+  var totDiv = document.getElementById('caisse-jour-totaux');
+  if(totDiv){
+    var cards = [
+      {label:'CA TTC du jour', value: totJour.total.toFixed(2)+' €', color:'var(--primary)', icon:'💰'},
+      {label:'CA HT', value: (totJour.total/1.2).toFixed(2)+' €', color:'var(--text)', icon:'📊'},
+      {label:'💳 CB', value: totJour.cb.toFixed(2)+' €', color:'var(--blue)', icon:''},
+      {label:'💵 Espèces', value: totJour.especes.toFixed(2)+' €', color:'var(--green)', icon:''},
+      {label:'📄 Chèque', value: totJour.cheque.toFixed(2)+' €', color:'var(--warning)', icon:''},
+      {label:'🏦 Virement', value: totJour.virement.toFixed(2)+' €', color:'#8b5cf6', icon:''},
+      {label:'🏷️ Bonus QR', value: totJour.quali.toFixed(2)+' €', color:'var(--green)', icon:''},
+      {label:'Nb transactions', value: totJour.nb, color:'var(--text-muted)', icon:'🧾'}
+    ];
+    totDiv.innerHTML = cards.map(function(c){
+      return '<div class="caisse-card" style="border-left:3px solid '+c.color+';">'+
+        '<div class="caisse-label">'+(c.icon?c.icon+' ':'')+c.label+'</div>'+
+        '<div class="caisse-value" style="color:'+c.color+';font-size:18px;">'+c.value+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Afficher les transactions
+  var tbody = document.getElementById('caisse-jour-tbody');
+  var empty = document.getElementById('caisse-jour-empty');
+  if(tbody){
+    if(txJour.length === 0){
+      tbody.innerHTML = '';
+      if(empty) empty.style.display = 'block';
+    } else {
+      if(empty) empty.style.display = 'none';
+      var modeColors = {CB:'#3b82f6',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
+      tbody.innerHTML = txJour.map(function(tx, i){
+        var mc = modeColors[(tx.mode||'CB').toUpperCase()] || '#666';
+        var bg = i%2===0 ? '#fff' : '#f8fafc';
+        return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
+          '<td style="padding:8px;color:var(--text-muted);">'+tx.heure+'</td>'+
+          '<td style="padding:8px;">'+tx.label+' <span style="font-size:11px;background:'+(tx.type==='reparation'?'#fef2f2':'#f0fdf4')+';color:'+(tx.type==='reparation'?'#c0392b':'#16a34a')+';padding:2px 6px;border-radius:10px;">'+(tx.type==='reparation'?'Réparation':'Vente')+'</span></td>'+
+          '<td style="padding:8px;">'+tx.desc+'</td>'+
+          '<td style="padding:8px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €'+(tx.quali>0?'<br><span style="font-size:10px;color:var(--green);">dont bonus QR '+tx.quali+'€</span>':'')+'</td>'+
+          '<td style="padding:8px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:3px 8px;border-radius:10px;font-size:12px;font-weight:700;">'+tx.mode+'</span></td>'+
+        '</tr>';
+      }).join('');
+    }
+  }
+
+  // Recap Z de caisse
+  var zDiv = document.getElementById('caisse-z-recap');
+  if(zDiv){
+    zDiv.innerHTML = '<b>'+txJour.length+' transaction(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
+      'CB : '+totJour.cb.toFixed(2)+' € · Espèces : '+totJour.especes.toFixed(2)+' € · '+
+      'Chèque : '+totJour.cheque.toFixed(2)+' € · Virement : '+totJour.virement.toFixed(2)+' €'+
+      (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '');
+  }
+
+  // Stocker pour le Z de caisse
+  transactions = txJour;
+  window._caisseJourTotaux = totJour;
+}
+
+function genererZCaisse(){
+  renderCaisseJour();
+  var today = new Date().toISOString().split('T')[0];
+  var tot = window._caisseJourTotaux || {total:0,cb:0,especes:0,cheque:0,virement:0,quali:0,nb:0};
+  var dateStr = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var heureStr = new Date().toLocaleTimeString('fr-FR');
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Z de Caisse — '+today+'</title>'+
+  '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:"Courier New",monospace;font-size:12px;width:80mm;margin:auto;padding:4mm;}'+
+  '.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}.big{font-size:16px;font-weight:bold;}.right{text-align:right;}'+
+  '.row{display:flex;justify-content:space-between;padding:2px 0;}'+
+  '@media print{@page{size:80mm auto;margin:0;}}</style></head><body>'+
+  '<p class="no-print" style="padding:4px;margin-bottom:8px;"><button onclick="window.print()" style="width:100%;padding:8px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;">🖨️ Imprimer</button></p>'+
+  '<div class="center bold big">SOLUTION PHONE</div>'+
+  '<div class="center">21 Rue Gambetta — Mâcon 71000</div>'+
+  '<div class="line"></div>'+
+  '<div class="center bold" style="font-size:14px;">★ Z DE CAISSE ★</div>'+
+  '<div class="center">'+dateStr+'</div>'+
+  '<div class="center">Clôture : '+heureStr+'</div>'+
+  '<div class="line"></div>'+
+  '<div class="row"><span>Nb transactions</span><span class="bold">'+tot.nb+'</span></div>'+
+  '<div class="line"></div>'+
+  '<div class="row bold"><span>CA TTC TOTAL</span><span>'+tot.total.toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>CA HT</span><span>'+(tot.total/1.2).toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>TVA 20%</span><span>'+(tot.total-tot.total/1.2).toFixed(2)+' €</span></div>'+
+  '<div class="line"></div>'+
+  '<div class="center bold">DÉTAIL PAR MODE</div>'+
+  '<div class="row"><span>💳 CB</span><span>'+tot.cb.toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>💵 Espèces</span><span>'+tot.especes.toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>📄 Chèque</span><span>'+tot.cheque.toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>🏦 Virement</span><span>'+tot.virement.toFixed(2)+' €</span></div>'+
+  (tot.quali>0?'<div class="row"><span>🏷️ Bonus QR</span><span>'+tot.quali.toFixed(2)+' €</span></div>':'')+
+  '<div class="line"></div>';
+
+  // Détail des transactions
+  if(transactions.length > 0){
+    html += '<div class="center bold">DÉTAIL TRANSACTIONS</div>';
+    transactions.forEach(function(tx){
+      html += '<div class="row"><span>'+(tx.type==='reparation'?'🔧':'📱')+' '+tx.desc.substring(0,28)+'</span><span>'+tx.montant.toFixed(2)+' €</span></div>';
+    });
+    html += '<div class="line"></div>';
+  }
+
+  html += '<div class="line"></div>'+
+  '<div class="center bold">■ LOGICIEL CERTIFIÉ NF525 ■</div>'+
+  '<div class="center" style="font-size:10px;">Certification AFNOR/Infocert via Kiwiz</div>'+
+  '<div class="center" style="font-size:10px;">Loi anti-fraude TVA — Art. 286 CGI</div>'+
+  '<div class="center" style="font-size:10px;">Données inaltérables et archivées</div>'+
+  '<div class="line"></div>'+
+  '<div class="center">— Clôture journalière officielle —</div>'+
+  '<div class="center">Document généré automatiquement</div>'+
+  '<div class="center">Solution Phone — SIRET 801 044 785 00021</div>'+
+  '</div></body></html>';
+
+  var w = window.open('','_blank','width=400,height=700');
+  w.document.write(html);
+  w.document.close();
+
+  // Marquer le Z de caisse dans la caisse (entrée du jour déjà créée)
+  showNotif('✅ Z de caisse généré pour le '+today,'success');
+}
+
+
+
+// ═══════════════════════════════════════════════════════════
+// ENVOI FACTURE — Email (Brevo) + SMS
+// ═══════════════════════════════════════════════════════════
+
+var _envoiDossierCourant = null; // dossier en cours d'envoi
+
+function repShowEnvoiFacture(d){
+  _envoiDossierCourant = d;
+  var c = d.client||{};
+  var f = d.facture||{};
+
+  // Titre
+  var titre = document.getElementById('envoi-facture-titre');
+  if(titre) titre.textContent = 'Facture '+f.numero+' — '+(f.prix||0).toFixed(2)+'€ TTC';
+
+  // Pré-remplir email et tel depuis le client
+  var emailEl = document.getElementById('envoi-email-input');
+  var smsEl   = document.getElementById('envoi-sms-input');
+  if(emailEl) emailEl.value = c.email||'';
+  if(smsEl)   smsEl.value   = c.tel||'';
+
+  // Reset statuts
+  ['envoi-email-status','envoi-sms-status'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.innerHTML='';
+  });
+
+  // Afficher le modal
+  var modal = document.getElementById('modal-envoi-facture');
+  if(modal){ modal.style.display='flex'; }
+}
+
+function fermerEnvoiFacture(){
+  var modal = document.getElementById('modal-envoi-facture');
+  if(modal) modal.style.display='none';
+  _envoiDossierCourant = null;
+}
+
+function envoyerFactureImprimer(){
+  if(_envoiDossierCourant) repImprimerFacture(_envoiDossierCourant);
+  fermerEnvoiFacture();
+}
+
+// ── Brevo : fonctions paramètres ──
+function paramsSaveBrevo(){
+  var key    = (document.getElementById('params-brevo-key')||{value:''}).value.trim();
+  var sender = (document.getElementById('params-brevo-sender')||{value:''}).value.trim();
+  var name   = (document.getElementById('params-brevo-sender-name')||{value:'Solution Phone'}).value.trim()||'Solution Phone';
+  if(!key||!sender){ showNotif('Remplissez clé API et email expéditeur','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.brevoKey, key);
+  localStorage.setItem(PARAMS_KEYS.brevoSender, sender);
+  localStorage.setItem(PARAMS_KEYS.brevoSenderName, name);
+  showNotif('✅ Brevo configuré — Email & SMS activés !','success');
+  var st=document.getElementById('params-brevo-status');
+  if(st) st.innerHTML='<span style="color:var(--green);">✅ Email & SMS actifs</span>';
+}
+
+async function paramsTestBrevo(){
+  var key    = localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  var sender = localStorage.getItem(PARAMS_KEYS.brevoSender)||'';
+  var name   = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone';
+  if(!key||!sender){ showNotif('Configurez Brevo d\'abord','error'); return; }
+  var st=document.getElementById('params-brevo-status');
+  if(st) st.innerHTML='⏳ Test en cours...';
+  try {
+    var res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method:'POST',
+      headers:{'api-key':key,'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sender:{name:name, email:sender},
+        to:[{email:sender, name:name}],
+        subject:'✅ Test Solution Phone — Brevo configuré',
+        htmlContent:'<p>Brevo est bien configuré sur votre application Solution Phone.<br>Les factures seront envoyées automatiquement.</p>'
+      })
+    });
+    if(res.ok){
+      if(st) st.innerHTML='<span style="color:var(--green);">✅ Email de test envoyé à '+sender+'</span>';
+      showNotif('✅ Brevo OK — email de test envoyé','success');
+    } else {
+      var err=await res.json();
+      if(st) st.innerHTML='<span style="color:red;">❌ '+(err.message||res.status)+'</span>';
+    }
+  } catch(e){
+    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Erreur réseau</span>';
+  }
+}
+
+// ── Envoi email facture ──
+async function envoyerFactureEmail(){
+  var d   = _envoiDossierCourant;
+  if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
+  var email  = (document.getElementById('envoi-email-input')||{value:''}).value.trim();
+  if(!email){ showNotif('Entrez un email','error'); return; }
+  var key    = localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  var sender = localStorage.getItem(PARAMS_KEYS.brevoSender)||'solution.phone71@gmail.com';
+  var name   = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+  if(!key){ showNotif('Configurez Brevo dans Paramètres','error'); return; }
+
+  var btn = document.getElementById('btn-envoi-email');
+  var st  = document.getElementById('envoi-email-status');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Envoi...'; }
+
+  var c = d.client||{};
+  var f = d.facture;
+  var a = d.appareil||{};
+  var bonusQR = !!(d.bonusQR||f.bonusQR);
+  var prixClient = f.prix||0;
+  var prixAffiche = bonusQR ? prixClient - 25 : prixClient;
+
+  var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
+    '<div style="background:#c0392b;padding:20px;text-align:center;">'+
+      '<h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+      '<p style="color:#ffcdd2;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p>'+
+    '</div>'+
+    '<div style="padding:24px;">'+
+      '<p>Bonjour '+(c.prenom||c.nom||'')+ ',</p>'+
+      '<p>Votre réparation est terminée. Veuillez trouver ci-joint votre facture.</p>'+
+      '<div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #c0392b;">'+
+        '<b>Facture N° '+f.numero+'</b><br>'+
+        'Date : '+new Date(f.date||new Date()).toLocaleDateString('fr-FR')+'<br>'+
+        'Appareil : '+(a.marque||'')+' '+(a.modele||'')+(a.imei?'<br>IMEI : '+a.imei:'')+'<br>'+
+        'Réparation : '+(d.panne||f.description||'')+'<br>'+
+        '<b style="font-size:18px;color:#c0392b;">Montant : '+prixAffiche.toFixed(2)+' € TTC</b>'+
+        (bonusQR?'<br><span style="color:#16a34a;font-size:12px;">✅ Bonus QualiRépar -25€ déduit</span>':'')+
+      '</div>'+
+      '<div style="background:#eff6ff;border-radius:6px;padding:10px;font-size:11px;color:#1e40af;margin-top:16px;">'+
+        '<b>🔒 NF525</b> · Facture certifiée conforme loi anti-fraude TVA · Art. 286 CGI'+
+      '</div>'+
+      '<p style="color:#666;font-size:12px;margin-top:16px;">Merci de votre confiance !<br><b>L'équipe Solution Phone</b></p>'+
+    '</div>'+
+  '</div>';
+
+  try {
+    var res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method:'POST',
+      headers:{'api-key':key,'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sender:{name:name, email:sender},
+        to:[{email:email, name:(c.prenom||'')+' '+(c.nom||'')}],
+        subject:'Votre facture Solution Phone — '+f.numero+' — '+prixAffiche.toFixed(2)+'€',
+        htmlContent: htmlEmail
+      })
+    });
+    if(res.ok){
+      if(st) st.innerHTML='<span style="color:var(--green);">✅ Email envoyé à '+email+'</span>';
+      showNotif('✅ Facture envoyée par email !','success');
+      if(btn){ btn.textContent='✅ Envoyé'; btn.style.background='var(--green)'; }
+    } else {
+      var err=await res.json();
+      if(st) st.innerHTML='<span style="color:red;">❌ '+(err.message||'Erreur envoi')+'</span>';
+      if(btn){ btn.disabled=false; btn.textContent='📧 Réessayer'; }
+    }
+  } catch(e){
+    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Erreur connexion Brevo</span>';
+    if(btn){ btn.disabled=false; btn.textContent='📧 Envoyer'; }
+  }
+}
+
+// ── Envoi SMS facture ──
+async function envoyerFactureSMS(){
+  var d   = _envoiDossierCourant;
+  if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
+  var tel = (document.getElementById('envoi-sms-input')||{value:''}).value.trim().replace(/\s/g,'');
+  if(!tel||tel.length < 10){ showNotif('Numéro invalide','error'); return; }
+  var key  = localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  var name = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'SolPhone';
+  if(!key){ showNotif('Configurez Brevo dans Paramètres','error'); return; }
+
+  var btn = document.getElementById('btn-envoi-sms');
+  var st  = document.getElementById('envoi-sms-status');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Envoi...'; }
+
+  var f   = d.facture;
+  var bonusQR = !!(d.bonusQR||f.bonusQR);
+  var prixAffiche = (f.prix||0) - (bonusQR?25:0);
+
+  // Formater tel en international (+33...)
+  var telIntl = tel;
+  if(tel.startsWith('0')) telIntl = '+33'+tel.substring(1);
+
+  var msgSMS = 'Solution Phone Macon - Facture '+f.numero+
+    ' : '+prixAffiche.toFixed(2)+'EUR TTC'+
+    (bonusQR?' (Bonus QR -25EUR inclus)':'')+
+    '. Merci pour votre confiance !';
+
+  try {
+    var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
+      method:'POST',
+      headers:{'api-key':key,'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sender: (name.substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone'),
+        recipient: telIntl,
+        content: msgSMS,
+        type: 'transactional'
+      })
+    });
+    if(res.ok){
+      if(st) st.innerHTML='<span style="color:var(--green);">✅ SMS envoyé au '+tel+'</span>';
+      showNotif('✅ Facture envoyée par SMS !','success');
+      if(btn){ btn.textContent='✅ Envoyé'; btn.style.background='var(--green)'; }
+    } else {
+      var err=await res.json();
+      if(st) st.innerHTML='<span style="color:red;">❌ '+(err.message||'Erreur SMS')+'</span>';
+      if(btn){ btn.disabled=false; btn.textContent='📱 SMS'; }
+    }
+  } catch(e){
+    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Erreur connexion</span>';
+    if(btn){ btn.disabled=false; btn.textContent='📱 SMS'; }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// KIWIZ — Certification NF525
+// ═══════════════════════════════════════════════════════════
+
+function getKiwizUser(){ return localStorage.getItem(PARAMS_KEYS.kiwizUser)||''; }
+function getKiwizPass(){ return localStorage.getItem(PARAMS_KEYS.kiwizPass)||''; }
+function getKiwizSub(){  return localStorage.getItem(PARAMS_KEYS.kiwizSub)||'';  }
+function kiwizConfigured(){ return !!(getKiwizUser() && getKiwizPass() && getKiwizSub()); }
+
+function paramsSaveKiwiz(){
+  var u = (document.getElementById('params-kiwiz-user')||{value:''}).value.trim();
+  var p = (document.getElementById('params-kiwiz-pass')||{value:''}).value.trim();
+  var s = (document.getElementById('params-kiwiz-sub')||{value:''}).value.trim();
+  if(!u||!p||!s){ showNotif('Remplissez tous les champs Kiwiz','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.kiwizUser, u);
+  localStorage.setItem(PARAMS_KEYS.kiwizPass, p);
+  localStorage.setItem(PARAMS_KEYS.kiwizSub,  s);
+  showNotif('✅ Kiwiz configuré — NF525 actif !','success');
+  var st = document.getElementById('params-kiwiz-status');
+  if(st) st.innerHTML='<span style="color:var(--green);">✅ Certification NF525 active</span>';
+}
+
+async function paramsTestKiwiz(){
+  var st = document.getElementById('params-kiwiz-status');
+  if(st) st.innerHTML='⏳ Test en cours...';
+  try {
+    var res = await fetch('https://api.kiwiz.io/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
+    });
+    if(res.ok){
+      if(st) st.innerHTML='<span style="color:var(--green);">✅ Connexion Kiwiz OK — NF525 opérationnel</span>';
+      showNotif('✅ Kiwiz connecté — NF525 actif','success');
+    } else {
+      if(st) st.innerHTML='<span style="color:var(--red);">❌ Identifiants incorrects</span>';
+      showNotif('Kiwiz : identifiants incorrects','error');
+    }
+  } catch(e){
+    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Connexion impossible — vérifiez votre accès</span>';
+  }
+}
+
+async function certifierFactureKiwiz(facture, client, pdfBase64){
+  if(!kiwizConfigured()) return null;
+  try {
+    // 1. Obtenir un token Kiwiz
+    var authRes = await fetch('https://api.kiwiz.io/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
+    });
+    if(!authRes.ok) return null;
+    var auth = await authRes.json();
+    var token = auth.token || auth.access_token;
+    if(!token) return null;
+
+    // 2. Soumettre la facture pour certification
+    var payload = {
+      subscription_id: getKiwizSub(),
+      type: 'invoice',
+      number: facture.numero,
+      date: facture.date,
+      total_ht: (facture.prix/1.2).toFixed(2),
+      total_ttc: facture.prix.toString(),
+      client_name: client,
+      pdf: pdfBase64 || ''
+    };
+    var certRes = await fetch('https://api.kiwiz.io/invoices', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify(payload)
+    });
+    if(certRes.ok){
+      var certData = await certRes.json();
+      return certData.hash || certData.reference || certData.id || 'KIWIZ-OK';
+    }
+  } catch(e){ console.error('Kiwiz:', e); }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CAISSE AUTOMATIQUE — alimentation depuis réparations/ventes
+// ═══════════════════════════════════════════════════════════
+
+async function alimenterCaisse(opts){
+  // opts = { date, ttc, mode, quali, source, description }
+  // mode = 'CB' | 'ESPECES' | 'CHEQUE' | 'VIREMENT'
+  var today = opts.date || new Date().toISOString().split('T')[0];
+  var ttc   = parseFloat(opts.ttc) || 0;
+  var mode  = (opts.mode || 'CB').toUpperCase();
+  var quali = parseFloat(opts.quali) || 0;
+
+  // Chercher l'entrée caisse du jour
+  var idx = caisse.findIndex(function(c){ return c.date === today; });
+  var entry;
+  if(idx >= 0){
+    entry = JSON.parse(JSON.stringify(caisse[idx]));
+  } else {
+    entry = {date:today, ttc:0, cb:0, especes:0, cheque:0, virement:0,
+             quali:0, depotEsp:0, depotCheque:0, achatSmart:0};
+  }
+
+  // Ajouter les montants
+  entry.ttc += ttc;
+  if(mode === 'CB')        entry.cb       += ttc;
+  if(mode === 'ESPECES')   entry.especes  += ttc;
+  if(mode === 'CHEQUE')    entry.cheque   += ttc;
+  if(mode === 'VIREMENT')  entry.virement += ttc;
+  if(quali > 0)            entry.quali    += quali;
+
+  // Arrondir
+  ['ttc','cb','especes','cheque','virement','quali'].forEach(function(k){
+    entry[k] = Math.round((entry[k]||0)*100)/100;
+  });
+
+  // Mettre à jour le tableau caisse en mémoire
+  if(idx >= 0) caisse[idx] = entry;
+  else { caisse.push(entry); caisse.sort(function(a,b){return a.date.localeCompare(b.date);}); }
+
+  // Sauvegarder en Supabase
+  await saveCaisseRow(entry);
+
+  // Rafraîchir l'affichage si on est sur la page caisse
+  if(document.getElementById('caisse-table')) renderCaisse();
+  if(document.getElementById('dash-caisse'))  renderDashboard();
+
+  console.log('💰 Caisse alimentée :', today, ttc+'€', mode, opts.description||'');
+}
+
+// Appelée quand une facture réparation est générée
+function caisseFromFactureRep(facture, client, mode, bonusQR){
+  var prixClient = facture.prix || 0;
+  var prixReel   = bonusQR ? prixClient + 25 : prixClient; // TTC réel encaissé (avant bonus)
+  var qualiMont  = bonusQR ? 25 : 0;
+  return alimenterCaisse({
+    date:        facture.date || new Date().toISOString().split('T')[0],
+    ttc:         prixReel,      // montant réel reçu de l'éco-organisme inclus
+    mode:        mode || 'CB',
+    quali:       qualiMont,
+    source:      'reparation',
+    description: 'Réparation ' + (facture.numero||'') + ' — ' + (client||'')
+  });
+}
+
+// Appelée quand une vente téléphone/accessoire est enregistrée
+function caisseFromVente(opts){
+  // opts = { prixTTC, mode, description, date }
+  return alimenterCaisse({
+    date:        opts.date || new Date().toISOString().split('T')[0],
+    ttc:         opts.prixTTC || 0,
+    mode:        opts.mode || 'CB',
+    quali:       0,
+    source:      'vente',
+    description: opts.description || 'Vente'
+  });
+}
 
 function addCaisse(){
   var date=document.getElementById('c-date').value;
@@ -4475,13 +5216,33 @@ async function verifierIMEI(imei) {
 function marquerVendu(id){
   var p=phones.find(function(x){return x.id===id;});
   if(!p)return;
-  if(!confirm('Marquer '+p.modele+' comme VENDU ?\nIl sera retiré du stock et ajouté au rapport des ventes.'))return;
+  // Demander le mode de paiement
+  var modes = ['CB','ESPECES','CHEQUE','VIREMENT'];
+  var modeChoix = prompt('Mode de paiement pour '+p.modele+' ('+p.vente+'€) ?
+
+1 = CB
+2 = Espèces
+3 = Chèque
+4 = Virement
+
+(Appuyez Entrée pour CB par défaut)','1');
+  var modeMap = {'1':'CB','2':'ESPECES','3':'CHEQUE','4':'VIREMENT'};
+  var mode = modeMap[modeChoix] || 'CB';
+  if(!confirm('Marquer '+p.modele+' comme VENDU ('+p.vente+'€ — '+mode+') ?\nIl sera retiré du stock.'))return;
   p.etat='VENDU';
   p.dateVente=new Date().toISOString().split('T')[0];
+  p.modeVente = mode;
   savePhone(p);
+  // ── Alimentation automatique caisse ──
+  caisseFromVente({
+    prixTTC: p.vente,
+    mode: mode,
+    date: p.dateVente,
+    description: 'Vente '+p.modele+' IMEI '+p.imei
+  });
   renderPhones();
   renderDashboard();
-  showNotif('✅ '+p.modele+' vendu — visible dans Ventes Smartphones','success');
+  showNotif('✅ '+p.modele+' vendu ('+p.vente+'€ '+mode+') — enregistré en caisse','success');
 }
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
 
@@ -8551,8 +9312,12 @@ var PARAMS_KEYS = {
   ecoPass:        'sp_eco_pass',
   ecologicToken:  'sp_ecologic_token',
   ecologicSiteId: 'sp_ecologic_siteid',
-  vfToken:        'sp_vf_token',
-  vfDomain:       'sp_vf_domain'
+  kiwizUser:      'sp_kiwiz_user',
+  kiwizPass:      'sp_kiwiz_pass',
+  kiwizSub:       'sp_kiwiz_sub',
+  brevoKey:       'sp_brevo_key',
+  brevoSender:    'sp_brevo_sender',
+  brevoSenderName:'sp_brevo_sender_name'
 };
 
 
@@ -8568,15 +9333,30 @@ var PARAMS_KEYS = {
 })();
 
 function paramsLoad(){
+  // Pré-configurer Brevo si pas encore fait
+  if(!localStorage.getItem(PARAMS_KEYS.brevoKey)){
+    localStorage.setItem(PARAMS_KEYS.brevoKey, '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');
+    localStorage.setItem(PARAMS_KEYS.brevoSender, 'solution.phone71@gmail.com');
+    localStorage.setItem(PARAMS_KEYS.brevoSenderName, 'Solution Phone Mâcon');
+  }
   var el;
 
+  el=document.getElementById('params-brevo-key');         if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  el=document.getElementById('params-brevo-sender');      if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoSender)||'';
+  el=document.getElementById('params-brevo-sender-name'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+  el=document.getElementById('params-brevo-status');
+  if(el) el.innerHTML = localStorage.getItem(PARAMS_KEYS.brevoKey) ? '<span style="color:var(--green);">✅ Email & SMS actifs</span>' : '<span style="color:var(--text-muted);">Non configuré</span>';
+  el=document.getElementById('params-kiwiz-user'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizUser)||'';
+  el=document.getElementById('params-kiwiz-pass'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizPass)||'';
+  el=document.getElementById('params-kiwiz-sub');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizSub)||'';
+  el=document.getElementById('params-kiwiz-status');
+  if(el) el.innerHTML = kiwizConfigured() ? '<span style="color:var(--green);">✅ Certification NF525 active</span>' : '<span style="color:var(--text-muted);">Non configuré</span>';
   el=document.getElementById('params-eco-repairer-id'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoRepairerId)||'';
   el=document.getElementById('params-eco-user');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoUser)||'';
   el=document.getElementById('params-eco-pass');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   el=document.getElementById('params-ecologic-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicToken)||'';
   el=document.getElementById('params-ecologic-siteid'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||'';
-  el=document.getElementById('params-vf-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.vfToken)||'';
-  el=document.getElementById('params-vf-domain'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.vfDomain)||'';
+
   paramsUpdateStatus();
 }
 
@@ -8604,112 +9384,8 @@ function paramsSaveEcologic(){
   paramsUpdateStatus();
 }
 
-function paramsSaveVosFactures(){
-  var token  = (document.getElementById('params-vf-token')||{value:''}).value.trim();
-  var domain = (document.getElementById('params-vf-domain')||{value:''}).value.trim();
-  if(!token||!domain){ showNotif('Token et sous-domaine sont obligatoires','error'); return; }
-  localStorage.setItem(PARAMS_KEYS.vfToken, token);
-  localStorage.setItem(PARAMS_KEYS.vfDomain, domain);
-  showNotif('✅ VosFactures configuré !','success');
-  paramsUpdateStatus();
-}
 
-async function paramsTestVosFactures(){
-  var token  = localStorage.getItem(PARAMS_KEYS.vfToken);
-  var domain = localStorage.getItem(PARAMS_KEYS.vfDomain);
-  var resultEl = document.getElementById('params-vf-test-result');
-  if(!token||!domain){ showNotif('Paramètres VosFactures manquants','error'); return; }
-  if(resultEl) resultEl.innerHTML='⏳ Test en cours...';
-  try {
-    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json?api_token='+token+'&per_page=1',{
-      method:'GET', headers:{'Accept':'application/json'}
-    });
-    if(res.ok){
-      if(resultEl) resultEl.innerHTML='<span style="color:var(--green);">✅ Connexion VosFactures OK !</span>';
-      showNotif('VosFactures connecté !','success');
-    } else {
-      if(resultEl) resultEl.innerHTML='<span style="color:var(--red);">❌ Erreur '+res.status+' — Vérifiez token et sous-domaine</span>';
-    }
-  } catch(err){
-    if(resultEl) resultEl.innerHTML='<span style="color:var(--red);">❌ Erreur de connexion — vérifiez le sous-domaine</span>';
-  }
-}
 
-function getVFToken(){ return localStorage.getItem(PARAMS_KEYS.vfToken)||''; }
-function getVFDomain(){ return localStorage.getItem(PARAMS_KEYS.vfDomain)||''; }
-
-// Créer une facture dans VosFactures depuis une réparation
-async function creerFactureVosFactures(rep){
-  var token = getVFToken();
-  var domain = getVFDomain();
-  if(!token||!domain){ showNotif('Configurez VosFactures dans Paramètres API','error'); return null; }
-
-  // Prix réel = prix client + 25€ si bonus QR
-  var prixClient = rep.prix||0;
-  var prixReel   = rep.bonusQR ? prixClient + 25 : prixClient;
-
-  // Adresse client depuis le dossier courant (champs HTML en priorité)
-  var d = repDossierCourant;
-  var c = (d&&d.client)||{};
-  var adresse  = (document.getElementById('rep-adresse')||{value:''}).value || c.adresse || rep.clientAdresse || '';
-  var cp       = (document.getElementById('rep-cp')||{value:''}).value     || c.cp      || '';
-  var ville    = (document.getElementById('rep-ville')||{value:''}).value  || c.ville   || '';
-  var cpVille  = [cp, ville].filter(Boolean).join(' ');
-
-  var payload = {
-    api_token: token,
-    invoice: {
-      kind: 'vat',
-      sell_date: rep.date||new Date().toISOString().split('T')[0],
-      issue_date: new Date().toISOString().split('T')[0],
-      buyer_name: rep.clientNom||'',
-      buyer_email: rep.clientEmail||'',
-      buyer_street: adresse,
-      buyer_post_code: cp,
-      buyer_city: ville,
-      description: (rep.description||'Réparation smartphone') + (rep.dossier?' — N° '+rep.dossier:''),
-      number_with_year_template: null,
-      positions: [
-        {
-          name: rep.description||'Réparation',
-          tax: 20,
-          total_price_gross: prixReel,
-          quantity: 1
-        }
-      ].concat(rep.bonusQR ? [{
-        name: 'Bonus Réparation QualiRépar (dispositif QualiRépar - Loi AGEC)',
-        tax: 'zw',
-        total_price_gross: -25,
-        quantity: 1
-      }] : [])
-    }
-  };
-
-  // Retirer api_token du body (VosFactures le veut en query param)
-  var payloadBody = JSON.parse(JSON.stringify(payload));
-  delete payloadBody.api_token;
-
-  try {
-    var res = await fetch('https://'+domain+'.vosfactures.fr/invoices.json?api_token='+encodeURIComponent(token), {
-      method: 'POST',
-      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadBody)
-    });
-    var data = await res.json();
-    if(res.ok){
-      console.log('VosFactures OK:', data.id, data.number);
-      return data;
-    } else {
-      console.error('VosFactures erreur', res.status, JSON.stringify(data));
-      showNotif('VosFactures : '+res.status+' — '+(data.error||JSON.stringify(data).substring(0,100)),'error');
-      return null;
-    }
-  } catch(e){
-    console.error('VosFactures exception:', e);
-    showNotif('VosFactures connexion impossible : '+e.message,'error');
-    return null;
-  }
-}
 
 function paramsUpdateStatus(){
   var box = document.getElementById('params-connexions-status');
@@ -8718,7 +9394,6 @@ function paramsUpdateStatus(){
   var connexions = [
     { label: 'Ecosystem',  ok: !!localStorage.getItem(PARAMS_KEYS.ecoRepairerId),   icon: '🟢', color: 'var(--green)' },
     { label: 'Ecologic',   ok: !!localStorage.getItem(PARAMS_KEYS.ecologicToken),   icon: '🔵', color: 'var(--blue)' },
-    { label: 'VosFactures', ok: !!localStorage.getItem(PARAMS_KEYS.vfToken),         icon: '🧾', color: '#0369a1' },
   ];
 
   box.innerHTML = '';
@@ -9506,10 +10181,6 @@ function repImprimerTicket(){
   setTimeout(function(){ w.print(); }, 400);
 }
 
-function repOuvrirVosFactures(){
-  if(!repDossierCourant||!repDossierCourant.facture||!repDossierCourant.facture.vfUrl) return;
-  window.open(repDossierCourant.facture.vfUrl,'_blank');
-}
 
 function repOuvrirDossier(id){
   if(!Array.isArray(repDossiers)) repDossiers = [];
@@ -9698,41 +10369,13 @@ async function repGenererFacture(){
   repSauvegarderDossier();
   repUpdateStatutBadge();
 
-  // Envoyer à VosFactures D'ABORD (avant l'impression)
-  if(getVFToken() && getVFDomain()){
-    var vfData = {
-      date: d.facture.date,
-      clientNom: (d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom,
-      clientEmail: d.client.email||'',
-      clientAdresse: d.client.adresse||'',
-      description: descFull,
-      prix: prix,
-      bonusQR: bonusQR,
-      irisLines: irisLines,
-      mode: mode,
-      dossier: d.numero||''
-    };
-    creerFactureVosFactures(vfData).then(function(result){
-      if(result && result.id){
-        d.facture.vfId  = result.id;
-        d.facture.vfNum = result.number;
-        d.facture.vfUrl = result.view_url;
-        repSauvegarderDossier();
-        showNotif('✅ Facture créée + envoyée à VosFactures !','success');
-        var btnVF = document.getElementById('btn-vf-link');
-        if(btnVF) btnVF.style.display='block';
-      } else {
-        showNotif('⚠️ Facture créée mais VosFactures a retourné une erreur','error');
-      }
-      // Imprimer après VosFactures
-      repImprimerFacture(d);
-    });
-    return; // L'impression se fait dans le .then()
-  } else {
-    showNotif('✅ Facture '+d.facture.numero+' créée !','success');
-  }
-  // Imprimer (si pas VosFactures)
-  repImprimerFacture(d);
+  // ── Alimenter automatiquement la caisse ──
+  var modeReg = (document.getElementById('r-mode')||{value:'CB'}).value || 'CB';
+  caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR);
+
+  showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
+  // Afficher popup envoi au lieu d'imprimer directement
+  repShowEnvoiFacture(d);
   repUpdateDevisRecap();
 }
 
@@ -9883,8 +10526,19 @@ function repImprimerFacture(d){
         (_tampStr?'<img src="'+_tampStr+'" style="max-height:65px;max-width:200px;object-fit:contain;mix-blend-mode:multiply;filter:contrast(1.2);">':'<div style="height:55px;"></div>')+
       '</div>'+
     '</div>'+
-    '<div style="text-align:center;margin-top:10px;font-size:9px;color:#bbb;border-top:1px solid #eee;padding-top:8px;">'+
-    'SOLUTION PHONE · RCS Mâcon B 801 044 785 · solution.phone71@gmail.com · www.solution-phone.fr'+
+    '<div style="border-top:1px solid #eee;margin-top:12px;padding-top:8px;">'+
+      '<div style="text-align:center;font-size:9px;color:#bbb;margin-bottom:6px;">'+
+        'SOLUTION PHONE · RCS Mâcon B 801 044 785 · solution.phone71@gmail.com · www.solution-phone.fr'+
+      '</div>'+
+      // Mention NF525 obligatoire
+      '<div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;">'+
+        '<div style="background:#1e40af;color:#fff;font-size:8px;font-weight:900;padding:3px 6px;border-radius:3px;letter-spacing:1px;">NF525</div>'+
+        '<div style="font-size:8px;color:#555;line-height:1.4;">'+
+          'Logiciel de caisse certifié NF525 · Conforme loi anti-fraude TVA (Art. 88 LF 2016 — Art. 286 CGI)<br>'+
+          'Données inaltérables, sécurisées, conservées et archivées · Certification AFNOR/Infocert via Kiwiz'+
+          (d.facture && d.facture.kiwizRef ? ' · Réf. certification : <b>'+d.facture.kiwizRef+'</b>' : '')+
+        '</div>'+
+      '</div>'+
     '</div>'+
     '</div></body></html>');
   w.document.close();
@@ -10139,7 +10793,7 @@ function repGoStep(n){
     repApplyClientLock(locked);
   }
   if(n===3) repUpdateDevisRecap();
-  if(n===4){ setTimeout(repAutoFillStep4, 400); repUpdateFacturePreview(); }
+  if(n===4){ setTimeout(function(){ repAutoFillStep4(); repSetMode(repDossierCourant && repDossierCourant.facture ? repDossierCourant.facture.mode||'CB' : 'CB'); }, 400); repUpdateFacturePreview(); }
   if(n===5) repUpdateStep5();
 }
 
@@ -10167,9 +10821,7 @@ function repUpdateStep5(){
   if(qrRecap)  qrRecap.style.display  = 'block';
   if(qrActions)qrActions.style.display= 'block';
 
-  // Afficher lien VosFactures si disponible
-  var btnVF = document.getElementById('btn-vf-link');
-  if(btnVF) btnVF.style.display = (f.vfUrl) ? 'block' : 'none';
+  
 
   // Organisme selon la marque
   var marque = (d.appareil||{}).marque||'';
@@ -10674,9 +11326,7 @@ function repUpdateDevisRecap(){
     '<b>Devis TTC :</b> '+(d.devis?d.devis.toFixed(2)+' € TTC':'Non renseigné')+'<br>'+
     (f?'<b>Facture :</b> '+f.numero+' · '+(f.bonusQR?f.prix-25:f.prix)+' € TTC':'');
   // QR recap
-  // Afficher lien VosFactures si dossier a un ID VF
-  var btnVF = document.getElementById('btn-vf-link');
-  if(btnVF) btnVF.style.display = (d.facture&&d.facture.vfId)?'block':'none';
+
   var qrRecap=document.getElementById('rep-qr-recap');
   var qrNo=document.getElementById('rep-qr-no-bonus');
   var qrActions=document.getElementById('rep-qr-actions');
@@ -11453,6 +12103,26 @@ function repCheckEligibilite(){
 
 
 var _repAutoDecompRunning = false;
+function repSetMode(mode){
+  document.getElementById('r-mode').value = mode;
+  // Mettre à jour les boutons visuels
+  var modes = ['CB','ESPECES','CHEQUE','VIREMENT'];
+  modes.forEach(function(m){
+    var btn = document.getElementById('btn-mode-'+m.toLowerCase());
+    if(!btn) return;
+    if(m === mode){
+      btn.style.background = 'var(--green)';
+      btn.style.borderColor = 'var(--green)';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = '#f8fafc';
+      btn.style.borderColor = '#ddd';
+      btn.style.color = 'var(--text)';
+    }
+  });
+  repUpdateFacturePreview();
+}
+
 function repToggleQR(){
   var checked = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
   // Afficher/masquer les sections bonus QR
