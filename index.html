@@ -4808,7 +4808,7 @@ function renderCaisse(){
   var el=document.getElementById('report-display');if(el)el.textContent=rep.toFixed(2)+' €';
   var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
   caisse.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb;tot.esp+=c.especes;tot.ch+=c.cheque;tot.vir+=c.virement;tot.quali+=c.quali;tot.dEsp+=c.depotEsp;tot.dCh+=c.depotCheque;tot.aS+=c.achatSmart;});
-  document.getElementById('caisse-totaux').innerHTML= +
+  document.getElementById('caisse-totaux').innerHTML =
     '<div class="caisse-card"><div class="caisse-label">CA TTC</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CA HT</div><div class="caisse-value">'+(tot.ttc/1.2).toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CB</div><div class="caisse-value">'+tot.cb.toFixed(2)+' €</div></div>'+
