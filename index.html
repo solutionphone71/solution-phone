@@ -3722,7 +3722,7 @@ function renderFacturesSearch(){
       ? '<span style="background:#fef2f2;color:#c0392b;padding:2px 6px;border-radius:10px;font-size:11px;">🔧 Réparation</span>'
       : '<span style="background:#f0fdf4;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:11px;">📱 Vente</span>';
     var actions = tx.type==='reparation' && tx.dossier
-      ? '<button onclick="repOuvrirDossierFromCaisse(''+tx.dossier.id+'')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">📄 Voir</button>'
+      ? '<button onclick="repOuvrirDossierFromCaisse('+JSON.stringify(String(tx.dossier.id))+')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">\u{1F4C4} Voir</button>'
       : '';
     if(tx.kiwizRef) actions += ' <span style="font-size:10px;color:#1e40af;" title="Certifié NF525">🔒</span>';
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
