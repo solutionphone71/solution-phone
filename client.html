@@ -1031,7 +1031,7 @@ html, body {
     </div>
 
     <div class="field" style="margin-top:24px;">
-      <label>Problème constaté <span class="req">*</span></label>
+      <label>Problème constaté <span style="color:var(--muted);font-size:11px;">(optionnel)</span></label>
     </div>
 
     <div class="panne-list" id="panne-list">
@@ -1257,7 +1257,7 @@ function togglePanne(el, label){
 
 function checkAppareil(){
   var modele = document.getElementById('ap-modele').value.trim();
-  var ok = state.marque && modele.length >= 2 && state.pannes.length > 0;
+  var ok = state.marque && modele.length >= 2;  // panne optionnelle
   document.getElementById('btn-appareil').disabled = !ok;
   var ls = document.getElementById('btn-appareil-ls');
   if(ls) ls.disabled = !ok;
