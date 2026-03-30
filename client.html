@@ -8,6 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#e53e3e">
 <title>Solution Phone — Prise en charge</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ── RESET & BASE ── */
@@ -400,6 +401,399 @@ html, body {
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════
+   MODE PAYSAGE — TABLETTE
+   Layout 2 colonnes : sidebar gauche fixe + contenu droit scrollable
+══════════════════════════════════════ */
+@media (orientation: landscape) {
+
+  /* Accueil : 2 colonnes */
+  #screen-home {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    padding: 24px 60px;
+  }
+  #screen-home .home-logo { margin-bottom: 0; }
+  #screen-home .home-steps { margin-top: 20px; }
+  .home-left-ls {
+    display: flex; flex-direction: column;
+    align-items: flex-start; gap: 8px;
+    flex: 0 0 auto;
+  }
+  .home-right-ls {
+    display: flex; flex-direction: column;
+    align-items: flex-start;
+    max-width: 440px;
+  }
+  .home-icon { width: 72px; height: 72px; font-size: 34px; margin: 0 0 16px; }
+  .home-title { font-size: 28px; text-align: left; }
+  .home-sub { text-align: left; margin: 0 0 28px; }
+  .btn-start { align-self: flex-start; }
+
+  /* Écrans formulaires : header compact + layout 2 cols */
+  .page-header { padding: 10px 20px; }
+  .header-logo { font-size: 15px; }
+  .header-step { font-size: 12px; }
+
+  /* Structure 2 colonnes en paysage */
+  .screen.active:not(#screen-home):not(#screen-success):not(#screen-loading) {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .ls-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  /* Sidebar gauche */
+  .ls-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 24px 20px;
+    justify-content: space-between;
+  }
+  .ls-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
+  .ls-sidebar .section-title { font-size: 20px; margin-bottom: 0; }
+  .ls-sidebar .section-sub { font-size: 13px; margin-bottom: 0; }
+  .ls-step-indicator {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 8px;
+  }
+  .ls-step-item {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--muted); font-weight: 500;
+  }
+  .ls-step-item.done { color: var(--success); }
+  .ls-step-item.current { color: var(--text); font-weight: 700; }
+  .ls-step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .ls-step-item.done .ls-step-num { background: var(--success); color: #fff; }
+  .ls-step-item.current .ls-step-num { background: var(--red); color: #fff; }
+  /* Bouton dans la sidebar */
+  .ls-btn {
+    width: 100%; padding: 16px;
+    background: var(--red); color: #fff; border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s;
+    letter-spacing: .3px;
+  }
+  .ls-btn:disabled { opacity: 0.4; }
+  /* Contenu droit scrollable */
+  .ls-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 28px 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ls-content .form-body {
+    padding: 0;
+    max-width: 100%;
+  }
+  /* Cacher le header de section et bottom-bar — gérés par la sidebar */
+  .ls-content .section-title,
+  .ls-content .section-sub { display: none; }
+  .bottom-bar { display: none; }
+
+  /* Pannes : 2 colonnes en paysage */
+  .panne-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .panne-item { padding: 10px 12px; }
+  .panne-icon { font-size: 18px; }
+  .panne-label { font-size: 13px; }
+
+  /* Marques : 3 colonnes plus compact */
+  .brand-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .brand-btn { padding: 10px 6px; font-size: 12px; }
+  .brand-btn .brand-icon { font-size: 18px; margin-bottom: 2px; }
+
+  /* Signature en paysage : canvas plus haut */
+  #sig-canvas { height: 100%; }
+  .signature-wrapper { height: calc(100vh - 200px); min-height: 180px; }
+  .sig-placeholder { font-size: 20px; }
+
+  /* Champs plus compacts */
+  .field input, .field select, .field textarea {
+    padding: 11px 14px;
+    font-size: 15px;
+  }
+  .field { margin-bottom: 12px; }
+  .civ-btn { padding: 10px; font-size: 15px; }
+  .cgu-box { padding: 12px; font-size: 12px; margin-bottom: 12px; }
+
+  /* Succès en paysage */
+  #screen-success {
+    flex-direction: row;
+    gap: 40px;
+    padding: 24px 60px;
+    align-items: center;
+    justify-content: center;
+  }
+  #screen-success .success-icon { margin: 0; }
+  .success-right-ls { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .success-title { margin-bottom: 0; }
+  .success-sub { text-align: left; margin: 0; }
+}
+
+/* ══ SCREENSAVER CYBERPUNK PAYSAGE ══ */
+#ss-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #060608;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.7s ease;
+  cursor: pointer;
+}
+#ss-overlay.ss-hiding  { opacity: 0; pointer-events: none; }
+#ss-overlay.ss-hidden  { display: none; }
+
+/* Grille néon */
+#ss-overlay::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+/* Scanlines */
+#ss-overlay::after {
+  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(0,0,0,0.16) 3px,rgba(0,0,0,0.16) 4px);
+}
+.ss-bg-glow {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 70% at 12% 50%, rgba(229,62,62,0.13) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 60% at 88% 50%, rgba(0,212,255,0.07) 0%, transparent 60%);
+}
+#ss-canvas-particles { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+
+/* Layout 2 colonnes — plus de place à gauche */
+.ss-layout {
+  position: relative; z-index: 10;
+  display: grid;
+  grid-template-columns: 52% 48%;
+  align-items: center;
+  width: 100%;
+  height: calc(100% - 36px); /* laisser place au ticker */
+  padding: 20px 32px 70px 32px; /* padding bottom pour QR centré */
+  gap: 16px;
+}
+
+/* Coins déco */
+.ss-corner {
+  position: absolute; z-index: 15;
+  width: 36px; height: 36px;
+  border-color: rgba(229,62,62,0.45); border-style: solid;
+}
+.ss-corner.tl { top:12px; left:12px; border-width:2px 0 0 2px; }
+.ss-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
+.ss-corner.bl { bottom:40px; left:12px; border-width:0 0 2px 2px; }
+.ss-corner.br { bottom:40px; right:12px; border-width:0 2px 2px 0; }
+
+/* ── COLONNE GAUCHE ── */
+.ss-left {
+  display: flex; flex-direction: column;
+  justify-content: center; gap: 10px;
+}
+.ss-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(9px,1.3vw,11px); font-weight:700;
+  letter-spacing: 5px; text-transform: uppercase;
+  color: rgba(0,212,255,0.7);
+}
+.ss-logo span { color: rgba(229,62,62,0.8); }
+
+/* Headline — taille réduite pour tenir sur 2 lignes */
+.ss-h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(24px,4.2vw,44px);
+  font-weight: 900; line-height: 1.08;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: #fff;
+  animation: ss-glitch 8s ease-in-out infinite;
+}
+.ss-h1 .cy { color: #00d4ff; text-shadow: 0 0 18px rgba(0,212,255,0.8); }
+.ss-h1 .rd { color: #e53e3e; text-shadow: 0 0 18px rgba(229,62,62,0.8); }
+@keyframes ss-glitch {
+  0%,90%,100% { transform:translate(0); filter:none; }
+  91% { transform:translate(-3px,1px); filter:hue-rotate(80deg); }
+  92% { transform:translate(3px,-1px); }
+  93% { transform:translate(-2px,0); filter:hue-rotate(-80deg); }
+  94% { transform:translate(0); filter:none; }
+}
+
+.ss-sep {
+  width: 50px; height: 2px;
+  background: linear-gradient(90deg,#e53e3e,#00d4ff);
+  box-shadow: 0 0 8px rgba(229,62,62,0.5);
+  margin: 2px 0;
+}
+.ss-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(13px,2vw,17px); font-weight: 500;
+  color: rgba(255,255,255,0.5); line-height: 1.6;
+}
+.ss-sub strong { color: rgba(0,212,255,0.9); font-weight:700; }
+
+.ss-steps { display:flex; flex-direction:column; gap:7px; }
+.ss-step {
+  display:flex; align-items:center; gap:10px;
+  font-size:clamp(13px,1.8vw,16px); font-weight:600;
+  color:rgba(255,255,255,0.7);
+  font-family:'Rajdhani',sans-serif;
+}
+.ss-step-num {
+  width:clamp(24px,3.5vw,30px); height:clamp(24px,3.5vw,30px);
+  background:rgba(229,62,62,0.12); border:1.5px solid rgba(229,62,62,0.5);
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-size:clamp(10px,1.4vw,13px); font-weight:700;
+  color:#e53e3e; flex-shrink:0;
+  box-shadow:0 0 8px rgba(229,62,62,0.3);
+}
+
+/* ── QR CODE — CENTRÉ EN BAS ── */
+.ss-qr-center {
+  position: absolute;
+  bottom: 44px;          /* juste au-dessus du ticker */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ss-qr-frame {
+  position: relative; padding: 8px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 10px;
+  animation: ss-qr-glow 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes ss-qr-glow {
+  0%,100%{ border-color:rgba(0,212,255,0.3); box-shadow:0 0 8px rgba(0,212,255,0.1); }
+  50%    { border-color:rgba(0,212,255,0.7); box-shadow:0 0 18px rgba(0,212,255,0.35); }
+}
+.ss-qr-frame::before {
+  content:''; position:absolute; top:-1px; left:-1px;
+  width:12px; height:12px;
+  border:2px solid #00d4ff; border-right:none; border-bottom:none;
+}
+.ss-qr-frame::after {
+  content:''; position:absolute; bottom:-1px; right:-1px;
+  width:12px; height:12px;
+  border:2px solid #00d4ff; border-left:none; border-top:none;
+}
+.ss-qr-img {
+  width: clamp(80px,10vw,110px);
+  height: clamp(80px,10vw,110px);
+  display: block; border-radius: 4px;
+}
+.ss-qr-text {
+  display:flex; flex-direction:column; gap:4px;
+}
+.ss-scan-big {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(13px,2vw,18px); font-weight:700;
+  color:#fff; letter-spacing:1px; line-height:1.2;
+}
+.ss-scan-big .blink { color:#00d4ff; animation:ss-blink 1.5s ease-in-out infinite; }
+@keyframes ss-blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
+.ss-url {
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(10px,1.3vw,12px);
+  color:rgba(229,62,62,0.55); font-weight:500; letter-spacing:0.5px;
+}
+.ss-touch-hint {
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(10px,1.3vw,12px); font-weight:600;
+  letter-spacing:3px; text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  animation:ss-blink 3s ease-in-out infinite;
+  margin-top:2px;
+}
+
+/* ── COLONNE DROITE — ROUE ── */
+.ss-right {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:12px;
+}
+.ss-wheel-zone {
+  position:relative;
+  width:min(310px,42vw); height:min(310px,42vw);
+  flex-shrink:0;
+}
+#ss-wheel-canvas {
+  width:100%; height:100%; border-radius:50%; display:block;
+  box-shadow:
+    0 0 0 3px rgba(229,62,62,0.2),
+    0 0 60px rgba(229,62,62,0.3),
+    0 0 0 8px rgba(229,62,62,0.05);
+  animation:ss-wglow 3s ease-in-out infinite;
+}
+@keyframes ss-wglow {
+  0%,100%{ box-shadow:0 0 0 3px rgba(229,62,62,0.2),0 0 60px rgba(229,62,62,0.3); }
+  50%    { box-shadow:0 0 0 5px rgba(229,62,62,0.3),0 0 90px rgba(229,62,62,0.5); }
+}
+.ss-ptr {
+  position:absolute; right:-22px; top:50%;
+  transform:translateY(-50%); z-index:20;
+  filter:drop-shadow(0 0 8px rgba(229,62,62,1));
+}
+.ss-hub {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:min(50px,6.5vw); height:min(50px,6.5vw);
+  background:radial-gradient(circle,#1a1a2e,#060608);
+  border:2.5px solid #e53e3e; border-radius:50%; z-index:15;
+  display:flex; align-items:center; justify-content:center;
+  font-size:min(18px,2.5vw);
+  box-shadow:0 0 20px rgba(229,62,62,0.6),0 0 0 4px rgba(229,62,62,0.1);
+}
+.ss-spin-label {
+  font-family:'Orbitron',monospace;
+  font-size:clamp(9px,1.4vw,12px); font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  color:rgba(0,212,255,0.55); text-align:center;
+}
+
+/* Ticker */
+.ss-ticker {
+  position:absolute; bottom:0; left:0; right:0;
+  height:36px; z-index:20;
+  background:rgba(40,5,5,0.9);
+  border-top:1px solid rgba(229,62,62,0.3);
+  overflow:hidden; display:flex; align-items:center;
+}
+.ss-ticker-inner,.ss-ticker-inner2 {
+  display:flex; align-items:center; gap:28px;
+  white-space:nowrap; font-family:'Rajdhani',sans-serif;
+  font-size:13px; font-weight:600; color:rgba(255,255,255,0.55);
+  flex-shrink:0;
+}
+.ss-ticker-inner  { animation:ss-tick 24s linear infinite; }
+.ss-ticker-inner2 { animation:ss-tick 24s linear infinite -12s; }
+@keyframes ss-tick { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+.ss-ticker-sep { color:rgba(229,62,62,0.5); }
+
 </style>
 </head>
 <body>
@@ -407,19 +801,99 @@ html, body {
 <!-- ══════════════════════════════════════
      ÉCRAN 0 — ACCUEIL
 ══════════════════════════════════════ -->
+<!-- ══ SCREENSAVER CYBERPUNK ══ -->
+<div id="ss-overlay" onclick="ssDismiss()">
+  <div class="ss-bg-glow"></div>
+  <canvas id="ss-canvas-particles"></canvas>
+
+  <div class="ss-corner tl"></div>
+  <div class="ss-corner tr"></div>
+  <div class="ss-corner bl"></div>
+  <div class="ss-corner br"></div>
+
+  <div class="ss-layout">
+    <!-- GAUCHE -->
+    <div class="ss-left">
+      <div class="ss-logo">Solution <span>Phone</span> · Mâcon</div>
+      <div class="ss-h1">TENTEZ VOTRE<br><span class="rd">CHANCE</span> <span class="cy">!</span></div>
+      <div class="ss-sep"></div>
+      <div class="ss-sub">
+        Laissez un avis Google ★★★★★<br>
+        et gagnez un cadeau <strong>GRATUIT</strong>
+      </div>
+      <div class="ss-steps">
+        <div class="ss-step"><div class="ss-step-num">1</div>Laissez un avis Google</div>
+        <div class="ss-step"><div class="ss-step-num">2</div>Revenez sur cette page</div>
+        <div class="ss-step"><div class="ss-step-num">3</div>Tournez la roue !</div>
+      </div>
+    </div>
+
+    <!-- DROITE : roue -->
+    <div class="ss-right">
+      <div class="ss-wheel-zone">
+        <svg class="ss-ptr" width="28" height="22" viewBox="0 0 28 22">
+          <defs><linearGradient id="ss-pg" x1="1" y1="0" x2="0" y2="0">
+            <stop offset="0%" stop-color="#ff6666"/>
+            <stop offset="100%" stop-color="#c0392b"/>
+          </linearGradient></defs>
+          <polygon points="0,11 26,2 26,20" fill="url(#ss-pg)"/>
+          <circle cx="22" cy="11" r="4.5" fill="#fff" opacity="0.9"/>
+        </svg>
+        <canvas id="ss-wheel-canvas"></canvas>
+        <div class="ss-hub">⭐</div>
+      </div>
+      <div class="ss-spin-label">◀ ROUE DES CADEAUX ▶</div>
+    </div>
+  </div>
+
+  <!-- QR CODE CENTRÉ EN BAS -->
+  <div class="ss-qr-center">
+    <div class="ss-qr-frame">
+      <img class="ss-qr-img"
+        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://solution-phone.fr/roulette.html&bgcolor=000000&color=ffffff&format=png&qzone=1"
+        alt="QR Roulette">
+    </div>
+    <div class="ss-qr-text">
+      <div class="ss-scan-big">SCANNEZ POUR<br><span class="blink">JOUER !</span></div>
+      <div class="ss-url">solution-phone.fr/roulette.html</div>
+      <div class="ss-touch-hint">[ TOUCHEZ L'ÉCRAN POUR DÉPOSER VOTRE APPAREIL ]</div>
+    </div>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ss-ticker">
+    <div class="ss-ticker-inner">
+    <span>🛡️ Protection d'écran offerte</span><span class="ss-ticker-sep">◆</span>
+    <span>🎁 Housse de protection offerte</span><span class="ss-ticker-sep">◆</span>
+    <span>🔌 Câble de charge offert</span><span class="ss-ticker-sep">◆</span>
+    <span>🧴 Nettoyant écran offert</span><span class="ss-ticker-sep">◆</span>
+    <span>⚡ -10% sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
+    <span>💶 -5€ sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
+</div>
+    <div class="ss-ticker-inner2" aria-hidden="true">
+    <span>🛡️ Protection d'écran offerte</span><span class="ss-ticker-sep">◆</span>
+    <span>🎁 Housse de protection offerte</span><span class="ss-ticker-sep">◆</span>
+    <span>🔌 Câble de charge offert</span><span class="ss-ticker-sep">◆</span>
+    <span>🧴 Nettoyant écran offert</span><span class="ss-ticker-sep">◆</span>
+    <span>⚡ -10% sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
+    <span>💶 -5€ sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
+</div>
+  </div>
+</div>
+<!-- ══ FIN SCREENSAVER ══ -->
 <div id="screen-home" class="screen active">
-  <div class="home-logo">Solution Phone · Mâcon</div>
-  <div class="home-icon">🔧</div>
-  <div class="home-title">Bienvenue !<br>Déposez votre appareil</div>
-  <div class="home-sub">Remplissez ce formulaire en quelques secondes pour déposer votre appareil en réparation.</div>
-  <button class="btn-start" onclick="goScreen('screen-client')">
-    Commencer →
-  </button>
-  <div class="home-steps" style="margin-top:40px;">
-    <div class="step-dot on"></div>
-    <div class="step-dot"></div>
-    <div class="step-dot"></div>
-    <div class="step-dot"></div>
+  <div class="home-left-ls">
+    <div class="home-logo">Solution Phone · Mâcon</div>
+    <div class="home-steps" style="margin-top:16px;">
+      <div class="step-dot on"></div><div class="step-dot"></div>
+      <div class="step-dot"></div><div class="step-dot"></div>
+    </div>
+  </div>
+  <div class="home-right-ls">
+    <div class="home-icon">🔧</div>
+    <div class="home-title">Bienvenue !<br>Déposez votre appareil</div>
+    <div class="home-sub">Remplissez ce formulaire en quelques secondes pour déposer votre appareil en réparation.</div>
+    <button class="btn-start" onclick="goScreen('screen-client')">Commencer →</button>
   </div>
 </div>
 
@@ -432,7 +906,20 @@ html, body {
     <div class="header-step">Étape 1 / 3</div>
   </div>
   <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
-
+  <div class="ls-layout">
+  <div class="ls-sidebar">
+    <div class="ls-sidebar-top">
+      <div class="section-title" style="display:block!important;">Vos coordonnées</div>
+      <div class="section-sub" style="display:block!important;">Informations confidentielles</div>
+      <div class="ls-step-indicator">
+        <div class="ls-step-item current"><div class="ls-step-num">1</div>Coordonnées</div>
+        <div class="ls-step-item"><div class="ls-step-num">2</div>Appareil</div>
+        <div class="ls-step-item"><div class="ls-step-num">3</div>Signature</div>
+      </div>
+    </div>
+    <button class="ls-btn" id="btn-client-ls" onclick="goScreen('screen-appareil')" disabled>Continuer →</button>
+  </div>
+  <div class="ls-content">
   <div class="form-body">
     <div class="section-title">Vos coordonnées</div>
     <div class="section-sub">Ces informations resteront confidentielles.</div>
@@ -486,6 +973,8 @@ html, body {
       Continuer →
     </button>
   </div>
+  </div><!-- fin ls-content -->
+  </div><!-- fin ls-layout -->
 </div>
 
 <!-- ══════════════════════════════════════
@@ -497,7 +986,20 @@ html, body {
     <div class="header-step">Étape 2 / 3</div>
   </div>
   <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
-
+  <div class="ls-layout">
+  <div class="ls-sidebar">
+    <div class="ls-sidebar-top">
+      <div class="section-title" style="display:block!important;">Votre appareil</div>
+      <div class="section-sub" style="display:block!important;">Marque, modèle et panne</div>
+      <div class="ls-step-indicator">
+        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Coordonnées</div>
+        <div class="ls-step-item current"><div class="ls-step-num">2</div>Appareil</div>
+        <div class="ls-step-item"><div class="ls-step-num">3</div>Signature</div>
+      </div>
+    </div>
+    <button class="ls-btn" id="btn-appareil-ls" onclick="goScreen('screen-signature')" disabled>Continuer →</button>
+  </div>
+  <div class="ls-content">
   <div class="form-body">
     <div class="section-title">Votre appareil</div>
     <div class="section-sub">Quelle est la marque de votre téléphone ?</div>
@@ -581,6 +1083,8 @@ html, body {
       Continuer →
     </button>
   </div>
+  </div><!-- fin ls-content -->
+  </div><!-- fin ls-layout -->
 </div>
 
 <!-- ══════════════════════════════════════
@@ -592,7 +1096,20 @@ html, body {
     <div class="header-step">Étape 3 / 3</div>
   </div>
   <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
-
+  <div class="ls-layout">
+  <div class="ls-sidebar">
+    <div class="ls-sidebar-top">
+      <div class="section-title" style="display:block!important;">Signature</div>
+      <div class="section-sub" style="display:block!important;">Validez la prise en charge</div>
+      <div class="ls-step-indicator">
+        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Coordonnées</div>
+        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Appareil</div>
+        <div class="ls-step-item current"><div class="ls-step-num">3</div>Signature</div>
+      </div>
+    </div>
+    <button class="ls-btn" id="btn-signature-ls" onclick="soumettre()" disabled>✅ Valider et déposer</button>
+  </div>
+  <div class="ls-content">
   <div class="form-body">
     <div class="section-title">Signature</div>
     <div class="section-sub">Signez pour valider la prise en charge de votre appareil.</div>
@@ -618,6 +1135,8 @@ html, body {
       ✅ Valider et déposer mon appareil
     </button>
   </div>
+  </div><!-- fin ls-content -->
+  </div><!-- fin ls-layout -->
 </div>
 
 <!-- ══════════════════════════════════════
@@ -706,6 +1225,8 @@ function checkClient(){
   var tel = document.getElementById('cl-tel').value.replace(/\D/g,'');
   var ok = nom.length >= 2 && prenom.length >= 1 && tel.length >= 9;
   document.getElementById('btn-client').disabled = !ok;
+  var ls = document.getElementById('btn-client-ls');
+  if(ls) ls.disabled = !ok;
 }
 
 // ════════════════════════════════════════════
@@ -738,6 +1259,8 @@ function checkAppareil(){
   var modele = document.getElementById('ap-modele').value.trim();
   var ok = state.marque && modele.length >= 2 && state.pannes.length > 0;
   document.getElementById('btn-appareil').disabled = !ok;
+  var ls = document.getElementById('btn-appareil-ls');
+  if(ls) ls.disabled = !ok;
 }
 
 // ════════════════════════════════════════════
@@ -793,6 +1316,8 @@ function sigMove(e){
     sigHasMark = true;
     document.getElementById('sig-placeholder').style.opacity = '0';
     document.getElementById('btn-signature').disabled = false;
+    var ls = document.getElementById('btn-signature-ls');
+    if(ls) ls.disabled = false;
   }
 }
 function sigEnd(e){ sigDrawing = false; }
@@ -802,6 +1327,8 @@ function clearSignature(){
   sigHasMark = false;
   document.getElementById('sig-placeholder').style.opacity = '1';
   document.getElementById('btn-signature').disabled = true;
+  var ls = document.getElementById('btn-signature-ls');
+  if(ls) ls.disabled = true;
 }
 
 // ════════════════════════════════════════════
@@ -887,6 +1414,116 @@ document.getElementById('screen-success').addEventListener('transitionend', func
   clearTimeout(autoRestartTimer);
   autoRestartTimer = setTimeout(restart, 30000);
 });
+
+// ════════════════════════════════════════════
+//  SCREENSAVER CYBERPUNK — Solution Phone
+// ════════════════════════════════════════════
+(function(){
+var SS_INACTIVITY=50000, ssVisible=true, ssTimer=null, ssAnimId=null, ssPAId=null;
+
+var ssWC=document.getElementById('ss-wheel-canvas');
+var ssCtx=ssWC?ssWC.getContext('2d'):null;
+var SZ=560; if(ssWC){ssWC.width=SZ;ssWC.height=SZ;}
+var CX=SZ/2,CY=SZ/2,SR=SZ/2-12, ssRot=0, SPD=0.009;
+
+var SP=[
+  {c:'#c0392b',c2:'#7f1d1d',w:20},{c:'#1d6fa8',c2:'#0e3d5e',w:15},
+  {c:'#1a7a44',c2:'#0e4225',w:15},{c:'#7b2fbe',c2:'#3d1760',w:20},
+  {c:'#b7770d',c2:'#6b450a',w:20},{c:'#a02020',c2:'#5c1212',w:10}
+];
+var ST=SP.reduce(function(s,p){return s+p.w;},0);
+
+function sL(h,a){var n=parseInt(h.replace('#',''),16);return 'rgb('+Math.min(255,(n>>16)+a)+','+Math.min(255,((n>>8)&0xff)+a)+','+Math.min(255,(n&0xff)+a)+')';}
+
+function ssDraw(rot){
+  if(!ssCtx)return;
+  ssCtx.clearRect(0,0,SZ,SZ);
+  var a=rot;
+  SP.forEach(function(p){
+    var s=(p.w/ST)*Math.PI*2,e=a+s,m=a+s/2;
+    var gx=CX+SR*0.3*Math.cos(m),gy=CY+SR*0.3*Math.sin(m);
+    var g=ssCtx.createRadialGradient(gx,gy,0,CX,CY,SR);
+    g.addColorStop(0,sL(p.c,50));g.addColorStop(0.5,p.c);g.addColorStop(1,p.c2);
+    ssCtx.beginPath();ssCtx.moveTo(CX,CY);ssCtx.arc(CX,CY,SR-16,a,e);ssCtx.closePath();
+    ssCtx.fillStyle=g;ssCtx.fill();
+    ssCtx.strokeStyle='rgba(0,0,0,0.4)';ssCtx.lineWidth=2;ssCtx.stroke();
+    a=e;
+  });
+  // LEDs cyan/rouge alternés
+  var nL=40,lR=SR-5;
+  for(var i=0;i<nL;i++){
+    var ang=i/nL*Math.PI*2+rot;
+    var lx=CX+lR*Math.cos(ang),ly=CY+lR*Math.sin(ang);
+    var iC=i%2===0;
+    var gl=ssCtx.createRadialGradient(lx,ly,0,lx,ly,5);
+    gl.addColorStop(0,iC?'#00d4ff':'#e53e3e');gl.addColorStop(1,'transparent');
+    ssCtx.beginPath();ssCtx.arc(lx,ly,5.5,0,Math.PI*2);ssCtx.fillStyle=gl;ssCtx.fill();
+    ssCtx.beginPath();ssCtx.arc(lx,ly,2.5,0,Math.PI*2);
+    ssCtx.fillStyle=iC?'#ccf5ff':'#ffaaaa';ssCtx.fill();
+  }
+  // Ring cyan→rouge
+  var rg=ssCtx.createLinearGradient(CX-SR,CY,CX+SR,CY);
+  rg.addColorStop(0,'rgba(0,212,255,0.7)');rg.addColorStop(0.5,'rgba(229,62,62,0.9)');rg.addColorStop(1,'rgba(0,212,255,0.7)');
+  ssCtx.beginPath();ssCtx.arc(CX,CY,SR,0,Math.PI*2);ssCtx.strokeStyle=rg;ssCtx.lineWidth=5;ssCtx.stroke();
+  // Hub
+  var hg=ssCtx.createRadialGradient(CX,CY,0,CX,CY,30);
+  hg.addColorStop(0,'#1a1a2e');hg.addColorStop(1,'#060608');
+  ssCtx.beginPath();ssCtx.arc(CX,CY,30,0,Math.PI*2);ssCtx.fillStyle=hg;ssCtx.fill();
+  ssCtx.strokeStyle='rgba(0,212,255,0.8)';ssCtx.lineWidth=2.5;ssCtx.stroke();
+}
+
+function ssAnimW(){if(!ssVisible)return;ssRot+=SPD;ssDraw(ssRot);ssAnimId=requestAnimationFrame(ssAnimW);}
+
+// Particules
+var ssPC=document.getElementById('ss-canvas-particles');
+var ssPX=ssPC?ssPC.getContext('2d'):null;
+var ssP=[];
+function ssInitP(){
+  if(!ssPC)return;
+  ssPC.width=window.innerWidth;ssPC.height=window.innerHeight;ssP=[];
+  var cols=[[229,62,62],[0,212,255],[255,255,255],[246,201,14]];
+  for(var i=0;i<55;i++){
+    var c=cols[Math.floor(Math.random()*cols.length)];
+    ssP.push({x:Math.random()*ssPC.width,y:Math.random()*ssPC.height,r:.8+Math.random()*2,
+      vx:(Math.random()-.5)*.5,vy:-.25-Math.random()*.4,c:c,op:.1+Math.random()*.3,
+      pop:Math.random()*Math.PI*2,ps:.004+Math.random()*.009});
+  }
+}
+function ssAnimP(){
+  if(!ssVisible||!ssPX)return;
+  ssPX.clearRect(0,0,ssPC.width,ssPC.height);
+  ssP.forEach(function(p){
+    p.x+=p.vx;p.y+=p.vy;p.pop+=p.ps;
+    if(p.y<-5){p.y=ssPC.height+5;p.x=Math.random()*ssPC.width;}
+    var pu=.7+.3*Math.sin(p.pop);
+    ssPX.beginPath();ssPX.arc(p.x,p.y,p.r*pu,0,Math.PI*2);
+    ssPX.fillStyle='rgba('+p.c.join(',')+','+(p.op*pu)+')';ssPX.fill();
+  });
+  ssPAId=requestAnimationFrame(ssAnimP);
+}
+
+function ssShow(){
+  var ov=document.getElementById('ss-overlay');if(!ov)return;
+  ssVisible=true;ov.classList.remove('ss-hiding','ss-hidden');ov.style.opacity='1';
+  ssRot=0;ssInitP();
+  if(ssAnimId)cancelAnimationFrame(ssAnimId);if(ssPAId)cancelAnimationFrame(ssPAId);
+  ssAnimW();ssAnimP();
+}
+window.ssDismiss=function(){
+  var ov=document.getElementById('ss-overlay');if(!ov||!ssVisible)return;
+  ssVisible=false;ov.classList.add('ss-hiding');
+  setTimeout(function(){ov.classList.add('ss-hidden');},700);
+  ssStartTimer();
+};
+function ssStartTimer(){clearTimeout(ssTimer);ssTimer=setTimeout(ssShow,SS_INACTIVITY);}
+['touchstart','click','keydown','input'].forEach(function(ev){
+  document.addEventListener(ev,function(){if(!ssVisible)ssStartTimer();},{passive:true});
+});
+var _r=window.restart;
+window.restart=function(){if(_r)_r();clearTimeout(ssTimer);setTimeout(ssShow,2500);};
+window.addEventListener('load',function(){ssInitP();ssDraw(0);ssAnimW();ssAnimP();});
+})();
+
 </script>
 </body>
 </html>
