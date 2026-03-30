@@ -1441,25 +1441,44 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <div id="rep-liste-view">
         <div class="card">
           <div class="card-header">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div class="card-title" id="rep-liste-titre">📂 Dossiers en cours</div>
-              <div style="display:flex;gap:4px;">
-                <button onclick="repShowListeTab('cours')" id="rep-tab-cours"
-                  style="padding:5px 12px;border-radius:20px;border:2px solid var(--primary);background:var(--primary);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">
-                  En cours
-                </button>
-                <button onclick="repShowListeTab('archive')" id="rep-tab-archive"
-                  style="padding:5px 12px;border-radius:20px;border:2px solid #ddd;background:#f8fafc;font-size:12px;font-weight:700;cursor:pointer;color:var(--text-muted);">
-                  Archivés
-                </button>
-              </div>
-            </div>
+            <div class="card-title">📂 Dossiers en cours</div>
             <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="renderRepListe()">
           </div>
           <div style="overflow-x:auto;">
             <table>
               <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Appareil</th><th>Panne</th><th>Statut</th><th>QR</th><th>Actions</th></tr></thead>
               <tbody id="rep-liste-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DOSSIERS TERMINÉS ── -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header" style="cursor:pointer;" onclick="repToggleTermines()">
+          <div class="card-title">✅ Dossiers terminés</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="text" id="rep-search-termine" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="renderRepTermines()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:160px;">
+            <span id="rep-termine-toggle" style="font-size:18px;color:var(--text-muted);">▼</span>
+          </div>
+        </div>
+        <div id="rep-termine-body">
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#f1f5f9;text-align:left;">
+                  <th style="padding:8px;">N°</th>
+                  <th style="padding:8px;">Date</th>
+                  <th style="padding:8px;">Client</th>
+                  <th style="padding:8px;">Appareil</th>
+                  <th style="padding:8px;">Panne</th>
+                  <th style="padding:8px;text-align:right;">Montant</th>
+                  <th style="padding:8px;text-align:center;">Statut</th>
+                  <th style="padding:8px;text-align:center;">QR</th>
+                  <th style="padding:8px;text-align:center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rep-termine-table"></tbody>
             </table>
           </div>
         </div>
@@ -10621,6 +10640,7 @@ function repLoadDossiers(){
     return safe;
   });
   renderRepListe();
+  renderRepTermines();
 }
 
 
@@ -10725,6 +10745,80 @@ function renderRepHistorique(){
   }).join('');
 }
 
+
+// ══════════════════════════════════════════════════════
+// DOSSIERS TERMINÉS
+// ══════════════════════════════════════════════════════
+var _repTermineOpen = true;
+
+function repToggleTermines(){
+  _repTermineOpen = !_repTermineOpen;
+  var body = document.getElementById('rep-termine-body');
+  var tog  = document.getElementById('rep-termine-toggle');
+  if(body) body.style.display = _repTermineOpen ? 'block' : 'none';
+  if(tog)  tog.textContent = _repTermineOpen ? '▲' : '▼';
+}
+
+function renderRepTermines(){
+  var tbody = document.getElementById('rep-termine-table');
+  if(!tbody) return;
+  var search = (document.getElementById('rep-search-termine')||{value:''}).value.toLowerCase();
+  var statutsTermines = ['facture','qr','cloture'];
+
+  var list = repDossiers.filter(function(d){
+    if(!d) return false;
+    if(!statutsTermines.includes(d.statut||'depot')) return false;
+    if(!search) return true;
+    var c = d.client||{}; var a = d.appareil||{};
+    return ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
+           ((a.marque||'')+' '+(a.modele||'')).toLowerCase().includes(search) ||
+           (d.numero||'').toLowerCase().includes(search);
+  }).slice().reverse();
+
+  var statusColors = {facture:'#16a34a', qr:'#2563eb', cloture:'#64748b'};
+  var statusLabels = {facture:'🟢 Facturé', qr:'🔵 QR envoyé', cloture:'⚫ Clôturé'};
+  var modeColors   = {CB:'#2563eb', ESPECES:'#16a34a', CHEQUE:'#d97706', VIREMENT:'#8b5cf6'};
+
+  if(list.length === 0){
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier terminé</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(d, i){
+    var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
+    var montant = f ? ((f.prix||0) + (d.bonusQR?25:0)) : (d.devis||0);
+    var mode    = f ? (f.mode||'CB').toUpperCase() : '';
+    var statut  = d.statut||'facture';
+    var sc      = statusColors[statut]||'#64748b';
+    var mc      = modeColors[mode]||'#888';
+    var bg      = i%2===0 ? '#fff' : '#f8fafc';
+
+    // Badge QR
+    var qrBadge = '';
+    if(d.bonusQR){
+      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
+      qrBadge = envoye
+        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ QR envoyé</span>'
+        : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
+    }
+
+    var id = JSON.stringify(String(d.id));
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
+      '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
+      '<td style="padding:8px;font-size:12px;color:var(--text-muted);">'+fmtDate(d.date)+'</td>'+
+      '<td style="padding:8px;font-weight:600;">'+(c.prenom?c.prenom+' ':'')+c.nom+'</td>'+
+      '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
+      '<td style="padding:8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px;">'+(d.panne||'—')+'</td>'+
+      '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+'<br>'+(mode?'<span style="background:'+mc+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;">'+mode+'</span>':'')+'</td>'+
+      '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
+      '<td style="padding:8px;text-align:center;">'+qrBadge+'</td>'+
+      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" title="Ouvrir">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" title="Facture" style="margin-left:3px;">🧾</button>':'')+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
 var _repListeTab = 'cours';
 
 function repShowListeTab(tab){
@@ -10744,9 +10838,7 @@ function renderRepListe(){
   var search = (document.getElementById('rep-search')||{value:''}).value.toLowerCase();
   var tbody = document.getElementById('rep-liste-table');
   if(!tbody) return;
-  var statutsEnCours  = ['depot','devis'];
-  var statutsArchives = ['facture','qr','cloture'];
-  var filtreStatuts   = _repListeTab === 'cours' ? statutsEnCours : statutsArchives;
+  var filtreStatuts = ['depot','devis'];
 
   var list = repDossiers.filter(function(d){
     if(!d) return false;
@@ -10792,6 +10884,7 @@ function repShowListe(){
   document.getElementById('rep-dossier-view').style.display='none';
   repDossierCourant = null;
   renderRepListe();
+  renderRepTermines();
   // Initialiser la date d'aujourd'hui dans l'historique
   var dateEl = document.getElementById('rep-hist-date');
   if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
