@@ -12178,7 +12178,7 @@ async function repEnvoyerEcologic(){
   };
 
   try {
-    var res1 = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+    var res1 = await fetch('https://app.solution-phone.fr/proxy-ecologic.php', {
       method: 'POST',
       headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
       body: JSON.stringify(payload1)
@@ -12201,7 +12201,7 @@ async function repEnvoyerEcologic(){
         invoicePhotoUrl: d.photoImeiUrl||''
       };
 
-      var res2 = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+      var res2 = await fetch('https://app.solution-phone.fr/proxy-ecologic.php', {
         method: 'POST',
         headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
         body: JSON.stringify(payload2)
@@ -15557,7 +15557,7 @@ async function qrVerifierStatutEcologic(dossier){
   var siteId = localStorage.getItem('sp_ecologic_siteid') || 'f3f52871-5be0-4c26-9082-002479b9cf4e';
 
   try {
-    var res = await fetch('https://www.ecologic-france.com/admin/ajax/_actions.php', {
+    var res = await fetch('https://app.solution-phone.fr/proxy-ecologic.php', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body: JSON.stringify({
