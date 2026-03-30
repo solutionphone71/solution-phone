@@ -747,8 +747,122 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
         <div class="page" id="page-neufs-access">
       <div class="page-title">Téléphones neufs &amp; Accessoires</div>
-      <div class="page-sub">Vente neuf · TVA 20% · Factures Pennylane</div>
 
+      <!-- Onglets -->
+      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border);">
+        <button id="na-tab-caisse" onclick="naShowTab('caisse')"
+          style="padding:12px 24px;border:none;border-bottom:3px solid var(--primary);background:none;font-weight:800;color:var(--primary);cursor:pointer;font-size:15px;">
+          🛒 Caisse rapide
+        </button>
+        <button id="na-tab-form" onclick="naShowTab('form')"
+          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
+          📝 Vente détaillée
+        </button>
+      </div>
+
+      <!-- ══ VUE CAISSE RAPIDE ══ -->
+      <div id="na-view-caisse">
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:16px;align-items:start;">
+
+          <!-- GRILLE ARTICLES -->
+          <div>
+            <!-- Catégories -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="na-categories">
+              <button onclick="naFilterCat('tous')" id="na-cat-tous" class="btn btn-primary btn-sm">Tous</button>
+              <button onclick="naFilterCat('coque')" id="na-cat-coque" class="btn btn-sm">📱 Coques</button>
+              <button onclick="naFilterCat('chargeur')" id="na-cat-chargeur" class="btn btn-sm">⚡ Chargeurs</button>
+              <button onclick="naFilterCat('cable')" id="na-cat-cable" class="btn btn-sm">🔌 Câbles</button>
+              <button onclick="naFilterCat('verre')" id="na-cat-verre" class="btn btn-sm">🛡️ Verres</button>
+              <button onclick="naFilterCat('ecouteur')" id="na-cat-ecouteur" class="btn btn-sm">🎧 Écouteurs</button>
+              <button onclick="naFilterCat('batterie')" id="na-cat-batterie" class="btn btn-sm">🔋 Batteries</button>
+              <button onclick="naFilterCat('autre')" id="na-cat-autre" class="btn btn-sm">➕ Autres</button>
+            </div>
+
+            <!-- Grille articles -->
+            <div id="na-grille" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+            </div>
+
+            <!-- Bouton ajouter article -->
+            <div style="text-align:center;margin-top:16px;">
+              <button onclick="naShowAddArticle()" class="btn btn-sm" style="border-style:dashed;color:var(--text-muted);">
+                ➕ Ajouter un article
+              </button>
+            </div>
+          </div>
+
+          <!-- PANIER -->
+          <div style="position:sticky;top:80px;">
+            <div class="card" style="border:2px solid var(--primary);">
+              <div style="background:var(--primary);margin:-1px -1px 0;padding:14px 16px;border-radius:10px 10px 0 0;">
+                <div style="color:#fff;font-weight:800;font-size:16px;">🛒 Panier</div>
+                <div id="na-panier-count" style="color:#ffcdd2;font-size:12px;">0 article</div>
+              </div>
+
+              <!-- Liste panier -->
+              <div id="na-panier-liste" style="padding:12px;min-height:80px;max-height:300px;overflow-y:auto;">
+                <div id="na-panier-empty" style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">
+                  Cliquez sur un article pour l'ajouter
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div style="border-top:2px solid var(--border);padding:12px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                  <span style="font-size:13px;color:var(--text-muted);">Total HT</span>
+                  <span id="na-total-ht" style="font-size:13px;">0,00 €</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <span style="font-size:13px;color:var(--text-muted);">TVA 20%</span>
+                  <span id="na-total-tva" style="font-size:13px;">0,00 €</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                  <span style="font-weight:800;font-size:18px;">TOTAL TTC</span>
+                  <span id="na-total-ttc" style="font-weight:900;font-size:22px;color:var(--primary);">0,00 €</span>
+                </div>
+
+                <!-- Mode paiement -->
+                <div style="margin-bottom:12px;">
+                  <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">💳 Mode de paiement</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    <button onclick="naSetMode('CB')" id="na-mode-cb"
+                      style="padding:10px;border-radius:8px;border:2px solid var(--primary);background:var(--primary);color:#fff;font-weight:700;cursor:pointer;font-size:13px;">
+                      💳 CB
+                    </button>
+                    <button onclick="naSetMode('ESPECES')" id="na-mode-especes"
+                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      💵 Espèces
+                    </button>
+                    <button onclick="naSetMode('CHEQUE')" id="na-mode-cheque"
+                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      📄 Chèque
+                    </button>
+                    <button onclick="naSetMode('VIREMENT')" id="na-mode-virement"
+                      style="padding:10px;border-radius:8px;border:2px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:13px;">
+                      🏦 Virement
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Bouton valider -->
+                <button onclick="naValiderVente()" id="na-btn-valider"
+                  style="width:100%;padding:16px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:900;cursor:pointer;opacity:0.5;" disabled>
+                  ✅ VALIDER LA VENTE
+                </button>
+
+                <!-- Bouton vider -->
+                <button onclick="naViderPanier()"
+                  style="width:100%;padding:8px;background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;margin-top:6px;">
+                  🗑️ Vider le panier
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- fin na-view-caisse -->
+
+      <!-- ══ VUE VENTE DÉTAILLÉE ══ -->
+      <div id="na-view-form" style="display:none;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
 
         <!-- Formulaire nouvelle vente -->
@@ -3422,7 +3536,7 @@ function showPage(id,el){
   }
   if(id==='suivi-qr'){renderSuiviQR();}
   if(id==='params'){paramsLoad();}
-  if(id==='neufs-access'){naLoad();naRender();}
+  if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='depenses'){renderDepenses();}
   if(id==='comparaison')renderComparaison();
   if(id==='bilan')renderBilan();
@@ -3625,6 +3739,302 @@ function repOuvrirDossierFromCaisse(id){
   setTimeout(function(){
     repOuvrirDossier(d);
   }, 300);
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// CAISSE RAPIDE ACCESSOIRES — Interface POS
+// ═══════════════════════════════════════════════════════════
+
+// Catalogue articles (personnalisable dans les paramètres)
+var NA_ARTICLES = [
+  // Coques
+  {id:'coque-silicone', nom:'Coque Silicone', prix:9.90, cat:'coque', emoji:'📱', couleur:'#8b5cf6'},
+  {id:'coque-rigide',   nom:'Coque Rigide',   prix:14.90, cat:'coque', emoji:'📱', couleur:'#7c3aed'},
+  {id:'coque-folio',    nom:'Coque Folio',    prix:19.90, cat:'coque', emoji:'📱', couleur:'#6d28d9'},
+  // Verres trempés
+  {id:'verre-std',      nom:'Verre Trempé',   prix:9.90, cat:'verre', emoji:'🛡️', couleur:'#0ea5e9'},
+  {id:'verre-privacy',  nom:'Verre Privacy',  prix:14.90, cat:'verre', emoji:'🛡️', couleur:'#0284c7'},
+  // Chargeurs
+  {id:'chargeur-20w',   nom:'Chargeur 20W',   prix:19.90, cat:'chargeur', emoji:'⚡', couleur:'#f59e0b'},
+  {id:'chargeur-65w',   nom:'Chargeur 65W',   prix:29.90, cat:'chargeur', emoji:'⚡', couleur:'#d97706'},
+  {id:'chargeur-mag',   nom:'MagSafe 15W',    prix:34.90, cat:'chargeur', emoji:'🔋', couleur:'#b45309'},
+  // Câbles
+  {id:'cable-usbc',     nom:'Câble USB-C 1m', prix:9.90, cat:'cable', emoji:'🔌', couleur:'#10b981'},
+  {id:'cable-usbc-2m',  nom:'Câble USB-C 2m', prix:12.90, cat:'cable', emoji:'🔌', couleur:'#059669'},
+  {id:'cable-lightning',nom:'Câble Lightning', prix:9.90, cat:'cable', emoji:'🔌', couleur:'#047857'},
+  // Écouteurs
+  {id:'ecout-filaire',  nom:'Écouteurs Filaire',  prix:14.90, cat:'ecouteur', emoji:'🎧', couleur:'#f43f5e'},
+  {id:'ecout-bluetooth',nom:'Écouteurs Bluetooth', prix:34.90, cat:'ecouteur', emoji:'🎧', couleur:'#e11d48'},
+  // Batteries
+  {id:'batterie-5000',  nom:'Batterie 5000mAh', prix:24.90, cat:'batterie', emoji:'🔋', couleur:'#84cc16'},
+  {id:'batterie-10000', nom:'Batterie 10000mAh',prix:34.90, cat:'batterie', emoji:'🔋', couleur:'#65a30d'},
+  // Autre
+  {id:'support-voiture',nom:'Support Voiture',  prix:14.90, cat:'autre', emoji:'🚗', couleur:'#64748b'},
+  {id:'autre-custom',   nom:'Article libre',    prix:0,     cat:'autre', emoji:'➕', couleur:'#94a3b8', libre:true},
+];
+
+var _naPanier    = []; // [{article, qte}]
+var _naMode      = 'CB';
+var _naCatFilter = 'tous';
+
+function naShowTab(tab){
+  ['caisse','form'].forEach(function(t){
+    var v = document.getElementById('na-view-'+t);
+    var b = document.getElementById('na-tab-'+t);
+    if(v) v.style.display = t===tab ? 'block' : 'none';
+    if(b){
+      b.style.borderBottomColor = t===tab ? 'var(--primary)' : 'transparent';
+      b.style.color = t===tab ? 'var(--primary)' : 'var(--text-muted)';
+      b.style.fontWeight = t===tab ? '800' : '600';
+    }
+  });
+  if(tab==='caisse') naRenderGrille();
+}
+
+function naFilterCat(cat){
+  _naCatFilter = cat;
+  // Mettre à jour boutons catégories
+  var cats = ['tous','coque','chargeur','cable','verre','ecouteur','batterie','autre'];
+  cats.forEach(function(c){
+    var btn = document.getElementById('na-cat-'+c);
+    if(!btn) return;
+    if(c===cat){
+      btn.classList.add('btn-primary'); btn.style.opacity='1';
+    } else {
+      btn.classList.remove('btn-primary'); btn.style.opacity='0.7';
+    }
+  });
+  naRenderGrille();
+}
+
+function naRenderGrille(){
+  var grille = document.getElementById('na-grille');
+  if(!grille) return;
+
+  var articles = _naCatFilter==='tous'
+    ? NA_ARTICLES
+    : NA_ARTICLES.filter(function(a){ return a.cat===_naCatFilter; });
+
+  grille.innerHTML = articles.map(function(a){
+    var qteEnPanier = 0;
+    _naPanier.forEach(function(p){ if(p.article.id===a.id) qteEnPanier=p.qte; });
+    var active = qteEnPanier > 0;
+    return '<div onclick="naAddToPanier(''+a.id+'')" '+
+      'style="background:'+(active?a.couleur:'#fff')+';'+
+             'color:'+(active?'#fff':'var(--text)')+';'+
+             'border:2px solid '+(active?a.couleur:'var(--border)')+';'+
+             'border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;'+
+             'transition:all .15s;user-select:none;position:relative;'+
+             (active?'box-shadow:0 4px 12px rgba(0,0,0,0.15);transform:scale(1.02);':'')+'">'+
+      (qteEnPanier>0 ? '<div style="position:absolute;top:6px;right:6px;background:#fff;color:'+a.couleur+';border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">'+qteEnPanier+'</div>' : '')+
+      '<div style="font-size:28px;margin-bottom:6px;">'+a.emoji+'</div>'+
+      '<div style="font-size:12px;font-weight:700;line-height:1.3;margin-bottom:4px;">'+a.nom+'</div>'+
+      '<div style="font-size:15px;font-weight:900;">'+a.prix.toFixed(2)+' €</div>'+
+    '</div>';
+  }).join('');
+}
+
+function naAddToPanier(id){
+  var article = NA_ARTICLES.find(function(a){ return a.id===id; });
+  if(!article) return;
+
+  // Si article libre → demander prix et nom
+  if(article.libre){
+    var nom = prompt('Nom de l'article :', '');
+    if(!nom) return;
+    var prixStr = prompt('Prix TTC (€) :', '');
+    var prix = parseFloat(prixStr);
+    if(!prix || prix <= 0) return;
+    article = Object.assign({}, article, {nom:nom, prix:prix, id:'libre-'+Date.now()});
+    NA_ARTICLES.push(article);
+  }
+
+  // Ajouter ou incrémenter
+  var existing = _naPanier.find(function(p){ return p.article.id===article.id; });
+  if(existing){
+    existing.qte++;
+  } else {
+    _naPanier.push({article:article, qte:1});
+  }
+
+  naRenderPanier();
+  naRenderGrille();
+}
+
+function naRetireDuPanier(id){
+  var idx = _naPanier.findIndex(function(p){ return p.article.id===id; });
+  if(idx<0) return;
+  if(_naPanier[idx].qte > 1){
+    _naPanier[idx].qte--;
+  } else {
+    _naPanier.splice(idx,1);
+  }
+  naRenderPanier();
+  naRenderGrille();
+}
+
+function naViderPanier(){
+  _naPanier = [];
+  naRenderPanier();
+  naRenderGrille();
+}
+
+function naRenderPanier(){
+  var liste  = document.getElementById('na-panier-liste');
+  var empty  = document.getElementById('na-panier-empty');
+  var count  = document.getElementById('na-panier-count');
+  var btnVal = document.getElementById('na-btn-valider');
+
+  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.article.prix*p.qte; }, 0);
+  var totalHT  = totalTTC / 1.2;
+  var totalTVA = totalTTC - totalHT;
+  var nbArticles = _naPanier.reduce(function(s,p){ return s+p.qte; }, 0);
+
+  // Totaux
+  var htEl  = document.getElementById('na-total-ht');
+  var tvaEl = document.getElementById('na-total-tva');
+  var ttcEl = document.getElementById('na-total-ttc');
+  if(htEl)  htEl.textContent  = totalHT.toFixed(2)+' €';
+  if(tvaEl) tvaEl.textContent = totalTVA.toFixed(2)+' €';
+  if(ttcEl) ttcEl.textContent = totalTTC.toFixed(2)+' €';
+
+  // Compteur
+  if(count) count.textContent = nbArticles+' article'+(nbArticles>1?'s':'');
+
+  // Bouton valider
+  if(btnVal){
+    btnVal.disabled = (_naPanier.length===0);
+    btnVal.style.opacity = (_naPanier.length===0) ? '0.5' : '1';
+  }
+
+  if(!liste) return;
+  if(_naPanier.length===0){
+    liste.innerHTML = '<div id="na-panier-empty" style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Cliquez sur un article pour l'ajouter</div>';
+    return;
+  }
+
+  liste.innerHTML = _naPanier.map(function(p){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">'+
+      '<span style="font-size:20px;">'+p.article.emoji+'</span>'+
+      '<div style="flex:1;">'+
+        '<div style="font-size:13px;font-weight:700;">'+p.article.nom+'</div>'+
+        '<div style="font-size:12px;color:var(--text-muted);">'+p.article.prix.toFixed(2)+' € × '+p.qte+' = '+(p.article.prix*p.qte).toFixed(2)+' €</div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:4px;">'+
+        '<button onclick="naRetireDuPanier(''+p.article.id+'')" style="width:26px;height:26px;border-radius:50%;border:1px solid #ddd;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:700;">−</button>'+
+        '<span style="font-size:14px;font-weight:700;min-width:20px;text-align:center;">'+p.qte+'</span>'+
+        '<button onclick="naAddToPanier(''+p.article.id+'')" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;font-size:14px;font-weight:700;">+</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function naSetMode(mode){
+  _naMode = mode;
+  var modes = {CB:'#2563eb', ESPECES:'#16a34a', CHEQUE:'#d97706', VIREMENT:'#8b5cf6'};
+  Object.keys(modes).forEach(function(m){
+    var btn = document.getElementById('na-mode-'+m.toLowerCase());
+    if(!btn) return;
+    if(m===mode){
+      btn.style.background = modes[m];
+      btn.style.borderColor = modes[m];
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = '#f8fafc';
+      btn.style.borderColor = '#ddd';
+      btn.style.color = 'var(--text)';
+    }
+  });
+}
+
+function naValiderVente(){
+  if(_naPanier.length===0){ showNotif('Panier vide','error'); return; }
+  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.article.prix*p.qte; }, 0);
+  var desc = _naPanier.map(function(p){ return p.qte+'× '+p.article.nom; }).join(', ');
+  var num  = 'ACC-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(0,14);
+
+  if(!confirm('Valider la vente :\n'+desc+'\n\nTotal : '+totalTTC.toFixed(2)+' € — '+_naMode+' ?')) return;
+
+  // Enregistrer en caisse
+  caisseFromVente({
+    prixTTC: totalTTC,
+    mode: _naMode,
+    date: new Date().toISOString().split('T')[0],
+    description: 'Vente access. : '+desc
+  });
+
+  showNotif('✅ Vente enregistrée — '+totalTTC.toFixed(2)+' € ('+_naMode+') en caisse !','success');
+
+  // Imprimer ticket
+  naImprimerTicketAccess(num, desc, totalTTC, _naMode);
+
+  // Vider le panier
+  naViderPanier();
+}
+
+function naImprimerTicketAccess(num, desc, totalTTC, mode){
+  var ht  = (totalTTC/1.2).toFixed(2);
+  var tva = (totalTTC - totalTTC/1.2).toFixed(2);
+  var now = new Date();
+  var modeColors={CB:'💳',ESPECES:'💵',CHEQUE:'📄',VIREMENT:'🏦'};
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>'+
+  '<style>*{margin:0;padding:0;}body{font-family:"Courier New",monospace;font-size:12px;width:80mm;}'+
+  '.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}'+
+  '.row{display:flex;justify-content:space-between;padding:2px 0;}'+
+  '@media print{@page{size:80mm auto;margin:0;}}</style></head><body>'+
+  '<p class="no-print" style="padding:4px;"><button onclick="window.print()" style="width:100%;padding:8px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;">🖨️ Imprimer</button></p>'+
+  '<div style="padding:3mm;">'+
+  '<div class="center bold" style="font-size:15px;">SOLUTION PHONE</div>'+
+  '<div class="center">21 Rue Gambetta · 71000 Mâcon</div>'+
+  '<div class="center">03 85 33 06 89</div>'+
+  '<div class="line"></div>'+
+  '<div class="center bold">VENTE ACCESSOIRES</div>'+
+  '<div class="center">'+now.toLocaleDateString('fr-FR')+' '+now.toLocaleTimeString('fr-FR')+'</div>'+
+  '<div class="center" style="font-size:10px;">N° '+num+'</div>'+
+  '<div class="line"></div>';
+
+  _naPanier.forEach(function(p){
+    html += '<div class="row"><span>'+p.article.emoji+' '+p.article.nom+(p.qte>1?' ×'+p.qte:'')+'</span><span>'+(p.article.prix*p.qte).toFixed(2)+' €</span></div>';
+  });
+
+  html += '<div class="line"></div>'+
+  '<div class="row"><span>HT</span><span>'+ht+' €</span></div>'+
+  '<div class="row"><span>TVA 20%</span><span>'+tva+' €</span></div>'+
+  '<div class="line"></div>'+
+  '<div class="row bold" style="font-size:14px;"><span>TOTAL TTC</span><span>'+totalTTC.toFixed(2)+' €</span></div>'+
+  '<div class="row"><span>Règlement</span><span>'+(modeColors[mode]||'')+' '+mode+'</span></div>'+
+  '<div class="line"></div>'+
+  '<div class="center" style="font-size:9px;">■ NF525 ■ Logiciel certifié conforme</div>'+
+  '<div class="center" style="font-size:9px;">Loi anti-fraude TVA · Art. 286 CGI</div>'+
+  '<div class="line"></div>'+
+  '<div class="center">Merci de votre visite !</div>'+
+  '</div></body></html>';
+
+  var w=window.open('','_blank','width=400,height=600');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); },400);
+}
+
+function naShowAddArticle(){
+  var nom  = prompt('Nom du nouvel article :','');
+  if(!nom) return;
+  var prix = parseFloat(prompt('Prix TTC (€) :',''));
+  if(!prix||prix<=0) return;
+  var cats = ['coque','chargeur','cable','verre','ecouteur','batterie','autre'];
+  var catStr = prompt('Catégorie ('+cats.join(', ')+') :','autre');
+  var cat = cats.includes(catStr) ? catStr : 'autre';
+  var emojis={coque:'📱',chargeur:'⚡',cable:'🔌',verre:'🛡️',ecouteur:'🎧',batterie:'🔋',autre:'🏷️'};
+  NA_ARTICLES.push({
+    id:'custom-'+Date.now(),
+    nom:nom, prix:prix, cat:cat,
+    emoji:emojis[cat]||'🏷️',
+    couleur:'#64748b'
+  });
+  naRenderGrille();
+  showNotif('✅ Article "'+nom+'" ajouté','success');
 }
 
 // ═══════════════════════════════════════════════════════════
