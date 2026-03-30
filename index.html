@@ -4066,7 +4066,7 @@ function naConfigPrix(){
   html += '</tbody></table>'+
     '<div style="display:flex;gap:10px;margin-top:16px;">'+
       '<button onclick="naSavePrix()" style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:15px;">💾 Enregistrer</button>'+
-      '<button onclick="document.getElementById('modal-na-config').remove()" style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;">Annuler</button>'+
+      '<button onclick="naFermerConfigPrix()" style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;">Annuler</button>'+
     '</div>'+
   '</div>';
 
@@ -4075,6 +4075,11 @@ function naConfigPrix(){
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;';
   modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:500px;width:100%;max-height:85vh;overflow:hidden;">'+html+'</div>';
   document.body.appendChild(modal);
+}
+
+function naFermerConfigPrix(){
+  var m = document.getElementById('modal-na-config');
+  if(m) m.remove();
 }
 
 function naSavePrix(){
