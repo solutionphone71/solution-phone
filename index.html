@@ -782,10 +782,16 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div id="na-grille" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
             </div>
 
-            <!-- Bouton ajouter article -->
-            <div style="text-align:center;margin-top:16px;">
+            <!-- Boutons config -->
+            <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
               <button onclick="naShowAddArticle()" class="btn btn-sm" style="border-style:dashed;color:var(--text-muted);">
                 ➕ Ajouter un article
+              </button>
+              <button onclick="naConfigPrix()" class="btn btn-sm" style="border-color:var(--blue);color:var(--blue);">
+                ✏️ Modifier les prix
+              </button>
+              <button onclick="naResetPrix()" class="btn btn-sm" style="border-color:var(--warning);color:var(--warning);">
+                ↺ Réinitialiser
               </button>
             </div>
           </div>
@@ -3746,8 +3752,8 @@ function repOuvrirDossierFromCaisse(id){
 // CAISSE RAPIDE ACCESSOIRES — Interface POS
 // ═══════════════════════════════════════════════════════════
 
-// Catalogue articles (personnalisable dans les paramètres)
-var NA_ARTICLES = [
+// Catalogue articles — prix modifiables et sauvegardés en localStorage
+var NA_ARTICLES_DEFAULT = [
   // Coques
   {id:'coque-silicone', nom:'Coque Silicone', prix:9.90, cat:'coque', emoji:'📱', couleur:'#8b5cf6'},
   {id:'coque-rigide',   nom:'Coque Rigide',   prix:14.90, cat:'coque', emoji:'📱', couleur:'#7c3aed'},
@@ -3773,6 +3779,16 @@ var NA_ARTICLES = [
   {id:'support-voiture',nom:'Support Voiture',  prix:14.90, cat:'autre', emoji:'🚗', couleur:'#64748b'},
   {id:'autre-custom',   nom:'Article libre',    prix:0,     cat:'autre', emoji:'➕', couleur:'#94a3b8', libre:true},
 ];
+
+// Charger les prix personnalisés depuis localStorage
+var NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){
+  var prixSauve = localStorage.getItem('na_prix_'+a.id);
+  var nomSauve  = localStorage.getItem('na_nom_'+a.id);
+  return Object.assign({}, a,
+    prixSauve !== null ? {prix: parseFloat(prixSauve)} : {},
+    nomSauve  !== null ? {nom: nomSauve} : {}
+  );
+});
 
 var _naPanier    = []; // [{article, qte}]
 var _naMode      = 'CB';
@@ -3812,9 +3828,11 @@ function naRenderGrille(){
   var grille = document.getElementById('na-grille');
   if(!grille) return;
 
-  var articles = _naCatFilter==='tous'
-    ? NA_ARTICLES
-    : NA_ARTICLES.filter(function(a){ return a.cat===_naCatFilter; });
+  var articles = NA_ARTICLES.filter(function(a){
+    if(localStorage.getItem('na_hidden_'+a.id)==='1') return false;
+    if(_naCatFilter==='tous') return true;
+    return a.cat===_naCatFilter;
+  });
 
   grille.innerHTML = articles.map(function(a){
     var qteEnPanier = 0;
@@ -4016,6 +4034,88 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   w.document.write(html);
   w.document.close();
   setTimeout(function(){ w.print(); },400);
+}
+
+function naConfigPrix(){
+  // Afficher un tableau de modification des prix
+  var html = '<div style="padding:16px;max-height:70vh;overflow-y:auto;">'+
+    '<h3 style="margin-bottom:16px;">✏️ Modifier les articles et prix</h3>'+
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+    '<thead><tr style="background:#f1f5f9;">'+
+      '<th style="padding:8px;text-align:left;">Article</th>'+
+      '<th style="padding:8px;text-align:center;width:100px;">Prix TTC (€)</th>'+
+      '<th style="padding:8px;text-align:center;width:80px;">Actif</th>'+
+    '</tr></thead><tbody>';
+  NA_ARTICLES.forEach(function(a){
+    if(a.libre) return;
+    html += '<tr style="border-bottom:1px solid var(--border);">'+
+      '<td style="padding:6px 8px;">'+a.emoji+' '+
+        '<input type="text" value="'+a.nom+'" id="na-cfg-nom-'+a.id+'" '+
+        'style="border:none;border-bottom:1px solid #ddd;width:140px;font-size:13px;padding:2px;">'+
+      '</td>'+
+      '<td style="padding:6px 8px;text-align:center;">'+
+        '<input type="number" value="'+a.prix.toFixed(2)+'" id="na-cfg-prix-'+a.id+'" '+
+        'step="0.5" min="0" style="width:80px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;text-align:center;font-weight:700;font-size:14px;">'+
+      '</td>'+
+      '<td style="padding:6px 8px;text-align:center;">'+
+        '<input type="checkbox" id="na-cfg-actif-'+a.id+'" '+
+        (localStorage.getItem('na_hidden_'+a.id)==='1'?'':'checked')+'>'+
+      '</td>'+
+    '</tr>';
+  });
+  html += '</tbody></table>'+
+    '<div style="display:flex;gap:10px;margin-top:16px;">'+
+      '<button onclick="naSavePrix()" style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:15px;">💾 Enregistrer</button>'+
+      '<button onclick="document.getElementById('modal-na-config').remove()" style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;">Annuler</button>'+
+    '</div>'+
+  '</div>';
+
+  var modal = document.createElement('div');
+  modal.id = 'modal-na-config';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:500px;width:100%;max-height:85vh;overflow:hidden;">'+html+'</div>';
+  document.body.appendChild(modal);
+}
+
+function naSavePrix(){
+  NA_ARTICLES.forEach(function(a){
+    if(a.libre) return;
+    var prixEl = document.getElementById('na-cfg-prix-'+a.id);
+    var nomEl  = document.getElementById('na-cfg-nom-'+a.id);
+    var actifEl= document.getElementById('na-cfg-actif-'+a.id);
+    if(prixEl){
+      var p = parseFloat(prixEl.value);
+      if(!isNaN(p) && p >= 0){
+        a.prix = p;
+        localStorage.setItem('na_prix_'+a.id, p.toString());
+      }
+    }
+    if(nomEl && nomEl.value.trim()){
+      a.nom = nomEl.value.trim();
+      localStorage.setItem('na_nom_'+a.id, a.nom);
+    }
+    if(actifEl){
+      if(actifEl.checked){ localStorage.removeItem('na_hidden_'+a.id); }
+      else { localStorage.setItem('na_hidden_'+a.id,'1'); }
+    }
+  });
+  var m = document.getElementById('modal-na-config');
+  if(m) m.remove();
+  naRenderGrille();
+  showNotif('✅ Prix et articles mis à jour !','success');
+}
+
+function naResetPrix(){
+  if(!confirm('Remettre tous les prix par défaut ?')) return;
+  NA_ARTICLES_DEFAULT.forEach(function(a){
+    localStorage.removeItem('na_prix_'+a.id);
+    localStorage.removeItem('na_nom_'+a.id);
+    localStorage.removeItem('na_hidden_'+a.id);
+  });
+  // Recharger
+  NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){ return Object.assign({},a); });
+  naRenderGrille();
+  showNotif('Prix remis par défaut','success');
 }
 
 function naShowAddArticle(){
