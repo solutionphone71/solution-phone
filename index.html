@@ -4171,11 +4171,16 @@ function renderCaisseJour(){
   // Collecter toutes les transactions du jour
   var txJour = [];
 
-  // 1. Réparations facturées aujourd'hui (depuis bonsDepot)
-  bonsDepot.forEach(function(d){
+  // 1. Réparations facturées aujourd'hui
+  // Lire depuis repDossiers (plus à jour) ET bonsDepot (fallback)
+  var idsVus = {};
+  var sourceDossiers = (repDossiers && repDossiers.length > 0) ? repDossiers : bonsDepot;
+  sourceDossiers.forEach(function(d){
     if(!d.facture) return;
+    if(idsVus[d.id]) return; // éviter doublons
     var dateFacture = (d.facture.date || d.date || '').substring(0,10);
     if(dateFacture !== today) return;
+    idsVus[d.id] = true;
     var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
     var prixClient = d.facture.prix || d.devis || 0;
     var prixReel = bonusQR ? prixClient + 25 : prixClient;
@@ -10886,6 +10891,9 @@ async function repGenererFacture(){
   caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR);
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
+
+  // Rafraîchir la caisse du jour si on est dessus
+  if(typeof renderCaisseJour === 'function') setTimeout(renderCaisseJour, 500);
 
   // Certification NF525 Kiwiz en arrière-plan
   if(kiwizConfigured()){
