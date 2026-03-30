@@ -1971,7 +1971,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 </div>
               </div>
 
-              <button class="btn btn-primary" onclick="repGenererFacture()" style="padding:14px;font-size:15px;font-weight:800;">🧾 Générer la facture</button>
+              <button class="btn btn-primary" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
             </div>
 
             <!-- Colonne droite : aperçu -->
@@ -11046,6 +11046,9 @@ async function repGenererFacture(){
       }
     });
   }
+
+  // Imprimer la facture automatiquement
+  setTimeout(function(){ repImprimerFacture(d); }, 400);
 
   // Afficher popup envoi
   repShowEnvoiFacture(d);
