@@ -10675,7 +10675,7 @@ function renderRepHistorique(){
     var statut = d.statut||'depot';
     var sc = statusColors[statut]||'#666';
     var bg = i%2===0?'#fff':'#f8fafc';
-    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);" onclick="repOuvrirDossier(''+d.id+'')" style="cursor:pointer;">'+
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" >'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
       '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
