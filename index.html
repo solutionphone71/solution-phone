@@ -9333,6 +9333,12 @@ var PARAMS_KEYS = {
 })();
 
 function paramsLoad(){
+  // Pré-configurer Kiwiz si pas encore fait
+  if(!localStorage.getItem(PARAMS_KEYS.kiwizUser)){
+    localStorage.setItem(PARAMS_KEYS.kiwizUser, 'solution.phone71@gmail.com');
+    localStorage.setItem(PARAMS_KEYS.kiwizPass, 'dc!2GB#b');
+    localStorage.setItem(PARAMS_KEYS.kiwizSub,  '1542327000024372039');
+  }
   // Pré-configurer Brevo si pas encore fait
   if(!localStorage.getItem(PARAMS_KEYS.brevoKey)){
     localStorage.setItem(PARAMS_KEYS.brevoKey, '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');
@@ -10374,7 +10380,21 @@ async function repGenererFacture(){
   caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR);
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
-  // Afficher popup envoi au lieu d'imprimer directement
+
+  // Certification NF525 Kiwiz en arrière-plan
+  if(kiwizConfigured()){
+    var clientNomKiwiz = ((d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom).trim();
+    certifierFactureKiwiz(d.facture, clientNomKiwiz, null).then(function(ref){
+      if(ref){
+        d.facture.kiwizRef = ref;
+        repSauvegarderDossier();
+        showNotif('🔒 NF525 certifiée — Réf: '+ref,'success');
+        console.log('Kiwiz NF525:', ref);
+      }
+    });
+  }
+
+  // Afficher popup envoi
   repShowEnvoiFacture(d);
   repUpdateDevisRecap();
 }
