@@ -3841,9 +3841,9 @@ function naAddToPanier(id){
 
   // Si article libre → demander prix et nom
   if(article.libre){
-    var nom = prompt('Nom de l'article :', '');
+    var nom = prompt('Nom de l\u2019article :', '');
     if(!nom) return;
-    var prixStr = prompt('Prix TTC (€) :', '');
+    var prixStr = prompt('Prix TTC (\u20ac) :', '');
     var prix = parseFloat(prixStr);
     if(!prix || prix <= 0) return;
     article = Object.assign({}, article, {nom:nom, prix:prix, id:'libre-'+Date.now()});
