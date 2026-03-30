@@ -12033,7 +12033,8 @@ async function repEnvoyerEcosystem(){
   var c     = d.client||{};
   var f     = d.facture||{};
 
-  var baseUrl = 'https://api.repairerportal.ecosystem.eco';
+  // URL API Ecosystem — à mettre à jour si changée (contacter contacteznous@ecosystem.eco)
+  var baseUrl = localStorage.getItem('sp_ecosystem_api_url') || 'https://portail-reparateurs.ecosystem.eco';
 
   try {
     // Étape 1 : Authentification
@@ -15512,7 +15513,7 @@ async function qrVerifierStatutEcosystem(dossier){
 
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || 'Coincoin71?!';
-  var baseUrl   = 'https://api.repairerportal.ecosystem.eco';
+  var baseUrl = localStorage.getItem('sp_ecosystem_api_url') || 'https://portail-reparateurs.ecosystem.eco';
 
   try {
     // Auth
