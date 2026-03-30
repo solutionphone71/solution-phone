@@ -1453,6 +1453,39 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
 
+      <!-- ── RÉPARATIONS TERMINÉES PAR JOUR ── -->
+      <div class="card" style="margin-top:16px;" id="rep-historique-jour">
+        <div class="card-header" style="cursor:pointer;" onclick="repToggleHistorique()">
+          <div class="card-title">📅 Réparations du jour — Historique</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            <span id="rep-hist-toggle" style="font-size:18px;color:var(--text-muted);">▼</span>
+          </div>
+        </div>
+        <div id="rep-hist-body">
+          <!-- Stats du jour sélectionné -->
+          <div id="rep-hist-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;padding:12px;background:#f8fafc;border-bottom:1px solid var(--border);"></div>
+          <!-- Table des réparations -->
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#f1f5f9;text-align:left;">
+                  <th style="padding:8px;">N°</th>
+                  <th style="padding:8px;">Client</th>
+                  <th style="padding:8px;">Appareil</th>
+                  <th style="padding:8px;">Panne</th>
+                  <th style="padding:8px;text-align:right;">Montant</th>
+                  <th style="padding:8px;text-align:center;">Mode</th>
+                  <th style="padding:8px;text-align:center;">Statut</th>
+                  <th style="padding:8px;text-align:center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rep-hist-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ── DOSSIER DÉTAIL (stepper) ── -->
       <div id="rep-dossier-view" style="display:none;">
 
@@ -10555,6 +10588,108 @@ function repLoadDossiers(){
   renderRepListe();
 }
 
+
+// ═══════════════════════════════════════════════════════════
+// HISTORIQUE RÉPARATIONS PAR JOUR — Vue type Phonilab
+// ═══════════════════════════════════════════════════════════
+
+var _repHistOpen = true;
+
+function repToggleHistorique(){
+  _repHistOpen = !_repHistOpen;
+  var body = document.getElementById('rep-hist-body');
+  var tog  = document.getElementById('rep-hist-toggle');
+  if(body) body.style.display = _repHistOpen ? 'block' : 'none';
+  if(tog)  tog.textContent = _repHistOpen ? '▲' : '▼';
+}
+
+function renderRepHistorique(){
+  var dateEl = document.getElementById('rep-hist-date');
+  var today  = new Date().toISOString().split('T')[0];
+  var date   = dateEl ? (dateEl.value || today) : today;
+  if(dateEl && !dateEl.value) dateEl.value = today;
+
+  // Filtrer les dossiers de cette date (toutes statuts)
+  var dossiers = repDossiers.filter(function(d){
+    var dateD = (d.date||'').substring(0,10);
+    var dateF = d.facture ? (d.facture.date||'').substring(0,10) : '';
+    return dateD === date || dateF === date;
+  });
+
+  // Stats
+  var nb = dossiers.length;
+  var totalTTC = 0, totalCB = 0, totalEsp = 0, totalCh = 0, totalVir = 0, totalQR = 0;
+  dossiers.forEach(function(d){
+    var f = d.facture;
+    if(!f) return;
+    var bonusQR = !!(d.bonusQR || f.bonusQR);
+    var prixClient = f.prix || d.devis || 0;
+    var prixReel = bonusQR ? prixClient + 25 : prixClient;
+    totalTTC += prixReel;
+    if(bonusQR) totalQR += 25;
+    var mode = (f.mode||'CB').toUpperCase();
+    if(mode==='CB') totalCB += prixReel;
+    else if(mode==='ESPECES') totalEsp += prixReel;
+    else if(mode==='CHEQUE') totalCh += prixReel;
+    else if(mode==='VIREMENT') totalVir += prixReel;
+  });
+
+  var statsDiv = document.getElementById('rep-hist-stats');
+  if(statsDiv){
+    var fmtDate2 = new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    statsDiv.innerHTML = [
+      {l:'📅 Date',      v: fmtDate2,               c:'var(--text)'},
+      {l:'📦 Dossiers',  v: nb,                     c:'var(--text)'},
+      {l:'💰 CA TTC',    v: totalTTC.toFixed(2)+' €', c:'var(--primary)'},
+      {l:'💳 CB',        v: totalCB.toFixed(2)+' €',  c:'#2563eb'},
+      {l:'💵 Espèces',   v: totalEsp.toFixed(2)+' €', c:'#16a34a'},
+      {l:'📄 Chèque',    v: totalCh.toFixed(2)+' €',  c:'#d97706'},
+      {l:'🏷️ Bonus QR',  v: totalQR.toFixed(2)+' €',  c:'#16a34a'},
+    ].map(function(s){
+      return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'+
+        '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">'+s.l+'</div>'+
+        '<div style="font-weight:800;font-size:15px;color:'+s.c+';">'+s.v+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Table
+  var tbody = document.getElementById('rep-hist-table');
+  if(!tbody) return;
+
+  if(dossiers.length === 0){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
+    return;
+  }
+
+  var modeColors = {CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
+  var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#c0392b',cloture:'#64748b'};
+  var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'🔴 QR',cloture:'⚫ Clôturé'};
+
+  tbody.innerHTML = dossiers.map(function(d, i){
+    var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
+    var bonusQR = !!(d.bonusQR || (f&&f.bonusQR));
+    var montant = f ? (f.prix||0) + (bonusQR?25:0) : (d.devis||0);
+    var mode = f ? (f.mode||'CB').toUpperCase() : '—';
+    var mc = modeColors[mode]||'#666';
+    var statut = d.statut||'depot';
+    var sc = statusColors[statut]||'#666';
+    var bg = i%2===0?'#fff':'#f8fafc';
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);" onclick="repOuvrirDossier(''+d.id+'')" style="cursor:pointer;">'+
+      '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
+      '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
+      '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
+      '<td style="padding:8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(d.panne||'—')+'</td>'+
+      '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -25€</span>':'')+'</td>'+
+      '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
+      '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
+      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier(''+d.id+'')" style="font-size:11px;">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFacture(repDossiers.find(function(x){return String(x.id)===''+d.id+''}))" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
 function renderRepListe(){
   var search = (document.getElementById('rep-search')||{value:''}).value.toLowerCase();
   var tbody = document.getElementById('rep-liste-table');
@@ -10594,6 +10729,10 @@ function repShowListe(){
   document.getElementById('rep-dossier-view').style.display='none';
   repDossierCourant = null;
   renderRepListe();
+  // Initialiser la date d'aujourd'hui dans l'historique
+  var dateEl = document.getElementById('rep-hist-date');
+  if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  renderRepHistorique();
 }
 
 
