@@ -3928,7 +3928,7 @@ function naRenderPanier(){
 
   if(!liste) return;
   if(_naPanier.length===0){
-    liste.innerHTML = '<div id="na-panier-empty" style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Cliquez sur un article pour l'ajouter</div>';
+    liste.innerHTML = '<div id="na-panier-empty" style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px;">Cliquez sur un article pour l&#x2019;ajouter</div>';
     return;
   }
 
@@ -5733,14 +5733,7 @@ function marquerVendu(id){
   if(!p)return;
   // Demander le mode de paiement
   var modes = ['CB','ESPECES','CHEQUE','VIREMENT'];
-  var modeChoix = prompt('Mode de paiement pour '+p.modele+' ('+p.vente+'€) ?
-
-1 = CB
-2 = Espèces
-3 = Chèque
-4 = Virement
-
-(Appuyez Entrée pour CB par défaut)','1');
+  var modeChoix = prompt('Mode de paiement : 1=CB  2=Esp\u00e8ces  3=Ch\u00e8que  4=Virement  (Entr\u00e9e=CB)', '1');
   var modeMap = {'1':'CB','2':'ESPECES','3':'CHEQUE','4':'VIREMENT'};
   var mode = modeMap[modeChoix] || 'CB';
   if(!confirm('Marquer '+p.modele+' comme VENDU ('+p.vente+'€ — '+mode+') ?\nIl sera retiré du stock.'))return;
