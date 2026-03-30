@@ -10684,8 +10684,8 @@ function renderRepHistorique(){
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        '<button class="btn btn-sm" onclick="repOuvrirDossier(''+d.id+'')" style="font-size:11px;">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFacture(repDossiers.find(function(x){return String(x.id)===''+d.id+''}))" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" style="font-size:11px;">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+JSON.stringify(String(d.id))+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -11050,6 +11050,11 @@ async function repGenererFacture(){
   // Afficher popup envoi
   repShowEnvoiFacture(d);
   repUpdateDevisRecap();
+}
+
+function repImprimerFactureById(id){
+  var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
+  if(d) repImprimerFacture(d);
 }
 
 function repImprimerFacture(d){
