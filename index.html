@@ -4319,7 +4319,8 @@ function renderCaisseJour(){
     } else {
       if(empty) empty.style.display = 'none';
       var modeColors = {CB:'#3b82f6',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
-      tbody.innerHTML = txJour.map(function(tx, i){
+      var txCaisse = txJour.filter(function(tx){ return tx.type !== 'vente'; });
+      tbody.innerHTML = txCaisse.map(function(tx, i){
         var mc = modeColors[(tx.mode||'CB').toUpperCase()] || '#666';
         var bg = i%2===0 ? '#fff' : '#f8fafc';
         return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
@@ -4336,7 +4337,8 @@ function renderCaisseJour(){
   // Recap Z de caisse
   var zDiv = document.getElementById('caisse-z-recap');
   if(zDiv){
-    zDiv.innerHTML = '<b>'+txJour.length+' transaction(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
+    var txCaisseZ = txJour.filter(function(tx){ return tx.type !== 'vente'; });
+    zDiv.innerHTML = '<b>'+txCaisseZ.length+' transaction(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
       'CB : '+totJour.cb.toFixed(2)+' € · Espèces : '+totJour.especes.toFixed(2)+' € · '+
       'Chèque : '+totJour.cheque.toFixed(2)+' € · Virement : '+totJour.virement.toFixed(2)+' €'+
       (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '');
@@ -7294,143 +7296,208 @@ function renderReparations() {
 function renderComptable() {
   var mois = document.getElementById('compta-mois').value;
   var data = caisse.filter(function(c) { return c.date.startsWith(mois); });
-  
-  // Totaux CA
-  var totalTTC = data.reduce(function(s,c){return s+(c.ttc||0);},0);
-  var totalHT = totalTTC / 1.2;
-  var totalTVA = totalTTC - totalHT;
-  var totalQuali = data.reduce(function(s,c){return s+(c.quali||0);},0);
-  
-  // Totaux paiements
-  var totalCB = data.reduce(function(s,c){return s+(c.cb||0);},0);
-  var totalEsp = data.reduce(function(s,c){return s+(c.especes||0);},0);
+
+  // ── Totaux Z1 : Réparations & Accessoires (TVA 20%) ──
+  var totalTTC    = data.reduce(function(s,c){return s+(c.ttc||0);},0);
+  var totalHT     = totalTTC / 1.2;
+  var totalTVA    = totalTTC - totalHT;
+  var totalQuali  = data.reduce(function(s,c){return s+(c.quali||0);},0);
+  var totalCB     = data.reduce(function(s,c){return s+(c.cb||0);},0);
+  var totalEsp    = data.reduce(function(s,c){return s+(c.especes||0);},0);
   var totalCheque = data.reduce(function(s,c){return s+(c.cheque||0);},0);
-  var totalVir = data.reduce(function(s,c){return s+(c.virement||0);},0);
-  var totalDepotEsp = data.reduce(function(s,c){return s+(c.depotEsp||0);},0);
+  var totalVir    = data.reduce(function(s,c){return s+(c.virement||0);},0);
+  var totalDepotEsp    = data.reduce(function(s,c){return s+(c.depotEsp||0);},0);
   var totalDepotCheque = data.reduce(function(s,c){return s+(c.depotCheque||0);},0);
-  var totalAchatSmart = data.reduce(function(s,c){return s+(c.achatSmart||0);},0);
-  
-  // Caisse finale
-  var finales = calcFinales();
-  var caisseFin = finales.length > 0 ? finales[finales.length-1] : 0;
+  var totalAchatSmart  = data.reduce(function(s,c){return s+(c.achatSmart||0);},0);
+
+  // ── Totaux Z2 : Smartphones occasion (TVA sur marge) ──
+  var phonesVendus  = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(mois);});
+  var phonesAchetes = phones.filter(function(p){return p.dateAchat&&p.dateAchat.startsWith(mois);});
+  var totalVenteOcc = phonesVendus.reduce(function(s,p){return s+(p.vente||0);},0);
+  var totalAchatOcc = phonesVendus.reduce(function(s,p){return s+(p.achat||0);},0);
+  var margeOcc      = totalVenteOcc - totalAchatOcc;
+  var tvaMargeOcc   = margeOcc * 20 / 120;
+  // Paiements smartphones vendus
+  var z2CB = 0, z2Esp = 0, z2Cheque = 0, z2Vir = 0;
+  phonesVendus.forEach(function(p){
+    var m = (p.modeVente||p.mode||'CB').toUpperCase();
+    var v = p.vente||0;
+    if(m==='CB')       z2CB     += v;
+    else if(m==='ESPECES') z2Esp += v;
+    else if(m==='CHEQUE')  z2Cheque += v;
+    else if(m==='VIREMENT') z2Vir += v;
+    else z2CB += v;
+  });
+  // Achats espèces smartphones
+  var achatsEsp = phones.filter(function(p){return p.dateAchat&&p.dateAchat.startsWith(mois)&&(p.mode||'').toUpperCase()==='ESPECES';});
+  var totalEspAchats = achatsEsp.reduce(function(s,p){return s+p.achat;},0);
+
+  // Caisse
+  var finales    = calcFinales();
+  var caisseFin  = finales.length > 0 ? finales[finales.length-1] : 0;
   var caisseDebut = getReport(mois);
-  
-  // Smartphones du mois
-  var phonesVendus = phones.filter(function(p){return p.etat==='VENDU' && p.dateVente && p.dateVente.startsWith(mois);});
-  var phonesAchetes = phones.filter(function(p){return p.dateAchat && p.dateAchat.startsWith(mois);});
-  var margeSmartphones = phonesVendus.reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  
+
   // Nom du mois
   var moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
   var parts = mois.split('-');
   var moisLabel = moisNoms[parts[1]] + ' ' + parts[0];
 
+  // ── Détail journalier (fusion caisse + repDossiers) ──
+  var djMap = {};
+  data.forEach(function(c){ djMap[c.date] = JSON.parse(JSON.stringify(c)); });
+  var srcDossiers = (repDossiers&&repDossiers.length>0)?repDossiers:bonsDepot;
+  srcDossiers.forEach(function(d){
+    if(!d.facture) return;
+    var df = (d.facture.date||d.date||'').substring(0,10);
+    if(!df.startsWith(mois)) return;
+    if(!djMap[df]) djMap[df]={date:df,ttc:0,cb:0,especes:0,cheque:0,virement:0,quali:0};
+  });
+  var djRows = Object.keys(djMap).sort().map(function(date){
+    var c = djMap[date];
+    var fin = (function(){ var entry = caisse.find(function(x){return x.date===date;}); return entry ? finales[caisse.indexOf(entry)] : 0; })() || 0;
+    return '<tr><td>'+fmtDate(date)+'</td><td><b>'+(c.ttc||0).toFixed(2)+' €</b></td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:#16a34a">'+(c.quali).toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin.toFixed(2)+' €</b></td></tr>';
+  }).join('');
+
+  var sep = '<div style="height:2px;background:linear-gradient(90deg,#c0392b,#e74c3c,#c0392b);margin:32px 0;border-radius:2px;"></div>';
+  var sectionTitle = function(icon, title, color){ return '<div style="font-size:15px;font-weight:800;color:'+(color||'#1a202c')+';text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;border-bottom:3px solid '+(color||'#e2e8f0')+';padding-bottom:8px;">'+icon+' '+title+'</div>'; };
+
   var html = '<div id="compta-print-zone">' +
-    '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;">' +
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
-    '<div>' +
-    '<div style="font-size:22px;font-weight:800;color:var(--red);">SOLUTION PHONE</div>' +
-    '<div style="font-size:13px;color:var(--text-muted);">21 Rue Gambetta · 71000 Mâcon</div>' +
-    '<div style="font-size:13px;color:var(--text-muted);">SIRET : 801044785 00021</div>' +
-    '</div>' +
-    '<div style="text-align:right;">' +
-    '<div style="font-size:18px;font-weight:700;">RÉCAPITULATIF MENSUEL</div>' +
-    '<div style="font-size:24px;font-weight:800;color:var(--red);">' + moisLabel + '</div>' +
-    '</div>' +
+    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">' +
+
+    // En-tête
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px;">' +
+    '<div><div style="font-size:22px;font-weight:800;color:#c0392b;">SOLUTION PHONE</div>' +
+    '<div style="font-size:12px;color:#64748b;">21 Rue Gambetta · 71000 Mâcon · SIRET 801044785 00021</div></div>' +
+    '<div style="text-align:right;"><div style="font-size:16px;font-weight:700;">RÉCAPITULATIF MENSUEL</div>' +
+    '<div style="font-size:22px;font-weight:800;color:#c0392b;">'+moisLabel+'</div></div>' +
     '</div>' +
 
-    // Section CA +
-    '<div style="margin-bottom:20px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💰 Chiffre d\'Affaires</div>' +
-    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
-    '<tr><td>CA Total TTC</td><td style="text-align:right;font-size:18px;font-weight:800;color:var(--red);">' + totalTTC.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>CA HT (TVA sur marge)</td><td style="text-align:right;font-weight:700;">' + totalHT.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>TVA collectée</td><td style="text-align:right;">' + totalTVA.toFixed(2) + ' €</td></tr>' +
-    '<tr><td style="color:var(--green);">Bonus QualiRépar</td><td style="text-align:right;color:var(--green);font-weight:700;">+ ' + totalQuali.toFixed(2) + ' €</td></tr>' +
+    // ════════════════════════════════════════════
+    // Z1 — RÉPARATIONS & ACCESSOIRES (TVA 20%)
+    // ════════════════════════════════════════════
+    '<div style="background:#fef2f2;border:2px solid #c0392b;border-radius:8px;padding:16px;margin-bottom:20px;">' +
+    '<div style="font-size:16px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">🔧 Z DE CAISSE N°1 — RÉPARATIONS & ACCESSOIRES</div>' +
+    '<div style="font-size:12px;color:#64748b;">TVA 20% · Inclut réparations, ventes accessoires, téléphones neufs</div>' +
+    '</div>' +
 
+    sectionTitle('💰','Chiffre d'affaires','#c0392b') +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Désignation</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th></tr></thead><tbody>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">CA Total TTC</td><td style="padding:8px;text-align:right;font-size:20px;font-weight:800;color:#c0392b;">'+totalTTC.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">CA HT</td><td style="padding:8px;text-align:right;font-weight:700;">'+totalHT.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">TVA collectée (20%)</td><td style="padding:8px;text-align:right;">'+totalTVA.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;background:#f0fdf4;"><td style="padding:8px;color:#16a34a;">🏷️ Bonus QualiRépar encaissé</td><td style="padding:8px;text-align:right;color:#16a34a;font-weight:700;">+ '+totalQuali.toFixed(2)+' €</td></tr>' +
     '</tbody></table>' +
-    '</div>' +
 
-    // Section Paiements +
-    '<div style="margin-bottom:20px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">💳 Répartition des paiements</div>' +
-    '<table><thead><tr><th>Mode</th><th style="text-align:right">Montant</th><th style="text-align:right">%</th></tr></thead><tbody>' +
-    '<tr><td>💳 CB</td><td style="text-align:right;">' + totalCB.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalCB/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
-    '<tr><td>💵 Espèces</td><td style="text-align:right;">' + totalEsp.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalEsp/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
-    '<tr><td>📄 Chèque</td><td style="text-align:right;">' + totalCheque.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalCheque/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
-    '<tr><td>🏦 Virement</td><td style="text-align:right;">' + totalVir.toFixed(2) + ' €</td><td style="text-align:right;color:var(--text-muted);">' + (totalTTC > 0 ? (totalVir/totalTTC*100).toFixed(1) : 0) + '%</td></tr>' +
+    sectionTitle('💳','Répartition des paiements','#2563eb') +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Mode</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">%</th></tr></thead><tbody>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">💳 CB</td><td style="padding:8px;text-align:right;">'+totalCB.toFixed(2)+' €</td><td style="padding:8px;text-align:right;color:#64748b;">'+(totalTTC>0?(totalCB/totalTTC*100).toFixed(1):0)+'%</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">💵 Espèces</td><td style="padding:8px;text-align:right;">'+totalEsp.toFixed(2)+' €</td><td style="padding:8px;text-align:right;color:#64748b;">'+(totalTTC>0?(totalEsp/totalTTC*100).toFixed(1):0)+'%</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">📄 Chèque</td><td style="padding:8px;text-align:right;">'+totalCheque.toFixed(2)+' €</td><td style="padding:8px;text-align:right;color:#64748b;">'+(totalTTC>0?(totalCheque/totalTTC*100).toFixed(1):0)+'%</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">🏦 Virement</td><td style="padding:8px;text-align:right;">'+totalVir.toFixed(2)+' €</td><td style="padding:8px;text-align:right;color:#64748b;">'+(totalTTC>0?(totalVir/totalTTC*100).toFixed(1):0)+'%</td></tr>' +
     '</tbody></table>' +
-    '</div>' +
 
-    // Section Caisse +
-    '<div style="margin-bottom:20px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">🏪 Suivi de caisse</div>' +
-    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Montant</th></tr></thead><tbody>' +
-    '<tr><td>Report début de mois</td><td style="text-align:right;">' + caisseDebut.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>+ Espèces encaissées</td><td style="text-align:right;">+ ' + totalEsp.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>- Dépôts espèces en banque</td><td style="text-align:right;color:var(--red);">- ' + totalDepotEsp.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>- Achats smartphones espèces</td><td style="text-align:right;color:var(--red);">- ' + totalAchatSmart.toFixed(2) + ' €</td></tr>' +
-    '<tr style="background:rgba(229,62,62,0.1)"><td style="font-weight:700">Caisse finale</td><td style="text-align:right;font-weight:800;font-size:16px;color:var(--red);">' + caisseFin.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>Chèques à déposer</td><td style="text-align:right;">' + (totalCheque - totalDepotCheque).toFixed(2) + ' €</td></tr>' +
+    sectionTitle('🏪','Suivi de caisse','#7c3aed') +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Désignation</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th></tr></thead><tbody>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Report début de mois</td><td style="padding:8px;text-align:right;">'+caisseDebut.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">+ Espèces encaissées</td><td style="padding:8px;text-align:right;">+ '+totalEsp.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;color:#c0392b;">- Dépôts espèces en banque</td><td style="padding:8px;text-align:right;color:#c0392b;">- '+totalDepotEsp.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;color:#c0392b;">- Achats smartphones (espèces)</td><td style="padding:8px;text-align:right;color:#c0392b;">- '+totalAchatSmart.toFixed(2)+' €</td></tr>' +
+    '<tr style="background:#fef2f2;"><td style="padding:8px;font-weight:800;">💰 Caisse finale</td><td style="padding:8px;text-align:right;font-weight:800;font-size:18px;color:#c0392b;">'+caisseFin.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Chèques à déposer</td><td style="padding:8px;text-align:right;">'+(totalCheque-totalDepotCheque).toFixed(2)+' €</td></tr>' +
     '</tbody></table>' +
+
+    sectionTitle('📅','Détail journalier','#475569') +
+    '<div style="overflow-x:auto;margin-bottom:24px;"><table style="width:100%;border-collapse:collapse;">' +
+    '<thead><tr>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Date</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">TTC</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">CB</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Espèces</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Chèque</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Virement</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">QualiRépar</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Caisse Fin.</th>' +
+    '</tr></thead><tbody>'+djRows+'</tbody></table></div>' +
+
+    sep +
+
+    // ════════════════════════════════════════════
+    // Z2 — SMARTPHONES OCCASION (TVA SUR MARGE)
+    // ════════════════════════════════════════════
+    '<div style="background:#eff6ff;border:2px solid #2563eb;border-radius:8px;padding:16px;margin-bottom:20px;">' +
+    '<div style="font-size:16px;font-weight:800;color:#2563eb;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📱 Z DE CAISSE N°2 — SMARTPHONES OCCASION</div>' +
+    '<div style="font-size:12px;color:#64748b;">TVA sur marge · Art. 297 A CGI · Régime de la marge bénéficiaire</div>' +
     '</div>' +
 
-    // Section Smartphones +
-    '<div style="margin-bottom:20px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📱 Smartphones</div>' +
-    '<table><thead><tr><th>Désignation</th><th style="text-align:right">Valeur</th></tr></thead><tbody>' +
-    '<tr><td>Smartphones achetés</td><td style="text-align:right;">' + phonesAchetes.length + ' tél. · ' + totalAchatSmart.toFixed(2) + ' €</td></tr>' +
-    '<tr><td>Smartphones vendus</td><td style="text-align:right;">' + phonesVendus.length + ' tél.</td></tr>' +
-    '<tr style="background:rgba(72,187,120,0.1)"><td style="font-weight:700;color:var(--green);">Marge smartphones</td><td style="text-align:right;font-weight:800;color:var(--green);">' + margeSmartphones.toFixed(2) + ' €</td></tr>' +
+    sectionTitle('📊','Calcul de la marge','#2563eb') +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Désignation</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th></tr></thead><tbody>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Total ventes TTC ('+phonesVendus.length+' tél.)</td><td style="padding:8px;text-align:right;font-weight:700;">'+totalVenteOcc.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;color:#c0392b;">- Total achats ('+phonesVendus.length+' tél. vendus)</td><td style="padding:8px;text-align:right;color:#c0392b;">- '+totalAchatOcc.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;background:#f0fdf4;"><td style="padding:8px;font-weight:700;color:#16a34a;">= Marge brute</td><td style="padding:8px;text-align:right;font-weight:800;font-size:18px;color:#16a34a;">'+margeOcc.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">TVA sur marge (20/120)</td><td style="padding:8px;text-align:right;font-weight:700;">'+tvaMargeOcc.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Marge HT</td><td style="padding:8px;text-align:right;">'+(margeOcc-tvaMargeOcc).toFixed(2)+' €</td></tr>' +
     '</tbody></table>' +
-    '</div>' +
 
-    // Section Achats espèces smartphones
-    (function(){
-      var achatsEsp = phones.filter(function(p){return p.dateAchat&&p.dateAchat.startsWith(mois)&&p.mode==='ESPECES';});
-      if(!achatsEsp.length) return '';
-      var totalEspSmarts = achatsEsp.reduce(function(s,p){return s+p.achat;},0);
-      var rows = achatsEsp.map(function(p){
-        var vendeur=p.typeAchat==='FOURNISSEUR'?'🏢 '+(p.fournisseur||'Fournisseur'):'👤 '+(p.vendeurNom||'—');
-        return '<tr><td>'+fmtDate(p.dateAchat)+'</td><td>'+vendeur+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px;color:var(--text-muted);">'+(p.imei||'—')+'</td><td style="text-align:right;font-weight:700;color:#ed8936;">'+p.achat.toFixed(2)+' €</td></tr>';
-      }).join('');
-      return '<div style="margin-bottom:20px;">'+
-        '<div style="font-size:13px;font-weight:700;color:#ed8936;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:2px solid #ed8936;padding-bottom:6px;">💵 Achats smartphones en espèces</div>'+
-        '<div style="overflow-x:auto;"><table><thead><tr>'+
-        '<th>Date</th><th>Vendeur / Fournisseur</th><th>Appareil</th><th>IMEI</th><th style="text-align:right">Montant espèces</th>'+
-        '</tr></thead><tbody>'+rows+
-        '<tr style="background:rgba(237,137,54,0.12)"><td colspan="4" style="font-weight:700;">TOTAL espèces sortantes</td>'+
-        '<td style="text-align:right;font-weight:800;font-size:16px;color:#ed8936;">'+totalEspSmarts.toFixed(2)+' €</td></tr>'+
-        '</tbody></table></div>'+
-        '</div>';
-    })() +
+    sectionTitle('💳','Encaissements smartphones','#2563eb') +
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;">Mode</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th></tr></thead><tbody>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">💳 CB</td><td style="padding:8px;text-align:right;">'+z2CB.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">💵 Espèces</td><td style="padding:8px;text-align:right;">'+z2Esp.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">📄 Chèque</td><td style="padding:8px;text-align:right;">'+z2Cheque.toFixed(2)+' €</td></tr>' +
+    '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">🏦 Virement</td><td style="padding:8px;text-align:right;">'+z2Vir.toFixed(2)+' €</td></tr>' +
+    '<tr style="background:#eff6ff;"><td style="padding:8px;font-weight:800;">TOTAL encaissé</td><td style="padding:8px;text-align:right;font-weight:800;font-size:16px;color:#2563eb;">'+totalVenteOcc.toFixed(2)+' €</td></tr>' +
+    '</tbody></table>' +
 
-    // Détail journalier +
-    '<div>' +
-    '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
-    (function(){
-      // Fusionner caisse + repDossiers pour couvrir les jours manquants
-      var map = {};
-      data.forEach(function(c){ map[c.date] = JSON.parse(JSON.stringify(c)); });
-      var sourceDossiers = (repDossiers && repDossiers.length > 0) ? repDossiers : bonsDepot;
-      sourceDossiers.forEach(function(d){
-        if(!d.facture) return;
-        var df = (d.facture.date||d.date||'').substring(0,10);
-        if(!df.startsWith(mois)) return;
-        if(!map[df]){ map[df]={date:df,ttc:0,cb:0,especes:0,cheque:0,virement:0,quali:0}; }
-      });
-      var rows = Object.keys(map).sort().map(function(date){
-        var c = map[date];
-        var fin = finales[caisse.indexOf(caisse.find(function(x){return x.date===date;}))] || 0;
-        return '<tr><td>'+fmtDate(date)+'</td><td><b>'+(c.ttc||0).toFixed(2)+' €</b></td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+(c.quali).toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin.toFixed(2)+' €</b></td></tr>';
-      }).join('');
-      return '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
-    })() +
-    '</div>' +
+    sectionTitle('📋','Détail des ventes','#475569') +
+    '<div style="overflow-x:auto;margin-bottom:20px;"><table style="width:100%;border-collapse:collapse;">' +
+    '<thead><tr>' +
+    '<th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Date vente</th>' +
+    '<th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Appareil</th>' +
+    '<th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">IMEI</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Achat</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Vente</th>' +
+    '<th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Marge</th>' +
+    '<th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Mode</th>' +
+    '</tr></thead><tbody>' +
+    phonesVendus.map(function(p){
+      var marge = (p.vente||0)-(p.achat||0);
+      var mc = marge>=0?'#16a34a':'#c0392b';
+      return '<tr style="border-bottom:1px solid #eee;">'+
+        '<td style="padding:8px;">'+fmtDate(p.dateVente)+'</td>'+
+        '<td style="padding:8px;font-weight:600;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td>'+
+        '<td style="padding:8px;font-size:11px;color:#64748b;">'+(p.imei||'—')+'</td>'+
+        '<td style="padding:8px;text-align:right;color:#c0392b;">'+(p.achat||0).toFixed(2)+' €</td>'+
+        '<td style="padding:8px;text-align:right;font-weight:700;">'+(p.vente||0).toFixed(2)+' €</td>'+
+        '<td style="padding:8px;text-align:right;font-weight:700;color:'+mc+';">'+marge.toFixed(2)+' €</td>'+
+        '<td style="padding:8px;"><span style="background:#3b82f6;color:#fff;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:700;">'+(p.modeVente||p.mode||'CB').toUpperCase()+'</span></td>'+
+        '</tr>';
+    }).join('') +
+    '<tr style="background:#eff6ff;font-weight:800;">'+
+    '<td style="padding:8px;" colspan="3">TOTAL ('+phonesVendus.length+' téléphones)</td>'+
+    '<td style="padding:8px;text-align:right;color:#c0392b;">'+totalAchatOcc.toFixed(2)+' €</td>'+
+    '<td style="padding:8px;text-align:right;">'+totalVenteOcc.toFixed(2)+' €</td>'+
+    '<td style="padding:8px;text-align:right;color:#16a34a;">'+margeOcc.toFixed(2)+' €</td>'+
+    '<td></td></tr>' +
+    '</tbody></table></div>' +
 
-    '<div style="margin-top:20px;padding:12px;background:#f8fafc;border-radius:8px;font-size:12px;color:var(--text-muted);text-align:center;">Document généré le ' + new Date().toLocaleDateString('fr-FR') + ' · Solution Phone · TVA sur marge Art. 297 CGI</div>' +
-    '</div>' +
-    '</div>';
+    (achatsEsp.length > 0 ?
+    sectionTitle('💵','Achats espèces du mois (sorties de caisse)','#d97706') +
+    '<div style="overflow-x:auto;margin-bottom:20px;"><table style="width:100%;border-collapse:collapse;">' +
+    '<thead><tr><th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Date achat</th><th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Vendeur</th><th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">Appareil</th><th style="background:#f5f5f5;padding:8px;border-bottom:2px solid #ddd;">IMEI</th><th style="background:#f5f5f5;padding:8px;text-align:right;border-bottom:2px solid #ddd;">Montant</th></tr></thead><tbody>' +
+    achatsEsp.map(function(p){
+      var vendeur = p.typeAchat==='FOURNISSEUR'?'🏢 '+(p.fournisseur||'Fournisseur'):'👤 '+(p.vendeurNom||'—');
+      return '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">'+fmtDate(p.dateAchat)+'</td><td style="padding:8px;">'+vendeur+'</td><td style="padding:8px;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="padding:8px;font-size:11px;color:#64748b;">'+(p.imei||'—')+'</td><td style="padding:8px;text-align:right;font-weight:700;color:#d97706;">'+(p.achat||0).toFixed(2)+' €</td></tr>';
+    }).join('') +
+    '<tr style="background:#fffbeb;font-weight:800;"><td style="padding:8px;" colspan="4">TOTAL espèces sortantes</td><td style="padding:8px;text-align:right;font-size:16px;color:#d97706;">'+totalEspAchats.toFixed(2)+' €</td></tr>' +
+    '</tbody></table></div>'
+    : '') +
+
+    '<div style="margin-top:20px;padding:12px;background:#f8fafc;border-radius:8px;font-size:11px;color:#64748b;text-align:center;">Document généré le '+new Date().toLocaleDateString('fr-FR')+' à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' · Solution Phone · SIRET 801044785 00021</div>' +
+    '</div></div>';
 
   document.getElementById('comptable-content').innerHTML = html;
 }
