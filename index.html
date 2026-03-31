@@ -7408,12 +7408,24 @@ function renderComptable() {
     // Détail journalier +
     '<div>' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
-    '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
-    data.map(function(c,i) {
-      var fin = finales[caisse.indexOf(c)] || 0;
-      return '<tr><td>' + fmtDate(c.date) + '</td><td><b>' + c.ttc.toFixed(2) + ' €</b></td><td>' + (c.cb||0).toFixed(2) + ' €</td><td>' + (c.especes||0).toFixed(2) + ' €</td><td>' + (c.cheque||0).toFixed(2) + ' €</td><td>' + (c.virement||0).toFixed(2) + ' €</td><td>' + ((c.quali||0)>0?'<span style="color:var(--green)">'+(c.quali).toFixed(2)+' €</span>':'—') + '</td><td><b>' + fin.toFixed(2) + ' €</b></td></tr>';
-    }).join('') +
-    '</tbody></table></div>' +
+    (function(){
+      // Fusionner caisse + repDossiers pour couvrir les jours manquants
+      var map = {};
+      data.forEach(function(c){ map[c.date] = JSON.parse(JSON.stringify(c)); });
+      var sourceDossiers = (repDossiers && repDossiers.length > 0) ? repDossiers : bonsDepot;
+      sourceDossiers.forEach(function(d){
+        if(!d.facture) return;
+        var df = (d.facture.date||d.date||'').substring(0,10);
+        if(!df.startsWith(mois)) return;
+        if(!map[df]){ map[df]={date:df,ttc:0,cb:0,especes:0,cheque:0,virement:0,quali:0}; }
+      });
+      var rows = Object.keys(map).sort().map(function(date){
+        var c = map[date];
+        var fin = finales[caisse.indexOf(caisse.find(function(x){return x.date===date;}))] || 0;
+        return '<tr><td>'+fmtDate(date)+'</td><td><b>'+(c.ttc||0).toFixed(2)+' €</b></td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+(c.quali).toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin.toFixed(2)+' €</b></td></tr>';
+      }).join('');
+      return '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    })() +
     '</div>' +
 
     '<div style="margin-top:20px;padding:12px;background:#f8fafc;border-radius:8px;font-size:12px;color:var(--text-muted);text-align:center;">Document généré le ' + new Date().toLocaleDateString('fr-FR') + ' · Solution Phone · TVA sur marge Art. 297 CGI</div>' +
@@ -7433,10 +7445,15 @@ function printComptable() {
     'th{background:#f5f5f5;padding:8px;text-align:left;font-size:11px;text-transform:uppercase;border-bottom:2px solid #ddd;}' +
     'td{padding:8px;border-bottom:1px solid #eee;}' +
     '.red{color:#e53e3e;}.green{color:#48bb78;}' +
-    '@media print{body{padding:15px;}@page{margin:1cm;}}' +
+    '.no-print{display:flex;gap:10px;margin-bottom:20px;}' +
+    '@media print{.no-print{display:none;}body{padding:15px;}@page{margin:1cm;}}' +
     '</style></head><body>' +
+    '<div class="no-print">' +
+    '<button onclick="window.print()" style="padding:10px 24px;background:#c0392b;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>' +
+    '<button onclick="window.close()" style="padding:10px 24px;background:#64748b;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">✖ Fermer</button>' +
+    '</div>' +
     content.innerHTML +
-    '<script>window.onload=function(){window.print();}<\/script></body></html>');
+    '</body></html>');
   w.document.close();
 }
 
