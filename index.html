@@ -4275,8 +4275,9 @@ function renderCaisseJour(){
   });
 
   // Calculer les totaux du jour
-  var totJour = {total:0, cb:0, especes:0, cheque:0, virement:0, quali:0, nb:txJour.length};
+  var totJour = {total:0, cb:0, especes:0, cheque:0, virement:0, quali:0, smartphones:0, nb:txJour.length};
   txJour.forEach(function(tx){
+    if(tx.type === 'vente'){ totJour.smartphones += tx.montant; return; }
     totJour.total    += tx.montant;
     totJour.quali    += tx.quali;
     var m = (tx.mode||'CB').toUpperCase();
@@ -4292,6 +4293,7 @@ function renderCaisseJour(){
     var cards = [
       {label:'CA TTC du jour', value: totJour.total.toFixed(2)+' €', color:'var(--primary)', icon:'💰'},
       {label:'CA HT', value: (totJour.total/1.2).toFixed(2)+' €', color:'var(--text)', icon:'📊'},
+      {label:'Smartphones (marge)', value: totJour.smartphones.toFixed(2)+' €', color:'#f59e0b', icon:'📱'},
       {label:'💳 CB', value: totJour.cb.toFixed(2)+' €', color:'var(--blue)', icon:''},
       {label:'💵 Espèces', value: totJour.especes.toFixed(2)+' €', color:'var(--green)', icon:''},
       {label:'📄 Chèque', value: totJour.cheque.toFixed(2)+' €', color:'var(--warning)', icon:''},
