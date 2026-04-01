@@ -1048,6 +1048,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-caisse')">➕ Ajouter</button>
             <button class="btn btn-sm" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
+            <select id="caisse-archive-mois" onchange="chargerCaisseArchive(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;">
+              <option value="">📁 Voir un mois archivé...</option>
+            </select>
             <button class="btn btn-sm" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-import').click()">📂 Import Phonilab CSV</button>
             <input type="file" id="phonilab-import" accept=".csv" style="display:none" onchange="importPhonilabToCaisse(this)">
           </div>
@@ -3305,7 +3308,7 @@ function initRealtime() {
   setInterval(async function() {
     if (!supabaseReady) return;
     try {
-      var c = await supaFetch('caisse','GET',null,'?order=date.asc');
+      var c = await supaFetch('caisse','GET',null,'?cloture=is.false&order=date.asc');
       if (c) {
         caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
         renderCaisse();
@@ -3326,7 +3329,7 @@ async function loadFromSupabase() {
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
       supaFetch('factures','GET',null,'?order=id.desc&limit=200'),
-      supaFetch('caisse','GET',null,'?order=date.asc'),
+      supaFetch('caisse','GET',null,'?cloture=is.false&order=date.asc'),
       supaFetch('reports_mois','GET',null,'')
     ]);
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
@@ -3591,7 +3594,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
-  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); }
+  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); if(supabaseReady) initCaisseArchiveSelect(); }
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
@@ -3625,23 +3628,74 @@ function getMoisActuel(){if(!caisse.length){var n=new Date();return n.getFullYea
 function getReport(mois){var p=mois.split('-');var y=parseInt(p[0]),m=parseInt(p[1]);var mp=m===1?12:m-1;var yp=m===1?y-1:y;return reportsMois[yp+'-'+String(mp).padStart(2,'0')]||0;}
 function calcFinales(){var cc=getReport(getMoisActuel());return caisse.map(function(c){cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));return cc;});}
 
+
+// ══════════════════════════════════════════════════════
+// CAISSE ARCHIVÉE — consultation des mois clôturés
+// ══════════════════════════════════════════════════════
+
+async function initCaisseArchiveSelect(){
+  // Charger les mois distincts archivés
+  try {
+    var res = await supaFetch('caisse','GET',null,'?cloture=eq.true&select=date&order=date.desc');
+    if(!res || !res.length) return;
+    var mois = [...new Set(res.map(function(r){ return r.date.substring(0,7); }))];
+    var sel = document.getElementById('caisse-archive-mois');
+    if(!sel) return;
+    var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    mois.forEach(function(m){
+      var parts = m.split('-');
+      var label = moisNoms[parseInt(parts[1])-1]+' '+parts[0];
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = '📁 '+label;
+      sel.appendChild(opt);
+    });
+  } catch(e){ console.log('archive select:', e); }
+}
+
+async function chargerCaisseArchive(mois){
+  if(!mois){ renderCaisse(); return; }
+  var res = await supaFetch('caisse','GET',null,'?cloture=eq.true&date=like.'+mois+'*&order=date.asc');
+  if(!res || !res.length){ showNotif('Aucune donnée archivée pour ce mois','info'); return; }
+  // Afficher dans le tableau existant
+  var fin = []; var cumul = getReport(mois); 
+  res.forEach(function(c){ cumul += c.ttc; fin.push(cumul); });
+  var moisNoms = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var parts = mois.split('-');
+  var label = moisNoms[parseInt(parts[1])]+' '+parts[0];
+  // Totaux
+  var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
+  res.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb||0;tot.esp+=c.especes||0;tot.ch+=c.cheque||0;tot.vir+=c.virement||0;tot.quali+=c.quali||0;tot.dEsp+=c.depotEsp||0;tot.dCh+=c.depotCheque||0;tot.aS+=c.achatSmart||0;});
+  document.getElementById('caisse-totaux').innerHTML =
+    '<div class="caisse-card" style="background:#fef2f2;"><div class="caisse-label">📁 '+label+' (archivé)</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
+    '<div class="caisse-card"><div class="caisse-label">CA HT</div><div class="caisse-value">'+(tot.ttc/1.2).toFixed(2)+' €</div></div>'+
+    '<div class="caisse-card"><div class="caisse-label">CB</div><div class="caisse-value">'+tot.cb.toFixed(2)+' €</div></div>'+
+    '<div class="caisse-card"><div class="caisse-label">Espèces</div><div class="caisse-value">'+tot.esp.toFixed(2)+' €</div></div>'+
+    '<div class="caisse-card"><div class="caisse-label">QualiRépar</div><div class="caisse-value" style="color:var(--green)">'+tot.quali.toFixed(2)+' €</div></div>';
+  document.getElementById('caisse-table').innerHTML = res.map(function(c,i){
+    var ttc=c.ttc, ht=(ttc/1.2).toFixed(2), tva=(ttc-ttc/1.2).toFixed(2);
+    return '<tr style="background:#fff9f9;"><td>'+fmtDate(c.date)+'</td><td><b>'+ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?c.quali.toFixed(2)+' €':'—')+'</td><td>'+fin[i].toFixed(2)+' €</td><td><span style="font-size:11px;color:var(--text-muted);">🔒 archivé</span></td></tr>';
+  }).join('');
+  showNotif('📁 Données archivées de '+label+' chargées','success');
+}
+
 function cloturerMois(){
   if(!caisse.length){showNotif('Aucune donnée','error');return;}
   var mois=getMoisActuel();
-  if(!confirm('Clôturer le mois '+mois+' ? Les données seront archivées et le mois suivant commencera.')) return;
+  if(!confirm('Clôturer le mois '+mois+' ?\nLes données seront archivées et resteront consultables dans l\'historique mensuel.')) return;
   var fin=calcFinales();
   reportsMois[mois]=fin[fin.length-1];
   // Sauvegarder le report
   if(supabaseReady) supaFetch('reports_mois','POST',{mois:mois,montant:reportsMois[mois]});
-  // Supprimer toutes les lignes du mois clôturé dans Supabase
+  // Marquer chaque ligne comme clôturée dans Supabase (archivage)
   if(supabaseReady){
     caisse.forEach(function(c){
-      supaFetch('caisse','DELETE',null,'?date=eq.'+c.date);
+      supaFetch('caisse','PATCH',{cloture:true},'?date=eq.'+c.date);
     });
   }
+  // Retirer les lignes clôturées de la vue courante
   caisse=[];
   renderCaisse();
-  showNotif('✅ Mois '+mois+' clôturé ! Report : '+reportsMois[mois].toFixed(2)+' €','success');
+  showNotif('✅ Mois '+mois+' archivé ! Report : '+reportsMois[mois].toFixed(2)+' €','success');
 }
 
 function updateCaisseCalc(){var t=parseFloat(document.getElementById('c-ttc').value)||0;document.getElementById('c-ht').value=(t/1.2).toFixed(2)+' €';document.getElementById('c-tva').value=(t-t/1.2).toFixed(2)+' €';}
