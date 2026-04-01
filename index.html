@@ -1029,13 +1029,19 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
         </div>
 
-        <!-- Z de caisse -->
+        <!-- Z REPARATIONS -->
         <div class="card" style="border:2px solid var(--primary);">
-          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🔒 Z de Caisse</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">🔒 Z de Caisse — Réparations</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">TVA 20%</div>
           <div id="caisse-z-recap" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;"></div>
-          <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">
-            🔒 Clôturer et imprimer le Z de caisse
-          </button>
+          <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">🔒 Z Caisse Réparations</button>
+        </div>
+        <!-- Z SMARTPHONES -->
+        <div class="card" id="caisse-z-smart-block" style="border:2px solid #8b5cf6;display:none;margin-top:12px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:#8b5cf6;">📱 Z de Caisse — Smartphones</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">TVA sur marge · Art.297A CGI</div>
+          <div id="caisse-z-smart-recap" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;"></div>
+          <button onclick="genererZCaisseSmartphones()" style="width:100%;padding:14px;font-size:15px;font-weight:700;background:#8b5cf6;color:#fff;border:none;border-radius:8px;cursor:pointer;">🔒 Z Caisse Smartphones</button>
         </div>
       </div>
 
@@ -3624,7 +3630,7 @@ function showPage(id,el){
   if(id==='ventes-smart')renderVentesSmartphones();
 }
 
-function getMoisActuel(){if(!caisse.length){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}return caisse[0].date.substring(0,7);}
+function getMoisActuel(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
 function getReport(mois){var p=mois.split('-');var y=parseInt(p[0]),m=parseInt(p[1]);var mp=m===1?12:m-1;var yp=m===1?y-1:y;return reportsMois[yp+'-'+String(mp).padStart(2,'0')]||0;}
 function calcFinales(){var cc=getReport(getMoisActuel());return caisse.map(function(c){cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));return cc;});}
 
@@ -4340,8 +4346,10 @@ function renderCaisseJour(){
   });
 
   // Calculer les totaux du jour
-  var totJour = {total:0, cb:0, especes:0, cheque:0, virement:0, quali:0, nb:txJour.length};
-  txJour.forEach(function(tx){
+  var txRep=txJour.filter(function(tx){return tx.type==='reparation';});
+  var txSmart=txJour.filter(function(tx){return tx.type==='vente';});
+  var totJour={total:0,cb:0,especes:0,cheque:0,virement:0,quali:0,nb:txRep.length};
+  txRep.forEach(function(tx){
     totJour.total    += tx.montant;
     totJour.quali    += tx.quali;
     var m = (tx.mode||'CB').toUpperCase();
@@ -4399,17 +4407,50 @@ function renderCaisseJour(){
   // Recap Z de caisse
   var zDiv = document.getElementById('caisse-z-recap');
   if(zDiv){
-    zDiv.innerHTML = '<b>'+txJour.length+' transaction(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
+    zDiv.innerHTML = '<b>'+totJour.nb+' réparation(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
       'CB : '+totJour.cb.toFixed(2)+' € · Espèces : '+totJour.especes.toFixed(2)+' € · '+
       'Chèque : '+totJour.cheque.toFixed(2)+' € · Virement : '+totJour.virement.toFixed(2)+' €'+
       (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '');
   }
 
   // Stocker pour le Z de caisse
-  transactions = txJour;
-  window._caisseJourTotaux = totJour;
+  var totSmart={total:0,cb:0,especes:0,cheque:0,virement:0,nb:txSmart.length};
+  txSmart.forEach(function(tx){totSmart.total+=tx.montant;var m=(tx.mode||'CB').toUpperCase();if(m==='CB')totSmart.cb+=tx.montant;else if(m==='ESPECES')totSmart.especes+=tx.montant;else if(m==='CHEQUE')totSmart.cheque+=tx.montant;else if(m==='VIREMENT')totSmart.virement+=tx.montant;});
+  transactions=txRep;window._caisseJourTotaux=totJour;window._smartJourTotaux=totSmart;window._txSmart=txSmart;
+  var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.style.display=totSmart.nb>0?'block':'none';
+  var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.innerHTML='<b>'+totSmart.nb+' vente(s) smartphone</b> · Total : <b>'+totSmart.total.toFixed(2)+' €</b> · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' €';}
 }
 
+function genererZCaisseSmartphones(){
+  var tot=window._smartJourTotaux||{total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
+  var txS=window._txSmart||[];
+  if(!tot.nb){showNotif("Aucune vente smartphone aujourd’hui","error");return;}
+  var dateStr=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  var heureStr=new Date().toLocaleTimeString("fr-FR");
+  var html="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Z Smartphones</title>"+
+  "<style>*{margin:0;padding:0;}body{font-family:\"Courier New\",monospace;font-size:12px;width:80mm;padding:4mm;}"+
+  ".center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}.row{display:flex;justify-content:space-between;padding:2px 0;}"+
+  "@media print{@page{size:80mm auto;margin:0;}}</style></head><body>"+
+  "<p style=\"padding:4px;margin-bottom:8px;\"><button onclick=\"window.print()\" style=\"width:100%;padding:8px;background:#8b5cf6;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;\">Imprimer</button></p>"+
+  "<div class=\"center bold\" style=\"font-size:14px;\">SOLUTION PHONE</div>"+
+  "<div class=\"center\">21 Rue Gambetta — Mâcon 71000</div>"+
+  "<div class=\"line\"></div>"+
+  "<div class=\"center bold\">Z CAISSE — SMARTPHONES OCCASION</div>"+
+  "<div class=\"center\" style=\"font-size:10px;\">TVA sur marge — Art. 297A CGI</div>"+
+  "<div class=\"center\">"+dateStr+"</div>"+
+  "<div class=\"line\"></div>";
+  txS.forEach(function(tx){html+="<div class=\"row\"><span>"+(tx.desc||"").substring(0,30)+"</span><span>"+tx.montant.toFixed(2)+" €</span></div><div style=\"font-size:10px;color:#666;\">"+tx.mode+"</div>";});
+  html+="<div class=\"line\"></div>"+
+  "<div class=\"row bold\"><span>TOTAL</span><span>"+tot.total.toFixed(2)+" €</span></div>"+
+  "<div class=\"row\"><span>CB</span><span>"+tot.cb.toFixed(2)+" €</span></div>"+
+  "<div class=\"row\"><span>Espèces</span><span>"+tot.especes.toFixed(2)+" €</span></div>"+
+  "<div class=\"row\"><span>Chèque</span><span>"+tot.cheque.toFixed(2)+" €</span></div>"+
+  "<div class=\"row\"><span>Virement</span><span>"+tot.virement.toFixed(2)+" €</span></div>"+
+  "<div class=\"line\"></div>"+
+  "<div class=\"center\" style=\"font-size:9px;\">NF525 Logiciel certifié</div>"+
+  "</body></html>";
+  var w=window.open("","_blank","width=400,height=600");w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);
+}
 function genererZCaisse(){
   renderCaisseJour();
   var today = new Date().toISOString().split('T')[0];
