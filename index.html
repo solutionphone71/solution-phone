@@ -3312,7 +3312,7 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,modeVente:x.mode_vente||null,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
         renderPhones(); renderDashboard();
       }
     } catch(e) { console.log('Sync error:', e); }
@@ -3330,7 +3330,7 @@ async function loadFromSupabase() {
       supaFetch('reports_mois','GET',null,'')
     ]);
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
-    if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,modeVente:x.mode_vente||null,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
+    if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
@@ -3349,7 +3349,7 @@ async function loadFromSupabase() {
 
 async function savePhone(phone) {
   if(!supabaseReady) return;
-  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,mode_vente:phone.modeVente||null,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
+  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
   if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
   else{var res=await supaFetch('phones','POST',data);if(res&&res[0]){phone.supaId=res[0].id;phone.id=res[0].id;}}
 }
@@ -7320,7 +7320,7 @@ function renderComptable() {
   // Paiements smartphones vendus
   var z2CB = 0, z2Esp = 0, z2Cheque = 0, z2Vir = 0;
   phonesVendus.forEach(function(p){
-    var m = (p.modeVente||'CB').toUpperCase();
+    var m = (p.modeVente||p.mode||'CB').toUpperCase();
     var v = p.vente||0;
     if(m==='CB')       z2CB     += v;
     else if(m==='ESPECES') z2Esp += v;
@@ -7345,19 +7345,6 @@ function renderComptable() {
   // ── Détail journalier (fusion caisse + repDossiers) ──
   var djMap = {};
   data.forEach(function(c){ djMap[c.date] = JSON.parse(JSON.stringify(c)); });
-  // Soustraire les ventes smartphones de chaque jour (elles sont dans Z2)
-  phonesVendus.forEach(function(p){
-    var dv = (p.dateVente||'').substring(0,10);
-    if(djMap[dv]){
-      var mv = p.vente||0;
-      var mm = (p.modeVente||'CB').toUpperCase();
-      djMap[dv].ttc = Math.max(0,(djMap[dv].ttc||0)-mv);
-      if(mm==='CB')        djMap[dv].cb       = Math.max(0,(djMap[dv].cb||0)-mv);
-      else if(mm==='ESPECES') djMap[dv].especes = Math.max(0,(djMap[dv].especes||0)-mv);
-      else if(mm==='CHEQUE')  djMap[dv].cheque  = Math.max(0,(djMap[dv].cheque||0)-mv);
-      else if(mm==='VIREMENT') djMap[dv].virement= Math.max(0,(djMap[dv].virement||0)-mv);
-    }
-  });
   var srcDossiers = (repDossiers&&repDossiers.length>0)?repDossiers:bonsDepot;
   srcDossiers.forEach(function(d){
     if(!d.facture) return;
@@ -7486,7 +7473,7 @@ function renderComptable() {
         '<td style="padding:8px;text-align:right;color:#c0392b;">'+(p.achat||0).toFixed(2)+' €</td>'+
         '<td style="padding:8px;text-align:right;font-weight:700;">'+(p.vente||0).toFixed(2)+' €</td>'+
         '<td style="padding:8px;text-align:right;font-weight:700;color:'+mc+';">'+marge.toFixed(2)+' €</td>'+
-        '<td style="padding:8px;"><span style="background:#3b82f6;color:#fff;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:700;">'+(p.modeVente||'CB').toUpperCase()+'</span></td>'+
+        '<td style="padding:8px;"><span style="background:#3b82f6;color:#fff;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:700;">'+(p.modeVente||p.mode||'CB').toUpperCase()+'</span></td>'+
         '</tr>';
     }).join('') +
     '<tr style="background:#eff6ff;font-weight:800;">'+
