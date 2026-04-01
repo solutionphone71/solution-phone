@@ -7602,6 +7602,16 @@ function initComptaMoisSelect(){
 
 function renderComptable() {
   var mois = document.getElementById('compta-mois').value;
+  if(!mois) mois = getMoisActuel();
+  // S'assurer que l'option existe dans le select
+  var sel = document.getElementById('compta-mois');
+  if(sel && !Array.from(sel.options).find(function(o){return o.value===mois;})){
+    var moisNoms2 = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    var pp = mois.split('-');
+    var opt = document.createElement('option');
+    opt.value = mois; opt.textContent = '📅 '+moisNoms2[parseInt(pp[1])-1]+' '+pp[0]+' (actuel)';
+    opt.selected = true; sel.insertBefore(opt, sel.firstChild);
+  }
   var data = caisse.filter(function(c) { return c.date.startsWith(mois); });
   
   // Totaux CA
