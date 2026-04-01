@@ -3307,7 +3307,7 @@ function initRealtime() {
     try {
       var c = await supaFetch('caisse','GET',null,'?order=date.asc');
       if (c) {
-        caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
+        caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart),smartVente:Number(x.smart_vente||0)};});;
         renderCaisse();
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
@@ -3332,7 +3332,7 @@ async function loadFromSupabase() {
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
     if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,modeVente:x.mode_vente||null,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
-    if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
+    if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart),smartVente:Number(x.smart_vente||0)};});;
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
     if(cl) clients = cl.map(function(x){
       var nomComplet = '';
@@ -3356,7 +3356,7 @@ async function savePhone(phone) {
 
 async function saveCaisseRow(row) {
   if(!supabaseReady) return;
-  var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart};
+  var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart,smart_vente:row.smartVente||0};
   var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
   if(ex&&ex.length>0){await supaFetch('caisse','PATCH',data,'?date=eq.'+row.date);}
   else{await supaFetch('caisse','POST',data);}
@@ -4726,12 +4726,17 @@ async function alimenterCaisse(opts){
   }
 
   // Ajouter les montants
-  entry.ttc += ttc;
-  if(mode === 'CB')        entry.cb       += ttc;
-  if(mode === 'ESPECES')   entry.especes  += ttc;
-  if(mode === 'CHEQUE')    entry.cheque   += ttc;
-  if(mode === 'VIREMENT')  entry.virement += ttc;
-  if(quali > 0)            entry.quali    += quali;
+  if(opts.source === 'smartphone'){
+    // TVA sur marge — stocker séparément, PAS dans ttc/cb/especes
+    entry.smartVente = Math.round(((entry.smartVente||0) + ttc)*100)/100;
+  } else {
+    entry.ttc += ttc;
+    if(mode === 'CB')        entry.cb       += ttc;
+    if(mode === 'ESPECES')   entry.especes  += ttc;
+    if(mode === 'CHEQUE')    entry.cheque   += ttc;
+    if(mode === 'VIREMENT')  entry.virement += ttc;
+    if(quali > 0)            entry.quali    += quali;
+  }
 
   // Arrondir
   ['ttc','cb','especes','cheque','virement','quali'].forEach(function(k){
@@ -4769,13 +4774,13 @@ function caisseFromFactureRep(facture, client, mode, bonusQR){
 
 // Appelée quand une vente téléphone/accessoire est enregistrée
 function caisseFromVente(opts){
-  // opts = { prixTTC, mode, description, date }
+  // opts = { prixTTC, mode, description, date, isSmartphone }
   return alimenterCaisse({
     date:        opts.date || new Date().toISOString().split('T')[0],
     ttc:         opts.prixTTC || 0,
     mode:        opts.mode || 'CB',
     quali:       0,
-    source:      'vente',
+    source:      opts.isSmartphone ? 'smartphone' : 'vente',
     description: opts.description || 'Vente'
   });
 }
@@ -5817,7 +5822,8 @@ function marquerVendu(id){
     prixTTC: p.vente,
     mode: mode,
     date: p.dateVente,
-    description: 'Vente '+p.modele+' IMEI '+p.imei
+    description: 'Vente '+p.modele+' IMEI '+p.imei,
+    isSmartphone: true
   });
   renderPhones();
   renderDashboard();
