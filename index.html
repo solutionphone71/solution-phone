@@ -3334,7 +3334,7 @@ async function supaFetch(table, method, body, query) {
   } catch(e) { console.error(e); return null; }
 }
 
-var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':907.60};
+var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':907.60,'2026-03':624.00};
 var supabaseReady = false;
 var realtimeChannel = null;
 
@@ -7736,10 +7736,14 @@ function renderComptable() {
     '<div>' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
     '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
-    data.map(function(c,i) {
-      var fin = finales[caisse.indexOf(c)] || 0;
-      return '<tr><td>' + fmtDate(c.date) + '</td><td><b>' + c.ttc.toFixed(2) + ' €</b></td><td>' + (c.cb||0).toFixed(2) + ' €</td><td>' + (c.especes||0).toFixed(2) + ' €</td><td>' + (c.cheque||0).toFixed(2) + ' €</td><td>' + (c.virement||0).toFixed(2) + ' €</td><td>' + ((c.quali||0)>0?'<span style="color:var(--green)">'+(c.quali).toFixed(2)+' €</span>':'—') + '</td><td><b>' + fin.toFixed(2) + ' €</b></td></tr>';
-    }).join('') +
+    (function(){
+      var runCaisse = caisseDebut;
+      return data.map(function(row){
+        runCaisse += (Number(row.especes)||0) - (Number(row.depotEsp)||0);
+        // achatSmart soustrait uniquement sur la dernière ligne (déjà dans caisseFin)
+        return '<tr><td>'+fmtDate(row.date)+'</td><td><b>'+(row.ttc||0).toFixed(2)+' €</b></td><td>'+(row.cb||0).toFixed(2)+' €</td><td>'+(row.especes||0).toFixed(2)+' €</td><td>'+(row.cheque||0).toFixed(2)+' €</td><td>'+(row.virement||0).toFixed(2)+' €</td><td>'+((row.quali||0)>0?'<span style="color:var(--green)">'+(row.quali||0).toFixed(2)+' €</span>':'—')+'</td><td><b>'+runCaisse.toFixed(2)+' €</b></td></tr>';
+      }).join('');
+    })() +
     '</tbody></table></div>' +
     '</div>' +
 
