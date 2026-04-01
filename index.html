@@ -3371,6 +3371,8 @@ async function loadFromSupabase() {
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc)||0,cb:Number(x.cb)||0,especes:Number(x.especes)||0,cheque:Number(x.cheque)||0,virement:Number(x.virement)||0,quali:Number(x.quali)||0,depotEsp:Number(x.depot_esp)||0,depotCheque:Number(x.depot_cheque)||0,achatSmart:Number(x.achat_smart)||0};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
+    // Auto-clôture : calculer le report du mois précédent si pas encore fait
+    setTimeout(autoCalculerReportMoisPrecedent, 1000);
     if(cl) clients = cl.map(function(x){
       var nomComplet = '';
       if(x.prenom && x.nom) nomComplet = (x.prenom+' '+x.nom).trim();
@@ -3735,28 +3737,75 @@ async function chargerCaisseArchive(mois){
   showNotif('📁 Données archivées de '+label+' chargées','success');
 }
 
-function cloturerMois(){
-  if(!caisse.length){showNotif('Aucune donnée','error');return;}
-  var mois=getMoisActuel();
-  if(!confirm('Clôturer le mois '+mois+' ?\nLes données seront archivées et resteront consultables dans l\'historique mensuel.')) return;
-  var fin=calcFinales();
-  reportsMois[mois]=fin[fin.length-1];
-  // Sauvegarder le report
-  if(supabaseReady) supaFetch('reports_mois','POST',{mois:mois,montant:reportsMois[mois]});
-  // Sauvegarder le mois clôturé en localStorage pour l'historique
-  var moisClotures = JSON.parse(localStorage.getItem('sp_mois_clotures')||'[]');
-  if(!moisClotures.includes(mois)) moisClotures.unshift(mois);
-  localStorage.setItem('sp_mois_clotures', JSON.stringify(moisClotures));
-  // Marquer chaque ligne comme clôturée dans Supabase (archivage)
+function autoCalculerReportMoisPrecedent(){
+  var moisActuel = getMoisActuel();
+  var parts = moisActuel.split('-');
+  var y = parseInt(parts[0]), m = parseInt(parts[1]);
+  var mp = m===1?12:m-1, yp = m===1?y-1:y;
+  var moisPrec = yp+'-'+String(mp).padStart(2,'0');
+
+  // Si le report du mois précédent est déjà calculé → rien à faire
+  if(reportsMois[moisPrec] !== undefined) return;
+
+  // Chercher les données du mois précédent dans caisse[]
+  var caissePre = caisse.filter(function(r){ return r.date.substring(0,7)===moisPrec; });
+  if(!caissePre.length) return;
+
+  // Calculer la caisse finale du mois précédent
+  var reportAvant = getReport(moisPrec); // report du mois d'avant
+  var finalePre = reportAvant;
+  caissePre.forEach(function(r){
+    finalePre += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (Number(r.achatSmart)||0);
+  });
+
+  // Enregistrer le report
+  reportsMois[moisPrec] = Math.round(finalePre*100)/100;
   if(supabaseReady){
-    caisse.forEach(function(c){
-      supaFetch('caisse','PATCH',{cloture:true},'?date=eq.'+c.date);
+    supaFetch('reports_mois','POST',{mois:moisPrec, montant:reportsMois[moisPrec]});
+  }
+  // Sauvegarder en localStorage
+  var moisClotures = JSON.parse(localStorage.getItem('sp_mois_clotures')||'[]');
+  if(!moisClotures.includes(moisPrec)) moisClotures.unshift(moisPrec);
+  localStorage.setItem('sp_mois_clotures', JSON.stringify(moisClotures));
+
+  console.log('✅ Report auto calculé :', moisPrec, '→', reportsMois[moisPrec].toFixed(2)+'€');
+  renderCaisse();
+  showNotif('📅 Report '+moisPrec+' calculé automatiquement : '+reportsMois[moisPrec].toFixed(2)+' €','success');
+}
+
+function cloturerMois(){
+  var moisFiltreCur = window._caisseMoisFiltre || getMoisActuel();
+  var caisseMoisCur = caisse.filter(function(r){ return r.date.substring(0,7)===moisFiltreCur; });
+  if(!caisseMoisCur.length){ showNotif('Aucune donnée pour ce mois','error'); return; }
+
+  // Calculer la caisse finale (espèces uniquement)
+  var reportAv = getReport(moisFiltreCur);
+  var finale = reportAv;
+  caisseMoisCur.forEach(function(r){
+    finale += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (Number(r.achatSmart)||0);
+  });
+  finale = Math.round(finale*100)/100;
+  reportsMois[moisFiltreCur] = finale;
+
+  // Sauvegarder le report
+  if(supabaseReady) supaFetch('reports_mois','POST',{mois:moisFiltreCur, montant:finale});
+
+  // Sauvegarder en localStorage
+  var moisClotures = JSON.parse(localStorage.getItem('sp_mois_clotures')||'[]');
+  if(!moisClotures.includes(moisFiltreCur)) moisClotures.unshift(moisFiltreCur);
+  localStorage.setItem('sp_mois_clotures', JSON.stringify(moisClotures));
+
+  // Marquer comme clôturé dans Supabase
+  if(supabaseReady){
+    caisseMoisCur.forEach(function(r){
+      supaFetch('caisse','PATCH',{cloture:true},'?date=eq.'+r.date);
     });
   }
-  // Retirer les lignes clôturées de la vue courante
-  caisse=[];
-  renderCaisse();
-  showNotif('✅ Mois '+mois+' archivé ! Report : '+reportsMois[mois].toFixed(2)+' €','success');
+
+  // Passer automatiquement au mois actuel
+  window._caisseMoisFiltre = getMoisActuel();
+  setTimeout(function(){ initCaisseMoisSelect(); renderCaisse(); }, 300);
+  showNotif('✅ '+moisFiltreCur+' clôturé — Report espèces : '+finale.toFixed(2)+' € reporté sur '+getMoisActuel(),'success');
 }
 
 function updateCaisseCalc(){var t=parseFloat(document.getElementById('c-ttc').value)||0;document.getElementById('c-ht').value=(t/1.2).toFixed(2)+' €';document.getElementById('c-tva').value=(t-t/1.2).toFixed(2)+' €';}
