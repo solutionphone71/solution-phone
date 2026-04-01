@@ -3344,7 +3344,7 @@ function initRealtime() {
     try {
       var c = await supaFetch('caisse','GET',null,'?order=date.asc');
       if (c) {
-        caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
+        caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc)||0,cb:Number(x.cb)||0,especes:Number(x.especes)||0,cheque:Number(x.cheque)||0,virement:Number(x.virement)||0,quali:Number(x.quali)||0,depotEsp:Number(x.depot_esp)||0,depotCheque:Number(x.depot_cheque)||0,achatSmart:Number(x.achat_smart)||0};});
         renderCaisse();
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
@@ -3369,7 +3369,7 @@ async function loadFromSupabase() {
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
     if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
-    if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
+    if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc)||0,cb:Number(x.cb)||0,especes:Number(x.especes)||0,cheque:Number(x.cheque)||0,virement:Number(x.virement)||0,quali:Number(x.quali)||0,depotEsp:Number(x.depot_esp)||0,depotCheque:Number(x.depot_cheque)||0,achatSmart:Number(x.achat_smart)||0};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
     if(cl) clients = cl.map(function(x){
       var nomComplet = '';
@@ -3628,10 +3628,10 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
-  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
+  if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
-  if(id==='comptable')renderComptable();
+  if(id==='comptable'){ var sel=document.getElementById('compta-mois'); if(sel&&!sel.value) sel.value=getMoisActuel(); renderComptable(); }
   if(id==='reparations'){
     var _dosView = document.getElementById('rep-dossier-view');
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
@@ -3660,7 +3660,7 @@ function showPage(id,el){
 
 function getMoisActuel(){var n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
 function getReport(mois){var p=mois.split('-');var y=parseInt(p[0]),m=parseInt(p[1]);var mp=m===1?12:m-1;var yp=m===1?y-1:y;return reportsMois[yp+'-'+String(mp).padStart(2,'0')]||0;}
-function calcFinales(){var cc=getReport(getMoisActuel());return caisse.map(function(c){cc+=((c.especes||0)-(c.depotEsp||0)-(c.achatSmart||0));return cc;});}
+function calcFinales(){var cc=getReport(getMoisActuel());return caisse.map(function(c){cc+=((Number(c.especes)||0)-(Number(c.depotEsp)||0)-(Number(c.achatSmart)||0));return cc;});}
 
 
 // ══════════════════════════════════════════════════════
@@ -5047,7 +5047,7 @@ function renderCaisse(){
   // Filtrer par mois sélectionné
   var caisseMois = caisse.filter(function(r){ return r.date.substring(0,7) === moisFiltre; });
   var finMois = []; var cc = getReport(moisFiltre);
-  caisseMois.forEach(function(r){ cc += ((r.especes||0)-(r.depotEsp||0)-(r.achatSmart||0)); finMois.push(cc); });
+  caisseMois.forEach(function(r){ cc += ((Number(r.especes)||0)-(Number(r.depotEsp)||0)-(Number(r.achatSmart)||0)); finMois.push(cc); });
   var rep=getReport(moisFiltre);
   var el=document.getElementById('report-display');if(el)el.textContent=rep.toFixed(2)+' €  ('+moisFiltre+')';
   var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
