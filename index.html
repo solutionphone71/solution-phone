@@ -3333,7 +3333,7 @@ async function supaFetch(table, method, body, query) {
   } catch(e) { console.error(e); return null; }
 }
 
-var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':891.20};
+var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':907.60};
 var supabaseReady = false;
 var realtimeChannel = null;
 
@@ -3633,7 +3633,7 @@ function showPage(id,el){
   if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
-  if(id==='comptable'){ var sel=document.getElementById('compta-mois'); if(sel&&!sel.value) sel.value=getMoisActuel(); renderComptable(); }
+  if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
   if(id==='reparations'){
     var _dosView = document.getElementById('rep-dossier-view');
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
@@ -7566,6 +7566,30 @@ function renderReparations() {
     return '<tr><td><b>' + r.numero + '</b></td><td>' + fmtDate(r.date) + '</td><td>' + r.clientNom + '</td><td>' + r.appareil + '</td><td>' + r.description + '</td><td><b>' + r.prix.toFixed(2) + ' €</b></td>' +
       '<td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintRep(' + r.id + ')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmailRep(' + r.id + ')">📧</button></td></tr>';
   }).join('') || '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune réparation</td></tr>';
+}
+
+function initComptaMoisSelect(){
+  var sel = document.getElementById('compta-mois');
+  if(!sel) return;
+  var moisActuel = getMoisActuel();
+  // Collecter tous les mois présents dans caisse[] + mois actuel
+  var moisDispo = [...new Set(
+    caisse.map(function(r){ return r.date.substring(0,7); })
+      .concat([moisActuel])
+  )].sort().reverse();
+  var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  sel.innerHTML = '';
+  moisDispo.forEach(function(m){
+    var parts = m.split('-');
+    var label = moisNoms[parseInt(parts[1])-1]+' '+parts[0];
+    var opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = (m===moisActuel ? '📅 ' : '📁 ') + label + (m===moisActuel?' (actuel)':'');
+    if(m===moisActuel) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Forcer mois actuel si pas encore sélectionné
+  if(!sel.value) sel.value = moisActuel;
 }
 
 function renderComptable() {
