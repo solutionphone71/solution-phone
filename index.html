@@ -1082,8 +1082,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-caisse')">➕ Ajouter</button>
             <button class="btn btn-sm" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
-            <select id="caisse-archive-mois" onchange="chargerCaisseArchive(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;">
-              <option value="">📁 Voir un mois archivé...</option>
+            <select id="caisse-mois-select" onchange="filtrerCaisseMois(this.value)" style="padding:6px 14px;border:2px solid var(--primary);border-radius:8px;font-size:13px;background:#fff;font-weight:600;color:var(--primary);">
+              <option value="">📅 Choisir un mois...</option>
             </select>
             <button class="btn btn-sm" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-import').click()">📂 Import Phonilab CSV</button>
             <input type="file" id="phonilab-import" accept=".csv" style="display:none" onchange="importPhonilabToCaisse(this)">
@@ -3342,7 +3342,7 @@ function initRealtime() {
   setInterval(async function() {
     if (!supabaseReady) return;
     try {
-      var c = await supaFetch('caisse','GET',null,'?cloture=is.false&order=date.asc');
+      var c = await supaFetch('caisse','GET',null,'?order=date.asc');
       if (c) {
         caisse = c.map(function(x){return{date:x.date,ttc:Number(x.ttc),cb:Number(x.cb),especes:Number(x.especes),cheque:Number(x.cheque),virement:Number(x.virement),quali:Number(x.quali),depotEsp:Number(x.depot_esp),depotCheque:Number(x.depot_cheque),achatSmart:Number(x.achat_smart)};});
         renderCaisse();
@@ -3363,7 +3363,7 @@ async function loadFromSupabase() {
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
       supaFetch('factures','GET',null,'?order=id.desc&limit=200'),
-      supaFetch('caisse','GET',null,'?cloture=is.false&order=date.asc'),
+      supaFetch('caisse','GET',null,'?order=date.asc'),
       supaFetch('reports_mois','GET',null,'')
     ]);
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
@@ -3628,7 +3628,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
-  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); if(supabaseReady) initCaisseArchiveSelect(); }
+  if(id==='caisse'){ caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
   if(id==='stats')renderStats();
   if(id==='police')renderPolice();
   if(id==='comptable')renderComptable();
@@ -5008,11 +5008,50 @@ function saveCaisseEdit() {
 
 function deleteCaisse(date){if(!confirm('Supprimer ?'))return;caisse=caisse.filter(function(c){return c.date!==date;});if(supabaseReady)supaFetch('caisse','DELETE',null,'?date=eq.'+date);renderCaisse();showNotif('Supprimé','success');}
 
+function initCaisseMoisSelect(){
+  var sel = document.getElementById('caisse-mois-select');
+  if(!sel) return;
+  // Construire la liste des mois présents dans caisse[]
+  var moisDispo = [...new Set(caisse.map(function(r){ return r.date.substring(0,7); }))].sort().reverse();
+  var current = getMoisActuel();
+  var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  // Vider et remplir
+  sel.innerHTML = '';
+  moisDispo.forEach(function(m){
+    var parts = m.split('-');
+    var label = moisNoms[parseInt(parts[1])-1]+' '+parts[0];
+    var opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = (m===current?'📅 ':'📁 ')+label+(m===current?' (mois actuel)':'');
+    if(m===current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Si mois actuel pas encore dans caisse, l'ajouter en premier
+  if(!moisDispo.includes(current)){
+    var parts = current.split('-');
+    var label = moisNoms[parseInt(parts[1])-1]+' '+parts[0];
+    var opt = document.createElement('option');
+    opt.value = current; opt.textContent = '📅 '+label+' (mois actuel)'; opt.selected=true;
+    sel.insertBefore(opt, sel.firstChild);
+  }
+  window._caisseMoisFiltre = sel.value || current;
+}
+
+function filtrerCaisseMois(mois){
+  window._caisseMoisFiltre = mois || getMoisActuel();
+  renderCaisse();
+}
+
 function renderCaisse(){
-  var fin=calcFinales();var rep=getReport(getMoisActuel());
-  var el=document.getElementById('report-display');if(el)el.textContent=rep.toFixed(2)+' €';
+  var moisFiltre = window._caisseMoisFiltre || getMoisActuel();
+  // Filtrer par mois sélectionné
+  var caisseMois = caisse.filter(function(r){ return r.date.substring(0,7) === moisFiltre; });
+  var finMois = []; var cc = getReport(moisFiltre);
+  caisseMois.forEach(function(r){ cc += ((r.especes||0)-(r.depotEsp||0)-(r.achatSmart||0)); finMois.push(cc); });
+  var rep=getReport(moisFiltre);
+  var el=document.getElementById('report-display');if(el)el.textContent=rep.toFixed(2)+' €  ('+moisFiltre+')';
   var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
-  caisse.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb;tot.esp+=c.especes;tot.ch+=c.cheque;tot.vir+=c.virement;tot.quali+=c.quali;tot.dEsp+=c.depotEsp;tot.dCh+=c.depotCheque;tot.aS+=c.achatSmart;});
+  caisseMois.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb;tot.esp+=c.especes;tot.ch+=c.cheque;tot.vir+=c.virement;tot.quali+=c.quali;tot.dEsp+=c.depotEsp;tot.dCh+=c.depotCheque;tot.aS+=c.achatSmart;});
   document.getElementById('caisse-totaux').innerHTML =
     '<div class="caisse-card"><div class="caisse-label">CA TTC</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CA HT</div><div class="caisse-value">'+(tot.ttc/1.2).toFixed(2)+' €</div></div>'+
@@ -5020,12 +5059,12 @@ function renderCaisse(){
     '<div class="caisse-card"><div class="caisse-label">Espèces</div><div class="caisse-value">'+tot.esp.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">QualiRépar</div><div class="caisse-value" style="color:var(--green)">'+tot.quali.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">Achats Smart.</div><div class="caisse-value">'+tot.aS.toFixed(2)+' €</div></div>';
-  document.getElementById('caisse-table').innerHTML=caisse.map(function(c,i){
+  document.getElementById('caisse-table').innerHTML=caisseMois.map(function(c,i){
     // TTC réel = ttc stocké + quali (si l'ancien import n'incluait pas le bonus)
     // Détection : si ttc < quali*4, le bonus n'était probablement pas inclus (ancien format)
     var ttcTotal = c.ttc; // nouveau format : bonus déjà dans ttc
     var ht=(ttcTotal/1.2).toFixed(2);var tva=(ttcTotal-ttcTotal/1.2).toFixed(2);
-    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+ttcTotal.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+fin[i].toFixed(2)+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="editCaisse(\''+c.date+'\')">✏️</button><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
+    return '<tr><td>'+fmtDate(c.date)+'</td><td><b>'+ttcTotal.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?'<span style="color:var(--green)">'+c.quali.toFixed(2)+' €</span>':'—')+'</td><td><b>'+finMois[i].toFixed(2)+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="editCaisse(\''+c.date+'\')">✏️</button><button class="btn btn-sm" onclick="deleteCaisse(\''+c.date+'\')">🗑️</button></td></tr>';
   }).join('')||'<tr><td colspan="14" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune saisie</td></tr>';
 }
 
