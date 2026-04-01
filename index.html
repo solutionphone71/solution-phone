@@ -7734,17 +7734,48 @@ function renderComptable() {
     // Détail journalier +
     '<div>' +
     '<div style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px;">📅 Détail journalier</div>' +
-    '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
+    '<div style="overflow-x:auto;"><table><thead><tr>'+
+    '<th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th style="color:#e67e22;">Dép. Esp.</th><th style="color:#8e44ad;">Dép. Chq.</th><th style="color:#c0392b;">Ach. Smart.</th><th>QualiRépar</th><th style="font-weight:800;">Caisse Finale</th>'+
+    '</tr></thead><tbody>' +
     (function(){
       var runCaisse = caisseDebut;
       var lastIdx = data.length - 1;
-      return data.map(function(row, i){
-        runCaisse += (Number(row.especes)||0) - (Number(row.depotEsp)||0);
-        // Soustraire achats smartphones espèces uniquement sur la dernière ligne
+      var rows = data.map(function(row, i){
+        var esp   = Number(row.especes)||0;
+        var depE  = Number(row.depotEsp)||0;
+        var depC  = Number(row.depotCheque)||0;
+        runCaisse += esp - depE;
         var finJour = i === lastIdx ? runCaisse - totalAchatSmart : runCaisse;
-        var couleur = finJour < 0 ? 'color:#c0392b;' : '';
-        return '<tr><td>'+fmtDate(row.date)+'</td><td><b>'+(row.ttc||0).toFixed(2)+' €</b></td><td>'+(row.cb||0).toFixed(2)+' €</td><td>'+(row.especes||0).toFixed(2)+' €</td><td>'+(row.cheque||0).toFixed(2)+' €</td><td>'+(row.virement||0).toFixed(2)+' €</td><td>'+((row.quali||0)>0?'<span style="color:var(--green)">'+(row.quali||0).toFixed(2)+' €</span>':'—')+'</td><td><b style="'+couleur+'">'+finJour.toFixed(2)+' €</b></td></tr>';
+        var couleur = finJour < 0 ? 'color:#c0392b;font-weight:800;' : 'font-weight:800;';
+        return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';border-bottom:1px solid #eee;">'+
+          '<td>'+fmtDate(row.date)+'</td>'+
+          '<td style="text-align:right;font-weight:700;">'+(row.ttc||0).toFixed(2)+' €</td>'+
+          '<td style="text-align:right;">'+(row.cb||0).toFixed(2)+' €</td>'+
+          '<td style="text-align:right;">'+(esp>0?'<b>'+esp.toFixed(2)+' €</b>':'—')+'</td>'+
+          '<td style="text-align:right;">'+(( row.cheque||0)>0?(row.cheque||0).toFixed(2)+' €':'—')+'</td>'+
+          '<td style="text-align:right;">'+((row.virement||0)>0?(row.virement||0).toFixed(2)+' €':'—')+'</td>'+
+          '<td style="text-align:right;color:#e67e22;">'+(depE>0?'<b>-'+depE.toFixed(2)+' €</b>':'—')+'</td>'+
+          '<td style="text-align:right;color:#8e44ad;">'+(depC>0?'<b>-'+depC.toFixed(2)+' €</b>':'—')+'</td>'+
+          '<td style="text-align:right;color:#c0392b;">'+(i===lastIdx&&totalAchatSmart>0?'<b>-'+totalAchatSmart.toFixed(2)+' €</b>':'—')+'</td>'+
+          '<td style="text-align:right;">'+((row.quali||0)>0?'<span style="color:#16a34a;font-weight:700;">'+( row.quali||0).toFixed(2)+' €</span>':'—')+'</td>'+
+          '<td style="text-align:right;'+couleur+'">'+finJour.toFixed(2)+' €</td>'+
+        '</tr>';
       }).join('');
+      // Ligne totaux
+      rows += '<tr style="background:#f1f5f9;border-top:2px solid #cbd5e1;font-weight:700;">'+
+        '<td><b>TOTAL</b></td>'+
+        '<td style="text-align:right;color:var(--red);">'+totalTTC.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;">'+totalCB.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;">'+totalEsp.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;">'+totalCheque.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;">'+totalVir.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;color:#e67e22;">-'+totalDepotEsp.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;color:#8e44ad;">-'+totalDepotCheque.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;color:#c0392b;">-'+totalAchatSmart.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;color:#16a34a;">'+totalQuali.toFixed(2)+' €</td>'+
+        '<td style="text-align:right;font-size:15px;color:var(--red);">'+caisseFin.toFixed(2)+' €</td>'+
+      '</tr>';
+      return rows;
     })() +
     '</tbody></table></div>' +
     '</div>' +
