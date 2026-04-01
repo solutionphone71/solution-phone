@@ -1031,8 +1031,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
         <!-- Z REPARATIONS -->
         <div class="card" style="border:2px solid var(--primary);">
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">🔒 Z de Caisse — Réparations</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">TVA 20%</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">🔒 Z de Caisse — Principal</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Réparations + Accessoires + Tél. neufs · TVA 20%</div>
           <div id="caisse-z-recap" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;"></div>
           <!-- Modes de paiement -->
           <div id="caisse-z-modes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
@@ -1048,7 +1048,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               </table>
             </div>
           </div>
-          <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">🔒 Z Caisse Réparations</button>
+          <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">🔒 Z Caisse Principal</button>
         </div>
         <!-- Z SMARTPHONES -->
         <div class="card" id="caisse-z-smart-block" style="border:2px solid #8b5cf6;display:none;margin-top:12px;">
@@ -3668,10 +3668,28 @@ function calcFinales(){var cc=getReport(getMoisActuel());return caisse.map(funct
 // ══════════════════════════════════════════════════════
 
 async function initCaisseArchiveSelect(){
-  // Charger les mois distincts archivés
+  // Charger les mois distincts archivés (colonne cloture OU localStorage)
   try {
+    // Essayer avec le flag cloture
     var res = await supaFetch('caisse','GET',null,'?cloture=eq.true&select=date&order=date.desc');
-    if(!res || !res.length) return;
+    // Si pas de résultat, essayer via les mois clôturés en localStorage
+    if(!res || !res.length){
+      var stored = JSON.parse(localStorage.getItem('sp_mois_clotures')||'[]');
+      if(!stored.length) return;
+      var sel = document.getElementById('caisse-archive-mois');
+      if(!sel) return;
+      var moisNoms2 = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      // Vider les options existantes sauf la première
+      while(sel.options.length > 1) sel.remove(1);
+      stored.forEach(function(m){
+        var parts = m.split('-');
+        var label = moisNoms2[parseInt(parts[1])-1]+' '+parts[0];
+        var opt = document.createElement('option');
+        opt.value = m; opt.textContent = '📁 '+label;
+        sel.appendChild(opt);
+      });
+      return;
+    }
     var mois = [...new Set(res.map(function(r){ return r.date.substring(0,7); }))];
     var sel = document.getElementById('caisse-archive-mois');
     if(!sel) return;
@@ -3688,7 +3706,12 @@ async function initCaisseArchiveSelect(){
 
 async function chargerCaisseArchive(mois){
   if(!mois){ renderCaisse(); return; }
+  // Essayer d'abord avec le flag cloture, sinon chercher toutes les lignes du mois
   var res = await supaFetch('caisse','GET',null,'?cloture=eq.true&date=like.'+mois+'*&order=date.asc');
+  if(!res || !res.length){
+    // Fallback : chercher les données du mois (même sans flag cloture)
+    res = await supaFetch('caisse','GET',null,'?date=like.'+mois+'*&order=date.asc');
+  }
   if(!res || !res.length){ showNotif('Aucune donnée archivée pour ce mois','info'); return; }
   // Afficher dans le tableau existant
   var fin = []; var cumul = getReport(mois); 
@@ -3720,6 +3743,10 @@ function cloturerMois(){
   reportsMois[mois]=fin[fin.length-1];
   // Sauvegarder le report
   if(supabaseReady) supaFetch('reports_mois','POST',{mois:mois,montant:reportsMois[mois]});
+  // Sauvegarder le mois clôturé en localStorage pour l'historique
+  var moisClotures = JSON.parse(localStorage.getItem('sp_mois_clotures')||'[]');
+  if(!moisClotures.includes(mois)) moisClotures.unshift(mois);
+  localStorage.setItem('sp_mois_clotures', JSON.stringify(moisClotures));
   // Marquer chaque ligne comme clôturée dans Supabase (archivage)
   if(supabaseReady){
     caisse.forEach(function(c){
@@ -4375,8 +4402,10 @@ function renderCaisseJour(){
   });
 
   // Calculer les totaux du jour
-  var txRep=txJour.filter(function(tx){return tx.type==='reparation';});
-  var txSmart=txJour.filter(function(tx){return tx.type==='vente';});
+  // Z PRINCIPAL = réparations + accessoires + téléphones NEUFS (TVA 20%)
+  // Z SMARTPHONES = téléphones OCCASION uniquement (TVA sur marge)
+  var txSmart=txJour.filter(function(tx){ return tx.type==='vente'; }); // smartphones occasion
+  var txRep=txJour.filter(function(tx){ return tx.type!=='vente'; });   // tout le reste = Z principal
   var totJour={total:0,cb:0,especes:0,cheque:0,virement:0,quali:0,nb:txRep.length};
   txRep.forEach(function(tx){
     totJour.total    += tx.montant;
