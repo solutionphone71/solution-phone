@@ -7737,10 +7737,13 @@ function renderComptable() {
     '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>TTC</th><th>CB</th><th>Espèces</th><th>Chèque</th><th>Virement</th><th>QualiRépar</th><th>Caisse Finale</th></tr></thead><tbody>' +
     (function(){
       var runCaisse = caisseDebut;
-      return data.map(function(row){
+      var lastIdx = data.length - 1;
+      return data.map(function(row, i){
         runCaisse += (Number(row.especes)||0) - (Number(row.depotEsp)||0);
-        // achatSmart soustrait uniquement sur la dernière ligne (déjà dans caisseFin)
-        return '<tr><td>'+fmtDate(row.date)+'</td><td><b>'+(row.ttc||0).toFixed(2)+' €</b></td><td>'+(row.cb||0).toFixed(2)+' €</td><td>'+(row.especes||0).toFixed(2)+' €</td><td>'+(row.cheque||0).toFixed(2)+' €</td><td>'+(row.virement||0).toFixed(2)+' €</td><td>'+((row.quali||0)>0?'<span style="color:var(--green)">'+(row.quali||0).toFixed(2)+' €</span>':'—')+'</td><td><b>'+runCaisse.toFixed(2)+' €</b></td></tr>';
+        // Soustraire achats smartphones espèces uniquement sur la dernière ligne
+        var finJour = i === lastIdx ? runCaisse - totalAchatSmart : runCaisse;
+        var couleur = finJour < 0 ? 'color:#c0392b;' : '';
+        return '<tr><td>'+fmtDate(row.date)+'</td><td><b>'+(row.ttc||0).toFixed(2)+' €</b></td><td>'+(row.cb||0).toFixed(2)+' €</td><td>'+(row.especes||0).toFixed(2)+' €</td><td>'+(row.cheque||0).toFixed(2)+' €</td><td>'+(row.virement||0).toFixed(2)+' €</td><td>'+((row.quali||0)>0?'<span style="color:var(--green)">'+(row.quali||0).toFixed(2)+' €</span>':'—')+'</td><td><b style="'+couleur+'">'+finJour.toFixed(2)+' €</b></td></tr>';
       }).join('');
     })() +
     '</tbody></table></div>' +
