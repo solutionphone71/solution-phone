@@ -2110,10 +2110,11 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           <div class="form-group" style="flex:0">
             <label>Mois</label>
-            <select id="compta-mois" onchange="renderComptable()" style="width:160px;">
-              <option value="2026-03">Mars 2026</option>
-              <option value="2026-02">Février 2026</option>
-              <option value="2026-01">Janvier 2026</option>
+            <select id="compta-mois" onchange="renderComptable()" style="width:160px;font-weight:600;">
+              <option value="2026-04" selected>📅 Avril 2026 (actuel)</option>
+              <option value="2026-03">📁 Mars 2026</option>
+              <option value="2026-02">📁 Février 2026</option>
+              <option value="2026-01">📁 Janvier 2026</option>
             </select>
           </div>
           <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;">
@@ -7572,6 +7573,13 @@ function initComptaMoisSelect(){
   var sel = document.getElementById('compta-mois');
   if(!sel) return;
   var moisActuel = getMoisActuel();
+  // Ne reconstruire que si caisse[] est chargé
+  if(caisse.length === 0){
+    // S'assurer qu'avril est sélectionné par défaut
+    if(!sel.value || sel.value === '') sel.value = moisActuel;
+    renderComptable();
+    return;
+  }
   // Collecter tous les mois présents dans caisse[] + mois actuel
   var moisDispo = [...new Set(
     caisse.map(function(r){ return r.date.substring(0,7); })
@@ -7588,8 +7596,8 @@ function initComptaMoisSelect(){
     if(m===moisActuel) opt.selected = true;
     sel.appendChild(opt);
   });
-  // Forcer mois actuel si pas encore sélectionné
   if(!sel.value) sel.value = moisActuel;
+  renderComptable();
 }
 
 function renderComptable() {
