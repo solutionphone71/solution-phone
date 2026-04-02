@@ -11228,7 +11228,7 @@ function renderRepListe(){
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
     }
     var id = JSON.stringify(String(d.id));
-    return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;">'+
+    return '<tr onclick="showPage(\'reparations\',null);setTimeout(function(){repOuvrirDossier('+id+')},250);" style="cursor:pointer;">'+
       '<td><b>'+(d.numero||'')+'</b></td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
       '<td>'+((c.prenom?c.prenom+' ':'')+c.nom)+'</td>'+
