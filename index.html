@@ -15949,7 +15949,7 @@ async function qrSendEcologic(dossier) {
   var brandId = String((d.qrData && d.qrData.brandId) || 243);
   var serial = a.imei || "";
   var today = new Date().toISOString();
-  var refFact = d.numero || "REP-001";
+  var refFact = (d.refFacture || d.numero || "REP-001");
   var payload = JSON.stringify({
     Consumer: { Title: (c.civilite === "Mme" ? 1 : 3), LastName: c.nom || "Client", FirstName: c.prenom || "", Address1: c.adresse || "21 Rue Gambetta", Zip: c.cp || "71000", City: c.ville || "Macon", Country: "250", Phone: c.tel || "", Email: c.email || "" },
     Product: { ProductId: "EEE.M6.060", BrandId: brandId, SerialNumber: serial, IRISSymptom: irisCode, FailureDescription: d.panne || "Reparation" },
@@ -15960,7 +15960,7 @@ async function qrSendEcologic(dossier) {
   try {
     var r1 = await fetch(proxy + "/CreateSupportRequest?CallDate=" + today + "&RepairSiteId=" + siteId + "&QuoteNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
     var j1 = await r1.json();
-    if (!j1.IsValid) throw new Error(j1.ResponseErrorMessage || "Etape 1 echouee");
+    if (!j1.IsValid || !(j1.ResponseData && j1.ResponseData.IsValid)) throw new Error("CreateSupportRequest: " + JSON.stringify((j1.ResponseData && j1.ResponseData.ValidationErrors)||j1.ResponseErrorMessage));
     var reqId = j1.ResponseData.RequestId;
     var r2 = await fetch(proxy + "/CreateClaim?RequestId=" + reqId + "&RepairEndDate=" + today + "&RepairSiteId=" + siteId + "&ConsumerInvoiceNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
     var j2 = await r2.json();
