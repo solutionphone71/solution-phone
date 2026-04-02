@@ -11365,6 +11365,11 @@ async function repOuvrirDossier(id){
   // Si repDossiers vide, recharger bonsDepot depuis Supabase
   if(repDossiers.length === 0) {
     try { await loadBonsDepot(); } catch(e) { console.warn('loadBonsDepot err:', e); }
+  }
+  // Naviguer vers page-reparations si pas dessus
+  var rp = document.getElementById('page-reparations');
+  if(rp && !rp.classList.contains('active')){ try{showPage('reparations',null);}catch(e){} await new Promise(function(r){setTimeout(r,250);}); }
+  if(repDossiers.length === 0) {
     repLoadDossiers();
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
