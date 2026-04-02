@@ -16067,8 +16067,8 @@ async function qrSendEcologic(dossier) {
     var reqId = j1.ResponseData.RequestId;
     var r2 = await fetch(proxy + "/CreateClaim?RequestId=" + reqId + "&RepairEndDate=" + today + "&RepairSiteId=" + siteId + "&ConsumerInvoiceNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
     var j2 = await r2.json();
-    if (!j2.IsValid) throw new Error(j2.ResponseErrorMessage || "Etape 2 echouee");
-    var claimId = j2.ResponseData.ClaimId;
+    var claimId = j2.ResponseData && j2.ResponseData.ClaimId;
+    if (!claimId) throw new Error("Pas de ClaimId - " + (j2.ResponseErrorMessage || JSON.stringify(j2.ResponseData)));
     var errs = (j2.ResponseData.ValidationErrors || []).map(function(e){return e.Field;});
     if (d.photoImeiUrl) {
       try {
