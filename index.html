@@ -12862,7 +12862,7 @@ async function repEnvoyerEcologic(){
     var brandId   = await qrGetEcologicBrandId(a.marque || '');
 
     // CreateClaim (v1.4 : pas besoin de Request préalable)
-    var claimUrl = QR_ECOLOGIC_PROXY + '/createclaim'
+    var claimUrl = QR_ECOLOGIC_PROXY + '/CreateSupportRequest'
       + '?repairEndDate='         + encodeURIComponent(today)
       + '&repairSiteId='          + encodeURIComponent(QR_ECOLOGIC_SITE_ID)
       + '&consumerInvoiceNumber=' + encodeURIComponent(refFact);
@@ -12916,7 +12916,7 @@ async function repEnvoyerEcologic(){
 
     // SubmitClaim
     var subResp = await fetch(
-      QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId,
+      QR_ECOLOGIC_PROXY + '/SubmitSupportRequest?claimId=' + claimId,
       { method: 'POST', headers: {'Content-Type':'application/json'} }
     );
     var subData = await subResp.json();
@@ -16069,7 +16069,7 @@ async function qrSendEcologic() {
   // ② CreateClaim
   qrSetAgoraBadge('\u23F3', 'Création dossier\u2026', 'Ecologic GesCo', '#f39c12');
 
-  var claimUrl = QR_ECOLOGIC_PROXY + '/createclaim'
+  var claimUrl = QR_ECOLOGIC_PROXY + '/CreateSupportRequest'
     + '?repairEndDate='          + encodeURIComponent(today)
     + '&repairSiteId='           + encodeURIComponent(QR_ECOLOGIC_SITE_ID)
     + '&consumerInvoiceNumber='  + encodeURIComponent(refFact);
@@ -16143,7 +16143,7 @@ async function qrSendEcologic() {
   qrSetAgoraBadge('\u{1F680}', 'Soumission\u2026', 'Dossier #' + claimId, '#e67e22');
 
   var subResp = await fetch(
-    QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId,
+    QR_ECOLOGIC_PROXY + '/SubmitSupportRequest?claimId=' + claimId,
     { method: 'POST', headers: { 'Content-Type': 'application/json' } }
   );
   var subData = await subResp.json();
@@ -16529,7 +16529,7 @@ async function qrVerifierStatutEcologic(dossier) {
   if (!dossier || !dossier.agoraClaimId) return null;
   try {
     var r = await fetch(
-      QR_ECOLOGIC_PROXY + '/getclaimstatus?ClaimId=' + dossier.agoraClaimId
+      QR_ECOLOGIC_PROXY + '/GetClaimStatusstatus?ClaimId=' + dossier.agoraClaimId
     );
     var data = await r.json();
     var rd = data.ResponseData || {};
