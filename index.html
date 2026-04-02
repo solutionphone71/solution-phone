@@ -15955,7 +15955,7 @@ async function qrSendEcologic(dossier) {
     Product: { ProductId: "EEE.M6.060", BrandId: brandId, SerialNumber: serial, IRISSymptom: irisCode, FailureDescription: d.panne || "Reparation" },
     Quote: { LaborCost: {Amount: moHT, Currency: "EUR"}, SparePartsCost: {Amount: piecesHT, Currency: "EUR"}, TravelCost: {Amount: 0, Currency: "EUR"}, TotalAmountExclVAT: {Amount: totalHT, Currency: "EUR"}, TotalAmountInclVAT: {Amount: devisTTC, Currency: "EUR"}, SupportAmount: {Amount: soutien, Currency: "EUR"} }
   });
-  var el = document.getElementById("qr-ecologic-status");
+  var el = document.getElementById("rep-qr-envoi-statut");
   if (el) el.innerHTML = "<div style='color:blue'>⏳ Envoi Ecologic...</div>";
   try {
     var r1 = await fetch(proxy + "/CreateSupportRequest?CallDate=" + today + "&RepairSiteId=" + siteId + "&QuoteNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
