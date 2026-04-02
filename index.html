@@ -11096,7 +11096,7 @@ function renderRepHistorique(){
     var statut = d.statut||'depot';
     var sc = statusColors[statut]||'#666';
     var bg = i%2===0?'#fff':'#f8fafc';
-    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" >'+
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+String(d.id)+')" >'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
       '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
@@ -11105,8 +11105,8 @@ function renderRepHistorique(){
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        '<button class="btn btn-sm" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" style="font-size:11px;">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+JSON.stringify(String(d.id))+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier('+String(d.id)+')" style="font-size:11px;">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+String(d.id)+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -11168,7 +11168,7 @@ function renderRepTermines(){
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
-    var id = JSON.stringify(String(d.id));
+    var id = String(d.id);
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
       '<td style="padding:8px;font-size:12px;color:var(--text-muted);">'+fmtDate(d.date)+'</td>'+
@@ -11227,7 +11227,7 @@ function renderRepListe(){
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
     }
-    var id = JSON.stringify(String(d.id));
+    var id = String(d.id);
     return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;">'+
       '<td><b>'+(d.numero||'')+'</b></td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
