@@ -11369,6 +11369,11 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
+  // Naviguer vers la page réparations si on n'y est pas
+  if(!document.getElementById('page-reparations').classList.contains('active')) {
+    showPage('reparations', null);
+    await new Promise(function(r){ setTimeout(r, 200); });
+  }
   repDossierCourant = JSON.parse(JSON.stringify(d));
   // Sécuriser les propriétés manquantes
   if(!repDossierCourant.client) repDossierCourant.client = {};
