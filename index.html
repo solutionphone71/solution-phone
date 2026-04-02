@@ -11360,11 +11360,15 @@ function repImprimerTicket(){
 }
 
 
-function repOuvrirDossier(id){
+async function repOuvrirDossier(id){
   if(!Array.isArray(repDossiers)) repDossiers = [];
-  if(repDossiers.length === 0) repLoadDossiers();
+  // Si repDossiers vide, recharger bonsDepot depuis Supabase
+  if(repDossiers.length === 0) {
+    await loadBonsDepot();
+    repLoadDossiers();
+  }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
-  if(!d) return;
+  if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
   repDossierCourant = JSON.parse(JSON.stringify(d));
   // Sécuriser les propriétés manquantes
   if(!repDossierCourant.client) repDossierCourant.client = {};
@@ -15603,7 +15607,6 @@ function qrValidStep2() {
     qrData.appareil.modele  = modele.trim();
     qrData.appareil.typeRep = typeRep;
     qrData.appareil.imei    = imei;
-      qrData.appareil.imeiPhotoB64 = imageDataUrl ? imageDataUrl.split(',')[1] : null; // NAMEPlate Ecologic
   }
 }
 
