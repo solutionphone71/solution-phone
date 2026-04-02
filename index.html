@@ -16164,55 +16164,94 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : CreateEcosystemRequest ───────────────── */
+/* ── Flux Ecosystem : Authenticate → CreateRepairReimbursement ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
   var app = d.appareil || {};
   var dev = d.devis    || {};
 
-  var ECOSYSTEM_TOKEN   = 'a74a198f6d99b2863bf0fe28fd9ccb9fb8fe021e';
-  var ECOSYSTEM_ATELIER = '2002535';
+  var ECO_BASE      = 'https://api-reparateurs.ecosystem.eco';
+  var ECO_USER      = '501710';
+  var ECO_PASS      = 'Coincoin71?!';
+  var ECO_REPAIRER  = '501710';
+  var ECO_SITE      = '2002535';
 
-  qrSetAgoraBadge('\u23F3', 'Envoi Ecosystem\u2026', app.marque || '', '#f39c12');
+  var prenom   = (cli.prenom  || '').trim();
+  var nom      = (cli.nom     || '').trim();
+  var tel      = (cli.tel     || '').trim();
+  var email    = (cli.email   || 'client@solution-phone.fr').trim();
+  var cp       = (cli.cp      || '71000').trim();
+  var ville    = (cli.ville   || 'MACON').trim();
+  var adresse  = (cli.adresse || '').trim();
+  var marque   = (app.marque  || '').trim();
+  var modele   = (app.modele  || '').trim();
+  var imei     = (app.imei    || '').trim();
+  var typeRep  = (app.typeRep || app.type || 'R\u00e9paration').trim();
+  var montantHT = parseFloat(dev.prixHT) || 0;
+  var soutien   = parseFloat(dev.bonusMontant) || 25;
+  var refFact   = d.refRep || ('QR-' + Date.now());
+  var today     = new Date().toISOString().split('T')[0];
 
-  var body = JSON.stringify({
-    idAtelier:    ECOSYSTEM_ATELIER,
-    consommateur: {
-      prenom:     (cli.prenom  || '').trim(),
-      nom:        (cli.nom     || '').trim(),
-      telephone:  (cli.tel     || '').trim(),
-      email:      (cli.email   || 'client@solution-phone.fr').trim(),
-      codePostal: (cli.cp      || '71000').trim(),
-      ville:      (cli.ville   || 'MACON').trim()
-    },
-    reparation: {
-      marque:        (app.marque  || '').trim(),
-      modele:        (app.modele  || '').trim(),
-      imei:          (app.imei    || '').trim(),
-      montantHT:     parseFloat(dev.prixHT)      || 0,
-      montantSoutien:parseFloat(dev.bonusMontant) || 25,
-      typePanne:     (app.typeRep || app.type || 'R\u00E9paration').trim()
-    }
-  });
+  qrSetAgoraBadge('\u23f3', 'Authentification...', 'Ecosystem', '#f39c12');
 
-  var r = await fetch(QR_ECOSYSTEM_PROXY + '/reparation/creer', {
+  // ① Authentification → JWT
+  var authResp = await fetch(ECO_BASE + '/api/authenticate', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
+  });
+  if (!authResp.ok) throw new Error('Ecosystem auth HTTP ' + authResp.status);
+  var authData = await authResp.json();
+  var jwtToken = authData.token || authData.id_token || authData.access_token;
+  if (!jwtToken) throw new Error('Ecosystem : pas de token JWT');
+  console.log('[QR Ecosystem] Auth OK, token length:', jwtToken.length);
+
+  // ② Cr\u00e9ation dossier remboursement
+  qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');
+
+  var payload = {
+    repairerId:     ECO_REPAIRER,
+    repairerSiteId: ECO_SITE,
+    serialNumber:   imei,
+    brand:          marque,
+    model:          modele,
+    commercialRef:  modele,
+    repairDate:     today,
+    invoiceReference: refFact,
+    invoiceAmount:  montantHT,
+    bonusAmount:    soutien,
+    consumerLastName:  nom,
+    consumerFirstName: prenom,
+    consumerEmail:     email,
+    consumerPhone:     tel,
+    consumerAddress:   adresse,
+    consumerZipCode:   cp,
+    consumerCity:      ville,
+    spareParts:        []
+  };
+
+  var repairResp = await fetch(ECO_BASE + '/api/repair-reimbursements', {
+    method:  'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': 'Bearer ' + ECOSYSTEM_TOKEN
+      'Authorization': 'Bearer ' + jwtToken
     },
-    body: body
+    body: JSON.stringify(payload)
   });
 
-  var resp = await r.json();
-  console.log('[QR Ecosystem]', JSON.stringify(resp).substring(0,200));
+  var resp = await repairResp.json();
+  console.log('[QR Ecosystem] repair-reimbursements:', JSON.stringify(resp).substring(0,300));
 
-  var ref = resp.reference || resp.id || resp.idDossier || resp.numDossier || String(resp);
+  if (!repairResp.ok) {
+    throw new Error('Ecosystem HTTP ' + repairResp.status + ' — ' + (resp.message || resp.detail || JSON.stringify(resp).substring(0,80)));
+  }
+
+  var ref = resp.id || resp.reimbursementId || resp.reference || resp.numDossier || String(resp);
   d.agoraOK  = true;
   d.agoraRef = ref;
 
-  qrSetAgoraBadge('\u2705', 'Dossier envoy\u00E9 !', 'Ecosystem #' + ref, '#27ae60');
+  qrSetAgoraBadge('\u2705', 'Dossier envoy\u00e9 !', 'Ecosystem #' + ref, '#27ae60');
   var refEl  = document.getElementById('qr-ref-display');
   var banner = document.getElementById('qr-done-banner');
   if (refEl)  refEl.textContent   = 'Ecosystem #' + ref;
