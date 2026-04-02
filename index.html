@@ -15978,7 +15978,9 @@ async function qrSendEcologic(dossier) {
     if (!d.qrEnvoi) d.qrEnvoi = {};
     d.qrEnvoi.ecologicClaimId = claimId; d.qrEnvoi.ecologicRequestId = reqId; d.qrEnvoi.ecologicDate = today;
     if (typeof repSauvegarderDossierImmediatement === "function") repSauvegarderDossierImmediatement();
-    var msg = "✅ Ecologic OK! ClaimId: " + claimId + (errs.length ? " | Manquant: " + errs.join(", ") : "");
+    var msg = "✅ Ecologic OK! ClaimId: " + claimId;
+    if (errs.length) msg += "<br><small style='color:orange;'>⚠️ Pièces jointes manquantes: " + errs.join(", ") + "</small>";
+    msg += "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Compléter sur le portail Ecologic →</a>";
     if (el) el.innerHTML = "<div style='background:#f0fdf4;padding:12px;border-radius:8px;color:green;'>" + msg + "</div>";
     showNotif && showNotif(msg, "success");
   } catch(e) {
