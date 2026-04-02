@@ -2008,7 +2008,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                         <input type="text" id="iris-condition" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="6">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
-                        <label style="font-size:11px;">Symptôme <span style="color:var(--text-muted);">(IRISSymptom)</span></label>
+                        <label style="font-size:11px;">Symptôme <span style="color:var(--text-muted);">(IRISSymtom)</span></label>
                         <input type="text" id="iris-symptom" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="E7">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
@@ -12880,7 +12880,7 @@ async function repEnvoyerEcologic(){
         Product: {
           ProductId: 'EEE.M2.044', BrandId: brandId,
           CommercialRef: a.modele||'', SerialNumber: a.imei||'',
-          IRISCondition:'', IRISConditionEX:'', IRISSymptom:'',
+          IRISCondition:'', IRISConditionEX:'', IRISSymtom:'',
           IRISSection: irisCode, IRISDefault:'', IRISRepair:'',
           FailureDescription: panne || (a.marque+' '+a.modele), DefectCode:''
         },
@@ -16055,7 +16055,7 @@ async function qrSendEcologic(dossier) {
   var refFact = d.numero || "REP-001";
   var payload = JSON.stringify({
     Consumer: { Title: (c.civilite === "Mme" ? 1 : 3), LastName: c.nom || "Client", FirstName: c.prenom || "", Address1: c.adresse || "21 Rue Gambetta", Zip: c.cp || "71000", City: c.ville || "Macon", Country: "250", Phone: c.tel || "", Email: c.email || "" },
-    Product: { ProductId: "EEE.M6.060", BrandId: brandId, SerialNumber: serial, IRISSymptom: irisCode, FailureDescription: d.panne || "Reparation" },
+    Product: { ProductId: "EEE.M6.060", BrandId: brandId, SerialNumber: serial, IRISSymtom: irisCode, FailureDescription: d.panne || "Reparation" },
     Quote: { LaborCost: {Amount: moHT, Currency: "EUR"}, SparePartsCost: {Amount: piecesHT, Currency: "EUR"}, TravelCost: {Amount: 0, Currency: "EUR"}, TotalAmountExclVAT: {Amount: totalHT, Currency: "EUR"}, TotalAmountInclVAT: {Amount: devisTTC, Currency: "EUR"}, SupportAmount: {Amount: soutien, Currency: "EUR"} }
   });
   var el = document.getElementById("qr-ecologic-status");
