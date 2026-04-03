@@ -11192,7 +11192,7 @@ function renderRepTermines(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR'+(_cid?' #'+_cid:' OK')+'</span>'
+        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR'+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
@@ -11255,7 +11255,7 @@ function renderRepListe(){
     var qrBadge = '';
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.claimId);
-      var _cid = d.qrEnvoi && (d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemRepairId || '');
+      // ClaimId inliné directement dans le badge
       qrBadge = envoye
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
