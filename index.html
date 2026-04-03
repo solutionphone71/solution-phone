@@ -12961,7 +12961,7 @@ async function qrEnvoyerEcologicComplet(d){
   var iris=irisData.symptom;
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
-  var ref=d.refFacture||d.numero||("QR-"+Date.now());
+  var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
   var body=JSON.stringify({
     Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},
     Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},
