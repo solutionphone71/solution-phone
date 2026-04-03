@@ -11612,6 +11612,80 @@ async function repGenererFacture(){
   repUpdateDevisRecap();
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// FACTURE → PDF BASE64 pour Ecologic
+// ══════════════════════════════════════════════════════════════════
+async function repFactureToPDFBase64(d) {
+  if (!d || !d.facture) return null;
+
+  // Charger html2canvas + jsPDF si besoin
+  if (!window.html2canvas) {
+    await new Promise(function(res, rej) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = res; s.onerror = rej; document.head.appendChild(s);
+    });
+  }
+  if (!window.jspdf) {
+    await new Promise(function(res, rej) {
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = res; s.onerror = rej; document.head.appendChild(s);
+    });
+  }
+
+  // Ouvrir la facture dans un iframe caché (réutilise repImprimerFacture)
+  return new Promise(function(resolve) {
+    // Remplacer window.open temporairement
+    var origOpen = window.open;
+    var capturedWindow = null;
+    window.open = function() {
+      var iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
+      document.body.appendChild(iframe);
+      capturedWindow = iframe.contentWindow;
+      capturedWindow._iframe = iframe;
+      return capturedWindow;
+    };
+
+    // Générer la facture (appelle window.open en interne)
+    repImprimerFacture(d);
+
+    // Restaurer window.open
+    window.open = origOpen;
+
+    // Attendre que le contenu soit rendu
+    setTimeout(function() {
+      if (!capturedWindow || !capturedWindow._iframe) { resolve(null); return; }
+      var iframe = capturedWindow._iframe;
+      var body = iframe.contentDocument && iframe.contentDocument.body;
+      if (!body) { document.body.removeChild(iframe); resolve(null); return; }
+
+      // Masquer les boutons no-print
+      var noPrint = iframe.contentDocument.querySelectorAll('.no-print');
+      noPrint.forEach(function(el) { el.style.display = 'none'; });
+
+      html2canvas(body, {
+        scale: 1.5, useCORS: true, allowTaint: true,
+        width: 794, height: 1123,
+        windowWidth: 794, windowHeight: 1123
+      }).then(function(canvas) {
+        var imgData = canvas.toDataURL('image/jpeg', 0.88);
+        var pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+        var b64 = pdf.output('datauristring').split(',')[1];
+        document.body.removeChild(iframe);
+        resolve(b64);
+      }).catch(function(err) {
+        console.warn('html2canvas err:', err);
+        document.body.removeChild(iframe);
+        resolve(null);
+      });
+    }, 1000);
+  });
+}
+
 function repImprimerFactureById(id){
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(d) repImprimerFacture(d);
@@ -16137,6 +16211,21 @@ async function qrSendEcologic() {
 
   var claimId = claimData.ResponseData.ClaimId;
   d.agoraClaimId = claimId;
+
+  // ② bis: AttachFile — Facture PDF (Invoice)
+  try {
+    var factB64 = await repFactureToPDFBase64(repDossierCourant);
+    if (factB64) {
+      qrSetAgoraBadge('\u23F3', 'Facture PDF\u2026', 'Dossier #' + claimId, '#e67e22');
+      await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
+        + '?ClaimId=' + claimId
+        + '&FileName=Facture_' + encodeURIComponent(refFact) + '&FileExtension=pdf&DocumentType=Invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ FileContent: factB64 })
+      });
+    }
+  } catch(ef) { console.warn('[QR Ecologic] Facture:', ef); }
 
   // ③ AttachFile — Signature (CONSUMERVALIDATION — obligatoire)
   var sigB64 = qrGetSignatureB64();
