@@ -12938,15 +12938,33 @@ async function qrEnvoyerEcologicComplet(d){
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
-  var irisMap={"ecran":"XX1","vitre":"XX1","tactile":"XX1","affichage":"XX1","batterie":"XX6","camera":"XX11","charge":"XX13","connecteur":"XX13","son":"XX18","micro":"XX18","bouton":"XX19","wifi":"XX20","bluetooth":"XX20","coque":"XX22"};
-  var panneStr=(d.panne||"").toLowerCase();var iris="XX1";
-  for(var k in irisMap){if(panneStr.indexOf(k)>=0){iris=irisMap[k];break;}}
+  // IRIS complet: Symptom + Section + Default + Repair + Condition
+  var irisFullMap={
+    "ecran":    {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "vitre":    {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "tactile":  {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "affichage":{symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "batterie": {symptom:"XX6", section:"XX", def:"R", repair:"BAI", condition:"6"},
+    "camera":   {symptom:"XX11",section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "charge":   {symptom:"XX13",section:"XX", def:"R", repair:"CON", condition:"6"},
+    "connecteur":{symptom:"XX13",section:"XX",def:"R", repair:"CON", condition:"6"},
+    "son":      {symptom:"XX18",section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "micro":    {symptom:"XX18",section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "bouton":   {symptom:"XX19",section:"XX", def:"R", repair:"MEC", condition:"6"},
+    "wifi":     {symptom:"XX20",section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "bluetooth":{symptom:"XX20",section:"XX", def:"R", repair:"ELO", condition:"6"},
+    "coque":    {symptom:"XX22",section:"XX", def:"R", repair:"CAS", condition:"6"}
+  };
+  var panneStr=(d.panne||"").toLowerCase();
+  var irisData={symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"};
+  for(var k in irisFullMap){if(panneStr.indexOf(k)>=0){irisData=irisFullMap[k];break;}}
+  var iris=irisData.symptom;
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
   var ref=d.refFacture||d.numero||("QR-"+Date.now());
   var body=JSON.stringify({
     Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},
-    Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSymptom:iris,FailureDescription:d.panne||"Reparation"},
+    Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},
     Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}
   });
   var el=document.getElementById("rep-qr-envoi-statut");
