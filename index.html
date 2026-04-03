@@ -2041,10 +2041,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               </div>
 
               <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
-            <div id="div-envoi-facture-cloture" style="display:none;margin-top:10px;display:flex;gap:8px;">
-              <button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">📧 Email facture</button>
-              <button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">📱 SMS facture</button>
-            </div>
+            <div id="div-envoi-facture-cloture" style="display:none;margin-top:10px;"></div>
             </div>
 
             <!-- Colonne droite : aperçu -->
@@ -4749,7 +4746,7 @@ async function envoyerFactureEmail(){
   var a = d.appareil||{};
   var bonusQR = !!(d.bonusQR||f.bonusQR);
   var prixClient = f.prix||0;
-  var prixAffiche = bonusQR ? prixClient - 25 : prixClient; // Client paie prix - bonus QR
+  var prixAffiche = bonusQR ? Math.max(0, prixClient - 25) : prixClient;
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -4776,15 +4773,13 @@ async function envoyerFactureEmail(){
 
   try {
     var _att=[];
-    if(typeof repFactureToPDFBase64==='function'){
-      try{var _pdf=await repFactureToPDFBase64(d);if(_pdf)_att=[{content:_pdf,name:'Facture_'+f.numero+'.pdf',type:'application/pdf'}];}catch(ep){console.warn('PDF:',ep);}
-    }
-    var _payload={sender:{name:name,email:sender},to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}],subject:'Votre facture Solution Phone \u2014 '+f.numero+' \u2014 '+prixAffiche.toFixed(2)+'\u20ac',htmlContent:htmlEmail};
-    if(_att.length>0)_payload.attachment=_att;
+    if(typeof repFactureToPDFBase64==='function'){try{var _pdf=await repFactureToPDFBase64(d);if(_pdf)_att=[{content:_pdf,name:'Facture_'+f.numero+'.pdf',type:'application/pdf'}];}catch(ep){console.warn('PDF:',ep);}}
+    var _pl={sender:{name:name,email:sender},to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}],subject:'Votre facture Solution Phone \u2014 '+f.numero+' \u2014 '+prixAffiche.toFixed(2)+'\u20ac',htmlContent:htmlEmail};
+    if(_att.length>0)_pl.attachment=_att;
     var res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method:'POST',
       headers:{'api-key':key,'Content-Type':'application/json'},
-      body: JSON.stringify(_payload)
+      body: JSON.stringify(_pl)
     });
     if(res.ok){
       if(st) st.innerHTML='<span style="color:var(--green);">✅ Email envoyé à '+email+'</span>';
@@ -4802,22 +4797,6 @@ async function envoyerFactureEmail(){
 }
 
 // ── Envoi SMS facture ──
-
-function repEnvoyerSMSFactureCloture(){
-  var d = repDossierCourant;
-  if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
-  var c = d.client||{};
-  var tel = c.tel||'';
-  if(!tel){ showNotif('Pas de numéro de téléphone','error'); return; }
-  _envoiDossierCourant = d;
-  // Pré-remplir le tel dans le panel
-  repShowEnvoiFacture(d);
-  setTimeout(function(){
-    var smsInput = document.getElementById('envoi-sms-input');
-    if(smsInput) smsInput.value = tel;
-  }, 200);
-}
-
 async function envoyerFactureSMS(){
   var d   = _envoiDossierCourant;
   if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
@@ -4833,7 +4812,7 @@ async function envoyerFactureSMS(){
 
   var f   = d.facture;
   var bonusQR = !!(d.bonusQR||f.bonusQR);
-  var prixAffiche = bonusQR ? (f.prix||0) - 25 : (f.prix||0); // Client paie prix - bonus QR
+  var prixAffiche = bonusQR ? Math.max(0,(f.prix||0)-25) : (f.prix||0);
 
   // Formater tel en international (+33...)
   var telIntl = tel;
@@ -4841,7 +4820,7 @@ async function envoyerFactureSMS(){
 
   var msgSMS = 'Solution Phone Macon - Facture '+f.numero+
     ' : '+prixAffiche.toFixed(2)+'EUR TTC'+
-    (bonusQR?' (apres bonus QualiRepar -25EUR)':'')+
+    (bonusQR?' (Bonus QR -25EUR inclus)':'')+
     '. Merci pour votre confiance !';
 
   try {
@@ -4849,7 +4828,7 @@ async function envoyerFactureSMS(){
       method:'POST',
       headers:{'api-key':key,'Content-Type':'application/json'},
       body: JSON.stringify({
-        sender: 'SolPhone',
+        sender: (name.substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone'),
         recipient: telIntl,
         content: msgSMS,
         type: 'transactional'
@@ -10304,7 +10283,7 @@ function paramsLoad(){
   }
   // Pré-configurer Brevo si pas encore fait
   if(!localStorage.getItem(PARAMS_KEYS.brevoKey)){
-    localStorage.setItem(PARAMS_KEYS.brevoKey, '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');
+    localStorage.setItem(PARAMS_KEYS.brevoKey, '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');
     localStorage.setItem(PARAMS_KEYS.brevoSender, 'solution.phone71@gmail.com');
     localStorage.setItem(PARAMS_KEYS.brevoSenderName, 'Solution Phone Mâcon');
   }
@@ -11157,7 +11136,7 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   try {
     var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': localStorage.getItem(PARAMS_KEYS.brevoKey)||'' },
+      headers: { 'Content-Type': 'application/json', 'api-key': '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' },
       body: JSON.stringify({ sender: 'SolPhone', recipient: tel, content: message })
     });
     if(res.ok) {
@@ -11212,7 +11191,7 @@ function renderRepTermines(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR'+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
+        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR '+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
@@ -11229,7 +11208,7 @@ function renderRepTermines(){
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         (d.avis_demande
           ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
-          : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&d.client.tel?d.client.tel.replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
+          : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&d.client.telephone?d.client.telephone.replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" title="Ouvrir">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" title="Facture" style="margin-left:3px;">🧾</button>':'')+'</td>'+
@@ -11275,7 +11254,6 @@ function renderRepListe(){
     var qrBadge = '';
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.claimId);
-      // ClaimId inliné directement dans le badge
       qrBadge = envoye
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
@@ -11434,9 +11412,12 @@ async function repOuvrirDossier(id){
   document.getElementById('rep-dossier-titre').textContent = (repDossierCourant.client.prenom||'')+' '+(repDossierCourant.client.nom||'');
   document.getElementById('rep-dossier-num').textContent = repDossierCourant.numero+' · '+fmtDate(repDossierCourant.date);
   repUpdateStatutBadge();
-  // Verrouiller bouton si facture deja generee
   var _btnF=document.getElementById('btn-generer-facture');
-  if(_btnF&&repDossierCourant&&repDossierCourant.facture&&repDossierCourant.facture.numero){_btnF.disabled=true;_btnF.style.background='#94a3b8';_btnF.style.borderColor='#94a3b8';_btnF.style.cursor='not-allowed';_btnF.textContent='\u2705 Facture '+repDossierCourant.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';var _de=document.getElementById('div-envoi-facture-cloture');if(_de)_de.style.display='flex';}else if(_btnF){_btnF.disabled=false;var _de2=document.getElementById('div-envoi-facture-cloture');if(_de2)_de2.style.display='none';_btnF.style.background='#16a34a';_btnF.style.borderColor='#16a34a';_btnF.style.cursor='pointer';_btnF.innerHTML='\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';}
+  var _divEc=document.getElementById('div-envoi-facture-cloture');
+  if(_btnF&&repDossierCourant&&repDossierCourant.facture&&repDossierCourant.facture.numero){
+    _btnF.disabled=true;_btnF.style.background='#94a3b8';_btnF.style.borderColor='#94a3b8';_btnF.style.cursor='not-allowed';_btnF.textContent='\u2705 Facture '+repDossierCourant.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
+    if(_divEc){_divEc.style.display='flex';_divEc.style.gap='8px';_divEc.style.marginTop='10px';_divEc.innerHTML='<button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">\uD83D\uDCE7 Email</button><button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">\uD83D\uDCF1 SMS</button>';}
+  }else if(_btnF){_btnF.disabled=false;_btnF.style.background='#16a34a';_btnF.style.borderColor='#16a34a';_btnF.style.cursor='pointer';_btnF.innerHTML='\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';if(_divEc)_divEc.style.display='none';}
   document.getElementById('rep-liste-view').style.display='none';
   document.getElementById('rep-dossier-view').style.display='block';
   // Ouvrir sur la bonne étape selon statut
@@ -11616,26 +11597,20 @@ async function repGenererFacture(){
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
 
-  // Verrouiller le bouton (une seule facture par dossier)
-  var btnF = document.getElementById('btn-generer-facture');
-  if(btnF){
-    btnF.disabled=true;
-    btnF.style.cssText='background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';
-    btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
-    var _divEnvoi=document.getElementById('div-envoi-facture-cloture');
-    if(_divEnvoi)_divEnvoi.style.display='flex';
-  }
+  // Verrouiller bouton
+  var btnF=document.getElementById('btn-generer-facture');
+  if(btnF){btnF.disabled=true;btnF.style.cssText='background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';}
+  // Afficher boutons envoi
+  var divEc=document.getElementById('div-envoi-facture-cloture');
+  if(divEc){divEc.style.display='flex';divEc.style.gap='8px';divEc.style.marginTop='10px';divEc.innerHTML='<button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">\uD83D\uDCE7 Email facture</button><button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">\uD83D\uDCF1 SMS facture</button>';}
 
-  // Envoi automatique QualiRepar selon la marque
+  // Envoi auto QualiRepar
   if(d.bonusQR){
     var _marque=((d.appareil||{}).marque||'').toLowerCase();
     var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
     var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
-    if(_isEcologic && typeof qrEnvoyerEcologicComplet==='function'){
-      setTimeout(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});},800);
-    } else if(_isEcosystem && typeof qrEnvoyerEcosystemComplet==='function'){
-      setTimeout(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});},800);
-    }
+    if(_isEcologic&&typeof qrEnvoyerEcologicComplet==='function'){setTimeout(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});},800);}
+    else if(_isEcosystem&&typeof qrEnvoyerEcosystemComplet==='function'){setTimeout(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});},800);}
   }
 
   // Rafraîchir la caisse du jour si on est dessus
@@ -11653,6 +11628,9 @@ async function repGenererFacture(){
       }
     });
   }
+
+  // Imprimer la facture automatiquement
+  
 
   // Afficher popup envoi
   repShowEnvoiFacture(d);
@@ -12909,32 +12887,19 @@ async function repEnvoyerEcosystem(){
 }
 
 
-// ════════════════════════════════════════════════════
-// PDF FACTURE → base64
-// ════════════════════════════════════════════════════
-async function repFactureToPDFBase64(d) {
-  if(!d||!d.facture) return null;
-  if(!window.html2canvas){
-    await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-  }
-  if(!window.jspdf){
-    await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
-  }
+async function repFactureToPDFBase64(d){
+  if(!d||!d.facture)return null;
+  if(!window.html2canvas){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+  if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
   return new Promise(function(resolve){
     var iframe=document.createElement('iframe');
     iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
     document.body.appendChild(iframe);
-    var origOpen=window.open;
-    var origST=window.setTimeout;
+    var origOpen=window.open,origST=window.setTimeout;
     window.open=function(){return iframe.contentWindow;};
-    window.setTimeout=function(fn,delay){
-      var fs=fn.toString();
-      if(fs.indexOf('print')>=0){return 0;}
-      return origST(fn,delay);
-    };
+    window.setTimeout=function(fn,delay){var fs=fn.toString();if(fs.indexOf('print')>=0)return 0;return origST(fn,delay);};
     repImprimerFacture(d);
-    window.open=origOpen;
-    window.setTimeout=origST;
+    window.open=origOpen;window.setTimeout=origST;
     origST(function(){
       var body=iframe.contentDocument&&iframe.contentDocument.body;
       if(!body){document.body.removeChild(iframe);resolve(null);return;}
@@ -12944,85 +12909,60 @@ async function repFactureToPDFBase64(d) {
         var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
         pdf.addImage(imgData,'JPEG',0,0,210,297);
         var b64=pdf.output('datauristring').split(',')[1];
-        document.body.removeChild(iframe);
-        resolve(b64);
-      }).catch(function(err){document.body.removeChild(iframe);resolve(null);});
+        document.body.removeChild(iframe);resolve(b64);
+      }).catch(function(){document.body.removeChild(iframe);resolve(null);});
     },1200);
   });
 }
 
-// ════════════════════════════════════════════════════
-// ECOLOGIC COMPLET
-// ════════════════════════════════════════════════════
+function repEnvoyerSMSFactureCloture(){
+  var d=repDossierCourant;
+  if(!d||!d.facture){showNotif('Aucune facture','error');return;}
+  _envoiDossierCourant=d;
+  repShowEnvoiFacture(d);
+  setTimeout(function(){var si=document.getElementById('envoi-sms-input');if(si)si.value=(d.client&&d.client.tel)||'';},200);
+}
+
 async function qrEnvoyerEcologicComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
-  // IRIS complet: Symptom + Section + Default + Repair + Condition
-  var irisFullMap={
-    "ecran":    {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "vitre":    {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "tactile":  {symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "affichage":{symptom:"XX1", section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "batterie": {symptom:"XX6", section:"XX", def:"R", repair:"BAI", condition:"6"},
-    "camera":   {symptom:"XX11",section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "charge":   {symptom:"XX13",section:"XX", def:"R", repair:"CON", condition:"6"},
-    "connecteur":{symptom:"XX13",section:"XX",def:"R", repair:"CON", condition:"6"},
-    "son":      {symptom:"XX18",section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "micro":    {symptom:"XX18",section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "bouton":   {symptom:"XX19",section:"XX", def:"R", repair:"MEC", condition:"6"},
-    "wifi":     {symptom:"XX20",section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "bluetooth":{symptom:"XX20",section:"XX", def:"R", repair:"ELO", condition:"6"},
-    "coque":    {symptom:"XX22",section:"XX", def:"R", repair:"CAS", condition:"6"}
-  };
-  var panneStr=(d.panne||"").toLowerCase();
-  var irisData={symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"};
+  var irisFullMap={"ecran":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"vitre":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"tactile":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"affichage":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"batterie":{symptom:"XX6",section:"XX",def:"R",repair:"BAI",condition:"6"},"camera":{symptom:"XX11",section:"XX",def:"R",repair:"ELO",condition:"6"},"charge":{symptom:"XX13",section:"XX",def:"R",repair:"CON",condition:"6"},"connecteur":{symptom:"XX13",section:"XX",def:"R",repair:"CON",condition:"6"},"son":{symptom:"XX18",section:"XX",def:"R",repair:"ELO",condition:"6"},"micro":{symptom:"XX18",section:"XX",def:"R",repair:"ELO",condition:"6"},"bouton":{symptom:"XX19",section:"XX",def:"R",repair:"MEC",condition:"6"},"wifi":{symptom:"XX20",section:"XX",def:"R",repair:"ELO",condition:"6"},"bluetooth":{symptom:"XX20",section:"XX",def:"R",repair:"ELO",condition:"6"},"coque":{symptom:"XX22",section:"XX",def:"R",repair:"CAS",condition:"6"}};
+  var panneStr=(d.panne||"").toLowerCase();var irisData={symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"};
   for(var k in irisFullMap){if(panneStr.indexOf(k)>=0){irisData=irisFullMap[k];break;}}
-  var iris=irisData.symptom;
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
-  var body=JSON.stringify({
-    Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},
-    Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},
-    Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}
-  });
+  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
   try{
     var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
     var j1=await r1.json();
-    if(!j1.IsValid||!(j1.ResponseData&&j1.ResponseData.IsValid)) throw new Error("Etape1: "+JSON.stringify((j1.ResponseData&&j1.ResponseData.ValidationErrors)||j1.ResponseErrorMessage));
+    if(!j1.IsValid||!(j1.ResponseData&&j1.ResponseData.IsValid))throw new Error("Etape1: "+JSON.stringify((j1.ResponseData&&j1.ResponseData.ValidationErrors)||j1.ResponseErrorMessage));
     var reqId=j1.ResponseData.RequestId;
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/4...</div>";
     var r2=await fetch(proxy+"/CreateClaim?RequestId="+reqId+"&RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
     var j2=await r2.json();
     var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
-    if(!claimId) throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
+    if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
     var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
-    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/4 : pieces jointes...</div>";
-    if(d.facture&&typeof repFactureToPDFBase64==="function"){
-      try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}
-    }
-    if(d.photoImeiUrl){
-      try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});errs=errs.filter(function(e){return!e.includes("Plaque")&&!e.includes("jointes");});}catch(e2){console.warn("IMEI:",e2);}
-    }
-    if(d.signature){
-      try{var sb=d.signature.indexOf(",")>0?d.signature.split(",")[1]:d.signature;await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sb})});errs=errs.filter(function(e){return!e.includes("Validation")&&!e.includes("manuscrite");});}catch(e2){console.warn("Sig:",e2);}
-    }
-    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 4/4 : soumission...</div>";
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/4...</div>";
+    if(d.facture&&typeof repFactureToPDFBase64==="function"){try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}}
+    if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
+    if(d.signature){try{var sb=d.signature.indexOf(",")>0?d.signature.split(",")[1]:d.signature;await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sb})});}catch(e2){console.warn("Sig:",e2);}}
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 4/4...</div>";
     await fetch(proxy+"/SubmitSupportRequest?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicRequestId=reqId;d.qrEnvoi.ecologicDate=today;
-    d.qrEnvoi.manquants=errs;
+    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicRequestId=reqId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
     d.statut="qr";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepTermines==="function")renderRepTermines();
     if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
     var msg="&#9989; Ecologic OK! ClaimId: "+claimId;
-    if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer portail: "+errs.join(", ")+"</small>";
+    if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer: "+errs.join(", ")+"</small>";
     msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
     if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("&#9989; ClaimId: "+claimId,"success");
@@ -13032,29 +12972,23 @@ async function qrEnvoyerEcologicComplet(d){
   }
 }
 
-// ════════════════════════════════════════════════════
-// ECOSYSTEM COMPLET
-// ════════════════════════════════════════════════════
 async function qrEnvoyerEcosystemComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
   var proxy='https://app.solution-phone.fr/proxy-ecosystem';
   var el=document.getElementById("rep-qr-envoi-statut");
-  if(el)el.innerHTML="<div style='color:blue'>&#9203; Authentification Ecosystem...</div>";
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Auth Ecosystem...</div>";
   try{
     var r1=await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'501710',password:'Coincoin71?!'})});
-    var j1=await r1.json();
-    var token=j1.token||j1.accessToken||j1.access_token;
-    if(!token) throw new Error("Auth Ecosystem echouee: "+JSON.stringify(j1));
+    var j1=await r1.json();var token=j1.token||j1.accessToken||j1.access_token;
+    if(!token)throw new Error("Auth Ecosystem: "+JSON.stringify(j1));
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
-    var ref=d.refFacture||d.numero||("ECO-"+Date.now());
+    var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
     var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'501710',siteId:'2002535',invoiceNumber:ref,repairDate:new Date().toISOString().split('T')[0],consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
-    var j2=await r2.json();
-    var repairId=j2.id||j2.repairId||j2.reimbursementId;
+    var j2=await r2.json();var repairId=j2.id||j2.repairId||j2.reimbursementId;
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();
-    d.statut='qr';
+    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepTermines==="function")renderRepTermines();
     var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
@@ -13062,11 +12996,10 @@ async function qrEnvoyerEcosystemComplet(d){
     if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("&#9989; Ecosystem OK!","success");
   }catch(e){
-    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"<br><button onclick='qrEnvoyerEcosystemComplet(repDossierCourant)' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
   }
 }
-
 async function repEnvoyerEcosystem(){await qrEnvoyerEcosystemComplet(repDossierCourant);}
 
 async function repEnvoyerEcologic(){
@@ -14588,8 +14521,8 @@ async function loadBonsDepot(){
         return {
           id: x.id, numero: x.numero, date: x.date,
           statut: x.statut || 'depot',
-          facture: (function(){ try{var f=localStorage.getItem('sp_facture_'+x.id); return f?JSON.parse(f):null;}catch(e){return null;} })(),
-          qrEnvoi: (function(){ try{var q=localStorage.getItem('sp_qrenvoi_'+x.id); return q?JSON.parse(q):null;}catch(e){return null;} })(),
+          facture: (function(){try{var f=localStorage.getItem('sp_facture_'+x.id);return f?JSON.parse(f):null;}catch(e){return null;}})(),
+          qrEnvoi: (function(){try{var q=localStorage.getItem('sp_qrenvoi_'+x.id);return q?JSON.parse(q):null;}catch(e){return null;}})(),
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
@@ -14655,9 +14588,8 @@ async function saveBonDepotSupabase(d){
     if(ex && ex.length > 0){ await supaFetch('bons_depot','PATCH',data,'?id=eq.'+d.id); }
     else { await supaFetch('bons_depot','POST',data); }
   } catch(e){ console.log('Erreur save bon depot',e); }
-  // Sauvegarder facture et qrEnvoi en localStorage
-  if(d.facture) { try{localStorage.setItem('sp_facture_'+d.id, JSON.stringify(d.facture));}catch(e){} }
-  if(d.qrEnvoi) { try{localStorage.setItem('sp_qrenvoi_'+d.id, JSON.stringify(d.qrEnvoi));}catch(e){} }
+  if(d.facture){try{localStorage.setItem('sp_facture_'+d.id,JSON.stringify(d.facture));}catch(e){}}
+  if(d.qrEnvoi){try{localStorage.setItem('sp_qrenvoi_'+d.id,JSON.stringify(d.qrEnvoi));}catch(e){}}
   saveBonsDepot();
 }
 
