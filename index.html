@@ -4745,7 +4745,7 @@ async function envoyerFactureEmail(){
   var a = d.appareil||{};
   var bonusQR = !!(d.bonusQR||f.bonusQR);
   var prixClient = f.prix||0;
-  var prixAffiche = bonusQR ? prixClient - 25 : prixClient;
+  var prixAffiche = prixClient; // Prix payé par le client (bonus QR déjà déduit)
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -4771,15 +4771,27 @@ async function envoyerFactureEmail(){
   '</div>';
 
   try {
+    // Générer le PDF de la facture en base64
+    var attachment = [];
+    if (typeof repFactureToPDFBase64 === 'function') {
+      try {
+        var pdfB64 = await repFactureToPDFBase64(d);
+        if (pdfB64) {
+          attachment = [{ content: pdfB64, name: 'Facture_'+f.numero+'.pdf', type: 'application/pdf' }];
+        }
+      } catch(epdf) { console.warn('PDF email:', epdf); }
+    }
+    var emailPayload = {
+      sender: {name:name, email:sender},
+      to: [{email:email, name:(c.prenom||'')+' '+(c.nom||'')}],
+      subject: 'Votre facture Solution Phone — '+f.numero+' — '+prixAffiche.toFixed(2)+'€',
+      htmlContent: htmlEmail
+    };
+    if (attachment.length > 0) emailPayload.attachment = attachment;
     var res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method:'POST',
       headers:{'api-key':key,'Content-Type':'application/json'},
-      body: JSON.stringify({
-        sender:{name:name, email:sender},
-        to:[{email:email, name:(c.prenom||'')+' '+(c.nom||'')}],
-        subject:'Votre facture Solution Phone — '+f.numero+' — '+prixAffiche.toFixed(2)+'€',
-        htmlContent: htmlEmail
-      })
+      body: JSON.stringify(emailPayload)
     });
     if(res.ok){
       if(st) st.innerHTML='<span style="color:var(--green);">✅ Email envoyé à '+email+'</span>';
