@@ -2040,7 +2040,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 </div>
               </div>
 
-              <button class="btn btn-primary" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
+              <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
             </div>
 
             <!-- Colonne droite : aperçu -->
@@ -11424,6 +11424,7 @@ async function repOuvrirDossier(id){
   document.getElementById('rep-dossier-titre').textContent = (repDossierCourant.client.prenom||'')+' '+(repDossierCourant.client.nom||'');
   document.getElementById('rep-dossier-num').textContent = repDossierCourant.numero+' · '+fmtDate(repDossierCourant.date);
   repUpdateStatutBadge();
+  if(typeof repUpdateBoutonFacture === 'function') repUpdateBoutonFacture(repDossierCourant);
   document.getElementById('rep-liste-view').style.display='none';
   document.getElementById('rep-dossier-view').style.display='block';
   // Ouvrir sur la bonne étape selon statut
@@ -11555,7 +11556,26 @@ function repGetIrisLinesForFacture(){
   return IRIS_CODES[panne].irisLines;
 }
 
-async function repGenererFacture(){
+async 
+function repUpdateBoutonFacture(d) {
+  var btn = document.getElementById('btn-generer-facture');
+  if (!btn) return;
+  if (d && d.facture && d.facture.numero) {
+    btn.disabled = true;
+    btn.style.background = '#94a3b8';
+    btn.style.borderColor = '#94a3b8';
+    btn.style.cursor = 'not-allowed';
+    btn.textContent = '\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
+  } else {
+    btn.disabled = false;
+    btn.style.background = '#16a34a';
+    btn.style.borderColor = '#16a34a';
+    btn.style.cursor = 'pointer';
+    btn.innerHTML = '\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';
+  }
+}
+
+function repGenererFacture(){
   if(repGenererFacture._running) return;
   repGenererFacture._running = true;
   setTimeout(function(){ repGenererFacture._running=false; }, 3000);
@@ -11602,6 +11622,16 @@ async function repGenererFacture(){
   caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR);
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
+
+  // ── Verrouiller le bouton Valider (dossier clôturé) ──
+  var btnFacture = document.getElementById('btn-generer-facture');
+  if (btnFacture) {
+    btnFacture.disabled = true;
+    btnFacture.style.background = '#94a3b8';
+    btnFacture.style.borderColor = '#94a3b8';
+    btnFacture.style.cursor = 'not-allowed';
+    btnFacture.textContent = '✅ Facture '+d.facture.numero+' déjà générée';
+  }
 
   // ── Envoi automatique QualiRépar (Ecologic ou Ecosystem) ──
   if (d.bonusQR) {
