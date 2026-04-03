@@ -11203,7 +11203,7 @@ function renderRepTermines(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ QR envoyé</span>'
+        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;" title="'+(claimRef?"ClaimId: "+claimRef:'')+(d.qrEnvoi&&d.qrEnvoi.manquants&&d.qrEnvoi.manquants.length?" | Manquant: "+d.qrEnvoi.manquants.join(", "):'')+'">✅ QR '+(claimRef?'#'+claimRef:'OK')+(d.qrEnvoi&&d.qrEnvoi.manquants&&d.qrEnvoi.manquants.length?'⚠️':'')+'</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
@@ -11265,7 +11265,8 @@ function renderRepListe(){
     var s = (typeof REP_STATUTS !== 'undefined' ? REP_STATUTS[d.statut||'depot'] : null) || {label: d.statut||'depot', cls: 'rep-s-depot'};
     var qrBadge = '';
     if(d.bonusQR){
-      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecosystemId || d.qrEnvoi.claimId);
+      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.ecosystemRepairId || d.qrEnvoi.claimId);
+      var claimRef = d.qrEnvoi && (d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemRepairId || d.qrEnvoi.claimId);
       qrBadge = envoye
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
@@ -13009,10 +13010,14 @@ async function qrEnvoyerEcologicComplet(d) {
     if(el) el.innerHTML="<div style='color:blue'>⏳ Étape 4/4 : soumission...</div>";
     await fetch(proxy+"/SubmitSupportRequest?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
     if(!d.qrEnvoi) d.qrEnvoi={};
-    d.qrEnvoi.ecologicClaimId=claimId; d.qrEnvoi.ecologicRequestId=reqId; d.qrEnvoi.ecologicDate=today;
+    d.qrEnvoi.ecologicClaimId=claimId; d.qrEnvoi.ecologicId=claimId; d.qrEnvoi.ecologicRequestId=reqId; d.qrEnvoi.ecologicDate=today;
+    d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function") repSauvegarderDossierImmediatement();
+    if(typeof renderRepTermines==="function") renderRepTermines();
+    if(typeof repUpdateStatutBadge==="function") repUpdateStatutBadge();
+    d.qrEnvoi.manquants=errsVal.length>0?errsVal:[];
     var msg="✅ Ecologic OK! ClaimId: "+claimId;
-    if(errsVal.length>0) msg+="<br><small style='color:orange;'>⚠️ Manquant: "+errsVal.join(", ")+"</small>";
+    if(errsVal.length>0) msg+="<br><small style='color:orange;'>⚠️ À compléter sur portail: "+errsVal.join(", ")+"</small>";
     msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic →</a>";
     if(el) el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("✅ ClaimId: "+claimId,"success");
@@ -13099,9 +13104,12 @@ async function qrEnvoyerEcosystemComplet(d) {
 
     // Sauvegarder
     if (!d.qrEnvoi) d.qrEnvoi = {};
-    d.qrEnvoi.ecosystemRepairId = repairId;
+    d.qrEnvoi.ecosystemRepairId = repairId; d.qrEnvoi.ecosystemId = repairId;
     d.qrEnvoi.ecosystemDate = new Date().toISOString();
+    d.statut = 'qr'; // Dossier QR envoyé
     if (typeof repSauvegarderDossierImmediatement === "function") repSauvegarderDossierImmediatement();
+    if (typeof renderRepTermines === "function") renderRepTermines();
+    if (typeof repUpdateStatutBadge === "function") repUpdateStatutBadge();
 
     var msg = "✅ Ecosystem OK!" + (repairId ? " ID: " + repairId : "");
     msg += "<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem →</a>";
