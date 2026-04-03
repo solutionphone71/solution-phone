@@ -12965,7 +12965,9 @@ async function qrEnvoyerEcologicComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
   try{
     var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
-    var j1=await r1.json();
+    var r1text=await r1.text();
+    console.log('[Ecologic] Etape1 status:',r1.status,'body:',r1text.substring(0,300));
+    var j1;try{j1=JSON.parse(r1text);}catch(ex){throw new Error('Etape1 non-JSON ('+r1.status+'): '+r1text.substring(0,200));}
     if(!j1.IsValid||!(j1.ResponseData&&j1.ResponseData.IsValid))throw new Error("Etape1: "+JSON.stringify((j1.ResponseData&&j1.ResponseData.ValidationErrors)||j1.ResponseErrorMessage));
     var reqId=j1.ResponseData.RequestId;
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/4...</div>";
