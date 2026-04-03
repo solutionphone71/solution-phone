@@ -2041,6 +2041,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               </div>
 
               <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
+            <div id="div-envoi-facture-cloture" style="display:none;margin-top:10px;display:flex;gap:8px;">
+              <button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">📧 Email facture</button>
+              <button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">📱 SMS facture</button>
+            </div>
             </div>
 
             <!-- Colonne droite : aperçu -->
@@ -4798,6 +4802,22 @@ async function envoyerFactureEmail(){
 }
 
 // ── Envoi SMS facture ──
+
+function repEnvoyerSMSFactureCloture(){
+  var d = repDossierCourant;
+  if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
+  var c = d.client||{};
+  var tel = c.tel||'';
+  if(!tel){ showNotif('Pas de numéro de téléphone','error'); return; }
+  _envoiDossierCourant = d;
+  // Pré-remplir le tel dans le panel
+  repShowEnvoiFacture(d);
+  setTimeout(function(){
+    var smsInput = document.getElementById('envoi-sms-input');
+    if(smsInput) smsInput.value = tel;
+  }, 200);
+}
+
 async function envoyerFactureSMS(){
   var d   = _envoiDossierCourant;
   if(!d||!d.facture){ showNotif('Aucune facture','error'); return; }
@@ -4829,7 +4849,7 @@ async function envoyerFactureSMS(){
       method:'POST',
       headers:{'api-key':key,'Content-Type':'application/json'},
       body: JSON.stringify({
-        sender: (name.substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone'),
+        sender: 'SolPhone',
         recipient: telIntl,
         content: msgSMS,
         type: 'transactional'
@@ -11416,7 +11436,7 @@ async function repOuvrirDossier(id){
   repUpdateStatutBadge();
   // Verrouiller bouton si facture deja generee
   var _btnF=document.getElementById('btn-generer-facture');
-  if(_btnF&&repDossierCourant&&repDossierCourant.facture&&repDossierCourant.facture.numero){_btnF.disabled=true;_btnF.style.background='#94a3b8';_btnF.style.borderColor='#94a3b8';_btnF.style.cursor='not-allowed';_btnF.textContent='\u2705 Facture '+repDossierCourant.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';}else if(_btnF){_btnF.disabled=false;_btnF.style.background='#16a34a';_btnF.style.borderColor='#16a34a';_btnF.style.cursor='pointer';_btnF.innerHTML='\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';}
+  if(_btnF&&repDossierCourant&&repDossierCourant.facture&&repDossierCourant.facture.numero){_btnF.disabled=true;_btnF.style.background='#94a3b8';_btnF.style.borderColor='#94a3b8';_btnF.style.cursor='not-allowed';_btnF.textContent='\u2705 Facture '+repDossierCourant.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';var _de=document.getElementById('div-envoi-facture-cloture');if(_de)_de.style.display='flex';}else if(_btnF){_btnF.disabled=false;var _de2=document.getElementById('div-envoi-facture-cloture');if(_de2)_de2.style.display='none';_btnF.style.background='#16a34a';_btnF.style.borderColor='#16a34a';_btnF.style.cursor='pointer';_btnF.innerHTML='\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';}
   document.getElementById('rep-liste-view').style.display='none';
   document.getElementById('rep-dossier-view').style.display='block';
   // Ouvrir sur la bonne étape selon statut
@@ -11602,6 +11622,8 @@ async function repGenererFacture(){
     btnF.disabled=true;
     btnF.style.cssText='background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';
     btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
+    var _divEnvoi=document.getElementById('div-envoi-facture-cloture');
+    if(_divEnvoi)_divEnvoi.style.display='flex';
   }
 
   // Envoi automatique QualiRepar selon la marque
