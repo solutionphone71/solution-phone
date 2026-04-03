@@ -10283,7 +10283,7 @@ function paramsLoad(){
   }
   // Pré-configurer Brevo si pas encore fait
   if(!localStorage.getItem(PARAMS_KEYS.brevoKey)){
-    localStorage.setItem(PARAMS_KEYS.brevoKey, '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');
+    // Clé Brevo configurée dans Paramètres;
     localStorage.setItem(PARAMS_KEYS.brevoSender, 'solution.phone71@gmail.com');
     localStorage.setItem(PARAMS_KEYS.brevoSenderName, 'Solution Phone Mâcon');
   }
@@ -11136,7 +11136,7 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   try {
     var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': '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' },
+      headers: { 'Content-Type': 'application/json', 'api-key': localStorage.getItem(PARAMS_KEYS.brevoKey)||'' },
       body: JSON.stringify({ sender: 'SolPhone', recipient: tel, content: message })
     });
     if(res.ok) {
