@@ -12931,14 +12931,14 @@ async function qrEnvoyerEcologicComplet(d){
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
   // Mapping IRIS_CODES key → données Ecologic (codes officiels Phonilab)
   var PANNE_ECOLOGIC_MAP={
-    'ecran-casse':      {repair:'CAS', condition:'6', symptom:'E7',  section:'W10', def:'08'},
-    'ecran-hors-casse': {repair:'EHS', condition:'5', symptom:'E7',  section:'W10', def:'09'},
-    'batterie':         {repair:'BAI', condition:'5', symptom:'B4',  section:'W4',  def:'09'},
-    'haut-parleur':     {repair:'ELO', condition:'5', symptom:'C5',  section:'W15', def:'09'},
-    'micro':            {repair:'ELO', condition:'5', symptom:'C4',  section:'W15', def:'09'},
-    'connecteur':       {repair:'CON', condition:'5', symptom:'F4',  section:'W7',  def:'09'},
-    'camera':           {repair:'ELO', condition:'5', symptom:'D7',  section:'W17', def:'09'},
-    'bouton':           {repair:'MEC', condition:'5', symptom:'G4',  section:'W8',  def:'09'}
+    'ecran-casse':      {repair:'CAS', condition:'6', symptom:'E7',  section:'W10', def:'08', symptome:'EHS'},
+    'ecran-hors-casse': {repair:'EHS', condition:'5', symptom:'E7',  section:'W10', def:'09', symptome:'EHS'},
+    'batterie':         {repair:'BAI', condition:'5', symptom:'B4',  section:'W4',  def:'09', symptome:'BAI'},
+    'haut-parleur':     {repair:'ELO', condition:'5', symptom:'C5',  section:'W15', def:'09', symptome:'ELO'},
+    'micro':            {repair:'ELO', condition:'5', symptom:'C4',  section:'W15', def:'09', symptome:'ELO'},
+    'connecteur':       {repair:'CON', condition:'5', symptom:'F4',  section:'W7',  def:'09', symptome:'CON'},
+    'camera':           {repair:'ELO', condition:'5', symptom:'D7',  section:'W17', def:'09', symptome:'ELO'},
+    'bouton':           {repair:'MEC', condition:'5', symptom:'G4',  section:'W8',  def:'09', symptome:'MEC'}
   };
   // 1. Lire la clé panne depuis l'UI rep-qr-panne (déjà calculée par repQRAutoPanne)
   var qrPanneEl=document.getElementById('rep-qr-panne');
@@ -12960,7 +12960,7 @@ async function qrEnvoyerEcologicComplet(d){
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
-  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",Symptome:irisData.repair,IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
+  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",Symptome:(irisData.symptome||irisData.repair),IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
   try{
