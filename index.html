@@ -12960,12 +12960,12 @@ async function qrEnvoyerEcologicComplet(d){
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
-  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",Symptome:(irisData.symptome||irisData.repair),IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
+  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition,IRISSymptom:irisData.symptom,IRISSection:irisData.section,IRISDefault:irisData.def,IRISRepair:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
   try{
-    var symptomeParam=(irisData.symptome||irisData.repair||"ELO");
-    var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref)+"&Symptome="+encodeURIComponent(symptomeParam),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
+    
+    var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
     console.log('[Ecologic] body Product:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
     var r1text=await r1.text();
     console.log('[Ecologic] Etape1 status:',r1.status,'body:',r1text.substring(0,300));
@@ -16918,7 +16918,7 @@ async function qrVerifierTousLesStatuts(){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-03-v2.6';
+  var APP_VERSION = '2026-04-03-v2.7';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
