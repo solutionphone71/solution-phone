@@ -11591,14 +11591,24 @@ async function repGenererFacture(){
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
 
-  // ── Envoi automatique à Ecologic si dossier QualiRépar ──
-  var qrOrganisme = (d.qrData && d.qrData.organisme) || '';
-  var isEcologic = ['Apple','Xiaomi','OnePlus','Sony','Nokia','Motorola','Wiko','Realme','Crosscall','Google','LG'].some(function(m){ return ((d.appareil||{}).marque||'').toLowerCase().indexOf(m.toLowerCase()) >= 0; });
-  if (d.bonusQR && isEcologic && typeof qrEnvoyerEcologicComplet === 'function') {
-    setTimeout(function() {
-      showNotif('⏳ Envoi automatique vers Ecologic...', 'info');
-      qrEnvoyerEcologicComplet(d).catch(function(e){ console.warn('Ecologic auto:', e); });
-    }, 500);
+  // ── Envoi automatique QualiRépar (Ecologic ou Ecosystem) ──
+  if (d.bonusQR) {
+    var marqueAuto = ((d.appareil||{}).marque||'').toLowerCase();
+    var marquesEcologic = ['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'];
+    var marquesEcosystem = ['samsung','huawei','oppo','honor','blackview','vivo','tcl'];
+    var isEcologic  = marquesEcologic.some(function(m){ return marqueAuto.indexOf(m) >= 0; });
+    var isEcosystem = marquesEcosystem.some(function(m){ return marqueAuto.indexOf(m) >= 0; });
+    if (isEcologic && typeof qrEnvoyerEcologicComplet === 'function') {
+      setTimeout(function() {
+        showNotif('⏳ Envoi automatique vers Ecologic...', 'info');
+        qrEnvoyerEcologicComplet(d).catch(function(e){ console.warn('Ecologic auto:', e); });
+      }, 500);
+    } else if (isEcosystem && typeof qrEnvoyerEcosystemComplet === 'function') {
+      setTimeout(function() {
+        showNotif('⏳ Envoi automatique vers Ecosystem...', 'info');
+        qrEnvoyerEcosystemComplet(d).catch(function(e){ console.warn('Ecosystem auto:', e); });
+      }, 500);
+    }
   }
 
   // Rafraîchir la caisse du jour si on est dessus
@@ -12958,6 +12968,103 @@ async function qrEnvoyerEcologicComplet(d) {
     if(el) el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>❌ "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
     showNotif&&showNotif("❌ Ecologic: "+e.message,"error");
   }
+}
+
+
+// ══════════════════════════════════════════════════════════════════
+// ENVOI ECOSYSTEM COMPLET (depuis un dossier repDossierCourant)
+// ══════════════════════════════════════════════════════════════════
+async function qrEnvoyerEcosystemComplet(d) {
+  if (!d) { showNotif && showNotif("Aucun dossier ouvert", "error"); return; }
+  var c = d.client || {}; var a = d.appareil || {};
+  var proxy = 'https://app.solution-phone.fr/proxy-ecosystem';
+  var ECO_USER = '501710';
+  var ECO_PASS = 'Coincoin71?!';
+  var ECO_SITE = '2002535';
+
+  var el = document.getElementById("rep-qr-envoi-statut");
+  if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 1/3 : Authentification Ecosystem...</div>";
+
+  try {
+    // ETAPE 1: Authentification → token
+    var r1 = await fetch(proxy + '/api/authenticate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username: ECO_USER, password: ECO_PASS})
+    });
+    var j1 = await r1.json();
+    var token = j1.token || j1.accessToken || j1.access_token;
+    if (!token) throw new Error("Ecosystem auth échouée: " + JSON.stringify(j1));
+
+    // ETAPE 2: Créer la demande de remboursement
+    if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 2/3 : Envoi Ecosystem...</div>";
+
+    var moHT = parseFloat(d.moHT || 0);
+    var piecesHT = parseFloat(d.piecesHT || 0);
+    var devisTTC = parseFloat(d.devis || 0);
+    var totalHT = (moHT + piecesHT > 0) ? moHT + piecesHT : Math.round(devisTTC / 1.2 * 100) / 100;
+    var today = new Date().toISOString().split('T')[0];
+    var refFact = d.refFacture || d.numero || ("ECO-" + Date.now());
+
+    var r2 = await fetch(proxy + '/api/repair-reimbursements', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+      body: JSON.stringify({
+        repairerId: ECO_USER,
+        siteId: ECO_SITE,
+        invoiceNumber: refFact,
+        repairDate: today,
+        consumer: {
+          lastName: c.nom || 'Client',
+          firstName: c.prenom || '',
+          email: c.email || '',
+          phone: c.tel || '',
+          address: c.adresse || '21 Rue Gambetta',
+          zipCode: c.cp || '71000',
+          city: c.ville || 'Macon'
+        },
+        device: {
+          brand: a.marque || '',
+          model: a.modele || '',
+          serialNumber: a.imei || '',
+          imei: a.imei || ''
+        },
+        repair: {
+          description: d.panne || 'Réparation smartphone',
+          laborCost: moHT,
+          partsCost: piecesHT,
+          totalCost: devisTTC,
+          bonusAmount: 25
+        }
+      })
+    });
+    var j2 = await r2.json();
+    var repairId = j2.id || j2.repairId || j2.reimbursementId;
+    if (!repairId && !r2.ok) throw new Error("Ecosystem erreur: " + JSON.stringify(j2));
+
+    // ETAPE 3: Pièces jointes si possible
+    if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 3/3 : Finalisation...</div>";
+
+    // Sauvegarder
+    if (!d.qrEnvoi) d.qrEnvoi = {};
+    d.qrEnvoi.ecosystemRepairId = repairId;
+    d.qrEnvoi.ecosystemDate = new Date().toISOString();
+    if (typeof repSauvegarderDossierImmediatement === "function") repSauvegarderDossierImmediatement();
+
+    var msg = "✅ Ecosystem OK!" + (repairId ? " ID: " + repairId : "");
+    msg += "<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem →</a>";
+    if (el) el.innerHTML = "<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>" + msg + "</div>";
+    showNotif && showNotif("✅ Ecosystem envoyé !", "success");
+
+  } catch(e) {
+    if (el) el.innerHTML = "<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>❌ Ecosystem: " + e.message + "<br><button onclick='qrEnvoyerEcosystemComplet(repDossierCourant)' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    showNotif && showNotif("❌ Ecosystem: " + e.message, "error");
+  }
+}
+
+// Bouton manuel Ecosystem dans l'interface dossier
+async function repEnvoyerEcosystem() {
+  await qrEnvoyerEcosystemComplet(repDossierCourant);
 }
 
 async function repEnvoyerEcologic(){
