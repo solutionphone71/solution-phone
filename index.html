@@ -12906,10 +12906,20 @@ async function repFactureToPDFBase64(d) {
     var iframe = document.createElement('iframe');
     iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
     document.body.appendChild(iframe);
+    // Intercepter window.open ET setTimeout pour bloquer le w.print()
     var origOpen = window.open;
+    var origSetTimeout = window.setTimeout;
+    var printBlocked = false;
     window.open = function() { return iframe.contentWindow; };
+    window.setTimeout = function(fn, delay) {
+      // Bloquer le setTimeout qui contient print() venant de repImprimerFacture
+      var fnStr = fn.toString();
+      if (!printBlocked && fnStr.indexOf('print') >= 0) { printBlocked = true; return 0; }
+      return origSetTimeout(fn, delay);
+    };
     repImprimerFacture(d);
     window.open = origOpen;
+    window.setTimeout = origSetTimeout;
     setTimeout(function() {
       var body = iframe.contentDocument && iframe.contentDocument.body;
       if (!body) { document.body.removeChild(iframe); resolve(null); return; }
