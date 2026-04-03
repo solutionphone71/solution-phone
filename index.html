@@ -16916,22 +16916,19 @@ async function qrVerifierTousLesStatuts(){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2025-04-03-21h00';
+  var APP_VERSION = '2025-04-03-22h00';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
   if (stored !== APP_VERSION) {
     localStorage.setItem(KEY, APP_VERSION);
-    if (stored !== null) {
-      // Ce n'est pas la toute première visite → c'est une mise à jour
-      var el = document.getElementById('version-notif');
-      var txt = document.getElementById('version-notif-text');
-      if (el && txt) {
-        txt.innerHTML = '<span style="color:#68d391;">v ' + APP_VERSION + '</span> chargée avec succès.';
-        el.style.display = 'block';
-        // Auto-fermeture après 8s
-        setTimeout(function(){ el.style.display='none'; }, 8000);
-      }
+    var el = document.getElementById('version-notif');
+    var txt = document.getElementById('version-notif-text');
+    if (el && txt) {
+      txt.innerHTML = '<span style="color:#68d391;">v ' + APP_VERSION + '</span> chargée avec succès.';
+      el.style.display = 'block';
+      // Auto-fermeture après 8s
+      setTimeout(function(){ el.style.display='none'; }, 8000);
     }
   }
 })();
