@@ -16248,6 +16248,16 @@ async function qrSendEcologic() {
   var productId = 'EEE.M2.044'; // Smartphone par défaut
   var irisCode  = app.irisCode || 'XXX';  // Code panne IRIS générique
 
+  // Dériver le code Symptome depuis typeRep
+  var _typeNorm = typeRep.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  var _symptome = 'ELO'; // défaut
+  if(_typeNorm.includes('ecran')||_typeNorm.includes('vitre')||_typeNorm.includes('tactile')||_typeNorm.includes('affichage')){
+    _symptome=(_typeNorm.includes('cass')||_typeNorm.includes('fissu')||_typeNorm.includes('bris')||_typeNorm.includes('chut'))?'CAS':'EHS';
+  } else if(_typeNorm.includes('batterie')) _symptome='BAI';
+  else if(_typeNorm.includes('connect')||_typeNorm.includes('charge')) _symptome='CON';
+  else if(_typeNorm.includes('micro')) _symptome='ELO';
+  else if(_typeNorm.includes('bouton')) _symptome='MEC';
+
   // ② CreateClaim
   qrSetAgoraBadge('\u23F3', 'Création dossier\u2026', 'Ecologic GesCo', '#f39c12');
 
@@ -16268,8 +16278,9 @@ async function qrSendEcologic() {
       Product: {
         ProductId: productId, BrandId: brandId,
         CommercialRef: modele, SerialNumber: imei,
+        Symptome: _symptome,
         IRISCondition: '', IRISConditionEX: '', IRISSymptom: '',
-        IRISSection: irisCode, IRISDefault: '', IRISRepair: '',
+        IRISSection: irisCode, IRISDefault: '', IRISRepair: _symptome,
         FailureDescription: typeRep || (marque + ' - ' + modele), DefectCode: ''
       },
       Quote: {
