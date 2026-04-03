@@ -12965,7 +12965,7 @@ async function qrEnvoyerEcologicComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
   try{
     var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
-    console.log('[Ecologic] body envoyé:',JSON.parse(body).Product);
+    console.log('[Ecologic] body Product:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
     var r1text=await r1.text();
     console.log('[Ecologic] Etape1 status:',r1.status,'body:',r1text.substring(0,300));
     var j1;try{j1=JSON.parse(r1text);}catch(ex){throw new Error('Etape1 non-JSON ('+r1.status+'): '+r1text.substring(0,200));}
