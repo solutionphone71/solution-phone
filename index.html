@@ -14548,8 +14548,8 @@ async function loadBonsDepot(){
         return {
           id: x.id, numero: x.numero, date: x.date,
           statut: x.statut || 'depot',
-          facture: x.facture || null,
-          qrEnvoi: x.qr_envoi || null,
+          facture: (function(){ try{var f=localStorage.getItem('sp_facture_'+x.id); return f?JSON.parse(f):null;}catch(e){return null;} })(),
+          qrEnvoi: (function(){ try{var q=localStorage.getItem('sp_qrenvoi_'+x.id); return q?JSON.parse(q):null;}catch(e){return null;} })(),
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
@@ -14607,13 +14607,17 @@ async function saveBonDepotSupabase(d){
     photo_imei_url: (d.photoImeiUrl && d.photoImeiUrl.length < 500000) ? d.photoImeiUrl : null,
     signature: (d.signature && d.signature.length < 500000) ? d.signature : null,
     bonus_qr: !!(d.bonusQR || (d.facture && d.facture.bonusQR)),
-    mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null
+    mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null,
+    statut: d.statut||'depot'
   };
   try {
     var ex = await supaFetch('bons_depot','GET',null,'?id=eq.'+d.id);
     if(ex && ex.length > 0){ await supaFetch('bons_depot','PATCH',data,'?id=eq.'+d.id); }
     else { await supaFetch('bons_depot','POST',data); }
   } catch(e){ console.log('Erreur save bon depot',e); }
+  // Sauvegarder facture et qrEnvoi en localStorage
+  if(d.facture) { try{localStorage.setItem('sp_facture_'+d.id, JSON.stringify(d.facture));}catch(e){} }
+  if(d.qrEnvoi) { try{localStorage.setItem('sp_qrenvoi_'+d.id, JSON.stringify(d.qrEnvoi));}catch(e){} }
   saveBonsDepot();
 }
 
