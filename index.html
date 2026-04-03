@@ -14548,7 +14548,8 @@ async function loadBonsDepot(){
         return {
           id: x.id, numero: x.numero, date: x.date,
           statut: x.statut || 'depot',
-          facture: null, qrEnvoi: null,
+          facture: x.facture || null,
+          qrEnvoi: x.qr_envoi || null,
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
