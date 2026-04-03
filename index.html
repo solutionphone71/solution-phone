@@ -11208,7 +11208,7 @@ function renderRepTermines(){
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         (d.avis_demande
           ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
-          : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&d.client.telephone?d.client.telephone.replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
+          : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&(d.client.tel||d.client.telephone)?(d.client.tel||d.client.telephone).replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" title="Ouvrir">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" title="Facture" style="margin-left:3px;">🧾</button>':'')+'</td>'+
