@@ -12929,9 +12929,34 @@ async function qrEnvoyerEcologicComplet(d){
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
-  var irisFullMap={"ecran":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"vitre":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"tactile":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"affichage":{symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"},"batterie":{symptom:"XX6",section:"XX",def:"R",repair:"BAI",condition:"6"},"camera":{symptom:"XX11",section:"XX",def:"R",repair:"ELO",condition:"6"},"charge":{symptom:"XX13",section:"XX",def:"R",repair:"CON",condition:"6"},"connecteur":{symptom:"XX13",section:"XX",def:"R",repair:"CON",condition:"6"},"son":{symptom:"XX18",section:"XX",def:"R",repair:"ELO",condition:"6"},"micro":{symptom:"XX18",section:"XX",def:"R",repair:"ELO",condition:"6"},"bouton":{symptom:"XX19",section:"XX",def:"R",repair:"MEC",condition:"6"},"wifi":{symptom:"XX20",section:"XX",def:"R",repair:"ELO",condition:"6"},"bluetooth":{symptom:"XX20",section:"XX",def:"R",repair:"ELO",condition:"6"},"coque":{symptom:"XX22",section:"XX",def:"R",repair:"CAS",condition:"6"}};
-  var panneStr=(d.panne||"").toLowerCase();var irisData={symptom:"XX1",section:"XX",def:"R",repair:"ELO",condition:"6"};
-  for(var k in irisFullMap){if(panneStr.indexOf(k)>=0){irisData=irisFullMap[k];break;}}
+  // Mapping IRIS_CODES key → données Ecologic (codes officiels Phonilab)
+  var PANNE_ECOLOGIC_MAP={
+    'ecran-casse':      {repair:'CAS', condition:'6', symptom:'E7',  section:'W10', def:'08'},
+    'ecran-hors-casse': {repair:'EHS', condition:'5', symptom:'E7',  section:'W10', def:'09'},
+    'batterie':         {repair:'BAI', condition:'5', symptom:'B4',  section:'W4',  def:'09'},
+    'haut-parleur':     {repair:'ELO', condition:'5', symptom:'C5',  section:'W15', def:'09'},
+    'micro':            {repair:'ELO', condition:'5', symptom:'C4',  section:'W15', def:'09'},
+    'connecteur':       {repair:'CON', condition:'5', symptom:'F4',  section:'W7',  def:'09'},
+    'camera':           {repair:'ELO', condition:'5', symptom:'D7',  section:'W17', def:'09'},
+    'bouton':           {repair:'MEC', condition:'5', symptom:'G4',  section:'W8',  def:'09'}
+  };
+  // 1. Lire la clé panne depuis l'UI rep-qr-panne (déjà calculée par repQRAutoPanne)
+  var qrPanneEl=document.getElementById('rep-qr-panne');
+  var qrPanneKey=(qrPanneEl&&qrPanneEl.value)||'';
+  // 2. Si pas de sélection UI, auto-détecter avec gestion des accents
+  if(!qrPanneKey){
+    var panneNorm=(d.panne||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(panneNorm.includes('ecran')||panneNorm.includes('vitre')||panneNorm.includes('tactile')||panneNorm.includes('affichage')){
+      qrPanneKey=(panneNorm.includes('cass')||panneNorm.includes('fissu')||panneNorm.includes('bris')||panneNorm.includes('chut'))?'ecran-casse':'ecran-hors-casse';
+    } else if(panneNorm.includes('batterie')) qrPanneKey='batterie';
+    else if(panneNorm.includes('haut-parleur')||panneNorm.includes('son')) qrPanneKey='haut-parleur';
+    else if(panneNorm.includes('micro')) qrPanneKey='micro';
+    else if(panneNorm.includes('charge')||panneNorm.includes('connect')) qrPanneKey='connecteur';
+    else if(panneNorm.includes('cam')) qrPanneKey='camera';
+    else if(panneNorm.includes('bouton')) qrPanneKey='bouton';
+  }
+  var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey]||{repair:'ELO',condition:'5',symptom:'XX1',section:'XX',def:'09'};
+  console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=new Date().toISOString();
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
