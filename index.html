@@ -11591,6 +11591,16 @@ async function repGenererFacture(){
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
 
+  // ── Envoi automatique à Ecologic si dossier QualiRépar ──
+  var qrOrganisme = (d.qrData && d.qrData.organisme) || '';
+  var isEcologic = ['Apple','Xiaomi','OnePlus','Sony','Nokia','Motorola','Wiko','Realme','Crosscall','Google','LG'].some(function(m){ return ((d.appareil||{}).marque||'').toLowerCase().indexOf(m.toLowerCase()) >= 0; });
+  if (d.bonusQR && isEcologic && typeof qrEnvoyerEcologicComplet === 'function') {
+    setTimeout(function() {
+      showNotif('⏳ Envoi automatique vers Ecologic...', 'info');
+      qrEnvoyerEcologicComplet(d).catch(function(e){ console.warn('Ecologic auto:', e); });
+    }, 500);
+  }
+
   // Rafraîchir la caisse du jour si on est dessus
   if(typeof renderCaisseJour === 'function') setTimeout(renderCaisseJour, 500);
 
