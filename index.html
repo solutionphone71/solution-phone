@@ -4745,7 +4745,7 @@ async function envoyerFactureEmail(){
   var a = d.appareil||{};
   var bonusQR = !!(d.bonusQR||f.bonusQR);
   var prixClient = f.prix||0;
-  var prixAffiche = prixClient; // Prix payé par le client (bonus QR déjà déduit)
+  var prixAffiche = prixClient; // Le technicien saisit deja le prix client (apres deduction QualiRepar)
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -4771,27 +4771,16 @@ async function envoyerFactureEmail(){
   '</div>';
 
   try {
-    // Générer le PDF de la facture en base64
-    var attachment = [];
-    if (typeof repFactureToPDFBase64 === 'function') {
-      try {
-        var pdfB64 = await repFactureToPDFBase64(d);
-        if (pdfB64) {
-          attachment = [{ content: pdfB64, name: 'Facture_'+f.numero+'.pdf', type: 'application/pdf' }];
-        }
-      } catch(epdf) { console.warn('PDF email:', epdf); }
+    var _att=[];
+    if(typeof repFactureToPDFBase64==='function'){
+      try{var _pdf=await repFactureToPDFBase64(d);if(_pdf)_att=[{content:_pdf,name:'Facture_'+f.numero+'.pdf',type:'application/pdf'}];}catch(ep){console.warn('PDF:',ep);}
     }
-    var emailPayload = {
-      sender: {name:name, email:sender},
-      to: [{email:email, name:(c.prenom||'')+' '+(c.nom||'')}],
-      subject: 'Votre facture Solution Phone — '+f.numero+' — '+prixAffiche.toFixed(2)+'€',
-      htmlContent: htmlEmail
-    };
-    if (attachment.length > 0) emailPayload.attachment = attachment;
+    var _payload={sender:{name:name,email:sender},to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}],subject:'Votre facture Solution Phone \u2014 '+f.numero+' \u2014 '+prixAffiche.toFixed(2)+'\u20ac',htmlContent:htmlEmail};
+    if(_att.length>0)_payload.attachment=_att;
     var res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method:'POST',
       headers:{'api-key':key,'Content-Type':'application/json'},
-      body: JSON.stringify(emailPayload)
+      body: JSON.stringify(_payload)
     });
     if(res.ok){
       if(st) st.innerHTML='<span style="color:var(--green);">✅ Email envoyé à '+email+'</span>';
@@ -11203,7 +11192,7 @@ function renderRepTermines(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;" title="'+(claimRef?"ClaimId: "+claimRef:'')+(d.qrEnvoi&&d.qrEnvoi.manquants&&d.qrEnvoi.manquants.length?" | Manquant: "+d.qrEnvoi.manquants.join(", "):'')+'">✅ QR '+(claimRef?'#'+claimRef:'OK')+(d.qrEnvoi&&d.qrEnvoi.manquants&&d.qrEnvoi.manquants.length?'⚠️':'')+'</span>'
+        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR'+(_cid?' #'+_cid:' OK')+'</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
@@ -11265,8 +11254,8 @@ function renderRepListe(){
     var s = (typeof REP_STATUTS !== 'undefined' ? REP_STATUTS[d.statut||'depot'] : null) || {label: d.statut||'depot', cls: 'rep-s-depot'};
     var qrBadge = '';
     if(d.bonusQR){
-      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.ecosystemRepairId || d.qrEnvoi.claimId);
-      var claimRef = d.qrEnvoi && (d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemRepairId || d.qrEnvoi.claimId);
+      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.claimId);
+      var _cid = d.qrEnvoi && (d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemRepairId || '');
       qrBadge = envoye
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
@@ -11413,8 +11402,8 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
-  var rp = document.getElementById('page-reparations');
-  if(rp && !rp.classList.contains('active')){ try{showPage('reparations',null);}catch(e){} await new Promise(function(r){setTimeout(r,250);}); }
+  var rp=document.getElementById('page-reparations');
+  if(rp&&!rp.classList.contains('active')){try{showPage('reparations',null);}catch(e){}}
   repDossierCourant = JSON.parse(JSON.stringify(d));
   // Sécuriser les propriétés manquantes
   if(!repDossierCourant.client) repDossierCourant.client = {};
@@ -11425,7 +11414,9 @@ async function repOuvrirDossier(id){
   document.getElementById('rep-dossier-titre').textContent = (repDossierCourant.client.prenom||'')+' '+(repDossierCourant.client.nom||'');
   document.getElementById('rep-dossier-num').textContent = repDossierCourant.numero+' · '+fmtDate(repDossierCourant.date);
   repUpdateStatutBadge();
-  if(typeof repUpdateBoutonFacture === 'function') repUpdateBoutonFacture(repDossierCourant);
+  // Verrouiller bouton si facture deja generee
+  var _btnF=document.getElementById('btn-generer-facture');
+  if(_btnF&&repDossierCourant&&repDossierCourant.facture&&repDossierCourant.facture.numero){_btnF.disabled=true;_btnF.style.background='#94a3b8';_btnF.style.borderColor='#94a3b8';_btnF.style.cursor='not-allowed';_btnF.textContent='\u2705 Facture '+repDossierCourant.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';}else if(_btnF){_btnF.disabled=false;_btnF.style.background='#16a34a';_btnF.style.borderColor='#16a34a';_btnF.style.cursor='pointer';_btnF.innerHTML='\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';}
   document.getElementById('rep-liste-view').style.display='none';
   document.getElementById('rep-dossier-view').style.display='block';
   // Ouvrir sur la bonne étape selon statut
@@ -11557,26 +11548,7 @@ function repGetIrisLinesForFacture(){
   return IRIS_CODES[panne].irisLines;
 }
 
-async 
-function repUpdateBoutonFacture(d) {
-  var btn = document.getElementById('btn-generer-facture');
-  if (!btn) return;
-  if (d && d.facture && d.facture.numero) {
-    btn.disabled = true;
-    btn.style.background = '#94a3b8';
-    btn.style.borderColor = '#94a3b8';
-    btn.style.cursor = 'not-allowed';
-    btn.textContent = '\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
-  } else {
-    btn.disabled = false;
-    btn.style.background = '#16a34a';
-    btn.style.borderColor = '#16a34a';
-    btn.style.cursor = 'pointer';
-    btn.innerHTML = '\u2705 Valider le paiement &amp; G\u00e9n\u00e9rer la facture';
-  }
-}
-
-function repGenererFacture(){
+async function repGenererFacture(){
   if(repGenererFacture._running) return;
   repGenererFacture._running = true;
   setTimeout(function(){ repGenererFacture._running=false; }, 3000);
@@ -11624,33 +11596,23 @@ function repGenererFacture(){
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
 
-  // ── Verrouiller le bouton Valider (dossier clôturé) ──
-  var btnFacture = document.getElementById('btn-generer-facture');
-  if (btnFacture) {
-    btnFacture.disabled = true;
-    btnFacture.style.background = '#94a3b8';
-    btnFacture.style.borderColor = '#94a3b8';
-    btnFacture.style.cursor = 'not-allowed';
-    btnFacture.textContent = '✅ Facture '+d.facture.numero+' déjà générée';
+  // Verrouiller le bouton (une seule facture par dossier)
+  var btnF = document.getElementById('btn-generer-facture');
+  if(btnF){
+    btnF.disabled=true;
+    btnF.style.cssText='background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';
+    btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';
   }
 
-  // ── Envoi automatique QualiRépar (Ecologic ou Ecosystem) ──
-  if (d.bonusQR) {
-    var marqueAuto = ((d.appareil||{}).marque||'').toLowerCase();
-    var marquesEcologic = ['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'];
-    var marquesEcosystem = ['samsung','huawei','oppo','honor','blackview','vivo','tcl'];
-    var isEcologic  = marquesEcologic.some(function(m){ return marqueAuto.indexOf(m) >= 0; });
-    var isEcosystem = marquesEcosystem.some(function(m){ return marqueAuto.indexOf(m) >= 0; });
-    if (isEcologic && typeof qrEnvoyerEcologicComplet === 'function') {
-      setTimeout(function() {
-        showNotif('⏳ Envoi automatique vers Ecologic...', 'info');
-        qrEnvoyerEcologicComplet(d).catch(function(e){ console.warn('Ecologic auto:', e); });
-      }, 500);
-    } else if (isEcosystem && typeof qrEnvoyerEcosystemComplet === 'function') {
-      setTimeout(function() {
-        showNotif('⏳ Envoi automatique vers Ecosystem...', 'info');
-        qrEnvoyerEcosystemComplet(d).catch(function(e){ console.warn('Ecosystem auto:', e); });
-      }, 500);
+  // Envoi automatique QualiRepar selon la marque
+  if(d.bonusQR){
+    var _marque=((d.appareil||{}).marque||'').toLowerCase();
+    var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
+    var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
+    if(_isEcologic && typeof qrEnvoyerEcologicComplet==='function'){
+      setTimeout(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});},800);
+    } else if(_isEcosystem && typeof qrEnvoyerEcosystemComplet==='function'){
+      setTimeout(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});},800);
     }
   }
 
@@ -12925,207 +12887,147 @@ async function repEnvoyerEcosystem(){
 }
 
 
+// ════════════════════════════════════════════════════
+// PDF FACTURE → base64
+// ════════════════════════════════════════════════════
 async function repFactureToPDFBase64(d) {
-  if (!d || !d.facture) return null;
-  if (!window.html2canvas) {
+  if(!d||!d.facture) return null;
+  if(!window.html2canvas){
     await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
   }
-  if (!window.jspdf) {
+  if(!window.jspdf){
     await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
   }
-  return new Promise(function(resolve) {
-    var iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
+  return new Promise(function(resolve){
+    var iframe=document.createElement('iframe');
+    iframe.style.cssText='position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
     document.body.appendChild(iframe);
-    // Intercepter window.open ET setTimeout pour bloquer le w.print()
-    var origOpen = window.open;
-    var origSetTimeout = window.setTimeout;
-    var printBlocked = false;
-    window.open = function() { return iframe.contentWindow; };
-    window.setTimeout = function(fn, delay) {
-      // Bloquer le setTimeout qui contient print() venant de repImprimerFacture
-      var fnStr = fn.toString();
-      if (!printBlocked && fnStr.indexOf('print') >= 0) { printBlocked = true; return 0; }
-      return origSetTimeout(fn, delay);
+    var origOpen=window.open;
+    var origST=window.setTimeout;
+    window.open=function(){return iframe.contentWindow;};
+    window.setTimeout=function(fn,delay){
+      var fs=fn.toString();
+      if(fs.indexOf('print')>=0){return 0;}
+      return origST(fn,delay);
     };
     repImprimerFacture(d);
-    window.open = origOpen;
-    window.setTimeout = origSetTimeout;
-    setTimeout(function() {
-      var body = iframe.contentDocument && iframe.contentDocument.body;
-      if (!body) { document.body.removeChild(iframe); resolve(null); return; }
-      [].forEach.call(iframe.contentDocument.querySelectorAll('.no-print'), function(el){ el.style.display='none'; });
-      html2canvas(body, {scale:1.5,useCORS:true,allowTaint:true,width:794,height:1123}).then(function(canvas) {
-        var imgData = canvas.toDataURL('image/jpeg', 0.9);
-        var pdf = new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    window.open=origOpen;
+    window.setTimeout=origST;
+    origST(function(){
+      var body=iframe.contentDocument&&iframe.contentDocument.body;
+      if(!body){document.body.removeChild(iframe);resolve(null);return;}
+      [].forEach.call(iframe.contentDocument.querySelectorAll('.no-print'),function(el){el.style.display='none';});
+      html2canvas(body,{scale:1.5,useCORS:true,allowTaint:true,width:794,height:1123}).then(function(canvas){
+        var imgData=canvas.toDataURL('image/jpeg',0.9);
+        var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
         pdf.addImage(imgData,'JPEG',0,0,210,297);
-        var b64 = pdf.output('datauristring').split(',')[1];
+        var b64=pdf.output('datauristring').split(',')[1];
         document.body.removeChild(iframe);
         resolve(b64);
-      }).catch(function(err){ document.body.removeChild(iframe); resolve(null); });
-    }, 1200);
+      }).catch(function(err){document.body.removeChild(iframe);resolve(null);});
+    },1200);
   });
 }
 
-async function qrEnvoyerEcologicComplet(d) {
-  if (!d) { showNotif && showNotif("Aucun dossier ouvert", "error"); return; }
-  var c = d.client||{}; var a = d.appareil||{};
-  var proxy = QR_ECOLOGIC_PROXY; var siteId = QR_ECOLOGIC_SITE_ID;
-  var moHT = parseFloat(d.moHT||0); var piecesHT = parseFloat(d.piecesHT||0); var devisTTC = parseFloat(d.devis||0);
-  var totalHT = (moHT+piecesHT>0) ? moHT+piecesHT : Math.round(devisTTC/1.2*100)/100;
-  var irisMap = {"ecran":"XX1","vitre":"XX1","tactile":"XX1","affichage":"XX1","batterie":"XX6","camera":"XX11","charge":"XX13","connecteur":"XX13","son":"XX18","micro":"XX18","bouton":"XX19","wifi":"XX20","bluetooth":"XX20","coque":"XX22"};
-  var panneStr = (d.panne||"").toLowerCase(); var irisSymptom = "XX1";
-  for (var k in irisMap) { if (panneStr.indexOf(k)>=0) { irisSymptom=irisMap[k]; break; } }
-  var brandId = String((d.qrData&&d.qrData.brandId)||243);
-  var today = new Date().toISOString();
-  var refFact = d.refFacture||d.numero||("QR-"+Date.now());
-  var payload = JSON.stringify({
+// ════════════════════════════════════════════════════
+// ECOLOGIC COMPLET
+// ════════════════════════════════════════════════════
+async function qrEnvoyerEcologicComplet(d){
+  if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
+  var c=d.client||{};var a=d.appareil||{};
+  var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
+  var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
+  var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
+  var irisMap={"ecran":"XX1","vitre":"XX1","tactile":"XX1","affichage":"XX1","batterie":"XX6","camera":"XX11","charge":"XX13","connecteur":"XX13","son":"XX18","micro":"XX18","bouton":"XX19","wifi":"XX20","bluetooth":"XX20","coque":"XX22"};
+  var panneStr=(d.panne||"").toLowerCase();var iris="XX1";
+  for(var k in irisMap){if(panneStr.indexOf(k)>=0){iris=irisMap[k];break;}}
+  var brandId=String((d.qrData&&d.qrData.brandId)||243);
+  var today=new Date().toISOString();
+  var ref=d.refFacture||d.numero||("QR-"+Date.now());
+  var body=JSON.stringify({
     Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},
-    Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSymptom:irisSymptom,FailureDescription:d.panne||"Reparation smartphone"},
-    Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:piecesHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:totalHT,Currency:"EUR"},TotalAmountInclVAT:{Amount:devisTTC,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}
+    Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSymptom:iris,FailureDescription:d.panne||"Reparation"},
+    Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}
   });
-  var el = document.getElementById("rep-qr-envoi-statut");
-  if(el) el.innerHTML="<div style='color:blue'>⏳ Étape 1/4...</div>";
-  try {
-    var r1 = await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(refFact),{method:"POST",headers:{"Content-Type":"application/json"},body:payload});
-    var j1 = await r1.json();
+  var el=document.getElementById("rep-qr-envoi-statut");
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/4...</div>";
+  try{
+    var r1=await fetch(proxy+"/CreateSupportRequest?CallDate="+today+"&RepairSiteId="+siteId+"&QuoteNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
+    var j1=await r1.json();
     if(!j1.IsValid||!(j1.ResponseData&&j1.ResponseData.IsValid)) throw new Error("Etape1: "+JSON.stringify((j1.ResponseData&&j1.ResponseData.ValidationErrors)||j1.ResponseErrorMessage));
-    var reqId = j1.ResponseData.RequestId;
-    if(el) el.innerHTML="<div style='color:blue'>⏳ Étape 2/4...</div>";
-    var r2 = await fetch(proxy+"/CreateClaim?RequestId="+reqId+"&RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(refFact),{method:"POST",headers:{"Content-Type":"application/json"},body:payload});
-    var j2 = await r2.json();
-    var claimId = j2.ResponseData&&j2.ResponseData.ClaimId;
+    var reqId=j1.ResponseData.RequestId;
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/4...</div>";
+    var r2=await fetch(proxy+"/CreateClaim?RequestId="+reqId+"&RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref),{method:"POST",headers:{"Content-Type":"application/json"},body:body});
+    var j2=await r2.json();
+    var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
     if(!claimId) throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
-    var errsVal = (j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
-    if(el) el.innerHTML="<div style='color:blue'>⏳ Étape 3/4 : pièces jointes...</div>";
-    if(d.facture && typeof repFactureToPDFBase64==="function"){
-      try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:fb})});errsVal=errsVal.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}
+    var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/4 : pieces jointes...</div>";
+    if(d.facture&&typeof repFactureToPDFBase64==="function"){
+      try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}
     }
     if(d.photoImeiUrl){
-      try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});errsVal=errsVal.filter(function(e){return!e.includes("Plaque")&&!e.includes("jointes");});}catch(e2){console.warn("IMEI:",e2);}
+      try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});errs=errs.filter(function(e){return!e.includes("Plaque")&&!e.includes("jointes");});}catch(e2){console.warn("IMEI:",e2);}
     }
     if(d.signature){
-      try{var sigB64=d.signature.indexOf(",")>0?d.signature.split(",")[1]:d.signature;await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sigB64})});errsVal=errsVal.filter(function(e){return!e.includes("Validation")&&!e.includes("manuscrite");});}catch(e2){console.warn("Sig:",e2);}
+      try{var sb=d.signature.indexOf(",")>0?d.signature.split(",")[1]:d.signature;await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sb})});errs=errs.filter(function(e){return!e.includes("Validation")&&!e.includes("manuscrite");});}catch(e2){console.warn("Sig:",e2);}
     }
-    if(el) el.innerHTML="<div style='color:blue'>⏳ Étape 4/4 : soumission...</div>";
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 4/4 : soumission...</div>";
     await fetch(proxy+"/SubmitSupportRequest?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
-    if(!d.qrEnvoi) d.qrEnvoi={};
-    d.qrEnvoi.ecologicClaimId=claimId; d.qrEnvoi.ecologicId=claimId; d.qrEnvoi.ecologicRequestId=reqId; d.qrEnvoi.ecologicDate=today;
+    if(!d.qrEnvoi)d.qrEnvoi={};
+    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicRequestId=reqId;d.qrEnvoi.ecologicDate=today;
+    d.qrEnvoi.manquants=errs;
+    d.statut="qr";
+    if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
+    if(typeof renderRepTermines==="function")renderRepTermines();
+    if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
+    var msg="&#9989; Ecologic OK! ClaimId: "+claimId;
+    if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer portail: "+errs.join(", ")+"</small>";
+    msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
+    if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
+    showNotif&&showNotif("&#9989; ClaimId: "+claimId,"success");
+  }catch(e){
+    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
+  }
+}
+
+// ════════════════════════════════════════════════════
+// ECOSYSTEM COMPLET
+// ════════════════════════════════════════════════════
+async function qrEnvoyerEcosystemComplet(d){
+  if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
+  var c=d.client||{};var a=d.appareil||{};
+  var proxy='https://app.solution-phone.fr/proxy-ecosystem';
+  var el=document.getElementById("rep-qr-envoi-statut");
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Authentification Ecosystem...</div>";
+  try{
+    var r1=await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'501710',password:'Coincoin71?!'})});
+    var j1=await r1.json();
+    var token=j1.token||j1.accessToken||j1.access_token;
+    if(!token) throw new Error("Auth Ecosystem echouee: "+JSON.stringify(j1));
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
+    var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
+    var ref=d.refFacture||d.numero||("ECO-"+Date.now());
+    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'501710',siteId:'2002535',invoiceNumber:ref,repairDate:new Date().toISOString().split('T')[0],consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var j2=await r2.json();
+    var repairId=j2.id||j2.repairId||j2.reimbursementId;
+    if(!d.qrEnvoi)d.qrEnvoi={};
+    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();
     d.statut='qr';
-    if(typeof repSauvegarderDossierImmediatement==="function") repSauvegarderDossierImmediatement();
-    if(typeof renderRepTermines==="function") renderRepTermines();
-    if(typeof repUpdateStatutBadge==="function") repUpdateStatutBadge();
-    d.qrEnvoi.manquants=errsVal.length>0?errsVal:[];
-    var msg="✅ Ecologic OK! ClaimId: "+claimId;
-    if(errsVal.length>0) msg+="<br><small style='color:orange;'>⚠️ À compléter sur portail: "+errsVal.join(", ")+"</small>";
-    msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic →</a>";
-    if(el) el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
-    showNotif&&showNotif("✅ ClaimId: "+claimId,"success");
-  } catch(e) {
-    if(el) el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>❌ "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
-    showNotif&&showNotif("❌ Ecologic: "+e.message,"error");
+    if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
+    if(typeof renderRepTermines==="function")renderRepTermines();
+    var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
+    msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
+    if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
+    showNotif&&showNotif("&#9989; Ecosystem OK!","success");
+  }catch(e){
+    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"<br><button onclick='qrEnvoyerEcosystemComplet(repDossierCourant)' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
   }
 }
 
-
-// ══════════════════════════════════════════════════════════════════
-// ENVOI ECOSYSTEM COMPLET (depuis un dossier repDossierCourant)
-// ══════════════════════════════════════════════════════════════════
-async function qrEnvoyerEcosystemComplet(d) {
-  if (!d) { showNotif && showNotif("Aucun dossier ouvert", "error"); return; }
-  var c = d.client || {}; var a = d.appareil || {};
-  var proxy = 'https://app.solution-phone.fr/proxy-ecosystem';
-  var ECO_USER = '501710';
-  var ECO_PASS = 'Coincoin71?!';
-  var ECO_SITE = '2002535';
-
-  var el = document.getElementById("rep-qr-envoi-statut");
-  if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 1/3 : Authentification Ecosystem...</div>";
-
-  try {
-    // ETAPE 1: Authentification → token
-    var r1 = await fetch(proxy + '/api/authenticate', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: ECO_USER, password: ECO_PASS})
-    });
-    var j1 = await r1.json();
-    var token = j1.token || j1.accessToken || j1.access_token;
-    if (!token) throw new Error("Ecosystem auth échouée: " + JSON.stringify(j1));
-
-    // ETAPE 2: Créer la demande de remboursement
-    if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 2/3 : Envoi Ecosystem...</div>";
-
-    var moHT = parseFloat(d.moHT || 0);
-    var piecesHT = parseFloat(d.piecesHT || 0);
-    var devisTTC = parseFloat(d.devis || 0);
-    var totalHT = (moHT + piecesHT > 0) ? moHT + piecesHT : Math.round(devisTTC / 1.2 * 100) / 100;
-    var today = new Date().toISOString().split('T')[0];
-    var refFact = d.refFacture || d.numero || ("ECO-" + Date.now());
-
-    var r2 = await fetch(proxy + '/api/repair-reimbursements', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-      body: JSON.stringify({
-        repairerId: ECO_USER,
-        siteId: ECO_SITE,
-        invoiceNumber: refFact,
-        repairDate: today,
-        consumer: {
-          lastName: c.nom || 'Client',
-          firstName: c.prenom || '',
-          email: c.email || '',
-          phone: c.tel || '',
-          address: c.adresse || '21 Rue Gambetta',
-          zipCode: c.cp || '71000',
-          city: c.ville || 'Macon'
-        },
-        device: {
-          brand: a.marque || '',
-          model: a.modele || '',
-          serialNumber: a.imei || '',
-          imei: a.imei || ''
-        },
-        repair: {
-          description: d.panne || 'Réparation smartphone',
-          laborCost: moHT,
-          partsCost: piecesHT,
-          totalCost: devisTTC,
-          bonusAmount: 25
-        }
-      })
-    });
-    var j2 = await r2.json();
-    var repairId = j2.id || j2.repairId || j2.reimbursementId;
-    if (!repairId && !r2.ok) throw new Error("Ecosystem erreur: " + JSON.stringify(j2));
-
-    // ETAPE 3: Pièces jointes si possible
-    if (el) el.innerHTML = "<div style='color:blue'>⏳ Étape 3/3 : Finalisation...</div>";
-
-    // Sauvegarder
-    if (!d.qrEnvoi) d.qrEnvoi = {};
-    d.qrEnvoi.ecosystemRepairId = repairId; d.qrEnvoi.ecosystemId = repairId;
-    d.qrEnvoi.ecosystemDate = new Date().toISOString();
-    d.statut = 'qr'; // Dossier QR envoyé
-    if (typeof repSauvegarderDossierImmediatement === "function") repSauvegarderDossierImmediatement();
-    if (typeof renderRepTermines === "function") renderRepTermines();
-    if (typeof repUpdateStatutBadge === "function") repUpdateStatutBadge();
-
-    var msg = "✅ Ecosystem OK!" + (repairId ? " ID: " + repairId : "");
-    msg += "<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem →</a>";
-    if (el) el.innerHTML = "<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>" + msg + "</div>";
-    showNotif && showNotif("✅ Ecosystem envoyé !", "success");
-
-  } catch(e) {
-    if (el) el.innerHTML = "<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>❌ Ecosystem: " + e.message + "<br><button onclick='qrEnvoyerEcosystemComplet(repDossierCourant)' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
-    showNotif && showNotif("❌ Ecosystem: " + e.message, "error");
-  }
-}
-
-// Bouton manuel Ecosystem dans l'interface dossier
-async function repEnvoyerEcosystem() {
-  await qrEnvoyerEcosystemComplet(repDossierCourant);
-}
+async function repEnvoyerEcosystem(){await qrEnvoyerEcosystemComplet(repDossierCourant);}
 
 async function repEnvoyerEcologic(){
   await qrEnvoyerEcologicComplet(repDossierCourant);
