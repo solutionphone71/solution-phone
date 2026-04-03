@@ -1460,7 +1460,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="form-group">
             <label>Token Ecologic</label>
-            <input type="text" id="params-ecologic-token" placeholder="8121d135-4635-412d-b7ab-3b4dd61cbdb8">
+            <input type="text" id="params-ecologic-token" placeholder="Clé API Ecologic GesCo">
             <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Visible dans Phonilab → Paramètres Ecologic</div>
           </div>
           <div class="form-group">
@@ -10267,8 +10267,8 @@ var PARAMS_KEYS = {
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
-  if(!localStorage.getItem('sp_eco_pass'))        localStorage.setItem('sp_eco_pass','Coincoin71?!');
-  if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token','8121d135-4635-412d-b7ab-3b4dd61cbdb8');
+  if(!localStorage.getItem('sp_eco_pass'))        localStorage.setItem('sp_eco_pass',localStorage.getItem('sp_eco_pass')||'');
+  if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem('sp_ecologic_key')||'');
   if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
   if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
   if(!localStorage.getItem('sp_vf_domain'))       localStorage.setItem('sp_vf_domain','solution-phone71');
@@ -10278,7 +10278,7 @@ function paramsLoad(){
   // Pré-configurer Kiwiz si pas encore fait
   if(!localStorage.getItem(PARAMS_KEYS.kiwizUser)){
     localStorage.setItem(PARAMS_KEYS.kiwizUser, 'solution.phone71@gmail.com');
-    localStorage.setItem(PARAMS_KEYS.kiwizPass, 'dc!2GB#b');
+    localStorage.setItem(PARAMS_KEYS.kiwizPass, localStorage.getItem('sp_kiwiz_pass')||'');
     localStorage.setItem(PARAMS_KEYS.kiwizSub,  '1542327000024372039');
   }
   // Pré-configurer Brevo si pas encore fait
@@ -12782,7 +12782,7 @@ async function repEnvoyerEcosystem(){
   if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Connexion Ecosystem en cours...</div>';
 
   var user       = localStorage.getItem('sp_eco_user') || '501710';
-  var password   = localStorage.getItem('sp_eco_pass') || 'Coincoin71?!';
+  var password   = localStorage.getItem('sp_eco_pass') || localStorage.getItem('sp_eco_pass')||'';
   var repairerId = localStorage.getItem('sp_eco_repairer_id') || '2002535';
 
   var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
@@ -12979,7 +12979,7 @@ async function qrEnvoyerEcosystemComplet(d){
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Auth Ecosystem...</div>";
   try{
-    var r1=await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'501710',password:'Coincoin71?!'})});
+    var r1=await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:localStorage.getItem('sp_eco_user')||'501710',password:localStorage.getItem('sp_eco_pass')||''})});
     var j1=await r1.json();var token=j1.token||j1.accessToken||j1.access_token;
     if(!token)throw new Error("Auth Ecosystem: "+JSON.stringify(j1));
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
@@ -16248,7 +16248,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://app.solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = 'Coincoin71?!';
+  var ECO_PASS      = localStorage.getItem('sp_eco_pass')||'';
   var ECO_REPAIRER  = '501710';
   var ECO_SITE      = '2002535';
 
@@ -16555,7 +16555,7 @@ async function qrVerifierStatutEcosystem(dossier){
   if(!ecosystemId) return null;
 
   var user      = localStorage.getItem('sp_eco_user') || '501710';
-  var password  = localStorage.getItem('sp_eco_pass') || 'Coincoin71?!';
+  var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem('sp_eco_pass')||'';
   var baseUrl = localStorage.getItem('sp_ecosystem_api_url') || 'https://portail-reparateurs.ecosystem.eco';
 
   try {
