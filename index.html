@@ -16855,5 +16855,75 @@ async function qrVerifierTousLesStatuts(){
   </div>
 </div>
 
+<!-- ===== VERSION NOTIFICATION ===== -->
+<div id="version-notif" style="
+  display:none;
+  position:fixed;
+  top:16px;
+  right:16px;
+  z-index:99999;
+  background:#1a202c;
+  color:#fff;
+  border-radius:12px;
+  padding:14px 18px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.4);
+  font-family:sans-serif;
+  font-size:13px;
+  max-width:280px;
+  border-left:4px solid #48bb78;
+  animation: slideInRight 0.4s ease;
+">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <span style="font-size:18px;">🚀</span>
+    <strong style="font-size:14px;color:#48bb78;">Nouvelle version déployée</strong>
+  </div>
+  <div id="version-notif-text" style="color:#e2e8f0;line-height:1.5;"></div>
+  <div style="margin-top:10px;display:flex;gap:8px;">
+    <button onclick="document.getElementById('version-notif').style.display='none'" style="
+      flex:1;padding:6px;border:none;border-radius:6px;
+      background:#48bb78;color:#fff;font-size:12px;
+      font-weight:600;cursor:pointer;">
+      ✓ OK
+    </button>
+    <button onclick="window.location.reload(true)" style="
+      flex:1;padding:6px;border:1px solid #4a5568;border-radius:6px;
+      background:transparent;color:#a0aec0;font-size:12px;cursor:pointer;">
+      ↺ Recharger
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+</style>
+
+<script>
+(function() {
+  // 👉 Mettre à jour cette constante à chaque déploiement
+  var APP_VERSION = '2025-04-03-21h00';
+
+  var KEY = 'sp_app_version';
+  var stored = localStorage.getItem(KEY);
+  if (stored !== APP_VERSION) {
+    localStorage.setItem(KEY, APP_VERSION);
+    if (stored !== null) {
+      // Ce n'est pas la toute première visite → c'est une mise à jour
+      var el = document.getElementById('version-notif');
+      var txt = document.getElementById('version-notif-text');
+      if (el && txt) {
+        txt.innerHTML = '<span style="color:#68d391;">v ' + APP_VERSION + '</span> chargée avec succès.';
+        el.style.display = 'block';
+        // Auto-fermeture après 8s
+        setTimeout(function(){ el.style.display='none'; }, 8000);
+      }
+    }
+  }
+})();
+</script>
+<!-- ===== FIN VERSION NOTIFICATION ===== -->
+
 </body>
 </html>
