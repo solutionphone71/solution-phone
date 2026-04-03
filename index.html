@@ -11097,7 +11097,7 @@ function renderRepHistorique(){
     var statut = d.statut||'depot';
     var sc = statusColors[statut]||'#666';
     var bg = i%2===0?'#fff':'#f8fafc';
-    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" >'+
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+String(d.id)+')" >'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
       '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
@@ -11106,8 +11106,9 @@ function renderRepHistorique(){
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        '<button class="btn btn-sm" onclick="repOuvrirDossier('+JSON.stringify(String(d.id))+')" style="font-size:11px;">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+JSON.stringify(String(d.id))+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
+        '<button class="btn btn-sm btn-primary" style="font-weight:bold;padding:2px 6px;margin-right:2px;" onclick="repOuvrirDossier(\'+String(d.id)+\')">Ouvrir</button>'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier(\'+String(d.id)+\')" style="font-size:11px;">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+String(d.id)+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -11194,7 +11195,7 @@ function renderRepTermines(){
         : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
-    var id = JSON.stringify(String(d.id));
+    var id = String(d.id);
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
       '<td style="padding:8px;font-size:12px;color:var(--text-muted);">'+fmtDate(d.date)+'</td>'+
@@ -11257,7 +11258,7 @@ function renderRepListe(){
         ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
         : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
     }
-    var id = JSON.stringify(String(d.id));
+    var id = String(d.id);
     return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;">'+
       '<td><b>'+(d.numero||'')+'</b></td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
@@ -11399,6 +11400,8 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
+  var rp = document.getElementById('page-reparations');
+  if(rp && !rp.classList.contains('active')){ try{showPage('reparations',null);}catch(e){} await new Promise(function(r){setTimeout(r,250);}); }
   repDossierCourant = JSON.parse(JSON.stringify(d));
   // Sécuriser les propriétés manquantes
   if(!repDossierCourant.client) repDossierCourant.client = {};
@@ -11610,80 +11613,6 @@ async function repGenererFacture(){
   // Afficher popup envoi
   repShowEnvoiFacture(d);
   repUpdateDevisRecap();
-}
-
-
-// ══════════════════════════════════════════════════════════════════
-// FACTURE → PDF BASE64 pour Ecologic
-// ══════════════════════════════════════════════════════════════════
-async function repFactureToPDFBase64(d) {
-  if (!d || !d.facture) return null;
-
-  // Charger html2canvas + jsPDF si besoin
-  if (!window.html2canvas) {
-    await new Promise(function(res, rej) {
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      s.onload = res; s.onerror = rej; document.head.appendChild(s);
-    });
-  }
-  if (!window.jspdf) {
-    await new Promise(function(res, rej) {
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      s.onload = res; s.onerror = rej; document.head.appendChild(s);
-    });
-  }
-
-  // Ouvrir la facture dans un iframe caché (réutilise repImprimerFacture)
-  return new Promise(function(resolve) {
-    // Remplacer window.open temporairement
-    var origOpen = window.open;
-    var capturedWindow = null;
-    window.open = function() {
-      var iframe = document.createElement('iframe');
-      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:794px;height:1123px;border:none;visibility:hidden;';
-      document.body.appendChild(iframe);
-      capturedWindow = iframe.contentWindow;
-      capturedWindow._iframe = iframe;
-      return capturedWindow;
-    };
-
-    // Générer la facture (appelle window.open en interne)
-    repImprimerFacture(d);
-
-    // Restaurer window.open
-    window.open = origOpen;
-
-    // Attendre que le contenu soit rendu
-    setTimeout(function() {
-      if (!capturedWindow || !capturedWindow._iframe) { resolve(null); return; }
-      var iframe = capturedWindow._iframe;
-      var body = iframe.contentDocument && iframe.contentDocument.body;
-      if (!body) { document.body.removeChild(iframe); resolve(null); return; }
-
-      // Masquer les boutons no-print
-      var noPrint = iframe.contentDocument.querySelectorAll('.no-print');
-      noPrint.forEach(function(el) { el.style.display = 'none'; });
-
-      html2canvas(body, {
-        scale: 1.5, useCORS: true, allowTaint: true,
-        width: 794, height: 1123,
-        windowWidth: 794, windowHeight: 1123
-      }).then(function(canvas) {
-        var imgData = canvas.toDataURL('image/jpeg', 0.88);
-        var pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-        var b64 = pdf.output('datauristring').split(',')[1];
-        document.body.removeChild(iframe);
-        resolve(b64);
-      }).catch(function(err) {
-        console.warn('html2canvas err:', err);
-        document.body.removeChild(iframe);
-        resolve(null);
-      });
-    }, 1000);
-  });
 }
 
 function repImprimerFactureById(id){
@@ -12936,110 +12865,7 @@ async function repEnvoyerEcosystem(){
 }
 
 async function repEnvoyerEcologic(){
-  var d = repDossierCourant;
-  if(!d){ showNotif('Aucun dossier','error'); return; }
-
-  var statut = document.getElementById('rep-qr-envoi-statut');
-  if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Envoi vers Ecologic GesCo en cours...</div>';
-
-  var a = d.appareil || {};
-  var c = d.client   || {};
-  var f = d.facture  || {};
-  var panne    = (document.getElementById('rep-qr-panne')||{}).value || '';
-  var codes    = (typeof IRIS_CODES !== 'undefined' && IRIS_CODES[panne]) || {};
-  var iris     = codes.irisLines || [];
-  var irisCode = (iris[0] && iris[0].section) || 'XXX';
-
-  var montantHT  = parseFloat(f.prix)  || 0;
-  var montantTTC = +(montantHT * 1.2).toFixed(2);
-  var soutien    = 25;
-  var refFact    = d.numero || ('REP-' + Date.now());
-  var today      = new Date().toISOString();
-
-  try {
-    // Résoudre BrandId Ecologic
-    var brandId   = await qrGetEcologicBrandId(a.marque || '');
-
-    // CreateClaim (v1.4 : pas besoin de Request préalable)
-    var claimUrl = QR_ECOLOGIC_PROXY + '/createclaim'
-      + '?repairEndDate='         + encodeURIComponent(today)
-      + '&repairSiteId='          + encodeURIComponent(QR_ECOLOGIC_SITE_ID)
-      + '&consumerInvoiceNumber=' + encodeURIComponent(refFact);
-
-    var claimResp = await fetch(claimUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        Consumer: {
-          Title: 3, LastName: c.nom||'', FirstName: c.prenom||'',
-          StreetNumber: '', Address1: c.adresse||'', Address2: '', Address3: '',
-          Zip: c.cp||'71000', City: c.ville||'MACON', Country: '250',
-          Phone: c.tel||'', Email: c.email||'client@solution-phone.fr'
-        },
-        Product: {
-          ProductId: 'EEE.M2.044', BrandId: brandId,
-          CommercialRef: a.modele||'', SerialNumber: a.imei||'',
-          IRISCondition:'', IRISConditionEX:'', IRISSymptom:'',
-          IRISSection: irisCode, IRISDefault:'', IRISRepair:'',
-          FailureDescription: panne || (a.marque+' '+a.modele), DefectCode:''
-        },
-        Quote: {
-          LaborCost:          { Amount: montantHT,  Currency: 'EUR' },
-          SparePartsCost:     { Amount: 0,           Currency: 'EUR' },
-          TravelCost:         { Amount: 0,           Currency: 'EUR' },
-          TotalAmountExclVAT: { Amount: montantHT,  Currency: 'EUR' },
-          TotalAmountInclVAT: { Amount: montantTTC, Currency: 'EUR' },
-          SupportAmount:      { Amount: soutien,    Currency: 'EUR' }
-        },
-        SpareParts: [{ Partref:'', Quantity:0, Status:'' }]
-      })
-    });
-
-    var claimData = await claimResp.json();
-    console.log('[rep Ecologic] CreateClaim:', JSON.stringify(claimData).substring(0,300));
-
-    if(!claimData.ResponseData || !claimData.ResponseData.ClaimId) {
-      throw new Error(claimData.ResponseMessage || claimData.ResponseErrorMessage || 'Pas de ClaimId');
-    }
-    var claimId = claimData.ResponseData.ClaimId;
-
-    // AttachFile — photo IMEI si disponible
-    if(d.photoImeiB64) {
-      await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
-        + '?ClaimId=' + claimId
-        + '&FileName=plaque_imei&FileExtension=png&DocumentType=NamePlate', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ FileContent: d.photoImeiB64 })
-      });
-    }
-
-    // SubmitClaim
-    var subResp = await fetch(
-      QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId,
-      { method: 'POST', headers: {'Content-Type':'application/json'} }
-    );
-    var subData = await subResp.json();
-    console.log('[rep Ecologic] SubmitClaim:', JSON.stringify(subData).substring(0,200));
-
-    d.qrEnvoi = { date: today, statut: 'Sent', claimId: claimId };
-    d.statut = 'qr';
-    repSauvegarderDossier();
-    repUpdateStatutBadge();
-
-    var lastStatus = (subData.ResponseData && subData.ResponseData.LastStatus) || 'Envoyé';
-    if(statut) statut.innerHTML = '<div style="background:#f0fdf4;padding:12px;border-radius:8px;color:var(--green);font-size:13px;">'
-      + '✅ Dossier envoyé à Ecologic !<br>'
-      + '<b>Claim ID :</b> ' + claimId + '<br>'
-      + '<b>Statut :</b> ' + lastStatus + '<br>'
-      + '<b>Remboursement :</b> sous 15 jours ouvrés</div>';
-    showNotif('✅ Dossier QualiRépar envoyé à Ecologic !','success');
-
-  } catch(err){
-    console.error('Ecologic error:', err);
-    var errAnalysee = qrAnalyserErreur(err.message, 'Ecologic');
-    qrAfficherErreurCorrection(errAnalysee, 'Ecologic', statut);
-    showNotif('❌ Erreur Ecologic — corrigez et renvoyez','error');
-  }
+  await qrSendEcologic(repDossierCourant);
 }
 
 function repCloturerDossier(){
@@ -16134,159 +15960,76 @@ async function qrSendAgora() {
 }
 
 /* ── Flux Ecologic : CreateClaim → AttachFile × N → SubmitClaim ── */
-async function qrSendEcologic() {
-  var d        = qrData;
-  var cli      = d.client   || {};
-  var app      = d.appareil || {};
-  var dev      = d.devis    || {};
-
-  var prenom   = (cli.prenom   || '').trim();
-  var nom      = (cli.nom      || '').trim();
-  var tel      = (cli.tel      || '').trim();
-  var email    = (cli.email    || 'client@solution-phone.fr').trim();
-  var cp       = (cli.cp       || '71000').trim();
-  var ville    = (cli.ville    || 'MACON').trim();
-  var adresse  = (cli.adresse  || '').trim();
-
-  var imei     = (app.imei     || '').trim();
-  var marque   = (app.marque   || '').trim();
-  var modele   = (app.modele   || '').trim();
-  var typeRep  = (app.typeRep  || app.type || '').trim();
-
-  var montantHT  = parseFloat(dev.prixHT)     || 0;
-  var montantTTC = +(montantHT * 1.2).toFixed(2);
-  var soutien    = parseFloat(dev.bonusMontant) || 25;
-  var refFact    = d.refRep || ('QR-' + Date.now());
-  var today      = new Date().toISOString();
-
-  // ① Résoudre BrandId Ecologic
-  qrSetAgoraBadge('\u23F3', 'Recherche marque\u2026', marque, '#f39c12');
-  var brandId   = await qrGetEcologicBrandId(marque);
-  var productId = 'EEE.M2.044'; // Smartphone par défaut
-  var irisCode  = app.irisCode || 'XXX';  // Code panne IRIS générique
-
-  // ② CreateClaim
-  qrSetAgoraBadge('\u23F3', 'Création dossier\u2026', 'Ecologic GesCo', '#f39c12');
-
-  var claimUrl = QR_ECOLOGIC_PROXY + '/createclaim'
-    + '?repairEndDate='          + encodeURIComponent(today)
-    + '&repairSiteId='           + encodeURIComponent(QR_ECOLOGIC_SITE_ID)
-    + '&consumerInvoiceNumber='  + encodeURIComponent(refFact);
-
-  var claimResp = await fetch(claimUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      Consumer: {
-        Title: 3, LastName: nom, FirstName: prenom,
-        StreetNumber: '', Address1: adresse, Address2: '', Address3: '',
-        Zip: cp, City: ville, Country: '250', Phone: tel, Email: email
-      },
-      Product: {
-        ProductId: productId, BrandId: brandId,
-        CommercialRef: modele, SerialNumber: imei,
-        IRISCondition: '', IRISConditionEX: '', IRISSymptom: '',
-        IRISSection: irisCode, IRISDefault: '', IRISRepair: '',
-        FailureDescription: typeRep || (marque + ' - ' + modele), DefectCode: ''
-      },
-      Quote: {
-        LaborCost:          { Amount: montantHT,  Currency: 'EUR' },
-        SparePartsCost:     { Amount: 0,           Currency: 'EUR' },
-        TravelCost:         { Amount: 0,           Currency: 'EUR' },
-        TotalAmountExclVAT: { Amount: montantHT,  Currency: 'EUR' },
-        TotalAmountInclVAT: { Amount: montantTTC, Currency: 'EUR' },
-        SupportAmount:      { Amount: soutien,    Currency: 'EUR' }
-      },
-      SpareParts: [{ Partref: '', Quantity: 0, Status: '' }]
-    })
+async function qrSendEcologic(dossier) {
+  var d = dossier || repDossierCourant;
+  if (!d) { showNotif && showNotif("Aucun dossier", "error"); return; }
+  var c = d.client || {}; var a = d.appareil || {};
+  var proxy = QR_ECOLOGIC_PROXY; var siteId = QR_ECOLOGIC_SITE_ID;
+  var moHT = parseFloat(d.moHT || 0);
+  var piecesHT = parseFloat(d.piecesHT || 0);
+  var devisTTC = parseFloat(d.devis || 0);
+  var totalHT = (moHT + piecesHT > 0) ? moHT + piecesHT : Math.round(devisTTC / 1.2 * 100) / 100;
+  var soutien = 25;
+  var irisMap = {"ecran":"XX1","vitre":"XX1","tactile":"XX1","affichage":"XX1","batterie":"XX6","camera":"XX11","charge":"XX13","connecteur":"XX13","son":"XX18","micro":"XX18","bouton":"XX19","wifi":"XX20","bluetooth":"XX20","coque":"XX22"};
+  var panneStr = (d.panne || "").toLowerCase();
+  var irisCode = "XX1";
+  for (var k in irisMap) { if (panneStr.indexOf(k) >= 0) { irisCode = irisMap[k]; break; } }
+  var brandId = String((d.qrData && d.qrData.brandId) || 243);
+  var serial = a.imei || "";
+  var today = new Date().toISOString();
+  var refFact = d.refFacture || d.numero || "REP-001";
+  var payload = JSON.stringify({
+    Consumer: { Title: (c.civilite === "Mme" ? 1 : 3), LastName: c.nom || "Client", FirstName: c.prenom || "", Address1: c.adresse || "21 Rue Gambetta", Zip: c.cp || "71000", City: c.ville || "Macon", Country: "250", Phone: c.tel || "", Email: c.email || "" },
+    Product: { ProductId: "EEE.M6.060", BrandId: brandId, CommercialRef: a.modele || "", SerialNumber: serial, IRISSymptom: irisCode, FailureDescription: d.panne || "Reparation" },
+    Quote: { LaborCost: {Amount: moHT, Currency: "EUR"}, SparePartsCost: {Amount: piecesHT, Currency: "EUR"}, TravelCost: {Amount: 0, Currency: "EUR"}, TotalAmountExclVAT: {Amount: totalHT, Currency: "EUR"}, TotalAmountInclVAT: {Amount: devisTTC, Currency: "EUR"}, SupportAmount: {Amount: soutien, Currency: "EUR"} }
   });
-
-  var claimData = await claimResp.json();
-  console.log('[QR Ecologic] CreateClaim:', JSON.stringify(claimData).substring(0,300));
-
-  if (!claimData.ResponseData || !claimData.ResponseData.ClaimId) {
-    var errMsg = (claimData.ResponseMessage || claimData.ResponseErrorMessage || 'Erreur CreateClaim');
-    throw new Error(errMsg);
-  }
-
-  var claimId = claimData.ResponseData.ClaimId;
-  d.agoraClaimId = claimId;
-
-  // ② bis: AttachFile — Facture PDF (Invoice)
+  var el = document.getElementById("rep-qr-envoi-statut");
+  if (el) el.innerHTML = "<div style='color:blue'>⏳ Envoi Ecologic en cours...</div>";
   try {
-    var factB64 = await repFactureToPDFBase64(repDossierCourant);
-    if (factB64) {
-      qrSetAgoraBadge('\u23F3', 'Facture PDF\u2026', 'Dossier #' + claimId, '#e67e22');
-      await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
-        + '?ClaimId=' + claimId
-        + '&FileName=Facture_' + encodeURIComponent(refFact) + '&FileExtension=pdf&DocumentType=Invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ FileContent: factB64 })
-      });
+    var r1 = await fetch(proxy + "/CreateSupportRequest?CallDate=" + today + "&RepairSiteId=" + siteId + "&QuoteNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
+    var j1 = await r1.json();
+    if (!j1.IsValid || !(j1.ResponseData && j1.ResponseData.IsValid)) throw new Error("Etape1: " + JSON.stringify((j1.ResponseData && j1.ResponseData.ValidationErrors) || j1.ResponseErrorMessage));
+    var reqId = j1.ResponseData.RequestId;
+    var r2 = await fetch(proxy + "/CreateClaim?RequestId=" + reqId + "&RepairEndDate=" + today + "&RepairSiteId=" + siteId + "&ConsumerInvoiceNumber=" + encodeURIComponent(refFact), {method:"POST",headers:{"Content-Type":"application/json"},body:payload});
+    var j2 = await r2.json();
+    var claimId = j2.ResponseData && j2.ResponseData.ClaimId;
+    if (!claimId) throw new Error("Pas de ClaimId: " + (j2.ResponseErrorMessage || JSON.stringify(j2.ResponseData)));
+    var errs = (j2.ResponseData.ValidationErrors || []).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
+    if (d.facture && typeof repFactureToPDFBase64 === "function") {
+      try {
+        var factB64 = await repFactureToPDFBase64(d);
+        if (factB64) await fetch(proxy + "/AttachFile?ClaimId=" + claimId + "&FileName=Facture&FileExtension=pdf&DocumentType=Invoice", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:factB64})});
+      } catch(ef) { console.warn("Facture:", ef); }
     }
-  } catch(ef) { console.warn('[QR Ecologic] Facture:', ef); }
-
-  // ③ AttachFile — Signature (CONSUMERVALIDATION — obligatoire)
-  var sigB64 = qrGetSignatureB64();
-  if (sigB64) {
-    qrSetAgoraBadge('\u23F3', 'Signature\u2026', 'Dossier #' + claimId, '#e67e22');
-    await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
-      + '?ClaimId=' + claimId
-      + '&FileName=signature&FileExtension=png&DocumentType=ConsumerValidation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ FileContent: sigB64 })
-    });
-  }
-
-  // ④ AttachFile — Photo IMEI (NAMEPLATE — obligatoire pour smartphones)
-  var imeiB64 = app.imeiPhotoB64 || null;
-  if (imeiB64) {
-    qrSetAgoraBadge('\u23F3', 'Photo IMEI\u2026', 'Dossier #' + claimId, '#e67e22');
-    await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
-      + '?ClaimId=' + claimId
-      + '&FileName=plaque_imei&FileExtension=png&DocumentType=NamePlate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ FileContent: imeiB64 })
-    });
-  }
-
-  // ⑤ SubmitClaim
-  qrSetAgoraBadge('\u{1F680}', 'Soumission\u2026', 'Dossier #' + claimId, '#e67e22');
-
-  var subResp = await fetch(
-    QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-  );
-  var subData = await subResp.json();
-  console.log('[QR Ecologic] SubmitClaim:', JSON.stringify(subData).substring(0,300));
-
-  // ⑥ Affichage résultat
-  var refEl  = document.getElementById('qr-ref-display');
-  var banner = document.getElementById('qr-done-banner');
-
-  if (subData.ResponseData && subData.ResponseData.IsValid) {
-    d.agoraOK = true;
-    qrSetAgoraBadge('\u2705', 'Dossier soumis !', 'Ecologic #' + claimId, '#27ae60');
-    if (refEl)  refEl.textContent   = 'Ecologic #' + claimId;
-    if (banner) banner.style.display = 'block';
-  } else {
-    // Dossier créé mais incomplet (pièces manquantes) — statut normal à la création
-    var lastStatus = (subData.ResponseData && subData.ResponseData.LastStatus) || 'Incomplet';
-    var errs = (claimData.ResponseData.ValidationErrors || [])
-      .map(function(e) { return e.ErrorMessage; }).slice(0,2).join(' | ');
-    d.agoraOK = false;
-    qrSetAgoraBadge('\u26A0\uFE0F', 'Cr\u00E9\u00E9 — ' + lastStatus,
-      '#' + claimId + (errs ? ' | ' + errs.substring(0,50) : ''), '#f39c12');
-    if (refEl) refEl.textContent = 'Ecologic #' + claimId + ' (' + lastStatus + ')';
-    var wait = document.getElementById('qr-agora-wait');
-    if (wait) { wait.style.display = 'block'; wait.textContent = errs || lastStatus; }
+    if (d.photoImeiUrl) {
+      try {
+        var ir = await fetch(d.photoImeiUrl); var ib = await ir.blob();
+        var ib64 = await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});
+        await fetch(proxy + "/AttachFile?ClaimId=" + claimId + "&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});
+      } catch(e2){ console.warn("IMEI:", e2); }
+    }
+    if (d.signature) {
+      try {
+        var sigB64 = d.signature.indexOf(",") > 0 ? d.signature.split(",")[1] : d.signature;
+        await fetch(proxy + "/AttachFile?ClaimId=" + claimId + "&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sigB64})});
+      } catch(e2){ console.warn("Signature:", e2); }
+    }
+    await fetch(proxy + "/SubmitSupportRequest?ClaimId=" + claimId, {method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    if (!d.qrEnvoi) d.qrEnvoi = {};
+    d.qrEnvoi.ecologicClaimId = claimId; d.qrEnvoi.ecologicRequestId = reqId; d.qrEnvoi.ecologicDate = today;
+    if (typeof repSauvegarderDossierImmediatement === "function") repSauvegarderDossierImmediatement();
+    var msg = "✅ Ecologic OK! ClaimId: " + claimId;
+    if (errs.length) msg += "<br><small style='color:orange;'>⚠️ Manquant: " + errs.join(", ") + "</small>";
+    msg += "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic →</a>";
+    if (el) el.innerHTML = "<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>" + msg + "</div>";
+    showNotif && showNotif("✅ ClaimId: " + claimId, "success");
+  } catch(e) {
+    if (el) el.innerHTML = "<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>❌ " + e.message + "<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    showNotif && showNotif("❌ Ecologic: " + e.message, "error");
   }
 }
 
-/* ── Flux Ecosystem : Authenticate → CreateRepairReimbursement ── */
+
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
