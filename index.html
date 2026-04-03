@@ -12977,7 +12977,7 @@ async function qrEnvoyerEcologicComplet(d){
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/4...</div>";
     if(d.facture&&typeof repFactureToPDFBase64==="function"){try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}}
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
-    if(d.signature){try{var sb=d.signature.indexOf(",")>0?d.signature.split(",")[1]:d.signature;await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Signature&FileExtension=png&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:sb})});}catch(e2){console.warn("Sig:",e2);}}
+    if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 4/4...</div>";
     await fetch(proxy+"/SubmitSupportRequest?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
     if(!d.qrEnvoi)d.qrEnvoi={};
@@ -13026,6 +13026,96 @@ async function qrEnvoyerEcosystemComplet(d){
   }
 }
 async function repEnvoyerEcosystem(){await qrEnvoyerEcosystemComplet(repDossierCourant);}
+
+// Génère un PDF "Devis signé" : infos dossier + signature client → ConsumerValidation Ecologic
+async function repDevisSignePDFBase64(d){
+  if(!d||!d.signature) return null;
+  if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+  var c=d.client||{};var a=d.appareil||{};
+  var dateRep=d.dateDepot||(d.facture&&d.facture.date)||new Date().toLocaleDateString('fr-FR');
+  var montantTTC=parseFloat(d.devis||0).toFixed(2);
+  var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||'';
+  var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210;var lm=20;var rm=W-20;var y=20;
+  // ── En-tête ──
+  pdf.setFillColor(0,120,215);pdf.rect(0,0,W,18,'F');
+  pdf.setTextColor(255,255,255);pdf.setFont('helvetica','bold');pdf.setFontSize(13);
+  pdf.text('SOLUTION PHONE – 21 Rue Gambetta, 71000 Mâcon',lm,12);
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');
+  pdf.text('SIRET 801 044 785 00021 | QualiRépar certifié',lm,17);
+  y=28;
+  // ── Titre ──
+  pdf.setTextColor(0,0,0);pdf.setFont('helvetica','bold');pdf.setFontSize(14);
+  pdf.text('ATTESTATION DE DEMANDE DE SOUTIEN QUALIREPAR',W/2,y,{align:'center'});
+  y+=6;pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  pdf.setTextColor(80,80,80);
+  pdf.text('Document requis pour le remboursement du bonus QualiRépar (25 €)',W/2,y,{align:'center'});
+  y+=10;pdf.setDrawColor(0,120,215);pdf.setLineWidth(0.5);pdf.line(lm,y,rm,y);y+=8;
+  // ── Infos réparation ──
+  pdf.setTextColor(0,0,0);pdf.setFont('helvetica','bold');pdf.setFontSize(11);
+  pdf.text('1. INFORMATIONS RÉPARATION',lm,y);y+=7;
+  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  var rows=[
+    ['Date de réparation',dateRep],
+    ['N° dossier / facture',ref],
+    ['Appareil',(a.marque||'')+' '+(a.modele||'')],
+    ['IMEI / N° série',a.imei||'—'],
+    ['Type de panne',d.panne||'—'],
+    ['Montant TTC réparation',montantTTC+' €'],
+    ['Bonus QualiRépar déduit','25,00 €'],
+    ['Montant réglé par le client',(Math.max(0,parseFloat(montantTTC)-25)).toFixed(2)+' €']
+  ];
+  rows.forEach(function(r){
+    pdf.setFont('helvetica','bold');pdf.text(r[0]+' :',lm,y);
+    pdf.setFont('helvetica','normal');pdf.text(r[1],85,y);
+    y+=6;
+  });
+  y+=4;pdf.line(lm,y,rm,y);y+=8;
+  // ── Infos client ──
+  pdf.setFont('helvetica','bold');pdf.setFontSize(11);
+  pdf.text('2. CONSOMMATEUR',lm,y);y+=7;
+  pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  var crows=[
+    ['Nom / Prénom',(c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')],
+    ['Email',c.email||'—'],
+    ['Téléphone',c.tel||'—'],
+    ['Adresse',(c.adresse||'')+((c.cp||c.ville)?' – '+(c.cp||'')+' '+(c.ville||''):'')] 
+  ];
+  crows.forEach(function(r){
+    pdf.setFont('helvetica','bold');pdf.text(r[0]+' :',lm,y);
+    pdf.setFont('helvetica','normal');pdf.text(r[1],85,y);
+    y+=6;
+  });
+  y+=4;pdf.line(lm,y,rm,y);y+=8;
+  // ── Déclaration + signature ──
+  pdf.setFont('helvetica','bold');pdf.setFontSize(11);
+  pdf.text('3. VALIDATION DU CONSOMMATEUR',lm,y);y+=7;
+  pdf.setFont('helvetica','normal');pdf.setFontSize(9);pdf.setTextColor(40,40,40);
+  var decl='Je soussigné(e) '+((c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')).trim()+', certifie avoir fait réparer l\'appareil référencé ci-dessus par Solution Phone, avoir bénéficié du bonus QualiRépar de 25 € déduit du montant total de la réparation, et avoir pris connaissance des conditions du dispositif QualiRépar.';
+  var lines=pdf.splitTextToSize(decl,W-lm-20);
+  pdf.text(lines,lm,y);y+=lines.length*5+6;
+  pdf.setFontSize(9);pdf.setTextColor(80,80,80);
+  pdf.text('Date et signature du client :',lm,y);y+=4;
+  // Ajouter la signature image
+  try{
+    var sigData=d.signature;
+    var sigExt='PNG';
+    if(sigData.startsWith('data:image/jpeg')||sigData.startsWith('data:image/jpg')) sigExt='JPEG';
+    var sigB64=sigData.indexOf(',')>0?sigData:('data:image/png;base64,'+sigData);
+    // Cadre pour la signature
+    pdf.setDrawColor(180,180,180);pdf.setLineWidth(0.3);
+    pdf.rect(lm,y,80,35);
+    pdf.addImage(sigB64,sigExt,lm+1,y+1,78,33,'','FAST');
+    // Date à droite
+    pdf.setTextColor(0,0,0);pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+    pdf.text('Fait à Mâcon, le '+new Date().toLocaleDateString('fr-FR'),lm+90,y+18);
+  }catch(es){console.warn('Sig img:',es);}
+  y+=40;
+  // ── Pied de page ──
+  pdf.setFontSize(7);pdf.setTextColor(120,120,120);
+  pdf.text('Solution Phone – QualiRépar certifié – Ce document est requis pour le traitement du dossier de remboursement par l\'éco-organisme.',W/2,290,{align:'center'});
+  return pdf.output('datauristring').split(',')[1];
+}
 
 async function repEnvoyerEcologic(){
   await qrEnvoyerEcologicComplet(repDossierCourant);
