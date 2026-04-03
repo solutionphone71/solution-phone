@@ -4749,7 +4749,7 @@ async function envoyerFactureEmail(){
   var a = d.appareil||{};
   var bonusQR = !!(d.bonusQR||f.bonusQR);
   var prixClient = f.prix||0;
-  var prixAffiche = prixClient; // Le technicien saisit deja le prix client (apres deduction QualiRepar)
+  var prixAffiche = bonusQR ? prixClient - 25 : prixClient; // Client paie prix - bonus QR
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -4833,7 +4833,7 @@ async function envoyerFactureSMS(){
 
   var f   = d.facture;
   var bonusQR = !!(d.bonusQR||f.bonusQR);
-  var prixAffiche = (f.prix||0) - (bonusQR?25:0);
+  var prixAffiche = bonusQR ? (f.prix||0) - 25 : (f.prix||0); // Client paie prix - bonus QR
 
   // Formater tel en international (+33...)
   var telIntl = tel;
@@ -4841,7 +4841,7 @@ async function envoyerFactureSMS(){
 
   var msgSMS = 'Solution Phone Macon - Facture '+f.numero+
     ' : '+prixAffiche.toFixed(2)+'EUR TTC'+
-    (bonusQR?' (Bonus QR -25EUR inclus)':'')+
+    (bonusQR?' (apres bonus QualiRepar -25EUR)':'')+
     '. Merci pour votre confiance !';
 
   try {
@@ -11157,7 +11157,7 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   try {
     var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': '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' },
+      headers: { 'Content-Type': 'application/json', 'api-key': localStorage.getItem(PARAMS_KEYS.brevoKey)||'' },
       body: JSON.stringify({ sender: 'SolPhone', recipient: tel, content: message })
     });
     if(res.ok) {
