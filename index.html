@@ -4875,7 +4875,7 @@ async function paramsTestKiwiz(){
   var st = document.getElementById('params-kiwiz-status');
   if(st) st.innerHTML='⏳ Test en cours...';
   try {
-    var res = await fetch('https://api.kiwiz.io/auth/login', {
+    var res = await fetch('https://app.solution-phone.fr/proxy-kiwiz/auth/login', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
@@ -4896,7 +4896,7 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
   if(!kiwizConfigured()) return null;
   try {
     // 1. Obtenir un token Kiwiz
-    var authRes = await fetch('https://api.kiwiz.io/auth/login', {
+    var authRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/auth/login', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
@@ -4917,7 +4917,7 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
       client_name: client,
       pdf: pdfBase64 || ''
     };
-    var certRes = await fetch('https://api.kiwiz.io/invoices', {
+    var certRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/invoices', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body: JSON.stringify(payload)
@@ -16910,7 +16910,7 @@ async function qrVerifierTousLesStatuts(){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-03-v3.6';
+  var APP_VERSION = '2026-04-03-v3.7';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
