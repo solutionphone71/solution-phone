@@ -12976,9 +12976,7 @@ async function qrEnvoyerEcologicComplet(d){
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
-    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
-    var submitText=await submitResp.text();
-    console.log('[Ecologic] Submit status:',submitResp.status,'body:',submitText.substring(0,300));
+    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
     d.statut="qr";
@@ -16912,7 +16910,7 @@ async function qrVerifierTousLesStatuts(){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-03-v3.5';
+  var APP_VERSION = '2026-04-03-v3.6';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
