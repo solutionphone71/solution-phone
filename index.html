@@ -16903,6 +16903,324 @@ async function qrVerifierTousLesStatuts(){
   showNotif(updated > 0 ? updated+' statut(s) mis à jour ✅' : 'Tous les statuts sont à jour', 'success');
 }
 // ══════════════════════════════════════════════════════════════════
+
+
+// ===== CALENDRIER ÉDITORIAL =====
+var CAL_STATE = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth(),
+  items: [],
+  editId: null,
+  notifOn: false,
+  notifTimer: null,
+  MONTHS: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  TYPES: {reel:'🎬 Reel',post:'🖼️ Post',story:'📱 Story',ads:'💰 Ads',google:'⭐ Google',autre:'📌 Autre'},
+  CHIPS: {reel:'chip-c-reel',post:'chip-c-post',story:'chip-c-story',ads:'chip-c-ads',google:'chip-c-google',autre:'chip-c-post'},
+  ITEMBORDER: {reel:'cit-reel',post:'cit-post',story:'cit-story',ads:'cit-ads',google:'cit-google',autre:'cit-reel'},
+  TYPEBADGE: {reel:'ctb-reel',post:'ctb-post',story:'ctb-story',ads:'ctb-ads',google:'ctb-google',autre:'ctb-reel'}
+};
+
+async function loadCalItems(){
+  var y=CAL_STATE.year, m=CAL_STATE.month;
+  var start=y+'-'+String(m+1).padStart(2,'0')+'-01';
+  var last=new Date(y,m+1,0).getDate();
+  var end=y+'-'+String(m+1).padStart(2,'0')+'-'+last;
+  document.getElementById('calMonthLbl').textContent=CAL_STATE.MONTHS[m]+' '+y;
+  try{
+    if(!supabaseReady){
+    var waited=0;
+    await new Promise(function(resolve){
+      var t=setInterval(function(){waited+=200;if(supabaseReady||waited>=5000){clearInterval(t);resolve();}},200);
+    });
+  }
+  try{
+    var data=await supaFetch('calendrier_editorial','GET',null,'?date=gte.'+start+'&date=lte.'+end+'&order=date.asc,heure.asc');
+    CAL_STATE.items=Array.isArray(data)?data:[];
+  }catch(e){ CAL_STATE.items=[]; }
+  }catch(e){ CAL_STATE.items=[]; }
+  calRenderAll();
+}
+
+function calRenderAll(){
+  calUpdateStats();
+  calRenderGrid();
+  calRenderList();
+  checkCalNotifs();
+}
+
+function calUpdateStats(){
+  var its=CAL_STATE.items;
+  document.getElementById('cst-reel').textContent=its.filter(function(i){return i.type==='reel';}).length;
+  document.getElementById('cst-post').textContent=its.filter(function(i){return i.type==='post';}).length;
+  document.getElementById('cst-story').textContent=its.filter(function(i){return i.type==='story';}).length;
+  document.getElementById('cst-ads').textContent=its.filter(function(i){return i.type==='ads';}).length;
+  document.getElementById('cst-done').textContent=its.filter(function(i){return i.statut==='publie';}).length;
+}
+
+function calRenderGrid(){
+  var body=document.getElementById('calGridBody');
+  if(!body)return;
+  var y=CAL_STATE.year,m=CAL_STATE.month;
+  var first=new Date(y,m,1).getDay();
+  first=first===0?6:first-1;
+  var last=new Date(y,m+1,0).getDate();
+  var today=new Date();today.setHours(0,0,0,0);
+  var html='';
+  for(var i=0;i<first;i++) html+='<div class="cal-cell cal-empty"></div>';
+  for(var d=1;d<=last;d++){
+    var ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var cd=new Date(ds+'T00:00:00');
+    var isT=cd.getTime()===today.getTime();
+    var dayItems=CAL_STATE.items.filter(function(i){return i.date===ds;});
+    html+='<div class="cal-cell'+(isT?' cal-today':'')+'" onclick="calSwitchToList()">';
+    html+='<div class="cal-cell-num">'+d+'</div>';
+    dayItems.slice(0,3).forEach(function(it){
+      var chip=CAL_STATE.CHIPS[it.type]||'chip-c-post';
+      var done=it.statut==='publie'?' chip-c-done':'';
+      var lbl=it.titre.replace(/^(Reel|Post|Story|Ads|Google|Vidéo)\s*[—–\-]\s*/i,'').substring(0,18);
+      html+='<div class="cal-event-chip '+chip+done+'" onclick="event.stopPropagation();showCalDetail(\'"+it.id+"\')">'+lbl+'</div>';
+    });
+    if(dayItems.length>3) html+='<div style="font-size:9px;color:var(--text-muted);padding:1px 2px;">+'+( dayItems.length-3)+'</div>';
+    html+='</div>';
+  }
+  body.innerHTML=html;
+}
+
+function calRenderList(){
+  var body=document.getElementById('calListBody');
+  if(!body)return;
+  var today=new Date();today.setHours(0,0,0,0);
+  var byDate={};
+  CAL_STATE.items.forEach(function(it){ if(!byDate[it.date])byDate[it.date]=[];byDate[it.date].push(it); });
+  var dates=Object.keys(byDate).sort();
+  if(!dates.length){ body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">Aucun contenu ce mois.<br><br><button class="btn-cal-add" onclick="openAddCal()">➕ Ajouter</button></div>'; return; }
+  var DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var html='';
+  dates.forEach(function(ds){
+    var d=new Date(ds+'T00:00:00');
+    var isT=d.getTime()===today.getTime();
+    var isPast=d<today;
+    var cls=isT?'badge-today':isPast?'badge-past':'badge-future';
+    var lbl=DAYS[d.getDay()]+' '+d.getDate()+' '+CAL_STATE.MONTHS[d.getMonth()]+(isT?" · AUJOURD'HUI":'');
+    html+='<div class="cal-day-block"><div class="cal-day-hdr"><span class="cal-day-badge '+cls+'">'+lbl+'</span></div><div>';
+    byDate[ds].forEach(function(it){
+      var done=it.statut==='publie';
+      var bc=CAL_STATE.ITEMBORDER[it.type]||'cit-post';
+      var tb=CAL_STATE.TYPEBADGE[it.type]||'ctb-post';
+      html+='<div class="cal-item-row '+bc+(done?' cit-done':'')+'"><div class="cal-item-top">';
+      html+='<span class="cal-item-time">'+( it.heure||'09:00').substring(0,5)+'</span>';
+      html+='<span class="cal-item-type-badge '+tb+'">'+CAL_STATE.TYPES[it.type]+'</span>';
+      if(it.outil) html+='<span class="cal-item-outil">'+it.outil+'</span>';
+      if(done) html+='<span class="cal-item-done-tag">✅ Publié</span>';
+      html+='</div><div class="cal-item-title">'+it.titre+'</div>';
+      html+='<div class="cal-item-btns">';
+      html+="<button class=\"btn-ci btn-ci-view\" onclick=\"showCalDetail('"+it.id+"')\">👁️ Voir détail</button>";
+      if(!done) html+="<button class=\"btn-ci btn-ci-done\" onclick=\"calMarkDone('"+it.id+"')\">✅ Publié</button>";
+      html+="<button class=\"btn-ci\" onclick=\"editCalItem('"+it.id+"')\">✏️ Modifier</button>";
+      html+="<button class=\"btn-ci btn-ci-del\" onclick=\"delCalItem('"+it.id+"')\">🗑️</button>";
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  });
+  body.innerHTML=html;
+}
+
+function calPrevMonth(){ CAL_STATE.month--; if(CAL_STATE.month<0){CAL_STATE.month=11;CAL_STATE.year--;} loadCalItems(); }
+function calNextMonth(){ CAL_STATE.month++; if(CAL_STATE.month>11){CAL_STATE.month=0;CAL_STATE.year++;} loadCalItems(); }
+
+function switchCalView(v,btn){
+  document.querySelectorAll('.cal-vtab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  document.getElementById('calGridWrap').style.display=v==='grid'?'':'none';
+  document.getElementById('calListWrap').style.display=v==='list'?'':'none';
+}
+function calSwitchToList(){ switchCalView('list',document.querySelectorAll('.cal-vtab')[1]); }
+
+function openAddCal(ds){
+  CAL_STATE.editId=null;
+  document.getElementById('calModalTitle').textContent='➕ Nouveau contenu';
+  document.getElementById('cf-date').value=ds||new Date().toISOString().slice(0,10);
+  document.getElementById('cf-heure').value='09:00';
+  document.getElementById('cf-type').value='post';
+  document.getElementById('cf-outil').value='Canva Pro';
+  document.getElementById('cf-titre').value='';
+  document.getElementById('cf-prompt').value='';
+  document.getElementById('cf-legende').value='';
+  document.getElementById('cf-hashtags').value='';
+  document.getElementById('cf-notes').value='';
+  document.getElementById('cf-statut').value='planifie';
+  document.getElementById('cf-rappel').checked=true;
+  document.getElementById('calModalWrap').classList.add('open');
+}
+function closeCalModal(){ document.getElementById('calModalWrap').classList.remove('open'); }
+
+function editCalItem(id){
+  var it=CAL_STATE.items.find(function(i){return i.id===id;});
+  if(!it)return;
+  CAL_STATE.editId=id;
+  document.getElementById('calModalTitle').textContent='✏️ Modifier';
+  document.getElementById('cf-date').value=it.date;
+  document.getElementById('cf-heure').value=(it.heure||'09:00').substring(0,5);
+  document.getElementById('cf-type').value=it.type;
+  document.getElementById('cf-outil').value=it.outil||'Canva Pro';
+  document.getElementById('cf-titre').value=it.titre;
+  document.getElementById('cf-prompt').value=it.prompt_kling||'';
+  document.getElementById('cf-legende').value=it.legende||'';
+  document.getElementById('cf-hashtags').value=it.hashtags||'';
+  document.getElementById('cf-notes').value=it.notes||'';
+  document.getElementById('cf-statut').value=it.statut;
+  document.getElementById('cf-rappel').checked=it.rappel!==false;
+  document.getElementById('calModalWrap').classList.add('open');
+}
+
+async function saveCalItem(){
+  var payload={
+    date:document.getElementById('cf-date').value,
+    heure:document.getElementById('cf-heure').value+':00',
+    type:document.getElementById('cf-type').value,
+    outil:document.getElementById('cf-outil').value,
+    titre:document.getElementById('cf-titre').value.trim(),
+    prompt_kling:document.getElementById('cf-prompt').value.trim()||null,
+    legende:document.getElementById('cf-legende').value.trim()||null,
+    hashtags:document.getElementById('cf-hashtags').value.trim()||null,
+    notes:document.getElementById('cf-notes').value.trim()||null,
+    statut:document.getElementById('cf-statut').value,
+    rappel:document.getElementById('cf-rappel').checked
+  };
+  if(!payload.titre||!payload.date){showNotif('Titre et date requis !','error');return;}
+  try{
+    if(CAL_STATE.editId){
+      await supaFetch('calendrier_editorial','PATCH',payload,'?id=eq.'+CAL_STATE.editId);
+    } else {
+      await supaFetch('calendrier_editorial','POST',payload);
+    }
+    closeCalModal();
+    await loadCalItems();
+    showCalToast('✅ Enregistré !',payload.titre);
+  }catch(e){showNotif('Erreur enregistrement','error');}
+}
+
+async function calMarkDone(id){
+  try{
+    await supaFetch('calendrier_editorial','PATCH',{statut:'publie'},'?id=eq.'+id);
+    await loadCalItems();
+    showCalToast('✅ Marqué comme publié !','');
+  }catch(e){}
+}
+
+async function delCalItem(id){
+  var it=CAL_STATE.items.find(function(i){return i.id===id;});
+  if(!it||!confirm('Supprimer "'+it.titre+'" ?'))return;
+  try{
+    await supaFetch('calendrier_editorial','DELETE',null,'?id=eq.'+id);
+    await loadCalItems();
+  }catch(e){}
+}
+
+function showCalDetail(id){
+  var it=CAL_STATE.items.find(function(i){return i.id===id;});
+  if(!it)return;
+  document.getElementById('calDetailTitle').textContent=CAL_STATE.TYPES[it.type]+' — '+it.titre;
+  document.getElementById('calDetailMeta').textContent='📅 '+it.date+' · ⏰ '+(it.heure||'').substring(0,5)+' · 🛠️ '+(it.outil||'');
+  var html='';
+  if(it.prompt_kling) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">🎬 Prompt Kling AI</div><div class="cal-detail-val prompt-style">'+it.prompt_kling+'</div></div>';
+  if(it.legende) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">📝 Légende Instagram</div><div class="cal-detail-val">'+it.legende+'</div></div>';
+  if(it.hashtags) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">🏷️ Hashtags</div><div class="cal-detail-val hashtag-style">'+it.hashtags+'</div></div>';
+  if(it.notes) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">📌 Notes</div><div class="cal-detail-val">'+it.notes+'</div></div>';
+  if(!html) html='<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Aucun détail disponible.<br>Modifie ce contenu pour ajouter le prompt et la légende.</div>';
+  document.getElementById('calDetailBody').innerHTML=html;
+  var doneBtn=document.getElementById('calDetailDoneBtn');
+  doneBtn.style.display=it.statut==='publie'?'none':'';
+  doneBtn.onclick=function(){calMarkDone(id);closeCalDetail();};
+  document.getElementById('calDetailWrap').classList.add('open');
+}
+function closeCalDetail(){ document.getElementById('calDetailWrap').classList.remove('open'); }
+
+function toggleCalNotif(){
+  if(CAL_STATE.notifOn){
+    CAL_STATE.notifOn=false;
+    clearInterval(CAL_STATE.notifTimer);
+    document.getElementById('btnCalNotif').textContent='🔔 Activer alertes';
+    document.getElementById('btnCalNotif').classList.remove('on');
+    showCalToast('🔕 Alertes désactivées','');
+    return;
+  }
+  if(!('Notification' in window)){showCalToast('⚠️ Non supporté','Utilise Chrome ou Edge');return;}
+  Notification.requestPermission().then(function(p){
+    if(p==='granted'){
+      CAL_STATE.notifOn=true;
+      document.getElementById('btnCalNotif').textContent='🔕 Alertes ON ✅';
+      document.getElementById('btnCalNotif').classList.add('on');
+      showCalToast('🔔 Alertes activées !','Rappel 1h et 10min avant chaque publication.');
+      CAL_STATE.notifTimer=setInterval(checkCalNotifs,60000);
+      checkCalNotifs();
+    } else {
+      showCalToast('❌ Permission refusée','Autorise les notifications dans Chrome.');
+    }
+  });
+}
+
+function checkCalNotifs(){
+  if(!CAL_STATE.notifOn)return;
+  var now=new Date();
+  CAL_STATE.items.forEach(function(it){
+    if(!it.rappel||it.statut!=='planifie')return;
+    var pub=new Date(it.date+'T'+(it.heure||'09:00:00'));
+    var diff=(pub-now)/60000;
+    if(diff>59&&diff<61){
+      new Notification('⏰ Rappel dans 1h',{body:it.titre,icon:'/favicon.ico'});
+      showCalToast('⏰ Dans 1 heure !',it.titre);
+    }
+    if(diff>9&&diff<11){
+      new Notification('🚨 Dans 10 minutes !',{body:it.titre,icon:'/favicon.ico'});
+      showCalToast('🚨 Dans 10 minutes !',it.titre);
+    }
+  });
+}
+
+async function genCalNextMonth(){
+  var nm=CAL_STATE.month+1, ny=CAL_STATE.year;
+  if(nm>11){nm=0;ny++;}
+  var mname=CAL_STATE.MONTHS[nm];
+  if(!confirm("Générer le calendrier type pour "+mname+" "+ny+" ?\n\n4 Reels · 8 Posts · 4 Stories · 2 Boosts Ads"))return;
+  var first=new Date(ny,nm,1);
+  while(first.getDay()!==1)first.setDate(first.getDate()+1);
+  var weeks=[
+    {reel:'Reel — Votre téléphone est NU ?',p1:'Post — Collection coques du mois',p2:'Post Avis Client 5 étoiles',story:'Story — Le saviez-vous ?'},
+    {reel:'Reel — Hydrogel 5 minutes chrono',p1:'Post — QualiRépar -25€',ads:'Boost Meta Ads — Reel semaine 1',story:'Story Sondage — Votre problème ?'},
+    {reel:'Reel — Plus jamais à 1%',p1:'Post — Chargeurs Belkin & FairPlay',p2:'Post — Écouteurs TWS FairPlay',story:'Story Promo — Cette semaine'},
+    {reel:'Reel — Avant/Après réparation',p1:'Post — Équipe Solution Phone',ads:'Boost Best-of du mois — 14€',story:'Story — Lancement mois suivant'},
+  ];
+  var items=[];
+  var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  weeks.forEach(function(w,wi){
+    var mon=new Date(first);mon.setDate(mon.getDate()+wi*7);
+    if(mon.getMonth()!==nm)return;
+    var mer=new Date(mon);mer.setDate(mer.getDate()+2);
+    var ven=new Date(mon);ven.setDate(ven.getDate()+4);
+    var dim=new Date(mon);dim.setDate(dim.getDate()+6);
+    items.push({date:toISO(mon),heure:'09:00:00',type:'reel',outil:'Kling AI Pro',titre:w.reel,statut:'planifie',rappel:true});
+    items.push({date:toISO(mer),heure:'11:00:00',type:'post',outil:'Canva Pro',titre:w.p1,statut:'planifie',rappel:true});
+    if(w.p2&&ven.getMonth()===nm) items.push({date:toISO(ven),heure:'09:00:00',type:'post',outil:'Canva Pro',titre:w.p2,statut:'planifie',rappel:true});
+    if(w.ads&&ven.getMonth()===nm) items.push({date:toISO(ven),heure:'09:00:00',type:'ads',outil:'Meta Ads Manager',titre:w.ads,statut:'planifie',rappel:true});
+    if(dim.getMonth()===nm) items.push({date:toISO(dim),heure:'18:00:00',type:'story',outil:'Canva Pro',titre:w.story,statut:'planifie',rappel:true});
+  });
+  try{
+    await supaFetch('calendrier_editorial','POST',items);
+    CAL_STATE.month=nm;CAL_STATE.year=ny;
+    await loadCalItems();
+    showCalToast('✅ '+mname+' généré !',items.length+' contenus planifiés automatiquement.');
+  }catch(e){showNotif('Erreur génération','error');}
+}
+
+function showCalToast(title,body){
+  var t=document.getElementById('calToast');
+  document.getElementById('calToastTitle').textContent=title;
+  document.getElementById('calToastBody').textContent=body;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},4000);
+}
+
 </script>
 
 <!-- ══ PAGE SUIVI QUALIREPAR ══ -->
@@ -17153,317 +17471,10 @@ async function qrVerifierTousLesStatuts(){
 </style>
 
 
-// ===== CALENDRIER ÉDITORIAL =====
-var CAL_STATE = {
-  year: new Date().getFullYear(),
-  month: new Date().getMonth(),
-  items: [],
-  editId: null,
-  notifOn: false,
-  notifTimer: null,
-  MONTHS: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
-  TYPES: {reel:'🎬 Reel',post:'🖼️ Post',story:'📱 Story',ads:'💰 Ads',google:'⭐ Google',autre:'📌 Autre'},
-  CHIPS: {reel:'chip-c-reel',post:'chip-c-post',story:'chip-c-story',ads:'chip-c-ads',google:'chip-c-google',autre:'chip-c-post'},
-  ITEMBORDER: {reel:'cit-reel',post:'cit-post',story:'cit-story',ads:'cit-ads',google:'cit-google',autre:'cit-reel'},
-  TYPEBADGE: {reel:'ctb-reel',post:'ctb-post',story:'ctb-story',ads:'ctb-ads',google:'ctb-google',autre:'ctb-reel'}
-};
-
-async function loadCalItems(){
-  var y=CAL_STATE.year, m=CAL_STATE.month;
-  var start=y+'-'+String(m+1).padStart(2,'0')+'-01';
-  var last=new Date(y,m+1,0).getDate();
-  var end=y+'-'+String(m+1).padStart(2,'0')+'-'+last;
-  document.getElementById('calMonthLbl').textContent=CAL_STATE.MONTHS[m]+' '+y;
-  try{
-    var res=await supabase.from('calendrier_editorial').select('*').gte('date',start).lte('date',end).order('date').order('heure');
-    CAL_STATE.items=res.data||[];
-  }catch(e){ CAL_STATE.items=[]; }
-  calRenderAll();
-}
-
-function calRenderAll(){
-  calUpdateStats();
-  calRenderGrid();
-  calRenderList();
-  checkCalNotifs();
-}
-
-function calUpdateStats(){
-  var its=CAL_STATE.items;
-  document.getElementById('cst-reel').textContent=its.filter(function(i){return i.type==='reel';}).length;
-  document.getElementById('cst-post').textContent=its.filter(function(i){return i.type==='post';}).length;
-  document.getElementById('cst-story').textContent=its.filter(function(i){return i.type==='story';}).length;
-  document.getElementById('cst-ads').textContent=its.filter(function(i){return i.type==='ads';}).length;
-  document.getElementById('cst-done').textContent=its.filter(function(i){return i.statut==='publie';}).length;
-}
-
-function calRenderGrid(){
-  var body=document.getElementById('calGridBody');
-  if(!body)return;
-  var y=CAL_STATE.year,m=CAL_STATE.month;
-  var first=new Date(y,m,1).getDay();
-  first=first===0?6:first-1;
-  var last=new Date(y,m+1,0).getDate();
-  var today=new Date();today.setHours(0,0,0,0);
-  var html='';
-  for(var i=0;i<first;i++) html+='<div class="cal-cell cal-empty"></div>';
-  for(var d=1;d<=last;d++){
-    var ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    var cd=new Date(ds+'T00:00:00');
-    var isT=cd.getTime()===today.getTime();
-    var dayItems=CAL_STATE.items.filter(function(i){return i.date===ds;});
-    html+='<div class="cal-cell'+(isT?' cal-today':'')+'" onclick="calSwitchToList()">';
-    html+='<div class="cal-cell-num">'+d+'</div>';
-    dayItems.slice(0,3).forEach(function(it){
-      var chip=CAL_STATE.CHIPS[it.type]||'chip-c-post';
-      var done=it.statut==='publie'?' chip-c-done':'';
-      var lbl=it.titre.replace(/^(Reel|Post|Story|Ads|Google|Vidéo)\s*[—–\-]\s*/i,'').substring(0,18);
-      html+='<div class="cal-event-chip '+chip+done+'" onclick="event.stopPropagation();showCalDetail(''+it.id+'')">'+lbl+'</div>';
-    });
-    if(dayItems.length>3) html+='<div style="font-size:9px;color:var(--text-muted);padding:1px 2px;">+'+( dayItems.length-3)+'</div>';
-    html+='</div>';
-  }
-  body.innerHTML=html;
-}
-
-function calRenderList(){
-  var body=document.getElementById('calListBody');
-  if(!body)return;
-  var today=new Date();today.setHours(0,0,0,0);
-  var byDate={};
-  CAL_STATE.items.forEach(function(it){ if(!byDate[it.date])byDate[it.date]=[];byDate[it.date].push(it); });
-  var dates=Object.keys(byDate).sort();
-  if(!dates.length){ body.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">Aucun contenu ce mois.<br><br><button class="btn-cal-add" onclick="openAddCal()">➕ Ajouter</button></div>'; return; }
-  var DAYS=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  var html='';
-  dates.forEach(function(ds){
-    var d=new Date(ds+'T00:00:00');
-    var isT=d.getTime()===today.getTime();
-    var isPast=d<today;
-    var cls=isT?'badge-today':isPast?'badge-past':'badge-future';
-    var lbl=DAYS[d.getDay()]+' '+d.getDate()+' '+CAL_STATE.MONTHS[d.getMonth()]+(isT?' · AUJOURD'HUI':'');
-    html+='<div class="cal-day-block"><div class="cal-day-hdr"><span class="cal-day-badge '+cls+'">'+lbl+'</span></div><div>';
-    byDate[ds].forEach(function(it){
-      var done=it.statut==='publie';
-      var bc=CAL_STATE.ITEMBORDER[it.type]||'cit-post';
-      var tb=CAL_STATE.TYPEBADGE[it.type]||'ctb-post';
-      html+='<div class="cal-item-row '+bc+(done?' cit-done':'')+'"><div class="cal-item-top">';
-      html+='<span class="cal-item-time">'+( it.heure||'09:00').substring(0,5)+'</span>';
-      html+='<span class="cal-item-type-badge '+tb+'">'+CAL_STATE.TYPES[it.type]+'</span>';
-      if(it.outil) html+='<span class="cal-item-outil">'+it.outil+'</span>';
-      if(done) html+='<span class="cal-item-done-tag">✅ Publié</span>';
-      html+='</div><div class="cal-item-title">'+it.titre+'</div>';
-      html+='<div class="cal-item-btns">';
-      html+='<button class="btn-ci btn-ci-view" onclick="showCalDetail(''+it.id+'')">👁️ Voir détail</button>';
-      if(!done) html+='<button class="btn-ci btn-ci-done" onclick="calMarkDone(''+it.id+'')">✅ Publié</button>';
-      html+='<button class="btn-ci" onclick="editCalItem(''+it.id+'')">✏️ Modifier</button>';
-      html+='<button class="btn-ci btn-ci-del" onclick="delCalItem(''+it.id+'')">🗑️</button>';
-      html+='</div></div>';
-    });
-    html+='</div></div>';
-  });
-  body.innerHTML=html;
-}
-
-function calPrevMonth(){ CAL_STATE.month--; if(CAL_STATE.month<0){CAL_STATE.month=11;CAL_STATE.year--;} loadCalItems(); }
-function calNextMonth(){ CAL_STATE.month++; if(CAL_STATE.month>11){CAL_STATE.month=0;CAL_STATE.year++;} loadCalItems(); }
-
-function switchCalView(v,btn){
-  document.querySelectorAll('.cal-vtab').forEach(function(t){t.classList.remove('active');});
-  btn.classList.add('active');
-  document.getElementById('calGridWrap').style.display=v==='grid'?'':'none';
-  document.getElementById('calListWrap').style.display=v==='list'?'':'none';
-}
-function calSwitchToList(){ switchCalView('list',document.querySelectorAll('.cal-vtab')[1]); }
-
-function openAddCal(ds){
-  CAL_STATE.editId=null;
-  document.getElementById('calModalTitle').textContent='➕ Nouveau contenu';
-  document.getElementById('cf-date').value=ds||new Date().toISOString().slice(0,10);
-  document.getElementById('cf-heure').value='09:00';
-  document.getElementById('cf-type').value='post';
-  document.getElementById('cf-outil').value='Canva Pro';
-  document.getElementById('cf-titre').value='';
-  document.getElementById('cf-prompt').value='';
-  document.getElementById('cf-legende').value='';
-  document.getElementById('cf-hashtags').value='';
-  document.getElementById('cf-notes').value='';
-  document.getElementById('cf-statut').value='planifie';
-  document.getElementById('cf-rappel').checked=true;
-  document.getElementById('calModalWrap').classList.add('open');
-}
-function closeCalModal(){ document.getElementById('calModalWrap').classList.remove('open'); }
-
-function editCalItem(id){
-  var it=CAL_STATE.items.find(function(i){return i.id===id;});
-  if(!it)return;
-  CAL_STATE.editId=id;
-  document.getElementById('calModalTitle').textContent='✏️ Modifier';
-  document.getElementById('cf-date').value=it.date;
-  document.getElementById('cf-heure').value=(it.heure||'09:00').substring(0,5);
-  document.getElementById('cf-type').value=it.type;
-  document.getElementById('cf-outil').value=it.outil||'Canva Pro';
-  document.getElementById('cf-titre').value=it.titre;
-  document.getElementById('cf-prompt').value=it.prompt_kling||'';
-  document.getElementById('cf-legende').value=it.legende||'';
-  document.getElementById('cf-hashtags').value=it.hashtags||'';
-  document.getElementById('cf-notes').value=it.notes||'';
-  document.getElementById('cf-statut').value=it.statut;
-  document.getElementById('cf-rappel').checked=it.rappel!==false;
-  document.getElementById('calModalWrap').classList.add('open');
-}
-
-async function saveCalItem(){
-  var payload={
-    date:document.getElementById('cf-date').value,
-    heure:document.getElementById('cf-heure').value+':00',
-    type:document.getElementById('cf-type').value,
-    outil:document.getElementById('cf-outil').value,
-    titre:document.getElementById('cf-titre').value.trim(),
-    prompt_kling:document.getElementById('cf-prompt').value.trim()||null,
-    legende:document.getElementById('cf-legende').value.trim()||null,
-    hashtags:document.getElementById('cf-hashtags').value.trim()||null,
-    notes:document.getElementById('cf-notes').value.trim()||null,
-    statut:document.getElementById('cf-statut').value,
-    rappel:document.getElementById('cf-rappel').checked
-  };
-  if(!payload.titre||!payload.date){showNotif('Titre et date requis !','error');return;}
-  try{
-    if(CAL_STATE.editId) await supabase.from('calendrier_editorial').update(payload).eq('id',CAL_STATE.editId);
-    else await supabase.from('calendrier_editorial').insert([payload]);
-    closeCalModal();
-    await loadCalItems();
-    showCalToast('✅ Enregistré !',payload.titre);
-  }catch(e){showNotif('Erreur enregistrement','error');}
-}
-
-async function calMarkDone(id){
-  try{
-    await supabase.from('calendrier_editorial').update({statut:'publie'}).eq('id',id);
-    await loadCalItems();
-    showCalToast('✅ Marqué comme publié !','');
-  }catch(e){}
-}
-
-async function delCalItem(id){
-  var it=CAL_STATE.items.find(function(i){return i.id===id;});
-  if(!it||!confirm('Supprimer "'+it.titre+'" ?'))return;
-  try{
-    await supabase.from('calendrier_editorial').delete().eq('id',id);
-    await loadCalItems();
-  }catch(e){}
-}
-
-function showCalDetail(id){
-  var it=CAL_STATE.items.find(function(i){return i.id===id;});
-  if(!it)return;
-  document.getElementById('calDetailTitle').textContent=CAL_STATE.TYPES[it.type]+' — '+it.titre;
-  document.getElementById('calDetailMeta').textContent='📅 '+it.date+' · ⏰ '+(it.heure||'').substring(0,5)+' · 🛠️ '+(it.outil||'');
-  var html='';
-  if(it.prompt_kling) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">🎬 Prompt Kling AI</div><div class="cal-detail-val prompt-style">'+it.prompt_kling+'</div></div>';
-  if(it.legende) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">📝 Légende Instagram</div><div class="cal-detail-val">'+it.legende+'</div></div>';
-  if(it.hashtags) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">🏷️ Hashtags</div><div class="cal-detail-val hashtag-style">'+it.hashtags+'</div></div>';
-  if(it.notes) html+='<div class="cal-detail-section"><div class="cal-detail-lbl">📌 Notes</div><div class="cal-detail-val">'+it.notes+'</div></div>';
-  if(!html) html='<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Aucun détail disponible.<br>Modifie ce contenu pour ajouter le prompt et la légende.</div>';
-  document.getElementById('calDetailBody').innerHTML=html;
-  var doneBtn=document.getElementById('calDetailDoneBtn');
-  doneBtn.style.display=it.statut==='publie'?'none':'';
-  doneBtn.onclick=function(){calMarkDone(id);closeCalDetail();};
-  document.getElementById('calDetailWrap').classList.add('open');
-}
-function closeCalDetail(){ document.getElementById('calDetailWrap').classList.remove('open'); }
-
-function toggleCalNotif(){
-  if(CAL_STATE.notifOn){
-    CAL_STATE.notifOn=false;
-    clearInterval(CAL_STATE.notifTimer);
-    document.getElementById('btnCalNotif').textContent='🔔 Activer alertes';
-    document.getElementById('btnCalNotif').classList.remove('on');
-    showCalToast('🔕 Alertes désactivées','');
-    return;
-  }
-  if(!('Notification' in window)){showCalToast('⚠️ Non supporté','Utilise Chrome ou Edge');return;}
-  Notification.requestPermission().then(function(p){
-    if(p==='granted'){
-      CAL_STATE.notifOn=true;
-      document.getElementById('btnCalNotif').textContent='🔕 Alertes ON ✅';
-      document.getElementById('btnCalNotif').classList.add('on');
-      showCalToast('🔔 Alertes activées !','Rappel 1h et 10min avant chaque publication.');
-      CAL_STATE.notifTimer=setInterval(checkCalNotifs,60000);
-      checkCalNotifs();
-    } else {
-      showCalToast('❌ Permission refusée','Autorise les notifications dans Chrome.');
-    }
-  });
-}
-
-function checkCalNotifs(){
-  if(!CAL_STATE.notifOn)return;
-  var now=new Date();
-  CAL_STATE.items.forEach(function(it){
-    if(!it.rappel||it.statut!=='planifie')return;
-    var pub=new Date(it.date+'T'+(it.heure||'09:00:00'));
-    var diff=(pub-now)/60000;
-    if(diff>59&&diff<61){
-      new Notification('⏰ Rappel dans 1h',{body:it.titre,icon:'/favicon.ico'});
-      showCalToast('⏰ Dans 1 heure !',it.titre);
-    }
-    if(diff>9&&diff<11){
-      new Notification('🚨 Dans 10 minutes !',{body:it.titre,icon:'/favicon.ico'});
-      showCalToast('🚨 Dans 10 minutes !',it.titre);
-    }
-  });
-}
-
-async function genCalNextMonth(){
-  var nm=CAL_STATE.month+1, ny=CAL_STATE.year;
-  if(nm>11){nm=0;ny++;}
-  var mname=CAL_STATE.MONTHS[nm];
-  if(!confirm('Générer le calendrier type pour '+mname+' '+ny+' ?
-
-4 Reels · 8 Posts · 4 Stories · 2 Boosts Ads'))return;
-  var first=new Date(ny,nm,1);
-  while(first.getDay()!==1)first.setDate(first.getDate()+1);
-  var weeks=[
-    {reel:'Reel — Votre téléphone est NU ?',p1:'Post — Collection coques du mois',p2:'Post Avis Client 5 étoiles',story:'Story — Le saviez-vous ?'},
-    {reel:'Reel — Hydrogel 5 minutes chrono',p1:'Post — QualiRépar -25€',ads:'Boost Meta Ads — Reel semaine 1',story:'Story Sondage — Votre problème ?'},
-    {reel:'Reel — Plus jamais à 1%',p1:'Post — Chargeurs Belkin & FairPlay',p2:'Post — Écouteurs TWS FairPlay',story:'Story Promo — Cette semaine'},
-    {reel:'Reel — Avant/Après réparation',p1:'Post — Équipe Solution Phone',ads:'Boost Best-of du mois — 14€',story:'Story — Lancement mois suivant'},
-  ];
-  var items=[];
-  var toISO=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-  weeks.forEach(function(w,wi){
-    var mon=new Date(first);mon.setDate(mon.getDate()+wi*7);
-    if(mon.getMonth()!==nm)return;
-    var mer=new Date(mon);mer.setDate(mer.getDate()+2);
-    var ven=new Date(mon);ven.setDate(ven.getDate()+4);
-    var dim=new Date(mon);dim.setDate(dim.getDate()+6);
-    items.push({date:toISO(mon),heure:'09:00:00',type:'reel',outil:'Kling AI Pro',titre:w.reel,statut:'planifie',rappel:true});
-    items.push({date:toISO(mer),heure:'11:00:00',type:'post',outil:'Canva Pro',titre:w.p1,statut:'planifie',rappel:true});
-    if(w.p2&&ven.getMonth()===nm) items.push({date:toISO(ven),heure:'09:00:00',type:'post',outil:'Canva Pro',titre:w.p2,statut:'planifie',rappel:true});
-    if(w.ads&&ven.getMonth()===nm) items.push({date:toISO(ven),heure:'09:00:00',type:'ads',outil:'Meta Ads Manager',titre:w.ads,statut:'planifie',rappel:true});
-    if(dim.getMonth()===nm) items.push({date:toISO(dim),heure:'18:00:00',type:'story',outil:'Canva Pro',titre:w.story,statut:'planifie',rappel:true});
-  });
-  try{
-    await supabase.from('calendrier_editorial').insert(items);
-    CAL_STATE.month=nm;CAL_STATE.year=ny;
-    await loadCalItems();
-    showCalToast('✅ '+mname+' généré !',items.length+' contenus planifiés automatiquement.');
-  }catch(e){showNotif('Erreur génération','error');}
-}
-
-function showCalToast(title,body){
-  var t=document.getElementById('calToast');
-  document.getElementById('calToastTitle').textContent=title;
-  document.getElementById('calToastBody').textContent=body;
-  t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},4000);
-}
-
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-05-v4.0';
+  var APP_VERSION = '2026-04-05-v4.1';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
