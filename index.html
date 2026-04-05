@@ -17176,8 +17176,8 @@ async function loadCalItems(){
   var end=y+'-'+String(m+1).padStart(2,'0')+'-'+last;
   document.getElementById('calMonthLbl').textContent=CAL_STATE.MONTHS[m]+' '+y;
   try{
-    var res=await supabase.from('calendrier_editorial').select('*').gte('date',start).lte('date',end).order('date').order('heure');
-    CAL_STATE.items=res.data||[];
+    var data=await supaFetch('calendrier_editorial','GET',null,'?date=gte.'+start+'&date=lte.'+end+'&order=date.asc,heure.asc');
+    CAL_STATE.items=data||[];
   }catch(e){ CAL_STATE.items=[]; }
   calRenderAll();
 }
@@ -17330,8 +17330,11 @@ async function saveCalItem(){
   };
   if(!payload.titre||!payload.date){showNotif('Titre et date requis !','error');return;}
   try{
-    if(CAL_STATE.editId) await supabase.from('calendrier_editorial').update(payload).eq('id',CAL_STATE.editId);
-    else await supabase.from('calendrier_editorial').insert([payload]);
+    if(CAL_STATE.editId){
+      await supaFetch('calendrier_editorial','PATCH',payload,'?id=eq.'+CAL_STATE.editId);
+    } else {
+      await supaFetch('calendrier_editorial','POST',payload);
+    }
     closeCalModal();
     await loadCalItems();
     showCalToast('✅ Enregistré !',payload.titre);
@@ -17340,7 +17343,7 @@ async function saveCalItem(){
 
 async function calMarkDone(id){
   try{
-    await supabase.from('calendrier_editorial').update({statut:'publie'}).eq('id',id);
+    await supaFetch('calendrier_editorial','PATCH',{statut:'publie'},'?id=eq.'+id);
     await loadCalItems();
     showCalToast('✅ Marqué comme publié !','');
   }catch(e){}
@@ -17350,7 +17353,7 @@ async function delCalItem(id){
   var it=CAL_STATE.items.find(function(i){return i.id===id;});
   if(!it||!confirm('Supprimer "'+it.titre+'" ?'))return;
   try{
-    await supabase.from('calendrier_editorial').delete().eq('id',id);
+    await supaFetch('calendrier_editorial','DELETE',null,'?id=eq.'+id);
     await loadCalItems();
   }catch(e){}
 }
@@ -17446,7 +17449,7 @@ async function genCalNextMonth(){
     if(dim.getMonth()===nm) items.push({date:toISO(dim),heure:'18:00:00',type:'story',outil:'Canva Pro',titre:w.story,statut:'planifie',rappel:true});
   });
   try{
-    await supabase.from('calendrier_editorial').insert(items);
+    await supaFetch('calendrier_editorial','POST',items);
     CAL_STATE.month=nm;CAL_STATE.year=ny;
     await loadCalItems();
     showCalToast('✅ '+mname+' généré !',items.length+' contenus planifiés automatiquement.');
