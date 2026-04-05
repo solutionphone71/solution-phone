@@ -4987,20 +4987,22 @@ async function paramsTestKiwiz(){
   var st = document.getElementById('params-kiwiz-status');
   if(st) st.innerHTML='⏳ Test en cours...';
   try {
-    var res = await fetch('https://app.solution-phone.fr/proxy-kiwiz/auth/login', {
+    var body = 'username='+encodeURIComponent(getKiwizUser())+'&password='+encodeURIComponent(getKiwizPass());
+    var res = await fetch('https://api.kiwiz.io/token/generate', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
+      headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
+      body: body
     });
-    if(res.ok){
+    var data = await res.json();
+    if(res.ok && data.token){
       if(st) st.innerHTML='<span style="color:var(--green);">✅ Connexion Kiwiz OK — NF525 opérationnel</span>';
       showNotif('✅ Kiwiz connecté — NF525 actif','success');
     } else {
-      if(st) st.innerHTML='<span style="color:var(--red);">❌ Identifiants incorrects</span>';
+      if(st) st.innerHTML='<span style="color:var(--red);">❌ '+( data.message||'Identifiants incorrects')+'</span>';
       showNotif('Kiwiz : identifiants incorrects','error');
     }
   } catch(e){
-    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Connexion impossible — vérifiez votre accès</span>';
+    if(st) st.innerHTML='<span style="color:var(--warning);">⚠️ Connexion impossible</span>';
   }
 }
 
@@ -5008,14 +5010,16 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
   if(!kiwizConfigured()) return null;
   try {
     // 1. Obtenir un token Kiwiz
-    var authRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/auth/login', {
+    // 1. Obtenir token Kiwiz
+    var authBody = 'username='+encodeURIComponent(getKiwizUser())+'&password='+encodeURIComponent(getKiwizPass());
+    var authRes = await fetch('https://api.kiwiz.io/token/generate', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:getKiwizUser(),password:getKiwizPass()})
+      headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
+      body: authBody
     });
     if(!authRes.ok) return null;
     var auth = await authRes.json();
-    var token = auth.token || auth.access_token;
+    var token = auth.token;
     if(!token) return null;
 
     // 2. Soumettre la facture pour certification
@@ -5029,7 +5033,7 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
       client_name: client,
       pdf: pdfBase64 || ''
     };
-    var certRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/invoices', {
+    var certRes = await fetch('https://api.kiwiz.io/invoices', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body: JSON.stringify(payload)
@@ -17474,7 +17478,7 @@ function showCalToast(title,body){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-05-v4.1';
+  var APP_VERSION = '2026-04-05-v4.2';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
