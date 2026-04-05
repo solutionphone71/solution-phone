@@ -17175,10 +17175,23 @@ async function loadCalItems(){
   var last=new Date(y,m+1,0).getDate();
   var end=y+'-'+String(m+1).padStart(2,'0')+'-'+last;
   document.getElementById('calMonthLbl').textContent=CAL_STATE.MONTHS[m]+' '+y;
+  if(!supabaseReady){
+    var waited=0;
+    await new Promise(function(resolve){
+      var t=setInterval(function(){waited+=200;if(supabaseReady||waited>=5000){clearInterval(t);resolve();}},200);
+    });
+  }
   try{
-    var data=await supaFetch('calendrier_editorial','GET',null,'?date=gte.'+start+'&date=lte.'+end+'&order=date.asc,heure.asc');
-    CAL_STATE.items=data||[];
-  }catch(e){ CAL_STATE.items=[]; }
+    var url='?date=gte.'+start+'&date=lte.'+end+'&order=date.asc,heure.asc';
+    console.log('[CAL] Fetching:', url, 'supabaseReady:', supabaseReady);
+    var data=await supaFetch('calendrier_editorial','GET',null,url);
+    console.log('[CAL] Data received:', data);
+    CAL_STATE.items=Array.isArray(data)?data:[];
+    console.log('[CAL] Items count:', CAL_STATE.items.length);
+  }catch(e){ 
+    console.error('[CAL] Error:', e);
+    CAL_STATE.items=[]; 
+  }
   calRenderAll();
 }
 
