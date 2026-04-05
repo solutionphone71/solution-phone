@@ -17232,7 +17232,7 @@ function calRenderGrid(){
       var chip=CAL_STATE.CHIPS[it.type]||'chip-c-post';
       var done=it.statut==='publie'?' chip-c-done':'';
       var lbl=it.titre.replace(/^(Reel|Post|Story|Ads|Google|Vidéo)\s*[—–\-]\s*/i,'').substring(0,18);
-      html+='<div class="cal-event-chip '+chip+done+'" onclick="event.stopPropagation();showCalDetail(''+it.id+'')">'+lbl+'</div>';
+      html+='<div class="cal-event-chip '+chip+done+'" onclick="event.stopPropagation();showCalDetail(\''+it.id+'\')">'+lbl+'</div>';
     });
     if(dayItems.length>3) html+='<div style="font-size:9px;color:var(--text-muted);padding:1px 2px;">+'+( dayItems.length-3)+'</div>';
     html+='</div>';
@@ -17255,7 +17255,7 @@ function calRenderList(){
     var isT=d.getTime()===today.getTime();
     var isPast=d<today;
     var cls=isT?'badge-today':isPast?'badge-past':'badge-future';
-    var lbl=DAYS[d.getDay()]+' '+d.getDate()+' '+CAL_STATE.MONTHS[d.getMonth()]+(isT?' · AUJOURD'HUI':'');
+    var lbl=DAYS[d.getDay()]+' '+d.getDate()+' '+CAL_STATE.MONTHS[d.getMonth()]+(isT?" · AUJOURD'HUI":'');
     html+='<div class="cal-day-block"><div class="cal-day-hdr"><span class="cal-day-badge '+cls+'">'+lbl+'</span></div><div>';
     byDate[ds].forEach(function(it){
       var done=it.statut==='publie';
@@ -17268,10 +17268,10 @@ function calRenderList(){
       if(done) html+='<span class="cal-item-done-tag">✅ Publié</span>';
       html+='</div><div class="cal-item-title">'+it.titre+'</div>';
       html+='<div class="cal-item-btns">';
-      html+='<button class="btn-ci btn-ci-view" onclick="showCalDetail(''+it.id+'')">👁️ Voir détail</button>';
-      if(!done) html+='<button class="btn-ci btn-ci-done" onclick="calMarkDone(''+it.id+'')">✅ Publié</button>';
-      html+='<button class="btn-ci" onclick="editCalItem(''+it.id+'')">✏️ Modifier</button>';
-      html+='<button class="btn-ci btn-ci-del" onclick="delCalItem(''+it.id+'')">🗑️</button>';
+      html+='<button class="btn-ci btn-ci-view" onclick="showCalDetail('+it.id+')">👁️ Voir détail</button>';
+      if(!done) html+='<button class="btn-ci btn-ci-done" onclick="calMarkDone('+it.id+')">✅ Publié</button>';
+      html+='<button class="btn-ci" onclick="editCalItem('+it.id+')">✏️ Modifier</button>';
+      html+='<button class="btn-ci btn-ci-del" onclick="delCalItem('+it.id+')">🗑️</button>';
       html+='</div></div>';
     });
     html+='</div></div>';
@@ -17436,9 +17436,7 @@ async function genCalNextMonth(){
   var nm=CAL_STATE.month+1, ny=CAL_STATE.year;
   if(nm>11){nm=0;ny++;}
   var mname=CAL_STATE.MONTHS[nm];
-  if(!confirm('Générer le calendrier type pour '+mname+' '+ny+' ?
-
-4 Reels · 8 Posts · 4 Stories · 2 Boosts Ads'))return;
+  if(!confirm('Générer le calendrier type pour '+mname+' '+ny+' ?\n4 Reels · 8 Posts · 4 Stories · 2 Boosts Ads'))return;
   var first=new Date(ny,nm,1);
   while(first.getDay()!==1)first.setDate(first.getDate()+1);
   var weeks=[
