@@ -16903,257 +16903,8 @@ async function qrVerifierTousLesStatuts(){
   showNotif(updated > 0 ? updated+' statut(s) mis à jour ✅' : 'Tous les statuts sont à jour', 'success');
 }
 // ══════════════════════════════════════════════════════════════════
-</script>
-
-<!-- ══ PAGE SUIVI QUALIREPAR ══ -->
-<div class="page" id="page-suivi-qr">
-  <div class="page-header">
-    <div>
-      <div class="page-title">🔄 Suivi QualiRépar</div>
-      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
-    </div>
-    <div style="display:flex;gap:10px;">
-      <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
-      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
-    </div>
-  </div>
-
-  <!-- Statistiques rapides -->
-  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
-
-  <!-- Ecosystem -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header">
-      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
-      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:#f0fdf4;">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecosystem-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Ecologic -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
-      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:#eff6ff;">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">Support ID</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecologic-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ===== VERSION NOTIFICATION ===== -->
-<div id="version-notif" style="
-  display:none;
-  position:fixed;
-  top:16px;
-  right:16px;
-  z-index:99999;
-  background:#1a202c;
-  color:#fff;
-  border-radius:12px;
-  padding:14px 18px;
-  box-shadow:0 4px 24px rgba(0,0,0,0.4);
-  font-family:sans-serif;
-  font-size:13px;
-  max-width:280px;
-  border-left:4px solid #48bb78;
-  animation: slideInRight 0.4s ease;
-">
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-    <span style="font-size:18px;">🚀</span>
-    <strong style="font-size:14px;color:#48bb78;">Nouvelle version déployée</strong>
-  </div>
-  <div id="version-notif-text" style="color:#e2e8f0;line-height:1.5;"></div>
-  <div style="margin-top:10px;display:flex;gap:8px;">
-    <button onclick="document.getElementById('version-notif').style.display='none'" style="
-      flex:1;padding:6px;border:none;border-radius:6px;
-      background:#48bb78;color:#fff;font-size:12px;
-      font-weight:600;cursor:pointer;">
-      ✓ OK
-    </button>
-    <button onclick="window.location.reload(true)" style="
-      flex:1;padding:6px;border:1px solid #4a5568;border-radius:6px;
-      background:transparent;color:#a0aec0;font-size:12px;cursor:pointer;">
-      ↺ Recharger
-    </button>
-  </div>
-</div>
-
-<!-- PAGE CALENDRIER ÉDITORIAL -->
-<div class="page" id="page-calendrier">
-  <!-- TOAST -->
-  <div class="cal-toast" id="calToast">
-    <div class="cal-toast-title" id="calToastTitle"></div>
-    <div class="cal-toast-body" id="calToastBody"></div>
-  </div>
-
-  <!-- MODAL FORMULAIRE -->
-  <div class="cal-modal-wrap" id="calModalWrap">
-    <div class="cal-modal-box">
-      <div class="cal-modal-hdr">
-        <div class="cal-modal-hdr-title" id="calModalTitle">➕ Nouveau contenu</div>
-        <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
-      </div>
-      <div class="cal-modal-body">
-        <div class="cal-fg">
-          <div><div class="cal-flabel">Date *</div><input type="date" id="cf-date" class="cal-finput"></div>
-          <div><div class="cal-flabel">Heure</div><input type="time" id="cf-heure" class="cal-finput" value="09:00"></div>
-          <div><div class="cal-flabel">Type *</div>
-            <select id="cf-type" class="cal-fselect">
-              <option value="reel">🎬 Reel / Vidéo Kling AI</option>
-              <option value="post">🖼️ Post Image Canva</option>
-              <option value="story">📱 Story</option>
-              <option value="ads">💰 Meta Ads Boost</option>
-              <option value="google">⭐ Google Business</option>
-              <option value="autre">📌 Autre</option>
-            </select>
-          </div>
-          <div><div class="cal-flabel">Outil</div>
-            <select id="cf-outil" class="cal-fselect">
-              <option value="Kling AI Pro">🎬 Kling AI Pro</option>
-              <option value="Canva Pro">🎨 Canva Pro</option>
-              <option value="ChatGPT Plus">🤖 ChatGPT Plus</option>
-              <option value="Meta Ads Manager">💰 Meta Ads Manager</option>
-              <option value="CapCut">✂️ CapCut</option>
-              <option value="Photo manuelle">📸 Photo manuelle</option>
-            </select>
-          </div>
-          <div class="cal-fg-full"><div class="cal-flabel">Titre *</div><input type="text" id="cf-titre" class="cal-finput" placeholder="Ex: Reel — Votre téléphone est NU ?"></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Prompt Kling AI (si vidéo)</div><textarea id="cf-prompt" class="cal-ftextarea" placeholder="Prompt à copier dans Kling AI..."></textarea></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Légende Instagram</div><textarea id="cf-legende" class="cal-ftextarea" placeholder="Texte de la publication..."></textarea></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Hashtags</div><input type="text" id="cf-hashtags" class="cal-finput" placeholder="#SolutionPhone #Mâcon ..."></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Notes internes</div><textarea id="cf-notes" class="cal-ftextarea" style="min-height:52px;" placeholder="Notes..."></textarea></div>
-          <div><div class="cal-flabel">Statut</div>
-            <select id="cf-statut" class="cal-fselect">
-              <option value="planifie">📅 Planifié</option>
-              <option value="en_cours">⚙️ En cours</option>
-              <option value="publie">✅ Publié</option>
-              <option value="annule">❌ Annulé</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;padding-top:22px;">
-            <input type="checkbox" id="cf-rappel" checked style="accent-color:var(--red);width:15px;height:15px;">
-            <label for="cf-rappel" style="font-size:13px;color:var(--text);cursor:pointer;">🔔 Rappel notification</label>
-          </div>
-        </div>
-      </div>
-      <div class="cal-modal-ftr">
-        <button class="btn" onclick="closeCalModal()">Annuler</button>
-        <button class="btn btn-primary" onclick="saveCalItem()">💾 Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DÉTAIL -->
-  <div class="cal-modal-wrap" id="calDetailWrap">
-    <div class="cal-modal-box" style="max-width:700px;">
-      <div class="cal-modal-hdr">
-        <div>
-          <div class="cal-modal-hdr-title" id="calDetailTitle"></div>
-          <div id="calDetailMeta" style="font-size:11px;color:var(--text-muted);margin-top:3px;"></div>
-        </div>
-        <button class="cal-modal-close" onclick="closeCalDetail()">✕</button>
-      </div>
-      <div class="cal-modal-body" id="calDetailBody"></div>
-      <div class="cal-modal-ftr">
-        <button class="btn" onclick="closeCalDetail()">Fermer</button>
-        <button class="btn btn-primary" id="calDetailDoneBtn">✅ Marquer Publié</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN -->
-  <div class="cal-header-bar">
-    <div>
-      <div class="page-title">📅 Calendrier Éditorial</div>
-      <div class="page-sub">Plan de communication mensuel · Instagram · Meta Ads · Google</div>
-    </div>
-    <div class="cal-month-nav">
-      <button class="btn-cal-nav" onclick="calPrevMonth()">←</button>
-      <div class="cal-month-lbl" id="calMonthLbl">Avril 2026</div>
-      <button class="btn-cal-nav" onclick="calNextMonth()">→</button>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div class="cal-stats-row">
-    <div class="cal-stat-box stat-v-reel"><div class="cal-stat-val" id="cst-reel">0</div><div class="cal-stat-lbl">🎬 Reels</div></div>
-    <div class="cal-stat-box stat-v-post"><div class="cal-stat-val" id="cst-post">0</div><div class="cal-stat-lbl">🖼️ Posts</div></div>
-    <div class="cal-stat-box stat-v-story"><div class="cal-stat-val" id="cst-story">0</div><div class="cal-stat-lbl">📱 Stories</div></div>
-    <div class="cal-stat-box stat-v-ads"><div class="cal-stat-val" id="cst-ads">0</div><div class="cal-stat-lbl">💰 Ads</div></div>
-    <div class="cal-stat-box stat-v-done"><div class="cal-stat-val" id="cst-done">0</div><div class="cal-stat-lbl">✅ Publiés</div></div>
-  </div>
-
-  <!-- ACTIONS -->
-  <div class="cal-action-bar">
-    <button class="btn-cal-add" onclick="openAddCal()">➕ Ajouter un contenu</button>
-    <button class="btn-cal-notif" id="btnCalNotif" onclick="toggleCalNotif()">🔔 Activer alertes</button>
-    <button class="btn-cal-gen" onclick="genCalNextMonth()">⚡ Générer mois suivant</button>
-  </div>
-
-  <!-- VIEW TABS -->
-  <div class="cal-view-bar">
-    <button class="cal-vtab active" onclick="switchCalView('grid',this)">📅 Grille</button>
-    <button class="cal-vtab" onclick="switchCalView('list',this)">📋 Liste</button>
-  </div>
-
-  <!-- GRID VIEW -->
-  <div id="calGridWrap">
-    <div class="cal-grid-hdr">
-      <div class="cal-grid-dname">Lun</div><div class="cal-grid-dname">Mar</div><div class="cal-grid-dname">Mer</div>
-      <div class="cal-grid-dname">Jeu</div><div class="cal-grid-dname">Ven</div><div class="cal-grid-dname">Sam</div><div class="cal-grid-dname">Dim</div>
-    </div>
-    <div class="cal-grid-body" id="calGridBody"></div>
-  </div>
-
-  <!-- LIST VIEW -->
-  <div id="calListWrap" style="display:none;"><div id="calListBody"></div></div>
-</div>
-<!-- FIN PAGE CALENDRIER -->
 
 
-<style>
-@keyframes slideInRight {
-  from { transform: translateX(120%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-</style>
-
-
-<script>
 // ===== CALENDRIER ÉDITORIAL =====
 var CAL_STATE = {
   year: new Date().getFullYear(),
@@ -17474,7 +17225,258 @@ function showCalToast(title,body){
   t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},4000);
 }
+
 </script>
+
+<!-- ══ PAGE SUIVI QUALIREPAR ══ -->
+<div class="page" id="page-suivi-qr">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🔄 Suivi QualiRépar</div>
+      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
+      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
+    </div>
+  </div>
+
+  <!-- Statistiques rapides -->
+  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+  <!-- Ecosystem -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
+      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#f0fdf4;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecosystem-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ecologic -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
+      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="background:#eff6ff;">
+            <th style="padding:8px 10px;text-align:left;">Dossier</th>
+            <th style="padding:8px 10px;text-align:left;">Client</th>
+            <th style="padding:8px 10px;text-align:left;">Appareil</th>
+            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
+            <th style="padding:8px 10px;text-align:left;">Support ID</th>
+            <th style="padding:8px 10px;text-align:left;">Statut</th>
+            <th style="padding:8px 10px;text-align:left;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="qr-ecologic-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VERSION NOTIFICATION ===== -->
+<div id="version-notif" style="
+  display:none;
+  position:fixed;
+  top:16px;
+  right:16px;
+  z-index:99999;
+  background:#1a202c;
+  color:#fff;
+  border-radius:12px;
+  padding:14px 18px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.4);
+  font-family:sans-serif;
+  font-size:13px;
+  max-width:280px;
+  border-left:4px solid #48bb78;
+  animation: slideInRight 0.4s ease;
+">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <span style="font-size:18px;">🚀</span>
+    <strong style="font-size:14px;color:#48bb78;">Nouvelle version déployée</strong>
+  </div>
+  <div id="version-notif-text" style="color:#e2e8f0;line-height:1.5;"></div>
+  <div style="margin-top:10px;display:flex;gap:8px;">
+    <button onclick="document.getElementById('version-notif').style.display='none'" style="
+      flex:1;padding:6px;border:none;border-radius:6px;
+      background:#48bb78;color:#fff;font-size:12px;
+      font-weight:600;cursor:pointer;">
+      ✓ OK
+    </button>
+    <button onclick="window.location.reload(true)" style="
+      flex:1;padding:6px;border:1px solid #4a5568;border-radius:6px;
+      background:transparent;color:#a0aec0;font-size:12px;cursor:pointer;">
+      ↺ Recharger
+    </button>
+  </div>
+</div>
+
+<!-- PAGE CALENDRIER ÉDITORIAL -->
+<div class="page" id="page-calendrier">
+  <!-- TOAST -->
+  <div class="cal-toast" id="calToast">
+    <div class="cal-toast-title" id="calToastTitle"></div>
+    <div class="cal-toast-body" id="calToastBody"></div>
+  </div>
+
+  <!-- MODAL FORMULAIRE -->
+  <div class="cal-modal-wrap" id="calModalWrap">
+    <div class="cal-modal-box">
+      <div class="cal-modal-hdr">
+        <div class="cal-modal-hdr-title" id="calModalTitle">➕ Nouveau contenu</div>
+        <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
+      </div>
+      <div class="cal-modal-body">
+        <div class="cal-fg">
+          <div><div class="cal-flabel">Date *</div><input type="date" id="cf-date" class="cal-finput"></div>
+          <div><div class="cal-flabel">Heure</div><input type="time" id="cf-heure" class="cal-finput" value="09:00"></div>
+          <div><div class="cal-flabel">Type *</div>
+            <select id="cf-type" class="cal-fselect">
+              <option value="reel">🎬 Reel / Vidéo Kling AI</option>
+              <option value="post">🖼️ Post Image Canva</option>
+              <option value="story">📱 Story</option>
+              <option value="ads">💰 Meta Ads Boost</option>
+              <option value="google">⭐ Google Business</option>
+              <option value="autre">📌 Autre</option>
+            </select>
+          </div>
+          <div><div class="cal-flabel">Outil</div>
+            <select id="cf-outil" class="cal-fselect">
+              <option value="Kling AI Pro">🎬 Kling AI Pro</option>
+              <option value="Canva Pro">🎨 Canva Pro</option>
+              <option value="ChatGPT Plus">🤖 ChatGPT Plus</option>
+              <option value="Meta Ads Manager">💰 Meta Ads Manager</option>
+              <option value="CapCut">✂️ CapCut</option>
+              <option value="Photo manuelle">📸 Photo manuelle</option>
+            </select>
+          </div>
+          <div class="cal-fg-full"><div class="cal-flabel">Titre *</div><input type="text" id="cf-titre" class="cal-finput" placeholder="Ex: Reel — Votre téléphone est NU ?"></div>
+          <div class="cal-fg-full"><div class="cal-flabel">Prompt Kling AI (si vidéo)</div><textarea id="cf-prompt" class="cal-ftextarea" placeholder="Prompt à copier dans Kling AI..."></textarea></div>
+          <div class="cal-fg-full"><div class="cal-flabel">Légende Instagram</div><textarea id="cf-legende" class="cal-ftextarea" placeholder="Texte de la publication..."></textarea></div>
+          <div class="cal-fg-full"><div class="cal-flabel">Hashtags</div><input type="text" id="cf-hashtags" class="cal-finput" placeholder="#SolutionPhone #Mâcon ..."></div>
+          <div class="cal-fg-full"><div class="cal-flabel">Notes internes</div><textarea id="cf-notes" class="cal-ftextarea" style="min-height:52px;" placeholder="Notes..."></textarea></div>
+          <div><div class="cal-flabel">Statut</div>
+            <select id="cf-statut" class="cal-fselect">
+              <option value="planifie">📅 Planifié</option>
+              <option value="en_cours">⚙️ En cours</option>
+              <option value="publie">✅ Publié</option>
+              <option value="annule">❌ Annulé</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding-top:22px;">
+            <input type="checkbox" id="cf-rappel" checked style="accent-color:var(--red);width:15px;height:15px;">
+            <label for="cf-rappel" style="font-size:13px;color:var(--text);cursor:pointer;">🔔 Rappel notification</label>
+          </div>
+        </div>
+      </div>
+      <div class="cal-modal-ftr">
+        <button class="btn" onclick="closeCalModal()">Annuler</button>
+        <button class="btn btn-primary" onclick="saveCalItem()">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DÉTAIL -->
+  <div class="cal-modal-wrap" id="calDetailWrap">
+    <div class="cal-modal-box" style="max-width:700px;">
+      <div class="cal-modal-hdr">
+        <div>
+          <div class="cal-modal-hdr-title" id="calDetailTitle"></div>
+          <div id="calDetailMeta" style="font-size:11px;color:var(--text-muted);margin-top:3px;"></div>
+        </div>
+        <button class="cal-modal-close" onclick="closeCalDetail()">✕</button>
+      </div>
+      <div class="cal-modal-body" id="calDetailBody"></div>
+      <div class="cal-modal-ftr">
+        <button class="btn" onclick="closeCalDetail()">Fermer</button>
+        <button class="btn btn-primary" id="calDetailDoneBtn">✅ Marquer Publié</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="cal-header-bar">
+    <div>
+      <div class="page-title">📅 Calendrier Éditorial</div>
+      <div class="page-sub">Plan de communication mensuel · Instagram · Meta Ads · Google</div>
+    </div>
+    <div class="cal-month-nav">
+      <button class="btn-cal-nav" onclick="calPrevMonth()">←</button>
+      <div class="cal-month-lbl" id="calMonthLbl">Avril 2026</div>
+      <button class="btn-cal-nav" onclick="calNextMonth()">→</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="cal-stats-row">
+    <div class="cal-stat-box stat-v-reel"><div class="cal-stat-val" id="cst-reel">0</div><div class="cal-stat-lbl">🎬 Reels</div></div>
+    <div class="cal-stat-box stat-v-post"><div class="cal-stat-val" id="cst-post">0</div><div class="cal-stat-lbl">🖼️ Posts</div></div>
+    <div class="cal-stat-box stat-v-story"><div class="cal-stat-val" id="cst-story">0</div><div class="cal-stat-lbl">📱 Stories</div></div>
+    <div class="cal-stat-box stat-v-ads"><div class="cal-stat-val" id="cst-ads">0</div><div class="cal-stat-lbl">💰 Ads</div></div>
+    <div class="cal-stat-box stat-v-done"><div class="cal-stat-val" id="cst-done">0</div><div class="cal-stat-lbl">✅ Publiés</div></div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="cal-action-bar">
+    <button class="btn-cal-add" onclick="openAddCal()">➕ Ajouter un contenu</button>
+    <button class="btn-cal-notif" id="btnCalNotif" onclick="toggleCalNotif()">🔔 Activer alertes</button>
+    <button class="btn-cal-gen" onclick="genCalNextMonth()">⚡ Générer mois suivant</button>
+  </div>
+
+  <!-- VIEW TABS -->
+  <div class="cal-view-bar">
+    <button class="cal-vtab active" onclick="switchCalView('grid',this)">📅 Grille</button>
+    <button class="cal-vtab" onclick="switchCalView('list',this)">📋 Liste</button>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div id="calGridWrap">
+    <div class="cal-grid-hdr">
+      <div class="cal-grid-dname">Lun</div><div class="cal-grid-dname">Mar</div><div class="cal-grid-dname">Mer</div>
+      <div class="cal-grid-dname">Jeu</div><div class="cal-grid-dname">Ven</div><div class="cal-grid-dname">Sam</div><div class="cal-grid-dname">Dim</div>
+    </div>
+    <div class="cal-grid-body" id="calGridBody"></div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="calListWrap" style="display:none;"><div id="calListBody"></div></div>
+</div>
+<!-- FIN PAGE CALENDRIER -->
+
+
+<style>
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+</style>
+
+
+
 
 <script>
 (function() {
