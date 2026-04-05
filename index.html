@@ -13074,7 +13074,7 @@ async function qrEnvoyerEcologicComplet(d){
   var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey]||{repair:'ELO',condition:'5',symptom:'XX1',section:'XX',def:'09'};
   console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
-  var today=new Date().toISOString();
+  var today=(d.date ? new Date(d.date+'T12:00:00').toISOString() : new Date().toISOString());
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
   // API Ecologic v1.4 (Avril 2024) : CreateClaim directement, sans CreateSupportRequest
   var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSection:irisData.repair,RepairCode:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
@@ -13123,7 +13123,7 @@ async function qrEnvoyerEcosystemComplet(d){
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'501710',siteId:'2002535',invoiceNumber:ref,repairDate:new Date().toISOString().split('T')[0],consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'501710',siteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
     var j2=await r2.json();var repairId=j2.id||j2.repairId||j2.reimbursementId;
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
@@ -16353,7 +16353,7 @@ async function qrSendEcologic() {
   var montantTTC = +(montantHT * 1.2).toFixed(2);
   var soutien    = parseFloat(dev.bonusMontant) || 25;
   var refFact    = d.refRep || ('QR-' + Date.now());
-  var today      = new Date().toISOString();
+  var today      = (d.date ? new Date(d.date+'T12:00:00').toISOString() : new Date().toISOString());
 
   // ① Résoudre BrandId Ecologic
   qrSetAgoraBadge('\u23F3', 'Recherche marque\u2026', marque, '#f39c12');
