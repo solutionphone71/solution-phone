@@ -4571,6 +4571,21 @@ function renderCaisseJour(){
     });
   });
 
+  // 3. Achats smartphones du jour payés en espèces → sortie caisse
+  phones.forEach(function(p){
+    if((p.dateAchat||'').substring(0,10) !== today) return;
+    if((p.mode||'').toUpperCase() !== 'ESPECES') return;
+    txJour.push({
+      heure:   '--:--',
+      type:    'achat',
+      label:   '🛒',
+      desc:    'Achat ' + p.modele + (p.imei ? ' — IMEI '+p.imei : ''),
+      montant: -(p.achat || 0),
+      mode:    'ESPECES',
+      quali:   0
+    });
+  });
+
   // Calculer les totaux du jour
   // Z PRINCIPAL = réparations + accessoires + téléphones NEUFS (TVA 20%)
   // Z SMARTPHONES = téléphones OCCASION uniquement (TVA sur marge)
@@ -4621,11 +4636,16 @@ function renderCaisseJour(){
       tbody.innerHTML = txJour.map(function(tx, i){
         var mc = modeColors[(tx.mode||'CB').toUpperCase()] || '#666';
         var bg = i%2===0 ? '#fff' : '#f8fafc';
+        var isAchat = tx.type === 'achat';
+        var typeLabel = tx.type==='reparation' ? 'Réparation' : tx.type==='vente' ? 'Vente' : 'Achat';
+        var typeBg    = tx.type==='reparation' ? '#fef2f2' : tx.type==='vente' ? '#f0fdf4' : '#fef9ec';
+        var typeColor = tx.type==='reparation' ? '#c0392b' : tx.type==='vente' ? '#16a34a' : '#b45309';
+        var montantTxt = (isAchat ? '<span style="color:#c0392b;">':'')+tx.montant.toFixed(2)+' €'+(isAchat?'</span>':'');
         return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
           '<td style="padding:8px;color:var(--text-muted);">'+tx.heure+'</td>'+
-          '<td style="padding:8px;">'+tx.label+' <span style="font-size:11px;background:'+(tx.type==='reparation'?'#fef2f2':'#f0fdf4')+';color:'+(tx.type==='reparation'?'#c0392b':'#16a34a')+';padding:2px 6px;border-radius:10px;">'+(tx.type==='reparation'?'Réparation':'Vente')+'</span></td>'+
+          '<td style="padding:8px;">'+tx.label+' <span style="font-size:11px;background:'+typeBg+';color:'+typeColor+';padding:2px 6px;border-radius:10px;">'+typeLabel+'</span></td>'+
           '<td style="padding:8px;">'+tx.desc+'</td>'+
-          '<td style="padding:8px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €'+(tx.quali>0?'<br><span style="font-size:10px;color:var(--green);">dont bonus QR '+tx.quali+'€</span>':'')+'</td>'+
+          '<td style="padding:8px;text-align:right;font-weight:700;">'+montantTxt+(tx.quali>0?'<br><span style="font-size:10px;color:var(--green);">dont bonus QR '+tx.quali+'€</span>':'')+'</td>'+
           '<td style="padding:8px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:3px 8px;border-radius:10px;font-size:12px;font-weight:700;">'+tx.mode+'</span></td>'+
         '</tr>';
       }).join('');
@@ -5220,15 +5240,20 @@ function renderCaisse(){
   // Filtrer par mois sélectionné
   var caisseMois = caisse.filter(function(r){ return r.date.substring(0,7) === moisFiltre; });
   // Achats smartphones espèces du mois = source unique phones[]
+  // Achats smartphones espèces : utiliser achatSmart de chaque ligne caisse (alimenté par import Phonilab)
+  // Fallback si aucune ligne caisse n'a achatSmart renseigné → déduire le total mois sur la dernière ligne
+  var hasAchatSmartData = caisseMois.some(function(r){ return (r.achatSmart||0) > 0; });
   var achatSmartMois = phones
     .filter(function(p){ return p.dateAchat&&p.dateAchat.startsWith(moisFiltre)&&(p.mode||'').toUpperCase()==='ESPECES'; })
     .reduce(function(s,p){ return s+(Number(p.achat)||0); },0);
   var finMois = []; var cc = getReport(moisFiltre);
-  var achatSmartComptabilise = false;
   caisseMois.forEach(function(r,i){
-    // Déduire achatSmart une seule fois (dernière ligne du mois)
-    var estDerniereLigne = i===caisseMois.length-1;
-    cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (estDerniereLigne ? achatSmartMois : 0);
+    if(hasAchatSmartData){
+      cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (Number(r.achatSmart)||0);
+    } else {
+      var estDerniereLigne = i===caisseMois.length-1;
+      cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (estDerniereLigne ? achatSmartMois : 0);
+    }
     finMois.push(cc);
   });
   var rep=getReport(moisFiltre);
@@ -5337,19 +5362,28 @@ function importPhonilabToCaisse(input) {
       }
     }
 
+    // Croiser avec phones[] : achat smartphones en ESPECES par date
+    Object.keys(byDate).forEach(function(dateISO) {
+      var achatJour = phones
+        .filter(function(p){ return p.dateAchat === dateISO && (p.mode||'').toUpperCase() === 'ESPECES'; })
+        .reduce(function(sum, p){ return sum + (Number(p.achat)||0); }, 0);
+      byDate[dateISO].achatSmart = Math.round(achatJour * 100) / 100;
+    });
+
     var imported = 0, updated = 0;
     Object.values(byDate).forEach(function(entry) {
-      ['ttc','cb','especes','cheque','virement','quali'].forEach(function(k){
+      ['ttc','cb','especes','cheque','virement','quali','achatSmart'].forEach(function(k){
         entry[k] = Math.round((entry[k]||0) * 100) / 100;
       });
       var idx = caisse.findIndex(function(c){ return c.date === entry.date; });
       if (idx >= 0) {
-        caisse[idx].ttc      = entry.ttc;
-        caisse[idx].cb       = entry.cb;
-        caisse[idx].especes  = entry.especes;
-        caisse[idx].cheque   = entry.cheque;
-        caisse[idx].virement = entry.virement;
-        caisse[idx].quali    = (caisse[idx].quali||0) + entry.quali;
+        caisse[idx].ttc       = entry.ttc;
+        caisse[idx].cb        = entry.cb;
+        caisse[idx].especes   = entry.especes;
+        caisse[idx].cheque    = entry.cheque;
+        caisse[idx].virement  = entry.virement;
+        caisse[idx].quali     = (caisse[idx].quali||0) + entry.quali;
+        caisse[idx].achatSmart = entry.achatSmart; // ← achat smartphones du jour
         saveCaisseRow(caisse[idx]);
         updated++;
       } else {
@@ -6090,12 +6124,29 @@ function addPhone(){
   if(!achat||achat<=0){showNotif('Prix achat invalide','error');return;}
   if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
   var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
-  if(phone.mode==='ESPECES'&&phone.dateAchat){var entry=caisse.find(function(c){return c.date===phone.dateAchat;});if(entry){entry.achatSmart=(entry.achatSmart||0)+achat;saveCaisseRow(entry);}}
+  if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);savePhone(phone);
   ['p-modele','p-achat','p-vente','p-batterie','p-imei','p-couleur','p-vendeur-nom','p-vendeur-adresse','p-vendeur-ci','p-vendeur-ci-date','p-photo'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('p-photo-preview').style.display='none';
   closeModal('modal-add-phone');renderPhones();renderDashboard();
   showNotif(modele+' ajouté !','success');
+}
+
+// Déduction sortie caisse pour achat smartphone en espèces
+// Crée la ligne caisse si elle n'existe pas encore
+function caisseSortieAchat(date, montant, modele) {
+  if(!date || !montant || montant <= 0) return;
+  var entry = caisse.find(function(c){ return c.date === date; });
+  if(entry){
+    entry.achatSmart = Math.round(((entry.achatSmart||0) + montant) * 100) / 100;
+    saveCaisseRow(entry);
+  } else {
+    var newEntry = {date:date, ttc:0, cb:0, especes:0, cheque:0, virement:0, quali:0, depotEsp:0, depotCheque:0, achatSmart: Math.round(montant*100)/100};
+    caisse.push(newEntry);
+    caisse.sort(function(a,b){ return a.date.localeCompare(b.date); });
+    saveCaisseRow(newEntry);
+  }
+  renderCaisse();
 }
 
 function renderPhones(){
@@ -14630,7 +14681,10 @@ function fermerTicket(){
   if(m) m.style.display = 'none';
 }
 
-var VPS_PRINT = 'http://212.227.82.100/print';
+// --- CONFIGURATION SERVEUR IMPRESSION NAS ---
+var NAS_IP = '192.168.10.164';
+var VPS_PRINT = 'http://' + NAS_IP + ':3000';
+// --------------------------------------------
 
 function eposPrint(c){
   if(!c) return;
@@ -14638,42 +14692,47 @@ function eposPrint(c){
   var date  = new Date(c.date).toLocaleDateString('fr-FR');
   var now   = new Date();
   var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function txt(s,bold,dbl){ return '<text bold="'+(bold?'true':'false')+'" width="'+(dbl?'2':'1')+'" height="'+(dbl?'2':'1')+'">'+esc(s)+'</text>'; }
-  function align(a){ return '<text align="'+a+'"/>'; }
-  function sep(){ return txt('------------------------------------------------\n',false,false); }
-  var body =
-    align('center')+txt('SOLUTION PHONE\n',true,true)+
-    txt('21 Rue Gambetta - 71000 Macon\n',false,false)+
-    txt('Tel : 03 85 33 06 89\n',false,false)+sep()+
-    txt((isRep?'*** REPARATION ***':'*** ACCESSOIRE ***')+'\n',true,false)+
-    txt(esc(c.numero)+'\n',false,false)+
-    txt(date+' a '+heure+'\n',false,false)+sep()+
-    align('left')+
-    txt('Client  : '+esc(c.client.nom)+'\n',false,false)+
-    txt('Tel     : '+esc(c.client.tel)+'\n',false,false)+sep()+
-    (isRep
-      ? txt('Appareil: '+esc(c.detail.split(' — ')[0])+'\n',false,false)+txt('Piece   : '+esc(c.detail.split(' — ')[1]||'')+'\n',false,false)
-      : txt('Article : '+esc(c.detail)+'\n',false,false)
-    )+sep()+
-    align('center')+txt(c.prix.toFixed(2)+' EUR\n',true,true)+
-    (c.paye?txt('*** DEJA PAYE ***\n',true,false):txt('A REGLER A LA REPRISE\n',false,false))+sep()+
-    txt('Merci de votre confiance !\n',false,false)+
-    txt('www.solutionphone71.fr\n',false,false)+
-    '<feed line="4"/><cut type="feed"/>';
-  var soap =
-    '<?xml version="1.0" encoding="utf-8"?>'+
-    '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">'+
-      '<s:Body><epos-print xmlns="http://www.epson-pos.com/schemas/2011/03/epos-print">'+body+
-      '</epos-print></s:Body></s:Envelope>';
+
+  var title = 'SOLUTION PHONE';
+  var lines = [];
+  lines.push('21 Rue Gambetta - 71000 Macon');
+  lines.push('Tel : 03 85 33 06 89');
+  lines.push('--------------------------------');
+  lines.push(isRep ? '*** REPARATION ***' : '*** ACCESSOIRE ***');
+  lines.push(c.numero || '');
+  lines.push(date + ' a ' + heure);
+  lines.push('--------------------------------');
+  lines.push('Client  : ' + (c.client.nom || ''));
+  lines.push('Tel     : ' + (c.client.tel || ''));
+  lines.push('--------------------------------');
+  if(isRep){
+    var parts = (c.detail || '').split(' — ');
+    lines.push('Appareil: ' + (parts[0] || ''));
+    lines.push('Piece   : ' + (parts[1] || ''));
+  } else {
+    lines.push('Article : ' + (c.detail || ''));
+  }
+  lines.push('--------------------------------');
+  lines.push('TOTAL : ' + c.prix.toFixed(2) + ' EUR');
+  lines.push(c.paye ? '*** DEJA PAYE ***' : 'A REGLER A LA REPRISE');
+  lines.push('--------------------------------');
+  lines.push('Merci de votre confiance !');
+  lines.push('www.solution-phone.fr');
+
+  var content = lines.join('\n');
+
   showNotif('⏳ Envoi à l\'imprimante...','info');
-  fetch(VPS_PRINT,{method:'POST',headers:{'Content-Type':'text/xml; charset=utf-8','SOAPAction':'""'},body:soap})
-  .then(function(r){return r.json();})
-  .then(function(j){
-    if(j.ok){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
-    else { showNotif('⚠️ Erreur','error'); }
+  fetch(VPS_PRINT, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title: title, content: content})
   })
-  .catch(function(e){ showNotif('❌ VPS non joignable','error'); console.error(e); });
+  .then(function(r){ return r.text(); })
+  .then(function(t){
+    if(t === 'OK'){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
+    else { showNotif('⚠️ Erreur imprimante : ' + t,'error'); }
+  })
+  .catch(function(e){ showNotif('❌ NAS non joignable — vérifiez le réseau','error'); console.error(e); });
 }
 
 function renderBonsCommande(){
@@ -17493,7 +17552,7 @@ function showCalToast(title,body){
 <script>
 (function() {
   // 👉 Mettre à jour cette constante à chaque déploiement
-  var APP_VERSION = '2026-04-05-v4.3';
+  var APP_VERSION = '2026-04-07-v4.4';
 
   var KEY = 'sp_app_version';
   var stored = localStorage.getItem(KEY);
