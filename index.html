@@ -5239,21 +5239,15 @@ function renderCaisse(){
   var moisFiltre = window._caisseMoisFiltre || getMoisActuel();
   // Filtrer par mois sélectionné
   var caisseMois = caisse.filter(function(r){ return r.date.substring(0,7) === moisFiltre; });
-  // Achats smartphones espèces du mois = source unique phones[]
-  // Achats smartphones espèces : utiliser achatSmart de chaque ligne caisse (alimenté par import Phonilab)
-  // Fallback si aucune ligne caisse n'a achatSmart renseigné → déduire le total mois sur la dernière ligne
-  var hasAchatSmartData = caisseMois.some(function(r){ return (r.achatSmart||0) > 0; });
-  var achatSmartMois = phones
+  // Source unique : phones[] — achat smartphones espèces déduit par date (pas de doublon possible)
+  var achatParDate = {};
+  phones
     .filter(function(p){ return p.dateAchat&&p.dateAchat.startsWith(moisFiltre)&&(p.mode||'').toUpperCase()==='ESPECES'; })
-    .reduce(function(s,p){ return s+(Number(p.achat)||0); },0);
+    .forEach(function(p){ achatParDate[p.dateAchat] = (achatParDate[p.dateAchat]||0) + (Number(p.achat)||0); });
   var finMois = []; var cc = getReport(moisFiltre);
-  caisseMois.forEach(function(r,i){
-    if(hasAchatSmartData){
-      cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (Number(r.achatSmart)||0);
-    } else {
-      var estDerniereLigne = i===caisseMois.length-1;
-      cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - (estDerniereLigne ? achatSmartMois : 0);
-    }
+  caisseMois.forEach(function(r){
+    var achatJour = achatParDate[r.date] || 0;
+    cc += (Number(r.especes)||0) - (Number(r.depotEsp)||0) - achatJour;
     finMois.push(cc);
   });
   var rep=getReport(moisFiltre);
