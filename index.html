@@ -206,7 +206,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; neufs</div>
     <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Tél. neufs &amp; access.</span></div>
-    <div class="nav-item" onclick="naShowBonCommande()"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
+    <div class="nav-item" onclick="showPage('reparations', null); repGoStep(3);"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Smartphones</div>
@@ -10376,8 +10376,8 @@ function naShowBonCommande(){
   showPage('reparations',null);
   repLoadDossiers();
   setTimeout(function(){
-    // Ouvrir nouveau dossier et aller directement au bon de commande
-    showNotif('Utilisez le bon de commande dans Réparations → Étape 3','success');
+    repGoStep(3);
+    showNotif('Bon de commande — remplissez le formulaire ci-dessous','success');
   },200);
 }
 
