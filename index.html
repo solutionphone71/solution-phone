@@ -198,7 +198,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-sep"></div>
     <div class="nav-group-label">Réparations</div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
-    <div class="nav-item" onclick="showPage('reparations', null); repNewDossier();"><span class="nav-icon">📋</span><span>Prise en charge</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('suivi-qr',this);renderSuiviQR()"><span class="nav-icon">🔄</span><span>Suivi QR</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
@@ -206,7 +205,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; neufs</div>
     <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Tél. neufs &amp; access.</span></div>
-    <div class="nav-item" onclick="showPage('reparations', null); repGoStep(3);"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
+    <div class="nav-item" onclick="showPage('page-commande', this)"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Smartphones</div>
@@ -825,6 +824,58 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div id="fact-count" style="text-align:right;padding:8px 12px;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);"></div>
         </div>
       </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ══ PAGE BON DE COMMANDE ══ -->
+    <div class="page" id="page-commande" style="display:none;">
+      <div class="page-title">Nouveau Bon de Commande</div>
+      <div class="page-sub">Enregistrement d'une commande de pièce ou accessoire</div>
+      
+      <div class="card" style="max-width: 600px; margin-top: 20px;">
+        <div style="display:flex; flex-direction:column; gap:15px; padding:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group">
+              <label>Nom *</label>
+              <input type="text" id="bc-nom" placeholder="Nom du client">
+            </div>
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" id="bc-prenom" placeholder="Prénom du client">
+            </div>
+          </div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group">
+              <label>Téléphone *</label>
+              <input type="tel" id="bc-tel" placeholder="06 XX XX XX XX">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="bc-email" placeholder="client@email.com">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Type de commande *</label>
+            <select id="bc-type" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); width: 100%;">
+              <option value="piece">⚙️ Pièce à commander (Écran, Batterie...)</option>
+              <option value="accessoire">🎧 Accessoire spécifique</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Détails de la commande *</label>
+            <textarea id="bc-details" rows="3" placeholder="Description précise de l'article..." style="font-size:16px;"></textarea>
+          </div>
+          
+          <div style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="validerNouvelleCommande()" style="width:100%; padding:15px; font-size:16px; font-weight:bold;">
+              Valider et Imprimer
+            </button>
+          </div>
         </div>
       </div>
     </div>
