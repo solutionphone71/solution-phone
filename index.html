@@ -13962,6 +13962,64 @@ function setCmdType(type){
   document.getElementById('cmd-type-acc').style.borderColor  = isRep ? 'var(--border)' : 'var(--red)';
 }
 
+
+// ============================================================
+//  NOUVELLE PAGE BON DE COMMANDE (formulaire Gemini)
+// ============================================================
+function validerNouvelleCommande() {
+  var nom     = (document.getElementById('cmd-nom')     || {value:''}).value.trim();
+  var prenom  = (document.getElementById('cmd-prenom')  || {value:''}).value.trim();
+  var tel     = (document.getElementById('cmd-tel')     || {value:''}).value.trim();
+  var email   = (document.getElementById('cmd-email')   || {value:''}).value.trim();
+  var type    = (document.getElementById('cmd-type')    || {value:'Pièce'}).value;
+  var details = (document.getElementById('cmd-details') || {value:''}).value.trim();
+
+  // Validation
+  if(!nom)     { showNotif('Le nom est obligatoire', 'error'); return; }
+  if(!tel)     { showNotif('Le téléphone est obligatoire', 'error'); return; }
+  if(!details) { showNotif('Les détails sont obligatoires', 'error'); return; }
+
+  // Construire le bon de commande
+  var num = 'CMD-' + new Date().getFullYear() + '-' + String(bonsCommande.length + 1).padStart(3, '0');
+  var cmd = {
+    id:      Date.now(),
+    numero:  num,
+    date:    new Date().toISOString().split('T')[0],
+    type:    type === 'Accessoire' ? 'accessoire' : 'reparation',
+    client:  { nom: (prenom ? prenom + ' ' : '') + nom, tel: tel, email: email },
+    detail:  details,
+    prix:    0,
+    paye:    false,
+    traite:  false
+  };
+
+  // 1. Sauvegarder dans bonsCommande + Supabase
+  bonsCommande.push(cmd);
+  saveBonsCommande();
+  saveBonCommandeSupabase(cmd);
+  renderBonsCommande();
+
+  // 2. Imprimer le ticket sur l'Epson via NAS
+  printTicketCommande(cmd);
+
+  // 3. SMS de confirmation (ouvre l'app SMS native)
+  var telPropre = tel.replace(/\s/g, '');
+  var sms = 'Bonjour ' + (prenom || nom) + ', votre commande a bien été enregistrée (' + details + '). Nous vous contacterons dès réception. Solution Phone — 03 85 33 06 89';
+  setTimeout(function(){
+    window.location.href = 'sms:' + telPropre + '?body=' + encodeURIComponent(sms);
+  }, 800);
+
+  // Reset du formulaire
+  ['cmd-nom','cmd-prenom','cmd-tel','cmd-email','cmd-details'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  var typeEl = document.getElementById('cmd-type');
+  if(typeEl) typeEl.value = 'Pièce';
+
+  showNotif('✅ Bon ' + num + ' créé — Impression en cours !', 'success');
+}
+
 function genererBonCommande(){
   var nom = document.getElementById('cmd-nom').value.trim();
   var tel = document.getElementById('cmd-tel').value.trim();
