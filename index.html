@@ -14247,7 +14247,7 @@ function paramsSaveNas() {
 
 async function paramsTestNas() {
   var ip = getNasUrl();
-  if(!ip){ showNotif('Configurez d'abord l'IP du NAS','error'); return; }
+  if(!ip){ showNotif('Configurez l\'IP du NAS dans Param\u00e8tres','error'); return; }
   var st = document.getElementById('params-nas-status');
   if(st) st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test en cours...</span>';
   try {
@@ -14256,7 +14256,7 @@ async function paramsTestNas() {
     if(st) st.innerHTML = '<span style="color:var(--green);">✅ NAS joignable !</span>';
     showNotif('✅ NAS joignable','success');
   } catch(e) {
-    if(st) st.innerHTML = '<span style="color:var(--red);">❌ NAS non joignable — vérifiez l'IP et le WiFi shop</span>';
+    if(st) st.innerHTML = '<span style="color:var(--red);">&#10060; NAS non joignable &#8212; v&#233;rifiez IP et WiFi shop</span>';
     showNotif('❌ NAS non joignable','error');
   }
 }
@@ -14298,7 +14298,7 @@ function eposPrint(c) {
   lines.push('--------------------------------');
   lines.push('Merci de votre confiance !');
   lines.push('www.solution-phone.fr');
-  showNotif('⏳ Envoi à l'imprimante...','info');
+  showNotif('&#9203; Envoi imprimante...','info');
   fetch('http://' + nasIp, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
