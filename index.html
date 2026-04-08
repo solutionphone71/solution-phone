@@ -14187,8 +14187,7 @@ function printTicketCommande(c){
   }
   modal.innerHTML =
     '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
-      '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson Direct</button>' +
-      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
+      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
       '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
@@ -14203,59 +14202,6 @@ function fermerTicket(){
   if(m) m.style.display = 'none';
 }
 
-// --- CONFIGURATION SERVEUR IMPRESSION NAS ---
-var NAS_IP = '192.168.10.164';
-var VPS_PRINT = 'http://' + NAS_IP + ':3000';
-// --------------------------------------------
-
-function eposPrint(c){
-  if(!c) return;
-  var isRep = c.type === 'reparation';
-  var date  = new Date(c.date).toLocaleDateString('fr-FR');
-  var now   = new Date();
-  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-
-  var title = 'SOLUTION PHONE';
-  var lines = [];
-  lines.push('21 Rue Gambetta - 71000 Macon');
-  lines.push('Tel : 03 85 33 06 89');
-  lines.push('--------------------------------');
-  lines.push(isRep ? '*** REPARATION ***' : '*** ACCESSOIRE ***');
-  lines.push(c.numero || '');
-  lines.push(date + ' a ' + heure);
-  lines.push('--------------------------------');
-  lines.push('Client  : ' + (c.client.nom || ''));
-  lines.push('Tel     : ' + (c.client.tel || ''));
-  lines.push('--------------------------------');
-  if(isRep){
-    var parts = (c.detail || '').split(' — ');
-    lines.push('Appareil: ' + (parts[0] || ''));
-    lines.push('Piece   : ' + (parts[1] || ''));
-  } else {
-    lines.push('Article : ' + (c.detail || ''));
-  }
-  lines.push('--------------------------------');
-  lines.push('TOTAL : ' + c.prix.toFixed(2) + ' EUR');
-  lines.push(c.paye ? '*** DEJA PAYE ***' : 'A REGLER A LA REPRISE');
-  lines.push('--------------------------------');
-  lines.push('Merci de votre confiance !');
-  lines.push('www.solution-phone.fr');
-
-  var content = lines.join('\n');
-
-  showNotif('⏳ Envoi à l\'imprimante...','info');
-  fetch(VPS_PRINT, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({title: title, content: content})
-  })
-  .then(function(r){ return r.text(); })
-  .then(function(t){
-    if(t === 'OK'){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
-    else { showNotif('⚠️ Erreur imprimante : ' + t,'error'); }
-  })
-  .catch(function(e){ showNotif('❌ NAS non joignable — vérifiez le réseau','error'); console.error(e); });
-}
 
 function renderBonsCommande(){
   var tbody = document.getElementById('commande-table');
