@@ -1251,6 +1251,23 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <button class="btn btn-primary" style="background:var(--blue);border-color:var(--blue);width:100%;" onclick="paramsSaveEcologic()">💾 Enregistrer</button>
         </div>
       </div>
+
+      <!-- Imprimante NAS -->
+      <div class="card" style="border:1.5px solid #f59e0b;">
+        <div class="card-header" style="background:#fffbeb;">
+          <div class="card-title" style="color:#b45309;">🖨️ Imprimante Epson (NAS)</div>
+          <div id="params-nas-status" style="font-size:12px;"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>IP du NAS + port</label>
+            <input type="text" id="params-nas-ip" placeholder="ex: 192.168.10.164:3000">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">IP locale du NAS Synology sur le réseau du shop</div>
+          </div>
+          <button class="btn btn-primary" style="background:#b45309;border-color:#b45309;width:100%;" onclick="paramsSaveNas()">💾 Enregistrer</button>
+          <button class="btn" style="width:100%;" onclick="paramsTestNas()">🔌 Tester la connexion</button>
+        </div>
+      </div>
       </div>
       </div>
 
@@ -10068,6 +10085,10 @@ function paramsLoad(){
   el=document.getElementById('params-brevo-status');
   if(el) el.innerHTML = localStorage.getItem(PARAMS_KEYS.brevoKey) ? '<span style="color:var(--green);">✅ Email & SMS actifs</span>' : '<span style="color:var(--text-muted);">Non configuré</span>';
   el=document.getElementById('params-kiwiz-user'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizUser)||'';
+  // NAS IP
+  el=document.getElementById('params-nas-ip'); if(el) el.value=localStorage.getItem(NAS_PRINT_KEY)||'';
+  var nasSt=document.getElementById('params-nas-status');
+  if(nasSt) nasSt.innerHTML = localStorage.getItem(NAS_PRINT_KEY) ? '<span style="color:var(--green);">✅ '+localStorage.getItem(NAS_PRINT_KEY)+'</span>' : '';
   el=document.getElementById('params-kiwiz-pass'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizPass)||'';
   el=document.getElementById('params-kiwiz-sub');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizSub)||'';
   el=document.getElementById('params-kiwiz-status');
@@ -14187,7 +14208,8 @@ function printTicketCommande(c){
   }
   modal.innerHTML =
     '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
-      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Imprimer</button>' +
+      '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson</button>' +
+      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
       '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
@@ -14202,6 +14224,93 @@ function fermerTicket(){
   if(m) m.style.display = 'none';
 }
 
+
+
+// ══════════════════════════════════════════════════════════
+// IMPRESSION EPSON — NAS Synology
+// ══════════════════════════════════════════════════════════
+var NAS_PRINT_KEY = 'sp_nas_ip';
+
+function getNasUrl() {
+  return localStorage.getItem(NAS_PRINT_KEY) || '';
+}
+
+function paramsSaveNas() {
+  var ip = (document.getElementById('params-nas-ip')||{value:''}).value.trim();
+  localStorage.setItem(NAS_PRINT_KEY, ip);
+  var st = document.getElementById('params-nas-status');
+  if(st) st.innerHTML = '<span style="color:var(--green);">✅ IP enregistrée : ' + ip + '</span>';
+  showNotif('✅ IP NAS enregistrée','success');
+}
+
+async function paramsTestNas() {
+  var ip = getNasUrl();
+  if(!ip){ showNotif('Configurez d'abord l'IP du NAS','error'); return; }
+  var st = document.getElementById('params-nas-status');
+  if(st) st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test en cours...</span>';
+  try {
+    var r = await fetch('http://' + ip + '/ping', {method:'GET', signal: AbortSignal.timeout(3000)});
+    if(st) st.innerHTML = '<span style="color:var(--green);">✅ NAS joignable !</span>';
+    showNotif('✅ NAS joignable','success');
+  } catch(e) {
+    if(st) st.innerHTML = '<span style="color:var(--red);">❌ NAS non joignable — vérifiez l'IP et le WiFi</span>';
+    showNotif('❌ NAS non joignable','error');
+  }
+}
+
+function eposPrint(c) {
+  if(!c) return;
+  var nasIp = getNasUrl();
+  if(!nasIp){
+    showNotif('⚠️ IP NAS non configurée — impression PC','info');
+    window.print();
+    return;
+  }
+  var isRep = c.type === 'reparation';
+  var date  = new Date(c.date).toLocaleDateString('fr-FR');
+  var now   = new Date();
+  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  var lines = [];
+  lines.push('SOLUTION PHONE');
+  lines.push('21 Rue Gambetta - 71000 Macon');
+  lines.push('Tel : 03 85 33 06 89');
+  lines.push('--------------------------------');
+  lines.push(isRep ? '*** REPARATION ***' : '*** ACCESSOIRE ***');
+  lines.push(c.numero || '');
+  lines.push(date + ' a ' + heure);
+  lines.push('--------------------------------');
+  lines.push('Client  : ' + (c.client.nom || ''));
+  lines.push('Tel     : ' + (c.client.tel || ''));
+  lines.push('--------------------------------');
+  if(isRep){
+    var parts = (c.detail || '').split(' — ');
+    lines.push('Appareil: ' + (parts[0] || ''));
+    lines.push('Piece   : ' + (parts[1] || ''));
+  } else {
+    lines.push('Article : ' + (c.detail || ''));
+  }
+  lines.push('--------------------------------');
+  lines.push('TOTAL : ' + c.prix.toFixed(2) + ' EUR');
+  lines.push(c.paye ? '*** DEJA PAYE ***' : 'A REGLER A LA REPRISE');
+  lines.push('--------------------------------');
+  lines.push('Merci de votre confiance !');
+  lines.push('www.solution-phone.fr');
+  showNotif('⏳ Envoi à l'imprimante...','info');
+  fetch('http://' + nasIp, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({title: 'SOLUTION PHONE', content: lines.join('\n')})
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(t){
+    if(t === 'OK'){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
+    else { showNotif('⚠️ Erreur imprimante : ' + t,'error'); }
+  })
+  .catch(function(e){ showNotif('❌ NAS non joignable — vérifiez le WiFi shop','error'); console.error(e); });
+}
+// ══════════════════════════════════════════════════════════
+// FIN IMPRESSION EPSON
+// ══════════════════════════════════════════════════════════
 
 function renderBonsCommande(){
   var tbody = document.getElementById('commande-table');
