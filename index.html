@@ -3173,14 +3173,27 @@ function _pinRefreshDots() {
   }
 }
 
+async function _pinHashSHA256(str) {
+  var msgBuffer = new TextEncoder().encode(str);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+
 async function _pinValidate() {
   var pinsConfig = await loadPinsConfig();
   var msg = document.getElementById('pin-msg');
+  var version = pinsConfig.version || 'v1';
 
-  if(_pinBuffer === String(pinsConfig.patron || '')) {
+  var inputHash = (version === 'v2') ? await _pinHashSHA256(_pinBuffer) : _pinBuffer;
+
+  var patronHash  = (version === 'v2') ? (pinsConfig.patron  || '') : String(pinsConfig.patron  || '');
+  var employeHash = (version === 'v2') ? (pinsConfig.employe || '') : String(pinsConfig.employe || '');
+
+  if(inputHash === patronHash) {
     _userRole = 'patron';
     _pinAccess();
-  } else if(_pinBuffer === String(pinsConfig.employe || '')) {
+  } else if(inputHash === employeHash) {
     _userRole = 'employe';
     _pinAccess();
   } else {
@@ -3190,7 +3203,6 @@ async function _pinValidate() {
       msg.textContent = '❌ Code incorrect';
       setTimeout(function(){ msg.textContent = ''; }, 2000);
     }
-    // Vibration si supportée
     if(navigator.vibrate) navigator.vibrate([100,50,100]);
   }
 }
