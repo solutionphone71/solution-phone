@@ -831,26 +831,108 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <!-- ══ PAGE BON DE COMMANDE ══ -->
     <div class="page" id="page-commande" style="display:none;">
-      <div class="header-section" style="margin-bottom: 20px;">
-        <h2 style="font-size: 24px; font-weight: bold; color: #333;">Nouveau Bon de Commande</h2>
-        <p style="color: #666;">Création d'une commande client (Pièce ou Accessoire)</p>
-      </div>
+      <div class="page-title">🛒 Bon de Commande</div>
+      <div class="page-sub">Commandes pièces & accessoires clients</div>
 
-      <div class="form-grid" style="display: grid; gap: 15px; max-width: 600px;">
-        <input type="text" id="cmd-nom" placeholder="Nom du client" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-        <input type="text" id="cmd-prenom" placeholder="Prénom" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-        <input type="tel" id="cmd-tel" placeholder="Téléphone" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-        <input type="email" id="cmd-email" placeholder="Email" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-        
-        <select id="cmd-type" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
-          <option value="">-- Type de commande --</option>
-          <option value="piece">Pièce à commander</option>
-          <option value="accessoire">Accessoire / Téléphone Neuf</option>
-        </select>
-        
-        <textarea id="cmd-details" placeholder="Détails (ex: Coque iPhone 13 Rouge, ou Écran Samsung S23...)" rows="4" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
-        
-        <button onclick="validerNouvelleCommande()" style="padding: 15px; background-color: #007bff; color: white; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">💾 Valider et Imprimer</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px;">
+
+        <!-- ── Colonne gauche : formulaire ── -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">📝 Nouvelle commande</div></div>
+
+          <!-- Choix type -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button id="cmd-type-rep" onclick="setCmdType('reparation')"
+              style="flex:1;padding:10px;border:1.5px solid var(--red);border-radius:8px;background:var(--red);color:#fff;font-weight:700;cursor:pointer;">
+              🔧 Pièce à commander
+            </button>
+            <button id="cmd-type-acc" onclick="setCmdType('accessoire')"
+              style="flex:1;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;color:var(--text-muted);font-weight:700;cursor:pointer;">
+              🎁 Accessoire
+            </button>
+          </div>
+
+          <!-- Client -->
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div class="form-group">
+              <label>Nom client *</label>
+              <input type="text" id="cmd-nom" placeholder="Dupont Jean">
+            </div>
+            <div class="form-group">
+              <label>Téléphone *</label>
+              <input type="tel" id="cmd-tel" placeholder="06 XX XX XX XX">
+            </div>
+          </div>
+
+          <!-- Bloc Réparation -->
+          <div id="cmd-block-rep" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            <div class="form-group">
+              <label>Modèle appareil *</label>
+              <input type="text" id="cmd-modele" placeholder="iPhone 13, Samsung S23...">
+            </div>
+            <div class="form-group">
+              <label>Pièce à commander *</label>
+              <select id="cmd-piece">
+                <option value="">— Sélectionner —</option>
+                <option>Écran</option><option>Batterie</option><option>Vitre arrière</option>
+                <option>Connecteur de charge</option><option>Caméra arrière</option>
+                <option>Caméra avant</option><option>Bouton power</option>
+                <option>Haut-parleur</option><option>Micro</option><option>Autre</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Bloc Accessoire -->
+          <div id="cmd-block-acc" style="display:none;margin-bottom:14px;">
+            <div class="form-group">
+              <label>Désignation accessoire *</label>
+              <input type="text" id="cmd-acc-nom" placeholder="Coque iPhone 13 Rouge, Chargeur...">
+            </div>
+          </div>
+
+          <!-- Prix + Payé -->
+          <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:14px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Acompte / Prix (€)</label>
+              <input type="number" id="cmd-prix" placeholder="0.00" step="0.01" min="0">
+            </div>
+            <div id="cmd-block-paye" style="display:none;padding-bottom:6px;">
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="cmd-paye"> Déjà payé
+              </label>
+            </div>
+          </div>
+
+          <button onclick="genererBonCommande()"
+            style="width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">
+            💾 Valider & Imprimer
+          </button>
+        </div>
+
+        <!-- ── Colonne droite : liste commandes ── -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">📋 Commandes en cours</div></div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:#f8fafc;border-bottom:2px solid var(--border);">
+                  <th style="padding:8px;text-align:left;">N°</th>
+                  <th style="padding:8px;text-align:left;">Date</th>
+                  <th style="padding:8px;text-align:left;">Type</th>
+                  <th style="padding:8px;text-align:left;">Client</th>
+                  <th style="padding:8px;text-align:left;">Tél</th>
+                  <th style="padding:8px;text-align:left;">Détail</th>
+                  <th style="padding:8px;text-align:left;">Prix</th>
+                  <th style="padding:8px;text-align:left;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="commande-table">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim);">Chargement...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
 
