@@ -3121,6 +3121,104 @@ var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':907.60,'20
 var supabaseReady = false;
 var realtimeChannel = null;
 
+// ══════════════════════════════════════════════════════════
+// SYSTÈME PIN — Login Screen
+// ══════════════════════════════════════════════════════════
+var _userRole = 'patron'; // défaut sécurisé
+var _modulesPatronOnly = ['caisse','stats','bilan','params','police','rachat','comptable','roulette','suivi-qr'];
+var _pinBuffer = '';
+
+// Charger les PINs depuis Supabase settings
+async function loadPinsConfig() {
+  try {
+    var res = await supaFetch('settings','GET',null,'?key=eq.pins_config&limit=1');
+    if(res && res.length > 0 && res[0].value) {
+      return JSON.parse(res[0].value);
+    }
+  } catch(e) { console.warn('PINs config non chargée:', e); }
+  // Fallback par défaut
+  return { patron: '1234', employe: '0000' };
+}
+
+function pinPress(digit) {
+  if(_pinBuffer.length >= 6) return;
+  _pinBuffer += String(digit);
+  _pinRefreshDots();
+  if(_pinBuffer.length === 6) {
+    setTimeout(_pinValidate, 200);
+  }
+}
+
+function pinClear() {
+  _pinBuffer = _pinBuffer.slice(0,-1);
+  _pinRefreshDots();
+  var msg = document.getElementById('pin-msg');
+  if(msg) msg.textContent = '';
+}
+
+function _pinRefreshDots() {
+  for(var i = 1; i <= 6; i++) {
+    var el = document.getElementById('pin-d' + i);
+    if(!el) continue;
+    if(i <= _pinBuffer.length) {
+      el.textContent = '●';
+      el.style.background = 'var(--red)';
+      el.style.color = '#fff';
+      el.style.borderColor = 'var(--red)';
+    } else {
+      el.textContent = '';
+      el.style.background = '#f8fafc';
+      el.style.borderColor = 'var(--border)';
+    }
+  }
+}
+
+async function _pinValidate() {
+  var pinsConfig = await loadPinsConfig();
+  var msg = document.getElementById('pin-msg');
+
+  if(_pinBuffer === String(pinsConfig.patron || '')) {
+    _userRole = 'patron';
+    _pinAccess();
+  } else if(_pinBuffer === String(pinsConfig.employe || '')) {
+    _userRole = 'employe';
+    _pinAccess();
+  } else {
+    _pinBuffer = '';
+    _pinRefreshDots();
+    if(msg) {
+      msg.textContent = '❌ Code incorrect';
+      setTimeout(function(){ msg.textContent = ''; }, 2000);
+    }
+    // Vibration si supportée
+    if(navigator.vibrate) navigator.vibrate([100,50,100]);
+  }
+}
+
+function _pinAccess() {
+  // Afficher badge rôle
+  var badge = document.getElementById('role-badge');
+  if(badge) {
+    if(_userRole === 'patron') {
+      badge.textContent = '👑 Patron';
+      badge.style.color = 'var(--warning)';
+    } else {
+      badge.textContent = '👤 Employé';
+      badge.style.color = 'var(--text-muted)';
+    }
+  }
+  // Cacher login, afficher app
+  var ls = document.getElementById('login-screen');
+  var app = document.getElementById('app');
+  if(ls) ls.style.display = 'none';
+  if(app) app.style.display = '';
+  // Lancer le chargement des données
+  bootApp();
+}
+// ══════════════════════════════════════════════════════════
+// FIN SYSTÈME PIN
+// ══════════════════════════════════════════════════════════
+
 function initRealtime() {
   // Polling toutes les 90 secondes pour synchro multiposte
   setInterval(async function() {
@@ -11893,22 +11991,6 @@ function repStep1Next(){
 
 function repSauvegarderClientManuel(){
   if(!repDossierCourant) return;
-
-  // Lire les champs directement
-  var c = {
-    civilite: (document.getElementById('rep-civilite')||{value:''}).value,
-    nom:      (document.getElementById('rep-nom')||{value:''}).value.trim(),
-    prenom:   (document.getElementById('rep-prenom')||{value:''}).value.trim(),
-    tel:      (document.getElementById('rep-tel')||{value:''}).value.trim(),
-    email:    (document.getElementById('rep-email')||{value:''}).value.trim(),
-    adresse:  (document.getElementById('rep-adresse')||{value:''}).value.trim(),
-    cp:       (document.getElementById('rep-cp')||{value:''}).value.trim(),
-    ville:    (document.getElementById('rep-ville')||{value:''}).value.trim()
-  };
-}
-
-function repSauvegarderClientManuel(){
-  if(!repDossierCourant) return;
   var c = {
     civilite: (document.getElementById('rep-civilite')||{value:''}).value,
     nom:      (document.getElementById('rep-nom')||{value:''}).value.trim(),
@@ -12437,117 +12519,6 @@ function repEnvoyerOrganisme(){
 }
 
 
-async function repEnvoyerEcosystem(){
-  var d = repDossierCourant;
-  if(!d){ showNotif('Aucun dossier','error'); return; }
-
-  var statut = document.getElementById('rep-qr-envoi-statut');
-  if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Connexion Ecosystem en cours...</div>';
-
-  var user       = localStorage.getItem('sp_eco_user') || '501710';
-  var password   = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
-  var repairerId = localStorage.getItem('sp_eco_repairer_id') || '2002535';
-
-  var panne = (document.getElementById('rep-qr-panne')||{value:''}).value;
-  var codes = IRIS_CODES[panne]||{};
-  var iris  = Array.isArray(codes.irisLines) ? codes.irisLines : [];
-  var a     = d.appareil||{};
-  var c     = d.client||{};
-  var f     = d.facture||{};
-
-  // URL API Ecosystem — à mettre à jour si changée (contacter contacteznous@ecosystem.eco)
-  var baseUrl = localStorage.getItem('sp_ecosystem_api_url') || 'https://portail-reparateurs.ecosystem.eco';
-
-  try {
-    // Étape 1 : Authentification
-    if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Authentification Ecosystem...</div>';
-
-    var authRes = await fetch(baseUrl+'/api/authenticate', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({username: user, password: password})
-    });
-
-    if(!authRes.ok) throw new Error('Authentification échouée ('+authRes.status+')');
-    var authData = await authRes.json();
-    var jwt = authData.id_token || authData.token || authData.access_token;
-    if(!jwt) throw new Error('Token JWT non reçu');
-
-    console.log('Ecosystem auth OK');
-    if(statut) statut.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:13px;">⏳ Création du dossier Ecosystem...</div>';
-
-    // Étape 2 : Créer le dossier de remboursement
-    var repairDate = f.date || new Date().toISOString().split('T')[0];
-    var prixReel   = (f.prix||0) + 25; // Prix réel = prix client + bonus
-
-    var dossierPayload = {
-      repairerId:       parseInt(repairerId),
-      repairerSiteId:   parseInt(repairerId),
-      serialNumber:     a.imei||'',
-      brand:            a.marque||'Apple',
-      model:            a.modele||'',
-      commercialRef:    d.refMobile||'',
-      repairDate:       repairDate,
-      invoiceReference: d.numero||'',
-      invoiceAmount:    prixReel,
-      bonusAmount:      25,
-      consumerLastName:  c.nom||'',
-      consumerFirstName: c.prenom||'',
-      consumerEmail:     c.email||'',
-      consumerPhone:     c.tel||'',
-      consumerAddress:   c.adresse||'',
-      consumerZipCode:   c.cp||'',
-      consumerCity:      c.ville||'',
-      spareParts: (iris||[]).map(function(l){
-        return {
-          irisConditionCode: l.condition,
-          irisSymptomCode:   l.symptom,
-          irisSectionCode:   l.section,
-          irisDefaultCode:   l.irisDefault,
-          irisRepairCode:    l.repair,
-          partReference:     l.repairCode,
-          description:       l.description||''
-        };
-      }),
-      invoiceFileUrl:    d.photoImeiUrl||'',
-      imeiFileUrl:       d.photoImeiUrl||''
-    };
-
-    var repairRes = await fetch(baseUrl+'/api/repair-reimbursements', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+jwt
-      },
-      body: JSON.stringify(dossierPayload)
-    });
-
-    var repairData = await repairRes.json();
-    console.log('Ecosystem repair response:', repairData);
-
-    if(repairRes.ok && (repairData.id || repairData.reimbursementId)){
-      var dossierId = repairData.id || repairData.reimbursementId;
-      d.qrEnvoi = {date:new Date().toISOString(), statut:'Sent', ecosystemId: dossierId};
-      d.statut = 'qr';
-      repSauvegarderDossier();
-      repUpdateStatutBadge();
-      if(statut) statut.innerHTML = '<div style="background:#f0fdf4;padding:12px;border-radius:8px;color:var(--green);font-size:13px;">'+
-        '✅ Dossier envoyé à Ecosystem !<br>'+
-        '<b>ID Ecosystem :</b> '+dossierId+'<br>'+
-        '<b>Remboursement :</b> 25€ sous 15 jours ouvrés</div>';
-      showNotif('✅ Dossier QualiRépar envoyé à Ecosystem !','success');
-    } else {
-      var rawMsg = repairData.message || repairData.error || repairData.detail || JSON.stringify(repairData).slice(0,300);
-      throw new Error(rawMsg);
-    }
-
-  } catch(err){
-    console.error('Ecosystem error:', err);
-    var errAnalysee = qrAnalyserErreur(err.message, 'Ecosystem');
-    qrAfficherErreurCorrection(errAnalysee, 'Ecosystem', statut);
-    showNotif('❌ Erreur Ecosystem — corrigez et renvoyez','error');
-  }
-}
 
 
 async function repFactureToPDFBase64(d){
@@ -16407,11 +16378,11 @@ async function qrVerifierStatutEcosystem(dossier){
 
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
-  var baseUrl = localStorage.getItem('sp_ecosystem_api_url') || 'https://portail-reparateurs.ecosystem.eco';
+  var proxy = 'https://app.solution-phone.fr/proxy-ecosystem';
 
   try {
     // Auth
-    var authRes = await fetch(baseUrl+'/api/authenticate', {
+    var authRes = await fetch(proxy+'/api/authenticate', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({username:user, password:password})
     });
@@ -16420,7 +16391,7 @@ async function qrVerifierStatutEcosystem(dossier){
     if(!jwt) return null;
 
     // GET statut du dossier
-    var res = await fetch(baseUrl+'/api/repair-reimbursements/'+ecosystemId, {
+    var res = await fetch(proxy+'/api/repair-reimbursements/'+ecosystemId, {
       method:'GET',
       headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'}
     });
@@ -16837,6 +16808,32 @@ function showCalToast(title,body){
   t.classList.add('show');
   setTimeout(function(){t.classList.remove('show');},4000);
 }
+
+
+// ══════════════════════════════════════════════════════════
+// DÉMARRAGE APPLICATION
+// ══════════════════════════════════════════════════════════
+async function bootApp() {
+  await loadFromSupabase();
+  renderPhones();
+  renderCaisse();
+  renderDashboard();
+  await loadAllClients();
+  await loadBonsCommande();
+  await loadBonsDepot();
+  checkCalNotifs();
+}
+
+// Au chargement : afficher login, cacher l'app
+(function initLogin() {
+  var ls = document.getElementById('login-screen');
+  var app = document.getElementById('app');
+  if(ls) ls.style.display = '';
+  if(app) app.style.display = 'none';
+})();
+// ══════════════════════════════════════════════════════════
+// FIN DÉMARRAGE
+// ══════════════════════════════════════════════════════════
 
 </script>
 
