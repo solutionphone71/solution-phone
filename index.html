@@ -1261,7 +1261,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="form-group">
             <label>IP du NAS + port</label>
-            <input type="text" id="params-nas-ip" placeholder="ex: 192.168.10.164:3000">
+            <input type="text" id="params-nas-ip" placeholder="192.168.10.164:3000">
             <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">IP locale du NAS Synology sur le réseau du shop</div>
           </div>
           <button class="btn btn-primary" style="background:#b45309;border-color:#b45309;width:100%;" onclick="paramsSaveNas()">💾 Enregistrer</button>
@@ -14230,6 +14230,8 @@ function fermerTicket(){
 // IMPRESSION EPSON — NAS Synology
 // ══════════════════════════════════════════════════════════
 var NAS_PRINT_KEY = 'sp_nas_ip';
+// Pré-remplir IP NAS par défaut si non configurée
+if(!localStorage.getItem(NAS_PRINT_KEY)) localStorage.setItem(NAS_PRINT_KEY, '192.168.10.164:3000');
 
 function getNasUrl() {
   return localStorage.getItem(NAS_PRINT_KEY) || '';
@@ -14249,11 +14251,12 @@ async function paramsTestNas() {
   var st = document.getElementById('params-nas-status');
   if(st) st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test en cours...</span>';
   try {
-    var r = await fetch('http://' + ip + '/ping', {method:'GET', signal: AbortSignal.timeout(3000)});
+    // OPTIONS est supporté par le serveur (CORS preflight)
+    var r = await fetch('http://' + ip, {method:'OPTIONS', signal: AbortSignal.timeout(4000)});
     if(st) st.innerHTML = '<span style="color:var(--green);">✅ NAS joignable !</span>';
     showNotif('✅ NAS joignable','success');
   } catch(e) {
-    if(st) st.innerHTML = '<span style="color:var(--red);">❌ NAS non joignable — vérifiez l'IP et le WiFi</span>';
+    if(st) st.innerHTML = '<span style="color:var(--red);">❌ NAS non joignable — vérifiez l'IP et le WiFi shop</span>';
     showNotif('❌ NAS non joignable','error');
   }
 }
