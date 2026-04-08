@@ -831,52 +831,26 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <!-- ══ PAGE BON DE COMMANDE ══ -->
     <div class="page" id="page-commande" style="display:none;">
-      <div class="page-title">Nouveau Bon de Commande</div>
-      <div class="page-sub">Enregistrement d'une commande de pièce ou accessoire</div>
-      
-      <div class="card" style="max-width: 600px; margin-top: 20px;">
-        <div style="display:flex; flex-direction:column; gap:15px; padding:10px;">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="form-group">
-              <label>Nom *</label>
-              <input type="text" id="bc-nom" placeholder="Nom du client">
-            </div>
-            <div class="form-group">
-              <label>Prénom</label>
-              <input type="text" id="bc-prenom" placeholder="Prénom du client">
-            </div>
-          </div>
-          
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div class="form-group">
-              <label>Téléphone *</label>
-              <input type="tel" id="bc-tel" placeholder="06 XX XX XX XX">
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="bc-email" placeholder="client@email.com">
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>Type de commande *</label>
-            <select id="bc-type" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); width: 100%;">
-              <option value="piece">⚙️ Pièce à commander (Écran, Batterie...)</option>
-              <option value="accessoire">🎧 Accessoire spécifique</option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Détails de la commande *</label>
-            <textarea id="bc-details" rows="3" placeholder="Description précise de l'article..." style="font-size:16px;"></textarea>
-          </div>
-          
-          <div style="margin-top:10px;">
-            <button class="btn btn-primary" onclick="validerNouvelleCommande()" style="width:100%; padding:15px; font-size:16px; font-weight:bold;">
-              Valider et Imprimer
-            </button>
-          </div>
-        </div>
+      <div class="header-section" style="margin-bottom: 20px;">
+        <h2 style="font-size: 24px; font-weight: bold; color: #333;">Nouveau Bon de Commande</h2>
+        <p style="color: #666;">Création d'une commande client (Pièce ou Accessoire)</p>
+      </div>
+
+      <div class="form-grid" style="display: grid; gap: 15px; max-width: 600px;">
+        <input type="text" id="cmd-nom" placeholder="Nom du client" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        <input type="text" id="cmd-prenom" placeholder="Prénom" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        <input type="tel" id="cmd-tel" placeholder="Téléphone" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        <input type="email" id="cmd-email" placeholder="Email" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+        
+        <select id="cmd-type" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+          <option value="">-- Type de commande --</option>
+          <option value="piece">Pièce à commander</option>
+          <option value="accessoire">Accessoire / Téléphone Neuf</option>
+        </select>
+        
+        <textarea id="cmd-details" placeholder="Détails (ex: Coque iPhone 13 Rouge, ou Écran Samsung S23...)" rows="4" class="input-field" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+        
+        <button onclick="validerNouvelleCommande()" style="padding: 15px; background-color: #007bff; color: white; font-weight: bold; border: none; border-radius: 5px; cursor: pointer;">💾 Valider et Imprimer</button>
       </div>
     </div>
 
