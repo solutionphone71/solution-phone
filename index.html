@@ -1604,6 +1604,33 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
       </div>
+
+      <!-- ──────────── CLAUDE API ──────────── -->
+      <div class="card mb-3" style="border:1px solid #6f42c1; border-radius:10px; overflow:hidden;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#3d1a6e,#6f42c1);color:#fff;padding:12px 16px;">
+          <div><strong>🤖 Claude — Intelligence Artificielle</strong></div>
+          <div id="params-claude-status"><span class="badge bg-warning text-dark">⚠️ Non configurée</span></div>
+        </div>
+        <div class="card-body" style="background:#1a1a2e; padding:16px;">
+          <p class="text-muted small mb-3">Clé API Anthropic pour l'assistant IA, l'analyse de documents PDF et les fonctions intelligentes de l'app.</p>
+          <div class="mb-3">
+            <label class="form-label text-light" style="font-size:13px;">Clé API Anthropic</label>
+            <input type="password" class="form-control" id="params-claude-key" placeholder="sk-ant-api03-…" style="background:#0d0d1a;border-color:#6f42c1;color:#fff;">
+          </div>
+          <div class="mb-3">
+            <label class="form-label text-light" style="font-size:13px;">Modèle par défaut</label>
+            <select class="form-select" id="params-claude-model" style="background:#0d0d1a;border-color:#6f42c1;color:#fff;">
+              <option value="claude-sonnet-4-6">claude-sonnet-4-6 — Rapide &amp; efficace (recommandé)</option>
+              <option value="claude-opus-4-6">claude-opus-4-6 — Puissant &amp; précis</option>
+              <option value="claude-haiku-4-5">claude-haiku-4-5 — Ultra-rapide &amp; léger</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-primary" style="background:var(--purple,#6f42c1);border-color:#6f42c1;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
+            <button class="btn btn-sm btn-outline-light" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
+          </div>
+        </div>
+      </div>
       </div>
 
         <div class="page" id="page-reparations">
@@ -10307,7 +10334,9 @@ var PARAMS_KEYS = {
   kiwizSub:       'sp_kiwiz_sub',
   brevoKey:       'sp_brevo_key',
   brevoSender:    'sp_brevo_sender',
-  brevoSenderName:'sp_brevo_sender_name'
+  brevoSenderName:'sp_brevo_sender_name',
+  claudeKey:   'sp_claude_key',
+  claudeModel: 'sp_claude_model'
 };
 
 
@@ -10356,6 +10385,14 @@ function paramsLoad(){
   el=document.getElementById('params-eco-pass');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   el=document.getElementById('params-ecologic-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicToken)||'';
   el=document.getElementById('params-ecologic-siteid'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||'';
+
+  // Claude API
+  el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
+  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
+  var stCl=document.getElementById('params-claude-status');
+  if(stCl) stCl.innerHTML=localStorage.getItem(PARAMS_KEYS.claudeKey)
+    ? '<span class="badge bg-success">✅ Clé configurée</span>'
+    : '<span class="badge bg-warning text-dark">⚠️ Non configurée</span>';
 
   paramsUpdateStatus();
 }
@@ -14516,6 +14553,47 @@ async function paramsTestNas() {
   } catch(e) {
     if(st) st.innerHTML = '<span style="color:var(--red);">&#10060; NAS non joignable &#8212; v&#233;rifiez IP et WiFi shop</span>';
     showNotif('❌ NAS non joignable','error');
+  }
+}
+
+function paramsSaveClaude() {
+  var key = (document.getElementById('params-claude-key')||{value:''}).value.trim();
+  var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
+  localStorage.setItem(PARAMS_KEYS.claudeKey, key);
+  localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
+  var st = document.getElementById('params-claude-status');
+  if(st) st.innerHTML = key
+    ? '<span class="badge bg-success">✅ Clé enregistrée</span>'
+    : '<span class="badge bg-warning text-dark">⚠️ Non configurée</span>';
+  showNotif('💾 Clé Claude enregistrée', 'success');
+}
+
+async function paramsTestClaude() {
+  var key = localStorage.getItem(PARAMS_KEYS.claudeKey) || '';
+  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-sonnet-4-6';
+  var st  = document.getElementById('params-claude-status');
+  if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
+  if(st) st.innerHTML = '<span class="badge bg-info">🔄 Test en cours…</span>';
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({ model: mdl, max_tokens: 20, messages: [{ role: 'user', content: 'OK?' }] })
+    });
+    var d = await res.json();
+    if(d.content && d.content[0] && d.content[0].text) {
+      if(st) st.innerHTML = '<span class="badge bg-success">✅ Connexion OK — ' + mdl + '</span>';
+      showNotif('✅ Claude API opérationnelle', 'success');
+    } else {
+      throw new Error(d.error ? d.error.message : 'Réponse invalide');
+    }
+  } catch(e) {
+    if(st) st.innerHTML = '<span class="badge bg-danger">❌ ' + e.message.substring(0,50) + '</span>';
+    showNotif('❌ Erreur Claude API: ' + e.message.substring(0,60), 'danger');
   }
 }
 
