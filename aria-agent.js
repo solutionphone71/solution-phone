@@ -684,7 +684,7 @@ Sois concis. Zéro texte hors du JSON.`;
       const apiKey = getClaudeKey();
       if (!apiKey) return { intent:'error', response:'Clé API manquante.' };
 
-      const res = await fetch('https://app.solution-phone.fr/proxy-claude/v1/messages', {
+      const res = await fetch('https://app.solution-phone.fr/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
