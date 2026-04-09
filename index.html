@@ -17238,5 +17238,313 @@ function showCalToast(title,body){
 </script>
 <!-- ===== FIN VERSION NOTIFICATION ===== -->
 
+
+<!-- ══ SMART WORKFLOW ══════════════════════════════════════════════ -->
+<style>
+@keyframes sp-fadein{from{opacity:0}to{opacity:1}}
+@keyframes sp-slidein{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sp-pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+#sp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;animation:sp-fadein 0.15s ease;}
+#sp-overlay.open{display:flex;}
+#sp-modal{background:#0d0d0d;border:1.5px solid #1e1e1e;border-radius:12px;width:100%;max-width:580px;overflow:hidden;animation:sp-slidein 0.18s ease;font-family:'Rajdhani',system-ui,sans-serif;}
+#sp-bar-wrap{display:flex;align-items:center;gap:0;border-bottom:1px solid #1a1a1a;}
+#sp-cmd-icon{font-size:18px;padding:0 14px;color:#333;flex-shrink:0;}
+#sp-bar{flex:1;background:transparent;border:none;outline:none;padding:16px 0;font-size:18px;font-family:inherit;font-weight:600;color:#eee;letter-spacing:0.3px;}
+#sp-bar::placeholder{color:#2a2a2a;}
+#sp-bar-shortcut{font-size:11px;color:#222;font-family:monospace;padding:0 14px;flex-shrink:0;}
+#sp-intent-wrap{padding:10px 12px;}
+.sp-intent-card{background:#111;border:1.5px solid #1e1e1e;border-radius:10px;padding:13px 15px;display:flex;align-items:center;gap:12px;cursor:pointer;animation:sp-slidein 0.15s ease;position:relative;overflow:hidden;}
+.sp-intent-card:hover{background:#141414;border-color:#2a2a2a;}
+.sp-intent-bar{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.sp-intent-ico{font-size:22px;width:30px;text-align:center;flex-shrink:0;}
+.sp-intent-body{flex:1;min-width:0;}
+.sp-intent-label{font-size:15px;font-weight:700;color:#eee;margin-bottom:2px;letter-spacing:0.3px;}
+.sp-intent-sub{font-size:12px;color:#444;}
+.sp-intent-badge{font-size:9px;font-weight:700;padding:3px 7px;border-radius:3px;letter-spacing:1px;flex-shrink:0;}
+.sp-intent-enter{font-size:11px;color:#333;flex-shrink:0;font-family:monospace;}
+#sp-shortcuts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 12px;}
+.sp-sc{background:#111;border:1px solid #1a1a1a;border-radius:8px;padding:10px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.sp-sc:hover{background:#141414;border-color:#222;}
+.sp-sc-ico{font-size:15px;}
+.sp-sc-lbl{font-size:12px;font-weight:600;color:#555;letter-spacing:0.3px;}
+#sp-bottom{padding:10px 16px 14px;border-top:1px solid #141414;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
+.sp-leg{text-align:center;}
+.sp-leg-b{font-size:8px;color:#2a2a2a;letter-spacing:1px;}
+.sp-leg-h{font-size:10px;color:#1e1e1e;font-family:monospace;margin-top:1px;}
+#sp-status-wrap{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid #111;}
+#sp-status-dot{width:5px;height:5px;border-radius:50%;background:#27ae60;animation:sp-pulse 2s infinite;}
+#sp-status-txt{font-size:10px;color:#222;font-family:monospace;letter-spacing:1px;}
+#sp-section-lbl{font-size:8px;color:#1e1e1e;letter-spacing:2px;padding:6px 14px 4px;font-family:monospace;}
+#sp-recent{padding:0 12px 8px;display:flex;flex-direction:column;gap:3px;}
+.sp-rec{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;cursor:pointer;}
+.sp-rec:hover{background:#0f0f0f;}
+.sp-rec-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.sp-rec-txt{font-size:12px;color:#333;flex:1;}
+.sp-rec-t{font-size:10px;color:#1e1e1e;font-family:monospace;}
+/* FAB */
+#sp-fab{position:fixed;bottom:90px;right:20px;width:48px;height:48px;background:#c0392b;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:1000;box-shadow:0 4px 15px rgba(192,57,43,0.4);transition:transform 0.15s;}
+#sp-fab:hover{transform:scale(1.08);}
+@media(max-width:768px){#sp-fab{bottom:70px;right:16px;} #sp-overlay{padding-top:40px;padding-left:12px;padding-right:12px;}}
+</style>
+
+<!-- Bouton flottant -->
+<button id="sp-fab" onclick="spOpen()" title="Workflow rapide (Ctrl+K)">⌘</button>
+
+<!-- Modal -->
+<div id="sp-overlay" onclick="spOverlayClick(event)">
+  <div id="sp-modal">
+    <div id="sp-status-wrap">
+      <div id="sp-status-dot"></div>
+      <div id="sp-status-txt">SOLUTION PHONE · MÂCON · SMART WORKFLOW</div>
+    </div>
+    <div id="sp-bar-wrap">
+      <span id="sp-cmd-icon">⌘</span>
+      <input id="sp-bar" placeholder="IMEI, nom client, marque, panne, n° bon..." autocomplete="off" spellcheck="false" oninput="spUpdate(this.value)" onkeydown="spKey(event)">
+      <span id="sp-bar-shortcut">ESC</span>
+    </div>
+    <div id="sp-intent-wrap" style="display:none;"></div>
+    <div id="sp-shortcuts">
+      <div class="sp-sc" onclick="spExec({action:'repair'})"><span class="sp-sc-ico">🔧</span><span class="sp-sc-lbl">Nouvelle réparation</span></div>
+      <div class="sp-sc" onclick="spExec({action:'client'})"><span class="sp-sc-ico">👤</span><span class="sp-sc-lbl">Fiche client</span></div>
+      <div class="sp-sc" onclick="spExec({action:'caisse'})"><span class="sp-sc-ico">💶</span><span class="sp-sc-lbl">Caisse</span></div>
+      <div class="sp-sc" onclick="spExec({action:'phones'})"><span class="sp-sc-ico">📱</span><span class="sp-sc-lbl">Smartphones</span></div>
+      <div class="sp-sc" onclick="spExec({action:'bons_depot'})"><span class="sp-sc-ico">📋</span><span class="sp-sc-lbl">Bons dépôt</span></div>
+      <div class="sp-sc" onclick="spExec({action:'dashboard'})"><span class="sp-sc-ico">🏠</span><span class="sp-sc-lbl">Dashboard</span></div>
+    </div>
+    <div style="border-top:1px solid #111;"></div>
+    <div id="sp-section-lbl">ACCÈS RÉCENTS</div>
+    <div id="sp-recent"></div>
+    <div id="sp-bottom">
+      <div class="sp-leg"><div class="sp-leg-b">IMEI</div><div class="sp-leg-h">15 chiffres</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">TEL</div><div class="sp-leg-h">06/07...</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">BON</div><div class="sp-leg-h">4-8 digits</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">RÉPA</div><div class="sp-leg-h">écran, batterie...</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">CLIENT</div><div class="sp-leg-h">Nom Prénom</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+var SP_BRANDS=['iphone','apple','samsung','xiaomi','huawei','oppo','honor','realme','pixel','google','sony','nokia','motorola','wiko','crosscall','oneplus','lg','blackview','vivo','tcl'];
+var SP_REPAIRS=[
+  {kw:['écran','vitre','lcd','display','cassé','fissuré','brisé'],label:'Remplacement écran',val:'Remplacement écran suite à une casse (fissure / écran cassé)',ico:'📱'},
+  {kw:['batterie','charge','recharge','autonomie','autonomy'],label:'Batterie',val:'Remplacement batterie - autonomie insuffisante, batterie usée',ico:'🔋'},
+  {kw:['micro','son','haut-parleur','speaker','audio','écoute'],label:'Problème audio',val:'Remplacement micro / haut-parleur',ico:'🔊'},
+  {kw:['connecteur','port','usb','lightning','type-c','charge impossible'],label:'Connecteur de charge',val:'Remplacement connecteur de charge - charge impossible ou intermittente',ico:'⚡'},
+  {kw:['camera','photo','objectif','appareil photo'],label:'Caméra',val:'Remplacement caméra',ico:'📷'},
+  {kw:['bouton','volume','power','on/off','marche'],label:'Boutons',val:'Réparation boutons',ico:'🔘'},
+  {kw:['eau','noyé','humidité','liquide'],label:'Dégâts des eaux',val:'Dégâts des eaux',ico:'💧'},
+];
+var SP_RECENT_KEY='sp_recent_v1';
+var spCurrentIntent=null;
+
+function spDetect(text){
+  var t=text.trim(),tl=t.toLowerCase();
+  if(!t)return null;
+  if(/^\d{15}$/.test(t.replace(/\s/g,'')))
+    return{type:'imei',label:'IMEI détecté',sub:'Ouvrir réparation avec cet IMEI',ico:'🔍',color:'#c0392b',action:'repair',badge:'IMEI',data:{imei:t.replace(/\s/g,'')}};
+  if(/^0[67]\d{8}$/.test(t.replace(/[\s.\-]/g,'')))
+    return{type:'tel',label:'Numéro de téléphone',sub:'Rechercher ce client',ico:'📞',color:'#2980b9',action:'client_tel',badge:'TEL',data:{tel:t}};
+  if(/^\d{4,8}$/.test(t))
+    return{type:'bon',label:'Bon n°'+t,sub:'Rechercher dans les réparations',ico:'🎫',color:'#e67e22',action:'search_bon',badge:'BON',data:{bon:t}};
+  var brand=null,repair=null;
+  for(var i=0;i<SP_BRANDS.length;i++){if(tl.indexOf(SP_BRANDS[i])!==-1){brand=SP_BRANDS[i];break;}}
+  for(var j=0;j<SP_REPAIRS.length;j++){for(var k=0;k<SP_REPAIRS[j].kw.length;k++){if(tl.indexOf(SP_REPAIRS[j].kw[k])!==-1){repair=SP_REPAIRS[j];break;}}if(repair)break;}
+  if(brand&&repair){
+    var bl=brand.charAt(0).toUpperCase()+brand.slice(1);
+    return{type:'repair_full',label:repair.ico+' '+repair.label+' — '+bl,sub:'Ouvrir formulaire pré-rempli',ico:'🔧',color:'#c0392b',action:'repair_prefill',badge:'RÉPA',data:{brand:brand,brandLabel:bl,repair:repair}};
+  }
+  if(repair)
+    return{type:'repair_type',label:repair.ico+' '+repair.label,sub:'Nouvelle réparation — quelle marque ?',ico:'🔧',color:'#c0392b',action:'repair_prefill',badge:'RÉPA',data:{repair:repair}};
+  if(brand){
+    var bl2=brand.charAt(0).toUpperCase()+brand.slice(1);
+    return{type:'brand',label:'Réparation '+bl2,sub:'Quel est le problème ?',ico:'📱',color:'#8e44ad',action:'repair_prefill',badge:'MARQUE',data:{brand:brand,brandLabel:bl2}};
+  }
+  if(t.length>=4&&/^[a-zà-ÿ\s'\-]+$/i.test(t)&&t.split(' ').filter(function(w){return w.length>0;}).length>=2){
+    var name=t.split(' ').map(function(w){return w.charAt(0).toUpperCase()+w.slice(1);}).join(' ');
+    return{type:'client_name',label:'Client : '+name,sub:'Rechercher ou créer ce client',ico:'👤',color:'#2980b9',action:'search_client',badge:'CLIENT',data:{name:name,raw:t}};
+  }
+  if(t.length>=3)
+    return{type:'search',label:'Rechercher "'+t+'"',sub:'Clients, réparations, bons dépôt...',ico:'🔎',color:'#555',action:'search_global',badge:'SEARCH',data:{q:t}};
+  return null;
+}
+
+function spUpdate(val){
+  spCurrentIntent=spDetect(val);
+  var iw=document.getElementById('sp-intent-wrap');
+  var sc=document.getElementById('sp-shortcuts');
+  if(spCurrentIntent){
+    iw.style.display='block';
+    sc.style.display='none';
+    var c=spCurrentIntent.color;
+    iw.innerHTML='<div class="sp-intent-card" style="border-color:'+c+'44" onclick="spExec(spCurrentIntent)">'+
+      '<div class="sp-intent-bar" style="background:'+c+'"></div>'+
+      '<div class="sp-intent-ico">'+spCurrentIntent.ico+'</div>'+
+      '<div class="sp-intent-body">'+
+        '<div class="sp-intent-label">'+spCurrentIntent.label+'</div>'+
+        '<div class="sp-intent-sub">'+spCurrentIntent.sub+'</div>'+
+      '</div>'+
+      '<div class="sp-intent-badge" style="background:'+c+'22;color:'+c+';border:1px solid '+c+'44">'+spCurrentIntent.badge+'</div>'+
+      '<div class="sp-intent-enter">↵</div>'+
+    '</div>';
+  } else {
+    iw.style.display='none';
+    sc.style.display='grid';
+  }
+}
+
+function spExec(intent){
+  if(!intent||!intent.action)return;
+  spSaveRecent(intent);
+  spClose();
+  var d=intent.data||{};
+  switch(intent.action){
+    case 'repair':
+      showPage('reparations');
+      setTimeout(function(){repNewDossier();},100);
+      break;
+    case 'repair_prefill':
+      showPage('reparations');
+      setTimeout(function(){
+        repNewDossier();
+        setTimeout(function(){
+          // Aller étape 2 si on a appareil
+          if(d.brand||d.repair){
+            repGoStep(2);
+            if(d.brand){
+              var sel=document.getElementById('dep-marque');
+              if(sel){for(var i=0;i<sel.options.length;i++){if(sel.options[i].text.toLowerCase().includes(d.brand.toLowerCase())){sel.value=sel.options[i].value;if(typeof repMajOrganismePhoto==='function')repMajOrganismePhoto();break;}}}
+            }
+            if(d.repair){
+              // Sélectionner dans dep-panne-select
+              var ps=document.getElementById('dep-panne-select');
+              if(ps){for(var j=0;j<ps.options.length;j++){if(ps.options[j].value===d.repair.val){ps.value=ps.options[j].value;if(typeof repPanneSelect==='function')repPanneSelect(ps.value);break;}}}
+              // Et remplir le textarea
+              var ta=document.getElementById('dep-panne');
+              if(ta&&ta.value==='')ta.value=d.repair.label;
+            }
+          }
+        },300);
+      },100);
+      break;
+    case 'client':
+      showPage('clients');
+      break;
+    case 'client_tel':
+      showPage('reparations');
+      setTimeout(function(){
+        repNewDossier();
+        setTimeout(function(){
+          var tf=document.getElementById('rep-tel');
+          if(tf)tf.value=d.tel;
+        },300);
+      },100);
+      break;
+    case 'search_client':
+      showPage('clients');
+      setTimeout(function(){
+        var cs=document.getElementById('client-search');
+        if(cs){cs.value=d.raw;if(typeof renderClients==='function')renderClients();}
+      },200);
+      break;
+    case 'search_bon':
+      showPage('reparations');
+      setTimeout(function(){
+        var rs=document.getElementById('rep-search');
+        if(rs){rs.value=d.bon;if(typeof renderRepListe==='function')renderRepListe();}
+        var rs2=document.getElementById('rep-search-termine');
+        if(rs2){rs2.value=d.bon;if(typeof renderRepTermines==='function')renderRepTermines();}
+      },200);
+      break;
+    case 'search_global':
+      // Cherche dans réparations par défaut
+      showPage('reparations');
+      setTimeout(function(){
+        var rs=document.getElementById('rep-search');
+        if(rs){rs.value=d.q;if(typeof renderRepListe==='function')renderRepListe();}
+      },200);
+      break;
+    case 'caisse': showPage('caisse'); break;
+    case 'phones': showPage('phones'); break;
+    case 'bons_depot': showPage('bons_depot'); break;
+    case 'dashboard': showPage('dashboard'); break;
+  }
+}
+
+function spOpen(){
+  var el=document.getElementById('sp-overlay');
+  el.classList.add('open');
+  document.getElementById('sp-bar').value='';
+  spUpdate('');
+  spRenderRecent();
+  setTimeout(function(){document.getElementById('sp-bar').focus();},50);
+}
+
+function spClose(){
+  document.getElementById('sp-overlay').classList.remove('open');
+}
+
+function spOverlayClick(e){
+  if(e.target===document.getElementById('sp-overlay'))spClose();
+}
+
+function spKey(e){
+  if(e.key==='Enter'&&spCurrentIntent){spExec(spCurrentIntent);}
+  if(e.key==='Escape'){spClose();}
+}
+
+// Raccourci clavier global Ctrl+K
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+    e.preventDefault();
+    var overlay=document.getElementById('sp-overlay');
+    if(overlay.classList.contains('open'))spClose();
+    else spOpen();
+  }
+});
+
+// Historique récent
+function spSaveRecent(intent){
+  try{
+    var list=JSON.parse(localStorage.getItem(SP_RECENT_KEY)||'[]');
+    var entry={label:intent.label,action:intent.action,data:intent.data||{},color:intent.color||'#555',ico:intent.ico||'⬡',ts:Date.now()};
+    list=list.filter(function(x){return x.label!==entry.label;});
+    list.unshift(entry);
+    if(list.length>5)list=list.slice(0,5);
+    localStorage.setItem(SP_RECENT_KEY,JSON.stringify(list));
+  }catch(e){}
+}
+
+function spRenderRecent(){
+  try{
+    var list=JSON.parse(localStorage.getItem(SP_RECENT_KEY)||'[]');
+    var el=document.getElementById('sp-recent');
+    if(!el)return;
+    if(!list.length){el.innerHTML='<div class="sp-rec"><span class="sp-rec-txt" style="color:#1e1e1e;">Aucun historique</span></div>';return;}
+    el.innerHTML=list.map(function(x){
+      var mins=Math.round((Date.now()-x.ts)/60000);
+      var timeStr=mins<1?'À l\'instant':mins<60?mins+'min':Math.round(mins/60)+'h';
+      return '<div class="sp-rec" onclick=\'spExec('+JSON.stringify(x)+')\'>'
+        +'<div class="sp-rec-dot" style="background:'+(x.color||'#555')+'"></div>'
+        +'<div class="sp-rec-txt">'+x.ico+' '+x.label+'</div>'
+        +'<div class="sp-rec-t">'+timeStr+'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){}
+}
+
+window.spOpen=spOpen;
+window.spClose=spClose;
+window.spOverlayClick=spOverlayClick;
+window.spKey=spKey;
+window.spUpdate=spUpdate;
+window.spExec=spExec;
+window.spCurrentIntent=spCurrentIntent;
+Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentIntent;},set:function(v){spCurrentIntent=v;}});
+})();
+</script>
+<!-- ══ FIN SMART WORKFLOW ══════════════════════════════════════════ -->
+
 </body>
 </html>
