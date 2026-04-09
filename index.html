@@ -1603,33 +1603,31 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <button class="btn" style="width:100%;" onclick="paramsTestNas()">🔌 Tester la connexion</button>
         </div>
       </div>
-      </div>
 
-      <!-- ──────────── CLAUDE API ──────────── -->
-      <div class="card mb-3" style="border:1px solid #6f42c1; border-radius:10px; overflow:hidden;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background:linear-gradient(135deg,#3d1a6e,#6f42c1);color:#fff;padding:12px 16px;">
-          <div><strong>🤖 Claude — Intelligence Artificielle</strong></div>
-          <div id="params-claude-status"><span class="badge bg-warning text-dark">⚠️ Non configurée</span></div>
+      <!-- Claude API -->
+      <div class="card" style="border:1.5px solid #7c3aed;">
+        <div class="card-header" style="background:#f5f3ff;">
+          <div class="card-title" style="color:#5b21b6;">🤖 Claude — Intelligence Artificielle</div>
+          <div id="params-claude-status" style="font-size:12px;color:var(--text-muted);">⚠️ Non configurée</div>
         </div>
-        <div class="card-body" style="background:#1a1a2e; padding:16px;">
-          <p class="text-muted small mb-3">Clé API Anthropic pour l'assistant IA, l'analyse de documents PDF et les fonctions intelligentes de l'app.</p>
-          <div class="mb-3">
-            <label class="form-label text-light" style="font-size:13px;">Clé API Anthropic</label>
-            <input type="password" class="form-control" id="params-claude-key" placeholder="sk-ant-api03-…" style="background:#0d0d1a;border-color:#6f42c1;color:#fff;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>Clé API Anthropic</label>
+            <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Stockée localement — jamais envoyée à nos serveurs. <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
           </div>
-          <div class="mb-3">
-            <label class="form-label text-light" style="font-size:13px;">Modèle par défaut</label>
-            <select class="form-select" id="params-claude-model" style="background:#0d0d1a;border-color:#6f42c1;color:#fff;">
+          <div class="form-group">
+            <label>Modèle par défaut</label>
+            <select id="params-claude-model">
               <option value="claude-sonnet-4-6">claude-sonnet-4-6 — Rapide &amp; efficace (recommandé)</option>
               <option value="claude-opus-4-6">claude-opus-4-6 — Puissant &amp; précis</option>
               <option value="claude-haiku-4-5">claude-haiku-4-5 — Ultra-rapide &amp; léger</option>
             </select>
           </div>
-          <div class="d-flex gap-2 mt-3">
-            <button class="btn btn-primary" style="background:var(--purple,#6f42c1);border-color:#6f42c1;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
-            <button class="btn btn-sm btn-outline-light" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
-          </div>
+          <button class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;width:100%;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
+          <button class="btn" style="width:100%;" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
         </div>
+      </div>
       </div>
       </div>
 
@@ -10390,9 +10388,8 @@ function paramsLoad(){
   el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
   el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
   var stCl=document.getElementById('params-claude-status');
-  if(stCl) stCl.innerHTML=localStorage.getItem(PARAMS_KEYS.claudeKey)
-    ? '<span class="badge bg-success">✅ Clé configurée</span>'
-    : '<span class="badge bg-warning text-dark">⚠️ Non configurée</span>';
+  if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
+  if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
 
   paramsUpdateStatus();
 }
@@ -14562,9 +14559,7 @@ function paramsSaveClaude() {
   localStorage.setItem(PARAMS_KEYS.claudeKey, key);
   localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
   var st = document.getElementById('params-claude-status');
-  if(st) st.innerHTML = key
-    ? '<span class="badge bg-success">✅ Clé enregistrée</span>'
-    : '<span class="badge bg-warning text-dark">⚠️ Non configurée</span>';
+  if(st){ st.textContent = key ? '✅ Clé enregistrée' : '⚠️ Non configurée'; st.style.color = key ? 'var(--green)' : 'var(--warning)'; }
   showNotif('💾 Clé Claude enregistrée', 'success');
 }
 
@@ -14573,27 +14568,28 @@ async function paramsTestClaude() {
   var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-sonnet-4-6';
   var st  = document.getElementById('params-claude-status');
   if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
-  if(st) st.innerHTML = '<span class="badge bg-info">🔄 Test en cours…</span>';
+  if(st){ st.textContent='🔄 Test en cours…'; st.style.color='var(--blue)'; }
   try {
     var res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': key,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({ model: mdl, max_tokens: 20, messages: [{ role: 'user', content: 'OK?' }] })
     });
     var d = await res.json();
     if(d.content && d.content[0] && d.content[0].text) {
-      if(st) st.innerHTML = '<span class="badge bg-success">✅ Connexion OK — ' + mdl + '</span>';
+      if(st){ st.textContent='✅ Connexion OK — ' + mdl; st.style.color='var(--green)'; }
       showNotif('✅ Claude API opérationnelle', 'success');
     } else {
       throw new Error(d.error ? d.error.message : 'Réponse invalide');
     }
   } catch(e) {
-    if(st) st.innerHTML = '<span class="badge bg-danger">❌ ' + e.message.substring(0,50) + '</span>';
-    showNotif('❌ Erreur Claude API: ' + e.message.substring(0,60), 'danger');
+    if(st){ st.textContent='❌ Erreur: ' + e.message.substring(0,50); st.style.color='var(--red)'; }
+    showNotif('❌ Claude API: ' + e.message.substring(0,60), 'danger');
   }
 }
 
