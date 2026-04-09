@@ -736,3 +736,120 @@ h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; color:
 [style*="color: var(--warning)"] { color: var(--warning) !important; }
 [style*="color: var(--blue)"]    { color: var(--blue) !important; }
 [style*="color: var(--red)"]     { color: var(--red) !important; text-shadow: var(--red-text-shadow); }
+
+/* ══ CORRECTIF AFFICHAGE ══════════════════════════════════════
+   Fix : backdrop-filter sur fond noir → contenu invisible
+   Fix : overflow:hidden qui coupe le contenu des cartes
+   Fix : layout principal qui ne remplit pas l'écran
+   ═══════════════════════════════════════════════════════════ */
+
+/* Zone principale — doit remplir tout l'espace */
+#app { display: block !important; }
+
+.layout {
+  display: grid !important;
+  grid-template-columns: 240px 1fr !important;
+  height: 100vh !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* La zone de contenu DOIT être visible */
+.main-content,
+[id^="page-"],
+#page-dashboard,
+.page-content,
+#app > .layout > *:last-child {
+  background: #0a0a0c !important; /* légèrement > pur noir pour le backdrop-filter */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+}
+
+/* Cartes : fond solide en fallback + pas d'overflow:hidden sur le contenu */
+.card,
+[class*="card-"],
+.panel,
+.section-card,
+.glass-card,
+div[class*="Card"],
+div[style*="border-radius"][style*="background"] {
+  background: rgba(28, 28, 30, 0.85) !important;
+  /* backdrop-filter nécessite un fond non-nul derrière */
+  overflow: visible !important; /* ← Fix principal : ne plus couper le contenu */
+  position: relative !important;
+}
+
+/* Le ::before (ligne néon) ne doit pas bloquer le contenu */
+.card::before,
+[class*="card-"]::before,
+.panel::before,
+.section-card::before,
+.glass-card::before {
+  pointer-events: none !important;
+  z-index: 0 !important; /* sous le contenu */
+}
+
+/* Le contenu dans les cartes doit être au-dessus */
+.card > *,
+[class*="card-"] > *,
+.panel > *,
+.section-card > *,
+.glass-card > * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Fix pour les dashboards avec grilles internes */
+.dashboard-grid,
+.stats-grid,
+.grid,
+[style*="display: grid"],
+[style*="display:grid"] {
+  width: 100% !important;
+}
+
+/* Fix body::before scanline — ne doit pas couvrir le contenu */
+body::before {
+  z-index: 1 !important; /* abaissé de 9999 → 1, derrière tout */
+}
+
+/* Fix layout si sidebar + contenu */
+.sidebar {
+  height: 100vh !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Fix tables et listes dans les cartes */
+table, thead, tbody, tr, th, td {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Fix pour les éléments avec style inline background blanc */
+[style*="background:#fff"],
+[style*="background: #fff"],
+[style*="background:white"],
+[style*="background: white"] {
+  background: rgba(28,28,30,0.9) !important;
+  color: #e8e8e8 !important;
+}
+
+/* Fix texte qui serait devenu invisible (blanc sur blanc) */
+[style*="color:#000"],
+[style*="color: #000"],
+[style*="color:black"],
+[style*="color: black"] {
+  color: rgba(255,255,255,0.85) !important;
+}
+
+/* Assure que le contenu du dashboard est visible */
+#dashboard,
+#page-dashboard,
+.dashboard {
+  background: #0a0a0c !important;
+  min-height: 100% !important;
+}
