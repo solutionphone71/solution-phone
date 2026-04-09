@@ -853,3 +853,69 @@ table, thead, tbody, tr, th, td {
   background: #0a0a0c !important;
   min-height: 100% !important;
 }
+
+/* ══ CORRECTIF LARGEUR DASHBOARD ═══════════════════════════
+   Fix : contenu coupé à droite / bande noire centrale
+   ═══════════════════════════════════════════════════════════ */
+
+/* Layout doit couvrir 100% de la fenêtre */
+html, body { width: 100% !important; overflow-x: hidden !important; }
+
+.layout,
+#app > .layout {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  grid-template-columns: 240px 1fr !important;
+  grid-gap: 0 !important;
+  gap: 0 !important;
+}
+
+/* La zone principale prend tout l'espace restant */
+.layout > *:not(.sidebar),
+.layout > div:last-child,
+#app > .layout > *:not(.sidebar) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important; /* Fix : empêche le dépassement grid */
+  overflow-x: hidden !important;
+}
+
+/* Grilles de stats dans le dashboard */
+.stats-grid,
+.kpi-grid,
+[style*="display:grid"],
+[style*="display: grid"] {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Cartes stat : fond blanc → fond sombre */
+.stat-card,
+.kpi-card,
+.dashboard-card,
+div[style*="background: white"],
+div[style*="background:#fff"],
+div[style*="background: #fff"],
+div[style*="background:white"] {
+  background: rgba(28,28,30,0.88) !important;
+  color: #e8e8e8 !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+}
+
+/* Supprime la bande / l'espace entre sidebar et contenu */
+.sidebar {
+  flex-shrink: 0 !important;
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+}
+
+/* Retire overflow:hidden du layout pour ne pas couper */
+.layout { overflow: visible !important; }
+
+/* Conteneur principal overflow */
+#app {
+  overflow: hidden !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+}
