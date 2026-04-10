@@ -803,170 +803,342 @@ function _ssStart() {
   var N = _ssColors.length;
 
   function drawFrame() {
-    // Fond
-    ctx.fillStyle = '#040408';
-    ctx.fillRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, H);
 
-    /* ── Côté gauche : Pub ── */
+    /* ════════════════════════════════
+       GAUCHE — Pub cyberpunk (inchangée)
+    ════════════════════════════════ */
     if (_ssImg.complete && _ssImg.naturalWidth > 0) {
-      var imgAR = _ssImg.naturalWidth / _ssImg.naturalHeight;
-      var boxH = H, boxW = leftW;
-      var drawH = boxH, drawW = boxH * imgAR;
-      if (drawW < boxW) { drawW = boxW; drawH = boxW / imgAR; }
-      var dx = (boxW - drawW) / 2, dy = (boxH - drawH) / 2;
+      var iAR = _ssImg.naturalWidth / _ssImg.naturalHeight;
+      var bW = leftW, bH = H;
+      var dW = bH * iAR, dH = bH;
+      if (dW < bW) { dW = bW; dH = bW / iAR; }
+      var dx = (bW - dW) / 2, dy = (bH - dH) / 2;
       ctx.save();
-      ctx.rect(0, 0, boxW, boxH);
-      ctx.clip();
+      ctx.beginPath(); ctx.rect(0, 0, bW, bH); ctx.clip();
       ctx.globalAlpha = 0.88;
-      ctx.drawImage(_ssImg, dx, dy, drawW, drawH);
+      ctx.drawImage(_ssImg, dx, dy, dW, dH);
       ctx.globalAlpha = 1;
       ctx.restore();
     } else {
-      // Placeholder si image pas encore chargée
-      ctx.fillStyle = '#0a0a18';
-      ctx.fillRect(0, 0, leftW, H);
-      ctx.fillStyle = '#ff3b30';
-      ctx.font = 'bold 22px -apple-system,sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Solution Phone', leftW/2, H/2);
+      ctx.fillStyle = '#0a0a18'; ctx.fillRect(0, 0, leftW, H);
     }
+    // Fondu bord droit pub
+    var gL = ctx.createLinearGradient(leftW * 0.65, 0, leftW, 0);
+    gL.addColorStop(0, 'rgba(3,8,16,0)');
+    gL.addColorStop(1, 'rgba(3,8,16,1)');
+    ctx.fillStyle = gL; ctx.fillRect(0, 0, leftW, H);
 
-    // Gradient droit sur la pub
-    var gL = ctx.createLinearGradient(leftW * 0.7, 0, leftW, 0);
-    gL.addColorStop(0, 'rgba(4,4,8,0)');
-    gL.addColorStop(1, 'rgba(4,4,8,0.85)');
-    ctx.fillStyle = gL;
-    ctx.fillRect(0, 0, leftW, H);
+    /* ════════════════════════════════
+       DROITE — Fond Cyberpunk Premium
+    ════════════════════════════════ */
+    // Fond noir profond
+    ctx.fillStyle = '#030810'; ctx.fillRect(leftW, 0, rightW, H);
 
-    // Ligne séparatrice néon rouge
-    var gLine = ctx.createLinearGradient(leftW, 0, leftW, H);
-    gLine.addColorStop(0,   'rgba(255,59,48,0)');
-    gLine.addColorStop(0.2, 'rgba(255,59,48,0.9)');
-    gLine.addColorStop(0.8, 'rgba(255,59,48,0.9)');
-    gLine.addColorStop(1,   'rgba(255,59,48,0)');
-    ctx.strokeStyle = gLine;
-    ctx.lineWidth = 2;
-    ctx.shadowColor = '#ff3b30';
-    ctx.shadowBlur = 16;
-    ctx.beginPath(); ctx.moveTo(leftW, 0); ctx.lineTo(leftW, H); ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    /* ── Côté droit : Roue + QR + Étapes ── */
+    // Grille numérique subtile
     ctx.save();
-    ctx.rect(leftW, 0, rightW, H);
-    ctx.clip();
+    ctx.strokeStyle = 'rgba(0,255,210,0.04)'; ctx.lineWidth = 0.5;
+    var grid = Math.round(H * 0.05);
+    for (var gx = leftW; gx <= leftW + rightW; gx += grid) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
+    }
+    for (var gy = 0; gy <= H; gy += grid) {
+      ctx.beginPath(); ctx.moveTo(leftW, gy); ctx.lineTo(leftW + rightW, gy); ctx.stroke();
+    }
+    ctx.restore();
 
-    // Titre
-    ctx.shadowColor = '#ff3b30'; ctx.shadowBlur = 20;
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold ' + Math.round(H * 0.032) + 'px Orbitron,-apple-system,sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🎰 GAGNEZ UN CADEAU !', wheelCX, H * 0.09);
+    // Ligne séparatrice néon
+    var lineGrad = ctx.createLinearGradient(leftW, 0, leftW, H);
+    lineGrad.addColorStop(0,   'rgba(255,40,60,0)');
+    lineGrad.addColorStop(0.15,'rgba(255,40,60,0.9)');
+    lineGrad.addColorStop(0.85,'rgba(0,240,200,0.9)');
+    lineGrad.addColorStop(1,   'rgba(0,240,200,0)');
+    ctx.save();
+    ctx.shadowColor = '#ff2840'; ctx.shadowBlur = 18;
+    ctx.strokeStyle = lineGrad; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(leftW, 0); ctx.lineTo(leftW, H); ctx.stroke();
+    ctx.restore();
+
+    var cx = leftW + rightW * 0.5;
+
+    /* ════════════════════════════════
+       TITRE NÉON ROUGE
+    ════════════════════════════════ */
+    ctx.save();
+    var titleY = H * 0.1;
+    ctx.font = '900 ' + Math.round(H * 0.038) + 'px Orbitron,-apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // Glow rouge
+    ctx.shadowColor = '#ff2840';
+    ctx.shadowBlur = 30 + Math.sin(_wheelAngle * 3) * 10;
+    ctx.fillStyle = '#ff4060';
+    ctx.fillText('🎰 GAGNEZ UN CADEAU !', cx, titleY);
     ctx.shadowBlur = 0;
+    ctx.restore();
 
-    // Roue
+    /* ════════════════════════════════
+       ROULETTE 3D CYBER-TECH
+    ════════════════════════════════ */
+    var wCX = cx;
+    var wCY = H * 0.37;
+    var wR  = Math.min(rightW, H) * 0.24;
+    var N   = _ssColors.length;
+
+    // Ombre portée / flottement 3D
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,240,200,0.4)';
+    ctx.shadowBlur  = 40 + Math.sin(_wheelAngle * 2) * 12;
+    ctx.shadowOffsetY = 6;
+
+    // Segments avec effet métallique
     for (var i = 0; i < N; i++) {
       var a0 = _wheelAngle + (i / N) * Math.PI * 2;
       var a1 = _wheelAngle + ((i + 1) / N) * Math.PI * 2;
-      ctx.beginPath(); ctx.moveTo(wheelCX, wheelCY);
-      ctx.arc(wheelCX, wheelCY, wheelR, a0, a1);
-      ctx.fillStyle = _ssColors[i]; ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
-      // Label
+      var aMid = (a0 + a1) / 2;
+
+      // Gradient métallique par segment
+      var gx1 = wCX + Math.cos(aMid) * wR * 0.3;
+      var gy1 = wCY + Math.sin(aMid) * wR * 0.3;
+      var gx2 = wCX + Math.cos(aMid) * wR;
+      var gy2 = wCY + Math.sin(aMid) * wR;
+      var segGrad = ctx.createLinearGradient(gx1, gy1, gx2, gy2);
+      var baseColor = _ssColors[i];
+      segGrad.addColorStop(0, baseColor + 'dd');
+      segGrad.addColorStop(0.5, baseColor + 'ff');
+      segGrad.addColorStop(1, baseColor + '88');
+
+      ctx.beginPath(); ctx.moveTo(wCX, wCY);
+      ctx.arc(wCX, wCY, wR, a0, a1);
+      ctx.fillStyle = segGrad; ctx.fill();
+
+      // Bordure néon fine cyan/rouge alternée
+      ctx.beginPath(); ctx.moveTo(wCX, wCY);
+      ctx.arc(wCX, wCY, wR, a0, a1);
+      ctx.strokeStyle = i % 2 === 0 ? 'rgba(0,240,200,0.7)' : 'rgba(255,40,60,0.7)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Reflet lumineux sur la roue (arc blanc semi-transparent en haut)
+    ctx.save();
+    var refGrad = ctx.createRadialGradient(wCX, wCY - wR * 0.3, 0, wCX, wCY, wR);
+    refGrad.addColorStop(0,   'rgba(255,255,255,0.18)');
+    refGrad.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+    refGrad.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.arc(wCX, wCY, wR, 0, Math.PI * 2);
+    ctx.fillStyle = refGrad; ctx.fill();
+    ctx.restore();
+
+    // Icônes/textes segments
+    for (var i = 0; i < N; i++) {
       ctx.save();
-      ctx.translate(wheelCX, wheelCY);
+      ctx.translate(wCX, wCY);
       ctx.rotate(_wheelAngle + (i + 0.5) / N * Math.PI * 2);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold ' + Math.round(wheelR * 0.15) + 'px Rajdhani,-apple-system,sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
+      ctx.font = 'bold ' + Math.round(wR * 0.14) + 'px Orbitron,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4;
-      ctx.fillText(_ssPrizes[i], wheelR * 0.62, 0);
+      ctx.fillText(_ssPrizes[i], wR * 0.63, 0);
       ctx.restore();
     }
-    // Centre roue
-    var cg = ctx.createRadialGradient(wheelCX, wheelCY, 0, wheelCX, wheelCY, wheelR * 0.13);
-    cg.addColorStop(0, '#555'); cg.addColorStop(1, '#111');
-    ctx.beginPath(); ctx.arc(wheelCX, wheelCY, wheelR * 0.13, 0, Math.PI * 2);
-    ctx.fillStyle = cg; ctx.fill();
-    ctx.strokeStyle = 'rgba(255,59,48,0.8)'; ctx.lineWidth = 2; ctx.stroke();
-    // Pointeur
-    ctx.shadowColor = '#ff3b30'; ctx.shadowBlur = 10;
-    ctx.fillStyle = '#ff3b30';
-    var px = wheelCX - wheelR - 8, py = wheelCY;
-    ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.lineTo(px - 14, py - 8);
-    ctx.lineTo(px - 14, py + 8);
-    ctx.closePath(); ctx.fill();
-    ctx.shadowBlur = 0;
 
-    // QR Code
-    var qrSize = Math.min(rightW * 0.22, H * 0.14);
-    var qrX = leftW + rightW * 0.18, qrY = H * 0.62;
+    // Anneau extérieur néon
+    ctx.save();
+    var neonPulse = 0.5 + Math.sin(_wheelAngle * 4) * 0.5;
+    ctx.shadowColor = 'rgba(0,240,200,' + (0.5 + neonPulse * 0.5) + ')';
+    ctx.shadowBlur  = 15 + neonPulse * 15;
+    ctx.strokeStyle = 'rgba(0,240,200,' + (0.6 + neonPulse * 0.4) + ')';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(wCX, wCY, wR + 4, 0, Math.PI * 2); ctx.stroke();
+    // Anneau intérieur rouge
+    ctx.shadowColor = 'rgba(255,40,60,0.6)';
+    ctx.shadowBlur  = 10;
+    ctx.strokeStyle = 'rgba(255,40,60,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(wCX, wCY, wR + 8, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+
+    // Centre métallique
+    ctx.save();
+    var hubGrad = ctx.createRadialGradient(wCX - wR*0.04, wCY - wR*0.04, 0, wCX, wCY, wR * 0.1);
+    hubGrad.addColorStop(0, '#888'); hubGrad.addColorStop(1, '#111');
+    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(wCX, wCY, wR * 0.1, 0, Math.PI * 2);
+    ctx.fillStyle = hubGrad; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,240,200,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+
+    // Pointeur néon
+    ctx.save();
+    var pX = wCX - wR - 6;
+    var pPulse = 0.7 + Math.sin(_wheelAngle * 6) * 0.3;
+    ctx.shadowColor = 'rgba(255,40,60,' + pPulse + ')';
+    ctx.shadowBlur = 12 + pPulse * 8;
+    var pGrad = ctx.createLinearGradient(pX - 16, wCY, pX, wCY);
+    pGrad.addColorStop(0, 'rgba(255,40,60,0)');
+    pGrad.addColorStop(1, '#ff2840');
+    ctx.fillStyle = pGrad;
+    ctx.beginPath();
+    ctx.moveTo(pX, wCY);
+    ctx.lineTo(pX - 16, wCY - 9);
+    ctx.lineTo(pX - 16, wCY + 9);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    /* ════════════════════════════════
+       QR CODE — Cadre Cyber-Tech
+    ════════════════════════════════ */
+    var qrSize = Math.min(rightW * 0.18, H * 0.13);
+    var qrX = leftW + rightW * 0.12;
+    var qrY = H * 0.625;
+    var qrPad = 6;
+    var qrPulse = 0.3 + Math.sin(_wheelAngle * 3 + 1) * 0.3;
+
+    // Fond verre fumé QR
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,240,200,' + (0.4 + qrPulse) + ')';
+    ctx.shadowBlur = 20 + qrPulse * 15;
+    ctx.fillStyle = 'rgba(0,240,200,0.06)';
+    ctx.strokeStyle = 'rgba(0,240,200,' + (0.5 + qrPulse * 0.5) + ')';
+    ctx.lineWidth = 1.5;
+    var qrFX = qrX - qrPad, qrFY = qrY - qrPad;
+    var qrFW = qrSize + qrPad * 2, qrFH = qrSize + qrPad * 2;
+    roundRect(ctx, qrFX, qrFY, qrFW, qrFH, 8);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // Coins néon cyan
+    var cSize = 14, cW = 2.5;
+    var corners = [[qrFX, qrFY],[qrFX+qrFW, qrFY],[qrFX, qrFY+qrFH],[qrFX+qrFW, qrFY+qrFH]];
+    var cornerDirs = [[1,1],[-1,1],[1,-1],[-1,-1]];
+    ctx.save();
+    ctx.strokeStyle = '#00f0c8'; ctx.lineWidth = cW;
+    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 8;
+    for (var ci = 0; ci < 4; ci++) {
+      var cx2 = corners[ci][0], cy2 = corners[ci][1];
+      var dx2 = cornerDirs[ci][0], dy2 = cornerDirs[ci][1];
+      ctx.beginPath();
+      ctx.moveTo(cx2, cy2 + dy2 * cSize); ctx.lineTo(cx2, cy2); ctx.lineTo(cx2 + dx2 * cSize, cy2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // QR image
     if (_qrImg.complete && _qrImg.naturalWidth > 0) {
-      // Fond blanc QR
-      ctx.fillStyle = '#fff';
-      ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
+      ctx.fillStyle = '#ffffff';
+      roundRect(ctx, qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 4);
       ctx.fill();
       ctx.drawImage(_qrImg, qrX, qrY, qrSize, qrSize);
     }
+
     // Texte QR
-    var qrTX = qrX + qrSize + 16, qrTY = qrY + qrSize * 0.2;
-    ctx.fillStyle = '#00d4ff';
-    ctx.shadowColor = '#00d4ff'; ctx.shadowBlur = 12;
-    ctx.font = 'bold ' + Math.round(H * 0.022) + 'px Orbitron,-apple-system,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Scannez le', qrTX, qrTY);
-    ctx.fillText('QR code', qrTX, qrTY + H * 0.028);
+    var qrTX = qrX + qrSize + 14;
+    var qrTY = qrY + qrSize * 0.15;
+    ctx.save();
+    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#00f0c8';
+    ctx.font = 'bold ' + Math.round(H * 0.021) + 'px Orbitron,-apple-system,sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('SCANNEZ', qrTX, qrTY);
+    ctx.fillText('LE QR CODE', qrTX, qrTY + H * 0.027);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = Math.round(H * 0.016) + 'px -apple-system,sans-serif';
-    ctx.fillText('pour jouer à la roulette', qrTX, qrTY + H * 0.062);
-
-    // 3 Étapes
-    var stepColors = ['#00d4ff','#ffa500','#ff3b30'];
-    var steps = ['Scannez le QR code','Laissez un avis Google ⭐','Tournez & gagnez votre cadeau !'];
-    var stepY = H * 0.76;
-    var stepH = (H - stepY - 20) / 3.5;
-    for (var s = 0; s < 3; s++) {
-      var sy = stepY + s * (stepH + 8);
-      // Fond step
-      ctx.fillStyle = 'rgba(255,255,255,0.04)';
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(leftW + 16, sy, rightW - 32, stepH, 10);
-      ctx.fill(); ctx.stroke();
-      // Numéro
-      ctx.fillStyle = stepColors[s];
-      ctx.shadowColor = stepColors[s]; ctx.shadowBlur = 8;
-      ctx.font = 'bold ' + Math.round(stepH * 0.5) + 'px Orbitron,-apple-system,sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(s + 1, leftW + 36, sy + stepH * 0.5);
-      ctx.shadowBlur = 0;
-      // Texte
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold ' + Math.round(H * 0.017) + 'px Rajdhani,-apple-system,sans-serif';
-      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(steps[s], leftW + 58, sy + stepH * 0.5);
-    }
-
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = Math.round(H * 0.015) + 'px -apple-system,sans-serif';
+    ctx.fillText('Accédez à la roue', qrTX, qrTY + H * 0.065);
+    ctx.fillText('des cadeaux', qrTX, qrTY + H * 0.085);
     ctx.restore();
 
-    // Tap hint
-    _tapAlpha += 0.02 * _tapDir;
-    if (_tapAlpha > 0.8) _tapDir = -1;
-    if (_tapAlpha < 0.2) _tapDir = 1;
-    ctx.fillStyle = 'rgba(255,255,255,' + _tapAlpha + ')';
-    ctx.font = 'bold ' + Math.round(H * 0.018) + 'px -apple-system,sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('Toucher pour commencer', W / 2, H - 22);
+    /* ════════════════════════════════
+       3 ÉTAPES — Dalles verre fumé
+    ════════════════════════════════ */
+    var stepData = [
+      {icon:'📲', label:'Scannez le QR code'},
+      {icon:'⭐', label:'Laissez un avis Google'},
+      {icon:'🎰', label:'Tournez & gagnez !'}
+    ];
+    var stepStartY = H * 0.77;
+    var stepH      = (H - stepStartY - H * 0.03) / 3.4;
+    var stepW      = rightW - 28;
+    var stepX      = leftW + 14;
 
-    _wheelAngle += 0.005;
+    // Animation séquentielle : une dalle s'illumine à la fois
+    var activeStep = Math.floor((_wheelAngle * 3) / (Math.PI * 2)) % 3;
+
+    for (var si = 0; si < 3; si++) {
+      var sy  = stepStartY + si * (stepH + 7);
+      var isActive = (si === activeStep);
+      var stepPulse = isActive ? (0.5 + Math.sin(_wheelAngle * 8) * 0.5) : 0;
+
+      // Dalle verre fumé
+      ctx.save();
+      if (isActive) {
+        ctx.shadowColor = 'rgba(0,240,200,' + (0.5 + stepPulse * 0.5) + ')';
+        ctx.shadowBlur  = 16 + stepPulse * 12;
+      }
+      ctx.fillStyle = isActive
+        ? 'rgba(0,240,200,0.08)'
+        : 'rgba(255,255,255,0.03)';
+      ctx.strokeStyle = isActive
+        ? 'rgba(0,240,200,' + (0.5 + stepPulse * 0.5) + ')'
+        : 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = isActive ? 1.5 : 0.8;
+      roundRect(ctx, stepX, sy, stepW, stepH, 10);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      // Numéro
+      ctx.save();
+      ctx.fillStyle = isActive ? '#00f0c8' : 'rgba(255,255,255,0.3)';
+      ctx.shadowColor = '#00f0c8';
+      ctx.shadowBlur  = isActive ? 10 : 0;
+      ctx.font = 'bold ' + Math.round(stepH * 0.5) + 'px Orbitron,-apple-system,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(si + 1, stepX + stepH * 0.55, sy + stepH * 0.5);
+      ctx.restore();
+
+      // Icône
+      ctx.font = Math.round(stepH * 0.45) + 'px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(stepData[si].icon, stepX + stepH * 1.3, sy + stepH * 0.5);
+
+      // Label
+      ctx.save();
+      ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.5)';
+      ctx.font = 'bold ' + Math.round(H * 0.017) + 'px Rajdhani,-apple-system,sans-serif';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(stepData[si].label, stepX + stepH * 1.9, sy + stepH * 0.5);
+      ctx.restore();
+    }
+
+    // Tap hint
+    _tapAlpha += 0.025 * _tapDir;
+    if (_tapAlpha > 0.7) _tapDir = -1;
+    if (_tapAlpha < 0.15) _tapDir = 1;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,' + _tapAlpha + ')';
+    ctx.font = '600 ' + Math.round(H * 0.017) + 'px -apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('✦ Toucher pour commencer ✦', W / 2, H - H * 0.025);
+    ctx.restore();
+
+    _wheelAngle += 0.004;
     _ssAnim = requestAnimationFrame(drawFrame);
   }
 
   drawFrame();
+}
+
+// Utilitaire roundRect compatible tous navigateurs
+function roundRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); return; }
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
 }
 
 function _ssStop() {
