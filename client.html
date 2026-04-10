@@ -24,81 +24,80 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 }
 
 /* ══════════════════════════════════════
-   SCREENSAVER — Cyberpunk avec Roue & QR
+   SCREENSAVER — Roue plein écran
 ══════════════════════════════════════ */
-#ss{
-  position:fixed;inset:0;z-index:9999;
-  background: radial-gradient(ellipse at center, #0f0f1a 0%, #050510 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  cursor:pointer;transition:opacity .5s;overflow:hidden;
+#ss {
+  position: fixed; inset: 0; z-index: 9999;
+  background: #0a0a12;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; transition: opacity .4s;
+  overflow: hidden;
 }
-#ss.out{opacity:0;pointer-events:none;}
-/* Particules bg */
-#ss::before{
-  content:'';position:absolute;inset:0;
-  background:
-    radial-gradient(circle at 20% 50%, rgba(255,59,48,0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(0,212,255,0.06) 0%, transparent 50%),
-    radial-gradient(circle at 60% 80%, rgba(139,92,246,0.06) 0%, transparent 50%);
-  animation:ss-bg-shift 8s ease-in-out infinite alternate;
+#ss.out { opacity: 0; pointer-events: none; }
+
+/* Roue plein écran en fond */
+#ss-bg-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0.35;
 }
-@keyframes ss-bg-shift{from{opacity:.5;}to{opacity:1;}}
-/* Logo */
-.ss-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:32px;z-index:1;}
-.ss-logo-icon{
-  width:90px;height:90px;
-  background:linear-gradient(135deg,var(--red),var(--red-d));
-  border-radius:24px;
-  display:flex;align-items:center;justify-content:center;font-size:46px;
-  box-shadow:0 0 40px rgba(255,59,48,.5),0 10px 30px rgba(0,0,0,.5);
-  animation:ss-float 3s ease-in-out infinite;
+/* Lueur centrale */
+#ss::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 50% 50%,
+    rgba(255,59,48,0.18) 0%, transparent 70%);
+  pointer-events: none;
 }
-@keyframes ss-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
-.ss-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.03em;text-align:center;}
-.ss-city{font-size:13px;color:rgba(255,255,255,.4);font-weight:400;letter-spacing:.05em;text-transform:uppercase;}
-/* Roue */
-.ss-wheel-row{
-  display:flex;align-items:center;gap:28px;z-index:1;margin-bottom:24px;
+/* Contenu au-dessus */
+.ss-content {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+  text-align: center;
 }
-.ss-wheel-wrap{position:relative;width:160px;height:160px;flex-shrink:0;}
-#ss-wheel-canvas{position:absolute;inset:0;width:160px;height:160px;}
-.ss-hub{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:32px;height:32px;border-radius:50%;
-  background:radial-gradient(circle,#2a2a2a,#111);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;box-shadow:0 0 10px rgba(0,0,0,.8);z-index:2;
+.ss-logo-icon {
+  width: 88px; height: 88px;
+  background: linear-gradient(135deg, #ff3b30, #c9251b);
+  border-radius: 24px;
+  display: flex; align-items: center; justify-content: center; font-size: 44px;
+  box-shadow: 0 0 50px rgba(255,59,48,.5), 0 10px 30px rgba(0,0,0,.6);
+  animation: ss-float 3s ease-in-out infinite;
 }
-.ss-spin-arrow{
-  font-size:28px;color:rgba(255,255,255,.6);
-  animation:ss-bounce 1.2s ease-in-out infinite;
+@keyframes ss-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+.ss-name { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -.03em; }
+.ss-city { font-size: 12px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .1em; }
+/* Badge roulette */
+.ss-roulette-badge {
+  margin-top: 8px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px; padding: 10px 22px;
+  display: flex; align-items: center; gap: 10px;
+  backdrop-filter: blur(10px);
 }
-@keyframes ss-bounce{0%,100%{transform:translateX(0);}50%{transform:translateX(-6px);}}
-.ss-wheel-text{display:flex;flex-direction:column;gap:6px;}
-.ss-wheel-title{
-  font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;
-  text-shadow:0 0 20px rgba(255,200,0,.3);
+.ss-badge-txt { text-align: left; }
+.ss-badge-title { font-size: 15px; font-weight: 800; color: #fff; }
+.ss-badge-sub { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
+/* QR */
+.ss-qr-wrap {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(0,212,255,.2);
+  border-radius: 16px; padding: 12px 16px;
+  display: flex; align-items: center; gap: 14px;
 }
-.ss-wheel-sub{font-size:12px;color:rgba(255,255,255,.45);line-height:1.4;}
-/* QR Code */
-.ss-qr-row{
-  display:flex;align-items:center;gap:16px;z-index:1;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(0,212,255,.2);
-  border-radius:16px;padding:14px 20px;
-  backdrop-filter:blur(10px);
+#ss-qr-img { width: 72px; height: 72px; border-radius: 8px; display: block; background: #fff; }
+.ss-qr-info { text-align: left; }
+.ss-qr-title { font-size: 13px; font-weight: 800; color: #fff; }
+.ss-qr-sub { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 3px; }
+/* Tap hint */
+.ss-tap {
+  font-size: 12px; color: rgba(255,255,255,.25);
+  letter-spacing: .04em;
+  animation: ss-blink 2.5s ease-in-out infinite;
 }
-.ss-qr-img{width:80px;height:80px;border-radius:8px;display:block;}
-.ss-qr-info{display:flex;flex-direction:column;gap:4px;}
-.ss-qr-big{font-size:14px;font-weight:800;color:#fff;letter-spacing:.02em;}
-.ss-qr-small{font-size:11px;color:rgba(255,255,255,.45);}
-/* Tap */
-.ss-tap{
-  font-size:12px;color:rgba(255,255,255,.2);margin-top:20px;z-index:1;
-  animation:ss-pulse 2.5s ease-in-out infinite;letter-spacing:.04em;
-}
-@keyframes ss-pulse{0%,100%{opacity:.2;}50%{opacity:.6;}}
-.ss-city,.ss-name{z-index:1;}
+@keyframes ss-blink { 0%,100%{opacity:.25;} 50%{opacity:.65;} }
 
 /* ══════════════════════════════════════
    APP SHELL
@@ -415,34 +414,31 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 </head>
 <body>
 
-<!-- ═══ SCREENSAVER CYBERPUNK + ROUE + QR ═══ -->
+<!-- ═══ SCREENSAVER — ROUE FOND PLEIN ÉCRAN ═══ -->
 <div id="ss" onclick="startApp()">
-  <div class="ss-logo-wrap">
+  <!-- Roue en fond -->
+  <canvas id="ss-bg-canvas"></canvas>
+  <!-- Contenu -->
+  <div class="ss-content">
     <div class="ss-logo-icon">📱</div>
     <div class="ss-name">Solution Phone</div>
     <div class="ss-city">Mâcon · Réparation &amp; Accessoires</div>
-  </div>
-  <!-- Roue + invitation -->
-  <div class="ss-wheel-row">
-    <div class="ss-wheel-wrap">
-      <canvas id="ss-wheel-canvas" width="160" height="160"></canvas>
-      <div class="ss-hub">⭐</div>
+    <div class="ss-roulette-badge">
+      <span style="font-size:28px;">🎰</span>
+      <div class="ss-badge-txt">
+        <div class="ss-badge-title">Tentez la Roulette !</div>
+        <div class="ss-badge-sub">Gagnez un cadeau après votre dépôt</div>
+      </div>
     </div>
-    <div class="ss-spin-arrow">◀</div>
-    <div class="ss-wheel-text">
-      <div class="ss-wheel-title">🎰 Tentez<br>la Roulette !</div>
-      <div class="ss-wheel-sub">Après votre dépôt,<br>gagnez un cadeau.</div>
+    <div class="ss-qr-wrap">
+      <img id="ss-qr-img" src="" alt="QR" crossorigin="anonymous">
+      <div class="ss-qr-info">
+        <div class="ss-qr-title">🎁 Scannez &amp; jouez !</div>
+        <div class="ss-qr-sub">Accédez à la roue<br>des cadeaux</div>
+      </div>
     </div>
+    <div class="ss-tap">Toucher pour commencer</div>
   </div>
-  <!-- QR Code roulette -->
-  <div class="ss-qr-row">
-    <img class="ss-qr-img" id="ss-qr-img" src="" alt="QR Roulette" crossorigin="anonymous">
-    <div class="ss-qr-info">
-      <div class="ss-qr-big">🎁 Jouez maintenant !</div>
-      <div class="ss-qr-small">Scannez pour accéder<br>à la roue des cadeaux</div>
-    </div>
-  </div>
-  <div class="ss-tap">Toucher l'écran pour commencer</div>
 </div>
 
 <!-- ═══ APP ═══ -->
@@ -903,47 +899,80 @@ function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : SCREENS_R
 ══════════════════════════════════════ */
 const ROULETTE_URL = 'https://app.solution-phone.fr/roulette.html';
 const SS_COLORS = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#AF52DE','#FF2D55','#5AC8FA'];
-const SS_PRIZES = ['10% off','Étui','Câble','Verre','5€','⭐','Coque','Chance!'];
+const SS_PRIZES = ['Réduction','Étui offert','Câble','Verre trempé','5 €','Surprise','Coque','Bonne chance'];
 let ssWheelAngle = 0, ssWheelAnim = null;
 
 function initSSWheel() {
-  const canvas = document.getElementById('ss-wheel-canvas');
+  const canvas = document.getElementById('ss-bg-canvas');
   if (!canvas) return;
+  // Plein écran
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H * 0.52;
+  const R = Math.min(W, H) * 0.52; // grande roue
   const ctx = canvas.getContext('2d');
   const N = SS_COLORS.length;
+
   function draw() {
-    ctx.clearRect(0,0,160,160);
-    for (let i=0;i<N;i++) {
-      const start = ssWheelAngle + (i/N)*Math.PI*2;
-      const end   = ssWheelAngle + ((i+1)/N)*Math.PI*2;
-      ctx.beginPath(); ctx.moveTo(80,80);
-      ctx.arc(80,80,76,start,end);
+    ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < N; i++) {
+      const start = ssWheelAngle + (i / N) * Math.PI * 2;
+      const end   = ssWheelAngle + ((i + 1) / N) * Math.PI * 2;
+      // Secteur
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, start, end);
       ctx.fillStyle = SS_COLORS[i]; ctx.fill();
-      ctx.beginPath(); ctx.moveTo(80,80);
-      ctx.arc(80,80,76,start,end);
-      ctx.strokeStyle='rgba(0,0,0,.2)'; ctx.lineWidth=1.5; ctx.stroke();
-      ctx.save(); ctx.translate(80,80);
-      ctx.rotate(ssWheelAngle + (i+.5)/N*Math.PI*2);
-      ctx.fillStyle='#fff'; ctx.font='bold 9px -apple-system,Inter,sans-serif';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(SS_PRIZES[i],46,0); ctx.restore();
+      // Séparateur
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, start, end);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2; ctx.stroke();
+      // Label
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(ssWheelAngle + (i + 0.5) / N * Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.font = 'bold ' + Math.round(R * 0.075) + 'px -apple-system,Inter,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(SS_PRIZES[i], R * 0.62, 0);
+      ctx.restore();
     }
-    // Centre
-    ctx.beginPath(); ctx.arc(80,80,18,0,Math.PI*2);
-    ctx.fillStyle='#1a1a1c'; ctx.fill();
-    ssWheelAngle += 0.008;
+    // Cercle central
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.10, 0, Math.PI * 2);
+    ctx.fillStyle = '#111'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.08, 0, Math.PI * 2);
+    ctx.fillStyle = '#222'; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.round(R*0.08)+'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('⭐', cx, cy);
+    // Rotation lente
+    ssWheelAngle += 0.004;
     ssWheelAnim = requestAnimationFrame(draw);
   }
   draw();
-  // QR code roulette
+
+  // QR code — URL directe sans CORS issues
   const qrEl = document.getElementById('ss-qr-img');
-  if (qrEl) qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(ROULETTE_URL)+'&bgcolor=ffffff&color=1a1a1a&format=png';
+  if (qrEl) {
+    qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=144x144&data='
+      + encodeURIComponent(ROULETTE_URL)
+      + '&bgcolor=ffffff&color=1a1a1a&format=png&margin=4';
+    qrEl.onerror = () => { qrEl.style.display='none'; };
+  }
+
+  // Recalcul si resize
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  }, {once: true});
 }
-function stopSSWheel() { if (ssWheelAnim) { cancelAnimationFrame(ssWheelAnim); ssWheelAnim=null; } }
+function stopSSWheel() {
+  if (ssWheelAnim) { cancelAnimationFrame(ssWheelAnim); ssWheelAnim = null; }
+}
 
 let ssTimer = null;
 function startApp() {
   stopSSWheel();
+  // Masquer screensaver
   const ss = document.getElementById('ss');
   ss.classList.add('out');
   setTimeout(() => { ss.style.display='none'; document.getElementById('app').style.display='flex'; }, 500);
@@ -959,6 +988,7 @@ function showSs() {
   const ss = document.getElementById('ss');
   ss.style.display = 'flex'; ss.classList.remove('out');
   document.getElementById('app').style.display = 'none';
+  initSSWheel(); // relancer la roue
 }
 document.addEventListener('touchstart', resetSsTimer, {passive:true});
 document.addEventListener('click', resetSsTimer);
@@ -1336,7 +1366,6 @@ function restart(silent) {
   const cb=document.getElementById('consent-chk'); if(cb){cb.classList.remove('chk');cb.textContent='';}
   const pb=document.getElementById('btn-paye'); if(pb){pb.classList.remove('active');pb.textContent='💰 Marquer comme déjà payé';}
   if (!silent) goStep(0);
-  // Relancer le screensaver si demandé
   if (silent) setTimeout(initSSWheel, 100);
 }
 </script>
