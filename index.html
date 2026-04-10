@@ -1614,7 +1614,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="form-group">
             <label>Clé API Anthropic</label>
             <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Stockée localement — active sur toute l'app (ARIA, Instagram/IA, Documents). <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Active sur toute l'app (ARIA, Instagram/IA, Documents). <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
           </div>
           <div class="form-group">
             <label>Modèle par défaut</label>
@@ -4874,7 +4874,7 @@ async function paramsTestKiwiz(){
   if(st) st.innerHTML='⏳ Test en cours...';
   try {
     var body = 'username='+encodeURIComponent(getKiwizUser())+'&password='+encodeURIComponent(getKiwizPass());
-    var res = await fetch('https://app.solution-phone.fr/proxy-kiwiz/token/generate', {
+    var res = await fetch('https://solution-phone.fr/proxy-kiwiz/token/generate', {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
       body: body
@@ -4898,7 +4898,7 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
     // 1. Obtenir un token Kiwiz
     // 1. Obtenir token Kiwiz
     var authBody = 'username='+encodeURIComponent(getKiwizUser())+'&password='+encodeURIComponent(getKiwizPass());
-    var authRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/token/generate', {
+    var authRes = await fetch('https://solution-phone.fr/proxy-kiwiz/token/generate', {
       method:'POST',
       headers:{'Content-Type':'application/x-www-form-urlencoded','Accept':'application/json'},
       body: authBody
@@ -4919,7 +4919,7 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
       client_name: client,
       pdf: pdfBase64 || ''
     };
-    var certRes = await fetch('https://app.solution-phone.fr/proxy-kiwiz/invoices', {
+    var certRes = await fetch('https://solution-phone.fr/proxy-kiwiz/invoices', {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body: JSON.stringify(payload)
@@ -12956,7 +12956,7 @@ async function qrEnvoyerEcologicComplet(d){
 async function qrEnvoyerEcosystemComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
-  var proxy='https://app.solution-phone.fr/proxy-ecosystem';
+  var proxy='https://solution-phone.fr/proxy-ecosystem';
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Auth Ecosystem...</div>";
   try{
@@ -14558,32 +14558,23 @@ function paramsSaveClaude() {
   var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
   localStorage.setItem(PARAMS_KEYS.claudeKey, key);
   localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
-
-  // Sync globale de la clé sur toute l'app
   window._cachedApiKey = key;
-
-  // 1. Champ Instagram/IA
   var igInput = document.getElementById('ig-api-key');
   if(igInput) igInput.value = key;
-
-  // 2. ARIA widget : remplit son input + clique son bouton save
   if(key) {
     var ariaInput = document.getElementById('aria-api-key-input');
     if(ariaInput) {
       ariaInput.value = key;
-      // Simule le clic du bouton save ARIA pour propager la clé
-      var ariaBtn = ariaInput.parentElement ? ariaInput.parentElement.querySelector('button') : null;
-      if(!ariaBtn) { var p=ariaInput; for(var i=0;i<4;i++){ p=p.parentElement; if(!p) break; ariaBtn=p.querySelector('button'); if(ariaBtn) break; } }
+      var ariaBtn = null;
+      var p = ariaInput;
+      for(var i=0;i<4;i++){ p=p.parentElement; if(!p) break; ariaBtn=p.querySelector('button'); if(ariaBtn) break; }
       if(ariaBtn) setTimeout(function(){ ariaBtn.click(); }, 100);
     }
-    // API publique ARIA si exposée
     if(window.ARIA && typeof ARIA.setApiKey === 'function') ARIA.setApiKey(key);
-    if(window.ARIA && typeof ARIA.saveKey   === 'function') ARIA.saveKey(key);
   }
-
   var st = document.getElementById('params-claude-status');
   if(st){ st.textContent = key ? '✅ Clé enregistrée' : '⚠️ Non configurée'; st.style.color = key ? 'var(--green)' : 'var(--warning)'; }
-  showNotif('💾 Clé Claude enregistrée — ' + (key ? 'active sur toute l\'app' : 'effacée'), key ? 'success' : 'warning');
+  showNotif('💾 Clé Claude enregistrée — active sur toute l\'app', key ? 'success' : 'warning');
 }
 
 async function paramsTestClaude() {
@@ -14607,9 +14598,7 @@ async function paramsTestClaude() {
     if(d.content && d.content[0] && d.content[0].text) {
       if(st){ st.textContent='✅ Connexion OK — ' + mdl; st.style.color='var(--green)'; }
       showNotif('✅ Claude API opérationnelle', 'success');
-    } else {
-      throw new Error(d.error ? d.error.message : 'Réponse invalide');
-    }
+    } else throw new Error(d.error ? d.error.message : 'Réponse invalide');
   } catch(e) {
     if(st){ st.textContent='❌ Erreur: ' + e.message.substring(0,50); st.style.color='var(--red)'; }
     showNotif('❌ Claude API: ' + e.message.substring(0,60), 'danger');
@@ -16257,8 +16246,8 @@ async function qrSendPennylane() {
 // QUALIREPAR — ECOLOGIC + ECOSYSTEM — API complète (patch avril 2025)
 // =============================================================================
 
-var QR_ECOLOGIC_PROXY   = 'https://app.solution-phone.fr/proxy-ecologic';
-var QR_ECOSYSTEM_PROXY  = 'https://app.solution-phone.fr/proxy-ecosystem';
+var QR_ECOLOGIC_PROXY   = 'https://solution-phone.fr/proxy-ecologic';
+var QR_ECOSYSTEM_PROXY  = 'https://solution-phone.fr/proxy-ecosystem';
 // SiteId Solution Phone Mâcon — récupéré via getrepairsitesbyats
 var QR_ECOLOGIC_SITE_ID = 'f3f52871-5be0-4c26-9082-002479b9cf4e';
 // Cache référentiel marques Ecologic (BrandId)
@@ -16493,7 +16482,7 @@ async function qrSendEcosystem() {
   var app = d.appareil || {};
   var dev = d.devis    || {};
 
-  var ECO_BASE      = 'https://app.solution-phone.fr/proxy-ecosystem';
+  var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
   var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   var ECO_REPAIRER  = '501710';
@@ -16803,7 +16792,7 @@ async function qrVerifierStatutEcosystem(dossier){
 
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
-  var proxy = 'https://app.solution-phone.fr/proxy-ecosystem';
+  var proxy = 'https://solution-phone.fr/proxy-ecosystem';
 
   try {
     // Auth
