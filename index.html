@@ -3700,14 +3700,16 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 <script>
 emailjs.init("vSpx7OHQTgKezV-Q-");
 
-var SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
-var SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
-
+// === PROXY SECURISE — les cles API sont dans Vercel Environment Variables ===
 async function supaFetch(table, method, body, query) {
   try {
-    var res = await fetch(SUPA_URL + '/rest/v1/' + table + (query||''), {
+    var url = '/api/supabase?table=' + encodeURIComponent(table);
+    if (query) url += '&query=' + encodeURIComponent(query);
+    var headers = {'Content-Type':'application/json'};
+    if (method === 'POST') headers['Prefer'] = 'return=representation';
+    var res = await fetch(url, {
       method: method||'GET',
-      headers: {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''},
+      headers: headers,
       body: body ? JSON.stringify(body) : null
     });
     var text = await res.text();
@@ -4931,9 +4933,9 @@ async function paramsTestBrevo(){
   var st=document.getElementById('params-brevo-status');
   if(st) st.innerHTML='⏳ Test en cours...';
   try {
-    var res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    var res = await fetch('/api/brevo?type=email', {
       method:'POST',
-      headers:{'api-key':key,'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         sender:{name:name, email:sender},
         to:[{email:sender, name:name}],
@@ -5003,9 +5005,9 @@ async function envoyerFactureEmail(){
     if(typeof repFactureToPDFBase64==='function'){try{var _pdf=await repFactureToPDFBase64(d);if(_pdf)_att=[{content:_pdf,name:'Facture_'+f.numero+'.pdf',type:'application/pdf'}];}catch(ep){console.warn('PDF:',ep);}}
     var _pl={sender:{name:name,email:sender},to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}],subject:'Votre facture Solution Phone \u2014 '+f.numero+' \u2014 '+prixAffiche.toFixed(2)+'\u20ac',htmlContent:htmlEmail};
     if(_att.length>0)_pl.attachment=_att;
-    var res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    var res = await fetch('/api/brevo?type=email', {
       method:'POST',
-      headers:{'api-key':key,'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify(_pl)
     });
     if(res.ok){
@@ -5051,9 +5053,9 @@ async function envoyerFactureSMS(){
     '. Merci pour votre confiance !';
 
   try {
-    var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
+    var res = await fetch('/api/brevo?type=sms', {
       method:'POST',
-      headers:{'api-key':key,'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         sender: (name.substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone'),
         recipient: telIntl,
@@ -5645,13 +5647,11 @@ async function calculerRachatIA() {
     var key = getIgApiKey();
     if(!key){ showNotif('Clé API manquante — configurez-la dans Instagram/IA','error'); btn.textContent='🤖 Estimer avec l\'IA + BackMarket'; btn.disabled=false; return; }
 
-    var resp = await fetch('https://api.anthropic.com/v1/messages',{
+    var resp = await fetch('/api/claude',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'x-api-key':key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
+        'anthropic-version':'2023-06-01'
       },
       body:JSON.stringify({
         model:'claude-sonnet-4-5',
@@ -8396,13 +8396,11 @@ function showIgTab(tab){
 async function callClaude(prompt){
   var key=getIgApiKey();
   if(!key){showNotif('Clé API manquante','error');throw new Error('No API key');}
-  var resp=await fetch('https://api.anthropic.com/v1/messages',{
+  var resp=await fetch('/api/claude',{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
+      'anthropic-version':'2023-06-01'
     },
     body:JSON.stringify({
       model:'claude-sonnet-4-5',
@@ -9402,9 +9400,7 @@ async function loadEcransFromSupabase(){
     }
     // 2. Fallback : ancienne table ecrans_prix
     console.log('Écrans: settings vide, fallback sur ecrans_prix');
-    var res = await fetch(SUPA_URL+'/rest/v1/ecrans_prix?select=*', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
+    var res = await fetch('/api/supabase?table=ecrans_prix&query=' + encodeURIComponent('?select=*'));
     if(!res.ok) return;
     var lignes = await res.json();
     if(!lignes || !lignes.length) return;
@@ -10080,9 +10076,7 @@ async function androidLoadSupabase(){
     }
     // Fallback : ancienne table prix_reparation_android
     console.log('Android: fallback sur prix_reparation_android');
-    var r = await fetch(SUPA_URL+'/rest/v1/prix_reparation_android?select=*', {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
+    var r = await fetch('/api/supabase?table=prix_reparation_android&query=' + encodeURIComponent('?select=*'));
     if(!r.ok) return;
     var rows2 = await r.json();
     if(!rows2 || !rows2.length) return;
@@ -10389,13 +10383,11 @@ async function docsAnalysePDF(input){
       r.readAsDataURL(file);
     });
 
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    var resp = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
@@ -10933,9 +10925,7 @@ function invaliderCacheHRep(){
 
 async function loadClientsEnAttente(){
   try {
-    var res = await fetch(SUPA_URL + '/rest/v1/clients_en_attente?traite=eq.false&order=date_inscription.desc', {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
-    });
+    var res = await fetch('/api/supabase?table=clients_en_attente&query=' + encodeURIComponent('?traite=eq.false&order=date_inscription.desc'));
     if(res.ok){
       clientsEnAttente = await res.json();
       renderClientsEnAttente();
@@ -11030,12 +11020,9 @@ async function chargerClientEnAttente(id){
 
 async function marquerClientTraite(id){
   try {
-    await fetch(SUPA_URL + '/rest/v1/clients_en_attente?id=eq.'+id, {
+    await fetch('/api/supabase?table=clients_en_attente&query=' + encodeURIComponent('?id=eq.'+id), {
       method: 'PATCH',
-      headers: {
-        'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({traite: true})
     });
     clientsEnAttente = clientsEnAttente.filter(function(x){ return String(x.id)!==String(id); });
@@ -13717,19 +13704,15 @@ async function uploaderPhotoIMEI(base64, dataUrl){
     for(var i=0;i<byteStr.length;i++) arr[i]=byteStr.charCodeAt(i);
     var blob = new Blob([arr], {type:'image/jpeg'});
 
-    var res = await fetch(SUPA_URL+'/storage/v1/object/'+bucket+'/'+fileName, {
+    var res = await fetch('/api/supabase-storage?bucket='+encodeURIComponent(bucket)+'&fileName='+encodeURIComponent(fileName), {
       method: 'POST',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer '+SUPA_KEY,
-        'Content-Type': 'image/jpeg',
-        'x-upsert': 'true'
-      },
+      headers: { 'Content-Type': 'image/jpeg' },
       body: blob
     });
 
     if(res.ok){
-      var url = SUPA_URL+'/storage/v1/object/public/'+bucket+'/'+fileName;
+      var data = await res.json();
+      var url = data.url;
       console.log('Photo uploadée :', url);
       return url;
     } else {
@@ -14965,13 +14948,11 @@ async function paramsTestClaude() {
   if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
   if(st){ st.textContent='🔄 Test en cours…'; st.style.color='var(--blue)'; }
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
+    var res = await fetch('/api/claude', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({ model: mdl, max_tokens: 20, messages: [{ role: 'user', content: 'OK?' }] })
     });
@@ -16533,13 +16514,11 @@ function qrClearSig() {
 async function qrExtractIMEI(base64Image) {
   var key = getIgApiKey();
   if(!key) throw new Error('Clé API manquante');
-  var resp = await fetch('https://api.anthropic.com/v1/messages', {
+  var resp = await fetch('/api/claude', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-5',
@@ -16731,9 +16710,9 @@ async function qrSendPennylane() {
           line_items_attributes: lines
         }
       };
-      await fetch('https://app.pennylane.com/api/external/v1/customer_invoices', {
+      await fetch('/api/pennylane?endpoint=customer_invoices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+key },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
     } else {

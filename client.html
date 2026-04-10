@@ -1576,16 +1576,11 @@ async function printBonCommande(num, clientData, detail, prix, paye, type) {
 /* ══════════════════════════════════════
    SUPABASE
 ══════════════════════════════════════ */
-const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
-const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
-
+// === PROXY SECURISE — les cles API sont dans Vercel Environment Variables ===
 async function supaPost(table, data) {
-  const r = await fetch(SUPA_URL+'/rest/v1/'+table, {
+  const r = await fetch('/api/supabase?table=' + encodeURIComponent(table), {
     method: 'POST',
-    headers: {
-      'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json', 'Prefer': 'return=minimal'
-    },
+    headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
     body: JSON.stringify(data)
   });
   if (!r.ok) throw new Error('HTTP '+r.status);

@@ -23,20 +23,15 @@
   /* ── SUPABASE HELPERS ───────────────────────────────────────────── */
   async function supaQuery(table, params = '') {
     if (typeof supaFetch === 'function') return supaFetch(table, 'GET', null, params);
-    const r = await fetch(`${window.SUPABASE_URL}/rest/v1/${table}${params}`, {
-      headers: { apikey: window.SUPABASE_KEY, Authorization: `Bearer ${window.SUPABASE_KEY}` }
-    });
+    const r = await fetch('/api/supabase?table=' + encodeURIComponent(table) + (params ? '&query=' + encodeURIComponent(params) : ''));
     return r.json();
   }
 
   async function supaPatch(table, data, params = '') {
     if (typeof supaFetch === 'function') return supaFetch(table, 'PATCH', data, params);
-    const r = await fetch(`${window.SUPABASE_URL}/rest/v1/${table}${params}`, {
+    const r = await fetch('/api/supabase?table=' + encodeURIComponent(table) + (params ? '&query=' + encodeURIComponent(params) : ''), {
       method: 'PATCH',
-      headers: {
-        apikey: window.SUPABASE_KEY, Authorization: `Bearer ${window.SUPABASE_KEY}`,
-        'Content-Type': 'application/json', Prefer: 'return=representation'
-      },
+      headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
       body: JSON.stringify(data)
     });
     return r.json();
@@ -684,11 +679,10 @@ Sois concis. Zéro texte hors du JSON.`;
       const apiKey = getClaudeKey();
       if (!apiKey) return { intent:'error', response:'Clé API manquante.' };
 
-      const res = await fetch('https://app.solution-phone.fr/api/claude', {
+      const res = await fetch('/api/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
