@@ -17,10 +17,11 @@ export default async function handler(req, res) {
 
   // Tables autorisees (securite: empecher l'acces a des tables sensibles)
   const ALLOWED_TABLES = [
-    'phones', 'clients', 'factures', 'caisse', 'depenses',
-    'reports_mois', 'ecrans_prix', 'batteries_prix', 'settings',
-    'commandes', 'devis', 'reparations', 'neufs_accessoires',
-    'salaries', 'phonilab_import', 'police'
+    'phones', 'clients', 'clients_en_attente', 'factures', 'caisse', 'depenses',
+    'reports_mois', 'ecrans_prix', 'batteries_prix', 'prix_reparation_android',
+    'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
+    'salaries', 'phonilab_import', 'police',
+    'bons_depot', 'historique_reparations', 'ventes_neufs_access'
   ];
   if (!ALLOWED_TABLES.includes(table)) {
     return res.status(403).json({ error: 'Table non autorisee: ' + table });

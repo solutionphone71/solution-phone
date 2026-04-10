@@ -11525,9 +11525,9 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   var tel = telephone.replace(/\s/g,'').replace(/^0/,'+33');
   var message = 'Bonjour ' + (prenom||'') + ', merci de votre confiance chez Solution Phone \u2764\uFE0F Un petit avis Google nous aiderait beaucoup \uD83D\uDE4F ' + LIEN_GOOGLE_AVIS;
   try {
-    var res = await fetch('https://api.brevo.com/v3/transactionalSMS/sms', {
+    var res = await fetch('/api/brevo?type=sms', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'api-key': localStorage.getItem(PARAMS_KEYS.brevoKey)||'' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sender: 'SolPhone', recipient: tel, content: message })
     });
     if(res.ok) {
@@ -15142,9 +15142,9 @@ function envoyerSMSCommande(id){
   // Brevo SMS si dispo
   var brevoKey = localStorage.getItem('sp_brevo_key')||'';
   if(brevoKey && tel.length >= 10){
-    fetch('https://api.brevo.com/v3/transactionalSMS/sms',{
+    fetch('/api/brevo?type=sms',{
       method:'POST',
-      headers:{'api-key':brevoKey,'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({sender:'SolPhone',recipient:tel.startsWith('0')?'+33'+tel.slice(1):tel,content:msg})
     }).then(function(r){ if(!r.ok) throw new Error(); showNotif('📱 SMS Brevo envoyé !','success'); })
     .catch(function(){ setTimeout(function(){window.location.href='sms:'+tel+'?body='+encodeURIComponent(msg);},300); });
@@ -15159,9 +15159,9 @@ async function envoyerSMSArrivee(c){
   var brevoKey = localStorage.getItem('sp_brevo_key')||'';
   if(brevoKey && tel.length >= 10){
     try {
-      var r = await fetch('https://api.brevo.com/v3/transactionalSMS/sms',{
+      var r = await fetch('/api/brevo?type=sms',{
         method:'POST',
-        headers:{'api-key':brevoKey,'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({sender:'SolPhone',recipient:tel.startsWith('0')?'+33'+tel.slice(1):tel,content:msg})
       });
       if(r.ok){ showNotif('📱 SMS automatique envoyé à '+c.client.nom+' !','success'); return; }
