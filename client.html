@@ -799,6 +799,29 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
   <div class="scr" id="scr-id-cmd">
     <div class="scr-title">Vos coordonnées</div>
     <div class="scr-sub">Pour vous prévenir dès l'arrivée de la pièce</div>
+
+    <!-- Recherche client existant -->
+    <div style="margin-bottom:20px;position:relative;">
+      <div class="lbl" style="margin-bottom:8px;">Déjà client ? Recherchez votre dossier</div>
+      <div style="position:relative;">
+        <input class="inp" type="text" id="client-search-inp-cmd"
+          placeholder="🔍 Nom ou téléphone…"
+          autocomplete="off" oninput="searchClientCmd(this.value)">
+        <div id="client-search-results-cmd" style="
+          display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
+          background:#fff;border-radius:var(--r);
+          box-shadow:0 8px 30px rgba(0,0,0,0.12);overflow:hidden;
+          border:1px solid rgba(0,0,0,0.06);
+        "></div>
+      </div>
+      <div id="client-found-badge-cmd" style="display:none;margin-top:8px;padding:8px 12px;
+        background:#f0fdf4;border-radius:var(--r);border:1px solid #bbf0cd;
+        font-size:12px;font-weight:600;color:#1a8a36;">
+        ✅ Données pré-remplies — vérifiez et continuez
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:20px;"></div>
+
     <div class="row c2">
       <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="cmd-nom-c" placeholder="Dupont" oninput="checkStep2Cmd()"></div>
       <div class="fld"><label class="lbl">Prénom</label><input class="inp" type="text" id="cmd-prenom-c" placeholder="Jean"></div>
@@ -1767,6 +1790,54 @@ async function soumettre() {
 /* ══════════════════════════════════════
    FLUX COMMANDE PIÈCE
 ══════════════════════════════════════ */
+function searchClientCmd(q) {
+  clearTimeout(searchTimer);
+  var res = document.getElementById('client-search-results-cmd');
+  var badge = document.getElementById('client-found-badge-cmd');
+  if (!q || q.length < 2) { if(res) res.style.display='none'; return; }
+  searchTimer = setTimeout(async function() {
+    try {
+      var url = SUPA_URL+'/rest/v1/clients?or=(nom.ilike.*'+encodeURIComponent(q)+'*,tel.ilike.*'+encodeURIComponent(q)+'*)&limit=5&order=nom.asc';
+      var r = await fetch(url, { headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY} });
+      var data = await r.json();
+      if (!data || !data.length) {
+        res.innerHTML='<div style="padding:12px 16px;font-size:13px;color:var(--gray2);">Aucun client trouvé</div>';
+        res.style.display='block'; return;
+      }
+      res.innerHTML = data.map(function(c) {
+        var nom = (c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'');
+        var dataStr = JSON.stringify(c).replace(/"/g,'&quot;');
+        return '<div onclick="fillClientCmd('+dataStr+')" style="'+
+          'padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.05);'+
+          'display:flex;justify-content:space-between;align-items:center;font-size:13px;" '+
+          'onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background=''">'+
+          '<div>'+
+            '<div style="font-weight:700;color:var(--black);">'+nom+'</div>'+
+            '<div style="color:var(--gray);font-size:11px;">'+(c.tel||'')+' '+(c.email?'· '+c.email:'')+'</div>'+
+          '</div>'+
+          '<div style="color:var(--red);font-size:11px;font-weight:600;">Sélectionner →</div>'+
+        '</div>';
+      }).join('');
+      res.style.display = 'block';
+    } catch(e) { if(res) res.style.display='none'; }
+  }, 350);
+}
+
+function fillClientCmd(c) {
+  var set = function(id,v){ var el=document.getElementById(id); if(el) el.value=v||''; };
+  set('cmd-nom-c',    c.nom);
+  set('cmd-prenom-c', c.prenom);
+  set('cmd-tel-c',    c.tel);
+  set('cmd-email-c',  c.email);
+  var res   = document.getElementById('client-search-results-cmd');
+  var badge = document.getElementById('client-found-badge-cmd');
+  var inp   = document.getElementById('client-search-inp-cmd');
+  if(res)   res.style.display = 'none';
+  if(badge) badge.style.display = 'block';
+  if(inp)   inp.value = (c.prenom||'')+' '+(c.nom||'');
+  checkStep2Cmd();
+}
+
 function checkStep2Cmd(silent) {
   var ok = !!(val('cmd-nom-c') && val('cmd-tel-c'));
   if (!silent) { var b=document.getElementById('btn-next'); if(b) b.disabled=!ok; }
@@ -1957,14 +2028,14 @@ function restart(silent) {
   // Reset state
   Object.assign(S,{flux:'',civ:'',nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',marque:'',modele:'',panne:'',prix:'0',dejaPaye:false,sigData:null,consent:false});
   // Reset fields
-  ['client-search-inp','client-search-inp-acc'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.value='';
+  ['client-search-inp','client-search-inp-acc','client-search-inp-cmd'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
   });
-  ['client-search-results','client-search-results-acc'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.style.display='none';
+  ['client-search-results','client-search-results-acc','client-search-results-cmd'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display='none';
   });
-  ['client-found-badge','client-found-badge-acc'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.style.display='none';
+  ['client-found-badge','client-found-badge-acc','client-found-badge-cmd'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display='none';
   });
   ['r-nom','r-prenom','r-tel','r-email','r-adresse','r-cp','r-ville','r-modele',
    'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp',
