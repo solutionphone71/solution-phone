@@ -584,7 +584,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
     </div>
   </div>
 </div>VER — ROUE FOND PLEIN ÉCRAN ═══ -->
-<div id="ss" onclick="startApp()">
+<div id="ss">
   <!-- Roue en fond -->
   <canvas id="ss-bg-canvas"></canvas>
   <!-- Contenu -->
@@ -939,6 +939,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 </div><!-- /app -->
 
 <script>
+var _appReady = false;
+
 
 /* ══════════════════════════════════════
    RECHERCHE CLIENT EXISTANT
@@ -1135,7 +1137,7 @@ function stopSSWheel() {
 
 let ssTimer = null;
 function startApp() {
-  if (!_appReady) return; // sécurité double
+  if (_appReady === false) return; // bloque pendant 1s au chargement
   stopSSWheel();
   // Masquer screensaver
   const ss = document.getElementById('ss');
@@ -1536,7 +1538,6 @@ function restart(silent) {
 
 // ═══ INIT AU CHARGEMENT ═══
 // Flag anti-faux-clic : startApp() bloqué pendant 1s après chargement
-var _appReady = false;
 setTimeout(function() { _appReady = true; }, 1000);
 
 // Listener propre sur #ss — ignoré si pas encore prêt
