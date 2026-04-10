@@ -169,6 +169,116 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   });
 })();
 </script>
+<style id="aria-cmd-css">
+/* ══ ARIA COMMAND CENTER — CSS ══ */
+#aria-omnibar-wrap {
+  margin: -24px -24px 0 -24px;
+  width: calc(100% + 48px);
+  position: sticky;
+  top: 0;
+  z-index: 9000;
+  background: rgba(245,245,247,0.97);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  padding: 8px 16px 0;
+}
+#aria-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 11px;
+  padding: 7px 12px;
+  box-shadow: inset 2px 2px 5px rgba(174,174,184,0.3),
+              inset -1px -1px 3px rgba(255,255,255,0.9),
+              0 1px 4px rgba(0,0,0,0.06);
+  position: relative;
+}
+#aria-wave-btn {
+  flex-shrink: 0; width: 28px; height: 28px;
+  background: linear-gradient(135deg,#ff3b30,#c9251b);
+  border-radius: 8px; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(255,59,48,0.35); padding: 0;
+}
+.aria-bar-rect {
+  transform-origin: center bottom;
+  animation: aria-idle 1.4s ease-in-out infinite;
+}
+.aria-bar-rect:nth-child(2){animation-delay:.14s;}
+.aria-bar-rect:nth-child(3){animation-delay:.28s;}
+.aria-bar-rect:nth-child(4){animation-delay:.42s;}
+.aria-bar-rect:nth-child(5){animation-delay:.56s;}
+@keyframes aria-idle {
+  0%,100%{transform:scaleY(0.4);} 50%{transform:scaleY(1);}
+}
+#aria-input-cmd {
+  flex: 1; border: none; outline: none; background: transparent;
+  font-size: 13px; font-family: -apple-system,'Inter',sans-serif;
+  font-weight: 500; color: #111; caret-color: #ff3b30; min-width: 0;
+}
+#aria-input-cmd::placeholder { color: #b0b0b5; font-weight: 400; }
+#aria-kbd-badge {
+  font-size: 10px; color: #bbb; background: #f0f0f3;
+  border: 1px solid #e0e0e5; border-radius: 5px;
+  padding: 2px 6px; font-family: monospace; flex-shrink: 0;
+}
+@media(max-width:768px){ #aria-kbd-badge { display: none; } }
+#aria-mic-round {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: #f0f0f3;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px;
+  box-shadow: 2px 2px 6px rgba(174,174,184,0.4),-1px -1px 3px rgba(255,255,255,0.9);
+  padding: 0;
+}
+#aria-mic-round.on { background: #ff3b30; animation: mic-p 1s infinite; }
+@keyframes mic-p {
+  0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.4);}
+  50%{box-shadow:0 0 0 6px rgba(255,59,48,0);}
+}
+#aria-spotlight {
+  display: none; position: absolute;
+  top: calc(100% + 6px); left: 0; right: 0;
+  background: rgba(248,248,250,0.98); border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.9);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  overflow: hidden; z-index: 9100; max-height: 260px; overflow-y: auto;
+}
+#aria-spotlight.open { display: block; }
+.as-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+  cursor: pointer; font-size: 12px; color: #1d1d1f;
+  border-bottom: 1px solid rgba(0,0,0,0.05); transition: background .1s;
+}
+.as-item:last-child { border-bottom: none; }
+.as-item:hover,.as-item:active { background: #f0f0f3; }
+.as-ico { font-size: 15px; flex-shrink: 0; }
+.as-title { font-weight: 600; }
+.as-sub { font-size: 10px; color: #888; margin-top: 1px; }
+#aria-qas {
+  display: flex; gap: 6px; padding: 6px 0;
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+#aria-qas::-webkit-scrollbar { display: none; }
+.aqa {
+  flex-shrink: 0; padding: 4px 10px; font-size: 11px; font-weight: 600;
+  font-family: -apple-system,'Inter',sans-serif; color: #374151;
+  background: #f0f0f3; border: none; border-radius: 20px;
+  cursor: pointer; white-space: nowrap;
+  box-shadow: 2px 2px 6px rgba(174,174,184,0.45),-1px -1px 3px rgba(255,255,255,0.9);
+}
+.aqa:active { box-shadow: inset 2px 2px 5px rgba(174,174,184,0.5); transform: scale(0.96); }
+/* ══ MASQUER TOUS LES ANCIENS FABs ══ */
+#aria-fab,
+#sp-fab,
+#claude-agent-glow-border { display: none !important; }
+@media(max-width:768px) {
+  #aria-omnibar-wrap { margin: -12px -12px 0 -12px; width: calc(100% + 24px); }
+}
+</style>
 </head>
 <body class="sp-theme">
 <div id="notif" class="notif"></div>
@@ -4245,109 +4355,7 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   '<style>*{margin:0;padding:0;}body{font-family:"Courier New",monospace;font-size:12px;width:80mm;}'+
   '.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}'+
   '.row{display:flex;justify-content:space-between;padding:2px 0;}'+
-  '@media print{@page{size:80mm auto;margin:0;}}
-/* ══ ARIA COMMAND CENTER ══ */
-#aria-omnibar-wrap {
-  margin: -24px -24px 0 -24px;
-  width: calc(100% + 48px);
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  background: rgba(245,245,247,0.97);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0,0,0,0.07);
-  padding: 8px 16px 0;
-}
-#aria-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border-radius: 11px;
-  padding: 7px 12px;
-  box-shadow: inset 2px 2px 5px rgba(174,174,184,0.3), inset -1px -1px 3px rgba(255,255,255,0.9), 0 1px 4px rgba(0,0,0,0.06);
-  position: relative;
-}
-#aria-wave-btn {
-  flex-shrink:0; width:28px; height:28px;
-  background: linear-gradient(135deg,#ff3b30,#c9251b);
-  border-radius:8px; border:none; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow:0 2px 6px rgba(255,59,48,0.35);
-  padding:0;
-}
-.aria-bar-rect {
-  transform-origin: center bottom;
-  animation: aria-idle 1.4s ease-in-out infinite;
-}
-.aria-bar-rect:nth-child(2){animation-delay:.14s;}
-.aria-bar-rect:nth-child(3){animation-delay:.28s;}
-.aria-bar-rect:nth-child(4){animation-delay:.42s;}
-.aria-bar-rect:nth-child(5){animation-delay:.56s;}
-@keyframes aria-idle {
-  0%,100%{transform:scaleY(0.4);} 50%{transform:scaleY(1);}
-}
-#aria-input-cmd {
-  flex:1; border:none; outline:none; background:transparent;
-  font-size:13px; font-family:-apple-system,'Inter',sans-serif;
-  font-weight:500; color:#111; caret-color:#ff3b30; min-width:0;
-}
-#aria-input-cmd::placeholder{color:#b0b0b5;font-weight:400;}
-#aria-kbd-badge {
-  font-size:10px;color:#bbb;background:#f0f0f3;
-  border:1px solid #e0e0e5;border-radius:5px;
-  padding:2px 6px;font-family:monospace;flex-shrink:0;
-}
-@media(max-width:768px){#aria-kbd-badge{display:none;}}
-#aria-mic-round {
-  flex-shrink:0;width:28px;height:28px;border-radius:50%;border:none;
-  background:#f0f0f3;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:14px;
-  box-shadow:2px 2px 6px rgba(174,174,184,0.4),-1px -1px 3px rgba(255,255,255,0.9);
-  transition:all 0.15s;padding:0;
-}
-#aria-mic-round.on{background:#ff3b30;animation:mic-p 1s infinite;}
-@keyframes mic-p{0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,.4);}50%{box-shadow:0 0 0 6px rgba(255,59,48,0);}}
-/* Spotlight */
-#aria-spotlight {
-  display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
-  background:rgba(248,248,250,0.98);border-radius:14px;
-  border:1px solid rgba(255,255,255,0.9);
-  box-shadow:0 8px 30px rgba(0,0,0,0.12);
-  overflow:hidden;z-index:300;max-height:260px;overflow-y:auto;
-}
-#aria-spotlight.open{display:block;}
-.as-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;
-  font-size:12px;font-family:-apple-system,'Inter',sans-serif;color:#1d1d1f;
-  border-bottom:1px solid rgba(0,0,0,0.05);transition:background .1s;}
-.as-item:last-child{border-bottom:none;}
-.as-item:hover,.as-item:active{background:#f0f0f3;}
-.as-ico{font-size:15px;flex-shrink:0;}
-.as-title{font-weight:600;}
-.as-sub{font-size:10px;color:#888;margin-top:1px;}
-/* Quick actions */
-#aria-qas {
-  display:flex;gap:6px;padding:6px 0;
-  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
-}
-#aria-qas::-webkit-scrollbar{display:none;}
-.aqa {
-  flex-shrink:0;padding:4px 10px;font-size:11px;font-weight:600;
-  font-family:-apple-system,'Inter',sans-serif;color:#374151;
-  background:#f0f0f3;border:none;border-radius:20px;cursor:pointer;
-  white-space:nowrap;
-  box-shadow:2px 2px 6px rgba(174,174,184,0.45),-1px -1px 3px rgba(255,255,255,0.9);
-  transition:all 0.12s;
-}
-.aqa:active{box-shadow:inset 2px 2px 5px rgba(174,174,184,0.5);transform:scale(0.96);}
-/* Masquer tous les anciens FABs */
-#aria-fab,#sp-fab,#claude-agent-glow-border{display:none!important;}
-/* Mobile .main */
-@media(max-width:768px){
-  #aria-omnibar-wrap{margin:-12px -12px 0 -12px;width:calc(100% + 24px);}
-}
-</style></head><body>'+
+  '@media print{@page{size:80mm auto;margin:0;}}</style></head><body>'+
   '<p class="no-print" style="padding:4px;"><button onclick="window.print()" style="width:100%;padding:8px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;">🖨️ Imprimer</button></p>'+
   '<div style="padding:3mm;">'+
   '<div class="center bold" style="font-size:15px;">SOLUTION PHONE</div>'+
