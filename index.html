@@ -392,6 +392,36 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   </div>
   <div class="main">
 
+  <!-- ═══════════════════════════════════════════
+       ARIA COMMAND CENTER — Dynamic Island
+       ═══════════════════════════════════════════ -->
+  <div id="aria-omnibar-wrap">
+    <div id="aria-omnibar" role="search" onclick="document.getElementById('aria-input-cmd').focus()">
+      <div id="aria-wave-icon" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
+        <svg viewBox="0 0 20 14" width="18" height="14" fill="none">
+          <rect class="aria-bar" x="0"  y="3" width="3" height="8"  rx="1.5" fill="white"/>
+          <rect class="aria-bar" x="4"  y="1" width="3" height="12" rx="1.5" fill="white"/>
+          <rect class="aria-bar" x="8"  y="4" width="3" height="6"  rx="1.5" fill="white"/>
+          <rect class="aria-bar" x="12" y="0" width="3" height="14" rx="1.5" fill="white"/>
+          <rect class="aria-bar" x="16" y="2" width="3" height="10" rx="1.5" fill="white"/>
+        </svg>
+      </div>
+      <input id="aria-input-cmd" type="text"
+        placeholder="Comment puis-je vous aider ? — CA, réparation, client, stock…"
+        autocomplete="off" spellcheck="false"/>
+      <span id="aria-kbd">⌘K</span>
+      <button id="aria-mic-btn" title="Parler à ARIA">🎤</button>
+      <div id="aria-spotlight"></div>
+    </div>
+    <div id="aria-quick-actions">
+      <button class="aria-qa" onclick="ariaCmd('Nouvelle réparation')">🔧 Nouvelle répa</button>
+      <button class="aria-qa" onclick="ariaCmd('CA aujourd\'hui')">💰 CA du jour</button>
+      <button class="aria-qa" onclick="ariaCmd('Stock smartphones')">📱 Stock</button>
+      <button class="aria-qa" onclick="ariaCmd('QualiRépar en attente')">🏷️ QualiRépar</button>
+      <button class="aria-qa" onclick="ariaCmd('Nouvelle facture')">🧾 Facture</button>
+    </div>
+  </div>
+
     <div class="page active" id="page-dashboard">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <div class="page-title" style="margin-bottom:0;">Tableau de bord</div>
@@ -1628,6 +1658,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <button class="btn" style="width:100%;" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
         </div>
       </div>
+
+
       </div>
       </div>
 
@@ -4226,7 +4258,139 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   '<style>*{margin:0;padding:0;}body{font-family:"Courier New",monospace;font-size:12px;width:80mm;}'+
   '.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}'+
   '.row{display:flex;justify-content:space-between;padding:2px 0;}'+
-  '@media print{@page{size:80mm auto;margin:0;}}</style></head><body>'+
+  '@media print{@page{size:80mm auto;margin:0;}}
+/* ═══════════════════════════════════════════════
+   ARIA COMMAND CENTER — Dynamic Island Style
+   ═══════════════════════════════════════════════ */
+#aria-omnibar-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 20px 6px;
+  background: linear-gradient(to bottom, rgba(245,247,250,0.98) 85%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+#aria-omnibar {
+  width: min(680px, 90%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(0,0,0,0.10);
+  border-radius: 32px;
+  padding: 8px 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08);
+  cursor: text;
+  transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+#aria-omnibar::after {
+  content:'';
+  position:absolute;
+  inset:-2px;
+  border-radius:34px;
+  background: conic-gradient(from var(--aria-angle,0deg), transparent 60%, var(--aria-glow-color,transparent) 80%, transparent 100%);
+  z-index:-1;
+  opacity: var(--aria-glow-opacity,0);
+  transition: opacity 0.4s;
+}
+@property --aria-angle { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+@keyframes aria-spin { to { --aria-angle: 360deg; } }
+#aria-omnibar.thinking { animation: aria-spin 2s linear infinite; --aria-glow-color:#3b82f6; --aria-glow-opacity:1; }
+#aria-omnibar.success  { --aria-glow-color:#22c55e; --aria-glow-opacity:1; }
+#aria-omnibar.error    { --aria-glow-color:#ef4444; --aria-glow-opacity:1; }
+#aria-omnibar.expanded {
+  width: min(780px, 96%);
+  border-radius: 22px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10), 0 20px 50px rgba(0,0,0,0.13);
+}
+#aria-wave-icon {
+  flex-shrink:0; width:32px; height:32px;
+  background: linear-gradient(135deg,#ef4444,#b91c1c);
+  border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 2px 8px rgba(239,68,68,.40);
+  transition: transform 0.2s;
+}
+#aria-wave-icon:hover { transform: scale(1.08); }
+#aria-wave-icon svg rect { transform-origin: center bottom; }
+.aria-bar { animation: aria-wave-idle 1.4s ease-in-out infinite; }
+.aria-bar:nth-child(2){animation-delay:.12s;}
+.aria-bar:nth-child(3){animation-delay:.24s;}
+.aria-bar:nth-child(4){animation-delay:.36s;}
+.aria-bar:nth-child(5){animation-delay:.48s;}
+@keyframes aria-wave-idle {
+  0%,100%{ transform:scaleY(0.45); } 50%{ transform:scaleY(1); }
+}
+#aria-omnibar.listening .aria-bar { animation: aria-wave-listen 0.35s ease-in-out infinite alternate; }
+@keyframes aria-wave-listen { from{transform:scaleY(0.3);}to{transform:scaleY(1.5);} }
+#aria-input-cmd {
+  flex:1; border:none; outline:none; background:transparent;
+  font-size:14px; font-family:-apple-system,'Inter',sans-serif; font-weight:500;
+  color:#111; caret-color:#ef4444; min-width:0;
+}
+#aria-input-cmd::placeholder { color:#aaa; font-weight:400; }
+#aria-kbd {
+  font-size:10px; color:#aaa; background:#f3f4f6;
+  border:1px solid #e5e7eb; border-radius:5px;
+  padding:2px 6px; font-family:monospace; white-space:nowrap; flex-shrink:0;
+}
+@media(max-width:768px){ #aria-kbd{display:none;} }
+#aria-mic-btn {
+  flex-shrink:0; width:32px; height:32px; border-radius:50%;
+  border:none; background:#f3f4f6;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:15px; transition:all 0.2s;
+}
+#aria-mic-btn:hover { background:#e5e7eb; transform:scale(1.08); }
+#aria-mic-btn.active { background:#fee2e2; animation:mic-pulse 1s infinite; }
+@keyframes mic-pulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4);}
+  50%{box-shadow:0 0 0 8px rgba(239,68,68,0);}
+}
+#aria-spotlight {
+  display:none; position:absolute; top:calc(100% + 8px); left:0; right:0;
+  background:rgba(255,255,255,0.97); backdrop-filter:blur(20px);
+  border-radius:20px; border:0.5px solid rgba(0,0,0,.10);
+  box-shadow:0 8px 30px rgba(0,0,0,.14);
+  overflow:hidden; z-index:600; max-height:320px; overflow-y:auto;
+}
+#aria-spotlight.open { display:block; }
+.aria-spot-item {
+  display:flex; align-items:center; gap:10px; padding:10px 16px;
+  cursor:pointer; transition:background 0.12s;
+  font-size:13px; font-family:-apple-system,'Inter',sans-serif; color:#111;
+  border-bottom:1px solid #f3f4f6;
+}
+.aria-spot-item:last-child{border-bottom:none;}
+.aria-spot-item:hover{background:#f5f5f7;}
+.aria-spot-icon{font-size:18px;flex-shrink:0;}
+.aria-spot-title{font-weight:600;font-size:13px;}
+.aria-spot-sub{font-size:11px;color:#6b7280;margin-top:1px;}
+#aria-quick-actions {
+  display:flex; gap:7px; margin-top:6px; flex-wrap:wrap; justify-content:center;
+}
+.aria-qa {
+  display:flex; align-items:center; gap:5px;
+  padding:5px 12px; font-size:12px; font-weight:600;
+  font-family:-apple-system,'Inter',sans-serif; color:#374151;
+  background:rgba(255,255,255,0.88); border:0.5px solid rgba(0,0,0,.10);
+  border-radius:20px; cursor:pointer; white-space:nowrap;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 10px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.aria-qa:hover{transform:translateY(-2px);box-shadow:0 2px 6px rgba(0,0,0,.10),0 8px 20px rgba(0,0,0,.10);}
+.aria-qa:active{transform:translateY(0);}
+/* Masquer ancien FAB ARIA */
+#aria-fab { display:none!important; }
+#claude-agent-glow-border { display:none!important; }
+</style></head><body>'+
   '<p class="no-print" style="padding:4px;"><button onclick="window.print()" style="width:100%;padding:8px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;">🖨️ Imprimer</button></p>'+
   '<div style="padding:3mm;">'+
   '<div class="center bold" style="font-size:15px;">SOLUTION PHONE</div>'+
@@ -10391,6 +10555,13 @@ function paramsLoad(){
   if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
   if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
 
+  // Claude API
+  el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
+  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
+  var stCl=document.getElementById('params-claude-status');
+  if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
+  if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
+
   paramsUpdateStatus();
 }
 
@@ -14605,6 +14776,68 @@ async function paramsTestClaude() {
   }
 }
 
+function paramsSaveClaude() {
+  var key = (document.getElementById('params-claude-key')||{value:''}).value.trim();
+  var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
+  // Sauvegarde principale
+  localStorage.setItem(PARAMS_KEYS.claudeKey, key);
+  localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
+  // ── Sync ARIA (lit sp_params_keys.claude_key) ──
+  try {
+    var pk = JSON.parse(localStorage.getItem('sp_params_keys') || '{}');
+    pk.claude_key = key;
+    localStorage.setItem('sp_params_keys', JSON.stringify(pk));
+  } catch(e) {}
+  // Sync champs secondaires
+  window._cachedApiKey = key;
+  var igInput = document.getElementById('ig-api-key');
+  if(igInput) igInput.value = key;
+  var ariaInput = document.getElementById('aria-api-key-input');
+  if(ariaInput) { ariaInput.value = key; }
+  // Masquer la bannière ARIA clé manquante si présente
+  if(key) {
+    var ariaKeySetup = document.getElementById('aria-key-setup');
+    if(ariaKeySetup) ariaKeySetup.style.display = 'none';
+  }
+  // Status UI
+  var st = document.getElementById('params-claude-status');
+  if(st){ st.textContent = key ? '✅ Clé enregistrée' : '⚠️ Non configurée'; st.style.color = key ? 'var(--green)' : 'var(--warning)'; }
+  // Notif omnibar glow
+  if(window._ariaOmniSetGlow) window._ariaOmniSetGlow(key ? 'success' : null);
+  showNotif('💾 Clé Claude enregistrée — active sur toute l\'app', key ? 'success' : 'warning');
+}
+
+async function paramsTestClaude() {
+  var key = localStorage.getItem(PARAMS_KEYS.claudeKey) || '';
+  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-sonnet-4-6';
+  var st  = document.getElementById('params-claude-status');
+  if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
+  if(st){ st.textContent='🔄 Test en cours…'; st.style.color='var(--blue)'; }
+  if(window._ariaOmniSetGlow) window._ariaOmniSetGlow('thinking');
+  try {
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: mdl, max_tokens: 20, messages: [{ role: 'user', content: 'OK?' }] })
+    });
+    var d = await res.json();
+    if(d.content && d.content[0] && d.content[0].text) {
+      if(st){ st.textContent='✅ Connexion OK — ' + mdl; st.style.color='var(--green)'; }
+      if(window._ariaOmniSetGlow) window._ariaOmniSetGlow('success');
+      showNotif('✅ Claude API opérationnelle', 'success');
+    } else throw new Error(d.error ? d.error.message : 'Réponse invalide');
+  } catch(e) {
+    if(st){ st.textContent='❌ Erreur: ' + e.message.substring(0,50); st.style.color='var(--red)'; }
+    if(window._ariaOmniSetGlow) window._ariaOmniSetGlow('error');
+    showNotif('❌ Claude API: ' + e.message.substring(0,60), 'danger');
+  }
+}
+
 function eposPrint(c) {
   if(!c) return;
   var nasIp = getNasUrl();
@@ -17856,6 +18089,176 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
     };
   }
   patchAria();
+})();
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   ARIA COMMAND CENTER — Logic (Dynamic Island + Spotlight)
+   ═══════════════════════════════════════════════════════ */
+(function(){
+  var omnibar, input, spotlight, micBtn;
+
+  function init(){
+    omnibar   = document.getElementById('aria-omnibar');
+    input     = document.getElementById('aria-input-cmd');
+    spotlight = document.getElementById('aria-spotlight');
+    micBtn    = document.getElementById('aria-mic-btn');
+    if(!omnibar || !input) return;
+
+    // Expand / collapse
+    input.addEventListener('focus', function(){
+      omnibar.classList.add('expanded');
+    });
+    input.addEventListener('blur', function(){
+      setTimeout(function(){
+        omnibar.classList.remove('expanded');
+        spotlight.classList.remove('open');
+      }, 200);
+    });
+
+    // Real-time Spotlight
+    input.addEventListener('input', function(){ ariaSpotlight(input.value); });
+
+    // Enter → send
+    input.addEventListener('keydown', function(e){
+      if(e.key==='Enter'){ ariaSendCmd(input.value); input.value=''; }
+      if(e.key==='Escape'){ input.blur(); input.value=''; }
+    });
+
+    // ⌘K / Ctrl+K
+    document.addEventListener('keydown', function(e){
+      if((e.metaKey||e.ctrlKey) && e.key==='k'){
+        e.preventDefault(); input.focus(); input.select();
+      }
+    });
+
+    // Mic
+    micBtn.addEventListener('click', ariaToggleMic);
+  }
+
+  // ── Glow API (accessible depuis paramsSaveClaude/paramsTestClaude)
+  window._ariaOmniSetGlow = function(state){
+    if(!omnibar) return;
+    omnibar.classList.remove('thinking','success','error');
+    if(state) {
+      omnibar.classList.add(state);
+      if(state!=='thinking') setTimeout(function(){ omnibar.classList.remove(state); }, 2500);
+    }
+  };
+
+  // ── Quick action entry point
+  window.ariaCmd = function(text){
+    if(!input) return;
+    input.value = text;
+    input.focus();
+    omnibar.classList.add('expanded');
+    ariaSpotlight(text);
+    ariaSendCmd(text);
+  };
+
+  // ── Spotlight suggestions
+  var SUGGESTIONS = [
+    {q:['ca','chiffre',"aujourd"],          icon:'💰', title:'CA du jour',         sub:'Chiffre d'affaires aujourd'hui',    fn:function(){ ariaSendCmd("CA aujourd'hui"); }},
+    {q:['répa','repair','nouv répa'],        icon:'🔧', title:'Nouvelle réparation', sub:'Créer un dossier',                   fn:function(){ showPage&&showPage('reparations',null); setTimeout(function(){repNewDossier&&repNewDossier();},300); }},
+    {q:['client'],                           icon:'👤', title:'Clients',             sub:'Liste & recherche clients',          fn:function(){ showPage&&showPage('clients',null); }},
+    {q:['stock','phone','smart','télép'],    icon:'📱', title:'Stock smartphones',   sub:'Gérer le stock',                     fn:function(){ showPage&&showPage('phones',null); }},
+    {q:['facture','fact','nouv fact'],       icon:'🧾', title:'Factures',            sub:'Historique et nouvelle facture',     fn:function(){ showPage&&showPage('factures',null); }},
+    {q:['quali','qr','bonus','25'],          icon:'🏷️', title:'QualiRépar',          sub:'Dossiers en attente',               fn:function(){ showPage&&showPage('qualirepar',null); qrInit&&qrInit(); }},
+    {q:['caisse','z de','clôtur'],           icon:'🏧', title:'Z de caisse',         sub:'Clôture journalière',               fn:function(){ showPage&&showPage('caisse',null); }},
+    {q:['param','api','clé','config'],       icon:'⚙️', title:'Paramètres API',      sub:'Configurer Kiwiz, Brevo, Claude…',  fn:function(){ showPage&&showPage('params',null); }},
+    {q:['devis'],                            icon:'📋', title:'Devis',               sub:'Créer ou voir les devis',           fn:function(){ showPage&&showPage('devis',null); }},
+    {q:['stat','stat'],                      icon:'📈', title:'Statistiques',        sub:'CA, réparations, tendances',        fn:function(){ showPage&&showPage('stats',null); }},
+    {q:['depense','dépens'],                 icon:'💸', title:'Dépenses',            sub:'Gérer les dépenses',                fn:function(){ showPage&&showPage('depenses',null); }},
+  ];
+
+  function ariaSpotlight(text){
+    var t = text.toLowerCase().trim();
+    if(!t){ spotlight.classList.remove('open'); return; }
+    var matches = SUGGESTIONS.filter(function(s){
+      return s.q.some(function(q){ return t.includes(q); });
+    }).slice(0,5);
+    if(!matches.length){ spotlight.classList.remove('open'); return; }
+    spotlight.innerHTML = matches.map(function(s,i){
+      return '<div class="aria-spot-item" data-i="'+i+'">'
+        +'<span class="aria-spot-icon">'+s.icon+'</span>'
+        +'<div><div class="aria-spot-title">'+s.title+'</div>'
+        +'<div class="aria-spot-sub">'+s.sub+'</div></div></div>';
+    }).join('');
+    spotlight.querySelectorAll('.aria-spot-item').forEach(function(el,i){
+      el.addEventListener('mousedown', function(){
+        matches[i].fn();
+        input.value=''; spotlight.classList.remove('open');
+      });
+    });
+    spotlight.classList.add('open');
+  }
+
+  // ── Send command (offline dispatch first, then ARIA agent)
+  function ariaSendCmd(text){
+    if(!text || !text.trim()) return;
+    spotlight.classList.remove('open');
+    window._ariaOmniSetGlow('thinking');
+
+    if(typeof window._ariaOfflineDispatch==='function'){
+      var off = window._ariaOfflineDispatch(text);
+      if(off){
+        window._ariaOmniSetGlow('success');
+        if(window.ARIA && typeof ARIA.open==='function') ARIA.open();
+        if(window.ARIA && typeof ARIA.addMessage==='function'){
+          ARIA.addMessage('user', text);
+          ARIA.executeIntent && ARIA.executeIntent(off);
+        }
+        return;
+      }
+    }
+    // Fallback : ouvrir ARIA et pré-remplir
+    if(window.ARIA && typeof ARIA.open==='function'){
+      ARIA.open();
+      setTimeout(function(){
+        var ai = document.getElementById('aria-input');
+        if(ai){ ai.value=text; ARIA.send&&ARIA.send(); }
+      }, 350);
+    }
+    window._ariaOmniSetGlow('success');
+  }
+
+  // ── Microphone Web Speech API
+  var recognition = null;
+  function ariaToggleMic(){
+    if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){
+      showNotif&&showNotif('Reconnaissance vocale non supportée','warning'); return;
+    }
+    if(recognition && micBtn.classList.contains('active')){
+      recognition.stop(); return;
+    }
+    var SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.lang='fr-FR'; recognition.interimResults=true; recognition.continuous=false;
+    recognition.onresult = function(e){
+      var t = Array.from(e.results).map(function(r){return r[0].transcript;}).join('');
+      input.value = t;
+      ariaSpotlight(t);
+      if(e.results[0].isFinal){ ariaSendCmd(t); input.value=''; }
+    };
+    recognition.onend = function(){
+      micBtn.classList.remove('active');
+      omnibar.classList.remove('listening');
+    };
+    recognition.onerror = function(){
+      micBtn.classList.remove('active');
+      omnibar.classList.remove('listening');
+    };
+    recognition.start();
+    micBtn.classList.add('active');
+    omnibar.classList.add('listening');
+    input.focus();
+  }
+
+  // Init au chargement
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
 })();
 </script>
 </body>
