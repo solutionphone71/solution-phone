@@ -2,1528 +2,1086 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=1.0,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#e53e3e">
+<meta name="theme-color" content="#f5f5f7">
 <title>Solution Phone — Prise en charge</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;800;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
 <style>
-/* ── RESET & BASE ── */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-:root {
-  --red: #e53e3e;
-  --red-dark: #c53030;
-  --red-light: #fff5f5;
-  --text: #1a1a1a;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --bg: #f9fafb;
-  --white: #ffffff;
-  --success: #16a34a;
-  --radius: 16px;
-}
-html, body {
-  min-height: 100vh;
-  background: var(--bg);
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-  overscroll-behavior: none;
-}
-
-/* ── ÉCRAN WRAPPER ── */
-.screen { display: none; min-height: 100vh; }
-.screen.active { display: flex; flex-direction: column; }
-
 /* ══════════════════════════════════════
-   ÉCRAN 1 — ACCUEIL
+   BASE
 ══════════════════════════════════════ */
-#screen-home {
-  align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
-  padding: 40px 24px;
-  text-align: center;
-  gap: 0;
-}
-.home-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700;
-  letter-spacing: 3px; text-transform: uppercase;
-  color: var(--red); margin-bottom: 48px;
-}
-.home-icon {
-  width: 100px; height: 100px;
-  background: var(--red);
-  border-radius: 28px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 48px;
-  margin: 0 auto 32px;
-  box-shadow: 0 20px 60px rgba(229,62,62,0.3);
-}
-.home-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 32px; font-weight: 800;
-  line-height: 1.15; margin-bottom: 14px;
-  color: var(--text);
-}
-.home-sub {
-  font-size: 16px; color: var(--muted);
-  line-height: 1.6; max-width: 320px;
-  margin: 0 auto 48px;
-}
-.btn-start {
-  background: var(--red); color: #fff;
-  border: none; border-radius: 50px;
-  padding: 20px 52px;
-  font-family: 'Syne', sans-serif;
-  font-size: 18px; font-weight: 700;
-  cursor: pointer; letter-spacing: .5px;
-  box-shadow: 0 10px 40px rgba(229,62,62,0.35);
-  transition: transform .15s, box-shadow .15s;
-  -webkit-touch-callout: none;
-}
-.btn-start:active { transform: scale(.97); box-shadow: 0 4px 20px rgba(229,62,62,0.3); }
-
-.home-steps {
-  display: flex; gap: 8px; justify-content: center;
-  margin-top: 40px;
-}
-.step-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #ddd;
-}
-.step-dot.on { background: var(--red); width: 24px; border-radius: 4px; }
-
-/* ══════════════════════════════════════
-   HEADER COMMUN (écrans 2-5)
-══════════════════════════════════════ */
-.page-header {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 20px;
-  display: flex; align-items: center; gap: 14px;
-  position: sticky; top: 0; z-index: 10;
-}
-.header-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 17px; font-weight: 800;
-  color: var(--red);
-}
-.header-step {
-  margin-left: auto;
-  font-size: 13px; color: var(--muted); font-weight: 500;
-}
-.progress-bar {
-  height: 3px; background: var(--border);
-  position: relative; overflow: hidden;
-}
-.progress-fill {
-  height: 100%; background: var(--red);
-  border-radius: 2px;
-  transition: width .4s ease;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:'Inter',-apple-system,sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;}
+:root{
+  --bg:#f5f5f7;--white:#fff;--red:#ff3b30;--red-d:#c9251b;
+  --blue:#0055b3;--green:#1a8a36;--black:#1d1d1f;--gray:#6e6e73;--gray2:#aeaeb2;
+  --sh-out:6px 6px 16px rgba(174,174,184,.45),-4px -4px 10px rgba(255,255,255,.9);
+  --sh-in:inset 3px 3px 8px rgba(174,174,184,.5),inset -2px -2px 5px rgba(255,255,255,.9);
+  --sh-card:4px 4px 14px rgba(174,174,184,.22),-3px -3px 8px rgba(255,255,255,.9);
+  --r:14px;--rL:22px;--rXL:28px;
 }
 
 /* ══════════════════════════════════════
-   CONTENU FORMULAIRE
+   SCREENSAVER
 ══════════════════════════════════════ */
-.form-body {
-  flex: 1; padding: 24px 20px 100px;
-  max-width: 560px; margin: 0 auto; width: 100%;
+#ss{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#1a1a1c 0%,#2c2c2e 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
+  cursor:pointer;transition:opacity .5s;
 }
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 22px; font-weight: 800;
-  margin-bottom: 6px; color: var(--text);
+#ss.out{opacity:0;pointer-events:none;}
+.ss-icon{
+  width:110px;height:110px;
+  background:linear-gradient(135deg,var(--red),var(--red-d));
+  border-radius:30px;
+  display:flex;align-items:center;justify-content:center;font-size:58px;
+  box-shadow:0 20px 60px rgba(255,59,48,.4),0 8px 20px rgba(0,0,0,.4);
+  animation:float 3s ease-in-out infinite;
 }
-.section-sub {
-  font-size: 14px; color: var(--muted);
-  margin-bottom: 24px;
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.ss-name{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.04em;}
+.ss-city{font-size:15px;color:rgba(255,255,255,.45);font-weight:400;}
+.ss-tap{font-size:13px;color:rgba(255,255,255,.25);margin-top:30px;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.25;}50%{opacity:.7;}}
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#app{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);}
+
+/* Header */
+#hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 24px;flex-shrink:0;
+  background:rgba(245,245,247,.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,0,0,.07);
 }
+.hdr-left{display:flex;align-items:center;gap:12px;}
+.hdr-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--red),var(--red-d));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 3px 10px rgba(255,59,48,.35);
+}
+.hdr-title{font-size:16px;font-weight:800;letter-spacing:-.03em;}
+.hdr-sub{font-size:11px;color:var(--gray);}
+/* Dots progress */
+.dots{display:flex;gap:7px;align-items:center;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--gray2);box-shadow:var(--sh-out);transition:.25s;}
+.dot.active{width:22px;border-radius:4px;background:var(--red);box-shadow:0 2px 8px rgba(255,59,48,.4);}
+.dot.done{background:var(--green);}
+/* Back btn */
+#btn-back{
+  padding:8px 16px;border:none;border-radius:var(--r);
+  background:var(--bg);color:var(--gray);font-size:13px;font-weight:700;cursor:pointer;
+  box-shadow:var(--sh-out);transition:.18s;display:none;
+}
+#btn-back:active{box-shadow:var(--sh-in);transform:scale(.97);}
+
+/* ══════════════════════════════════════
+   SCREENS
+══════════════════════════════════════ */
+.scr{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  display:none;opacity:0;transition:opacity .28s ease;
+  padding:28px 28px 120px;
+}
+.scr.on{display:flex;flex-direction:column;}
+.scr.vis{opacity:1;}
+.scr-title{font-size:28px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px;}
+.scr-sub{font-size:14px;color:var(--gray);margin-bottom:28px;}
+
+/* ══════════════════════════════════════
+   FORM ELEMENTS
+══════════════════════════════════════ */
+.row{display:grid;gap:14px;margin-bottom:14px;}
+.row.c2{grid-template-columns:1fr 1fr;}
+.row.c3{grid-template-columns:1fr 1fr 1fr;}
+.fld{display:flex;flex-direction:column;gap:6px;}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);}
+.inp{
+  width:100%;padding:13px 16px;
+  background:var(--bg);border:none;border-radius:var(--r);
+  font-size:15px;font-family:inherit;color:var(--black);
+  box-shadow:var(--sh-in);outline:none;transition:.18s;
+  -webkit-appearance:none;
+}
+.inp:focus{box-shadow:var(--sh-in),0 0 0 3px rgba(255,59,48,.15);}
+.inp::placeholder{color:var(--gray2);}
 
 /* Civilité */
-.civ-group {
-  display: flex; gap: 10px; margin-bottom: 20px;
+.civ-row{display:flex;gap:10px;margin-bottom:14px;}
+.civ-btn{
+  flex:1;padding:12px;border:none;border-radius:var(--r);
+  font-size:14px;font-weight:700;color:var(--gray);
+  background:var(--bg);cursor:pointer;
+  box-shadow:var(--sh-out);transition:.2s cubic-bezier(.34,1.56,.64,1);
 }
-.civ-btn {
-  flex: 1; padding: 14px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--white);
-  font-family: 'Syne', sans-serif;
-  font-size: 16px; font-weight: 700;
-  cursor: pointer; transition: all .15s;
-  color: var(--muted);
+.civ-btn.sel{background:var(--red);color:#fff;transform:scale(.97);
+  box-shadow:4px 4px 12px rgba(201,37,27,.35),-2px -2px 6px rgba(255,120,110,.15);}
+.civ-btn:active{box-shadow:var(--sh-in);transform:scale(.94);}
+
+/* ══════════════════════════════════════
+   FLUX BUTTONS (Step 1)
+══════════════════════════════════════ */
+.flux-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:20px;flex:1;align-content:center;padding:16px 0;
 }
-.civ-btn.active {
-  border-color: var(--red);
-  background: var(--red-light);
-  color: var(--red);
+.flux-btn{
+  padding:44px 16px;border:none;border-radius:var(--rXL);
+  background:var(--bg);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  box-shadow:var(--sh-out);transition:.3s cubic-bezier(.34,1.56,.64,1);
+  user-select:none;
+}
+.flux-btn:active,.flux-btn.sel{box-shadow:var(--sh-in);transform:scale(.96);}
+.flux-ico{
+  width:84px;height:84px;border-radius:24px;
+  display:flex;align-items:center;justify-content:center;font-size:42px;
+  transition:.25s;
+}
+.flux-rep .flux-ico{background:linear-gradient(135deg,#ff3b30,#c9251b);box-shadow:0 8px 24px rgba(255,59,48,.4);}
+.flux-acc .flux-ico{background:linear-gradient(135deg,#0055b3,#003d8a);box-shadow:0 8px 24px rgba(0,85,179,.35);}
+.flux-label{font-size:20px;font-weight:800;letter-spacing:-.03em;}
+.flux-desc{font-size:12px;color:var(--gray);}
+
+/* ══════════════════════════════════════
+   BRAND GRID (Step 3)
+══════════════════════════════════════ */
+.brand-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:16px;margin-bottom:24px;
+}
+.brand-btn{
+  padding:22px 12px;border:none;border-radius:var(--rL);
+  background:var(--bg);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-shadow:var(--sh-out);transition:.25s cubic-bezier(.34,1.56,.64,1);
+  user-select:none;
+}
+.brand-btn:active{transform:scale(.94);box-shadow:var(--sh-in);}
+.brand-btn.sel{
+  background:var(--white);transform:scale(.96);
+  box-shadow:var(--sh-in);
+}
+.brand-logo{height:42px;display:flex;align-items:center;justify-content:center;}
+.brand-logo img,.brand-logo svg{
+  height:34px;width:auto;max-width:72px;object-fit:contain;
+  filter:grayscale(100%) opacity(.35);transition:filter .25s;
+}
+.brand-btn.sel .brand-logo img,.brand-btn.sel .brand-logo svg{filter:grayscale(0%) opacity(1);}
+.brand-name{font-size:12px;font-weight:700;color:var(--gray2);transition:color .25s;}
+.brand-btn.sel .brand-name{color:var(--black);}
+
+/* ══════════════════════════════════════
+   PANNE / ACCESSOIRE GRID
+══════════════════════════════════════ */
+.panne-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:14px;margin-bottom:16px;
+}
+.panne-btn{
+  padding:22px 8px;border:none;border-radius:var(--rL);
+  background:var(--bg);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  box-shadow:var(--sh-out);transition:.25s cubic-bezier(.34,1.56,.64,1);
+  user-select:none;
+}
+.panne-btn:active{transform:scale(.93);box-shadow:var(--sh-in);}
+.panne-btn.sel{
+  background:var(--red);transform:scale(.95);
+  box-shadow:4px 4px 14px rgba(201,37,27,.4),-2px -2px 6px rgba(255,120,110,.15);
+}
+.panne-ico{font-size:28px;line-height:1;}
+.panne-label{font-size:11px;font-weight:700;text-align:center;color:var(--black);line-height:1.3;}
+.panne-btn.sel .panne-label{color:#fff;}
+
+/* Autre champ */
+.autre-wrap{display:none;margin-bottom:14px;animation:fadein .28s ease;}
+.autre-wrap.show{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ══════════════════════════════════════
+   SIGNATURE (Step 4 — Réparation)
+══════════════════════════════════════ */
+.sig-wrap{
+  background:var(--white);border-radius:var(--rL);
+  box-shadow:var(--sh-card);overflow:hidden;margin-bottom:18px;
+}
+#sig-canvas{width:100%;height:200px;display:block;cursor:crosshair;touch-action:none;}
+.sig-foot{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;border-top:1px solid rgba(0,0,0,.06);
+}
+.sig-hint{font-size:12px;color:var(--gray2);}
+.btn-sig-clear{
+  padding:6px 14px;background:var(--bg);border:none;border-radius:9px;
+  font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;
+  box-shadow:2px 2px 6px rgba(174,174,184,.4),-1px -1px 3px rgba(255,255,255,.9);
 }
 
-/* Champs */
-.field {
-  margin-bottom: 18px;
+/* Consent */
+.consent{
+  background:var(--white);border-radius:var(--r);padding:16px;
+  box-shadow:var(--sh-card);display:flex;gap:12px;align-items:flex-start;margin-bottom:18px;
 }
-.field label {
-  display: block;
-  font-size: 12px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .08em;
-  color: var(--muted); margin-bottom: 8px;
+.consent-chk{
+  width:22px;height:22px;flex-shrink:0;border-radius:6px;border:none;cursor:pointer;
+  background:var(--bg);box-shadow:var(--sh-in);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  transition:.18s;margin-top:2px;
 }
-.field label .req { color: var(--red); }
-.field input, .field select, .field textarea {
-  width: 100%; padding: 15px 16px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 16px; color: var(--text);
-  background: var(--white);
-  outline: none; transition: border-color .15s;
-  -webkit-appearance: none;
-}
-.field input:focus, .field select:focus, .field textarea:focus {
-  border-color: var(--red);
-}
-.field textarea { resize: none; }
-.field-hint {
-  font-size: 12px; color: var(--muted);
-  margin-top: 6px; display: flex; align-items: center; gap: 4px;
-}
-.field-grid {
-  display: grid; gap: 14px;
-}
-.field-grid.g2 { grid-template-columns: 1fr 1fr; }
-.field-grid.g-cp { grid-template-columns: 130px 1fr; }
+.consent-chk.chk{background:var(--green);box-shadow:0 2px 8px rgba(26,138,54,.3);}
+.consent-txt{font-size:13px;color:var(--gray);line-height:1.55;}
+.consent-txt b{color:var(--black);}
 
-/* Marques grid */
-.brand-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px; margin-bottom: 20px;
+/* ══════════════════════════════════════
+   PAVÉ NUMÉRIQUE (Step 4 — Accessoire)
+══════════════════════════════════════ */
+.price-display{
+  background:var(--white);border-radius:var(--rL);padding:24px 28px;
+  box-shadow:var(--sh-card);text-align:center;margin-bottom:20px;
 }
-.brand-btn {
-  padding: 14px 8px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--white);
-  cursor: pointer; transition: all .15s;
-  text-align: center;
-  font-size: 13px; font-weight: 600;
-  color: var(--muted);
+.price-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray2);margin-bottom:8px;}
+.price-val{font-size:52px;font-weight:900;letter-spacing:-.04em;color:var(--black);}
+.price-val .price-unit{font-size:28px;font-weight:600;color:var(--gray);}
+.numpad{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:12px;margin-bottom:16px;
 }
-.brand-btn .brand-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-.brand-btn.active {
-  border-color: var(--red);
-  background: var(--red-light);
-  color: var(--red);
+.num-btn{
+  padding:20px 10px;border:none;border-radius:var(--r);
+  background:var(--bg);font-size:22px;font-weight:700;color:var(--black);
+  cursor:pointer;box-shadow:var(--sh-out);transition:.18s;
+  display:flex;align-items:center;justify-content:center;
 }
-
-/* Pannes */
-.panne-list {
-  display: flex; flex-direction: column; gap: 10px;
+.num-btn:active{box-shadow:var(--sh-in);transform:scale(.94);}
+.num-btn.del{font-size:18px;color:var(--gray);}
+.num-btn.zero{grid-column:span 2;}
+/* Bouton 💰 déjà payé */
+.btn-paye{
+  width:100%;padding:18px;border:none;border-radius:var(--rL);
+  background:linear-gradient(135deg,#1a8a36,#0d6627);color:#fff;
+  font-size:17px;font-weight:800;cursor:pointer;margin-bottom:12px;
+  box-shadow:5px 5px 16px rgba(13,102,39,.35),-3px -3px 10px rgba(68,200,100,.15);
+  transition:.18s;letter-spacing:-.02em;
 }
-.panne-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 16px;
-  border: 2px solid var(--border);
-  border-radius: 12px;
-  background: var(--white);
-  cursor: pointer; transition: all .15s;
-}
-.panne-item.active {
-  border-color: var(--red);
-  background: var(--red-light);
-}
-.panne-item .panne-icon { font-size: 22px; flex-shrink: 0; }
-.panne-item .panne-label { font-size: 15px; font-weight: 600; }
-.panne-item .panne-check {
-  margin-left: auto;
-  width: 22px; height: 22px;
-  border: 2px solid var(--border);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  font-size: 12px;
-  transition: all .15s;
-}
-.panne-item.active .panne-check {
-  background: var(--red);
-  border-color: var(--red);
-  color: #fff;
+.btn-paye:active{transform:scale(.97);}
+.btn-paye.active{
+  background:linear-gradient(135deg,#0d6627,#085520);
+  box-shadow:var(--sh-in);
 }
 
 /* ══════════════════════════════════════
-   ÉCRAN SIGNATURE
+   RECAP BOX
 ══════════════════════════════════════ */
-.signature-wrapper {
-  background: var(--white);
-  border: 2px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  position: relative;
-  touch-action: none;
+.recap{
+  background:var(--white);border-radius:var(--rL);padding:20px;
+  box-shadow:var(--sh-card);margin-bottom:18px;
 }
-#sig-canvas {
-  display: block;
-  width: 100%;
-  cursor: crosshair;
-  touch-action: none;
+.recap-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:14px;
 }
-.sig-placeholder {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; color: #cbd5e1;
-  pointer-events: none;
-  transition: opacity .2s;
-}
-.sig-toolbar {
-  display: flex; justify-content: flex-end; gap: 8px;
-  padding: 10px 14px;
-  border-top: 1px solid var(--border);
-}
-.sig-clear {
-  padding: 7px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--white);
-  font-size: 13px; cursor: pointer;
-  color: var(--muted);
-  font-family: 'DM Sans', sans-serif;
-}
-
-.cgu-box {
-  background: #f8fafc;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-  font-size: 13px; color: var(--muted);
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-.cgu-box strong { color: var(--text); }
+.recap-row:last-child{border-bottom:none;}
+.recap-k{color:var(--gray);font-weight:500;}
+.recap-v{color:var(--black);font-weight:700;text-align:right;max-width:60%;}
 
 /* ══════════════════════════════════════
-   BOUTON FIXE EN BAS
+   FOOTER BUTTONS
 ══════════════════════════════════════ */
-.bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  background: var(--white);
-  border-top: 1px solid var(--border);
-  padding: 16px 20px;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
-  z-index: 20;
+.footer{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:16px 24px calc(16px + env(safe-area-inset-bottom));
+  background:rgba(245,245,247,.95);backdrop-filter:blur(20px);
+  border-top:1px solid rgba(0,0,0,.07);
+  display:none;gap:12px;
 }
-.btn-next {
-  width: 100%; padding: 18px;
-  background: var(--red);
-  color: #fff; border: none;
-  border-radius: 14px;
-  font-family: 'Syne', sans-serif;
-  font-size: 17px; font-weight: 700;
-  cursor: pointer;
-  transition: opacity .15s, transform .15s;
-  letter-spacing: .3px;
+.footer.show{display:flex;}
+.btn-next{
+  flex:1;padding:16px;border:none;border-radius:var(--rL);
+  background:linear-gradient(135deg,var(--red),var(--red-d));color:#fff;
+  font-size:16px;font-weight:800;cursor:pointer;letter-spacing:-.02em;
+  box-shadow:5px 5px 16px rgba(201,37,27,.38),-3px -3px 10px rgba(255,120,110,.15);
+  transition:.18s;
 }
-.btn-next:disabled { opacity: 0.4; }
-.btn-next:not(:disabled):active { transform: scale(.98); }
+.btn-next:active{transform:scale(.97);}
+.btn-next:disabled{background:var(--gray2);box-shadow:none;cursor:not-allowed;opacity:.7;}
 
 /* ══════════════════════════════════════
-   ÉCRAN SUCCÈS
+   LOADING + SUCCESS
 ══════════════════════════════════════ */
-#screen-success {
-  align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%);
-  padding: 40px 24px;
-  text-align: center;
+#scr-loading{justify-content:center;align-items:center;gap:18px;}
+.spinner{
+  width:52px;height:52px;
+  border:4px solid rgba(255,59,48,.15);border-top-color:var(--red);
+  border-radius:50%;animation:spin .9s linear infinite;
 }
-.success-icon {
-  width: 100px; height: 100px;
-  background: #16a34a;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 48px; margin: 0 auto 28px;
-  box-shadow: 0 16px 48px rgba(22,163,74,0.3);
-  animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
-}
-@keyframes popIn {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
-}
-.success-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 28px; font-weight: 800;
-  margin-bottom: 12px; color: var(--text);
-}
-.success-sub {
-  font-size: 16px; color: var(--muted);
-  line-height: 1.6; max-width: 320px; margin: 0 auto 40px;
-}
-.success-recap {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
-  text-align: left;
-  width: 100%; max-width: 360px;
-  margin: 0 auto 32px;
-}
-.recap-row {
-  display: flex; justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-.recap-row:last-child { border-bottom: none; }
-.recap-label { color: var(--muted); }
-.recap-val { font-weight: 600; text-align: right; max-width: 200px; }
-.btn-restart {
-  background: none; border: 2px solid var(--red);
-  border-radius: 12px; padding: 14px 32px;
-  color: var(--red);
-  font-family: 'Syne', sans-serif;
-  font-size: 15px; font-weight: 700;
-  cursor: pointer;
-}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-txt{font-size:15px;font-weight:600;color:var(--gray);}
 
-/* Loader */
-.loader-wrap {
-  display: flex; flex-direction: column;
-  align-items: center; gap: 16px;
-  padding: 40px;
+#scr-success{justify-content:center;align-items:center;gap:18px;text-align:center;}
+.ok-icon{
+  width:90px;height:90px;border-radius:28px;
+  background:linear-gradient(135deg,var(--green),#0d6627);
+  display:flex;align-items:center;justify-content:center;font-size:48px;
+  box-shadow:0 10px 30px rgba(26,138,54,.35);
+  animation:pop .5s cubic-bezier(.34,1.56,.64,1);
 }
-.spinner {
-  width: 48px; height: 48px;
-  border: 4px solid var(--border);
-  border-top-color: var(--red);
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
+@keyframes pop{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+.ok-title{font-size:26px;font-weight:900;letter-spacing:-.04em;}
+.ok-sub{font-size:14px;color:var(--gray);max-width:340px;line-height:1.5;}
+.ok-num{
+  background:var(--white);border-radius:var(--rL);padding:14px 32px;
+  box-shadow:var(--sh-card);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+.ok-num-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gray2);margin-bottom:4px;}
+.ok-num-val{font-size:24px;font-weight:900;color:var(--red);}
+.btn-restart{
+  padding:13px 32px;border:none;border-radius:var(--r);
+  background:var(--bg);font-size:14px;font-weight:700;color:var(--black);
+  cursor:pointer;box-shadow:var(--sh-out);transition:.18s;
+}
+.btn-restart:active{box-shadow:var(--sh-in);}
 
 /* ══════════════════════════════════════
-   MODE PAYSAGE — TABLETTE
-   Layout 2 colonnes : sidebar gauche fixe + contenu droit scrollable
+   RESPONSIVE TABLET
 ══════════════════════════════════════ */
-@media (orientation: landscape) {
-
-  /* Accueil : 2 colonnes */
-  #screen-home {
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 60px;
-    padding: 24px 60px;
-  }
-  #screen-home .home-logo { margin-bottom: 0; }
-  #screen-home .home-steps { margin-top: 20px; }
-  .home-left-ls {
-    display: flex; flex-direction: column;
-    align-items: flex-start; gap: 8px;
-    flex: 0 0 auto;
-  }
-  .home-right-ls {
-    display: flex; flex-direction: column;
-    align-items: flex-start;
-    max-width: 440px;
-  }
-  .home-icon { width: 72px; height: 72px; font-size: 34px; margin: 0 0 16px; }
-  .home-title { font-size: 28px; text-align: left; }
-  .home-sub { text-align: left; margin: 0 0 28px; }
-  .btn-start { align-self: flex-start; }
-
-  /* Écrans formulaires : header compact + layout 2 cols */
-  .page-header { padding: 10px 20px; }
-  .header-logo { font-size: 15px; }
-  .header-step { font-size: 12px; }
-
-  /* Structure 2 colonnes en paysage */
-  .screen.active:not(#screen-home):not(#screen-success):not(#screen-loading) {
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-  }
-  .ls-layout {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-  /* Sidebar gauche */
-  .ls-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    background: var(--white);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    padding: 24px 24px 20px;
-    justify-content: space-between;
-  }
-  .ls-sidebar-top { display: flex; flex-direction: column; gap: 12px; }
-  .ls-sidebar .section-title { font-size: 20px; margin-bottom: 0; }
-  .ls-sidebar .section-sub { font-size: 13px; margin-bottom: 0; }
-  .ls-step-indicator {
-    display: flex; flex-direction: column; gap: 8px;
-    margin-top: 8px;
-  }
-  .ls-step-item {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: var(--muted); font-weight: 500;
-  }
-  .ls-step-item.done { color: var(--success); }
-  .ls-step-item.current { color: var(--text); font-weight: 700; }
-  .ls-step-num {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--border); display: flex; align-items: center;
-    justify-content: center; font-size: 12px; font-weight: 700;
-    flex-shrink: 0;
-  }
-  .ls-step-item.done .ls-step-num { background: var(--success); color: #fff; }
-  .ls-step-item.current .ls-step-num { background: var(--red); color: #fff; }
-  /* Bouton dans la sidebar */
-  .ls-btn {
-    width: 100%; padding: 16px;
-    background: var(--red); color: #fff; border: none;
-    border-radius: 12px;
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 700;
-    cursor: pointer; transition: opacity .15s;
-    letter-spacing: .3px;
-  }
-  .ls-btn:disabled { opacity: 0.4; }
-  /* Contenu droit scrollable */
-  .ls-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 28px 20px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .ls-content .form-body {
-    padding: 0;
-    max-width: 100%;
-  }
-  /* Cacher le header de section et bottom-bar — gérés par la sidebar */
-  .ls-content .section-title,
-  .ls-content .section-sub { display: none; }
-  .bottom-bar { display: none; }
-
-  /* Pannes : 2 colonnes en paysage */
-  .panne-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .panne-item { padding: 10px 12px; }
-  .panne-icon { font-size: 18px; }
-  .panne-label { font-size: 13px; }
-
-  /* Marques : 3 colonnes plus compact */
-  .brand-grid { grid-template-columns: repeat(6, 1fr); gap: 8px; }
-  .brand-btn { padding: 10px 6px; font-size: 12px; }
-  .brand-btn .brand-icon { font-size: 18px; margin-bottom: 2px; }
-
-  /* Signature en paysage : canvas plus haut */
-  #sig-canvas { height: 100%; }
-  .signature-wrapper { height: calc(100vh - 200px); min-height: 180px; }
-  .sig-placeholder { font-size: 20px; }
-
-  /* Champs plus compacts */
-  .field input, .field select, .field textarea {
-    padding: 11px 14px;
-    font-size: 15px;
-  }
-  .field { margin-bottom: 12px; }
-  .civ-btn { padding: 10px; font-size: 15px; }
-  .cgu-box { padding: 12px; font-size: 12px; margin-bottom: 12px; }
-
-  /* Succès en paysage */
-  #screen-success {
-    flex-direction: row;
-    gap: 40px;
-    padding: 24px 60px;
-    align-items: center;
-    justify-content: center;
-  }
-  #screen-success .success-icon { margin: 0; }
-  .success-right-ls { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-  .success-title { margin-bottom: 0; }
-  .success-sub { text-align: left; margin: 0; }
+@media(max-width:700px){
+  .flux-grid{grid-template-columns:1fr;}
+  .brand-grid{grid-template-columns:repeat(2,1fr);}
+  .panne-grid{grid-template-columns:repeat(2,1fr);}
+  .row.c2,.row.c3{grid-template-columns:1fr;}
+  .scr{padding:20px 16px 100px;}
 }
-
-/* ══ SCREENSAVER CYBERPUNK PAYSAGE ══ */
-#ss-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: #060608;
-  display: flex; flex-direction: column;
-  overflow: hidden;
-  transition: opacity 0.7s ease;
-  cursor: pointer;
-}
-#ss-overlay.ss-hiding  { opacity: 0; pointer-events: none; }
-#ss-overlay.ss-hidden  { display: none; }
-
-/* Grille néon */
-#ss-overlay::before {
-  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-}
-/* Scanlines */
-#ss-overlay::after {
-  content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
-  background: repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(0,0,0,0.16) 3px,rgba(0,0,0,0.16) 4px);
-}
-.ss-bg-glow {
-  position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background:
-    radial-gradient(ellipse 50% 70% at 12% 50%, rgba(229,62,62,0.13) 0%, transparent 65%),
-    radial-gradient(ellipse 40% 60% at 88% 50%, rgba(0,212,255,0.07) 0%, transparent 60%);
-}
-#ss-canvas-particles { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
-
-/* Layout 2 colonnes — plus de place à gauche */
-.ss-layout {
-  position: relative; z-index: 10;
-  display: grid;
-  grid-template-columns: 52% 48%;
-  align-items: center;
-  width: 100%;
-  height: calc(100% - 36px); /* laisser place au ticker */
-  padding: 20px 32px 70px 32px; /* padding bottom pour QR centré */
-  gap: 16px;
-}
-
-/* Coins déco */
-.ss-corner {
-  position: absolute; z-index: 15;
-  width: 36px; height: 36px;
-  border-color: rgba(229,62,62,0.45); border-style: solid;
-}
-.ss-corner.tl { top:12px; left:12px; border-width:2px 0 0 2px; }
-.ss-corner.tr { top:12px; right:12px; border-width:2px 2px 0 0; }
-.ss-corner.bl { bottom:40px; left:12px; border-width:0 0 2px 2px; }
-.ss-corner.br { bottom:40px; right:12px; border-width:0 2px 2px 0; }
-
-/* ── COLONNE GAUCHE ── */
-.ss-left {
-  display: flex; flex-direction: column;
-  justify-content: center; gap: 10px;
-}
-.ss-logo {
-  font-family: 'Orbitron', monospace;
-  font-size: clamp(9px,1.3vw,11px); font-weight:700;
-  letter-spacing: 5px; text-transform: uppercase;
-  color: rgba(0,212,255,0.7);
-}
-.ss-logo span { color: rgba(229,62,62,0.8); }
-
-/* Headline — taille réduite pour tenir sur 2 lignes */
-.ss-h1 {
-  font-family: 'Orbitron', monospace;
-  font-size: clamp(24px,4.2vw,44px);
-  font-weight: 900; line-height: 1.08;
-  text-transform: uppercase; letter-spacing: 1px;
-  color: #fff;
-  animation: ss-glitch 8s ease-in-out infinite;
-}
-.ss-h1 .cy { color: #00d4ff; text-shadow: 0 0 18px rgba(0,212,255,0.8); }
-.ss-h1 .rd { color: #e53e3e; text-shadow: 0 0 18px rgba(229,62,62,0.8); }
-@keyframes ss-glitch {
-  0%,90%,100% { transform:translate(0); filter:none; }
-  91% { transform:translate(-3px,1px); filter:hue-rotate(80deg); }
-  92% { transform:translate(3px,-1px); }
-  93% { transform:translate(-2px,0); filter:hue-rotate(-80deg); }
-  94% { transform:translate(0); filter:none; }
-}
-
-.ss-sep {
-  width: 50px; height: 2px;
-  background: linear-gradient(90deg,#e53e3e,#00d4ff);
-  box-shadow: 0 0 8px rgba(229,62,62,0.5);
-  margin: 2px 0;
-}
-.ss-sub {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: clamp(13px,2vw,17px); font-weight: 500;
-  color: rgba(255,255,255,0.5); line-height: 1.6;
-}
-.ss-sub strong { color: rgba(0,212,255,0.9); font-weight:700; }
-
-.ss-steps { display:flex; flex-direction:column; gap:7px; }
-.ss-step {
-  display:flex; align-items:center; gap:10px;
-  font-size:clamp(13px,1.8vw,16px); font-weight:600;
-  color:rgba(255,255,255,0.7);
-  font-family:'Rajdhani',sans-serif;
-}
-.ss-step-num {
-  width:clamp(24px,3.5vw,30px); height:clamp(24px,3.5vw,30px);
-  background:rgba(229,62,62,0.12); border:1.5px solid rgba(229,62,62,0.5);
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  font-family:'Orbitron',monospace; font-size:clamp(10px,1.4vw,13px); font-weight:700;
-  color:#e53e3e; flex-shrink:0;
-  box-shadow:0 0 8px rgba(229,62,62,0.3);
-}
-
-/* ── QR CODE — CENTRÉ EN BAS ── */
-.ss-qr-center {
-  position: absolute;
-  bottom: 44px;          /* juste au-dessus du ticker */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.ss-qr-frame {
-  position: relative; padding: 8px;
-  background: rgba(0,0,0,0.7);
-  border: 1px solid rgba(0,212,255,0.3);
-  border-radius: 10px;
-  animation: ss-qr-glow 3s ease-in-out infinite;
-  flex-shrink: 0;
-}
-@keyframes ss-qr-glow {
-  0%,100%{ border-color:rgba(0,212,255,0.3); box-shadow:0 0 8px rgba(0,212,255,0.1); }
-  50%    { border-color:rgba(0,212,255,0.7); box-shadow:0 0 18px rgba(0,212,255,0.35); }
-}
-.ss-qr-frame::before {
-  content:''; position:absolute; top:-1px; left:-1px;
-  width:12px; height:12px;
-  border:2px solid #00d4ff; border-right:none; border-bottom:none;
-}
-.ss-qr-frame::after {
-  content:''; position:absolute; bottom:-1px; right:-1px;
-  width:12px; height:12px;
-  border:2px solid #00d4ff; border-left:none; border-top:none;
-}
-.ss-qr-img {
-  width: clamp(80px,10vw,110px);
-  height: clamp(80px,10vw,110px);
-  display: block; border-radius: 4px;
-}
-.ss-qr-text {
-  display:flex; flex-direction:column; gap:4px;
-}
-.ss-scan-big {
-  font-family:'Orbitron',monospace;
-  font-size:clamp(13px,2vw,18px); font-weight:700;
-  color:#fff; letter-spacing:1px; line-height:1.2;
-}
-.ss-scan-big .blink { color:#00d4ff; animation:ss-blink 1.5s ease-in-out infinite; }
-@keyframes ss-blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
-.ss-url {
-  font-family:'Rajdhani',sans-serif;
-  font-size:clamp(10px,1.3vw,12px);
-  color:rgba(229,62,62,0.55); font-weight:500; letter-spacing:0.5px;
-}
-.ss-touch-hint {
-  font-family:'Rajdhani',sans-serif;
-  font-size:clamp(10px,1.3vw,12px); font-weight:600;
-  letter-spacing:3px; text-transform:uppercase;
-  color:rgba(255,255,255,0.2);
-  animation:ss-blink 3s ease-in-out infinite;
-  margin-top:2px;
-}
-
-/* ── COLONNE DROITE — ROUE ── */
-.ss-right {
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:12px;
-}
-.ss-wheel-zone {
-  position:relative;
-  width:min(310px,42vw); height:min(310px,42vw);
-  flex-shrink:0;
-}
-#ss-wheel-canvas {
-  width:100%; height:100%; border-radius:50%; display:block;
-  box-shadow:
-    0 0 0 3px rgba(229,62,62,0.2),
-    0 0 60px rgba(229,62,62,0.3),
-    0 0 0 8px rgba(229,62,62,0.05);
-  animation:ss-wglow 3s ease-in-out infinite;
-}
-@keyframes ss-wglow {
-  0%,100%{ box-shadow:0 0 0 3px rgba(229,62,62,0.2),0 0 60px rgba(229,62,62,0.3); }
-  50%    { box-shadow:0 0 0 5px rgba(229,62,62,0.3),0 0 90px rgba(229,62,62,0.5); }
-}
-.ss-ptr {
-  position:absolute; right:-22px; top:50%;
-  transform:translateY(-50%); z-index:20;
-  filter:drop-shadow(0 0 8px rgba(229,62,62,1));
-}
-.ss-hub {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:min(50px,6.5vw); height:min(50px,6.5vw);
-  background:radial-gradient(circle,#1a1a2e,#060608);
-  border:2.5px solid #e53e3e; border-radius:50%; z-index:15;
-  display:flex; align-items:center; justify-content:center;
-  font-size:min(18px,2.5vw);
-  box-shadow:0 0 20px rgba(229,62,62,0.6),0 0 0 4px rgba(229,62,62,0.1);
-}
-.ss-spin-label {
-  font-family:'Orbitron',monospace;
-  font-size:clamp(9px,1.4vw,12px); font-weight:700;
-  letter-spacing:3px; text-transform:uppercase;
-  color:rgba(0,212,255,0.55); text-align:center;
-}
-
-/* Ticker */
-.ss-ticker {
-  position:absolute; bottom:0; left:0; right:0;
-  height:36px; z-index:20;
-  background:rgba(40,5,5,0.9);
-  border-top:1px solid rgba(229,62,62,0.3);
-  overflow:hidden; display:flex; align-items:center;
-}
-.ss-ticker-inner,.ss-ticker-inner2 {
-  display:flex; align-items:center; gap:28px;
-  white-space:nowrap; font-family:'Rajdhani',sans-serif;
-  font-size:13px; font-weight:600; color:rgba(255,255,255,0.55);
-  flex-shrink:0;
-}
-.ss-ticker-inner  { animation:ss-tick 24s linear infinite; }
-.ss-ticker-inner2 { animation:ss-tick 24s linear infinite -12s; }
-@keyframes ss-tick { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
-.ss-ticker-sep { color:rgba(229,62,62,0.5); }
-
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     ÉCRAN 0 — ACCUEIL
-══════════════════════════════════════ -->
-<!-- ══ SCREENSAVER CYBERPUNK ══ -->
-<div id="ss-overlay" onclick="ssDismiss()">
-  <div class="ss-bg-glow"></div>
-  <canvas id="ss-canvas-particles"></canvas>
-
-  <div class="ss-corner tl"></div>
-  <div class="ss-corner tr"></div>
-  <div class="ss-corner bl"></div>
-  <div class="ss-corner br"></div>
-
-  <div class="ss-layout">
-    <!-- GAUCHE -->
-    <div class="ss-left">
-      <div class="ss-logo">Solution <span>Phone</span> · Mâcon</div>
-      <div class="ss-h1">TENTEZ VOTRE<br><span class="rd">CHANCE</span> <span class="cy">!</span></div>
-      <div class="ss-sep"></div>
-      <div class="ss-sub">
-        Laissez un avis Google ★★★★★<br>
-        et gagnez un cadeau <strong>GRATUIT</strong>
-      </div>
-      <div class="ss-steps">
-        <div class="ss-step"><div class="ss-step-num">1</div>Laissez un avis Google</div>
-        <div class="ss-step"><div class="ss-step-num">2</div>Revenez sur cette page</div>
-        <div class="ss-step"><div class="ss-step-num">3</div>Tournez la roue !</div>
-      </div>
-    </div>
-
-    <!-- DROITE : roue -->
-    <div class="ss-right">
-      <div class="ss-wheel-zone">
-        <svg class="ss-ptr" width="28" height="22" viewBox="0 0 28 22">
-          <defs><linearGradient id="ss-pg" x1="1" y1="0" x2="0" y2="0">
-            <stop offset="0%" stop-color="#ff6666"/>
-            <stop offset="100%" stop-color="#c0392b"/>
-          </linearGradient></defs>
-          <polygon points="0,11 26,2 26,20" fill="url(#ss-pg)"/>
-          <circle cx="22" cy="11" r="4.5" fill="#fff" opacity="0.9"/>
-        </svg>
-        <canvas id="ss-wheel-canvas"></canvas>
-        <div class="ss-hub">⭐</div>
-      </div>
-      <div class="ss-spin-label">◀ ROUE DES CADEAUX ▶</div>
-    </div>
+<!-- ═══ SCREENSAVER ═══ -->
+<div id="ss" onclick="startApp()">
+  <div class="ss-icon">📱</div>
+  <div>
+    <div class="ss-name">Solution Phone</div>
+    <div class="ss-city">Mâcon · Réparation &amp; Accessoires</div>
   </div>
-
-  <!-- QR CODE CENTRÉ EN BAS -->
-  <div class="ss-qr-center">
-    <div class="ss-qr-frame">
-      <img class="ss-qr-img"
-        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://solution-phone.fr/roulette.html&bgcolor=000000&color=ffffff&format=png&qzone=1"
-        alt="QR Roulette">
-    </div>
-    <div class="ss-qr-text">
-      <div class="ss-scan-big">SCANNEZ POUR<br><span class="blink">JOUER !</span></div>
-      <div class="ss-url">solution-phone.fr/roulette.html</div>
-      <div class="ss-touch-hint">[ TOUCHEZ L'ÉCRAN POUR DÉPOSER VOTRE APPAREIL ]</div>
-    </div>
-  </div>
-
-  <!-- Ticker -->
-  <div class="ss-ticker">
-    <div class="ss-ticker-inner">
-    <span>🛡️ Protection d'écran offerte</span><span class="ss-ticker-sep">◆</span>
-    <span>🎁 Housse de protection offerte</span><span class="ss-ticker-sep">◆</span>
-    <span>🔌 Câble de charge offert</span><span class="ss-ticker-sep">◆</span>
-    <span>🧴 Nettoyant écran offert</span><span class="ss-ticker-sep">◆</span>
-    <span>⚡ -10% sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
-    <span>💶 -5€ sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
-</div>
-    <div class="ss-ticker-inner2" aria-hidden="true">
-    <span>🛡️ Protection d'écran offerte</span><span class="ss-ticker-sep">◆</span>
-    <span>🎁 Housse de protection offerte</span><span class="ss-ticker-sep">◆</span>
-    <span>🔌 Câble de charge offert</span><span class="ss-ticker-sep">◆</span>
-    <span>🧴 Nettoyant écran offert</span><span class="ss-ticker-sep">◆</span>
-    <span>⚡ -10% sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
-    <span>💶 -5€ sur votre prochaine réparation</span><span class="ss-ticker-sep">◆</span>
-</div>
-  </div>
-</div>
-<!-- ══ FIN SCREENSAVER ══ -->
-<div id="screen-home" class="screen active">
-  <div class="home-left-ls">
-    <div class="home-logo">Solution Phone · Mâcon</div>
-    <div class="home-steps" style="margin-top:16px;">
-      <div class="step-dot on"></div><div class="step-dot"></div>
-      <div class="step-dot"></div><div class="step-dot"></div>
-    </div>
-  </div>
-  <div class="home-right-ls">
-    <div class="home-icon">🔧</div>
-    <div class="home-title">Bienvenue !<br>Déposez votre appareil</div>
-    <div class="home-sub">Remplissez ce formulaire en quelques secondes pour déposer votre appareil en réparation.</div>
-    <button class="btn-start" onclick="goScreen('screen-client')">Commencer →</button>
-  </div>
+  <div class="ss-tap">Toucher pour commencer</div>
 </div>
 
-<!-- ══════════════════════════════════════
-     ÉCRAN 1 — COORDONNÉES CLIENT
-══════════════════════════════════════ -->
-<div id="screen-client" class="screen">
-  <div class="page-header">
-    <div class="header-logo">Solution Phone</div>
-    <div class="header-step">Étape 1 / 3</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" style="width:33%"></div></div>
-  <div class="ls-layout">
-  <div class="ls-sidebar">
-    <div class="ls-sidebar-top">
-      <div class="section-title" style="display:block!important;">Vos coordonnées</div>
-      <div class="section-sub" style="display:block!important;">Informations confidentielles</div>
-      <div class="ls-step-indicator">
-        <div class="ls-step-item current"><div class="ls-step-num">1</div>Coordonnées</div>
-        <div class="ls-step-item"><div class="ls-step-num">2</div>Appareil</div>
-        <div class="ls-step-item"><div class="ls-step-num">3</div>Signature</div>
+<!-- ═══ APP ═══ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="hdr">
+    <div class="hdr-left">
+      <button id="btn-back" onclick="goBack()">← Retour</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="hdr-icon">📱</div>
+        <div>
+          <div class="hdr-title">Solution Phone</div>
+          <div class="hdr-sub" id="hdr-step">Étape 1 sur 4</div>
+        </div>
       </div>
     </div>
-    <button class="ls-btn" id="btn-client-ls" onclick="goScreen('screen-appareil')" disabled>Continuer →</button>
-  </div>
-  <div class="ls-content">
-  <div class="form-body">
-    <div class="section-title">Vos coordonnées</div>
-    <div class="section-sub">Ces informations resteront confidentielles.</div>
-
-    <div class="civ-group">
-      <button class="civ-btn" id="civ-m" onclick="setCiv('M.')">M.</button>
-      <button class="civ-btn" id="civ-mme" onclick="setCiv('Mme')">Mme</button>
-    </div>
-
-    <div class="field-grid g2" style="margin-bottom:18px;">
-      <div class="field">
-        <label>Nom <span class="req">*</span></label>
-        <input type="text" id="cl-nom" placeholder="Dupont" autocomplete="family-name" oninput="checkClient()">
-      </div>
-      <div class="field">
-        <label>Prénom <span class="req">*</span></label>
-        <input type="text" id="cl-prenom" placeholder="Jean" autocomplete="given-name" oninput="checkClient()">
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Téléphone <span class="req">*</span></label>
-      <input type="tel" id="cl-tel" placeholder="06 XX XX XX XX" inputmode="tel" autocomplete="tel" oninput="formatTel(this);checkClient()">
-    </div>
-
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="cl-email" placeholder="exemple@gmail.com" inputmode="email" autocomplete="email">
-      <div class="field-hint">📧 Pour recevoir votre facture</div>
-    </div>
-
-    <div class="field">
-      <label>Adresse</label>
-      <input type="text" id="cl-adresse" placeholder="12 rue de la Paix" autocomplete="street-address">
-    </div>
-
-    <div class="field-grid g-cp">
-      <div class="field">
-        <label>Code postal</label>
-        <input type="text" id="cl-cp" placeholder="71000" inputmode="numeric" maxlength="5">
-      </div>
-      <div class="field">
-        <label>Ville</label>
-        <input type="text" id="cl-ville" placeholder="Mâcon" autocomplete="address-level2">
-      </div>
+    <div class="dots" id="dots">
+      <div class="dot active" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+      <div class="dot" id="d4"></div>
     </div>
   </div>
 
-  <div class="bottom-bar">
-    <button class="btn-next" id="btn-client" onclick="goScreen('screen-appareil')" disabled>
-      Continuer →
+  <!-- ─── STEP 1 : CHOIX FLUX ─── -->
+  <div class="scr" id="scr-flux">
+    <div class="scr-title">Que souhaitez-vous ?</div>
+    <div class="scr-sub">Choisissez votre parcours pour commencer</div>
+    <div class="flux-grid">
+      <button class="flux-btn flux-rep" onclick="choisirFlux('reparation')">
+        <div class="flux-ico">🔧</div>
+        <div class="flux-label">Réparation</div>
+        <div class="flux-desc">Écran, batterie, connecteur…</div>
+      </button>
+      <button class="flux-btn flux-acc" onclick="choisirFlux('accessoire')">
+        <div class="flux-ico">🛍️</div>
+        <div class="flux-label">Accessoire</div>
+        <div class="flux-desc">Coque, verre trempé, chargeur…</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2A : IDENTITÉ RÉPARATION ─── -->
+  <div class="scr" id="scr-id-rep">
+    <div class="scr-title">Vos coordonnées</div>
+    <div class="scr-sub">Toutes les informations pour votre dossier de réparation</div>
+    <div class="civ-row">
+      <button class="civ-btn" id="civ-m" onclick="setCiv('M.')">👨 M.</button>
+      <button class="civ-btn" id="civ-mme" onclick="setCiv('Mme')">👩 Mme</button>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="r-nom" placeholder="Dupont" autocomplete="family-name" oninput="checkStep2R()"></div>
+      <div class="fld"><label class="lbl">Prénom</label><input class="inp" type="text" id="r-prenom" placeholder="Jean" autocomplete="given-name"></div>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Téléphone *</label><input class="inp" type="tel" id="r-tel" placeholder="06 XX XX XX XX" inputmode="tel" oninput="checkStep2R()"></div>
+      <div class="fld"><label class="lbl">Email</label><input class="inp" type="email" id="r-email" placeholder="exemple@gmail.com" inputmode="email"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Adresse <span style="color:var(--gray2);font-weight:400;">(optionnel)</span></label><input class="inp" type="text" id="r-adresse" placeholder="12 rue de la Paix"></div>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Code postal</label><input class="inp" type="text" id="r-cp" placeholder="71000" inputmode="numeric"></div>
+      <div class="fld"><label class="lbl">Ville</label><input class="inp" type="text" id="r-ville" placeholder="Mâcon"></div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2B : IDENTITÉ ACCESSOIRE ─── -->
+  <div class="scr" id="scr-id-acc">
+    <div class="scr-title">Vos coordonnées</div>
+    <div class="scr-sub">Les informations essentielles pour votre commande</div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="a-nom" placeholder="Dupont" oninput="checkStep2A()"></div>
+      <div class="fld"><label class="lbl">Prénom</label><input class="inp" type="text" id="a-prenom" placeholder="Jean"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Téléphone *</label><input class="inp" type="tel" id="a-tel" placeholder="06 XX XX XX XX" inputmode="tel" oninput="checkStep2A()"></div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3A : RÉPARATION — Marque + Panne ─── -->
+  <div class="scr" id="scr-rep">
+    <div class="scr-title">Votre appareil</div>
+    <div class="scr-sub">Sélectionnez la marque puis le type de panne</div>
+
+    <div class="lbl" style="margin-bottom:10px;">Marque *</div>
+    <div class="brand-grid">
+      <button class="brand-btn" onclick="setBrand('Apple')" id="bb-Apple">
+        <div class="brand-logo">
+          <svg width="36" height="44" viewBox="0 0 814 1000">
+            <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-97.4C46.7 790 0 684 0 590.3 0 374.2 138.8 256 275.6 256c63.6 0 116.6 41.8 156.1 41.8 37.5 0 98.3-44.8 168.2-44.8 27.2 0 125.2 4.5 197.7 97.4zm-192.4-84.5c-29.6 34.4-79.3 61.1-129 57.3-6.4-49.7 18.1-102.3 45.3-134.8C541 146 596.9 118 641.4 116c5.8 51.3-15.4 101.9-45.7 140.4z" fill="#1d1d1f"/>
+          </svg>
+        </div>
+        <div class="brand-name">Apple</div>
+      </button>
+      <button class="brand-btn" onclick="setBrand('Samsung')" id="bb-Samsung">
+        <div class="brand-logo">
+          <svg viewBox="0 0 430 80" height="28" width="100%">
+            <text x="5" y="68" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1428A0">Samsung</text>
+          </svg>
+        </div>
+        <div class="brand-name">Samsung</div>
+      </button>
+      <button class="brand-btn" onclick="setBrand('Huawei')" id="bb-Huawei">
+        <div class="brand-logo">
+          <svg width="44" height="44" viewBox="0 0 100 100">
+            <path d="M50 8 L62 36 L92 36 L70 54 L78 82 L50 66 L22 82 L30 54 L8 36 L38 36 Z" fill="#CF0A2C" opacity=".9"/>
+          </svg>
+        </div>
+        <div class="brand-name">Huawei</div>
+      </button>
+      <button class="brand-btn" onclick="setBrand('Xiaomi')" id="bb-Xiaomi">
+        <div class="brand-logo">
+          <svg viewBox="0 0 100 65" height="28" width="60">
+            <rect x="0"  y="0" width="27" height="65" rx="4" fill="#FF6900"/>
+            <rect x="36" y="0" width="27" height="65" rx="4" fill="#FF6900"/>
+            <rect x="72" y="0" width="27" height="65" rx="4" fill="#FF6900"/>
+          </svg>
+        </div>
+        <div class="brand-name">Xiaomi</div>
+      </button>
+      <button class="brand-btn" onclick="setBrand('Google')" id="bb-Google">
+        <div class="brand-logo">
+          <svg viewBox="0 0 48 48" height="36" width="36">
+            <path fill="#4285F4" d="M43.6 20H24v8h11.3C33.8 33 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8 13.4 4.8 4.8 13.4 4.8 24S13.4 43.2 24 43.2c11 0 19.2-7.7 19.2-19.2 0-1.1-.1-2.1-.4-4z"/>
+            <path fill="#EA4335" d="M6.3 14.7l6.6 4.8C14.5 15.8 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8c-7.7 0-14.3 4.3-17.7 10z"/>
+            <path fill="#34A853" d="M24 43.2c5.1 0 9.7-1.7 13.3-4.5l-6.1-5.2C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3-11.3-7.4L6 33.5c3.3 5.8 9.8 9.7 18 9.7z"/>
+            <path fill="#FBBC05" d="M43.2 24c0-1.1-.1-2.1-.4-4H24v8h11.3c-.8 2.1-2.2 3.9-4 5.3l6.1 5.2c3.6-3.3 5.8-8.2 5.8-14.5z"/>
+          </svg>
+        </div>
+        <div class="brand-name">Google</div>
+      </button>
+      <button class="brand-btn" onclick="setBrand('Autre')" id="bb-Autre">
+        <div class="brand-logo"><span style="font-size:34px;">📱</span></div>
+        <div class="brand-name">Autre</div>
+      </button>
+    </div>
+
+    <div class="fld" style="margin-bottom:18px;">
+      <label class="lbl">Modèle *</label>
+      <input class="inp" type="text" id="r-modele" placeholder="ex: iPhone 15 Pro, Galaxy S24..." oninput="checkStep3R()">
+    </div>
+
+    <div class="lbl" style="margin-bottom:10px;">Type de panne *</div>
+    <div class="panne-grid">
+      <button class="panne-btn" onclick="setPanne('Écran cassé / Tactile')" id="pr-ecran"><div class="panne-ico">📱</div><div class="panne-label">Écran</div></button>
+      <button class="panne-btn" onclick="setPanne('Batterie')" id="pr-bat"><div class="panne-ico">🔋</div><div class="panne-label">Batterie</div></button>
+      <button class="panne-btn" onclick="setPanne('Connecteur de charge')" id="pr-charge"><div class="panne-ico">⚡</div><div class="panne-label">Connecteur charge</div></button>
+      <button class="panne-btn" onclick="setPanne('Vitre arrière')" id="pr-vitre"><div class="panne-ico">💎</div><div class="panne-label">Vitre arrière</div></button>
+      <button class="panne-btn" onclick="setPanne('Appareil photo')" id="pr-cam"><div class="panne-ico">📸</div><div class="panne-label">Appareil photo</div></button>
+      <button class="panne-btn" onclick="setPanne('Flash / Réinitialisation')" id="pr-flash"><div class="panne-ico">⚙️</div><div class="panne-label">Flash / Réinit.</div></button>
+      <button class="panne-btn" onclick="setPanne('Son / Micro')" id="pr-son"><div class="panne-ico">🔊</div><div class="panne-label">Son / Micro</div></button>
+      <button class="panne-btn" onclick="toggleAutrePanne()" id="pr-autre"><div class="panne-ico">➕</div><div class="panne-label">Autre</div></button>
+    </div>
+    <div class="autre-wrap" id="autre-panne-wrap">
+      <div class="fld"><label class="lbl">Précisez la panne *</label>
+        <input class="inp" type="text" id="autre-panne-inp" placeholder="Décrivez le problème…" oninput="setPanneLibre(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3B : ACCESSOIRE — Marque + Type ─── -->
+  <div class="scr" id="scr-acc">
+    <div class="scr-title">L'accessoire souhaité</div>
+    <div class="scr-sub">Marque du téléphone et type d'accessoire</div>
+
+    <div class="lbl" style="margin-bottom:10px;">Marque du téléphone *</div>
+    <div class="brand-grid" id="brand-grid-acc">
+      <button class="brand-btn" onclick="setBrandAcc('Apple')" id="ba-Apple">
+        <div class="brand-logo"><svg width="36" height="44" viewBox="0 0 814 1000"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-97.4C46.7 790 0 684 0 590.3 0 374.2 138.8 256 275.6 256c63.6 0 116.6 41.8 156.1 41.8 37.5 0 98.3-44.8 168.2-44.8 27.2 0 125.2 4.5 197.7 97.4zm-192.4-84.5c-29.6 34.4-79.3 61.1-129 57.3-6.4-49.7 18.1-102.3 45.3-134.8C541 146 596.9 118 641.4 116c5.8 51.3-15.4 101.9-45.7 140.4z" fill="#1d1d1f"/></svg></div>
+        <div class="brand-name">Apple</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandAcc('Samsung')" id="ba-Samsung">
+        <div class="brand-logo"><svg viewBox="0 0 430 80" height="28" width="100%"><text x="5" y="68" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1428A0">Samsung</text></svg></div>
+        <div class="brand-name">Samsung</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandAcc('Huawei')" id="ba-Huawei">
+        <div class="brand-logo"><svg width="44" height="44" viewBox="0 0 100 100"><path d="M50 8 L62 36 L92 36 L70 54 L78 82 L50 66 L22 82 L30 54 L8 36 L38 36 Z" fill="#CF0A2C" opacity=".9"/></svg></div>
+        <div class="brand-name">Huawei</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandAcc('Xiaomi')" id="ba-Xiaomi">
+        <div class="brand-logo"><svg viewBox="0 0 100 65" height="28" width="60"><rect x="0" y="0" width="27" height="65" rx="4" fill="#FF6900"/><rect x="36" y="0" width="27" height="65" rx="4" fill="#FF6900"/><rect x="72" y="0" width="27" height="65" rx="4" fill="#FF6900"/></svg></div>
+        <div class="brand-name">Xiaomi</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandAcc('Google')" id="ba-Google">
+        <div class="brand-logo"><svg viewBox="0 0 48 48" height="36" width="36"><path fill="#4285F4" d="M43.6 20H24v8h11.3C33.8 33 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8 13.4 4.8 4.8 13.4 4.8 24S13.4 43.2 24 43.2c11 0 19.2-7.7 19.2-19.2 0-1.1-.1-2.1-.4-4z"/><path fill="#EA4335" d="M6.3 14.7l6.6 4.8C14.5 15.8 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8c-7.7 0-14.3 4.3-17.7 10z"/><path fill="#34A853" d="M24 43.2c5.1 0 9.7-1.7 13.3-4.5l-6.1-5.2C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3-11.3-7.4L6 33.5c3.3 5.8 9.8 9.7 18 9.7z"/></svg></div>
+        <div class="brand-name">Google</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandAcc('Universel')" id="ba-Universel">
+        <div class="brand-logo"><span style="font-size:34px;">🔌</span></div>
+        <div class="brand-name">Universel</div>
+      </button>
+    </div>
+
+    <div class="fld" style="margin-bottom:18px;">
+      <label class="lbl">Modèle *</label>
+      <input class="inp" type="text" id="a-modele" placeholder="ex: iPhone 15, Galaxy S24…" oninput="checkStep3A()">
+    </div>
+
+    <div class="lbl" style="margin-bottom:10px;">Type d'accessoire *</div>
+    <div class="panne-grid">
+      <button class="panne-btn" onclick="setTypeAcc('Coque de protection')" id="ta-coque"><div class="panne-ico">🛡️</div><div class="panne-label">Coque</div></button>
+      <button class="panne-btn" onclick="setTypeAcc('Verre trempé')" id="ta-verre"><div class="panne-ico">🔍</div><div class="panne-label">Verre trempé</div></button>
+      <button class="panne-btn" onclick="setTypeAcc('Chargeur / Câble')" id="ta-charge"><div class="panne-ico">🔌</div><div class="panne-label">Chargeur</div></button>
+      <button class="panne-btn" onclick="toggleAutreAcc()" id="ta-autre"><div class="panne-ico">➕</div><div class="panne-label">Autre</div></button>
+    </div>
+    <div class="autre-wrap" id="autre-acc-wrap">
+      <div class="fld"><label class="lbl">Précisez *</label>
+        <input class="inp" type="text" id="autre-acc-inp" placeholder="Nom de l'accessoire…" oninput="setTypeAccLibre(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4A : SIGNATURE (Réparation) ─── -->
+  <div class="scr" id="scr-sig">
+    <div class="scr-title">Récap &amp; Signature</div>
+    <div class="scr-sub">Vérifiez votre dossier et signez pour valider</div>
+    <div class="recap" id="recap-rep"></div>
+    <div class="lbl" style="margin-bottom:8px;">Signature *</div>
+    <div class="sig-wrap">
+      <canvas id="sig-canvas"></canvas>
+      <div class="sig-foot">
+        <span class="sig-hint">Signez avec votre doigt</span>
+        <button class="btn-sig-clear" onclick="clearSig()">🗑️ Effacer</button>
+      </div>
+    </div>
+    <div class="consent">
+      <button class="consent-chk" id="consent-chk" onclick="toggleConsent()"></button>
+      <div class="consent-txt">Je certifie que l'appareil est <b>hors garantie</b> et consens à la réparation.<br>Solution Phone — <b>SIRET 801 044 785 00021</b> — QualiRépar certifié</div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4B : PRIX (Accessoire) ─── -->
+  <div class="scr" id="scr-prix">
+    <div class="scr-title">Montant &amp; Paiement</div>
+    <div class="scr-sub">Entrez le prix de l'accessoire</div>
+    <div class="recap" id="recap-acc"></div>
+    <div class="price-display">
+      <div class="price-label">Montant</div>
+      <div class="price-val" id="price-val">0<span class="price-unit"> €</span></div>
+    </div>
+    <div class="numpad" id="numpad">
+      <button class="num-btn" onclick="numPress('1')">1</button>
+      <button class="num-btn" onclick="numPress('2')">2</button>
+      <button class="num-btn" onclick="numPress('3')">3</button>
+      <button class="num-btn" onclick="numPress('4')">4</button>
+      <button class="num-btn" onclick="numPress('5')">5</button>
+      <button class="num-btn" onclick="numPress('6')">6</button>
+      <button class="num-btn" onclick="numPress('7')">7</button>
+      <button class="num-btn" onclick="numPress('8')">8</button>
+      <button class="num-btn" onclick="numPress('9')">9</button>
+      <button class="num-btn" onclick="numPress('.')">.</button>
+      <button class="num-btn zero" onclick="numPress('0')">0</button>
+      <button class="num-btn del" onclick="numDel()">⌫</button>
+    </div>
+    <button class="btn-paye" id="btn-paye" onclick="togglePaye()">
+      💰 Marquer comme déjà payé
     </button>
   </div>
-  </div><!-- fin ls-content -->
-  </div><!-- fin ls-layout -->
-</div>
 
-<!-- ══════════════════════════════════════
-     ÉCRAN 2 — APPAREIL & PANNE
-══════════════════════════════════════ -->
-<div id="screen-appareil" class="screen">
-  <div class="page-header">
-    <div class="header-logo">Solution Phone</div>
-    <div class="header-step">Étape 2 / 3</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" style="width:66%"></div></div>
-  <div class="ls-layout">
-  <div class="ls-sidebar">
-    <div class="ls-sidebar-top">
-      <div class="section-title" style="display:block!important;">Votre appareil</div>
-      <div class="section-sub" style="display:block!important;">Marque, modèle et panne</div>
-      <div class="ls-step-indicator">
-        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Coordonnées</div>
-        <div class="ls-step-item current"><div class="ls-step-num">2</div>Appareil</div>
-        <div class="ls-step-item"><div class="ls-step-num">3</div>Signature</div>
-      </div>
-    </div>
-    <button class="ls-btn" id="btn-appareil-ls" onclick="goScreen('screen-signature')" disabled>Continuer →</button>
-  </div>
-  <div class="ls-content">
-  <div class="form-body">
-    <div class="section-title">Votre appareil</div>
-    <div class="section-sub">Quelle est la marque de votre téléphone ?</div>
-
-    <div class="brand-grid" id="brand-grid">
-      <button class="brand-btn" onclick="setBrand('Apple')">
-        <span class="brand-icon">🍎</span>Apple
-      </button>
-      <button class="brand-btn" onclick="setBrand('Samsung')">
-        <span class="brand-icon">📱</span>Samsung
-      </button>
-      <button class="brand-btn" onclick="setBrand('Xiaomi')">
-        <span class="brand-icon">📱</span>Xiaomi
-      </button>
-      <button class="brand-btn" onclick="setBrand('Huawei')">
-        <span class="brand-icon">📱</span>Huawei
-      </button>
-      <button class="brand-btn" onclick="setBrand('Google')">
-        <span class="brand-icon">🔵</span>Google
-      </button>
-      <button class="brand-btn" onclick="setBrand('Autre')">
-        <span class="brand-icon">➕</span>Autre
-      </button>
-    </div>
-
-    <div class="field">
-      <label>Modèle <span class="req">*</span></label>
-      <input type="text" id="ap-modele" placeholder="ex: iPhone 13, Galaxy S23..." oninput="checkAppareil()">
-    </div>
-
-    <div class="field" style="margin-top:24px;">
-      <label>Problème constaté <span style="color:var(--muted);font-size:11px;">(optionnel)</span></label>
-    </div>
-
-    <div class="panne-list" id="panne-list">
-      <div class="panne-item" onclick="togglePanne(this, 'Écran cassé')">
-        <span class="panne-icon">💥</span>
-        <span class="panne-label">Écran cassé / fissuré</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Batterie')">
-        <span class="panne-icon">🔋</span>
-        <span class="panne-label">Batterie / autonomie</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Connecteur')">
-        <span class="panne-icon">🔌</span>
-        <span class="panne-label">Connecteur / charge</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Caméra')">
-        <span class="panne-icon">📷</span>
-        <span class="panne-label">Caméra / appareil photo</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Bouton / Son')">
-        <span class="panne-icon">🔊</span>
-        <span class="panne-label">Boutons / son / micro</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Vitre arrière cassée')">
-        <span class="panne-icon">🪟</span>
-        <span class="panne-label">Vitre arrière cassée</span>
-        <div class="panne-check">✓</div>
-      </div>
-      <div class="panne-item" onclick="togglePanne(this, 'Autre problème')">
-        <span class="panne-icon">🔧</span>
-        <span class="panne-label">Autre problème</span>
-        <div class="panne-check">✓</div>
-      </div>
-    </div>
-
-    <div class="field" style="margin-top:20px;">
-      <label>Précisions (optionnel)</label>
-      <textarea id="ap-obs" rows="3" placeholder="Décrivez le problème en détail si besoin..."></textarea>
-    </div>
-  </div>
-
-  <div class="bottom-bar">
-    <button class="btn-next" id="btn-appareil" onclick="goScreen('screen-signature')" disabled>
-      Continuer →
-    </button>
-  </div>
-  </div><!-- fin ls-content -->
-  </div><!-- fin ls-layout -->
-</div>
-
-<!-- ══════════════════════════════════════
-     ÉCRAN 3 — SIGNATURE
-══════════════════════════════════════ -->
-<div id="screen-signature" class="screen">
-  <div class="page-header">
-    <div class="header-logo">Solution Phone</div>
-    <div class="header-step">Étape 3 / 3</div>
-  </div>
-  <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
-  <div class="ls-layout">
-  <div class="ls-sidebar">
-    <div class="ls-sidebar-top">
-      <div class="section-title" style="display:block!important;">Signature</div>
-      <div class="section-sub" style="display:block!important;">Validez la prise en charge</div>
-      <div class="ls-step-indicator">
-        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Coordonnées</div>
-        <div class="ls-step-item done"><div class="ls-step-num">✓</div>Appareil</div>
-        <div class="ls-step-item current"><div class="ls-step-num">3</div>Signature</div>
-      </div>
-    </div>
-    <button class="ls-btn" id="btn-signature-ls" onclick="soumettre()" disabled>✅ Valider et déposer</button>
-  </div>
-  <div class="ls-content">
-  <div class="form-body">
-    <div class="section-title">Signature</div>
-    <div class="section-sub">Signez pour valider la prise en charge de votre appareil.</div>
-
-    <div class="cgu-box">
-      Je certifie que l'appareil déposé est <strong>hors garantie</strong> et j'autorise
-      Solution Phone à procéder au diagnostic et à la réparation selon le devis
-      qui me sera communiqué. <strong>Aucun travail ne sera effectué sans mon accord.</strong>
-    </div>
-
-    <div class="signature-wrapper">
-      <canvas id="sig-canvas" height="220"></canvas>
-      <div class="sig-placeholder" id="sig-placeholder">✍️ Signez ici avec votre doigt</div>
-      <div class="sig-toolbar">
-        <button class="sig-clear" onclick="clearSignature()">🗑️ Effacer</button>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="bottom-bar">
-    <button class="btn-next" id="btn-signature" onclick="soumettre()" disabled>
-      ✅ Valider et déposer mon appareil
-    </button>
-  </div>
-  </div><!-- fin ls-content -->
-  </div><!-- fin ls-layout -->
-</div>
-
-<!-- ══════════════════════════════════════
-     ÉCRAN CHARGEMENT
-══════════════════════════════════════ -->
-<div id="screen-loading" class="screen" style="align-items:center;justify-content:center;">
-  <div class="loader-wrap">
+  <!-- LOADING -->
+  <div class="scr" id="scr-loading">
     <div class="spinner"></div>
-    <div style="font-size:16px;color:var(--muted);">Envoi en cours...</div>
+    <div class="load-txt">Enregistrement en cours…</div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════════
-     ÉCRAN SUCCÈS
-══════════════════════════════════════ -->
-<div id="screen-success" class="screen">
-  <div class="success-icon">✅</div>
-  <div class="success-title">C'est enregistré !</div>
-  <div class="success-sub">Votre dossier a été créé. Un technicien va prendre en charge votre appareil.</div>
+  <!-- SUCCESS -->
+  <div class="scr" id="scr-success">
+    <div class="ok-icon">✅</div>
+    <div class="ok-title">Merci !</div>
+    <div class="ok-sub" id="ok-sub">Votre dossier a bien été enregistré.</div>
+    <div class="ok-num">
+      <div class="ok-num-lbl">Numéro de dossier</div>
+      <div class="ok-num-val" id="ok-num">—</div>
+    </div>
+    <button class="btn-restart" onclick="restart()">Nouveau dossier</button>
+  </div>
 
-  <div class="success-recap" id="success-recap"></div>
+  <!-- FOOTER BUTTONS -->
+  <div class="footer" id="footer">
+    <button class="btn-next" id="btn-next" onclick="nextStep()">Continuer →</button>
+  </div>
 
-  <button class="btn-restart" onclick="restart()">Nouveau dépôt</button>
-</div>
+</div><!-- /app -->
 
 <script>
-// ════════════════════════════════════════════
-// SUPABASE
-// ════════════════════════════════════════════
-var SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
-var SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
+/* ══════════════════════════════════════
+   SUPABASE
+══════════════════════════════════════ */
+const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
+const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
 
-function supaInsert(table, data){
-  return fetch(SUPA_URL+'/rest/v1/'+table, {
-    method:'POST',
-    headers:{
-      'apikey': SUPA_KEY,
-      'Authorization': 'Bearer '+SUPA_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
+async function supaPost(table, data) {
+  const r = await fetch(SUPA_URL+'/rest/v1/'+table, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPA_KEY, 'Authorization': 'Bearer '+SUPA_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=minimal'
     },
     body: JSON.stringify(data)
-  }).then(function(r){ return r.json(); });
+  });
+  if (!r.ok) throw new Error('HTTP '+r.status);
 }
 
-// ════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════
-var state = {
-  civ: '',
-  nom: '', prenom: '', tel: '', email: '',
-  adresse: '', cp: '', ville: '',
-  marque: '', modele: '',
-  pannes: [],
-  obs: '',
-  signature: ''
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+const S = {
+  flux:'', civ:'',
+  nom:'', prenom:'', tel:'', email:'', adresse:'', cp:'', ville:'',
+  marque:'', modele:'', panne:'',
+  prix:'0', dejaPaye: false,
+  sigData: null, consent: false
 };
 
-// ════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════
-function goScreen(id){
-  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-  if(id === 'screen-signature') initSignature();
-}
+// Navigation stack
+const SCREENS_REP = ['scr-flux','scr-id-rep','scr-rep','scr-sig'];
+const SCREENS_ACC = ['scr-flux','scr-id-acc','scr-acc','scr-prix'];
+let curStep = 0; // index dans le tableau actif
 
-// ════════════════════════════════════════════
-// ÉCRAN 1 — CLIENT
-// ════════════════════════════════════════════
-function setCiv(v){
-  state.civ = v;
-  document.getElementById('civ-m').classList.toggle('active', v==='M.');
-  document.getElementById('civ-mme').classList.toggle('active', v==='Mme');
-}
+function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : SCREENS_REP; }
 
-function formatTel(el){
-  var v = el.value.replace(/\D/g,'').substring(0,10);
-  el.value = v.replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+/* ══════════════════════════════════════
+   SCREENSAVER
+══════════════════════════════════════ */
+let ssTimer = null;
+function startApp() {
+  const ss = document.getElementById('ss');
+  ss.classList.add('out');
+  setTimeout(() => { ss.style.display='none'; document.getElementById('app').style.display='flex'; }, 500);
+  goStep(0);
+  resetSsTimer();
 }
-
-function checkClient(){
-  var nom = document.getElementById('cl-nom').value.trim();
-  var prenom = document.getElementById('cl-prenom').value.trim();
-  var tel = document.getElementById('cl-tel').value.replace(/\D/g,'');
-  var ok = nom.length >= 2 && prenom.length >= 1 && tel.length >= 9;
-  document.getElementById('btn-client').disabled = !ok;
-  var ls = document.getElementById('btn-client-ls');
-  if(ls) ls.disabled = !ok;
+function resetSsTimer() {
+  clearTimeout(ssTimer);
+  ssTimer = setTimeout(showSs, 90000);
 }
+function showSs() {
+  restart(true);
+  const ss = document.getElementById('ss');
+  ss.style.display = 'flex'; ss.classList.remove('out');
+  document.getElementById('app').style.display = 'none';
+}
+document.addEventListener('touchstart', resetSsTimer, {passive:true});
+document.addEventListener('click', resetSsTimer);
 
-// ════════════════════════════════════════════
-// ÉCRAN 2 — APPAREIL
-// ════════════════════════════════════════════
-function setBrand(brand){
-  state.marque = brand;
-  document.querySelectorAll('.brand-btn').forEach(function(b){
-    b.classList.toggle('active', b.textContent.trim() === brand || b.querySelector('.brand-icon') && b.textContent.includes(brand));
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+let _cur = null;
+function goStep(idx) {
+  const stack = activeStack();
+  if (idx < 0 || idx >= stack.length) return;
+  curStep = idx;
+
+  // Hide all screens
+  document.querySelectorAll('.scr').forEach(s => { s.classList.remove('on','vis'); });
+
+  const id = stack[idx];
+  const el = document.getElementById(id);
+  el.classList.add('on');
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('vis')));
+
+  // Back button
+  document.getElementById('btn-back').style.display = idx > 0 ? 'block' : 'none';
+
+  // Dots
+  ['d1','d2','d3','d4'].forEach((d,i) => {
+    const dot = document.getElementById(d);
+    dot.className = 'dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
   });
-  // Fix: match by text content
-  document.querySelectorAll('.brand-btn').forEach(function(b){
-    var txt = b.childNodes[b.childNodes.length-1].textContent.trim();
-    b.classList.toggle('active', txt === brand);
-  });
-  checkAppareil();
+
+  // Header sub
+  document.getElementById('hdr-step').textContent = 'Étape '+(idx+1)+' sur '+stack.length;
+
+  // Footer
+  updateFooter(idx);
+
+  // Special inits
+  if (id === 'scr-sig') { buildRecapRep(); initSig(); checkSig(); }
+  if (id === 'scr-prix') { buildRecapAcc(); }
 }
 
-function togglePanne(el, label){
-  el.classList.toggle('active');
-  if(el.classList.contains('active')){
-    if(!state.pannes.includes(label)) state.pannes.push(label);
+function goBack() { if (curStep > 0) goStep(curStep - 1); }
+
+function nextStep() {
+  const idx = curStep + 1;
+  const stack = activeStack();
+  if (idx < stack.length) goStep(idx);
+}
+
+function updateFooter(idx) {
+  const stack = activeStack();
+  const id = stack[idx];
+  const footer = document.getElementById('footer');
+  const btn = document.getElementById('btn-next');
+
+  // Screens where footer is managed differently
+  if (id === 'scr-flux') { footer.classList.remove('show'); return; }
+  if (id === 'scr-sig') {
+    footer.classList.add('show');
+    btn.textContent = '✅ Valider le dépôt';
+    btn.onclick = () => soumettre();
+    checkSig();
+    return;
+  }
+  if (id === 'scr-prix') {
+    footer.classList.add('show');
+    btn.textContent = '✅ Valider la commande';
+    btn.onclick = () => soumettreAcc();
+    btn.disabled = false;
+    return;
+  }
+  // Other steps
+  footer.classList.add('show');
+  btn.textContent = 'Continuer →';
+  btn.onclick = () => nextStep();
+  btn.disabled = !canProceed(id);
+}
+
+function canProceed(id) {
+  if (id === 'scr-id-rep') return checkStep2R(true);
+  if (id === 'scr-id-acc') return checkStep2A(true);
+  if (id === 'scr-rep')    return checkStep3R(true);
+  if (id === 'scr-acc')    return checkStep3A(true);
+  return true;
+}
+
+/* ══════════════════════════════════════
+   STEP 1 — FLUX
+══════════════════════════════════════ */
+function choisirFlux(flux) {
+  S.flux = flux;
+  goStep(1);
+}
+
+/* ══════════════════════════════════════
+   STEP 2 — IDENTITÉ
+══════════════════════════════════════ */
+function setCiv(v) {
+  S.civ = v;
+  document.getElementById('civ-m').classList.toggle('sel', v==='M.');
+  document.getElementById('civ-mme').classList.toggle('sel', v==='Mme');
+}
+
+function checkStep2R(silent) {
+  const ok = !!(val('r-nom') && val('r-tel'));
+  if (!silent) document.getElementById('btn-next').disabled = !ok;
+  return ok;
+}
+function checkStep2A(silent) {
+  const ok = !!(val('a-nom') && val('a-tel'));
+  if (!silent) document.getElementById('btn-next').disabled = !ok;
+  return ok;
+}
+
+function collectId() {
+  if (S.flux === 'reparation') {
+    S.nom    = val('r-nom'); S.prenom = val('r-prenom');
+    S.tel    = val('r-tel'); S.email  = val('r-email');
+    S.adresse= val('r-adresse'); S.cp = val('r-cp'); S.ville = val('r-ville');
   } else {
-    state.pannes = state.pannes.filter(function(p){ return p !== label; });
-  }
-  checkAppareil();
-}
-
-function checkAppareil(){
-  var modele = document.getElementById('ap-modele').value.trim();
-  var ok = state.marque && modele.length >= 2;  // panne optionnelle
-  document.getElementById('btn-appareil').disabled = !ok;
-  var ls = document.getElementById('btn-appareil-ls');
-  if(ls) ls.disabled = !ok;
-}
-
-// ════════════════════════════════════════════
-// ÉCRAN 3 — SIGNATURE CANVAS
-// ════════════════════════════════════════════
-var sigCanvas, sigCtx, sigDrawing = false, sigHasMark = false;
-
-function initSignature(){
-  sigCanvas = document.getElementById('sig-canvas');
-  // Adapter la largeur au conteneur
-  sigCanvas.width = sigCanvas.offsetWidth;
-  sigCtx = sigCanvas.getContext('2d');
-  sigCtx.strokeStyle = '#1a1a1a';
-  sigCtx.lineWidth = 2.5;
-  sigCtx.lineCap = 'round';
-  sigCtx.lineJoin = 'round';
-
-  // Touch events
-  sigCanvas.addEventListener('touchstart', sigStart, {passive:false});
-  sigCanvas.addEventListener('touchmove', sigMove, {passive:false});
-  sigCanvas.addEventListener('touchend', sigEnd, {passive:false});
-  // Mouse events
-  sigCanvas.addEventListener('mousedown', function(e){ sigStart(e); });
-  sigCanvas.addEventListener('mousemove', function(e){ sigMove(e); });
-  sigCanvas.addEventListener('mouseup', sigEnd);
-}
-
-function getPos(e){
-  var rect = sigCanvas.getBoundingClientRect();
-  var scaleX = sigCanvas.width / rect.width;
-  var scaleY = sigCanvas.height / rect.height;
-  var src = e.touches ? e.touches[0] : e;
-  return {
-    x: (src.clientX - rect.left) * scaleX,
-    y: (src.clientY - rect.top) * scaleY
-  };
-}
-
-function sigStart(e){
-  e.preventDefault();
-  sigDrawing = true;
-  var pos = getPos(e);
-  sigCtx.beginPath();
-  sigCtx.moveTo(pos.x, pos.y);
-}
-function sigMove(e){
-  e.preventDefault();
-  if(!sigDrawing) return;
-  var pos = getPos(e);
-  sigCtx.lineTo(pos.x, pos.y);
-  sigCtx.stroke();
-  if(!sigHasMark){
-    sigHasMark = true;
-    document.getElementById('sig-placeholder').style.opacity = '0';
-    document.getElementById('btn-signature').disabled = false;
-    var ls = document.getElementById('btn-signature-ls');
-    if(ls) ls.disabled = false;
+    S.nom    = val('a-nom'); S.prenom = val('a-prenom');
+    S.tel    = val('a-tel'); S.email  = '';
+    S.adresse= ''; S.cp = ''; S.ville = '';
   }
 }
-function sigEnd(e){ sigDrawing = false; }
 
-function clearSignature(){
-  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-  sigHasMark = false;
-  document.getElementById('sig-placeholder').style.opacity = '1';
-  document.getElementById('btn-signature').disabled = true;
-  var ls = document.getElementById('btn-signature-ls');
-  if(ls) ls.disabled = true;
+/* ══════════════════════════════════════
+   STEP 3 — APPAREIL / ACCESSOIRE
+══════════════════════════════════════ */
+function setBrand(b) {
+  S.marque = b;
+  document.querySelectorAll('[id^="bb-"]').forEach(el => el.classList.toggle('sel', el.id === 'bb-'+b));
+  checkStep3R();
+}
+function setBrandAcc(b) {
+  S.marque = b;
+  document.querySelectorAll('[id^="ba-"]').forEach(el => el.classList.toggle('sel', el.id === 'ba-'+b));
+  checkStep3A();
+}
+function setPanne(p) {
+  S.panne = p;
+  // Fermer le champ "autre" si on clique sur un autre
+  document.getElementById('autre-panne-wrap').classList.remove('show');
+  document.getElementById('pr-autre').classList.remove('sel');
+  ['pr-ecran','pr-bat','pr-charge','pr-vitre','pr-cam','pr-flash','pr-son','pr-autre'].forEach(id => {
+    const map = {'pr-ecran':'Écran cassé / Tactile','pr-bat':'Batterie','pr-charge':'Connecteur de charge','pr-vitre':'Vitre arrière','pr-cam':'Appareil photo','pr-flash':'Flash / Réinitialisation','pr-son':'Son / Micro'};
+    document.getElementById(id)?.classList.toggle('sel', map[id] === p);
+  });
+  checkStep3R();
+}
+function setPanneLibre(v) { S.panne = v; checkStep3R(); }
+function toggleAutrePanne() {
+  const wrap = document.getElementById('autre-panne-wrap');
+  const isOpen = wrap.classList.contains('show');
+  wrap.classList.toggle('show', !isOpen);
+  document.getElementById('pr-autre').classList.toggle('sel', !isOpen);
+  if (!isOpen) {
+    S.panne = '';
+    ['pr-ecran','pr-bat','pr-charge','pr-vitre','pr-cam','pr-flash','pr-son'].forEach(id => document.getElementById(id)?.classList.remove('sel'));
+    document.getElementById('autre-panne-inp').focus();
+  }
+}
+function setTypeAcc(v) {
+  S.panne = v;
+  document.getElementById('autre-acc-wrap').classList.remove('show');
+  ['ta-coque','ta-verre','ta-charge','ta-autre'].forEach(id => {
+    const map = {'ta-coque':'Coque de protection','ta-verre':'Verre trempé','ta-charge':'Chargeur / Câble'};
+    document.getElementById(id)?.classList.toggle('sel', map[id] === v);
+  });
+  checkStep3A();
+}
+function setTypeAccLibre(v) { S.panne = v; checkStep3A(); }
+function toggleAutreAcc() {
+  const wrap = document.getElementById('autre-acc-wrap');
+  const isOpen = wrap.classList.contains('show');
+  wrap.classList.toggle('show', !isOpen);
+  document.getElementById('ta-autre').classList.toggle('sel', !isOpen);
+  if (!isOpen) { S.panne = ''; document.getElementById('autre-acc-inp').focus(); }
+}
+function checkStep3R(silent) {
+  const ok = !!(S.marque && val('r-modele') && S.panne);
+  if (!silent) { const b = document.getElementById('btn-next'); if(b) b.disabled = !ok; }
+  return ok;
+}
+function checkStep3A(silent) {
+  const ok = !!(S.marque && val('a-modele') && S.panne);
+  if (!silent) { const b = document.getElementById('btn-next'); if(b) b.disabled = !ok; }
+  return ok;
 }
 
-// ════════════════════════════════════════════
-// SOUMISSION
-// ════════════════════════════════════════════
-async function soumettre(){
-  goScreen('screen-loading');
+/* ══════════════════════════════════════
+   STEP 4A — SIGNATURE
+══════════════════════════════════════ */
+let sigCtx, sigDrawing = false, sigHasData = false, consentOk = false;
 
-  // Collecter les données
-  state.nom    = document.getElementById('cl-nom').value.trim();
-  state.prenom = document.getElementById('cl-prenom').value.trim();
-  state.tel    = document.getElementById('cl-tel').value.trim();
-  state.email  = document.getElementById('cl-email').value.trim();
-  state.adresse= document.getElementById('cl-adresse').value.trim();
-  state.cp     = document.getElementById('cl-cp').value.trim();
-  state.ville  = document.getElementById('cl-ville').value.trim();
-  state.modele = document.getElementById('ap-modele').value.trim();
-  state.obs    = document.getElementById('ap-obs').value.trim();
-  state.signature = sigCanvas.toDataURL('image/png');
+function initSig() {
+  const c = document.getElementById('sig-canvas');
+  c.width = c.parentElement.clientWidth;
+  c.height = 200;
+  sigCtx = c.getContext('2d');
+  sigCtx.strokeStyle='#1d1d1f'; sigCtx.lineWidth=2.5; sigCtx.lineCap='round'; sigCtx.lineJoin='round';
+  sigHasData = false;
+  const pos = e => { const r=c.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return{x:t.clientX-r.left,y:t.clientY-r.top}; };
+  c.onmousedown = c.ontouchstart = e => { e.preventDefault(); sigDrawing=true; const p=pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); };
+  c.onmousemove = c.ontouchmove  = e => { if(!sigDrawing)return; e.preventDefault(); const p=pos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigHasData=true; checkSig(); };
+  c.onmouseup   = c.ontouchend   = () => { sigDrawing=false; };
+}
+function clearSig() {
+  sigCtx.clearRect(0,0,document.getElementById('sig-canvas').width,200);
+  sigHasData=false; checkSig();
+}
+function toggleConsent() {
+  consentOk = !consentOk;
+  const btn = document.getElementById('consent-chk');
+  btn.classList.toggle('chk', consentOk);
+  btn.textContent = consentOk ? '✓' : '';
+  checkSig();
+}
+function checkSig() {
+  const ok = sigHasData && consentOk;
+  document.getElementById('btn-next').disabled = !ok;
+}
 
-  var panneStr = state.pannes.join(', ');
+function buildRecapRep() {
+  collectId();
+  S.modele = val('r-modele');
+  const rows = [
+    ['Client', (S.civ?S.civ+' ':'')+S.prenom+' '+S.nom],
+    ['Téléphone', S.tel],
+    S.email?['Email',S.email]:null,
+    ['Marque', S.marque],
+    ['Modèle', S.modele],
+    ['Panne', S.panne],
+  ].filter(Boolean);
+  document.getElementById('recap-rep').innerHTML = rows.map(([k,v]) =>
+    `<div class="recap-row"><span class="recap-k">${k}</span><span class="recap-v">${v}</span></div>`
+  ).join('');
+}
 
-  var payload = {
-    nom:       state.nom,
-    prenom:    state.prenom,
-    civilite:  state.civ,
-    tel:       state.tel,
-    email:     state.email,
-    adresse:   state.adresse,
-    cp:        state.cp,
-    ville:     state.ville,
-    marque:    state.marque,
-    modele:    state.modele,
-    panne:     panneStr,
-    obs:       state.obs,
-    signature: state.signature,
-    created_at: new Date().toISOString(),
-    traite:    false
-  };
-
+async function soumettre() {
+  collectId(); S.modele = val('r-modele');
+  const sig = document.getElementById('sig-canvas').toDataURL('image/png');
+  const num = genNum('DEP');
+  showLoading();
   try {
-    await supaInsert('clients_en_attente', payload);
+    await supaPost('bons_depot', {
+      numero: num, date: today(),
+      client_civilite: S.civ, client_nom: S.nom, client_prenom: S.prenom,
+      client_tel: S.tel, client_email: S.email,
+      client_adresse: S.adresse, client_cp: S.cp, client_ville: S.ville,
+      appareil_marque: S.marque, appareil_modele: S.modele,
+      panne: S.panne, etat: 'depot', statut: 'depot',
+      signature: sig, bonus_qr: false, devis: 0, obs: '', mo_ht: 0, pieces_ht: 0
+    });
+    showSuccess(num, 'Votre appareil est entre de bonnes mains !<br>Nous vous contactons dès la réparation terminée.<br><br>🎰 Direction la roue des cadeaux…');
+    setTimeout(() => { window.location.href='/roulette.html'; }, 4000);
   } catch(e) {
-    console.warn('Supabase insert error:', e);
-  }
-
-  // Afficher le récap
-  var recap = document.getElementById('success-recap');
-  recap.innerHTML = [
-    {l:'Client', v: (state.civ+' '+state.prenom+' '+state.nom).trim()},
-    {l:'Téléphone', v: state.tel},
-    {l:'Appareil', v: state.marque+' '+state.modele},
-    {l:'Panne', v: panneStr},
-  ].map(function(r){
-    return '<div class="recap-row"><span class="recap-label">'+r.l+'</span><span class="recap-val">'+r.v+'</span></div>';
-  }).join('');
-
-  goScreen('screen-success');
-}
-
-// ════════════════════════════════════════════
-// RESTART
-// ════════════════════════════════════════════
-function restart(){
-  state = { civ:'', nom:'', prenom:'', tel:'', email:'', adresse:'', cp:'', ville:'', marque:'', modele:'', pannes:[], obs:'', signature:'' };
-  // Reset form fields
-  ['cl-nom','cl-prenom','cl-tel','cl-email','cl-adresse','cl-cp','cl-ville','ap-modele','ap-obs'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.value = '';
-  });
-  document.querySelectorAll('.civ-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.querySelectorAll('.brand-btn').forEach(function(b){ b.classList.remove('active'); });
-  document.querySelectorAll('.panne-item').forEach(function(b){ b.classList.remove('active'); });
-  document.getElementById('btn-client').disabled = true;
-  document.getElementById('btn-appareil').disabled = true;
-  sigHasMark = false;
-  goScreen('screen-home');
-}
-
-// Auto-retour accueil après 30s sur l'écran succès
-var autoRestartTimer;
-document.getElementById('screen-success').addEventListener('transitionend', function(){
-  clearTimeout(autoRestartTimer);
-  autoRestartTimer = setTimeout(restart, 30000);
-});
-
-// ════════════════════════════════════════════
-//  SCREENSAVER CYBERPUNK — Solution Phone
-// ════════════════════════════════════════════
-(function(){
-var SS_INACTIVITY=50000, ssVisible=true, ssTimer=null, ssAnimId=null, ssPAId=null;
-
-var ssWC=document.getElementById('ss-wheel-canvas');
-var ssCtx=ssWC?ssWC.getContext('2d'):null;
-var SZ=560; if(ssWC){ssWC.width=SZ;ssWC.height=SZ;}
-var CX=SZ/2,CY=SZ/2,SR=SZ/2-12, ssRot=0, SPD=0.009;
-
-var SP=[
-  {c:'#c0392b',c2:'#7f1d1d',w:20},{c:'#1d6fa8',c2:'#0e3d5e',w:15},
-  {c:'#1a7a44',c2:'#0e4225',w:15},{c:'#7b2fbe',c2:'#3d1760',w:20},
-  {c:'#b7770d',c2:'#6b450a',w:20},{c:'#a02020',c2:'#5c1212',w:10}
-];
-var ST=SP.reduce(function(s,p){return s+p.w;},0);
-
-function sL(h,a){var n=parseInt(h.replace('#',''),16);return 'rgb('+Math.min(255,(n>>16)+a)+','+Math.min(255,((n>>8)&0xff)+a)+','+Math.min(255,(n&0xff)+a)+')';}
-
-function ssDraw(rot){
-  if(!ssCtx)return;
-  ssCtx.clearRect(0,0,SZ,SZ);
-  var a=rot;
-  SP.forEach(function(p){
-    var s=(p.w/ST)*Math.PI*2,e=a+s,m=a+s/2;
-    var gx=CX+SR*0.3*Math.cos(m),gy=CY+SR*0.3*Math.sin(m);
-    var g=ssCtx.createRadialGradient(gx,gy,0,CX,CY,SR);
-    g.addColorStop(0,sL(p.c,50));g.addColorStop(0.5,p.c);g.addColorStop(1,p.c2);
-    ssCtx.beginPath();ssCtx.moveTo(CX,CY);ssCtx.arc(CX,CY,SR-16,a,e);ssCtx.closePath();
-    ssCtx.fillStyle=g;ssCtx.fill();
-    ssCtx.strokeStyle='rgba(0,0,0,0.4)';ssCtx.lineWidth=2;ssCtx.stroke();
-    a=e;
-  });
-  // LEDs cyan/rouge alternés
-  var nL=40,lR=SR-5;
-  for(var i=0;i<nL;i++){
-    var ang=i/nL*Math.PI*2+rot;
-    var lx=CX+lR*Math.cos(ang),ly=CY+lR*Math.sin(ang);
-    var iC=i%2===0;
-    var gl=ssCtx.createRadialGradient(lx,ly,0,lx,ly,5);
-    gl.addColorStop(0,iC?'#00d4ff':'#e53e3e');gl.addColorStop(1,'transparent');
-    ssCtx.beginPath();ssCtx.arc(lx,ly,5.5,0,Math.PI*2);ssCtx.fillStyle=gl;ssCtx.fill();
-    ssCtx.beginPath();ssCtx.arc(lx,ly,2.5,0,Math.PI*2);
-    ssCtx.fillStyle=iC?'#ccf5ff':'#ffaaaa';ssCtx.fill();
-  }
-  // Ring cyan→rouge
-  var rg=ssCtx.createLinearGradient(CX-SR,CY,CX+SR,CY);
-  rg.addColorStop(0,'rgba(0,212,255,0.7)');rg.addColorStop(0.5,'rgba(229,62,62,0.9)');rg.addColorStop(1,'rgba(0,212,255,0.7)');
-  ssCtx.beginPath();ssCtx.arc(CX,CY,SR,0,Math.PI*2);ssCtx.strokeStyle=rg;ssCtx.lineWidth=5;ssCtx.stroke();
-  // Hub
-  var hg=ssCtx.createRadialGradient(CX,CY,0,CX,CY,30);
-  hg.addColorStop(0,'#1a1a2e');hg.addColorStop(1,'#060608');
-  ssCtx.beginPath();ssCtx.arc(CX,CY,30,0,Math.PI*2);ssCtx.fillStyle=hg;ssCtx.fill();
-  ssCtx.strokeStyle='rgba(0,212,255,0.8)';ssCtx.lineWidth=2.5;ssCtx.stroke();
-}
-
-function ssAnimW(){if(!ssVisible)return;ssRot+=SPD;ssDraw(ssRot);ssAnimId=requestAnimationFrame(ssAnimW);}
-
-// Particules
-var ssPC=document.getElementById('ss-canvas-particles');
-var ssPX=ssPC?ssPC.getContext('2d'):null;
-var ssP=[];
-function ssInitP(){
-  if(!ssPC)return;
-  ssPC.width=window.innerWidth;ssPC.height=window.innerHeight;ssP=[];
-  var cols=[[229,62,62],[0,212,255],[255,255,255],[246,201,14]];
-  for(var i=0;i<55;i++){
-    var c=cols[Math.floor(Math.random()*cols.length)];
-    ssP.push({x:Math.random()*ssPC.width,y:Math.random()*ssPC.height,r:.8+Math.random()*2,
-      vx:(Math.random()-.5)*.5,vy:-.25-Math.random()*.4,c:c,op:.1+Math.random()*.3,
-      pop:Math.random()*Math.PI*2,ps:.004+Math.random()*.009});
+    goStep(curStep);
+    alert('Erreur réseau. Veuillez réessayer.');
   }
 }
-function ssAnimP(){
-  if(!ssVisible||!ssPX)return;
-  ssPX.clearRect(0,0,ssPC.width,ssPC.height);
-  ssP.forEach(function(p){
-    p.x+=p.vx;p.y+=p.vy;p.pop+=p.ps;
-    if(p.y<-5){p.y=ssPC.height+5;p.x=Math.random()*ssPC.width;}
-    var pu=.7+.3*Math.sin(p.pop);
-    ssPX.beginPath();ssPX.arc(p.x,p.y,p.r*pu,0,Math.PI*2);
-    ssPX.fillStyle='rgba('+p.c.join(',')+','+(p.op*pu)+')';ssPX.fill();
+
+/* ══════════════════════════════════════
+   STEP 4B — PRIX / ACCESSOIRE
+══════════════════════════════════════ */
+let priceStr = '0';
+let dejaPaye = false;
+
+function numPress(k) {
+  if (k === '.' && priceStr.includes('.')) return;
+  if (priceStr === '0' && k !== '.') priceStr = k;
+  else priceStr += k;
+  if (priceStr.length > 7) priceStr = priceStr.slice(0,-1);
+  updatePriceDisplay();
+}
+function numDel() {
+  priceStr = priceStr.length <= 1 ? '0' : priceStr.slice(0,-1);
+  updatePriceDisplay();
+}
+function updatePriceDisplay() {
+  document.getElementById('price-val').innerHTML = priceStr + '<span class="price-unit"> €</span>';
+}
+function togglePaye() {
+  dejaPaye = !dejaPaye;
+  const btn = document.getElementById('btn-paye');
+  btn.classList.toggle('active', dejaPaye);
+  btn.textContent = dejaPaye ? '💰 Déjà payé ✓' : '💰 Marquer comme déjà payé';
+}
+function buildRecapAcc() {
+  const nom = val('a-nom'); const prenom = val('a-prenom'); const tel = val('a-tel');
+  const mod = val('a-modele');
+  const rows = [
+    ['Client', prenom+' '+nom],
+    ['Téléphone', tel],
+    ['Marque', S.marque],
+    ['Modèle', mod],
+    ['Accessoire', S.panne],
+  ].filter(([,v])=>v);
+  document.getElementById('recap-acc').innerHTML = rows.map(([k,v]) =>
+    `<div class="recap-row"><span class="recap-k">${k}</span><span class="recap-v">${v}</span></div>`
+  ).join('');
+  priceStr = '0'; dejaPaye = false;
+  updatePriceDisplay();
+  document.getElementById('btn-paye').classList.remove('active');
+  document.getElementById('btn-paye').textContent = '💰 Marquer comme déjà payé';
+}
+async function soumettreAcc() {
+  const nom = val('a-nom'); const prenom = val('a-prenom'); const tel = val('a-tel');
+  const mod = val('a-modele');
+  const prix = parseFloat(priceStr) || 0;
+  const num = genNum('CMD');
+  showLoading();
+  try {
+    await supaPost('bons_depot', {
+      numero: num, date: today(),
+      client_civilite: '', client_nom: nom, client_prenom: prenom,
+      client_tel: tel, client_email: '',
+      client_adresse: '', client_cp: '', client_ville: '',
+      appareil_marque: S.marque, appareil_modele: mod,
+      accessoires: S.panne, panne: '', etat: 'commande', statut: 'commande',
+      devis: prix, bonus_qr: false, obs: dejaPaye ? 'DEJA_PAYE' : '', mo_ht: 0, pieces_ht: 0
+    });
+    showSuccess(num, 'Votre commande est enregistrée !<br>'+(dejaPaye?'Paiement encaissé ✅':'Règlement à la remise.')+'<br><br>🎰 Tentez la roue des cadeaux…');
+    setTimeout(() => { window.location.href='/roulette.html'; }, 4000);
+  } catch(e) {
+    goStep(curStep);
+    alert('Erreur réseau. Veuillez réessayer.');
+  }
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function val(id) { return (document.getElementById(id)||{value:''}).value.trim(); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function genNum(pfx) { return pfx+'-'+new Date().getFullYear()+'-'+String(Date.now()).slice(-4); }
+
+function showLoading() {
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on','vis'));
+  document.getElementById('footer').classList.remove('show');
+  const l = document.getElementById('scr-loading');
+  l.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>l.classList.add('vis')));
+}
+function showSuccess(num, sub) {
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on','vis'));
+  document.getElementById('footer').classList.remove('show');
+  document.getElementById('ok-num').textContent = num;
+  document.getElementById('ok-sub').innerHTML = sub;
+  const s = document.getElementById('scr-success');
+  s.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>s.classList.add('vis')));
+}
+
+function restart(silent) {
+  // Reset state
+  Object.assign(S,{flux:'',civ:'',nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',marque:'',modele:'',panne:'',prix:'0',dejaPaye:false,sigData:null,consent:false});
+  // Reset fields
+  ['r-nom','r-prenom','r-tel','r-email','r-adresse','r-cp','r-ville','r-modele',
+   'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
   });
-  ssPAId=requestAnimationFrame(ssAnimP);
+  // Reset buttons
+  document.querySelectorAll('.brand-btn,.panne-btn,.civ-btn,.flux-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('autre-panne-wrap').classList.remove('show');
+  document.getElementById('autre-acc-wrap').classList.remove('show');
+  consentOk=false; sigHasData=false; dejaPaye=false; priceStr='0';
+  const cb=document.getElementById('consent-chk'); if(cb){cb.classList.remove('chk');cb.textContent='';}
+  const pb=document.getElementById('btn-paye'); if(pb){pb.classList.remove('active');pb.textContent='💰 Marquer comme déjà payé';}
+  if (!silent) goStep(0);
 }
-
-function ssShow(){
-  var ov=document.getElementById('ss-overlay');if(!ov)return;
-  ssVisible=true;ov.classList.remove('ss-hiding','ss-hidden');ov.style.opacity='1';
-  ssRot=0;ssInitP();
-  if(ssAnimId)cancelAnimationFrame(ssAnimId);if(ssPAId)cancelAnimationFrame(ssPAId);
-  ssAnimW();ssAnimP();
-}
-window.ssDismiss=function(){
-  var ov=document.getElementById('ss-overlay');if(!ov||!ssVisible)return;
-  ssVisible=false;ov.classList.add('ss-hiding');
-  setTimeout(function(){ov.classList.add('ss-hidden');},700);
-  ssStartTimer();
-};
-function ssStartTimer(){clearTimeout(ssTimer);ssTimer=setTimeout(ssShow,SS_INACTIVITY);}
-['touchstart','click','keydown','input'].forEach(function(ev){
-  document.addEventListener(ev,function(){if(!ssVisible)ssStartTimer();},{passive:true});
-});
-var _r=window.restart;
-window.restart=function(){if(_r)_r();clearTimeout(ssTimer);setTimeout(ssShow,2500);};
-window.addEventListener('load',function(){ssInitP();ssDraw(0);ssAnimW();ssAnimP();});
-})();
-
 </script>
 </body>
 </html>
