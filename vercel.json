@@ -1,20 +1,24 @@
 {
   "rewrites": [
+    { "source": "/proxy-kiwiz/:path*",    "destination": "/api/proxy-kiwiz"    },
+    { "source": "/proxy-ecosystem/:path*","destination": "/api/proxy-ecosystem" },
+    { "source": "/proxy-ecologic/:path*", "destination": "/api/proxy-ecologic"  },
+    { "source": "/proxy-claude/:path*",   "destination": "https://api.anthropic.com/:path*" }
+  ],
+  "headers": [
     {
-      "source": "/proxy-kiwiz/:path*",
-      "destination": "/api/proxy-kiwiz"
+      "source": "/client.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" },
+        { "key": "Expires",       "value": "0" }
+      ]
     },
     {
-      "source": "/proxy-ecosystem/:path*",
-      "destination": "/api/proxy-ecosystem"
-    },
-    {
-      "source": "/proxy-ecologic/:path*",
-      "destination": "/api/proxy-ecologic"
-    },
-    {
-      "source": "/proxy-claude/:path*",
-      "destination": "https://api.anthropic.com/:path*"
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
     }
   ]
 }
