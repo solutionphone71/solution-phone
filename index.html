@@ -3439,6 +3439,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
     </div>
     <div id="marge-preview" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:var(--text-muted);">💡 Marge calculée automatiquement</div>
+    <div id="p-photo-preview" style="display:none;margin-top:12px;">
+      <img id="p-photo-img" src="" alt="Photo" style="max-width:100%;border-radius:8px;max-height:120px;object-fit:cover;">
+    </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button class="btn btn-primary" onclick="addPhone()">✅ Ajouter</button>
       <button class="btn" onclick="closeModal('modal-add-phone')">Annuler</button>
@@ -5477,8 +5480,8 @@ function previewPhoto(input) {
   if(input.files && input.files[0]) {
     var reader = new FileReader();
     reader.onload = function(e) {
-      document.getElementById('p-photo-img').src = e.target.result;
-      document.getElementById('p-photo-preview').style.display = 'block';
+      var _pimg=document.getElementById('p-photo-img');if(_pimg)_pimg.src=e.target.result;
+      var _pprev2=document.getElementById('p-photo-preview');if(_pprev2)_pprev2.style.display='block';
     };
     reader.readAsDataURL(input.files[0]);
   }
@@ -6116,7 +6119,7 @@ function addPhone(){
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);savePhone(phone);
   ['p-modele','p-achat','p-vente','p-batterie','p-imei','p-couleur','p-vendeur-nom','p-vendeur-adresse','p-vendeur-ci','p-vendeur-ci-date','p-photo'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('p-photo-preview').style.display='none';
+  var _pprev=document.getElementById('p-photo-preview');if(_pprev)_pprev.style.display='none';
   closeModal('modal-add-phone');renderPhones();renderDashboard();
   showNotif(modele+' ajouté !','success');
 }
