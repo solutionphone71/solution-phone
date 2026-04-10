@@ -1639,22 +1639,35 @@ function buildRecapAcc() {
   document.getElementById('btn-paye').textContent = '💰 Marquer comme déjà payé';
 }
 async function soumettreAcc() {
-  const nom = val('a-nom'); const prenom = val('a-prenom'); const tel = val('a-tel');
-  const mod = val('a-modele');
-  const prix = parseFloat(priceStr) || 0;
-  const num = genNum('CMD');
+  const nom    = val('a-nom'); const prenom = val('a-prenom'); const tel = val('a-tel');
+  const mod    = val('a-modele');
+  const prix   = parseFloat(priceStr) || 0;
+  const acompte = dejaPaye ? prix : 0;
+  const reste   = dejaPaye ? 0 : prix;
+  const num    = genNum('CMD');
   showLoading();
   try {
-    await supaPost('bons_depot', {
-      numero: num, date: today(),
-      client_civilite: '', client_nom: nom, client_prenom: prenom,
-      client_tel: tel, client_email: '',
-      client_adresse: '', client_cp: '', client_ville: '',
-      appareil_marque: S.marque, appareil_modele: mod,
-      accessoires: S.panne, panne: '', etat: 'commande', statut: 'commande',
-      devis: prix, bonus_qr: false, obs: dejaPaye ? 'DEJA_PAYE' : '', mo_ht: 0, pieces_ht: 0
+    // ─── Enregistrement dans bons_commande ───
+    // → Apparaît directement dans l'onglet "Bon de Commande" de l'app
+    await supaPost('bons_commande', {
+      id: Date.now(),
+      numero: num,
+      date: today(),
+      type: 'accessoire',
+      client_nom: (prenom ? prenom + ' ' : '') + nom,
+      client_tel: tel,
+      detail: (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : ''),
+      prix: prix,
+      acompte: acompte,
+      mode_reglement: 'ESPECES',
+      statut: 'a_commander',
+      paye: dejaPaye,
+      traite: false,
+      traite_date: null
     });
-    showSuccess(num, 'Votre commande est enregistrée !<br>'+(dejaPaye?'Paiement encaissé ✅':'Règlement à la remise.')+'<br><br>🎰 Tentez la roue des cadeaux…');
+    showSuccess(num, 'Commande enregistrée !<br>'
+      + (dejaPaye ? '💰 Déjà payé ✅' : 'Reste à régler : <b>' + prix.toFixed(2) + ' €</b>')
+      + '<br><br>🎰 Tentez la roue des cadeaux…');
     setTimeout(() => { window.location.href='/roulette.html'; }, 4000);
   } catch(e) {
     goStep(curStep);
