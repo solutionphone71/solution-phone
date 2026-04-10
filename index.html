@@ -3677,6 +3677,8 @@ async function loadFromSupabase() {
     supabaseReady=true;
     initRealtime();
     showNotif('✅ Connecté','success');
+    // Charger les clés API depuis Supabase
+    setTimeout(function(){ if(typeof paramsLoadFromSupabase==='function') paramsLoadFromSupabase(); }, 800);
   } catch(e){console.error(e);showNotif('Mode local actif','error');}
 }
 
@@ -4821,6 +4823,12 @@ function paramsSaveBrevo(){
   localStorage.setItem(PARAMS_KEYS.brevoKey, key);
   localStorage.setItem(PARAMS_KEYS.brevoSender, sender);
   localStorage.setItem(PARAMS_KEYS.brevoSenderName, name);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') {
+    supaSettingSave('brevo_key', key);
+    supaSettingSave('brevo_sender', sender);
+    supaSettingSave('brevo_sender_name', name);
+  }
   showNotif('✅ Brevo configuré — Email & SMS activés !','success');
   var st=document.getElementById('params-brevo-status');
   if(st) st.innerHTML='<span style="color:var(--green);">✅ Email & SMS actifs</span>';
@@ -4996,6 +5004,12 @@ function paramsSaveKiwiz(){
   localStorage.setItem(PARAMS_KEYS.kiwizUser, u);
   localStorage.setItem(PARAMS_KEYS.kiwizPass, p);
   localStorage.setItem(PARAMS_KEYS.kiwizSub,  s);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') {
+    supaSettingSave('kiwiz_user', u);
+    supaSettingSave('kiwiz_pass', p);
+    supaSettingSave('kiwiz_sub',  s);
+  }
   showNotif('✅ Kiwiz configuré — NF525 actif !','success');
   var st = document.getElementById('params-kiwiz-status');
   if(st) st.innerHTML='<span style="color:var(--green);">✅ Certification NF525 active</span>';
@@ -10482,6 +10496,10 @@ var PARAMS_KEYS = {
 })();
 
 function paramsLoad(){
+  // Charger depuis Supabase en arrière-plan (au cas où localStorage est vide)
+  if(typeof supaFetch === 'function') {
+    setTimeout(function(){ paramsLoadFromSupabase(); }, 500);
+  }
   // Pré-configurer Kiwiz si pas encore fait
   if(!localStorage.getItem(PARAMS_KEYS.kiwizUser)){
     localStorage.setItem(PARAMS_KEYS.kiwizUser, 'contact@solution-phone.fr');
@@ -10528,6 +10546,74 @@ function paramsLoad(){
 
 
 
+
+/* ═══════════════════════════════════════════════════════
+   SUPABASE SETTINGS SYNC — Persistance des clés API
+   Toutes les clés sont sauvegardées dans settings table
+   et rechargées au démarrage (même si localStorage vide)
+   ═══════════════════════════════════════════════════════ */
+
+// Clés à synchroniser avec Supabase
+var SUPABASE_KEYS_MAP = {
+  'sp_kiwiz_user':         'kiwiz_user',
+  'sp_kiwiz_pass':         'kiwiz_pass',
+  'sp_kiwiz_sub':          'kiwiz_sub',
+  'sp_brevo_key':          'brevo_key',
+  'sp_brevo_sender':       'brevo_sender',
+  'sp_brevo_sender_name':  'brevo_sender_name',
+  'sp_eco_repairer_id':    'eco_repairer_id',
+  'sp_eco_user':           'eco_user',
+  'sp_eco_pass':           'eco_pass',
+  'sp_ecologic_token':     'ecologic_token',
+  'sp_ecologic_siteid':    'ecologic_siteid',
+  'sp_claude_key':         'claude_api_key',
+  'sp_claude_model':       'claude_model',
+  'sp_nas_ip':             'nas_ip'
+};
+
+// Sauvegarde UNE clé dans Supabase settings
+async function supaSettingSave(supaKey, value) {
+  if(!value || !supaKey) return;
+  try {
+    var existing = await supaFetch('settings', 'GET', null, '?key=eq.' + supaKey);
+    if(existing && existing.length > 0) {
+      await supaFetch('settings', 'PATCH', {key: supaKey, value: value}, '?key=eq.' + supaKey);
+    } else {
+      await supaFetch('settings', 'POST', {key: supaKey, value: value});
+    }
+  } catch(e) { console.warn('[Settings] Save failed:', supaKey, e.message); }
+}
+
+// Charge TOUTES les clés depuis Supabase → localStorage
+async function paramsLoadFromSupabase() {
+  try {
+    var rows = await supaFetch('settings', 'GET', null, '');
+    if(!rows || !rows.length) return;
+    // Inverser la map pour lookup par supaKey
+    var loaded = 0;
+    rows.forEach(function(row) {
+      // Trouver le localStorage key correspondant
+      var lsKey = Object.keys(SUPABASE_KEYS_MAP).find(function(k) {
+        return SUPABASE_KEYS_MAP[k] === row.key;
+      });
+      if(lsKey && row.value) {
+        localStorage.setItem(lsKey, row.value);
+        loaded++;
+      }
+    });
+    // Sync ARIA key
+    try {
+      var pk = JSON.parse(localStorage.getItem('sp_params_keys') || '{}');
+      pk.claude_key = localStorage.getItem('sp_claude_key') || '';
+      localStorage.setItem('sp_params_keys', JSON.stringify(pk));
+    } catch(e) {}
+    if(loaded > 0) {
+      console.log('[Settings] ' + loaded + ' clés chargées depuis Supabase');
+      paramsLoad(); // Rafraîchir l'UI
+    }
+  } catch(e) { console.warn('[Settings] Load failed:', e.message); }
+}
+
 function paramsSaveEcosystem(){
   var id   = (document.getElementById('params-eco-repairer-id')||{value:''}).value.trim();
   var user = (document.getElementById('params-eco-user')||{value:''}).value.trim();
@@ -10536,6 +10622,12 @@ function paramsSaveEcosystem(){
   localStorage.setItem(PARAMS_KEYS.ecoRepairerId, id);
   localStorage.setItem(PARAMS_KEYS.ecoUser, user);
   localStorage.setItem(PARAMS_KEYS.ecoPass, pass);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') {
+    supaSettingSave('eco_repairer_id', id);
+    supaSettingSave('eco_user', user);
+    supaSettingSave('eco_pass', pass);
+  }
   showNotif('✅ Identifiants Ecosystem enregistrés !','success');
   paramsUpdateStatus();
 }
@@ -10546,6 +10638,11 @@ function paramsSaveEcologic(){
   if(!token){ showNotif('Entrez le Token Ecologic','error'); return; }
   localStorage.setItem(PARAMS_KEYS.ecologicToken, token);
   localStorage.setItem(PARAMS_KEYS.ecologicSiteId, siteid);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') {
+    supaSettingSave('ecologic_token', token);
+    supaSettingSave('ecologic_siteid', siteid);
+  }
   showNotif('✅ Identifiants Ecologic enregistrés !','success');
   paramsUpdateStatus();
 }
@@ -14664,6 +14761,8 @@ function getNasUrl() {
 function paramsSaveNas() {
   var ip = (document.getElementById('params-nas-ip')||{value:''}).value.trim();
   localStorage.setItem(NAS_PRINT_KEY, ip);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') supaSettingSave('nas_ip', ip);
   var st = document.getElementById('params-nas-status');
   if(st) st.innerHTML = '<span style="color:var(--green);">✅ IP enregistrée : ' + ip + '</span>';
   showNotif('✅ IP NAS enregistrée','success');
@@ -14690,6 +14789,11 @@ function paramsSaveClaude() {
   var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
   localStorage.setItem(PARAMS_KEYS.claudeKey, key);
   localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') {
+    supaSettingSave('claude_api_key', key);
+    supaSettingSave('claude_model', mdl);
+  }
   window._cachedApiKey = key;
   var igInput = document.getElementById('ig-api-key');
   if(igInput) igInput.value = key;
