@@ -278,6 +278,30 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
   box-shadow:2px 2px 6px rgba(174,174,184,.4),-1px -1px 3px rgba(255,255,255,.9);
 }
 
+/* Badge QualiRépar */
+.qr-badge {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #0a3d1f, #0d5a2c);
+  border: 1.5px solid #22c55e;
+  border-radius: var(--r); padding: 10px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 0 20px rgba(34,197,94,0.15);
+}
+.qr-badge-icon {
+  width: 38px; height: 38px; flex-shrink: 0;
+  background: #fff; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.qr-badge-text { flex: 1; }
+.qr-badge-title { font-size: 12px; font-weight: 800; color: #4ade80; letter-spacing: .04em; }
+.qr-badge-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+.qr-badge-price {
+  font-size: 22px; font-weight: 900; color: #4ade80;
+  font-family: -apple-system,sans-serif; letter-spacing: -.03em;
+  text-shadow: 0 0 12px rgba(74,222,128,0.4);
+}
+
 /* Consent */
 .consent{
   background:var(--white);border-radius:var(--r);padding:16px;
@@ -465,6 +489,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
         <div class="flux-label">Accessoire</div>
         <div class="flux-desc">Coque, verre trempé, chargeur…</div>
       </button>
+      <button class="flux-btn flux-cmd" onclick="choisirFlux('commande')" style="grid-column:1/-1;">
+        <div class="flux-ico" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);box-shadow:0 8px 24px rgba(124,58,237,0.4);">📦</div>
+        <div class="flux-label">Commander une pièce</div>
+        <div class="flux-desc">Pièce non disponible — je reviendrai quand elle sera arrivée</div>
+      </button>
     </div>
   </div>
 
@@ -472,6 +501,15 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
   <div class="scr" id="scr-id-rep">
     <div class="scr-title">Vos coordonnées</div>
     <div class="scr-sub">Toutes les informations pour votre dossier de réparation</div>
+    <!-- Badge QualiRépar -->
+    <div class="qr-badge">
+      <div class="qr-badge-icon">♻️</div>
+      <div class="qr-badge-text">
+        <div class="qr-badge-title">✅ CERTIFIÉ QUALIREPAR</div>
+        <div class="qr-badge-sub">Réduction immédiate sur votre réparation éligible</div>
+      </div>
+      <div class="qr-badge-price">-25€</div>
+    </div>
 
     <!-- Recherche client existant -->
     <div id="client-search-wrap" style="margin-bottom:20px;position:relative;">
@@ -688,6 +726,15 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
     <div class="scr-title">Récap &amp; Signature</div>
     <div class="scr-sub">Vérifiez votre dossier et signez pour valider</div>
     <div class="recap" id="recap-rep"></div>
+    <!-- Badge QualiRépar récap -->
+    <div class="qr-badge" style="margin-bottom:16px;">
+      <div class="qr-badge-icon">♻️</div>
+      <div class="qr-badge-text">
+        <div class="qr-badge-title">✅ QUALIREPAR — RÉDUCTION APPLIQUÉE</div>
+        <div class="qr-badge-sub">-25€ déduits automatiquement si votre appareil est éligible</div>
+      </div>
+      <div class="qr-badge-price">-25€</div>
+    </div>
     <div class="lbl" style="margin-bottom:8px;">Signature *</div>
     <div class="sig-wrap">
       <canvas id="sig-canvas"></canvas>
@@ -746,6 +793,115 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
       <div class="ok-num-val" id="ok-num">—</div>
     </div>
     <button class="btn-restart" onclick="restart()">Nouveau dossier</button>
+  </div>
+
+  <!-- ─── STEP 2C : IDENTITÉ COMMANDE ─── -->
+  <div class="scr" id="scr-id-cmd">
+    <div class="scr-title">Vos coordonnées</div>
+    <div class="scr-sub">Pour vous prévenir dès l'arrivée de la pièce</div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="cmd-nom-c" placeholder="Dupont" oninput="checkStep2Cmd()"></div>
+      <div class="fld"><label class="lbl">Prénom</label><input class="inp" type="text" id="cmd-prenom-c" placeholder="Jean"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Téléphone * <span style="color:var(--gray2);font-size:10px;">(SMS quand la pièce arrive)</span></label>
+        <input class="inp" type="tel" id="cmd-tel-c" placeholder="06 XX XX XX XX" inputmode="tel" oninput="checkStep2Cmd()">
+      </div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Email <span style="color:var(--gray2);font-weight:400;">(optionnel)</span></label>
+        <input class="inp" type="email" id="cmd-email-c" placeholder="exemple@gmail.com" inputmode="email">
+      </div>
+    </div>
+    <!-- Info délai -->
+    <div style="background:#f0f7ff;border:1.5px solid #bfdbfe;border-radius:var(--r);padding:14px 16px;margin-top:8px;">
+      <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:4px;">📱 Comment ça marche ?</div>
+      <div style="font-size:12px;color:#3b82f6;line-height:1.6;">
+        1. On commande votre pièce aujourd'hui<br>
+        2. Dès qu'elle arrive, vous recevez un SMS<br>
+        3. Vous revenez déposer votre téléphone (~1h de réparation)
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3C : DÉTAIL APPAREIL + PANNE ─── -->
+  <div class="scr" id="scr-cmd-detail">
+    <div class="scr-title">Votre appareil</div>
+    <div class="scr-sub">Marque, modèle et pièce à commander</div>
+
+    <div class="lbl" style="margin-bottom:10px;">Marque *</div>
+    <div class="brand-grid">
+      <button class="brand-btn" onclick="setBrandCmd('Apple')" id="bc-Apple">
+        <div class="brand-logo"><svg width="36" height="44" viewBox="0 0 814 1000"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-97.4C46.7 790 0 684 0 590.3 0 374.2 138.8 256 275.6 256c63.6 0 116.6 41.8 156.1 41.8 37.5 0 98.3-44.8 168.2-44.8 27.2 0 125.2 4.5 197.7 97.4zm-192.4-84.5c-29.6 34.4-79.3 61.1-129 57.3-6.4-49.7 18.1-102.3 45.3-134.8C541 146 596.9 118 641.4 116c5.8 51.3-15.4 101.9-45.7 140.4z" fill="#1d1d1f"/></svg></div>
+        <div class="brand-name">Apple</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandCmd('Samsung')" id="bc-Samsung">
+        <div class="brand-logo"><svg viewBox="0 0 430 80" height="28" width="100%"><text x="5" y="68" font-family="Arial Black,Arial,sans-serif" font-size="72" font-weight="900" fill="#1428A0">Samsung</text></svg></div>
+        <div class="brand-name">Samsung</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandCmd('Huawei')" id="bc-Huawei">
+        <div class="brand-logo"><svg width="44" height="44" viewBox="0 0 100 100"><path d="M50 8 L62 36 L92 36 L70 54 L78 82 L50 66 L22 82 L30 54 L8 36 L38 36 Z" fill="#CF0A2C" opacity=".9"/></svg></div>
+        <div class="brand-name">Huawei</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandCmd('Xiaomi')" id="bc-Xiaomi">
+        <div class="brand-logo"><svg viewBox="0 0 100 65" height="28" width="60"><rect x="0" y="0" width="27" height="65" rx="4" fill="#FF6900"/><rect x="36" y="0" width="27" height="65" rx="4" fill="#FF6900"/><rect x="72" y="0" width="27" height="65" rx="4" fill="#FF6900"/></svg></div>
+        <div class="brand-name">Xiaomi</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandCmd('Google')" id="bc-Google">
+        <div class="brand-logo"><svg viewBox="0 0 48 48" height="36" width="36"><path fill="#4285F4" d="M43.6 20H24v8h11.3C33.8 33 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8 13.4 4.8 4.8 13.4 4.8 24S13.4 43.2 24 43.2c11 0 19.2-7.7 19.2-19.2 0-1.1-.1-2.1-.4-4z"/><path fill="#EA4335" d="M6.3 14.7l6.6 4.8C14.5 15.8 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.9 6.7 29.2 4.8 24 4.8c-7.7 0-14.3 4.3-17.7 10z"/><path fill="#34A853" d="M24 43.2c5.1 0 9.7-1.7 13.3-4.5l-6.1-5.2C29.3 35.1 26.8 36 24 36c-5.3 0-9.7-3-11.3-7.4L6 33.5c3.3 5.8 9.8 9.7 18 9.7z"/></svg></div>
+        <div class="brand-name">Google</div>
+      </button>
+      <button class="brand-btn" onclick="setBrandCmd('Autre')" id="bc-Autre">
+        <div class="brand-logo"><span style="font-size:34px;">📱</span></div>
+        <div class="brand-name">Autre</div>
+      </button>
+    </div>
+
+    <div class="fld" style="margin-bottom:18px;">
+      <label class="lbl">Modèle *</label>
+      <input class="inp" type="text" id="cmd-modele-c" placeholder="ex: iPhone 15 Pro, Galaxy S24…" oninput="checkStep3Cmd()">
+    </div>
+
+    <div class="lbl" style="margin-bottom:10px;">Pièce à commander *</div>
+    <div class="panne-grid">
+      <button class="panne-btn" onclick="setPanneCmd('Écran')" id="pc-ecran"><div class="panne-ico">📱</div><div class="panne-label">Écran</div></button>
+      <button class="panne-btn" onclick="setPanneCmd('Batterie')" id="pc-bat"><div class="panne-ico">🔋</div><div class="panne-label">Batterie</div></button>
+      <button class="panne-btn" onclick="setPanneCmd('Connecteur de charge')" id="pc-charge"><div class="panne-ico">⚡</div><div class="panne-label">Connecteur</div></button>
+      <button class="panne-btn" onclick="setPanneCmd('Vitre arrière')" id="pc-vitre"><div class="panne-ico">💎</div><div class="panne-label">Vitre arrière</div></button>
+      <button class="panne-btn" onclick="setPanneCmd('Caméra')" id="pc-cam"><div class="panne-ico">📸</div><div class="panne-label">Caméra</div></button>
+      <button class="panne-btn" onclick="toggleAutreCmd()" id="pc-autre"><div class="panne-ico">➕</div><div class="panne-label">Autre</div></button>
+    </div>
+    <div class="autre-wrap" id="autre-cmd-wrap">
+      <div class="fld"><label class="lbl">Précisez *</label>
+        <input class="inp" type="text" id="autre-cmd-inp" placeholder="Pièce à commander…" oninput="setPanneCmd(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4C : CONFIRMATION COMMANDE ─── -->
+  <div class="scr" id="scr-cmd-confirm">
+    <div class="scr-title">Confirmation</div>
+    <div class="scr-sub">Votre commande de pièce va être enregistrée</div>
+    <div class="recap" id="recap-cmd"></div>
+    <!-- Badge info SMS -->
+    <div style="background:linear-gradient(135deg,#0a3d1f,#0d5a2c);border:1.5px solid #22c55e;border-radius:var(--r);padding:16px 18px;margin-bottom:16px;display:flex;gap:14px;align-items:center;">
+      <span style="font-size:28px;">📱</span>
+      <div>
+        <div style="font-size:13px;font-weight:800;color:#4ade80;margin-bottom:3px;">SMS automatique à l'arrivée</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65);line-height:1.5;">
+          Vous recevrez : <i>"Bonjour, votre pièce est arrivée en magasin ! Venez quand vous voulez, comptez 1h pour la réparation."</i>
+        </div>
+      </div>
+    </div>
+    <!-- Badge QualiRépar -->
+    <div class="qr-badge">
+      <div class="qr-badge-icon">♻️</div>
+      <div class="qr-badge-text">
+        <div class="qr-badge-title">✅ QUALIREPAR — -25€ SI ÉLIGIBLE</div>
+        <div class="qr-badge-sub">Réduction appliquée au moment de la réparation</div>
+      </div>
+      <div class="qr-badge-price">-25€</div>
+    </div>
   </div>
 
   <!-- FOOTER BUTTONS -->
@@ -1293,6 +1449,7 @@ const S = {
   flux:'', civ:'',
   nom:'', prenom:'', tel:'', email:'', adresse:'', cp:'', ville:'',
   marque:'', modele:'', panne:'',
+  marqueCmd:'', panneCmd:'',
   prix:'0', dejaPaye: false,
   sigData: null, consent: false
 };
@@ -1300,9 +1457,10 @@ const S = {
 // Navigation stack
 const SCREENS_REP = ['scr-flux','scr-id-rep','scr-rep','scr-sig'];
 const SCREENS_ACC = ['scr-flux','scr-id-acc','scr-acc','scr-prix'];
+const SCREENS_CMD = ['scr-flux','scr-id-cmd','scr-cmd-detail','scr-cmd-confirm'];
 let curStep = 0; // index dans le tableau actif
 
-function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : SCREENS_REP; }
+function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : S.flux === 'commande' ? SCREENS_CMD : SCREENS_REP; }
 
 /* ══════════════════════════════════════
    SCREENSAVER — Roue animée + QR
@@ -1403,6 +1561,14 @@ function updateFooter(idx) {
     btn.disabled = false;
     return;
   }
+  if (id === 'scr-cmd-confirm') {
+    buildRecapCmd();
+    footer.classList.add('show');
+    btn.textContent = '📦 Confirmer la commande';
+    btn.onclick = () => soumettreCommande();
+    btn.disabled = false;
+    return;
+  }
   // Other steps
   footer.classList.add('show');
   btn.textContent = 'Continuer →';
@@ -1411,10 +1577,12 @@ function updateFooter(idx) {
 }
 
 function canProceed(id) {
-  if (id === 'scr-id-rep') return checkStep2R(true);
-  if (id === 'scr-id-acc') return checkStep2A(true);
-  if (id === 'scr-rep')    return checkStep3R(true);
-  if (id === 'scr-acc')    return checkStep3A(true);
+  if (id === 'scr-id-rep')  return checkStep2R(true);
+  if (id === 'scr-id-acc')  return checkStep2A(true);
+  if (id === 'scr-id-cmd')  return checkStep2Cmd(true);
+  if (id === 'scr-rep')     return checkStep3R(true);
+  if (id === 'scr-acc')     return checkStep3A(true);
+  if (id === 'scr-cmd-detail') return checkStep3Cmd(true);
   return true;
 }
 
@@ -1584,10 +1752,100 @@ async function soumettre() {
       client_adresse: S.adresse, client_cp: S.cp, client_ville: S.ville,
       appareil_marque: S.marque, appareil_modele: S.modele,
       panne: S.panne, etat: 'depot', statut: 'depot',
-      signature: sig, bonus_qr: false, devis: 0, obs: '', mo_ht: 0, pieces_ht: 0
+      signature: sig, bonus_qr: false, devis: 0,
+      obs: 'QualiRépar -25€ éligible',
+      mo_ht: 0, pieces_ht: 0,
+      appareil_imei: '', appareil_couleur: '', appareil_code: ''
     });
-    showSuccess(num, 'Votre appareil est entre de bonnes mains !<br>Nous vous contactons dès la réparation terminée.<br><br>🎰 Direction la roue des cadeaux…');
-    setTimeout(() => { window.location.href='/roulette.html'; }, 4000);
+    showSuccess(num, 'Votre appareil est entre de bonnes mains !<br><span style="color:#4ade80;font-weight:700;">♻️ QualiRépar : -25€ si éligible ✅</span><br>Nous vous contactons dès la réparation terminée.');
+  } catch(e) {
+    goStep(curStep);
+    alert('Erreur réseau. Veuillez réessayer.');
+  }
+}
+
+/* ══════════════════════════════════════
+   FLUX COMMANDE PIÈCE
+══════════════════════════════════════ */
+function checkStep2Cmd(silent) {
+  var ok = !!(val('cmd-nom-c') && val('cmd-tel-c'));
+  if (!silent) { var b=document.getElementById('btn-next'); if(b) b.disabled=!ok; }
+  return ok;
+}
+function checkStep3Cmd(silent) {
+  var ok = !!(S.marqueCmd && val('cmd-modele-c') && S.panneCmd);
+  if (!silent) { var b=document.getElementById('btn-next'); if(b) b.disabled=!ok; }
+  return ok;
+}
+function setBrandCmd(b) {
+  S.marqueCmd = b;
+  document.querySelectorAll('[id^="bc-"]').forEach(el => el.classList.toggle('sel', el.id==='bc-'+b));
+  checkStep3Cmd();
+}
+function setPanneCmd(p) {
+  S.panneCmd = p;
+  document.getElementById('autre-cmd-wrap').classList.remove('show');
+  document.getElementById('pc-autre').classList.remove('sel');
+  var map={'pc-ecran':'Écran','pc-bat':'Batterie','pc-charge':'Connecteur de charge','pc-vitre':'Vitre arrière','pc-cam':'Caméra'};
+  Object.keys(map).forEach(id => document.getElementById(id)?.classList.toggle('sel', map[id]===p));
+  checkStep3Cmd();
+}
+function toggleAutreCmd() {
+  var wrap = document.getElementById('autre-cmd-wrap');
+  var isOpen = wrap.classList.contains('show');
+  wrap.classList.toggle('show', !isOpen);
+  document.getElementById('pc-autre').classList.toggle('sel', !isOpen);
+  if (!isOpen) { S.panneCmd=''; document.getElementById('autre-cmd-inp').focus(); }
+}
+
+function buildRecapCmd() {
+  var nom    = val('cmd-nom-c');
+  var prenom = val('cmd-prenom-c');
+  var tel    = val('cmd-tel-c');
+  var modele = val('cmd-modele-c');
+  var rows = [
+    ['Client',   (prenom?prenom+' ':'')+nom],
+    ['Téléphone', tel],
+    ['Marque',   S.marqueCmd||''],
+    ['Modèle',   modele],
+    ['Pièce',    S.panneCmd||''],
+  ].filter(function(r){return r[1];});
+  var el = document.getElementById('recap-cmd');
+  if(el) el.innerHTML = rows.map(function(r){
+    return '<div class="recap-row"><span class="recap-k">'+r[0]+'</span><span class="recap-v">'+r[1]+'</span></div>';
+  }).join('');
+}
+
+async function soumettreCommande() {
+  var nom    = val('cmd-nom-c');
+  var prenom = val('cmd-prenom-c');
+  var tel    = val('cmd-tel-c');
+  var email  = val('cmd-email-c');
+  var modele = val('cmd-modele-c');
+  var num    = genNum('CMD');
+  showLoading();
+  try {
+    await supaPost('bons_commande', {
+      id:            Date.now(),
+      numero:        num,
+      date:          today(),
+      type:          'reparation',
+      client_nom:    (prenom?prenom+' ':'')+nom,
+      client_tel:    tel,
+      detail:        (S.marqueCmd?S.marqueCmd+' ':'')+modele+' — '+S.panneCmd,
+      prix:          0,
+      acompte:       0,
+      mode_reglement:'ESPECES',
+      statut:        'a_commander',
+      paye:          false,
+      traite:        false,
+      traite_date:   null
+    });
+    showSuccess(num,
+      'Commande enregistrée ! 📦<br>'+
+      'Vous recevrez un SMS dès que la pièce arrive.<br>'+
+      '<span style="color:#4ade80;font-weight:700;">♻️ QualiRépar -25€ si éligible</span>'
+    );
   } catch(e) {
     goStep(curStep);
     alert('Erreur réseau. Veuillez réessayer.');
@@ -1666,9 +1924,7 @@ async function soumettreAcc() {
       traite_date: null
     });
     showSuccess(num, 'Commande enregistrée !<br>'
-      + (dejaPaye ? '💰 Déjà payé ✅' : 'Reste à régler : <b>' + prix.toFixed(2) + ' €</b>')
-      + '<br><br>🎰 Tentez la roue des cadeaux…');
-    setTimeout(() => { window.location.href='/roulette.html'; }, 4000);
+      + (dejaPaye ? '💰 Déjà payé ✅' : 'Reste à régler : <b>' + prix.toFixed(2) + ' €</b>'));
   } catch(e) {
     goStep(curStep);
     alert('Erreur réseau. Veuillez réessayer.');
@@ -1711,11 +1967,13 @@ function restart(silent) {
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   ['r-nom','r-prenom','r-tel','r-email','r-adresse','r-cp','r-ville','r-modele',
-   'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp'].forEach(id=>{
+   'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp',
+   'cmd-nom-c','cmd-prenom-c','cmd-tel-c','cmd-email-c','cmd-modele-c','autre-cmd-inp'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   // Reset buttons
   document.querySelectorAll('.brand-btn,.panne-btn,.civ-btn,.flux-btn').forEach(b=>b.classList.remove('sel'));
+  S.marqueCmd=''; S.panneCmd='';
   document.getElementById('autre-panne-wrap').classList.remove('show');
   document.getElementById('autre-acc-wrap').classList.remove('show');
   consentOk=false; sigHasData=false; dejaPaye=false; priceStr='0';
