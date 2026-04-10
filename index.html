@@ -392,25 +392,39 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   </div>
   <div class="main">
 
-  <!-- ARIA COMMAND CENTER -->
+  <!-- ═══ ARIA COMMAND CENTER ═══ -->
   <div id="aria-omnibar-wrap">
-    <div id="aria-omnibar" role="search" onclick="document.getElementById('aria-input-cmd').focus()">
-      <div id="aria-wave-icon" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
-        <svg viewBox="0 0 22 14" width="18" height="12" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect class="aria-bar" x="0"  y="3" width="3" height="8"  rx="1.5" fill="white"/>
-          <rect class="aria-bar" x="4.75" y="1" width="3" height="12" rx="1.5" fill="white"/>
-          <rect class="aria-bar" x="9.5"  y="4" width="3" height="6"  rx="1.5" fill="white"/>
-          <rect class="aria-bar" x="14.25" y="0" width="3" height="14" rx="1.5" fill="white"/>
-          <rect class="aria-bar" x="19" y="2" width="3" height="10" rx="1.5" fill="white"/>
+    <div class="sp-omnibar" style="position:relative;">
+      <!-- Icône ARIA (onde) -->
+      <div style="flex-shrink:0;width:30px;height:30px;background:linear-gradient(135deg,#ff3b30,#c9251b);border-radius:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(255,59,48,0.35);cursor:pointer;" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
+        <svg viewBox="0 0 22 14" width="16" height="11" fill="none">
+          <rect class="sp-wave__bar" x="0"   y="3" width="3" height="8"  rx="1.5" fill="white" style="transform-origin:center bottom;animation:sp-wave-bar 1.4s ease-in-out infinite;"/>
+          <rect class="sp-wave__bar" x="4.8" y="1" width="3" height="12" rx="1.5" fill="white" style="transform-origin:center bottom;animation:sp-wave-bar 1.4s ease-in-out .15s infinite;"/>
+          <rect class="sp-wave__bar" x="9.5" y="4" width="3" height="6"  rx="1.5" fill="white" style="transform-origin:center bottom;animation:sp-wave-bar 1.4s ease-in-out .30s infinite;"/>
+          <rect class="sp-wave__bar" x="14.2" y="0" width="3" height="14" rx="1.5" fill="white" style="transform-origin:center bottom;animation:sp-wave-bar 1.4s ease-in-out .45s infinite;"/>
+          <rect class="sp-wave__bar" x="19"  y="2" width="3" height="10" rx="1.5" fill="white" style="transform-origin:center bottom;animation:sp-wave-bar 1.4s ease-in-out .60s infinite;"/>
         </svg>
       </div>
-      <input id="aria-input-cmd" type="text"
-        placeholder="Chercher, créer, piloter l'app…"
-        autocomplete="off" spellcheck="false"/>
-      <span id="aria-kbd">⌘K</span>
-      <button id="aria-mic-btn" title="Parler à ARIA">🎤</button>
+      <!-- Input -->
+      <div class="sp-omnibar__search" style="flex:1;" onclick="document.getElementById('aria-input-cmd').focus()">
+        <input id="aria-input-cmd" type="text"
+          placeholder="Chercher, créer, piloter l'app…"
+          autocomplete="off" spellcheck="false"/>
+        <span id="aria-kbd">⌘K</span>
+      </div>
+      <!-- Bouton micro -->
+      <button id="aria-mic-btn" class="sp-mic-btn" title="Parler à ARIA">
+        <span class="sp-mic-btn__icon">🎤</span>
+        <div class="sp-wave">
+          <div class="sp-wave__bar"></div><div class="sp-wave__bar"></div>
+          <div class="sp-wave__bar"></div><div class="sp-wave__bar"></div>
+          <div class="sp-wave__bar"></div>
+        </div>
+      </button>
+      <!-- Spotlight -->
       <div id="aria-spotlight"></div>
     </div>
+    <!-- Quick Actions -->
     <div id="aria-quick-actions">
       <button class="aria-qa" onclick="ariaCmd('Nouvelle réparation')">🔧 Répa</button>
       <button class="aria-qa" onclick="ariaCmd('CA aujourd\'hui')">💰 CA</button>
@@ -1644,31 +1658,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <label>Clé API Anthropic</label>
             <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…">
             <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Active sur toute l'app (ARIA, Instagram/IA, Documents). <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
-          </div>
-          <div class="form-group">
-            <label>Modèle par défaut</label>
-            <select id="params-claude-model">
-              <option value="claude-sonnet-4-6">claude-sonnet-4-6 — Rapide &amp; efficace (recommandé)</option>
-              <option value="claude-opus-4-6">claude-opus-4-6 — Puissant &amp; précis</option>
-              <option value="claude-haiku-4-5">claude-haiku-4-5 — Ultra-rapide &amp; léger</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;width:100%;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
-          <button class="btn" style="width:100%;" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
-        </div>
-      </div>
-
-      <!-- Claude API -->
-      <div class="card" style="border:1.5px solid #7c3aed;">
-        <div class="card-header" style="background:#f5f3ff;">
-          <div class="card-title" style="color:#5b21b6;">🤖 Claude — Intelligence Artificielle</div>
-          <div id="params-claude-status" style="font-size:12px;color:var(--text-muted);">⚠️ Non configurée</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="form-group">
-            <label>Clé API Anthropic</label>
-            <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Active sur toute l'app (ARIA, IA, Documents). <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
           </div>
           <div class="form-group">
             <label>Modèle par défaut</label>
@@ -4281,151 +4270,72 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   '.center{text-align:center;}.bold{font-weight:bold;}.line{border-top:1px dashed #000;margin:4px 0;}'+
   '.row{display:flex;justify-content:space-between;padding:2px 0;}'+
   '@media print{@page{size:80mm auto;margin:0;}}
-/* ══════════════════════════════════════════
-   ARIA COMMAND CENTER — Mobile-First
-   ══════════════════════════════════════════ */
+/* ARIA omnibar actif — masquer anciens FABs */
+#aria-fab { display: none !important; }
+#claude-agent-glow-border { display: none !important; }
+
+/* ── ARIA Command Center — Quick Actions + Spotlight ── */
 #aria-omnibar-wrap {
-  position: sticky;
-  top: 0;
-  z-index: 500;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 12px 4px;
-  background: rgba(245,245,247,0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  position: sticky; top: 0; z-index: 200;
+  display: flex; flex-direction: column; align-items: stretch;
+  background: rgba(240,240,243,0.96);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255,255,255,0.65);
+  padding: 8px 16px 6px;
 }
-#aria-omnibar {
-  width: 100%;
-  max-width: 680px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #ffffff;
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 14px;
-  padding: 7px 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.07);
-  cursor: text;
-  transition: border-radius 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-  outline: 2px solid transparent;
+#aria-omnibar-wrap .sp-omnibar {
+  position: static;
+  border-bottom: none;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.75);
+  box-shadow: inset 2px 2px 5px rgba(174,174,184,0.3), inset -1px -1px 3px rgba(255,255,255,0.9);
 }
-#aria-omnibar.thinking { outline-color: #3b82f6; }
-#aria-omnibar.success  { outline-color: #22c55e; }
-#aria-omnibar.error    { outline-color: #ef4444; }
-#aria-omnibar.expanded {
-  border-radius: 18px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 12px 32px rgba(0,0,0,0.12);
-}
-/* Icône ARIA — carré rouge avec ondes SVG */
-#aria-wave-icon {
-  flex-shrink: 0;
-  width: 28px; height: 28px;
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 6px rgba(239,68,68,0.35);
-  cursor: pointer;
-}
-.aria-bar {
-  transform-origin: center bottom;
-  animation: aria-idle 1.5s ease-in-out infinite;
-}
-.aria-bar:nth-child(2){animation-delay:.15s;}
-.aria-bar:nth-child(3){animation-delay:.30s;}
-.aria-bar:nth-child(4){animation-delay:.45s;}
-.aria-bar:nth-child(5){animation-delay:.60s;}
-@keyframes aria-idle {
-  0%,100%{ transform:scaleY(0.4); } 50%{ transform:scaleY(1); }
-}
-#aria-omnibar.listening .aria-bar {
-  animation: aria-listen 0.35s ease-in-out infinite alternate;
-}
-@keyframes aria-listen {
-  from{transform:scaleY(0.3);}to{transform:scaleY(1.5);}
-}
-/* Input */
-#aria-input-cmd {
-  flex: 1; border: none; outline: none; background: transparent;
-  font-size: 13px; font-family: -apple-system,'Inter',sans-serif;
-  font-weight: 500; color: #111; caret-color: #ef4444;
-  min-width: 0;
-}
-#aria-input-cmd::placeholder { color: #b0b0b0; font-weight: 400; }
-/* ⌘K badge — caché sur mobile */
 #aria-kbd {
-  display: none;
-  font-size: 10px; color: #bbb; background: #f3f4f6;
-  border: 1px solid #e5e7eb; border-radius: 5px;
-  padding: 2px 6px; font-family: monospace; white-space: nowrap;
+  font-size:10px;color:#bbb;background:#f0f0f3;
+  border:1px solid #e0e0e5;border-radius:5px;
+  padding:2px 6px;font-family:monospace;white-space:nowrap;flex-shrink:0;
+}
+@media(max-width:768px){#aria-kbd{display:none!important;}}
+#aria-quick-actions {
+  display: flex; gap: 6px; margin-top: 6px;
+  overflow-x: auto; padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+#aria-quick-actions::-webkit-scrollbar { display: none; }
+.aria-qa {
   flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 11px; font-size: 11px; font-weight: 600;
+  font-family: -apple-system,'Inter',sans-serif; color: #374151;
+  background: #f0f0f3; border: none; border-radius: 20px;
+  cursor: pointer; white-space: nowrap;
+  box-shadow: 3px 3px 8px rgba(174,174,184,0.4), -2px -2px 5px rgba(255,255,255,0.9);
+  transition: all 0.15s;
 }
-@media(min-width:768px){ #aria-kbd { display:inline; } }
-/* Bouton micro */
-#aria-mic-btn {
-  flex-shrink:0; width:28px; height:28px; border-radius:50%;
-  border:none; background:#f3f4f6; display:flex;
-  align-items:center; justify-content:center;
-  cursor:pointer; font-size:14px; transition:all 0.2s; padding:0;
-}
-#aria-mic-btn:hover { background:#e5e7eb; }
-#aria-mic-btn.active { background:#fee2e2; animation:mic-pulse 1s infinite; }
-@keyframes mic-pulse {
-  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4);}
-  50%{box-shadow:0 0 0 6px rgba(239,68,68,0);}
-}
-/* Spotlight dropdown */
+.aria-qa:active { box-shadow: inset 2px 2px 5px rgba(174,174,184,0.5); transform: scale(0.96); }
 #aria-spotlight {
-  display:none; position:absolute;
-  top:calc(100% + 6px); left:0; right:0;
-  background:#fff; border-radius:14px;
-  border:1px solid rgba(0,0,0,.08);
-  box-shadow:0 8px 30px rgba(0,0,0,0.14);
-  overflow:hidden; z-index:600;
+  display:none; position:absolute; top:calc(100% + 6px); left:0; right:0;
+  background:rgba(248,248,250,0.97); backdrop-filter:blur(20px);
+  border-radius:14px; border:1px solid rgba(255,255,255,0.9);
+  box-shadow:0 8px 30px rgba(0,0,0,0.12); overflow:hidden; z-index:600;
   max-height:280px; overflow-y:auto;
 }
-#aria-spotlight.open { display:block; }
+#aria-spotlight.open { display: block; }
 .aria-spot-item {
-  display:flex; align-items:center; gap:10px;
-  padding:9px 14px; cursor:pointer;
-  transition:background 0.12s; font-size:13px;
-  font-family:-apple-system,'Inter',sans-serif; color:#111;
-  border-bottom:1px solid #f3f4f6;
+  display:flex;align-items:center;gap:10px;padding:9px 16px;
+  cursor:pointer;transition:background 0.12s;font-size:13px;color:#1d1d1f;
+  border-bottom:1px solid rgba(0,0,0,0.05);
 }
 .aria-spot-item:last-child{border-bottom:none;}
-.aria-spot-item:hover{background:#f5f5f7;}
+.aria-spot-item:hover{background:rgba(240,240,243,0.8);}
 .aria-spot-icon{font-size:16px;flex-shrink:0;}
 .aria-spot-title{font-weight:600;font-size:12px;}
-.aria-spot-sub{font-size:11px;color:#888;margin-top:1px;}
-/* Quick actions — scroll horizontal sur mobile */
-#aria-quick-actions {
-  display:flex; gap:6px; margin-top:5px;
-  overflow-x:auto; width:100%; max-width:680px;
-  padding-bottom:2px;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-}
-#aria-quick-actions::-webkit-scrollbar{display:none;}
-.aria-qa {
-  flex-shrink:0;
-  display:flex; align-items:center; gap:4px;
-  padding:4px 10px; font-size:11px; font-weight:600;
-  font-family:-apple-system,'Inter',sans-serif; color:#374151;
-  background:#fff; border:1px solid rgba(0,0,0,.10);
-  border-radius:20px; cursor:pointer; white-space:nowrap;
-  box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05);
-  transition:all 0.15s;
-}
-.aria-qa:active{transform:scale(0.96);background:#f3f4f6;}
-@media(min-width:768px){
-  .aria-qa:hover{transform:translateY(-2px);box-shadow:0 2px 8px rgba(0,0,0,.12);}
-}
-/* Masquer ancien FAB */
-#aria-fab{display:none!important;}
-#claude-agent-glow-border{display:none!important;}
+.aria-spot-sub{font-size:11px;color:#6e6e73;margin-top:1px;}
 </style></head><body>'+
   '<p class="no-print" style="padding:4px;"><button onclick="window.print()" style="width:100%;padding:8px;background:#c0392b;color:#fff;border:none;cursor:pointer;font-weight:bold;border-radius:4px;">🖨️ Imprimer</button></p>'+
   '<div style="padding:3mm;">'+
@@ -10595,8 +10505,8 @@ function paramsLoad(){
   el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
   el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
   var stCl=document.getElementById('params-claude-status');
-  if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
-  if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
+  if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey)?'✅ Clé configurée':'⚠️ Non configurée';
+  if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey)?'var(--green)':'var(--warning)';
   paramsUpdateStatus();
 }
 
@@ -14811,41 +14721,6 @@ async function paramsTestClaude() {
   }
 }
 
-function paramsSaveClaude() {
-  var key = (document.getElementById('params-claude-key')||{value:''}).value.trim();
-  var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
-  localStorage.setItem(PARAMS_KEYS.claudeKey, key);
-  localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
-  try { var pk=JSON.parse(localStorage.getItem('sp_params_keys')||'{}'); pk.claude_key=key; localStorage.setItem('sp_params_keys',JSON.stringify(pk)); } catch(e){}
-  window._cachedApiKey = key;
-  var igEl = document.getElementById('ig-api-key'); if(igEl) igEl.value = key;
-  var ariaEl = document.getElementById('aria-api-key-input'); if(ariaEl) ariaEl.value = key;
-  var st = document.getElementById('params-claude-status');
-  if(st){ st.textContent=key?'✅ Clé enregistrée':'⚠️ Non configurée'; st.style.color=key?'var(--green)':'var(--warning)'; }
-  if(window._ariaGlow) window._ariaGlow(key?'success':null);
-  showNotif('💾 Clé Claude active sur toute l\'app', key?'success':'warning');
-}
-async function paramsTestClaude() {
-  var key=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
-  var mdl=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
-  var st=document.getElementById('params-claude-status');
-  if(!key){showNotif('⚠️ Clé Claude non configurée','warning');return;}
-  if(st){st.textContent='🔄 Test…';st.style.color='var(--blue)';}
-  if(window._ariaGlow) window._ariaGlow('thinking');
-  try {
-    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:mdl,max_tokens:20,messages:[{role:'user',content:'OK?'}]})});
-    var d=await r.json();
-    if(d.content&&d.content[0]&&d.content[0].text){
-      if(st){st.textContent='✅ OK — '+mdl;st.style.color='var(--green)';}
-      if(window._ariaGlow) window._ariaGlow('success');
-      showNotif('✅ Claude API opérationnelle','success');
-    } else throw new Error(d.error?d.error.message:'Réponse invalide');
-  } catch(e){
-    if(st){st.textContent='❌ '+e.message.substring(0,50);st.style.color='var(--red)';}
-    if(window._ariaGlow) window._ariaGlow('error');
-    showNotif('❌ Claude: '+e.message.substring(0,50),'danger');
-  }
-}
 function eposPrint(c) {
   if(!c) return;
   var nasIp = getNasUrl();
@@ -18097,116 +17972,6 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
     };
   }
   patchAria();
-})();
-</script>
-
-<script>
-/* ARIA COMMAND CENTER — Logic */
-(function(){
-  var omnibar, input, spotlight, micBtn;
-  function init(){
-    omnibar   = document.getElementById('aria-omnibar');
-    input     = document.getElementById('aria-input-cmd');
-    spotlight = document.getElementById('aria-spotlight');
-    micBtn    = document.getElementById('aria-mic-btn');
-    if(!omnibar||!input) return;
-    input.addEventListener('focus', function(){ omnibar.classList.add('expanded'); });
-    input.addEventListener('blur',  function(){ setTimeout(function(){ omnibar.classList.remove('expanded'); spotlight.classList.remove('open'); },200); });
-    input.addEventListener('input', function(){ ariaSpotlight(input.value); });
-    input.addEventListener('keydown', function(e){
-      if(e.key==='Enter'){ ariaSendCmd(input.value); input.value=''; }
-      if(e.key==='Escape'){ input.blur(); input.value=''; }
-    });
-    document.addEventListener('keydown', function(e){
-      if((e.metaKey||e.ctrlKey)&&e.key==='k'){ e.preventDefault(); input.focus(); input.select(); }
-    });
-    if(micBtn) micBtn.addEventListener('click', ariaToggleMic);
-  }
-
-  /* Glow state */
-  window._ariaGlow = function(state){
-    if(!omnibar) return;
-    omnibar.classList.remove('thinking','success','error');
-    if(state){ omnibar.classList.add(state); if(state!=='thinking') setTimeout(function(){ omnibar.classList.remove(state); },2500); }
-  };
-
-  /* Quick actions */
-  window.ariaCmd = function(text){
-    if(!input) return;
-    input.value = text; input.focus();
-    omnibar.classList.add('expanded');
-    ariaSpotlight(text);
-    ariaSendCmd(text);
-  };
-
-  /* Spotlight */
-  var SUGG = [
-    {q:['ca','chiffre',"aujourd"],    i:'💰',t:"CA du jour",      s:"Chiffre d'affaires",      fn:function(){ ariaSendCmd("CA aujourd'hui"); }},
-    {q:['répa','repair','nouv répa'], i:'🔧',t:'Nouvelle répa',   s:'Créer un dossier',         fn:function(){ showPage&&showPage('reparations',null); setTimeout(function(){repNewDossier&&repNewDossier();},300); }},
-    {q:['client'],                    i:'👤',t:'Clients',          s:'Liste clients',            fn:function(){ showPage&&showPage('clients',null); }},
-    {q:['stock','phone','smart'],     i:'📱',t:'Stock',            s:'Smartphones en stock',     fn:function(){ showPage&&showPage('phones',null); }},
-    {q:['facture'],                   i:'🧾',t:'Factures',         s:'Historique factures',      fn:function(){ showPage&&showPage('factures',null); }},
-    {q:['quali','qr','bonus'],        i:'🏷️',t:'QualiRépar',      s:'Dossiers en attente',      fn:function(){ showPage&&showPage('qualirepar',null); qrInit&&qrInit(); }},
-    {q:['caisse'],                    i:'🏧',t:'Caisse',           s:'Z de caisse',              fn:function(){ showPage&&showPage('caisse',null); }},
-    {q:['param','api','clé'],         i:'⚙️',t:'Paramètres',      s:'API & configuration',      fn:function(){ showPage&&showPage('params',null); }},
-    {q:['devis'],                     i:'📋',t:'Devis',            s:'Créer ou voir les devis',  fn:function(){ showPage&&showPage('devis',null); }},
-    {q:['stat'],                      i:'📈',t:'Statistiques',     s:'CA et tendances',          fn:function(){ showPage&&showPage('stats',null); }},
-    {q:['depense','dépens'],          i:'💸',t:'Dépenses',         s:'Gérer les dépenses',       fn:function(){ showPage&&showPage('depenses',null); }},
-    {q:['roulet','cadeau','jeu'],     i:'🎰',t:'Roue cadeaux',    s:'Lancer la roue',           fn:function(){ showPage&&showPage('roulette',null); }},
-  ];
-
-  function ariaSpotlight(text){
-    var t=text.toLowerCase().trim();
-    if(!t||!spotlight){ spotlight&&spotlight.classList.remove('open'); return; }
-    var matches=SUGG.filter(function(s){ return s.q.some(function(q){ return t.includes(q); }); }).slice(0,5);
-    if(!matches.length){ spotlight.classList.remove('open'); return; }
-    spotlight.innerHTML = matches.map(function(s,i){
-      return '<div class="aria-spot-item" data-i="'+i+'"><span class="aria-spot-icon">'+s.i+'</span>'
-        +'<div><div class="aria-spot-title">'+s.t+'</div><div class="aria-spot-sub">'+s.s+'</div></div></div>';
-    }).join('');
-    spotlight.querySelectorAll('.aria-spot-item').forEach(function(el,i){
-      el.addEventListener('mousedown', function(){ matches[i].fn(); input.value=''; spotlight.classList.remove('open'); });
-    });
-    spotlight.classList.add('open');
-  }
-
-  function ariaSendCmd(text){
-    if(!text||!text.trim()) return;
-    spotlight&&spotlight.classList.remove('open');
-    window._ariaGlow('thinking');
-    if(typeof window._ariaOfflineDispatch==='function'){
-      var off=window._ariaOfflineDispatch(text);
-      if(off){
-        window._ariaGlow('success');
-        if(window.ARIA&&typeof ARIA.open==='function') ARIA.open();
-        if(window.ARIA&&typeof ARIA.addMessage==='function'){ ARIA.addMessage('user',text); ARIA.executeIntent&&ARIA.executeIntent(off); }
-        return;
-      }
-    }
-    if(window.ARIA&&typeof ARIA.open==='function'){
-      ARIA.open();
-      setTimeout(function(){ var ai=document.getElementById('aria-input'); if(ai){ai.value=text;ARIA.send&&ARIA.send();} },350);
-    }
-    window._ariaGlow('success');
-  }
-
-  var recognition=null;
-  function ariaToggleMic(){
-    if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){ showNotif&&showNotif('Micro non supporté','warning'); return; }
-    if(recognition&&micBtn.classList.contains('active')){ recognition.stop(); return; }
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    recognition=new SR(); recognition.lang='fr-FR'; recognition.interimResults=true; recognition.continuous=false;
-    recognition.onresult=function(e){
-      var t=Array.from(e.results).map(function(r){return r[0].transcript;}).join('');
-      input.value=t; ariaSpotlight(t);
-      if(e.results[0].isFinal){ariaSendCmd(t);input.value='';}
-    };
-    recognition.onend=function(){ micBtn.classList.remove('active'); omnibar&&omnibar.classList.remove('listening'); };
-    recognition.start();
-    micBtn.classList.add('active'); omnibar&&omnibar.classList.add('listening'); input.focus();
-  }
-
-  document.readyState==='loading' ? document.addEventListener('DOMContentLoaded',init) : init();
 })();
 </script>
 </body>
