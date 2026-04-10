@@ -15053,7 +15053,14 @@ function cmdChangerStatut(id, statut){
   var c = bonsCommande.find(function(x){ return x.id===id; });
   if(!c) return;
   c.statut = statut;
-  if(statut === 'arrive') envoyerSMSArrivee(c);
+  if(statut === 'arrive'){
+    envoyerSMSArrivee(c);
+    if(c.type === 'reparation'){
+      setTimeout(function(){
+        showNotif('📋 Pièce arrivée ! Cliquez "Créer dossier répa" quand le client dépose l'appareil.','success');
+      }, 1500);
+    }
+  }
   if(statut === 'remis'){
     c.traite = true;
     c.traiteDate = new Date().toISOString().split('T')[0];
@@ -15111,6 +15118,12 @@ function renderBonsCommande(){
               'style="padding:5px 9px;background:#f5f5f7;border:none;border-radius:8px;cursor:pointer;font-size:13px;'+
               'box-shadow:2px 2px 5px rgba(174,174,184,0.4),-1px -1px 3px rgba(255,255,255,0.9);" title="SMS client">📱</button>'
             : '')+
+          // Bouton créer dossier réparation — uniquement si pièce arrivée et type réparation
+          (c.type==='reparation' && (c.statut==='arrive') && !c.traite
+            ? '<button onclick="transformerEnReparation('+c.id+')" '+
+              'style="padding:5px 9px;background:linear-gradient(135deg,#1a8a36,#0d6627);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;'+
+              'box-shadow:2px 2px 8px rgba(26,138,54,0.4);" title="Créer le bon de dépôt">📋 Créer dossier répa</button>'
+            : '')+
           '<button onclick="supprimerCommande('+c.id+')" '+
           'style="padding:5px 9px;background:#f5f5f7;border:none;border-radius:8px;cursor:pointer;font-size:13px;color:#ff3b30;'+
           'box-shadow:2px 2px 5px rgba(174,174,184,0.4),-1px -1px 3px rgba(255,255,255,0.9);" title="Supprimer">🗑️</button>'+
@@ -15137,8 +15150,7 @@ function envoyerSMSCommande(id){
   var c = bonsCommande.find(function(x){ return x.id === id; });
   if(!c) return;
   var reste  = Math.max(0,(Number(c.prix)||0)-(Number(c.acompte)||0));
-  var resteStr = reste > 0 ? ' Reste à payer : '+reste.toFixed(2)+' €.' : ' Commande entièrement réglée.';
-  var msg = 'Bonjour '+c.client.nom+', votre commande est disponible ('+c.detail+').'+resteStr+' Solution Phone — 03 85 33 06 89';
+  var msg = 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ! Venez quand vous voulez, comptez 1h pour la réparation. Bonne journée, l\'équipe de Solution Phone';
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
   c.traite = true;
   c.statut = 'remis';
@@ -15161,9 +15173,7 @@ function envoyerSMSCommande(id){
 }
 
 async function envoyerSMSArrivee(c){
-  var reste  = Math.max(0,(Number(c.prix)||0)-(Number(c.acompte)||0));
-  var resteStr = reste > 0 ? ' Reste à payer : '+reste.toFixed(2)+' €.' : ' Commande entièrement réglée.';
-  var msg = 'Bonjour '+c.client.nom+', votre commande est arrivée chez Solution Phone !'+resteStr+' À très vite — 03 85 33 06 89';
+  var msg = 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ! Venez quand vous voulez, comptez 1h pour la réparation. Bonne journée, l\'équipe de Solution Phone';
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
   var brevoKey = localStorage.getItem('sp_brevo_key')||'';
   if(brevoKey && tel.length >= 10){
@@ -15178,6 +15188,57 @@ async function envoyerSMSArrivee(c){
   }
   // Fallback SMS natif
   setTimeout(function(){ window.location.href='sms:'+tel+'?body='+encodeURIComponent(msg); }, 500);
+}
+
+async function transformerEnReparation(id){
+  var c = bonsCommande.find(function(x){ return x.id === id; });
+  if(!c){ showNotif('Commande introuvable','error'); return; }
+
+  // Générer un numéro de dépôt basé sur le numéro de commande
+  var numDep = c.numero.replace('CMD','DEP');
+  var today  = new Date().toISOString().split('T')[0];
+
+  // Extraire marque et modèle depuis le détail (format: "Marque Modèle — Pièce")
+  var detailParts = c.detail.split(' — ');
+  var appareil = detailParts[0] || c.detail;
+  var panne    = detailParts[1] || 'Réparation pièce commandée';
+
+  // Créer le bon de dépôt dans bons_depot
+  var bonDepot = {
+    numero:         numDep,
+    date:           today,
+    client_nom:     c.client.nom,
+    client_tel:     c.client.tel,
+    client_email:   '',
+    client_adresse: '',
+    appareil_marque:'',
+    appareil_modele: appareil,
+    panne:           panne,
+    etat:           'depot',
+    statut:         'depot',
+    obs:            'Pièce commandée via ' + c.numero + ' — QualiRépar éligible',
+    devis:          c.prix || 0,
+    signature:      '',
+    bonus_qr:       false,
+    mo_ht:          0,
+    pieces_ht:      0
+  };
+
+  try {
+    await supaFetch('bons_depot','POST', bonDepot);
+    // Marquer la commande comme traitée
+    c.traite     = true;
+    c.statut     = 'remis';
+    c.traiteDate = today;
+    saveBonCommandeSupabase(c);
+    renderBonsCommande();
+    // Recharger les bons de dépôt si la fonction existe
+    if(typeof loadBonsDepot === 'function') loadBonsDepot();
+    showNotif('✅ Dossier réparation '+numDep+' créé ! Visible dans Réparations.','success');
+  } catch(e){
+    showNotif('❌ Erreur création dossier : ' + e.message,'error');
+    console.error(e);
+  }
 }
 
 function supprimerCommande(id){
