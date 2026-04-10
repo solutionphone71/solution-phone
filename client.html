@@ -1899,6 +1899,7 @@ async function soumettre() {
   showLoading();
   try {
     await supaPost('bons_depot', {
+      id: Date.now(),
       numero: num, date: today(),
       client_civilite: S.civ, client_nom: S.nom, client_prenom: S.prenom,
       client_tel: S.tel, client_email: S.email,
