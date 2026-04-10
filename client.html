@@ -24,28 +24,81 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 }
 
 /* ══════════════════════════════════════
-   SCREENSAVER
+   SCREENSAVER — Cyberpunk avec Roue & QR
 ══════════════════════════════════════ */
 #ss{
   position:fixed;inset:0;z-index:9999;
-  background:linear-gradient(135deg,#1a1a1c 0%,#2c2c2e 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
-  cursor:pointer;transition:opacity .5s;
+  background: radial-gradient(ellipse at center, #0f0f1a 0%, #050510 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;transition:opacity .5s;overflow:hidden;
 }
 #ss.out{opacity:0;pointer-events:none;}
-.ss-icon{
-  width:110px;height:110px;
-  background:linear-gradient(135deg,var(--red),var(--red-d));
-  border-radius:30px;
-  display:flex;align-items:center;justify-content:center;font-size:58px;
-  box-shadow:0 20px 60px rgba(255,59,48,.4),0 8px 20px rgba(0,0,0,.4);
-  animation:float 3s ease-in-out infinite;
+/* Particules bg */
+#ss::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255,59,48,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0,212,255,0.06) 0%, transparent 50%),
+    radial-gradient(circle at 60% 80%, rgba(139,92,246,0.06) 0%, transparent 50%);
+  animation:ss-bg-shift 8s ease-in-out infinite alternate;
 }
-@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
-.ss-name{font-size:30px;font-weight:900;color:#fff;letter-spacing:-.04em;}
-.ss-city{font-size:15px;color:rgba(255,255,255,.45);font-weight:400;}
-.ss-tap{font-size:13px;color:rgba(255,255,255,.25);margin-top:30px;animation:pulse 2s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:.25;}50%{opacity:.7;}}
+@keyframes ss-bg-shift{from{opacity:.5;}to{opacity:1;}}
+/* Logo */
+.ss-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:32px;z-index:1;}
+.ss-logo-icon{
+  width:90px;height:90px;
+  background:linear-gradient(135deg,var(--red),var(--red-d));
+  border-radius:24px;
+  display:flex;align-items:center;justify-content:center;font-size:46px;
+  box-shadow:0 0 40px rgba(255,59,48,.5),0 10px 30px rgba(0,0,0,.5);
+  animation:ss-float 3s ease-in-out infinite;
+}
+@keyframes ss-float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.ss-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.03em;text-align:center;}
+.ss-city{font-size:13px;color:rgba(255,255,255,.4);font-weight:400;letter-spacing:.05em;text-transform:uppercase;}
+/* Roue */
+.ss-wheel-row{
+  display:flex;align-items:center;gap:28px;z-index:1;margin-bottom:24px;
+}
+.ss-wheel-wrap{position:relative;width:160px;height:160px;flex-shrink:0;}
+#ss-wheel-canvas{position:absolute;inset:0;width:160px;height:160px;}
+.ss-hub{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle,#2a2a2a,#111);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;box-shadow:0 0 10px rgba(0,0,0,.8);z-index:2;
+}
+.ss-spin-arrow{
+  font-size:28px;color:rgba(255,255,255,.6);
+  animation:ss-bounce 1.2s ease-in-out infinite;
+}
+@keyframes ss-bounce{0%,100%{transform:translateX(0);}50%{transform:translateX(-6px);}}
+.ss-wheel-text{display:flex;flex-direction:column;gap:6px;}
+.ss-wheel-title{
+  font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;
+  text-shadow:0 0 20px rgba(255,200,0,.3);
+}
+.ss-wheel-sub{font-size:12px;color:rgba(255,255,255,.45);line-height:1.4;}
+/* QR Code */
+.ss-qr-row{
+  display:flex;align-items:center;gap:16px;z-index:1;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(0,212,255,.2);
+  border-radius:16px;padding:14px 20px;
+  backdrop-filter:blur(10px);
+}
+.ss-qr-img{width:80px;height:80px;border-radius:8px;display:block;}
+.ss-qr-info{display:flex;flex-direction:column;gap:4px;}
+.ss-qr-big{font-size:14px;font-weight:800;color:#fff;letter-spacing:.02em;}
+.ss-qr-small{font-size:11px;color:rgba(255,255,255,.45);}
+/* Tap */
+.ss-tap{
+  font-size:12px;color:rgba(255,255,255,.2);margin-top:20px;z-index:1;
+  animation:ss-pulse 2.5s ease-in-out infinite;letter-spacing:.04em;
+}
+@keyframes ss-pulse{0%,100%{opacity:.2;}50%{opacity:.6;}}
+.ss-city,.ss-name{z-index:1;}
 
 /* ══════════════════════════════════════
    APP SHELL
@@ -362,14 +415,34 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 </head>
 <body>
 
-<!-- ═══ SCREENSAVER ═══ -->
+<!-- ═══ SCREENSAVER CYBERPUNK + ROUE + QR ═══ -->
 <div id="ss" onclick="startApp()">
-  <div class="ss-icon">📱</div>
-  <div>
+  <div class="ss-logo-wrap">
+    <div class="ss-logo-icon">📱</div>
     <div class="ss-name">Solution Phone</div>
     <div class="ss-city">Mâcon · Réparation &amp; Accessoires</div>
   </div>
-  <div class="ss-tap">Toucher pour commencer</div>
+  <!-- Roue + invitation -->
+  <div class="ss-wheel-row">
+    <div class="ss-wheel-wrap">
+      <canvas id="ss-wheel-canvas" width="160" height="160"></canvas>
+      <div class="ss-hub">⭐</div>
+    </div>
+    <div class="ss-spin-arrow">◀</div>
+    <div class="ss-wheel-text">
+      <div class="ss-wheel-title">🎰 Tentez<br>la Roulette !</div>
+      <div class="ss-wheel-sub">Après votre dépôt,<br>gagnez un cadeau.</div>
+    </div>
+  </div>
+  <!-- QR Code roulette -->
+  <div class="ss-qr-row">
+    <img class="ss-qr-img" id="ss-qr-img" src="" alt="QR Roulette" crossorigin="anonymous">
+    <div class="ss-qr-info">
+      <div class="ss-qr-big">🎁 Jouez maintenant !</div>
+      <div class="ss-qr-small">Scannez pour accéder<br>à la roue des cadeaux</div>
+    </div>
+  </div>
+  <div class="ss-tap">Toucher l'écran pour commencer</div>
 </div>
 
 <!-- ═══ APP ═══ -->
@@ -417,6 +490,28 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
   <div class="scr" id="scr-id-rep">
     <div class="scr-title">Vos coordonnées</div>
     <div class="scr-sub">Toutes les informations pour votre dossier de réparation</div>
+
+    <!-- Recherche client existant -->
+    <div id="client-search-wrap" style="margin-bottom:20px;position:relative;">
+      <div class="lbl" style="margin-bottom:8px;">Déjà client ? Recherchez votre dossier</div>
+      <div style="position:relative;">
+        <input class="inp" type="text" id="client-search-inp"
+          placeholder="🔍 Nom ou téléphone…"
+          autocomplete="off" oninput="searchClient(this.value)">
+        <div id="client-search-results" style="
+          display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
+          background:#fff;border-radius:var(--r);
+          box-shadow:0 8px 30px rgba(0,0,0,0.12);overflow:hidden;
+          border:1px solid rgba(0,0,0,0.06);
+        "></div>
+      </div>
+      <div id="client-found-badge" style="display:none;margin-top:8px;padding:8px 12px;
+        background:#f0fdf4;border-radius:var(--r);border:1px solid #bbf0cd;
+        font-size:12px;font-weight:600;color:#1a8a36;">
+        ✅ Données pré-remplies — vérifiez et continuez
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:20px;"></div>
     <div class="civ-row">
       <button class="civ-btn" id="civ-m" onclick="setCiv('M.')">👨 M.</button>
       <button class="civ-btn" id="civ-mme" onclick="setCiv('Mme')">👩 Mme</button>
@@ -442,6 +537,28 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
   <div class="scr" id="scr-id-acc">
     <div class="scr-title">Vos coordonnées</div>
     <div class="scr-sub">Les informations essentielles pour votre commande</div>
+
+    <!-- Recherche client existant -->
+    <div id="client-search-wrap" style="margin-bottom:20px;position:relative;">
+      <div class="lbl" style="margin-bottom:8px;">Déjà client ? Recherchez votre dossier</div>
+      <div style="position:relative;">
+        <input class="inp" type="text" id="client-search-inp-acc"
+          placeholder="🔍 Nom ou téléphone…"
+          autocomplete="off" oninput="searchClientAcc(this.value)">
+        <div id="client-search-results-acc" style="
+          display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:200;
+          background:#fff;border-radius:var(--r);
+          box-shadow:0 8px 30px rgba(0,0,0,0.12);overflow:hidden;
+          border:1px solid rgba(0,0,0,0.06);
+        "></div>
+      </div>
+      <div id="client-found-badge-acc" style="display:none;margin-top:8px;padding:8px 12px;
+        background:#f0fdf4;border-radius:var(--r);border:1px solid #bbf0cd;
+        font-size:12px;font-weight:600;color:#1a8a36;">
+        ✅ Données pré-remplies — vérifiez et continuez
+      </div>
+    </div>
+    <div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:20px;"></div>
     <div class="row c2">
       <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="a-nom" placeholder="Dupont" oninput="checkStep2A()"></div>
       <div class="fld"><label class="lbl">Prénom</label><input class="inp" type="text" id="a-prenom" placeholder="Jean"></div>
@@ -657,6 +774,94 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
 </div><!-- /app -->
 
 <script>
+
+/* ══════════════════════════════════════
+   RECHERCHE CLIENT EXISTANT
+══════════════════════════════════════ */
+let searchTimer = null;
+function searchClient(q) {
+  clearTimeout(searchTimer);
+  const res = document.getElementById('client-search-results');
+  const badge = document.getElementById('client-found-badge');
+  if (!q || q.length < 2) { res.style.display='none'; return; }
+  searchTimer = setTimeout(async () => {
+    try {
+      // Recherche par nom OU téléphone
+      const url = SUPA_URL+'/rest/v1/clients?or=(nom.ilike.*'+encodeURIComponent(q)+'*,tel.ilike.*'+encodeURIComponent(q)+'*)&limit=5&order=nom.asc';
+      const r = await fetch(url, { headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY} });
+      const data = await r.json();
+      if (!data || !data.length) { res.innerHTML='<div style="padding:12px 16px;font-size:13px;color:var(--gray2);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML = data.map(c => {
+        const nom = (c.civilite?c.civilite+' ':'')+c.prenom+' '+c.nom;
+        return `<div onclick="fillClientRep(${JSON.stringify(c).replace(/"/g,'&quot;')})" style="
+          padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.05);
+          display:flex;justify-content:space-between;align-items:center;
+          transition:background .12s;font-size:13px;
+        " onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background=''">
+          <div>
+            <div style="font-weight:700;color:var(--black);">${nom}</div>
+            <div style="color:var(--gray);font-size:11px;">${c.tel||''} ${c.email?'· '+c.email:''}</div>
+          </div>
+          <div style="color:var(--red);font-size:11px;font-weight:600;">Sélectionner →</div>
+        </div>`;
+      }).join('');
+      res.style.display = 'block';
+    } catch(e) { res.style.display='none'; }
+  }, 350);
+}
+
+function fillClientRep(c) {
+  // Remplir les champs réparation
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('r-nom', c.nom); set('r-prenom', c.prenom); set('r-tel', c.tel);
+  set('r-email', c.email); set('r-adresse', c.adresse);
+  set('r-cp', c.cp); set('r-ville', c.ville);
+  if (c.civilite) setCiv(c.civilite);
+  // Masquer dropdown, afficher badge
+  document.getElementById('client-search-results').style.display = 'none';
+  document.getElementById('client-found-badge').style.display = 'block';
+  document.getElementById('client-search-inp').value = (c.prenom||'')+' '+(c.nom||'');
+  checkStep2R();
+}
+
+function searchClientAcc(q) {
+  clearTimeout(searchTimer);
+  const res = document.getElementById('client-search-results-acc');
+  const badge = document.getElementById('client-found-badge-acc');
+  if (!q || q.length < 2) { res.style.display='none'; return; }
+  searchTimer = setTimeout(async () => {
+    try {
+      const url = SUPA_URL+'/rest/v1/clients?or=(nom.ilike.*'+encodeURIComponent(q)+'*,tel.ilike.*'+encodeURIComponent(q)+'*)&limit=5&order=nom.asc';
+      const r = await fetch(url, { headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY} });
+      const data = await r.json();
+      if (!data || !data.length) { res.innerHTML='<div style="padding:12px 16px;font-size:13px;color:var(--gray2);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML = data.map(c => {
+        const nom = (c.prenom||'')+' '+(c.nom||'');
+        return `<div onclick="fillClientAcc(${JSON.stringify(c).replace(/"/g,'&quot;')})" style="
+          padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.05);
+          display:flex;justify-content:space-between;align-items:center;font-size:13px;
+        " onmouseover="this.style.background='#f5f5f7'" onmouseout="this.style.background=''">
+          <div>
+            <div style="font-weight:700;color:var(--black);">${nom}</div>
+            <div style="color:var(--gray);font-size:11px;">${c.tel||''}</div>
+          </div>
+          <div style="color:var(--red);font-size:11px;font-weight:600;">→</div>
+        </div>`;
+      }).join('');
+      res.style.display = 'block';
+    } catch(e) { res.style.display='none'; }
+  }, 350);
+}
+
+function fillClientAcc(c) {
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('a-nom', c.nom); set('a-prenom', c.prenom); set('a-tel', c.tel);
+  document.getElementById('client-search-results-acc').style.display = 'none';
+  document.getElementById('client-found-badge-acc').style.display = 'block';
+  document.getElementById('client-search-inp-acc').value = (c.prenom||'')+' '+(c.nom||'');
+  checkStep2A();
+}
+
 /* ══════════════════════════════════════
    SUPABASE
 ══════════════════════════════════════ */
@@ -694,10 +899,51 @@ let curStep = 0; // index dans le tableau actif
 function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : SCREENS_REP; }
 
 /* ══════════════════════════════════════
-   SCREENSAVER
+   SCREENSAVER — Roue animée + QR
 ══════════════════════════════════════ */
+const ROULETTE_URL = 'https://app.solution-phone.fr/roulette.html';
+const SS_COLORS = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#AF52DE','#FF2D55','#5AC8FA'];
+const SS_PRIZES = ['10% off','Étui','Câble','Verre','5€','⭐','Coque','Chance!'];
+let ssWheelAngle = 0, ssWheelAnim = null;
+
+function initSSWheel() {
+  const canvas = document.getElementById('ss-wheel-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const N = SS_COLORS.length;
+  function draw() {
+    ctx.clearRect(0,0,160,160);
+    for (let i=0;i<N;i++) {
+      const start = ssWheelAngle + (i/N)*Math.PI*2;
+      const end   = ssWheelAngle + ((i+1)/N)*Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(80,80);
+      ctx.arc(80,80,76,start,end);
+      ctx.fillStyle = SS_COLORS[i]; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(80,80);
+      ctx.arc(80,80,76,start,end);
+      ctx.strokeStyle='rgba(0,0,0,.2)'; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.save(); ctx.translate(80,80);
+      ctx.rotate(ssWheelAngle + (i+.5)/N*Math.PI*2);
+      ctx.fillStyle='#fff'; ctx.font='bold 9px -apple-system,Inter,sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(SS_PRIZES[i],46,0); ctx.restore();
+    }
+    // Centre
+    ctx.beginPath(); ctx.arc(80,80,18,0,Math.PI*2);
+    ctx.fillStyle='#1a1a1c'; ctx.fill();
+    ssWheelAngle += 0.008;
+    ssWheelAnim = requestAnimationFrame(draw);
+  }
+  draw();
+  // QR code roulette
+  const qrEl = document.getElementById('ss-qr-img');
+  if (qrEl) qrEl.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(ROULETTE_URL)+'&bgcolor=ffffff&color=1a1a1a&format=png';
+}
+function stopSSWheel() { if (ssWheelAnim) { cancelAnimationFrame(ssWheelAnim); ssWheelAnim=null; } }
+
 let ssTimer = null;
 function startApp() {
+  stopSSWheel();
   const ss = document.getElementById('ss');
   ss.classList.add('out');
   setTimeout(() => { ss.style.display='none'; document.getElementById('app').style.display='flex'; }, 500);
@@ -1069,6 +1315,15 @@ function restart(silent) {
   // Reset state
   Object.assign(S,{flux:'',civ:'',nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',marque:'',modele:'',panne:'',prix:'0',dejaPaye:false,sigData:null,consent:false});
   // Reset fields
+  ['client-search-inp','client-search-inp-acc'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  ['client-search-results','client-search-results-acc'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  ['client-found-badge','client-found-badge-acc'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
   ['r-nom','r-prenom','r-tel','r-email','r-adresse','r-cp','r-ville','r-modele',
    'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
@@ -1081,6 +1336,8 @@ function restart(silent) {
   const cb=document.getElementById('consent-chk'); if(cb){cb.classList.remove('chk');cb.textContent='';}
   const pb=document.getElementById('btn-paye'); if(pb){pb.classList.remove('active');pb.textContent='💰 Marquer comme déjà payé';}
   if (!silent) goStep(0);
+  // Relancer le screensaver si demandé
+  if (silent) setTimeout(initSSWheel, 100);
 }
 </script>
 </body>
