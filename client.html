@@ -771,6 +771,7 @@ _qrImg.src = 'data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJ
 var _wheelAngle = 0;
 var _tapAlpha = 0.5;
 var _tapDir = 1;
+var _laserY = 0; // Scanneur laser QR
 var _ssColors = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#AF52DE','#FF2D55','#5AC8FA'];
 var _ssPrizes = ['Réduction','Étui','Câble','Verre','5 €','Surprise','Coque','Chance'];
 var _ssOrbitronLoaded = false;
@@ -1048,6 +1049,21 @@ function _ssStart() {
     ctx.font = Math.round(H * 0.015) + 'px -apple-system,sans-serif';
     ctx.fillText('Accédez à la roue', qrTX, qrTY + H * 0.065);
     ctx.fillText('des cadeaux', qrTX, qrTY + H * 0.085);
+    ctx.restore();
+
+    /* Scanneur laser sur QR code */
+    _laserY = (_laserY + H * 0.0008) % (qrSize + 2);
+    var laserGrad = ctx.createLinearGradient(qrX, qrY + _laserY - 4, qrX, qrY + _laserY + 4);
+    laserGrad.addColorStop(0,   'rgba(0,240,200,0)');
+    laserGrad.addColorStop(0.5, 'rgba(0,240,200,0.85)');
+    laserGrad.addColorStop(1,   'rgba(0,240,200,0)');
+    ctx.save();
+    ctx.beginPath(); ctx.rect(qrX, qrY, qrSize, qrSize); ctx.clip();
+    ctx.fillStyle = laserGrad;
+    ctx.fillRect(qrX, qrY + _laserY - 4, qrSize, 8);
+    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 8;
+    ctx.strokeStyle = 'rgba(0,240,200,0.9)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(qrX, qrY + _laserY); ctx.lineTo(qrX + qrSize, qrY + _laserY); ctx.stroke();
     ctx.restore();
 
     /* ════════════════════════════════
