@@ -1056,7 +1056,7 @@ function initSSWheel() {
   if (!canvas) return;
   // Taille du canvas = taille CSS de son conteneur
   const rect = canvas.parentElement.getBoundingClientRect();
-  const SIZE = Math.round(Math.max(rect.width || 200, rect.height || 200));
+  const SIZE = Math.round(Math.max(rect.width || 0, rect.height || 0)) || 254;
   canvas.width  = SIZE;
   canvas.height = SIZE;
   const cx = SIZE / 2, cy = SIZE / 2, R = SIZE / 2 - 4;
@@ -1132,7 +1132,7 @@ function showSs() {
   const ss = document.getElementById('ss');
   ss.style.display = 'flex'; ss.classList.remove('out');
   document.getElementById('app').style.display = 'none';
-  initSSWheel(); // relancer la roue
+  setTimeout(function(){ initSSWheel(); }, 200); // relancer la roue
 }
 document.addEventListener('touchstart', resetSsTimer, {passive:true});
 document.addEventListener('click', resetSsTimer);
@@ -1510,8 +1510,12 @@ function restart(silent) {
   const cb=document.getElementById('consent-chk'); if(cb){cb.classList.remove('chk');cb.textContent='';}
   const pb=document.getElementById('btn-paye'); if(pb){pb.classList.remove('active');pb.textContent='💰 Marquer comme déjà payé';}
   if (!silent) goStep(0);
-  if (silent) setTimeout(initSSWheel, 100);
+  if (silent) setTimeout(initSSWheel, 300);
 }
+
+// ═══ INIT AU CHARGEMENT ═══
+// setTimeout 400ms pour laisser le layout CSS se calculer avant de dessiner la roue
+setTimeout(function() { initSSWheel(); }, 400);
 </script>
 </body>
 </html>
