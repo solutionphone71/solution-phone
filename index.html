@@ -14654,15 +14654,34 @@ async function saveBonCommandeSupabase(cmd){
 function setCmdType(type){
   _cmdType = type;
   var isRep = type === 'reparation';
-  document.getElementById('cmd-block-rep').style.display  = isRep ? '' : 'none';
-  document.getElementById('cmd-block-acc').style.display  = isRep ? 'none' : '';
-  document.getElementById('cmd-block-paye').style.display = isRep ? 'none' : '';
-  document.getElementById('cmd-type-rep').style.background   = isRep ? 'var(--red)' : '#f8fafc';
-  document.getElementById('cmd-type-rep').style.color        = isRep ? '#fff' : 'var(--text-muted)';
-  document.getElementById('cmd-type-rep').style.borderColor  = isRep ? 'var(--red)' : 'var(--border)';
-  document.getElementById('cmd-type-acc').style.background   = isRep ? '#f8fafc' : 'var(--red)';
-  document.getElementById('cmd-type-acc').style.color        = isRep ? 'var(--text-muted)' : '#fff';
-  document.getElementById('cmd-type-acc').style.borderColor  = isRep ? 'var(--border)' : 'var(--red)';
+  // Blocs contenu
+  var br = document.getElementById('cmd-block-rep');
+  var ba = document.getElementById('cmd-block-acc');
+  var bp = document.getElementById('cmd-block-paye');
+  if(br) br.style.display = isRep ? '' : 'none';
+  if(ba) ba.style.display = isRep ? 'none' : '';
+  if(bp) bp.style.display = isRep ? 'none' : '';
+  // Boutons Apple (nouvelles classes)
+  var btnRep = document.getElementById('cmd-type-rep');
+  var btnAcc = document.getElementById('cmd-type-acc');
+  if(btnRep){
+    btnRep.classList.toggle('active', isRep);
+    btnRep.style.background = isRep ? '#ff3b30' : 'var(--bg,#f5f5f7)';
+    btnRep.style.color      = isRep ? '#fff'    : 'var(--gray,#6e6e73)';
+    btnRep.style.boxShadow  = isRep
+      ? '4px 4px 12px rgba(201,37,27,.35),-2px -2px 6px rgba(255,120,110,.15)'
+      : '4px 4px 10px rgba(174,174,184,.4),-3px -3px 8px rgba(255,255,255,.9)';
+  }
+  if(btnAcc){
+    btnAcc.classList.toggle('active', !isRep);
+    btnAcc.style.background = isRep ? 'var(--bg,#f5f5f7)' : '#ff3b30';
+    btnAcc.style.color      = isRep ? 'var(--gray,#6e6e73)' : '#fff';
+    btnAcc.style.boxShadow  = isRep
+      ? '4px 4px 10px rgba(174,174,184,.4),-3px -3px 8px rgba(255,255,255,.9)'
+      : '4px 4px 12px rgba(201,37,27,.35),-2px -2px 6px rgba(255,120,110,.15)';
+  }
+  // Recalc acompte
+  if(typeof updateCmdCalc === 'function') updateCmdCalc();
 }
 
 
