@@ -3742,22 +3742,27 @@ function initRealtime() {
   console.log('🔄 Synchronisation temps réel activée (30s)');
 
   // Auto-impression : detecter les nouveaux bons de commande (depuis iPad)
-  // On stocke le plus grand ID Supabase connu au démarrage
-  var _lastPrintedMaxId = 0;
+  // localStorage partage entre TOUS les onglets du meme navigateur
   var _autoPrintBusy = false;
   try {
     var initRes = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
-    if (initRes && initRes.length) _lastPrintedMaxId = initRes[0].id;
+    if (initRes && initRes.length) {
+      var current = parseInt(localStorage.getItem('_globalLastPrintedId') || '0');
+      if (initRes[0].id > current) localStorage.setItem('_globalLastPrintedId', String(initRes[0].id));
+    }
   } catch(e){}
-  console.log('Auto-print: dernier ID connu =', _lastPrintedMaxId);
+  console.log('Auto-print: dernier ID global =', localStorage.getItem('_globalLastPrintedId'));
   setInterval(async function() {
     if (!supabaseReady || !getNasUrl() || _autoPrintBusy) return;
     _autoPrintBusy = true;
     try {
       var res = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
-      if (!res || !res.length || res[0].id <= _lastPrintedMaxId) { _autoPrintBusy = false; return; }
+      if (!res || !res.length) { _autoPrintBusy = false; return; }
       var newId = res[0].id;
-      _lastPrintedMaxId = newId; // Bloquer IMMEDIATEMENT
+      var globalLastId = parseInt(localStorage.getItem('_globalLastPrintedId') || '0');
+      if (newId <= globalLastId) { _autoPrintBusy = false; return; }
+      // Marquer IMMEDIATEMENT dans localStorage (bloque les autres onglets)
+      localStorage.setItem('_globalLastPrintedId', String(newId));
       await loadBonsCommande();
       var cmd = bonsCommande.find(function(c){ return c.id === newId; });
       if (cmd) {
@@ -15060,6 +15065,11 @@ function eposPrint(c) {
   lines.push('--------------------------------');
   lines.push('Merci de votre confiance !');
   lines.push('www.solution-phone.fr');
+  // DEBUG TEMPORAIRE — a retirer apres test
+  lines.push('--- DEBUG ---');
+  lines.push('SRC: PC-POLLING');
+  lines.push('H: ' + new Date().toLocaleTimeString());
+  lines.push('INST: ' + Math.floor(Math.random()*1000));
   lines.push('');
   lines.push('');
   lines.push('');
