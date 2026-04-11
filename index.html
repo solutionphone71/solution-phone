@@ -14618,12 +14618,7 @@ async function saveBonCommandeSupabase(cmd){
     type: cmd.type,
     client_nom: cmd.client.nom, client_tel: cmd.client.tel,
     detail: cmd.detail, prix: cmd.prix,
-    acompte: cmd.acompte||0,
-    mode_reglement: cmd.modeReglement||'ESPECES',
-    statut: cmd.statut||'a_commander',
-    paye: cmd.paye||false,
-    traite: cmd.traite||false,
-    traite_date: cmd.traiteDate||null
+    statut: cmd.statut||'a_commander'
   };
   try {
     var ex = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id);

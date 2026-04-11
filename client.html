@@ -2062,12 +2062,7 @@ async function soumettreCommande() {
       client_tel:    tel,
       detail:        (S.marqueCmd?S.marqueCmd+' ':'')+modele+' — '+S.panneCmd+(codeCmd?' [Code: '+codeCmd+']':''),
       prix:          0,
-      acompte:       0,
-      mode_reglement:'ESPECES',
-      statut:        'a_commander',
-      paye:          false,
-      traite:        false,
-      traite_date:   null
+      statut:        'a_commander'
     });
     // Impression 2 tickets Epson (1 boutique + 1 client)
     var cmdNom = val('cmd-nom-c'); var cmdPrenom = val('cmd-prenom-c');
@@ -2141,6 +2136,8 @@ async function soumettreAcc() {
   try {
     // ─── Enregistrement dans bons_commande ───
     // → Apparaît directement dans l'onglet "Bon de Commande" de l'app
+    var detailStr = (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : '');
+    if (dejaPaye) detailStr += ' [PAYÉ ' + prix.toFixed(2) + '€]';
     await supaPost('bons_commande', {
       id: Date.now(),
       numero: num,
@@ -2148,14 +2145,9 @@ async function soumettreAcc() {
       type: 'accessoire',
       client_nom: (prenom ? prenom + ' ' : '') + nom,
       client_tel: tel,
-      detail: (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : ''),
+      detail: detailStr,
       prix: prix,
-      acompte: acompte,
-      mode_reglement: 'ESPECES',
-      statut: 'a_commander',
-      paye: dejaPaye,
-      traite: false,
-      traite_date: null
+      statut: 'a_commander'
     });
     // Impression 2 tickets Epson (1 boutique + 1 client)
     printBonCommande(num, {nom:nom, prenom:prenom, tel:tel, marque:S.marque, modele:mod},
