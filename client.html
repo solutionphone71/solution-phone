@@ -1642,7 +1642,7 @@ function tryEpsonFromModal() {
   if (!ip || !window._lastTicketLines) { alert('IP NAS non configuree'); return; }
   // Methode 1 : fetch (fonctionne sur PC)
   // Methode 2 : iframe + formulaire (contourne blocage Safari HTTPS→HTTP)
-  var data = JSON.stringify({ title: 'SOLUTION PHONE', content: window._lastTicketLines });
+  var data = JSON.stringify({ title: 'SOLUTION PHONE', content: window._lastTicketLines, cut: true });
   function sendViaPOST(callback) {
     // Essayer fetch d'abord
     fetch('http://' + ip, {
