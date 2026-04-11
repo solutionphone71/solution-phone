@@ -1638,44 +1638,8 @@ function showTicketModal(ticketHtml, num, paye, prix) {
 }
 
 function tryEpsonFromModal() {
-  var ip = getNasIp();
-  if (!ip || !window._lastTicketLines) { alert('IP NAS non configuree'); return; }
-  // Envoyer 2 tickets en un seul job avec coupe ESC/POS entre les deux
-  var ticket = window._lastTicketLines;
-  var cutCmd = '\x1d\x56\x00'; // GS V 0 = full cut
-  var doubleTicket = ticket + cutCmd + ticket;
-  var data = JSON.stringify({ title: 'SOLUTION PHONE', content: doubleTicket, cut: true });
-  // Essayer fetch d'abord
-  fetch('http://' + ip, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: data
-  }).then(function(r){ return r.text(); })
-  .then(function(t){ alert('2 tickets envoyes !'); })
-  .catch(function(){
-    // Fallback : formulaire caché dans un iframe (contourne mixed content)
-    try {
-      var iframe = document.createElement('iframe');
-      iframe.name = 'epson_print_' + Date.now();
-      iframe.style.cssText = 'display:none;width:0;height:0;';
-      document.body.appendChild(iframe);
-      var form = document.createElement('form');
-      form.method = 'POST';
-      form.action = 'http://' + ip;
-      form.target = iframe.name;
-      var input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'data';
-      input.value = data;
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      setTimeout(function(){ form.remove(); iframe.remove(); }, 5000);
-      alert('2 tickets envoyes !');
-    } catch(e2) {
-      alert('Erreur Epson.\nVerifiez le WiFi boutique.');
-    }
-  });
+  // Impression géree automatiquement par le PC via polling
+  // L'iPad n'envoie plus directement à l'Epson (blocage Safari HTTPS→HTTP)
 }
 
 async function printBonDepot(num, clientData, appareil) {
