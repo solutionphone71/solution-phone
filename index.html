@@ -3744,14 +3744,14 @@ function initRealtime() {
   // Auto-impression : detecter les nouveaux bons de commande (depuis iPad)
   // localStorage partage entre TOUS les onglets du meme navigateur
   var _autoPrintBusy = false;
-  try {
-    var initRes = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
+  // Init : recuperer le dernier ID sans await (initRealtime n'est pas async)
+  supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1').then(function(initRes){
     if (initRes && initRes.length) {
       var current = parseInt(localStorage.getItem('_globalLastPrintedId') || '0');
       if (initRes[0].id > current) localStorage.setItem('_globalLastPrintedId', String(initRes[0].id));
     }
-  } catch(e){}
-  console.log('Auto-print: dernier ID global =', localStorage.getItem('_globalLastPrintedId'));
+    console.log('Auto-print: dernier ID global =', localStorage.getItem('_globalLastPrintedId'));
+  }).catch(function(e){});
   setInterval(async function() {
     if (!supabaseReady || !getNasUrl() || _autoPrintBusy) return;
     _autoPrintBusy = true;
