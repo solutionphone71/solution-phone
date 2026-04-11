@@ -3751,10 +3751,11 @@ function initRealtime() {
       if (!res || !res.length) return;
       var newOnes = res.filter(function(x){ return !_lastKnownCmdIds.has(x.id) && !_alreadyPrintedIds.has(x.id); });
       if (newOnes.length > 0) {
+        // Marquer IMMEDIATEMENT pour eviter doublons entre cycles
+        newOnes.forEach(function(x){ _alreadyPrintedIds.add(x.id); _lastKnownCmdIds.add(x.id); });
         await loadBonsCommande();
         _lastKnownCmdIds = new Set(bonsCommande.map(function(c){ return c.id; }));
         newOnes.forEach(function(x){
-          _alreadyPrintedIds.add(x.id);
           var cmd = bonsCommande.find(function(c){ return c.id === x.id; });
           if (cmd) {
             showNotif('🖨️ Nouveau bon ' + cmd.numero + ' — impression auto...', 'success');
