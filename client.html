@@ -1535,7 +1535,8 @@ function buildTicketLines(data) {
   L.push('');
   L.push('');
   L.push('');
-  return L.join('\n');
+  // Commande ESC/POS coupe automatique (GS V 0 = full cut)
+  return L.join('\n') + '\x1d\x56\x00';
 }
 
 function buildTicketHtml(data) {
