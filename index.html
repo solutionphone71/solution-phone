@@ -14976,12 +14976,15 @@ function eposPrint(c) {
   var date  = new Date(c.date).toLocaleDateString('fr-FR');
   var now   = new Date();
   var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  var acompte = Number(c.acompte)||0;
+  var reste   = Math.max(0, prix - acompte);
+  var modeReg = c.modeReglement||'ESPECES';
   var lines = [];
   lines.push('SOLUTION PHONE');
   lines.push('21 Rue Gambetta - 71000 Macon');
   lines.push('Tel : 03 85 33 06 89');
   lines.push('--------------------------------');
-  lines.push(isRep ? '*** REPARATION ***' : '*** ACCESSOIRE ***');
+  lines.push(isRep ? '*** BON COMMANDE REPARATION ***' : '*** BON COMMANDE ACCESSOIRE ***');
   lines.push(c.numero || '');
   lines.push(date + ' a ' + heure);
   lines.push('--------------------------------');
@@ -14992,12 +14995,24 @@ function eposPrint(c) {
     var parts = (c.detail || '').split(' — ');
     lines.push('Appareil: ' + (parts[0] || ''));
     lines.push('Piece   : ' + (parts[1] || ''));
+    lines.push('Statut  : A commander');
   } else {
     lines.push('Article : ' + (c.detail || ''));
   }
   lines.push('--------------------------------');
-  lines.push('TOTAL : ' + c.prix.toFixed(2) + ' EUR');
-  lines.push(c.paye ? '*** DEJA PAYE ***' : 'A REGLER A LA REPRISE');
+  lines.push('TOTAL TTC : ' + prix.toFixed(2) + ' EUR');
+  if(acompte > 0){
+    lines.push('Acompte ('+modeReg+') : -' + acompte.toFixed(2) + ' EUR');
+    lines.push('--------------------------------');
+  }
+  if(reste > 0){
+    lines.push('RESTE A PAYER : ' + reste.toFixed(2) + ' EUR');
+  } else {
+    lines.push('*** ENTIEREMENT PAYE ***');
+  }
+  lines.push('--------------------------------');
+  lines.push('Suivi : app.solution-phone.fr');
+  lines.push('Ref : ' + (c.numero||''));
   lines.push('--------------------------------');
   lines.push('Merci de votre confiance !');
   lines.push('www.solution-phone.fr');

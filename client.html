@@ -1485,6 +1485,42 @@ function getNasIp() {
   return localStorage.getItem(NAS_IP_KEY) || '192.168.10.164:3000';
 }
 
+function buildTicketLines(data) {
+  var now = new Date();
+  var heure = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  var dateStr = now.toLocaleDateString('fr-FR');
+  var L = [];
+  L.push('SOLUTION PHONE');
+  L.push('21 Rue Gambetta - 71000 Macon');
+  L.push('Tel : 03 85 33 06 89');
+  L.push('--------------------------------');
+  L.push(data.type);
+  L.push(data.numero || '');
+  L.push(dateStr + ' a ' + heure);
+  L.push('--------------------------------');
+  L.push('Client  : ' + data.client);
+  L.push('Tel     : ' + data.tel);
+  if (data.email) L.push('Email   : ' + data.email);
+  L.push('--------------------------------');
+  if (data.marque) L.push('Marque  : ' + data.marque);
+  if (data.modele) L.push('Modele  : ' + data.modele);
+  if (data.code)   L.push('Code    : ' + data.code);
+  if (data.detail) L.push('Detail  : ' + data.detail);
+  L.push('--------------------------------');
+  if (data.prix > 0) {
+    L.push('TOTAL : ' + data.prix.toFixed(2) + ' EUR');
+    L.push(data.paye ? '*** DEJA PAYE ***' : 'A REGLER A LA REMISE');
+  }
+  if (data.qualirepar) {
+    L.push('--------------------------------');
+    L.push('*** QUALIREPAR -25 EUR ***');
+  }
+  L.push('--------------------------------');
+  L.push('Merci de votre confiance !');
+  L.push('www.solution-phone.fr');
+  return L.join('\n');
+}
+
 function buildTicketHtml(data) {
   function line(txt, bold) {
     return '<div style="color:#000;font-weight:'+(bold?'900':'400')+';font-family:Courier New,monospace;font-size:13px;white-space:pre-wrap;">'+txt+'</div>';
@@ -1561,35 +1597,53 @@ async function printTicketEpson(ticketHtml, copies) {
   if (!ok) showTicketModal(ticketHtml);
 }
 
-function showTicketModal(ticketHtml) {
+function showTicketModal(ticketHtml, num, paye, prix) {
   var existing = document.getElementById('ticket-modal');
   if (existing) existing.remove();
   var modal = document.createElement('div');
   modal.id = 'ticket-modal';
   modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#f8fafc;z-index:99999;overflow-y:auto;';
-  modal.innerHTML =
-    '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;">' +
-      '<button onclick="tryEpsonFromModal()" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">Epson</button>' +
-      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">Imprimer</button>' +
-      '<button onclick="document.getElementById(\'ticket-modal\').remove()" style="flex:1;min-width:80px;padding:14px;background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:10px;font-size:15px;font-weight:800;">Fermer</button>' +
+  var successMsg = num ? '<div style="text-align:center;padding:16px 16px 0;"><div style="font-size:40px;">✅</div><div style="font-size:18px;font-weight:800;color:#1a8a36;margin:8px 0;">Commande ' + num + ' enregistrée !</div>' +
+    (paye ? '<div style="color:#27ae60;font-weight:700;">💰 Déjà payé ✅</div>' : (prix > 0 ? '<div>Reste à régler : <b>' + prix.toFixed(2) + ' €</b></div>' : '')) + '</div>' : '';
+  modal.innerHTML = successMsg +
+    '<div style="padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button onclick="tryEpsonFromModal()" style="flex:1;min-width:120px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">🖨️ Epson (x2)</button>' +
+      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">🖨️ Imprimer</button>' +
     '</div>' +
-    '<div style="display:flex;justify-content:center;padding:16px;">' +
-      '<div style="background:#fff;color:#000;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;">' + ticketHtml + '</div>' +
+    '<div style="display:flex;justify-content:center;padding:0 16px 16px;">' +
+      '<div style="background:#fff;color:#000;border:1px solid #e2e8f0;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;">' + ticketHtml + '</div>' +
+    '</div>' +
+    '<div style="padding:0 16px 30px;text-align:center;">' +
+      '<button onclick="document.getElementById(\'ticket-modal\').remove();restart();" style="width:100%;max-width:380px;padding:16px;background:#ef4444;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;">🔄 Nouvelle commande</button>' +
     '</div>';
   window._lastTicketHtml = ticketHtml;
+  window._lastTicketLines = ticketHtml; // sera remplacé par le vrai texte depuis l'appelant
   document.body.appendChild(modal);
 }
 
 function tryEpsonFromModal() {
   var ip = getNasIp();
-  if (!ip || !window._lastTicketHtml) return;
-  for (var i = 0; i < 2; i++) {
-    fetch('http://' + ip + '/print', {
+  if (!ip || !window._lastTicketLines) { alert('IP NAS non configurée'); return; }
+  var body = JSON.stringify({ title: 'SOLUTION PHONE', content: window._lastTicketLines });
+  var sent = 0;
+  function sendCopy() {
+    fetch('http://' + ip, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ html: window._lastTicketHtml })
-    }).then(function(){ if(i===0) alert('Impression envoyée !'); }).catch(function(e){ if(i===0) alert('Erreur Epson: ' + e.message); });
+      body: body
+    }).then(function(r){ return r.text(); })
+    .then(function(t){
+      sent++;
+      if (sent === 1) {
+        // Envoyer 2e copie
+        sendCopy();
+      } else {
+        alert('✅ 2 tickets envoyés !');
+      }
+    })
+    .catch(function(e){ alert('❌ Erreur Epson: ' + e.message + '\nVérifiez le WiFi boutique.'); });
   }
+  sendCopy();
 }
 
 async function printBonDepot(num, clientData, appareil) {
@@ -1972,7 +2026,19 @@ async function soumettre() {
       appareil_imei: '', appareil_couleur: '',
       appareil_code: (document.getElementById('r-code')||{}).value||''
     });
-    showSuccess(num, 'Votre appareil est entre de bonnes mains !<br><span style="color:#4ade80;font-weight:700;">♻️ QualiRépar : -25€ si éligible ✅</span><br>Nous vous contactons dès la réparation terminée.');
+    // Afficher le ticket pour impression
+    var codeVal = (document.getElementById('r-code')||{}).value||'';
+    var ticketData = {
+      type: '*** BON DE DEPOT ***',
+      numero: num,
+      client: (S.civ?S.civ+' ':'')+S.prenom+' '+S.nom,
+      tel: S.tel, email: S.email || '',
+      marque: S.marque, modele: S.modele,
+      code: codeVal, detail: S.panne,
+      prix: 0, qualirepar: true
+    };
+    showTicketModal(buildTicketHtml(ticketData), num, false, 0);
+    window._lastTicketLines = buildTicketLines(ticketData);
   } catch(e) {
     console.error('Erreur soumettre reparation:', e);
     goStep(curStep);
@@ -2101,16 +2167,18 @@ async function soumettreCommande() {
       prix:          0,
       statut:        'a_commander'
     });
-    // Impression 2 tickets Epson (1 boutique + 1 client)
-    var cmdNom = val('cmd-nom-c'); var cmdPrenom = val('cmd-prenom-c');
-    var cmdTel = val('cmd-tel-c'); var cmdMod = val('cmd-modele-c');
-    printBonCommande(num, {nom:cmdNom, prenom:cmdPrenom, tel:cmdTel, marque:S.marqueCmd, modele:cmdMod, code:codeCmd},
-      S.panneCmd, 0, false, 'commande').catch(()=>{});
-    showSuccess(num,
-      'Commande enregistrée ! 📦<br>'+
-      'Vous recevrez un SMS dès que la pièce arrive.<br>'+
-      '<span style="color:#4ade80;font-weight:700;">♻️ QualiRépar -25€ si éligible</span>'
-    );
+    // Afficher le ticket pour impression
+    var ticketData = {
+      type: '*** COMMANDE PIECE ***',
+      numero: num,
+      client: (prenom ? prenom + ' ' : '') + nom,
+      tel: tel, email: '',
+      marque: S.marqueCmd || '', modele: modele,
+      code: codeCmd, detail: S.panneCmd,
+      prix: 0, paye: false, qualirepar: true
+    };
+    showTicketModal(buildTicketHtml(ticketData), num, false, 0);
+    window._lastTicketLines = buildTicketLines(ticketData);
   } catch(e) {
     console.error('Erreur soumettreCommande:', e);
     goStep(curStep);
@@ -2184,11 +2252,18 @@ async function soumettreAcc() {
       prix: prix,
       statut: 'a_commander'
     });
-    // Impression 2 tickets Epson (1 boutique + 1 client)
-    printBonCommande(num, {nom:nom, prenom:prenom, tel:tel, marque:S.marque, modele:mod},
-      S.panne, prix, dejaPaye, 'accessoire').catch(()=>{});
-    showSuccess(num, 'Commande enregistrée !<br>'
-      + (dejaPaye ? '💰 Déjà payé ✅' : 'Reste à régler : <b>' + prix.toFixed(2) + ' €</b>'));
+    // Afficher le ticket pour impression
+    var ticketData = {
+      type: '*** COMMANDE ACCESSOIRE ***',
+      numero: num,
+      client: (prenom ? prenom + ' ' : '') + nom,
+      tel: tel, email: '',
+      marque: S.marque || '', modele: mod,
+      code: '', detail: S.panne,
+      prix: prix, paye: dejaPaye, qualirepar: false
+    };
+    showTicketModal(buildTicketHtml(ticketData), num, dejaPaye, prix);
+    window._lastTicketLines = buildTicketLines(ticketData);
   } catch(e) {
     console.error('Erreur soumettreAcc:', e);
     goStep(curStep);
