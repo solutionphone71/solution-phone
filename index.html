@@ -15057,18 +15057,15 @@ function eposPrint(c) {
   lines.push('');
   lines.push('');
   showNotif('&#9203; Envoi imprimante...','info');
-  // 2 copies avec coupe ESC/POS entre les deux
   var ticket = lines.join('\n');
-  var cutCmd = '\x1d\x56\x00';
-  var doubleTicket = ticket + cutCmd + ticket;
   fetch('http://' + nasIp, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({title: 'SOLUTION PHONE', content: doubleTicket, cut: true})
+    body: JSON.stringify({title: 'SOLUTION PHONE', content: ticket, cut: true})
   })
   .then(function(r){ return r.text(); })
   .then(function(t){
-    if(t === 'OK'){ showNotif('✅ 2 tickets envoyés !','success'); fermerTicket(); }
+    if(t === 'OK'){ showNotif('✅ Ticket envoyé !','success'); fermerTicket(); }
     else { showNotif('⚠️ Erreur imprimante : ' + t,'error'); }
   })
   .catch(function(e){ showNotif('❌ NAS non joignable — vérifiez le WiFi shop','error'); console.error(e); });
