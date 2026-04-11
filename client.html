@@ -2126,30 +2126,29 @@ function buildRecapAcc() {
   document.getElementById('btn-paye').textContent = '💰 Marquer comme déjà payé';
 }
 async function soumettreAcc() {
-  alert('VERSION 3 — sans acompte'); // TEST TEMPORAIRE — à supprimer
   const nom    = val('a-nom'); const prenom = val('a-prenom'); const tel = val('a-tel');
   const mod    = val('a-modele');
   const prix   = parseFloat(priceStr) || 0;
-  const acompte = dejaPaye ? prix : 0;
-  const reste   = dejaPaye ? 0 : prix;
   const num    = genNum('CMD');
+  var detailStr = (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : '');
+  if (dejaPaye) detailStr += ' [PAYÉ ' + prix.toFixed(2) + '€]';
+  var postData = {
+    id: Date.now(),
+    numero: num,
+    date: today(),
+    type: 'accessoire',
+    client_nom: (prenom ? prenom + ' ' : '') + nom,
+    client_tel: tel,
+    detail: detailStr,
+    prix: prix,
+    statut: 'a_commander'
+  };
+  alert('DONNÉES ENVOYÉES:\n' + JSON.stringify(postData, null, 2));
   showLoading();
   try {
     // ─── Enregistrement dans bons_commande ───
     // → Apparaît directement dans l'onglet "Bon de Commande" de l'app
-    var detailStr = (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : '');
-    if (dejaPaye) detailStr += ' [PAYÉ ' + prix.toFixed(2) + '€]';
-    await supaPost('bons_commande', {
-      id: Date.now(),
-      numero: num,
-      date: today(),
-      type: 'accessoire',
-      client_nom: (prenom ? prenom + ' ' : '') + nom,
-      client_tel: tel,
-      detail: detailStr,
-      prix: prix,
-      statut: 'a_commander'
-    });
+    await supaPost('bons_commande', postData);
     // Impression 2 tickets Epson (1 boutique + 1 client)
     printBonCommande(num, {nom:nom, prenom:prenom, tel:tel, marque:S.marque, modele:mod},
       S.panne, prix, dejaPaye, 'accessoire').catch(()=>{});
