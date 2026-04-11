@@ -1305,6 +1305,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <span class="cmd-badge cmd-badge-green">🟢 Arrivé</span>
             </div>
           </div>
+          <div style="margin-bottom:10px;">
+            <input type="text" id="cmd-search" placeholder="🔍 Rechercher un client, numéro, détail..." oninput="filterBonsCommande()" style="width:100%;padding:10px 14px;border:1px solid #e0e0e5;border-radius:10px;font-size:14px;background:#f5f5f7;outline:none;">
+          </div>
           <div id="commande-cards-list">
             <div style="text-align:center;padding:40px;color:#aeaeb2;font-size:14px;">Chargement…</div>
           </div>
@@ -3767,6 +3770,7 @@ function initRealtime() {
       var cmd = bonsCommande.find(function(c){ return c.id === newId; });
       if (cmd) {
         console.log('Auto-print: impression bon', cmd.numero, 'id=', newId);
+        playNotifSound();
         showNotif('🖨️ Nouveau bon ' + cmd.numero + ' — impression auto...', 'success');
         eposPrint(cmd);
       }
@@ -14632,6 +14636,7 @@ async function loadBonsCommande(){
           reste: Math.max(0,(Number(x.prix)||0)-(Number(x.acompte)||0)),
           paye: x.paye||false,
           traite: x.traite||false,
+          dateArrivee: x.date_arrivee||'',
           traiteDate: x.traite_date||''
         };
       });
@@ -14651,7 +14656,8 @@ async function saveBonCommandeSupabase(cmd){
     type: cmd.type,
     client_nom: cmd.client.nom, client_tel: cmd.client.tel,
     detail: cmd.detail, prix: cmd.prix,
-    statut: cmd.statut||'a_commander'
+    statut: cmd.statut||'a_commander',
+    date_arrivee: cmd.dateArrivee||null
   };
   try {
     var ex = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id);
@@ -14997,6 +15003,46 @@ async function paramsTestClaude() {
   }
 }
 
+// ══════════════════════════════════════════════════════════
+// SON NOTIFICATION — bip quand nouveau bon arrive
+// ══════════════════════════════════════════════════════════
+function playNotifSound(){
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Bip 1
+    var o1 = ctx.createOscillator();
+    var g1 = ctx.createGain();
+    o1.type = 'sine';
+    o1.frequency.value = 880;
+    g1.gain.value = 0.3;
+    o1.connect(g1);
+    g1.connect(ctx.destination);
+    o1.start(ctx.currentTime);
+    o1.stop(ctx.currentTime + 0.15);
+    // Bip 2 (plus aigu)
+    var o2 = ctx.createOscillator();
+    var g2 = ctx.createGain();
+    o2.type = 'sine';
+    o2.frequency.value = 1200;
+    g2.gain.value = 0.3;
+    o2.connect(g2);
+    g2.connect(ctx.destination);
+    o2.start(ctx.currentTime + 0.2);
+    o2.stop(ctx.currentTime + 0.35);
+    // Bip 3 (encore plus aigu)
+    var o3 = ctx.createOscillator();
+    var g3 = ctx.createGain();
+    o3.type = 'sine';
+    o3.frequency.value = 1400;
+    g3.gain.value = 0.25;
+    o3.connect(g3);
+    g3.connect(ctx.destination);
+    o3.start(ctx.currentTime + 0.4);
+    o3.stop(ctx.currentTime + 0.6);
+    setTimeout(function(){ ctx.close(); }, 1000);
+  } catch(e){ console.log('Audio non supporté'); }
+}
+
 var _eposPrintLock = {};
 function eposPrint(c) {
   if(!c) return;
@@ -15107,6 +15153,7 @@ function cmdChangerStatut(id, statut){
   if(!c) return;
   c.statut = statut;
   if(statut === 'arrive'){
+    c.dateArrivee = new Date().toISOString().split('T')[0];
     envoyerSMSArrivee(c);
     if(c.type === 'reparation'){
       setTimeout(function(){
@@ -15158,6 +15205,7 @@ function renderBonsCommande(){
         '</div>'+
         '<div style="font-size:14px;font-weight:700;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">'+c.client.nom+' · '+c.client.tel+'</div>'+
         '<div style="font-size:12px;color:#6e6e73;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</div>'+
+        (needsRelance(c) ? '<div style="margin-top:3px;"><span style="background:#ff9500;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;animation:pulse 2s infinite;">⏰ Relance — arrive depuis '+joursDepuis(c.dateArrivee)+' jours</span></div>' : '')+
       '</div>'+
       '<div style="flex-shrink:0;text-align:right;">'+
         '<div style="font-size:11px;color:#aeaeb2;margin-bottom:4px;">'+fmtDate(c.date)+'</div>'+
@@ -15170,6 +15218,11 @@ function renderBonsCommande(){
             ? '<button onclick="envoyerSMSCommande('+c.id+')" '+
               'style="padding:5px 9px;background:#f5f5f7;border:none;border-radius:8px;cursor:pointer;font-size:13px;'+
               'box-shadow:2px 2px 5px rgba(174,174,184,0.4),-1px -1px 3px rgba(255,255,255,0.9);" title="SMS client">📱</button>'
+            : '')+
+          (needsRelance(c)
+            ? '<button onclick="envoyerSMSRelance('+c.id+')" '+
+              'style="padding:5px 9px;background:linear-gradient(135deg,#ff9500,#e08600);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;'+
+              'box-shadow:2px 2px 8px rgba(255,149,0,0.4);" title="SMS de relance">⏰ Relancer</button>'
             : '')+
           // Bouton créer dossier réparation — uniquement si pièce arrivée et type réparation
           (c.type==='reparation' && (c.statut==='arrive') && !c.traite
@@ -15252,6 +15305,56 @@ function renderBonsCommande(){
   if(container) container.innerHTML = html || '<div style="text-align:center;padding:30px;color:#aeaeb2;">Aucun bon de commande</div>';
   if(tbody) tbody.innerHTML = '';
 }
+
+var _cmdSearchBackup = null;
+function filterBonsCommande(){
+  var q = (document.getElementById('cmd-search')||{value:''}).value.trim().toLowerCase();
+  if(!q){ renderBonsCommande(); return; }
+  // Sauvegarder et filtrer
+  var filtered = bonsCommande.filter(function(c){
+    var haystack = [c.numero, c.client.nom, c.client.tel, c.detail, c.type, c.date, c.statut].join(' ').toLowerCase();
+    return haystack.indexOf(q) !== -1;
+  });
+  // Render temporaire avec les résultats filtrés
+  var backup = bonsCommande;
+  bonsCommande = filtered;
+  renderBonsCommande();
+  bonsCommande = backup;
+}
+
+function joursDepuis(dateStr){
+  if(!dateStr) return 0;
+  var d = new Date(dateStr);
+  var now = new Date();
+  return Math.floor((now - d) / 86400000);
+}
+function needsRelance(c){
+  return c.statut === 'arrive' && !c.traite && c.dateArrivee && joursDepuis(c.dateArrivee) >= 3;
+}
+function envoyerSMSRelance(id){
+  var c = bonsCommande.find(function(x){ return x.id === id; });
+  if(!c) return;
+  var msg;
+  if(c.type === 'accessoire'){
+    msg = 'Bonjour '+c.client.nom+', petit rappel : votre accessoire est disponible en boutique depuis quelques jours. N\'hesitez pas a passer le recuperer. A bientot, Solution Phone - 03 85 33 06 89';
+  } else {
+    var appareil = (c.detail||'').split(' — ')[0] || (c.detail||'').split(' - ')[0] || 'votre appareil';
+    msg = 'Bonjour '+c.client.nom+', petit rappel : la piece pour votre '+appareil+' est en boutique depuis quelques jours. Pensez a passer avec votre appareil pour la reparation (environ 1h). A bientot, Solution Phone - 03 85 33 06 89';
+  }
+  var tel = c.client.tel.replace(/[^0-9+]/g,'');
+  var brevoKey = localStorage.getItem('sp_brevo_key')||'';
+  if(brevoKey && tel.length >= 10){
+    fetch('/api/brevo?type=sms',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sender:'SolPhone',recipient:tel.startsWith('0')?'+33'+tel.slice(1):tel,content:msg})
+    }).then(function(r){ if(!r.ok) throw new Error(); showNotif('⏰ SMS de relance envoye a '+c.client.nom+' !','success'); })
+    .catch(function(){ setTimeout(function(){window.location.href='sms:'+tel+'?body='+encodeURIComponent(msg);},300); });
+  } else {
+    setTimeout(function(){ window.location.href='sms:'+tel+'?body='+encodeURIComponent(msg); }, 300);
+  }
+}
+
 function envoyerSMSCommande(id){
   var c = bonsCommande.find(function(x){ return x.id === id; });
   if(!c) return;
