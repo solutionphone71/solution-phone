@@ -15065,11 +15065,6 @@ function eposPrint(c) {
   lines.push('--------------------------------');
   lines.push('Merci de votre confiance !');
   lines.push('www.solution-phone.fr');
-  // DEBUG TEMPORAIRE — a retirer apres test
-  lines.push('--- DEBUG ---');
-  lines.push('SRC: PC-POLLING');
-  lines.push('H: ' + new Date().toLocaleTimeString());
-  lines.push('INST: ' + Math.floor(Math.random()*1000));
   lines.push('');
   lines.push('');
   lines.push('');
@@ -15081,11 +15076,11 @@ function eposPrint(c) {
   lines.push('');
   lines.push('');
   showNotif('&#9203; Envoi imprimante...','info');
-  var ticket = lines.join('\n');
+  var ticket = lines.join('\n') + '\n\x1dV\x00';
   fetch('http://' + nasIp, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({title: 'SOLUTION PHONE', content: ticket, cut: true})
+    body: JSON.stringify({title: 'SOLUTION PHONE', content: ticket})
   })
   .then(function(r){ return r.text(); })
   .then(function(t){
