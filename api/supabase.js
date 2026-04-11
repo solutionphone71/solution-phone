@@ -44,12 +44,25 @@ export default async function handler(req, res) {
 
   try {
     const fetchOpts = { method, headers };
+    var sentBody = null;
     if (method !== 'GET' && method !== 'HEAD' && req.body) {
-      fetchOpts.body = JSON.stringify(req.body);
+      sentBody = JSON.stringify(req.body);
+      fetchOpts.body = sentBody;
     }
 
     const response = await fetch(url, fetchOpts);
     const text = await response.text();
+
+    // Si erreur Supabase, ajouter le debug body dans la reponse
+    if (!response.ok) {
+      console.error('Supabase error:', response.status, text, 'Body sent:', sentBody);
+      return res.status(response.status).json({
+        supaError: text,
+        debugBodySent: sentBody,
+        debugUrl: url,
+        debugMethod: method
+      });
+    }
 
     // Transmettre le status code Supabase
     res.status(response.status);
@@ -63,6 +76,6 @@ export default async function handler(req, res) {
     return res.send(text);
   } catch (e) {
     console.error('Proxy Supabase error:', e);
-    return res.status(500).json({ error: 'Erreur proxy Supabase' });
+    return res.status(500).json({ error: 'Erreur proxy Supabase', detail: e.message });
   }
 }

@@ -1610,7 +1610,14 @@ async function supaPost(table, data) {
     var errBody = '';
     try { errBody = await r.text(); } catch(e){}
     console.error('supaPost HTTP error:', r.status, errBody);
-    throw new Error('HTTP ' + r.status + ': ' + errBody);
+    // Afficher le debug complet du proxy
+    try {
+      var debug = JSON.parse(errBody);
+      alert('DEBUG PROXY:\nBody envoyé au serveur: ' + (debug.debugBodySent || 'null') + '\nURL Supabase: ' + (debug.debugUrl || '?') + '\nErreur Supabase: ' + (debug.supaError || errBody));
+    } catch(pe) {
+      alert('Erreur brute: ' + errBody);
+    }
+    throw new Error('HTTP ' + r.status);
   }
 }
 
