@@ -9363,7 +9363,7 @@ var ecransPrix = (function(){
 
 function saveEcransPrix(){
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-  if(!SUPA_URL || !SUPA_KEY) return;
+  if(!supabaseReady) return;
   // Même méthode que batteries : JSON dans la table settings
   var jsonData = JSON.stringify(ecransPrix);
   supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json').then(function(rows){
@@ -9379,7 +9379,7 @@ function saveEcransPrix(){
 }
 
 async function loadEcransFromSupabase(){
-  if(!SUPA_URL || !SUPA_KEY) return;
+  if(!supabaseReady) return;
   try {
     // 1. Essayer la table settings (nouvelle méthode)
     var rows = await supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json');
@@ -9665,7 +9665,7 @@ if(!batteriesPrix){ batteriesPrix = JSON.parse(JSON.stringify(BATTERIES_DEFAULT)
 
 function saveBatteriesPrix(){
   localStorage.setItem('sp_batteries_prix', JSON.stringify(batteriesPrix));
-  if(!SUPA_URL || !SUPA_KEY) return;
+  if(!supabaseReady) return;
   var jsonData = JSON.stringify(batteriesPrix.t1||[]);
   // Sauvegarde dans la table settings (clé = batteries_prix_json)
   supaFetch('settings','GET',null,'?key=eq.batteries_prix_json').then(function(rows){
@@ -9685,7 +9685,7 @@ function saveBatteriesPrix(){
 }
 
 async function loadBatteriesFromSupabase(){
-  if(!SUPA_URL || !SUPA_KEY) return;
+  if(!supabaseReady) return;
   try {
     var rows = await supaFetch('settings','GET',null,'?key=eq.batteries_prix_json');
     if(!rows || !rows.length || !rows[0].value) { console.log('Batteries: rien dans settings'); return; }
@@ -10060,7 +10060,7 @@ function androidInit(){
 }
 
 async function androidLoadSupabase(){
-  if(!SUPA_URL || !SUPA_KEY) return;
+  if(!supabaseReady) return;
   try{
     // Charger depuis settings (nouvelle méthode fiable)
     var rows = await supaFetch('settings','GET',null,'?key=eq.android_prix_json');
@@ -10101,7 +10101,7 @@ async function androidLoadSupabase(){
 
 async function androidSauvegarder(){
   localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
-  if(!SUPA_URL || !SUPA_KEY){ showNotif('Sauvegardé localement','info'); return; }
+  if(!supabaseReady){ showNotif('Sauvegardé localement','info'); return; }
   try{
     var jsonData = JSON.stringify(androidData);
     // Même méthode que batteries/écrans : JSON dans la table settings

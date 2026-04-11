@@ -21,7 +21,8 @@ export default async function handler(req, res) {
     'reports_mois', 'ecrans_prix', 'batteries_prix', 'prix_reparation_android',
     'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
     'salaries', 'phonilab_import', 'police',
-    'bons_depot', 'historique_reparations', 'ventes_neufs_access'
+    'bons_depot', 'bons_commande', 'historique_reparations', 'ventes_neufs_access',
+    'calendrier_editorial', 'roulette_config'
   ];
   if (!ALLOWED_TABLES.includes(table)) {
     return res.status(403).json({ error: 'Table non autorisee: ' + table });
