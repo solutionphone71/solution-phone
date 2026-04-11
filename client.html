@@ -1591,27 +1591,9 @@ function buildTicketHtml(data) {
 }
 
 async function printTicketEpson(ticketHtml, copies) {
-  var ip = getNasIp();
-  if (!ip) { showTicketModal(ticketHtml); return; }
-  copies = copies || 1;
-  var ok = false;
-  for (var i = 0; i < copies; i++) {
-    try {
-      // Timeout compatible tous navigateurs (pas AbortSignal.timeout)
-      var controller = new AbortController();
-      var timer = setTimeout(function(){ controller.abort(); }, 5000);
-      await fetch('http://' + ip + '/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: ticketHtml }),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
-      ok = true;
-    } catch(e) { console.log('Epson print error copy '+(i+1)+':', e.message||e); }
-  }
-  // Si l'impression Epson echoue, afficher le ticket en fallback
-  if (!ok) showTicketModal(ticketHtml);
+  // Impression geree automatiquement par le PC via polling Supabase
+  // L'iPad n'envoie plus directement a l'Epson (blocage Safari HTTPS->HTTP)
+  showTicketModal(ticketHtml);
 }
 
 function showTicketModal(ticketHtml, num, paye, prix) {
