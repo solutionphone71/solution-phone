@@ -1544,16 +1544,20 @@ async function printTicketEpson(ticketHtml, copies) {
   var ok = false;
   for (var i = 0; i < copies; i++) {
     try {
+      // Timeout compatible tous navigateurs (pas AbortSignal.timeout)
+      var controller = new AbortController();
+      var timer = setTimeout(function(){ controller.abort(); }, 5000);
       await fetch('http://' + ip + '/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ html: ticketHtml }),
-        signal: AbortSignal.timeout(5000)
+        signal: controller.signal
       });
+      clearTimeout(timer);
       ok = true;
-    } catch(e) { console.log('Epson print error:', e); }
+    } catch(e) { console.log('Epson print error copy '+(i+1)+':', e.message||e); }
   }
-  // Si l'impression Epson echoue (mixed content HTTPS→HTTP sur iPad), afficher le ticket
+  // Si l'impression Epson echoue, afficher le ticket en fallback
   if (!ok) showTicketModal(ticketHtml);
 }
 
