@@ -15076,7 +15076,7 @@ function eposPrint(c) {
   lines.push('');
   lines.push('');
   showNotif('&#9203; Envoi imprimante...','info');
-  var ticket = lines.join('\n') + '\n\x1dV\x00';
+  var ticket = lines.join('\n') + '\n\x1d\x56\x42\x03';
   fetch('http://' + nasIp, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
