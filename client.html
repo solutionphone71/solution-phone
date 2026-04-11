@@ -1624,8 +1624,7 @@ function showTicketModal(ticketHtml, num, paye, prix) {
     (paye ? '<div style="color:#27ae60;font-weight:700;">💰 Déjà payé ✅</div>' : (prix > 0 ? '<div>Reste à régler : <b>' + prix.toFixed(2) + ' €</b></div>' : '')) + '</div>' : '';
   modal.innerHTML = successMsg +
     '<div style="padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;">' +
-      '<button onclick="tryEpsonFromModal()" style="flex:1;min-width:120px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">🖨️ Epson (x2)</button>' +
-      '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#3b82f6;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;">🖨️ Imprimer</button>' +
+      '<button onclick="tryEpsonFromModal()" style="flex:1;min-width:120px;padding:16px;background:#27ae60;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;">🖨️ Imprimer Epson (x2)</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:0 16px 16px;">' +
       '<div style="background:#fff;color:#000;border:1px solid #e2e8f0;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;">' + ticketHtml + '</div>' +
@@ -1641,25 +1640,50 @@ function showTicketModal(ticketHtml, num, paye, prix) {
 function tryEpsonFromModal() {
   var ip = getNasIp();
   if (!ip || !window._lastTicketLines) { alert('IP NAS non configuree'); return; }
-  var body = JSON.stringify({ title: 'SOLUTION PHONE', content: window._lastTicketLines });
-  // 1ere copie
-  fetch('http://' + ip, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: body
-  }).then(function(r){ return r.text(); })
-  .then(function(t){
-    // 2e copie apres 2s de delai (evite caracteres parasites)
-    setTimeout(function(){
-      fetch('http://' + ip, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: body
-      }).then(function(){ alert('2 tickets envoyes !'); })
-      .catch(function(){ alert('1er ticket OK, erreur sur le 2e'); });
-    }, 2000);
-  })
-  .catch(function(e){ alert('Erreur Epson: ' + e.message + '\nVerifiez le WiFi boutique.'); });
+  // Methode 1 : fetch (fonctionne sur PC)
+  // Methode 2 : iframe + formulaire (contourne blocage Safari HTTPS→HTTP)
+  var data = JSON.stringify({ title: 'SOLUTION PHONE', content: window._lastTicketLines });
+  function sendViaPOST(callback) {
+    // Essayer fetch d'abord
+    fetch('http://' + ip, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: data
+    }).then(function(r){ return r.text(); })
+    .then(function(t){ if(callback) callback(true); })
+    .catch(function(){
+      // Fallback : formulaire caché dans un iframe (contourne mixed content)
+      try {
+        var iframe = document.createElement('iframe');
+        iframe.name = 'epson_print_' + Date.now();
+        iframe.style.cssText = 'display:none;width:0;height:0;';
+        document.body.appendChild(iframe);
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'http://' + ip;
+        form.target = iframe.name;
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'data';
+        input.value = data;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        setTimeout(function(){ form.remove(); iframe.remove(); }, 5000);
+        if(callback) callback(true);
+      } catch(e2) {
+        if(callback) callback(false);
+      }
+    });
+  }
+  // Copie 1
+  sendViaPOST(function(ok){
+    if(!ok){ alert('Erreur Epson.\nVerifiez le WiFi boutique.'); return; }
+    // Copie 2 apres delai
+    setTimeout(function(){ sendViaPOST(function(ok2){
+      alert(ok2 ? '2 tickets envoyes !' : '1 ticket envoye (erreur sur le 2e)');
+    }); }, 2000);
+  });
 }
 
 async function printBonDepot(num, clientData, appareil) {
