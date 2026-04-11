@@ -15258,7 +15258,7 @@ function envoyerSMSCommande(id){
   var reste  = Math.max(0,(Number(c.prix)||0)-(Number(c.acompte)||0));
   var msg;
   if (c.type === 'accessoire') {
-    msg = 'Bonjour '+c.client.nom+', votre accessoire commande est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
+    msg = 'Bonjour '+c.client.nom+', votre accessoire est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
   } else {
     var appareil = (c.detail||'').split(' — ')[0] || (c.detail||'').split(' - ')[0] || 'votre appareil';
     msg = 'Bonjour '+c.client.nom+', bonne nouvelle ! La piece pour votre '+appareil+' est arrivee. Passez en boutique avec votre appareil, comptez environ 1h de reparation. A bientot, Solution Phone - 03 85 33 06 89';
@@ -15287,7 +15287,7 @@ function envoyerSMSCommande(id){
 async function envoyerSMSArrivee(c){
   var msg;
   if (c.type === 'accessoire') {
-    msg = 'Bonjour '+c.client.nom+', votre accessoire commande est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
+    msg = 'Bonjour '+c.client.nom+', votre accessoire est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
   } else {
     var appareil = (c.detail||'').split(' — ')[0] || (c.detail||'').split(' - ')[0] || 'votre appareil';
     msg = 'Bonjour '+c.client.nom+', bonne nouvelle ! La piece pour votre '+appareil+' est arrivee. Passez en boutique avec votre appareil, comptez environ 1h de reparation. A bientot, Solution Phone - 03 85 33 06 89';
