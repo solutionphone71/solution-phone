@@ -6143,11 +6143,59 @@ function voirClientDetail(id){
   });
   content.appendChild(grid);
 
-  // Historique réparations
+  // === DONNÉES HISTORIQUES ===
   var searchKey = (c.prenom?c.prenom+' ':'')+c.nom;
   var hist = getHistoriqueClient(searchKey);
   if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
 
+  // Bons de commande du client
+  var clientBons = bonsCommande.filter(function(b){
+    return b.client && ((b.client.nom||'').toLowerCase().includes((c.nom||'').toLowerCase()) ||
+           (b.client.tel||'').replace(/\s/g,'') === (c.tel||'').replace(/\s/g,''));
+  });
+
+  // Factures du client
+  var clientFactures = (typeof factures !== 'undefined' ? factures : []).filter(function(f){
+    return (f.clientNom||'').toLowerCase().includes((c.nom||'').toLowerCase());
+  });
+
+  // === CA TOTAL & FIDÉLITÉ ===
+  var caRepas = hist.reduce(function(sum,r){ return sum + (Number(r.prix)||0); }, 0);
+  var caBons = clientBons.reduce(function(sum,b){ return sum + (Number(b.prix)||0); }, 0);
+  var caFactures = clientFactures.reduce(function(sum,f){ return sum + (Number(f.ttc)||0); }, 0);
+  var caTotal = caRepas + caBons + caFactures;
+  var nbTotal = hist.length + clientBons.length;
+  var premDate = '';
+  var allDates = hist.map(function(r){return r.date_rep||'';}).concat(clientBons.map(function(b){return b.date||'';})).filter(Boolean).sort();
+  if(allDates.length) premDate = allDates[0].substring(0,10);
+
+  var fidelite = nbTotal >= 5 ? '⭐ Client fidèle' : nbTotal >= 2 ? '👍 Client régulier' : '🆕 Nouveau client';
+  var fidelColor = nbTotal >= 5 ? '#ff9500' : nbTotal >= 2 ? '#0055b3' : '#6e6e73';
+
+  // Badge fidélité + stats
+  var statsDiv = document.createElement('div');
+  statsDiv.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;';
+  statsDiv.innerHTML =
+    '<div style="background:linear-gradient(135deg,#f0f7ff,#e0f2fe);border-radius:10px;padding:10px;text-align:center;">'+
+      '<div style="font-size:10px;font-weight:700;color:#6e6e73;text-transform:uppercase;">CA Total</div>'+
+      '<div style="font-size:18px;font-weight:900;color:#0055b3;">'+caTotal.toFixed(0)+' &euro;</div>'+
+    '</div>'+
+    '<div style="background:linear-gradient(135deg,#fff5f5,#fee2e2);border-radius:10px;padding:10px;text-align:center;">'+
+      '<div style="font-size:10px;font-weight:700;color:#6e6e73;text-transform:uppercase;">R&eacute;parations</div>'+
+      '<div style="font-size:18px;font-weight:900;color:#ff3b30;">'+hist.length+'</div>'+
+    '</div>'+
+    '<div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:10px;padding:10px;text-align:center;">'+
+      '<div style="font-size:10px;font-weight:700;color:#6e6e73;text-transform:uppercase;">Commandes</div>'+
+      '<div style="font-size:18px;font-weight:900;color:#1a8a36;">'+clientBons.length+'</div>'+
+    '</div>'+
+    '<div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-radius:10px;padding:10px;text-align:center;">'+
+      '<div style="font-size:10px;font-weight:700;color:#6e6e73;text-transform:uppercase;">Fid&eacute;lit&eacute;</div>'+
+      '<div style="font-size:14px;font-weight:900;color:'+fidelColor+';">'+fidelite+'</div>'+
+      (premDate ? '<div style="font-size:9px;color:#aeaeb2;">Depuis '+premDate+'</div>' : '')+
+    '</div>';
+  content.appendChild(statsDiv);
+
+  // === HISTORIQUE RÉPARATIONS ===
   var histTitle = document.createElement('div');
   histTitle.style.cssText = 'font-weight:800;font-size:13px;margin-bottom:10px;';
   histTitle.textContent = '🔧 Historique réparations ('+hist.length+')';
@@ -6179,6 +6227,31 @@ function voirClientDetail(id){
     });
     table.appendChild(tbody);
     content.appendChild(table);
+  }
+
+  // === HISTORIQUE BONS DE COMMANDE ===
+  if(clientBons.length){
+    var bonsTitle = document.createElement('div');
+    bonsTitle.style.cssText = 'font-weight:800;font-size:13px;margin:14px 0 10px;';
+    bonsTitle.textContent = '📦 Bons de commande ('+clientBons.length+')';
+    content.appendChild(bonsTitle);
+    var tblBons = document.createElement('table');
+    tblBons.style.width='100%';
+    tblBons.innerHTML = '<thead><tr><th>N°</th><th>Date</th><th>Type</th><th>Détail</th><th>Prix</th><th>Statut</th></tr></thead>';
+    var tbodyB = document.createElement('tbody');
+    clientBons.forEach(function(b){
+      var tr = document.createElement('tr');
+      var sColor = b.statut==='arrive'?'var(--green)':b.statut==='en_transit'?'var(--warning)':'var(--text-muted)';
+      tr.innerHTML = '<td><b>'+b.numero+'</b></td>'+
+        '<td style="font-size:12px;color:var(--text-muted);">'+fmtDate(b.date)+'</td>'+
+        '<td><span style="font-size:11px;padding:2px 6px;border-radius:10px;background:'+(b.type==='reparation'?'#fee2e2':'#e0f2fe')+';color:'+(b.type==='reparation'?'#dc2626':'#0369a1')+';">'+(b.type==='reparation'?'Pièce':'Accessoire')+'</span></td>'+
+        '<td style="font-size:12px;">'+b.detail+'</td>'+
+        '<td style="font-weight:700;">'+(Number(b.prix)||0).toFixed(2)+' &euro;</td>'+
+        '<td style="font-size:12px;color:'+sColor+';">'+(b.statut||'a_commander')+'</td>';
+      tbodyB.appendChild(tr);
+    });
+    tblBons.appendChild(tbodyB);
+    content.appendChild(tblBons);
   }
 
   card.style.display = 'block';
@@ -8275,13 +8348,27 @@ function renderDashboard(){
   var cards = document.getElementById('dash-cards');
   if(cards){
     cards.innerHTML = '';
+    // Stats supplémentaires
+    var todayStr = today.toISOString().split('T')[0];
+    var caJour = caisse.filter(function(c){return c.date===todayStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+    var debutSemaine = new Date(today); debutSemaine.setDate(today.getDate()-today.getDay()+1);
+    var semStr = debutSemaine.toISOString().split('T')[0];
+    var caSemaine = caisse.filter(function(c){return c.date>=semStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+    var repEnCours = Array.isArray(reparations) ? reparations.filter(function(r){return r.statut&&!r.statut.includes('ermin')&&r.statut!=='Cloturé';}).length : 0;
+    var cmdEnAttente = bonsCommande.filter(function(c){return !c.traite;}).length;
+    var relances = bonsCommande.filter(function(c){return typeof needsRelance==='function'&&needsRelance(c);}).length;
+
     if(isEmploye){
       cards.appendChild(dashCard('Stock dispo', dispo+' tél.', '', 'phones', ''));
       cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
     } else {
+      cards.appendChild(dashCard('CA du jour', caJour.toFixed(0)+' €', 'Réparations', null, ''));
+      cards.appendChild(dashCard('CA semaine', caSemaine.toFixed(0)+' €', '', null, 'color:var(--blue)'));
       cards.appendChild(dashCard('CA réparations', caReparMois.toFixed(0)+' €', 'dont QR : '+bonusQRMois.toFixed(0)+' €', 'reparations', ''));
       cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
       cards.appendChild(dashCard('CA total du mois', caTotal.toFixed(0)+' €', '', null, 'color:var(--red)'));
+      cards.appendChild(dashCard('Répa en cours', repEnCours+'', '', 'reparations', 'color:var(--green)'));
+      cards.appendChild(dashCard('Commandes', cmdEnAttente+' en attente', relances>0?'⏰ '+relances+' relance(s)':'', 'commandes', 'color:var(--blue)'));
       cards.appendChild(dashCard('Stock dispo', dispo+' tél.', 'Smartphones', 'phones', ''));
       cards.appendChild(dashCard('Bonus QR encaissé', bonusQRMois.toFixed(0)+' €', 'ce mois', 'qualirepar', 'color:var(--green)'));
     }
@@ -18595,6 +18682,10 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
   }
   patchAria();
 })();
+// Service Worker — mode hors-ligne
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(function(){console.log('[SW] OK');}).catch(function(){});
+}
 </script>
 </body>
 </html>

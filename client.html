@@ -2302,5 +2302,27 @@ function restart(silent) {
 }
 
 </script>
+<script>
+// Service Worker — mode hors-ligne
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(function(){
+    console.log('[SW] Enregistré');
+  }).catch(function(e){ console.log('[SW] Erreur:', e); });
+  // Indicateur hors-ligne
+  window.addEventListener('offline', function(){
+    document.title = '⚠️ HORS LIGNE — Solution Phone';
+    var b = document.createElement('div');
+    b.id = 'offline-banner';
+    b.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:#ff3b30;color:#fff;text-align:center;padding:6px;font-size:13px;font-weight:700;z-index:999999;';
+    b.textContent = '⚠️ Hors ligne — les commandes seront envoyées au retour du WiFi';
+    document.body.prepend(b);
+  });
+  window.addEventListener('online', function(){
+    document.title = 'Solution Phone';
+    var b = document.getElementById('offline-banner');
+    if(b) b.remove();
+  });
+}
+</script>
 </body>
 </html>
