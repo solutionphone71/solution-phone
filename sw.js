@@ -1,5 +1,5 @@
 // Service Worker — Solution Phone — Mode hors-ligne
-var CACHE_NAME = 'sp-cache-v2';
+var CACHE_NAME = 'sp-cache-v3';
 var URLS_TO_CACHE = [
   '/',
   '/index.html',

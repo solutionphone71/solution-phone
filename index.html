@@ -4,103 +4,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="dark">
 <title>Solution Phone — Gestion</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
-<meta name="theme-color" content="#c0392b">
+<meta name="theme-color" content="#0a0a1a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <link rel="stylesheet" href="./css/style.css">
 <link rel="stylesheet" href="./css/cyber-theme.css">
-<link rel="stylesheet" href="./css/sp-apple-light-theme.css">
-<style id="sp-override">
-/* Variables natives redéfinies */
-:root{
-  --primary:#ff3b30;--red:#ff3b30;--blue:#007aff;
-  --green:#28a745;--warning:#ff9500;
-  --text:#1d1d1f;--text-muted:#6e6e73;
-  --border:rgba(0,0,0,0.10);--bg:#f0f0f3;
-}
-/* Sélecteurs haute spécificité pour battre cyber-theme */
-html body,html body #app,html body .layout,
-html body .main,html body .page,
-html body #page-dashboard{
-  background:#f0f0f3!important;color:#1d1d1f!important;
-}
-html body .sidebar{
-  background:#f5f5f8!important;
-  border-right:1px solid rgba(0,0,0,0.08)!important;
-}
-html body .sidebar .logo-t{color:#1d1d1f!important;}
-html body .sidebar .logo-s{color:#6e6e73!important;}
-html body .nav-item{color:#6e6e73!important;border-radius:12px!important;}
-html body .nav-item.active{
-  background:#fff!important;color:#ff3b30!important;
-  box-shadow:3px 3px 10px rgba(174,174,184,.3),-2px -2px 6px rgba(255,255,255,.9)!important;
-}
-html body .nav-item:hover{background:rgba(255,255,255,.7)!important;color:#1d1d1f!important;}
-html body .nav-group-label{color:#aeaeb2!important;}
-html body .card{
-  background:#fff!important;color:#1d1d1f!important;
-  border:1px solid rgba(255,255,255,.9)!important;
-  border-radius:18px!important;
-  box-shadow:4px 4px 14px rgba(174,174,184,.22),-3px -3px 8px rgba(255,255,255,.9)!important;
-}
-html body .card-header{background:transparent!important;border-bottom:1px solid rgba(0,0,0,.06)!important;}
-html body .card-title{
-  color:#1d1d1f!important;font-weight:700!important;
-  background:transparent!important;
-  /* Annuler le style "pill" cyberpunk */
-  padding:0!important;border-radius:0!important;
-  border:none!important;box-shadow:none!important;
-  font-size:15px!important;letter-spacing:normal!important;
-  text-transform:none!important;
-}
-html body .btn{
-  background:#f0f0f3!important;color:#1d1d1f!important;
-  border-color:rgba(0,0,0,.12)!important;border-radius:10px!important;
-  box-shadow:3px 3px 8px rgba(174,174,184,.28),-3px -3px 7px rgba(255,255,255,.85)!important;
-}
-html body .btn-primary{
-  background:#ff3b30!important;color:#fff!important;
-  border-color:transparent!important;
-  box-shadow:4px 4px 12px rgba(201,37,27,.35),-2px -2px 6px rgba(255,120,110,.15)!important;
-}
-html body input,html body select,html body textarea{
-  background:#f0f0f3!important;color:#1d1d1f!important;
-  border:none!important;border-radius:10px!important;
-  box-shadow:inset 2px 2px 5px rgba(174,174,184,.35),inset -2px -2px 4px rgba(255,255,255,.8)!important;
-}
-html body table th{color:#aeaeb2!important;border-bottom:1px solid rgba(0,0,0,.06)!important;}
-html body table td{color:#1d1d1f!important;border-bottom:1px solid rgba(0,0,0,.04)!important;}
-html body .dash-card{
-  background:#f0f0f3!important;color:#1d1d1f!important;
-  border:none!important;border-radius:18px!important;
-  box-shadow:5px 5px 14px rgba(174,174,184,.25),-5px -5px 14px rgba(255,255,255,.85)!important;
-}
-html body .dash-label{color:#aeaeb2!important;font-size:10px!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.08em!important;}
-html body .dash-value{font-weight:800!important;font-size:28px!important;letter-spacing:-.03em!important;}
-html body .dash-sub{color:#6e6e73!important;font-size:12px!important;}
-html body .badge-green{background:#dcfce7!important;color:#166534!important;border-radius:20px!important;}
-html body .badge-red{background:#fce7e7!important;color:#991b1b!important;border-radius:20px!important;}
-html body #mobile-nav{background:rgba(245,245,248,.88)!important;border-top:1px solid rgba(0,0,0,.07)!important;}
-html body .mob-nav-btn{color:#6e6e73!important;}
-html body .mob-nav-btn.active{color:#ff3b30!important;}
-html body .page-title{color:#1d1d1f!important;font-weight:800!important;}
-html body .page-sub{color:#6e6e73!important;}
-html body #login-screen{background:#f0f0f3!important;}
-html body .login-box{
-  background:#fff!important;border-radius:24px!important;
-  box-shadow:8px 8px 24px rgba(174,174,184,.3),-8px -8px 20px rgba(255,255,255,.95)!important;
-}
-html body .pin-btn{
-  background:#f0f0f3!important;color:#1d1d1f!important;border:none!important;
-  border-radius:14px!important;
-  box-shadow:4px 4px 10px rgba(174,174,184,.28),-4px -4px 8px rgba(255,255,255,.85)!important;
-}
-html body .sidebar-logo{background:#f0f0f3!important;border-bottom:1px solid rgba(0,0,0,.07)!important;}
-</style>
+<link rel="stylesheet" href="./css/sp-futur-theme.css">
 <script src="pave.js"></script>
 <script>
 // ── Tampon + Signature Solution Phone ───────────────────────
@@ -3867,9 +3780,29 @@ function showPage(id,el){
       if(el2) el2.style.display = 'none';
     });
   }
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  // Page transition animation
+  var currentPage = document.querySelector('.page.active');
+  var targetPage = document.getElementById('page-'+id);
+  if(currentPage && currentPage !== targetPage){
+    currentPage.style.opacity = '0';
+    currentPage.style.transform = 'translateY(10px)';
+    setTimeout(function(){
+      document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');p.style.opacity='';p.style.transform='';});
+      targetPage.classList.add('active');
+      targetPage.style.opacity = '0';
+      targetPage.style.transform = 'translateY(10px)';
+      requestAnimationFrame(function(){
+        targetPage.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        targetPage.style.opacity = '1';
+        targetPage.style.transform = 'translateY(0)';
+        setTimeout(function(){ targetPage.style.transition = ''; }, 400);
+      });
+    }, 150);
+  } else {
+    document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+    targetPage.classList.add('active');
+  }
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
-  document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
   if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
   if(id==='stats')renderStats();
