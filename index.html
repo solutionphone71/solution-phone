@@ -15185,17 +15185,70 @@ function renderBonsCommande(){
     '</div>';
   }
 
+  // Séparer pièces et accessoires
+  var attentePieces = enAttente.filter(function(c){ return c.type === 'reparation'; });
+  var attenteAccs   = enAttente.filter(function(c){ return c.type !== 'reparation'; });
+
+  // Archivés triés par date décroissante et groupés par mois
+  var archivePieces = traites.filter(function(c){ return c.type === 'reparation'; });
+  var archiveAccs   = traites.filter(function(c){ return c.type !== 'reparation'; });
+  function sortByDate(a,b){ return (b.date||'').localeCompare(a.date||''); }
+  archivePieces.sort(sortByDate);
+  archiveAccs.sort(sortByDate);
+
+  function groupByMonth(list){
+    var groups = {};
+    list.forEach(function(c){
+      var d = c.date ? c.date.substring(0,7) : 'Inconnu'; // YYYY-MM
+      if(!groups[d]) groups[d] = [];
+      groups[d].push(c);
+    });
+    return groups;
+  }
+  function renderMonthGroups(groups){
+    var months = Object.keys(groups).sort().reverse();
+    var h = '';
+    months.forEach(function(m){
+      var parts = m.split('-');
+      var moisNoms = ['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+      var label = parts.length===2 ? moisNoms[parseInt(parts[1])-1]+' '+parts[0] : m;
+      h += '<div style="font-size:10px;font-weight:700;color:#aeaeb2;margin:10px 0 4px;padding:4px 8px;background:#f5f5f7;border-radius:6px;">'+label+' ('+groups[m].length+')</div>';
+      h += groups[m].map(cardHtml).join('');
+    });
+    return h;
+  }
+
   var html = '';
-  if(enAttente.length){
-    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6e6e73;margin-bottom:8px;">📬 En attente ('+enAttente.length+')</div>';
-    html += enAttente.map(cardHtml).join('');
+
+  // ── PIÈCES SMARTPHONE ──
+  html += '<div style="font-size:13px;font-weight:800;color:#ff3b30;margin-bottom:6px;padding:8px 10px;background:linear-gradient(135deg,#fff5f5,#fff);border-radius:10px;border-left:4px solid #ff3b30;">🔧 Pièces smartphone</div>';
+  if(attentePieces.length){
+    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6e6e73;margin-bottom:8px;">📬 En attente ('+attentePieces.length+')</div>';
+    html += attentePieces.map(cardHtml).join('');
   } else {
-    html += '<div style="text-align:center;padding:30px;color:#1a8a36;font-weight:700;font-size:14px;">✅ Aucune commande en attente</div>';
+    html += '<div style="text-align:center;padding:16px;color:#1a8a36;font-weight:600;font-size:13px;">✅ Aucune pièce en attente</div>';
   }
-  if(traites.length){
-    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#aeaeb2;margin:14px 0 8px;">🗂️ Archivés ('+traites.length+')</div>';
-    html += traites.map(cardHtml).join('');
+  if(archivePieces.length){
+    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#aeaeb2;margin:14px 0 4px;">🗂️ Archivées ('+archivePieces.length+')</div>';
+    html += renderMonthGroups(groupByMonth(archivePieces));
   }
+
+  // ── SÉPARATEUR ──
+  html += '<div style="border-top:2px solid #e5e7eb;margin:18px 0;"></div>';
+
+  // ── ACCESSOIRES ──
+  html += '<div style="font-size:13px;font-weight:800;color:#0055b3;margin-bottom:6px;padding:8px 10px;background:linear-gradient(135deg,#f0f7ff,#fff);border-radius:10px;border-left:4px solid #0055b3;">🎁 Accessoires</div>';
+  if(attenteAccs.length){
+    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6e6e73;margin-bottom:8px;">📬 En attente ('+attenteAccs.length+')</div>';
+    html += attenteAccs.map(cardHtml).join('');
+  } else {
+    html += '<div style="text-align:center;padding:16px;color:#1a8a36;font-weight:600;font-size:13px;">✅ Aucun accessoire en attente</div>';
+  }
+  if(archiveAccs.length){
+    html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#aeaeb2;margin:14px 0 4px;">🗂️ Archivés ('+archiveAccs.length+')</div>';
+    html += renderMonthGroups(groupByMonth(archiveAccs));
+  }
+
   if(container) container.innerHTML = html || '<div style="text-align:center;padding:30px;color:#aeaeb2;">Aucun bon de commande</div>';
   if(tbody) tbody.innerHTML = '';
 }
@@ -15203,7 +15256,13 @@ function envoyerSMSCommande(id){
   var c = bonsCommande.find(function(x){ return x.id === id; });
   if(!c) return;
   var reste  = Math.max(0,(Number(c.prix)||0)-(Number(c.acompte)||0));
-  var msg = 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ! Venez quand vous voulez, comptez 1h pour la réparation. Bonne journée, l\'équipe de Solution Phone';
+  var msg;
+  if (c.type === 'accessoire') {
+    msg = 'Bonjour '+c.client.nom+', votre accessoire commande est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
+  } else {
+    var appareil = (c.detail||'').split(' — ')[0] || (c.detail||'').split(' - ')[0] || 'votre appareil';
+    msg = 'Bonjour '+c.client.nom+', bonne nouvelle ! La piece pour votre '+appareil+' est arrivee. Passez en boutique avec votre appareil, comptez environ 1h de reparation. A bientot, Solution Phone - 03 85 33 06 89';
+  }
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
   c.traite = true;
   c.statut = 'remis';
@@ -15226,7 +15285,13 @@ function envoyerSMSCommande(id){
 }
 
 async function envoyerSMSArrivee(c){
-  var msg = 'Bonjour '+c.client.nom+', votre pièce est arrivée en magasin ! Venez quand vous voulez, comptez 1h pour la réparation. Bonne journée, l\'équipe de Solution Phone';
+  var msg;
+  if (c.type === 'accessoire') {
+    msg = 'Bonjour '+c.client.nom+', votre accessoire commande est arrive en boutique ! Vous pouvez venir le recuperer quand vous le souhaitez. A bientot, Solution Phone - 03 85 33 06 89';
+  } else {
+    var appareil = (c.detail||'').split(' — ')[0] || (c.detail||'').split(' - ')[0] || 'votre appareil';
+    msg = 'Bonjour '+c.client.nom+', bonne nouvelle ! La piece pour votre '+appareil+' est arrivee. Passez en boutique avec votre appareil, comptez environ 1h de reparation. A bientot, Solution Phone - 03 85 33 06 89';
+  }
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
   var brevoKey = localStorage.getItem('sp_brevo_key')||'';
   if(brevoKey && tel.length >= 10){
