@@ -14972,6 +14972,8 @@ function eposPrint(c) {
     window.print();
     return;
   }
+  // Nettoyer les caracteres non-ASCII pour Epson
+  function esc(s){ return (s||'').replace(/—/g,'-').replace(/–/g,'-').replace(/'/g,"'").replace(/[éèê]/g,'e').replace(/[àâ]/g,'a').replace(/[ùû]/g,'u').replace(/[ôö]/g,'o').replace(/[îï]/g,'i').replace(/[ç]/g,'c').replace(/[É]/g,'E').replace(/[€]/g,'EUR'); }
   var isRep = c.type === 'reparation';
   var date  = new Date(c.date).toLocaleDateString('fr-FR');
   var now   = new Date();
@@ -14989,16 +14991,16 @@ function eposPrint(c) {
   lines.push(c.numero || '');
   lines.push(date + ' a ' + heure);
   lines.push('--------------------------------');
-  lines.push('Client  : ' + (c.client.nom || ''));
+  lines.push('Client  : ' + esc(c.client.nom));
   lines.push('Tel     : ' + (c.client.tel || ''));
   lines.push('--------------------------------');
   if(isRep){
-    var parts = (c.detail || '').split(' — ');
+    var parts = esc(c.detail || '').split(' - ');
     lines.push('Appareil: ' + (parts[0] || ''));
     lines.push('Piece   : ' + (parts[1] || ''));
     lines.push('Statut  : A commander');
   } else {
-    lines.push('Article : ' + (c.detail || ''));
+    lines.push('Article : ' + esc(c.detail || ''));
   }
   lines.push('--------------------------------');
   lines.push('TOTAL TTC : ' + prix.toFixed(2) + ' EUR');
@@ -15017,6 +15019,11 @@ function eposPrint(c) {
   lines.push('--------------------------------');
   lines.push('Merci de votre confiance !');
   lines.push('www.solution-phone.fr');
+  lines.push('');
+  lines.push('');
+  lines.push('');
+  lines.push('');
+  lines.push('');
   lines.push('');
   lines.push('');
   lines.push('');
