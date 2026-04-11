@@ -14989,8 +14989,18 @@ async function paramsTestClaude() {
   }
 }
 
+var _eposPrintLock = {};
 function eposPrint(c) {
   if(!c) return;
+  // Anti-doublon : 1 seul ticket par bon pendant 60s
+  var lockKey = c.id || c.numero || 'unknown';
+  var now = Date.now();
+  if(_eposPrintLock[lockKey] && (now - _eposPrintLock[lockKey]) < 60000) {
+    console.log('eposPrint BLOQUE doublon pour', lockKey);
+    return;
+  }
+  _eposPrintLock[lockKey] = now;
+  console.log('eposPrint ENVOI pour', lockKey);
   var nasIp = getNasUrl();
   if(!nasIp){
     showNotif('⚠️ IP NAS non configurée — impression PC','info');
