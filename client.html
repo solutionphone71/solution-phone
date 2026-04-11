@@ -664,6 +664,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
       <input class="inp" type="text" id="r-modele" placeholder="ex: iPhone 15 Pro, Galaxy S24..." oninput="checkStep3R()">
     </div>
 
+    <div class="fld" style="margin-bottom:18px;">
+      <label class="lbl">Code de déverrouillage</label>
+      <input class="inp" type="text" id="r-code" placeholder="ex: 1234, schéma, Face ID…" inputmode="text" autocomplete="off"
+        style="letter-spacing:3px;font-weight:700;font-size:18px;">
+      <div style="font-size:11px;color:var(--gray2);margin-top:4px;">Nécessaire pour tester l'appareil après réparation</div>
+    </div>
+
     <div class="lbl" style="margin-bottom:10px;">Type de panne *</div>
     <div class="panne-grid">
       <button class="panne-btn" onclick="setPanne('Écran cassé / Tactile')" id="pr-ecran"><div class="panne-ico">📱</div><div class="panne-label">Écran</div></button>
@@ -897,6 +904,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
     <div class="fld" style="margin-bottom:18px;">
       <label class="lbl">Modèle *</label>
       <input class="inp" type="text" id="cmd-modele-c" placeholder="ex: iPhone 15 Pro, Galaxy S24…" oninput="checkStep3Cmd()">
+    </div>
+
+    <div class="fld" style="margin-bottom:18px;">
+      <label class="lbl">Code de déverrouillage</label>
+      <input class="inp" type="text" id="cmd-code-c" placeholder="ex: 1234, schéma, Face ID…" inputmode="text" autocomplete="off"
+        style="letter-spacing:3px;font-weight:700;font-size:18px;">
+      <div style="font-size:11px;color:var(--gray2);margin-top:4px;">Nécessaire pour tester l'appareil après réparation</div>
     </div>
 
     <div class="lbl" style="margin-bottom:10px;">Pièce à commander *</div>
@@ -1500,6 +1514,7 @@ function buildTicketHtml(data) {
 
   if (data.marque) body += line('Marque  : ' + data.marque);
   if (data.modele) body += line('Modele  : ' + data.modele);
+  if (data.code)   body += line('Code    : ' + data.code, true);
   if (data.detail) body += line('Detail  : ' + data.detail);
 
   body += sep();
@@ -1547,6 +1562,7 @@ async function printBonDepot(num, clientData, appareil) {
     email: clientData.email || '',
     marque: appareil.marque,
     modele: appareil.modele,
+    code: appareil.code || '',
     detail: appareil.panne,
     prix: 0,
     qualirepar: true
@@ -1564,6 +1580,7 @@ async function printBonCommande(num, clientData, detail, prix, paye, type) {
     email: '',
     marque: clientData.marque || '',
     modele: clientData.modele || '',
+    code: clientData.code || '',
     detail: detail,
     prix: prix || 0,
     paye: paye || false,
@@ -1904,7 +1921,8 @@ async function soumettre() {
       signature: sig, bonus_qr: false, devis: 0,
       obs: 'QualiRépar -25€ éligible',
       mo_ht: 0, pieces_ht: 0,
-      appareil_imei: '', appareil_couleur: '', appareil_code: ''
+      appareil_imei: '', appareil_couleur: '',
+      appareil_code: (document.getElementById('r-code')||{}).value||''
     });
     showSuccess(num, 'Votre appareil est entre de bonnes mains !<br><span style="color:#4ade80;font-weight:700;">♻️ QualiRépar : -25€ si éligible ✅</span><br>Nous vous contactons dès la réparation terminée.');
   } catch(e) {
@@ -2019,6 +2037,7 @@ async function soumettreCommande() {
   var tel    = val('cmd-tel-c');
   var email  = val('cmd-email-c');
   var modele = val('cmd-modele-c');
+  var codeCmd = (document.getElementById('cmd-code-c')||{}).value||'';
   var num    = genNum('CMD');
   showLoading();
   try {
@@ -2029,7 +2048,7 @@ async function soumettreCommande() {
       type:          'reparation',
       client_nom:    (prenom?prenom+' ':'')+nom,
       client_tel:    tel,
-      detail:        (S.marqueCmd?S.marqueCmd+' ':'')+modele+' — '+S.panneCmd,
+      detail:        (S.marqueCmd?S.marqueCmd+' ':'')+modele+' — '+S.panneCmd+(codeCmd?' [Code: '+codeCmd+']':''),
       prix:          0,
       acompte:       0,
       mode_reglement:'ESPECES',
@@ -2041,7 +2060,7 @@ async function soumettreCommande() {
     // Impression 2 tickets Epson (1 boutique + 1 client)
     var cmdNom = val('cmd-nom-c'); var cmdPrenom = val('cmd-prenom-c');
     var cmdTel = val('cmd-tel-c'); var cmdMod = val('cmd-modele-c');
-    printBonCommande(num, {nom:cmdNom, prenom:cmdPrenom, tel:cmdTel, marque:S.marqueCmd, modele:cmdMod},
+    printBonCommande(num, {nom:cmdNom, prenom:cmdPrenom, tel:cmdTel, marque:S.marqueCmd, modele:cmdMod, code:codeCmd},
       S.panneCmd, 0, false, 'commande').catch(()=>{});
     showSuccess(num,
       'Commande enregistrée ! 📦<br>'+
