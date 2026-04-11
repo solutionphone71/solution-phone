@@ -44,24 +44,44 @@ export default async function handler(req, res) {
 
   try {
     const fetchOpts = { method, headers };
-    var sentBody = null;
     if (method !== 'GET' && method !== 'HEAD' && req.body) {
-      sentBody = JSON.stringify(req.body);
-      fetchOpts.body = sentBody;
+      fetchOpts.body = JSON.stringify(req.body);
     }
 
-    const response = await fetch(url, fetchOpts);
-    const text = await response.text();
+    let response = await fetch(url, fetchOpts);
+    let text = await response.text();
 
-    // Si erreur Supabase, ajouter le debug body dans la reponse
-    if (!response.ok) {
-      console.error('Supabase error:', response.status, text, 'Body sent:', sentBody);
-      return res.status(response.status).json({
-        supaError: text,
-        debugBodySent: sentBody,
-        debugUrl: url,
-        debugMethod: method
-      });
+    // Auto-fix PGRST204 : colonne inconnue → retirer et reessayer
+    if (!response.ok && method === 'POST' && text.includes('PGRST204')) {
+      try {
+        const err = JSON.parse(text);
+        const match = err.message && err.message.match(/the '(\w+)' column/);
+        if (match && req.body) {
+          const badCol = match[1];
+          const cleaned = { ...req.body };
+          delete cleaned[badCol];
+          console.log('PGRST204: retrait colonne "' + badCol + '", retry POST');
+          const retryOpts = { method, headers, body: JSON.stringify(cleaned) };
+          // Boucle pour retirer plusieurs colonnes si necessaire (max 10)
+          let retryResp = await fetch(url, retryOpts);
+          let retryText = await retryResp.text();
+          let attempts = 0;
+          while (!retryResp.ok && retryText.includes('PGRST204') && attempts < 10) {
+            const err2 = JSON.parse(retryText);
+            const match2 = err2.message && err2.message.match(/the '(\w+)' column/);
+            if (!match2) break;
+            delete cleaned[match2[1]];
+            console.log('PGRST204: retrait colonne "' + match2[1] + '", retry POST');
+            retryResp = await fetch(url, { method, headers, body: JSON.stringify(cleaned) });
+            retryText = await retryResp.text();
+            attempts++;
+          }
+          response = retryResp;
+          text = retryText;
+        }
+      } catch(retryErr) {
+        console.error('Auto-fix PGRST204 failed:', retryErr);
+      }
     }
 
     // Transmettre le status code Supabase

@@ -1610,14 +1610,7 @@ async function supaPost(table, data) {
     var errBody = '';
     try { errBody = await r.text(); } catch(e){}
     console.error('supaPost HTTP error:', r.status, errBody);
-    // Afficher le debug complet du proxy
-    try {
-      var debug = JSON.parse(errBody);
-      alert('DEBUG PROXY:\nBody envoyé au serveur: ' + (debug.debugBodySent || 'null') + '\nURL Supabase: ' + (debug.debugUrl || '?') + '\nErreur Supabase: ' + (debug.supaError || errBody));
-    } catch(pe) {
-      alert('Erreur brute: ' + errBody);
-    }
-    throw new Error('HTTP ' + r.status);
+    throw new Error('HTTP ' + r.status + ': ' + errBody);
   }
 }
 
@@ -2139,23 +2132,21 @@ async function soumettreAcc() {
   const num    = genNum('CMD');
   var detailStr = (S.marque ? S.marque + ' ' : '') + mod + (S.panne ? ' — ' + S.panne : '');
   if (dejaPaye) detailStr += ' [PAYÉ ' + prix.toFixed(2) + '€]';
-  var postData = {
-    id: Date.now(),
-    numero: num,
-    date: today(),
-    type: 'accessoire',
-    client_nom: (prenom ? prenom + ' ' : '') + nom,
-    client_tel: tel,
-    detail: detailStr,
-    prix: prix,
-    statut: 'a_commander'
-  };
-  alert('DONNÉES ENVOYÉES:\n' + JSON.stringify(postData, null, 2));
   showLoading();
   try {
     // ─── Enregistrement dans bons_commande ───
     // → Apparaît directement dans l'onglet "Bon de Commande" de l'app
-    await supaPost('bons_commande', postData);
+    await supaPost('bons_commande', {
+      id: Date.now(),
+      numero: num,
+      date: today(),
+      type: 'accessoire',
+      client_nom: (prenom ? prenom + ' ' : '') + nom,
+      client_tel: tel,
+      detail: detailStr,
+      prix: prix,
+      statut: 'a_commander'
+    });
     // Impression 2 tickets Epson (1 boutique + 1 client)
     printBonCommande(num, {nom:nom, prenom:prenom, tel:tel, marque:S.marque, modele:mod},
       S.panne, prix, dejaPaye, 'accessoire').catch(()=>{});
