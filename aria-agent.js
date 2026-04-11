@@ -15,9 +15,10 @@
   const ARIA_VERSION = '2.0.0';
   const CLAUDE_MODEL  = 'claude-haiku-4-5-20251001'; // ← Haiku : coût ÷10, latence ÷3
 
+  // Clé API Claude maintenant côté serveur (proxy /api/claude)
+  // getClaudeKey garde compatibilité mais n'est plus requise
   function getClaudeKey() {
-    try { return JSON.parse(localStorage.getItem('sp_params_keys') || '{}').claude_key || ''; }
-    catch { return ''; }
+    return 'proxy'; // Toujours prêt, la clé est dans Vercel env
   }
 
   /* ── SUPABASE HELPERS ───────────────────────────────────────────── */

@@ -8323,7 +8323,9 @@ var igDrafts  = JSON.parse(localStorage.getItem('sp_ig_drafts') || '[]');
 var igCalMonth = (function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');})();
 
 function getIgApiKey(){
-  return localStorage.getItem('sp_claude_key') || window._cachedApiKey || '';
+  // Clé API Claude maintenant côté serveur (proxy /api/claude)
+  // Retourne toujours vrai pour ne pas bloquer les fonctions IA
+  return 'proxy';
 }
 
 async function saveApiKey(){
