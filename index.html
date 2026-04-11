@@ -3742,28 +3742,31 @@ function initRealtime() {
   console.log('🔄 Synchronisation temps réel activée (30s)');
 
   // Auto-impression : detecter les nouveaux bons de commande (depuis iPad)
-  var _lastKnownCmdIds = new Set(bonsCommande.map(function(c){ return c.id; }));
-  var _alreadyPrintedIds = new Set();
+  // On stocke le plus grand ID Supabase connu au démarrage
+  var _lastPrintedMaxId = 0;
+  var _autoPrintBusy = false;
+  try {
+    var initRes = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
+    if (initRes && initRes.length) _lastPrintedMaxId = initRes[0].id;
+  } catch(e){}
+  console.log('Auto-print: dernier ID connu =', _lastPrintedMaxId);
   setInterval(async function() {
-    if (!supabaseReady || !getNasUrl()) return;
+    if (!supabaseReady || !getNasUrl() || _autoPrintBusy) return;
+    _autoPrintBusy = true;
     try {
-      var res = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=5');
-      if (!res || !res.length) return;
-      var newOnes = res.filter(function(x){ return !_lastKnownCmdIds.has(x.id) && !_alreadyPrintedIds.has(x.id); });
-      if (newOnes.length > 0) {
-        // Marquer IMMEDIATEMENT pour eviter doublons entre cycles
-        newOnes.forEach(function(x){ _alreadyPrintedIds.add(x.id); _lastKnownCmdIds.add(x.id); });
-        await loadBonsCommande();
-        _lastKnownCmdIds = new Set(bonsCommande.map(function(c){ return c.id; }));
-        newOnes.forEach(function(x){
-          var cmd = bonsCommande.find(function(c){ return c.id === x.id; });
-          if (cmd) {
-            showNotif('🖨️ Nouveau bon ' + cmd.numero + ' — impression auto...', 'success');
-            eposPrint(cmd);
-          }
-        });
+      var res = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
+      if (!res || !res.length || res[0].id <= _lastPrintedMaxId) { _autoPrintBusy = false; return; }
+      var newId = res[0].id;
+      _lastPrintedMaxId = newId; // Bloquer IMMEDIATEMENT
+      await loadBonsCommande();
+      var cmd = bonsCommande.find(function(c){ return c.id === newId; });
+      if (cmd) {
+        console.log('Auto-print: impression bon', cmd.numero, 'id=', newId);
+        showNotif('🖨️ Nouveau bon ' + cmd.numero + ' — impression auto...', 'success');
+        eposPrint(cmd);
       }
-    } catch(e) { /* silencieux */ }
+    } catch(e) { console.log('Auto-print error:', e); }
+    _autoPrintBusy = false;
   }, 15000);
 }
 
