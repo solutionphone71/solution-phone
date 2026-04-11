@@ -15057,12 +15057,10 @@ function eposPrint(c) {
   lines.push('');
   lines.push('');
   showNotif('&#9203; Envoi imprimante...','info');
-  // Ajouter commande ESC/POS coupe automatique (GS V 0 = full cut)
-  var cutCmd = '\x1d\x56\x00';
   fetch('http://' + nasIp, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({title: 'SOLUTION PHONE', content: lines.join('\n') + cutCmd})
+    body: JSON.stringify({title: 'SOLUTION PHONE', content: lines.join('\n'), cut: true})
   })
   .then(function(r){ return r.text(); })
   .then(function(t){
