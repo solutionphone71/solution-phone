@@ -15514,7 +15514,7 @@ async function shopifyPublishPhone(phoneId){
       phone.shopify_id = result.product.id;
       // Update Supabase avec le shopify_id
       try {
-        await supaFetch('phones', '?id=eq.'+phoneId, 'PATCH', { shopify_id: result.product.id });
+        await supaFetch('phones', 'PATCH', { shopify_id: result.product.id }, '?id=eq.'+phoneId);
       } catch(e){}
     }
 
