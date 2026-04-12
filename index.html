@@ -15449,7 +15449,7 @@ function shopifySEO(phone){
 
 // ══ PUBLIER UN TÉLÉPHONE SUR SHOPIFY ══
 async function shopifyPublishPhone(phoneId){
-  var phone = (_allPhones||[]).find(function(p){ return p.id === phoneId; });
+  var phone = (phones||[]).find(function(p){ return p.id === phoneId; });
   if(!phone){ showNotif('Téléphone introuvable','error'); return; }
 
   var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
@@ -15534,7 +15534,7 @@ async function shopifyBulkPublish(){
   var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
   if(!store||!token){ showNotif('Configurez Shopify dans Paramètres','error'); return; }
 
-  var dispo = (_allPhones||[]).filter(function(p){ return p.etat==='DISPONIBLE'; });
+  var dispo = (phones||[]).filter(function(p){ return p.etat==='DISPONIBLE'; });
   if(dispo.length===0){ showNotif('Aucun téléphone disponible à publier','info'); return; }
 
   if(!confirm('Publier '+dispo.length+' téléphone(s) sur Shopify ?')) return;
