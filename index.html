@@ -10871,8 +10871,9 @@ function paramsLoad(){
   if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
   if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
 
-  // Shopify
-  el=document.getElementById('params-shopify-store');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  // Shopify — ne pas écraser le champ store si l'utilisateur est en train de taper
+  el=document.getElementById('params-shopify-store');
+  if(el && document.activeElement !== el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
   el=document.getElementById('params-shopify-autosync'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyAutosync)||'1';
   if(typeof shopifyUpdateUI === 'function') shopifyUpdateUI();
 
