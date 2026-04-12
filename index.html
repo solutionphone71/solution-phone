@@ -6711,6 +6711,14 @@ function marquerVendu(id){
     date: p.dateVente,
     description: 'Vente '+p.modele+' IMEI '+p.imei
   });
+  // ── Supprimer automatiquement de Shopify ──
+  if(p.shopify_id){
+    shopifyDeleteProduct(p.shopify_id).then(function(){
+      p.shopify_id = null;
+      savePhone(p);
+      console.log('[Shopify] Produit supprimé (vendu):', p.modele);
+    }).catch(function(e){ console.error('[Shopify] Erreur suppression:', e); });
+  }
   renderPhones();
   renderDashboard();
   showNotif('✅ '+p.modele+' vendu ('+p.vente+'€ '+mode+') — enregistré en caisse','success');
