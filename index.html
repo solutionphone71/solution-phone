@@ -737,6 +737,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="text" id="search-phones-neufs" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhonesNeufs()">
             <button class="btn btn-primary" onclick="openModal('modal-add-phone-neuf')">➕ Ajouter</button>
+            <button class="btn" style="color:var(--blue);border-color:var(--blue);" onclick="document.getElementById('wegacell-pdf-input').click()">📄 Import Wegacell PDF</button>
+            <input type="file" id="wegacell-pdf-input" accept=".pdf" style="display:none" onchange="importWegacellPDF(this)">
             <button class="btn" id="btn-shopify-bulk-neufs" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublishNeufs()">🛒 Tout publier Shopify</button>
           </div>
         </div>
@@ -838,6 +840,40 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end;">
           <button class="btn" onclick="closeModal('modal-edit-phone-neuf')">Annuler</button>
           <button class="btn btn-primary" onclick="updatePhoneNeuf()">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL IMPORT WEGACELL PDF -->
+    <div class="modal-overlay" id="modal-import-wegacell" onclick="if(event.target===this)closeModal('modal-import-wegacell')">
+      <div class="modal" style="max-width:800px;">
+        <div class="modal-header">
+          <div class="modal-title">📄 Import Wegacell — Vérification</div>
+          <button onclick="closeModal('modal-import-wegacell')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:20px;">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Vérifiez les téléphones détectés avant import. Modifiez les prix de vente si besoin.</div>
+          <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead><tr style="background:rgba(255,255,255,0.04);position:sticky;top:0;">
+                <th style="padding:8px;text-align:center;width:40px;">✓</th>
+                <th style="padding:8px;text-align:left;">Modèle</th>
+                <th style="padding:8px;">Stockage</th>
+                <th style="padding:8px;">Couleur</th>
+                <th style="padding:8px;">Qté</th>
+                <th style="padding:8px;">Achat HT</th>
+                <th style="padding:8px;">Vente TTC</th>
+              </tr></thead>
+              <tbody id="wegacell-import-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div id="wegacell-import-count" style="font-size:13px;color:var(--text-muted);"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn" onclick="closeModal('modal-import-wegacell')">Annuler</button>
+              <button class="btn btn-primary" onclick="confirmWegacellImport()">✅ Importer tout</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -16454,6 +16490,277 @@ function renderVentesNeufs(){
 
   html += '</tbody></table></div></div>';
   container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// IMPORT WEGACELL PDF
+// ══════════════════════════════════════════════════════════
+
+var _wegacellImportData = [];
+
+// Charger pdf.js à la demande
+async function loadPdfJs(){
+  if(window.pdfjsLib) return;
+  await new Promise(function(res,rej){
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+// Lire et parser le PDF Wegacell
+async function importWegacellPDF(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  showNotif('⏳ Lecture du PDF Wegacell...','info');
+
+  try {
+    await loadPdfJs();
+    var arrayBuffer = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    var allText = '';
+
+    for(var i = 1; i <= pdf.numPages; i++){
+      var page = await pdf.getPage(i);
+      var content = await page.getTextContent();
+      var lines = [];
+      var lastY = null;
+      content.items.forEach(function(item){
+        if(lastY !== null && Math.abs(item.transform[5] - lastY) > 5){
+          lines.push('\n');
+        }
+        lines.push(item.str);
+        lastY = item.transform[5];
+      });
+      allText += lines.join(' ') + '\n';
+    }
+
+    console.log('[Wegacell PDF] Texte extrait:', allText.substring(0, 2000));
+
+    // Parser les lignes pour trouver les produits
+    var products = parseWegacellText(allText);
+
+    if(products.length === 0){
+      showNotif('⚠️ Aucun téléphone détecté dans le PDF. Envoyez-moi le PDF pour adapter le parser.','error');
+      // Afficher le texte brut dans la console pour debug
+      console.log('[Wegacell PDF] TEXTE COMPLET:', allText);
+      input.value = '';
+      return;
+    }
+
+    _wegacellImportData = products;
+    renderWegacellPreview();
+    openModal('modal-import-wegacell');
+    showNotif('✅ '+products.length+' produit(s) détecté(s)','success');
+  } catch(e){
+    showNotif('❌ Erreur lecture PDF: '+e.message,'error');
+    console.error('[Wegacell PDF]', e);
+  }
+  input.value = '';
+}
+
+// Parser le texte extrait du PDF Wegacell (facture allemande)
+function parseWegacellText(text){
+  var products = [];
+  var lines = text.split('\n');
+
+  // Couleurs connues
+  var couleurMap = {
+    'black':'Noir','white':'Blanc','blue':'Bleu','red':'Rouge','green':'Vert',
+    'pink':'Rose','grey':'Gris','gray':'Gris','violet':'Violet','purple':'Violet',
+    'yellow':'Jaune','orange':'Orange','silver':'Argent','gold':'Or','cream':'Crème',
+    'titanium':'Titanium','midnight':'Minuit','starlight':'Lumière stellaire',
+    'lavender':'Lavande','mint':'Menthe','coral':'Corail','navy':'Marine',
+    'noir':'Noir','blanc':'Blanc','bleu':'Bleu','rouge':'Rouge','vert':'Vert',
+    'gris':'Gris','rose':'Rose','iceblue':'Bleu Glacier','light blue':'Bleu Clair',
+    'dark blue':'Bleu Foncé'
+  };
+
+  // Collecter toutes les lignes avec numéros de série
+  var serialsMap = {}; // index de ligne produit → tableau de serials
+
+  for(var i = 0; i < lines.length; i++){
+    var line = lines[i].trim();
+    if(!line) continue;
+
+    // Détecter les lignes de produit Wegacell : commence par un numéro de ligne (Nr)
+    // Format: Nr ArtikelNr Description... Menge E.Preis G.Preis S
+    // Ex: "2 36985 Samsung A075 Galaxy A07 4G Dual Sim 4GB RAM 64GB Black NON EU 3,00 Original verpackt 0,00 79,95 € 239,85 € 19"
+
+    // Pattern: numéro + artikelNr (5 chiffres) + description contenant une marque
+    var rowMatch = line.match(/^\s*(\d+)\s+(\d{4,6})\s+(.+)/);
+    if(!rowMatch) continue;
+
+    var rowNr = parseInt(rowMatch[1]);
+    var artikelNr = rowMatch[2];
+    var rest = rowMatch[3];
+
+    // Ignorer la ligne 1 (USt note) et les lignes sans marque de téléphone
+    var phonePattern = /\b(samsung|galaxy|iphone|apple|xiaomi|redmi|poco|motorola|huawei|oppo|realme|honor|oneplus|nothing|google pixel|tab)\b/i;
+    if(!phonePattern.test(rest)) continue;
+
+    // Extraire les prix (format: "79,95 €" ou "79.95")
+    var priceMatches = rest.match(/(\d+[\.,]\d{2})\s*€?/g);
+    var prices = (priceMatches||[]).map(function(p){ return parseFloat(p.replace(/\s*€/,'').replace(',','.')); });
+
+    // Extraire la quantité (Menge) - c'est le premier nombre décimal comme "3,00" ou "3.00" ou entier "3"
+    var mengeMatch = rest.match(/\b(\d{1,2})[,.]00\b/);
+    var qty = mengeMatch ? parseInt(mengeMatch[1]) : 1;
+
+    // E.Preis = prix unitaire (avant-dernier prix), G.Preis = prix total (dernier prix)
+    var achat = 0;
+    // Filtrer les prix valides (pas 0,00 et pas la quantité)
+    var validPrices = prices.filter(function(p){ return p > 10; });
+    if(validPrices.length >= 2){
+      // E.Preis est l'avant-dernier, G.Preis est le dernier
+      achat = validPrices[validPrices.length - 2];
+    } else if(validPrices.length === 1){
+      achat = validPrices[0];
+      if(qty > 1) achat = achat / qty; // Si un seul prix c'est probablement le total
+    }
+
+    // Extraire le stockage (Go/GB)
+    var storageMatch = rest.match(/\b(\d+)\s*GB\b/i);
+    var stockage = storageMatch ? storageMatch[1] : '128';
+    // Filtrer : le stockage c'est celui > 16 (pas le RAM de 4GB/6GB)
+    var allGb = [];
+    var gbRegex = /(\d+)\s*GB/gi;
+    var gbm;
+    while((gbm = gbRegex.exec(rest)) !== null) allGb.push(parseInt(gbm[1]));
+    // Le stockage est le plus grand nombre de GB (128, 256, 512)
+    // Le RAM est le plus petit (4, 6, 8)
+    if(allGb.length > 0) stockage = String(Math.max.apply(null, allGb));
+
+    // Extraire la couleur
+    var couleur = '';
+    var restLower = rest.toLowerCase();
+    var keys = Object.keys(couleurMap);
+    for(var c = 0; c < keys.length; c++){
+      if(restLower.indexOf(keys[c]) !== -1){
+        couleur = couleurMap[keys[c]];
+        break;
+      }
+    }
+
+    // Extraire le nom du modèle proprement
+    var cleanModele = '';
+    // Samsung Galaxy
+    var samMatch = rest.match(/Samsung\s+\w+\s+(Galaxy\s+(?:Tab\s+)?[A-Z]\d+\s*(?:\+|Ultra|FE|Plus|Pro)?(?:\s+\d+[\.]?\d*)?)/i);
+    if(samMatch){
+      cleanModele = 'Samsung ' + samMatch[1].trim();
+    }
+    // iPhone
+    var iphMatch = rest.match(/(iPhone\s+\d+\s*(?:Pro\s*Max|Pro|Plus|Mini|e)?)/i);
+    if(iphMatch) cleanModele = iphMatch[1].trim();
+    // Xiaomi / Redmi
+    var xiMatch = rest.match(/((?:Xiaomi|Redmi)\s+(?:Note\s+)?\w+\s*\d*\s*(?:Pro|Plus|Ultra)?)/i);
+    if(xiMatch) cleanModele = xiMatch[1].trim();
+    // Redmi Pad
+    var padMatch = rest.match(/(Redmi\s+Pad\s+\d*\s*\w*)/i);
+    if(padMatch) cleanModele = 'Xiaomi ' + padMatch[1].trim();
+
+    if(!cleanModele) cleanModele = rest.substring(0, 50).replace(/\s+\d+[,.]00\b.*/, '').trim();
+
+    // Chercher les numéros de série sur les lignes suivantes
+    var serials = [];
+    for(var j = i+1; j < lines.length && j < i+5; j++){
+      var sLine = lines[j].trim();
+      if(sLine.match(/^Seriennummer:/i) || sLine.match(/^\d{14,15}/) || sLine.match(/^[A-Z0-9]{8,}/)){
+        // Extraire les séries séparées par " / "
+        var sText = sLine.replace(/^Seriennummer:\s*/i, '');
+        var parts = sText.split(/\s*\/\s*/);
+        parts.forEach(function(s){
+          s = s.trim();
+          if(s.length >= 8) serials.push(s);
+        });
+      } else if(sLine.match(/^\d+\s+\d{4,6}\s+/)) break; // Nouvelle ligne produit
+    }
+
+    // Estimer prix de vente TTC (marge ~20-30% sur le HT, puis TVA 20%)
+    var venteSuggestion = achat > 0 ? Math.ceil(achat * 1.4 / 5) * 5 : 0;
+
+    products.push({
+      modele: cleanModele,
+      stockage: stockage,
+      couleur: couleur,
+      qty: qty,
+      achat: achat,
+      vente: venteSuggestion,
+      serials: serials,
+      selected: true,
+      raw: rest
+    });
+  }
+
+  return products;
+}
+
+// Afficher le preview des produits détectés
+function renderWegacellPreview(){
+  var tbody = document.getElementById('wegacell-import-tbody');
+  if(!tbody) return;
+
+  var totalQty = 0;
+  tbody.innerHTML = _wegacellImportData.map(function(p, i){
+    totalQty += p.qty;
+    return '<tr style="border-bottom:1px solid var(--border);">'+
+      '<td style="padding:6px;text-align:center;"><input type="checkbox" '+(p.selected?'checked':'')+' onchange="_wegacellImportData['+i+'].selected=this.checked"></td>'+
+      '<td style="padding:6px;"><input type="text" value="'+p.modele.replace(/"/g,'&quot;')+'" onchange="_wegacellImportData['+i+'].modele=this.value" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;"></td>'+
+      '<td style="padding:6px;text-align:center;">'+p.stockage+'Go</td>'+
+      '<td style="padding:6px;"><input type="text" value="'+(p.couleur||'').replace(/"/g,'&quot;')+'" onchange="_wegacellImportData['+i+'].couleur=this.value" style="width:80px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;"></td>'+
+      '<td style="padding:6px;text-align:center;"><input type="number" value="'+p.qty+'" min="1" max="99" onchange="_wegacellImportData['+i+'].qty=parseInt(this.value)||1" style="width:50px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;text-align:center;">'+(p.serials&&p.serials.length?'<div style="font-size:10px;color:var(--green);margin-top:2px;">'+p.serials.length+' IMEI</div>':'')+'</td>'+
+      '<td style="padding:6px;text-align:center;"><input type="number" value="'+p.achat.toFixed(2)+'" step="0.01" onchange="_wegacellImportData['+i+'].achat=parseFloat(this.value)||0" style="width:80px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right;"></td>'+
+      '<td style="padding:6px;text-align:center;"><input type="number" value="'+p.vente.toFixed(2)+'" step="0.01" onchange="_wegacellImportData['+i+'].vente=parseFloat(this.value)||0" style="width:80px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right;font-weight:700;"></td>'+
+    '</tr>';
+  }).join('');
+
+  var countDiv = document.getElementById('wegacell-import-count');
+  if(countDiv) countDiv.innerHTML = '<b>'+_wegacellImportData.length+'</b> ligne(s) détectée(s) · <b>'+totalQty+'</b> téléphone(s) au total';
+}
+
+// Confirmer et importer tous les produits
+async function confirmWegacellImport(){
+  var selected = _wegacellImportData.filter(function(p){ return p.selected; });
+  if(!selected.length){ showNotif('Aucun produit sélectionné','error'); return; }
+
+  showNotif('⏳ Import en cours...','info');
+  var count = 0;
+  var today = new Date().toISOString().split('T')[0];
+
+  for(var i = 0; i < selected.length; i++){
+    var item = selected[i];
+    var serials = item.serials || [];
+    // Créer un téléphone par IMEI si disponible, sinon par quantité
+    var nbToCreate = serials.length > 0 ? serials.length : item.qty;
+    for(var q = 0; q < nbToCreate; q++){
+      var p = {
+        modele: item.modele,
+        stockage: item.stockage,
+        couleur: item.couleur,
+        imei: serials[q] || '',
+        fournisseur: 'Wegacell',
+        achat: item.achat,
+        vente: item.vente,
+        date_achat: today,
+        etat: 'DISPONIBLE',
+        date_vente: null,
+        mode_vente: 'CB',
+        shopify_id: null,
+        photo_face: '',
+        photo_dos: ''
+      };
+      phonesNeufs.unshift(p);
+      await savePhoneNeufToDB(p);
+      count++;
+    }
+  }
+
+  closeModal('modal-import-wegacell');
+  renderPhonesNeufs();
+  showNotif('✅ '+count+' téléphone(s) importé(s) depuis Wegacell','success');
+  _wegacellImportData = [];
 }
 
 // ══════════════════════════════════════════════════════════
