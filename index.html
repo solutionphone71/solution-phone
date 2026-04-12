@@ -15868,20 +15868,9 @@ async function shopifyFixAllStock(){
     }
     var locationId = locRes.locations[0].id;
 
-    // Récupérer tous les produits (pagination)
-    var allProducts = [];
-    var page = 1;
-    var hasMore = true;
-    while(hasMore){
-      var res = await shopifyAPI('GET','products.json?limit=250&page='+page);
-      if(res && res.products && res.products.length > 0){
-        allProducts = allProducts.concat(res.products);
-        if(res.products.length < 250) hasMore = false;
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
+    // Récupérer tous les produits
+    var prodRes = await shopifyAPI('GET','products.json?limit=250');
+    var allProducts = (prodRes && prodRes.products) ? prodRes.products : [];
 
     if(!allProducts.length){ showNotif('Aucun produit trouvé sur Shopify','info'); return; }
     if(!confirm('Mettre le stock à 1 pour '+allProducts.length+' produit(s) ?')) return;
@@ -15921,19 +15910,8 @@ async function shopifyActivateAll(){
 
   try {
     // Récupérer tous les produits en draft
-    var allDrafts = [];
-    var page = 1;
-    var hasMore = true;
-    while(hasMore){
-      var res = await shopifyAPI('GET','products.json?status=draft&limit=250&page='+page);
-      if(res && res.products && res.products.length > 0){
-        allDrafts = allDrafts.concat(res.products);
-        if(res.products.length < 250) hasMore = false;
-        page++;
-      } else {
-        hasMore = false;
-      }
-    }
+    var draftRes = await shopifyAPI('GET','products.json?status=draft&limit=250');
+    var allDrafts = (draftRes && draftRes.products) ? draftRes.products : [];
 
     if(!allDrafts.length){ showNotif('✅ Aucun produit en brouillon !','success'); return; }
     if(!confirm('Activer '+allDrafts.length+' produit(s) en brouillon ?')) return;
