@@ -15492,6 +15492,10 @@ async function shopifyPublishPhone(phoneId){
       }
     } catch(e){}
 
+    // Status : active si photo présente, draft si absente (section 8 du doc)
+    var hasPhoto = phone.photo_url || phone.image_url || phone.photos || false;
+    var productStatus = hasPhoto ? 'active' : 'draft';
+
     // Structure produit conforme au doc (section 6 + 8)
     var productData = {
       product: {
@@ -15502,7 +15506,7 @@ async function shopifyPublishPhone(phoneId){
         tags: info.tags.join(', '),
         handle: handle,
         template_suffix: info.templateSuffix,
-        status: 'active',
+        status: productStatus,
         metafields_global_title_tag: seo.title,
         metafields_global_description_tag: seo.description,
         variants: [{
