@@ -644,6 +644,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
             <button class="btn" id="btn-shopify-bulk" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublish()">🛒 Tout publier Shopify</button>
+            <button class="btn" id="btn-shopify-stock" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyFixAllStock()">📦 Corriger stocks Shopify</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -3680,6 +3681,28 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
     </div>
     <div id="edit-marge-preview" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:var(--text-muted);">💡 Marge calculée automatiquement</div>
+    <!-- Photos Shopify (édition) -->
+    <div style="margin-top:16px;padding:14px;background:rgba(150,191,72,0.08);border:1px solid rgba(150,191,72,0.3);border-radius:10px;">
+      <div style="font-size:11px;color:#96bf48;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">📸 Photos produit (Shopify)</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <!-- Photo Face -->
+        <div style="flex:1;min-width:140px;text-align:center;">
+          <div id="edit-photo-face-preview" style="width:100%;height:120px;border:2px dashed rgba(150,191,72,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:rgba(0,0,0,0.1);" onclick="document.getElementById('edit-photo-face-input').click()">
+            <span id="edit-photo-face-text" style="font-size:12px;color:var(--text-muted);">📱 Face<br><span style="font-size:10px;">Cliquez pour changer</span></span>
+            <img id="edit-photo-face-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
+          </div>
+          <input type="file" id="edit-photo-face-input" accept="image/*" capture="environment" style="display:none;" onchange="previewEditPhoto(this,'face')">
+        </div>
+        <!-- Photo Dos -->
+        <div style="flex:1;min-width:140px;text-align:center;">
+          <div id="edit-photo-dos-preview" style="width:100%;height:120px;border:2px dashed rgba(150,191,72,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:rgba(0,0,0,0.1);" onclick="document.getElementById('edit-photo-dos-input').click()">
+            <span id="edit-photo-dos-text" style="font-size:12px;color:var(--text-muted);">📱 Dos<br><span style="font-size:10px;">Cliquez pour changer</span></span>
+            <img id="edit-photo-dos-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
+          </div>
+          <input type="file" id="edit-photo-dos-input" accept="image/*" capture="environment" style="display:none;" onchange="previewEditPhoto(this,'dos')">
+        </div>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button class="btn btn-primary" onclick="savePhoneEdit()">✅ Enregistrer</button>
       <button class="btn" onclick="closeModal('modal-edit-phone')">Annuler</button>
@@ -6410,6 +6433,23 @@ function editPhone(id) {
   populateFournisseurSelects(p.fournisseur||'Wegacell');
   toggleEditFournisseur();
   updateEditMarge();
+  // Pré-remplir les photos existantes
+  _editPendingPhotoFace = null;
+  _editPendingPhotoDos = null;
+  ['face','dos'].forEach(function(side){
+    var url = side==='face' ? p.photo_face : p.photo_dos;
+    var img = document.getElementById('edit-photo-'+side+'-img');
+    var text = document.getElementById('edit-photo-'+side+'-text');
+    var input = document.getElementById('edit-photo-'+side+'-input');
+    if(input) input.value='';
+    if(url){
+      if(img){ img.src=url; img.style.display='block'; }
+      if(text) text.style.display='none';
+    } else {
+      if(img){ img.src=''; img.style.display='none'; }
+      if(text) text.style.display='block';
+    }
+  });
   openModal('modal-edit-phone');
 }
 
@@ -6449,6 +6489,36 @@ function savePhoneEdit() {
   closeModal('modal-edit-phone');
   renderPhones(); renderDashboard();
   showNotif('✅ '+modele+' mis à jour !','success');
+
+  // Upload des nouvelles photos si ajoutées
+  if(_editPendingPhotoFace || _editPendingPhotoDos){
+    showNotif('⏳ Upload des photos...','info');
+    var handle = shopifyHandle(p);
+    var photoPromises = [];
+    if(_editPendingPhotoFace){
+      photoPromises.push(
+        uploadPhonePhoto(_editPendingPhotoFace, handle+'-face.jpg').then(function(url){ p.photo_face = url; })
+      );
+    }
+    if(_editPendingPhotoDos){
+      photoPromises.push(
+        uploadPhonePhoto(_editPendingPhotoDos, handle+'-dos.jpg').then(function(url){ p.photo_dos = url; })
+      );
+    }
+    Promise.all(photoPromises).then(function(){
+      var photoUpdate = {};
+      if(p.photo_face) photoUpdate.photo_face = p.photo_face;
+      if(p.photo_dos) photoUpdate.photo_dos = p.photo_dos;
+      if(Object.keys(photoUpdate).length > 0 && supabaseReady){
+        supaFetch('phones', 'PATCH', photoUpdate, '?id=eq.'+p.id);
+      }
+      _editPendingPhotoFace = null;
+      _editPendingPhotoDos = null;
+      showNotif('📸 Photos mises à jour !','success');
+    }).catch(function(e){
+      showNotif('⚠️ Erreur upload photo: '+e.message,'error');
+    });
+  }
 }
 
 function updateMarge(){var a=parseFloat((document.getElementById('p-achat').value||'0').toString().replace(',','.'))||0;var v=parseFloat((document.getElementById('p-vente').value||'0').toString().replace(',','.'))||0;document.getElementById('marge-preview').textContent='Marge : '+(v-a).toFixed(2)+' € ('+(a>0?(((v-a)/a)*100).toFixed(1):0)+'%)';}
@@ -15344,9 +15414,11 @@ function shopifyUpdateUI(){
   if(statusEl) statusEl.innerHTML = connected
     ? '<span style="color:var(--green);">✅ Connectée</span>'
     : '<span style="color:var(--text-muted);">⚠️ Non configurée</span>';
-  // Bouton bulk Shopify
+  // Boutons Shopify
   var bulkBtn=document.getElementById('btn-shopify-bulk');
   if(bulkBtn) bulkBtn.style.display = connected ? 'inline-flex' : 'none';
+  var stockBtn=document.getElementById('btn-shopify-stock');
+  if(stockBtn) stockBtn.style.display = connected ? 'inline-flex' : 'none';
 }
 
 // Ancien paramsSaveShopify (compatibilité si token manuel)
@@ -15455,6 +15527,26 @@ async function uploadPendingPhotos(phone){
     } catch(e){ console.error('[Photo Dos]', e); }
   }
   return urls;
+}
+
+// Variables pour photos en mode édition
+var _editPendingPhotoFace = null;
+var _editPendingPhotoDos = null;
+
+// Preview photo en mode édition
+function previewEditPhoto(input, side){
+  if(!input.files||!input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = document.getElementById('edit-photo-'+side+'-img');
+    var text = document.getElementById('edit-photo-'+side+'-text');
+    if(img){ img.src = e.target.result; img.style.display='block'; }
+    if(text) text.style.display='none';
+    if(side==='face') _editPendingPhotoFace = file;
+    if(side==='dos') _editPendingPhotoDos = file;
+  };
+  reader.readAsDataURL(file);
 }
 
 // Réinitialiser les champs photo du formulaire
@@ -15688,19 +15780,21 @@ async function shopifyPublishPhone(phoneId){
       // Mettre le stock à 1 via l'API inventaire
       try {
         var variant = result.product.variants[0];
+        console.log('[Shopify] Variant:', variant ? variant.id : 'none', 'inventory_item_id:', variant ? variant.inventory_item_id : 'none');
         if(variant && variant.inventory_item_id){
-          // Récupérer la location
           var locRes = await shopifyAPI('GET','locations.json');
+          console.log('[Shopify] Locations:', locRes);
           if(locRes && locRes.locations && locRes.locations.length > 0){
             var locationId = locRes.locations[0].id;
-            await shopifyAPI('POST','inventory_levels/set.json', {
+            var stockRes = await shopifyAPI('POST','inventory_levels/set.json', {
               location_id: locationId,
               inventory_item_id: variant.inventory_item_id,
               available: 1
             });
+            console.log('[Shopify] Stock set result:', stockRes);
           }
         }
-      } catch(e){ console.warn('[Shopify] Erreur stock:', e.message); }
+      } catch(e){ console.error('[Shopify] Erreur stock:', e.message); showNotif('⚠️ Stock non mis à jour: '+e.message,'error'); }
     }
 
     renderPhones();
@@ -15740,6 +15834,65 @@ async function shopifyBulkPublish(){
   }
 
   showNotif('✅ Shopify: '+ok+' publié(s)'+(fail>0?', '+fail+' erreur(s)':''),'success');
+}
+
+// ══ CORRIGER LE STOCK DE TOUS LES PRODUITS SHOPIFY (mettre à 1) ══
+async function shopifyFixAllStock(){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify d\'abord','error'); return; }
+
+  showNotif('⏳ Récupération des produits Shopify...','info');
+
+  try {
+    // Récupérer la location
+    var locRes = await shopifyAPI('GET','locations.json');
+    if(!locRes || !locRes.locations || !locRes.locations.length){
+      showNotif('❌ Aucune location Shopify trouvée','error'); return;
+    }
+    var locationId = locRes.locations[0].id;
+
+    // Récupérer tous les produits (pagination)
+    var allProducts = [];
+    var page = 1;
+    var hasMore = true;
+    while(hasMore){
+      var res = await shopifyAPI('GET','products.json?limit=250&page='+page);
+      if(res && res.products && res.products.length > 0){
+        allProducts = allProducts.concat(res.products);
+        if(res.products.length < 250) hasMore = false;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    if(!allProducts.length){ showNotif('Aucun produit trouvé sur Shopify','info'); return; }
+    if(!confirm('Mettre le stock à 1 pour '+allProducts.length+' produit(s) ?')) return;
+
+    var ok = 0, fail = 0;
+    for(var i = 0; i < allProducts.length; i++){
+      try {
+        var variant = allProducts[i].variants[0];
+        if(variant && variant.inventory_item_id){
+          await shopifyAPI('POST','inventory_levels/set.json', {
+            location_id: locationId,
+            inventory_item_id: variant.inventory_item_id,
+            available: 1
+          });
+          ok++;
+        }
+      } catch(e){
+        fail++;
+        console.error('[Stock Fix] Erreur produit', allProducts[i].title, e.message);
+      }
+      if(i < allProducts.length-1) await new Promise(function(r){ setTimeout(r, 500); });
+    }
+    showNotif('✅ Stock corrigé: '+ok+' produit(s)'+(fail>0?', '+fail+' erreur(s)':''), 'success');
+  } catch(e){
+    showNotif('❌ Erreur: '+e.message,'error');
+    console.error('[Stock Fix]', e);
+  }
 }
 
 // ══ SUPPRIMER UN PRODUIT SHOPIFY ══
