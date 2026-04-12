@@ -16109,7 +16109,8 @@ async function loadPhonesNeufs(){
   if(!supabaseReady) return;
   try {
     var data = await supaFetch('phones_neufs','GET',null,'?order=id.desc');
-    phonesNeufs = (data||[]).map(function(x){
+    if(!Array.isArray(data)){ console.warn('[Phones Neufs] Table non trouvée ou erreur'); renderPhonesNeufs(); return; }
+    phonesNeufs = data.map(function(x){
       return {
         id: x.id, modele: x.modele||'', stockage: x.stockage||'128',
         couleur: x.couleur||'', imei: x.imei||'',
