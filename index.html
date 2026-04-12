@@ -12,11 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <link rel="stylesheet" href="./css/style.css">
-<link rel="stylesheet" href="./css/cyber-theme.css">
 <link rel="stylesheet" href="./css/sp-futur-theme.css">
-<style id="sp-dark-extras">
-/* Minimal dark extras — base is in style.css */
-</style>
 <script src="pave.js"></script>
 <script>
 // ── Tampon + Signature Solution Phone ───────────────────────
@@ -103,7 +99,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #fff;
+  background:rgba(255,255,255,0.04);
   border-radius: 11px;
   padding: 7px 12px;
   box-shadow: inset 2px 2px 5px rgba(174,174,184,0.3),
@@ -200,11 +196,11 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 <div id="notif" class="notif"></div>
 <!-- ══ MODAL ENVOI FACTURE ══ -->
 <div id="modal-envoi-facture" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+  <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
     
     <!-- Header -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <div style="background:#f0fdf4;border-radius:50%;padding:10px;font-size:22px;">✅</div>
+      <div style="background:rgba(52,211,153,0.1);border-radius:50%;padding:10px;font-size:22px;">✅</div>
       <div>
         <div style="font-weight:800;font-size:16px;" id="envoi-facture-titre">Facture créée</div>
         <div style="font-size:12px;color:var(--text-muted);">Certifiée NF525 · Enregistrée en caisse</div>
@@ -212,7 +208,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     </div>
 
     <!-- Badge NF525 -->
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;font-size:11px;color:#1e40af;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
+    <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:8px;padding:8px 12px;font-size:11px;color:#60a5fa;margin-bottom:20px;display:flex;align-items:center;gap:8px;">
       <span style="background:#1e40af;color:#fff;padding:2px 6px;border-radius:4px;font-weight:900;font-size:10px;">NF525</span>
       Données certifiées, inaltérables et archivées · Conforme Art. 286 CGI
     </div>
@@ -252,11 +248,11 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <!-- Actions -->
     <div style="display:flex;gap:10px;">
       <button onclick="envoyerFactureImprimer()" 
-        style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">
+        style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">
         🖨️ Imprimer
       </button>
       <button onclick="fermerEnvoiFacture()"
-        style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;color:var(--text-muted);">
+        style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1.5px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;color:var(--text-muted);">
         ✖ Fermer
       </button>
     </div>
@@ -330,12 +326,12 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <!-- Affichage code -->
     <div style="display:flex;gap:10px;justify-content:center;margin:20px 0 8px;">
-      <div id="pin-d1" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d2" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d3" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d4" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d5" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
-      <div id="pin-d6" style="width:42px;height:42px;border-radius:50%;background:#f8fafc;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d1" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d2" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d3" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d4" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d5" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
+      <div id="pin-d6" style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--red);transition:all .15s;"></div>
     </div>
     <div id="pin-msg" style="height:18px;font-size:12px;color:var(--red);text-align:center;margin-bottom:12px;"></div>
 
@@ -511,7 +507,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- Clients en attente (tablette accueil) -->
       <div class="card" style="margin-top:18px;border:1.5px solid var(--green);" id="attente-card">
-        <div class="card-header" style="background:#f0fdf4;">
+        <div class="card-header" style="background:rgba(52,211,153,0.06);">
           <div class="card-title" style="color:var(--green);">
             🙋 Clients en attente
             <span id="badge-attente" style="display:none;background:#e53e3e;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:8px;"></span>
@@ -545,7 +541,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card-header">
           <div class="card-title">Stock</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
+            <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
           </div>
         </div>
@@ -612,7 +608,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card" id="facture-preview-card" style="display:none;">
           <div class="card-header"><div class="card-title">Aperçu</div>
             <button class="btn btn-primary btn-sm" onclick="imprimerFacture()">🖨️ Imprimer</button></div>
-          <div id="facture-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+          <div id="facture-preview-content" style="font-size:13px;background:rgba(255,255,255,0.04);color:#000;padding:16px;border-radius:8px;"></div>
         </div>
       </div>
       <div class="card">
@@ -713,15 +709,15 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       💳 CB
                     </button>
                     <button onclick="naSetMode('ESPECES')" id="na-mode-especes"
-                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);font-weight:700;cursor:pointer;font-size:14px;">
                       💵 Espèces
                     </button>
                     <button onclick="naSetMode('CHEQUE')" id="na-mode-cheque"
-                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);font-weight:700;cursor:pointer;font-size:14px;">
                       📄 Chèque
                     </button>
                     <button onclick="naSetMode('VIREMENT')" id="na-mode-virement"
-                      style="padding:12px 8px;border-radius:8px;border:3px solid #ddd;background:#f8fafc;font-weight:700;cursor:pointer;font-size:14px;">
+                      style="padding:12px 8px;border-radius:8px;border:3px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);font-weight:700;cursor:pointer;font-size:14px;">
                       🏦 Virement
                     </button>
                   </div>
@@ -815,7 +811,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div class="card-title">Aperçu</div>
             <button class="btn btn-primary btn-sm" onclick="naImprimer()">🖨️ Imprimer</button>
           </div>
-          <div id="na-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+          <div id="na-preview-content" style="font-size:13px;background:rgba(255,255,255,0.04);color:#000;padding:16px;border-radius:8px;"></div>
         </div>
 
       </div>
@@ -825,7 +821,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card-header">
           <div class="card-title">📋 Historique ventes</div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <input type="text" id="na-search" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:13px;width:180px;" oninput="naRender()">
+            <input type="text" id="na-search" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;width:180px;" oninput="naRender()">
             <button class="btn btn-sm" onclick="naExportCSV()">📥 Export CSV</button>
           </div>
         </div>
@@ -857,7 +853,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 <div class="page" id="page-caisse">
       <div class="page-title">Z de Caisse</div>
       <div class="page-sub">Saisie journalière</div>
-      <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:12px 18px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <div>
           <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">Report mois précédent</div>
           <div id="report-display" style="font-size:26px;font-weight:700;"></div>
@@ -893,7 +889,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
-              <tr style="background:#f1f5f9;text-align:left;">
+              <tr style="background:rgba(255,255,255,0.04);text-align:left;">
                 <th style="padding:8px;">Heure</th>
                 <th style="padding:8px;">Type</th>
                 <th style="padding:8px;">Description</th>
@@ -922,7 +918,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             </div>
             <div id="caisse-z-detail" style="display:none;overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:#f1f5f9;"><th style="padding:6px;text-align:left;">Heure</th><th style="padding:6px;text-align:left;">Description</th><th style="padding:6px;text-align:right;">Montant</th><th style="padding:6px;text-align:center;">Mode</th></tr></thead>
+                <thead><tr style="background:rgba(255,255,255,0.04);"><th style="padding:6px;text-align:left;">Heure</th><th style="padding:6px;text-align:left;">Description</th><th style="padding:6px;text-align:right;">Montant</th><th style="padding:6px;text-align:center;">Mode</th></tr></thead>
                 <tbody id="caisse-z-detail-tbody"></tbody>
               </table>
             </div>
@@ -961,7 +957,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-caisse')">➕ Ajouter</button>
             <button class="btn btn-sm" onclick="exportCaisseCSV()">📥 Export Google Sheets</button>
-            <select id="caisse-mois-select" onchange="filtrerCaisseMois(this.value)" style="padding:6px 14px;border:2px solid var(--primary);border-radius:8px;font-size:13px;background:#fff;font-weight:600;color:var(--primary);">
+            <select id="caisse-mois-select" onchange="filtrerCaisseMois(this.value)" style="padding:6px 14px;border:2px solid var(--primary);border-radius:8px;font-size:13px;background:rgba(255,255,255,0.04);font-weight:600;color:var(--primary);">
               <option value="">📅 Choisir un mois...</option>
             </select>
             <button class="btn btn-sm" style="border-color:#0066cc;color:#0066cc;" onclick="document.getElementById('phonilab-import').click()">📂 Import Phonilab CSV</button>
@@ -1012,7 +1008,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
-              <tr style="background:#f1f5f9;">
+              <tr style="background:rgba(255,255,255,0.04);">
                 <th style="padding:10px;text-align:left;">N° Facture</th>
                 <th style="padding:10px;text-align:left;">Date</th>
                 <th style="padding:10px;text-align:left;">Client / Article</th>
@@ -1078,7 +1074,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           box-shadow: 4px 4px 12px rgba(201,37,27,0.35), -2px -2px 6px rgba(255,120,110,0.15);
         }
         .cmd-calc-box {
-          background: #fff; border-radius: 16px; padding: 16px 20px;
+          background:rgba(255,255,255,0.04); border-radius: 16px; padding: 16px 20px;
           box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 20px rgba(0,0,0,0.06);
           margin-top: 16px;
         }
@@ -1108,7 +1104,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         .cmd-badge-gray   { background: #f5f5f7; color: #6e6e73; border: 1px solid #e0e0e5; }
         /* Cartes commande liste */
         .cmd-row-card {
-          background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
+          background:rgba(255,255,255,0.04); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px;
           box-shadow: 3px 3px 10px rgba(174,174,184,0.2), -2px -2px 6px rgba(255,255,255,0.9);
           display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
         }
@@ -1191,7 +1187,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="cmd-calc-box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <span style="font-size:12px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:0.06em;">Total TTC</span>
-              <span id="cmd-calc-total" style="font-size:16px;font-weight:800;color:#1d1d1f;">0.00 €</span>
+              <span id="cmd-calc-total" style="font-size:16px;font-weight:800;color:#e8eaf6;">0.00 €</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <span style="font-size:12px;font-weight:600;color:#6e6e73;text-transform:uppercase;letter-spacing:0.06em;">Acompte</span>
@@ -1199,7 +1195,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             </div>
             <div style="height:1px;background:rgba(0,0,0,0.07);margin:8px 0;"></div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:13px;font-weight:800;color:#1d1d1f;text-transform:uppercase;letter-spacing:0.06em;">Reste à payer</span>
+              <span style="font-size:13px;font-weight:800;color:#e8eaf6;text-transform:uppercase;letter-spacing:0.06em;">Reste à payer</span>
               <div>
                 <div id="cmd-calc-reste" class="cmd-reste rouge">0.00 €</div>
               </div>
@@ -1214,7 +1210,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <!-- ── LISTE COMMANDES ── -->
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <div style="font-size:17px;font-weight:800;color:#1d1d1f;">📋 Commandes en cours</div>
+            <div style="font-size:17px;font-weight:800;color:#e8eaf6;">📋 Commandes en cours</div>
             <div style="display:flex;gap:6px;">
               <span class="cmd-badge cmd-badge-red">🔴 À commander</span>
               <span class="cmd-badge cmd-badge-orange">🟠 En transit</span>
@@ -1329,7 +1325,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
         <input type="text" id="client-search" placeholder="🔍 Nom, téléphone, email..." oninput="renderClients()"
-          style="padding:9px 14px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
+          style="padding:9px 14px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
         <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
         <label class="btn btn-sm" style="cursor:pointer;border-color:var(--blue);color:var(--blue);">
           👥 Import clients Phonilab
@@ -1392,7 +1388,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="card-header"><div class="card-title">Aperçu</div>
             <button class="btn btn-primary btn-sm" onclick="imprimerDevis()">🖨️ Imprimer</button>
           </div>
-          <div id="devis-preview-content" style="font-size:13px;background:#fff;color:#000;padding:16px;border-radius:8px;"></div>
+          <div id="devis-preview-content" style="font-size:13px;background:rgba(255,255,255,0.04);color:#000;padding:16px;border-radius:8px;"></div>
         </div>
       </div>
       <div class="card" style="margin-top:18px;">
@@ -1419,7 +1415,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <button class="btn btn-sm" style="margin-top:18px;border-color:var(--green);color:var(--green);font-weight:700;" onclick="backupComplet()">💾 Backup complet</button>
         <!-- Import Phonilab -->
         <div style="margin-top:18px;display:flex;align-items:center;gap:8px;">
-          <label class="btn btn-sm" style="background:#f8fafc;border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <label class="btn btn-sm" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
             📥 Importer Phonilab CSV
             <input type="file" id="phonilab-csv" accept=".csv" style="display:none;" onchange="importPhonilabCSV(this)">
           </label>
@@ -1455,7 +1451,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="page-sub">Gestion des salariés · Bulletins de paie indicatifs</div>
 
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="sal-mois-sel" onchange="renderSalaries()" style="background:#f8fafc;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;"></select>
+      <select id="sal-mois-sel" onchange="renderSalaries()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;"></select>
       <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)">➕ Ajouter un salarié</button>
     </div>
 
@@ -1631,8 +1627,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- Kiwiz NF525 -->
       <div class="card" style="border:2px solid #1e40af;">
-        <div class="card-header" style="background:#eff6ff;">
-          <div class="card-title" style="color:#1e40af;">🔒 Kiwiz — Certification NF525</div>
+        <div class="card-header" style="background:rgba(96,165,250,0.06);">
+          <div class="card-title" style="color:#60a5fa;">🔒 Kiwiz — Certification NF525</div>
         </div>
         <div class="card-body">
           <div class="form-group"><label>Identifiant Kiwiz</label>
@@ -1641,10 +1637,10 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <input type="password" id="params-kiwiz-pass" placeholder="••••••••"></div>
           <div class="form-group"><label>N° d'abonnement Kiwiz</label>
             <input type="text" id="params-kiwiz-sub" placeholder="ex: 12345"></div>
-          <button class="btn btn-primary" style="background:#1e40af;border-color:#1e40af;width:100%;" onclick="paramsSaveKiwiz()">💾 Enregistrer</button>
-          <button class="btn btn-sm" onclick="paramsTestKiwiz()" style="border-color:#1e40af;color:#1e40af;margin-top:8px;width:100%;">🧪 Tester la connexion</button>
+          <button class="btn btn-primary" style="background:#1e40af;border-color:#60a5fa;width:100%;" onclick="paramsSaveKiwiz()">💾 Enregistrer</button>
+          <button class="btn btn-sm" onclick="paramsTestKiwiz()" style="border-color:#60a5fa;color:#60a5fa;margin-top:8px;width:100%;">🧪 Tester la connexion</button>
           <div id="params-kiwiz-status" style="margin-top:8px;font-size:12px;"></div>
-          <div style="margin-top:10px;padding:8px;background:#eff6ff;border-radius:6px;font-size:11px;color:#1e40af;">
+          <div style="margin-top:10px;padding:8px;background:rgba(96,165,250,0.06);border-radius:6px;font-size:11px;color:#60a5fa;">
             💡 Compte sur <b>kiwiz.io</b> → à partir de 4,99€ HT/mois · Sans engagement<br>
             Chaque facture certifiée NF525 automatiquement — conforme contrôle fiscal
           </div>
@@ -1682,7 +1678,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- Ecosystem -->
       <div class="card" style="border:1.5px solid var(--green);">
-        <div class="card-header" style="background:#f0fdf4;">
+        <div class="card-header" style="background:rgba(52,211,153,0.06);">
           <div class="card-title" style="color:var(--green);">🟢 Ecosystem</div>
           <div id="params-eco-status" style="font-size:12px;"></div>
         </div>
@@ -1706,7 +1702,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- Ecologic -->
       <div class="card" style="border:1.5px solid var(--blue);">
-        <div class="card-header" style="background:#eff6ff;">
+        <div class="card-header" style="background:rgba(96,165,250,0.06);">
           <div class="card-title" style="color:var(--blue);">🔵 Ecologic</div>
           <div id="params-ecologic-status" style="font-size:12px;"></div>
         </div>
@@ -1725,8 +1721,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
 
       <!-- Imprimante NAS -->
-      <div class="card" style="border:1.5px solid #f59e0b;">
-        <div class="card-header" style="background:#fffbeb;">
+      <div class="card" style="border:1.5px solid rgba(255,149,0,0.3);">
+        <div class="card-header" style="background:rgba(255,149,0,0.06);">
           <div class="card-title" style="color:#b45309;">🖨️ Imprimante Epson (NAS)</div>
           <div id="params-nas-status" style="font-size:12px;"></div>
         </div>
@@ -1744,7 +1740,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <!-- Claude API -->
       <div class="card" style="border:1.5px solid #7c3aed;">
         <div class="card-header" style="background:#f5f3ff;">
-          <div class="card-title" style="color:#5b21b6;">🤖 Claude — Intelligence Artificielle</div>
+          <div class="card-title" style="color:#a78bfa;">🤖 Claude — Intelligence Artificielle</div>
           <div id="params-claude-status" style="font-size:12px;color:var(--text-muted);">⚠️ Non configurée</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1774,7 +1770,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card">
           <div class="card-header">
             <div class="card-title">📂 Dossiers en cours</div>
-            <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="renderRepListe()">
+            <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="renderRepListe()">
           </div>
           <div style="overflow-x:auto;">
             <table>
@@ -1798,7 +1794,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
               <thead>
-                <tr style="background:#f1f5f9;text-align:left;">
+                <tr style="background:rgba(255,255,255,0.04);text-align:left;">
                   <th style="padding:8px;">N°</th>
                   <th style="padding:8px;">Date</th>
                   <th style="padding:8px;">Client</th>
@@ -1833,7 +1829,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
               <thead>
-                <tr style="background:#f1f5f9;text-align:left;">
+                <tr style="background:rgba(255,255,255,0.04);text-align:left;">
                   <th style="padding:8px;">N°</th>
                   <th style="padding:8px;">Client</th>
                   <th style="padding:8px;">Appareil</th>
@@ -1893,7 +1889,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <button id="rep-btn-modifier-client" class="btn btn-sm" onclick="repModifierClient()" style="font-size:12px;padding:5px 12px;display:none;">✏️ Modifier</button>
                 </div>
               </div>
-              <div id="rep-client-locked-banner" style="display:none;padding:7px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12px;color:#166534;margin-bottom:6px;">🔒 Fiche client verrouillée — cliquez <b>✏️ Modifier</b> pour éditer</div>
+              <div id="rep-client-locked-banner" style="display:none;padding:7px 12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:12px;color:#34d399;margin-bottom:6px;">🔒 Fiche client verrouillée — cliquez <b>✏️ Modifier</b> pour éditer</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
@@ -1950,25 +1946,25 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
-                        <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:#fff8e1;border:1px solid #f59e0b;display:flex;align-items:center;gap:8px;">
-                          📷 <span id="dep-photo-badge" style="color:#92400e;font-weight:700;">⚠️ Non prise — obligatoire pour QualiRépar</span>
+                        <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);display:flex;align-items:center;gap:8px;">
+                          📷 <span id="dep-photo-badge" style="color:#ff9500;font-weight:700;">⚠️ Non prise — obligatoire pour QualiRépar</span>
                         </div>
                         <div id="dep-photo-thumb" style="display:none;margin-top:4px;">
-                          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f0fdf4;border:1.5px solid #22c55e;border-radius:10px;">
+                          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(52,211,153,0.06);border:1.5px solid #22c55e;border-radius:10px;">
                             <a id="dep-photo-link" href="#" target="_blank" style="flex-shrink:0;">
                               <img id="dep-photo-img" src="" alt="Photo IMEI"
                                 style="width:72px;height:72px;object-fit:cover;border-radius:7px;border:2px solid #22c55e;display:block;cursor:zoom-in;"
                                 title="Cliquer pour agrandir">
                             </a>
                             <div style="flex:1;min-width:0;">
-                              <div style="font-size:12px;font-weight:700;color:#166534;">✅ Photo chargée</div>
+                              <div style="font-size:12px;font-weight:700;color:#34d399;">✅ Photo chargée</div>
                               <div id="dep-photo-org" style="font-size:11px;color:#16a34a;margin-top:2px;">Prête pour Ecosystem / Ecologic</div>
-                              <button onclick="repSupprimerPhotoImei()" style="margin-top:5px;font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;">🗑 Supprimer</button>
+                              <button onclick="repSupprimerPhotoImei()" style="margin-top:5px;font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid #fca5a5;background:rgba(255,59,48,0.08);color:#dc2626;cursor:pointer;">🗑 Supprimer</button>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
+                      <div id="rep-imei-alert" style="display:none;margin-top:6px;padding:10px 12px;background:rgba(255,59,48,0.08);border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
                     </div>
                     <div class="form-group"><label>Couleur</label><input type="text" id="dep-couleur" placeholder="Noir minuit"></div>
                   </div>
@@ -2026,7 +2022,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
                     <select id="dep-panne-select" onchange="repPanneSelect(this.value);repCheckEligibiliteDebounced();"
-                      style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
+                      style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
                       <option value="">-- Sélectionner la panne --</option>
                       <optgroup label="📱 Écran">
                         <option value="Remplacement écran suite à une casse (fissure / écran cassé)">Écran cassé / fissuré</option>
@@ -2074,7 +2070,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   </div>
 
                   <!-- Alerte inéligibilité -->
-                  <div id="rep-inelig-alert" style="display:none;padding:10px 12px;background:#fef2f2;border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
+                  <div id="rep-inelig-alert" style="display:none;padding:10px 12px;background:rgba(255,59,48,0.08);border:1.5px solid var(--red);border-radius:8px;font-size:12px;color:var(--red);line-height:1.6;"></div>
 
                   <div class="form-group"><label>Pièce à commander</label>
                     <select id="dep-piece">
@@ -2087,7 +2083,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
                   <!-- Décomposition HT obligatoire pour QR -->
                   <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;">
-                    <div style="font-size:11px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
+                    <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
                       Décomposition HT — obligatoire QualiRépar
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -2098,7 +2094,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                         <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" onchange="repCalcDevisDebounced()" onblur="repCalcDevis()">
                       </div>
                     </div>
-                    <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#0369a1;"></div>
+                    <div id="rep-devis-calc" style="margin-top:8px;font-size:12px;color:#60a5fa;"></div>
                     <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Vous pouvez modifier MO et Pièces manuellement si besoin</div>
                   </div>
 
@@ -2107,7 +2103,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       <label id="dep-devis-label">Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span></label>
                       <input type="number" id="dep-devis" placeholder="ex: 90 (prix payé par le client)" step="0.01" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:16px;font-weight:700;">
                       <div id="dep-devis-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
-                      <div style="font-size:11px;color:#0369a1;margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
+                      <div style="font-size:11px;color:#60a5fa;margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                     </div>
                   </div>
                   <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
@@ -2118,7 +2114,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
               <!-- Signature électronique -->
               <div class="card" style="border:1.5px solid var(--green);">
-                <div class="card-header" style="background:#f0fdf4;">
+                <div class="card-header" style="background:rgba(52,211,153,0.06);">
                   <div class="card-title">✍️ Signature client <span style="font-size:11px;font-weight:400;color:var(--text-muted);">(optionnelle — si le client est présent)</span></div>
                 </div>
                 <div style="padding:0 0 4px;">
@@ -2129,7 +2125,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <canvas id="rep-sig-canvas" width="380" height="100"
                       onmousedown="repSigDown(event)" onmousemove="repSigMove(event)" onmouseup="repSigUp(event)"
                       ontouchstart="repSigDown(event)" ontouchmove="repSigMove(event)" ontouchend="repSigUp(event)"
-                      style="border:2px solid #c0392b;border-radius:8px;background:#fff;display:block;width:100%;height:100px;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;"></canvas>
+                      style="border:2px solid #c0392b;border-radius:8px;background:rgba(255,255,255,0.04);display:block;width:100%;height:100px;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;"></canvas>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
                       <div id="rep-sig-hint" style="font-size:12px;color:var(--text-muted);">← Signez dans le cadre ci-dessus →</div>
                       <button type="button" class="btn btn-sm" onclick="repClearSig()">🗑️ Effacer</button>
@@ -2234,7 +2230,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
               <!-- QualiRépar bloc -->
               <div class="card" style="border:1.5px solid var(--green);">
-                <div class="card-header" style="background:#f0fdf4;">
+                <div class="card-header" style="background:rgba(52,211,153,0.06);">
                   <label style="display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;cursor:pointer;margin:0;">
                     <input type="checkbox" id="rep-qr-actif" onchange="repToggleQR()" checked style="width:18px;height:18px;accent-color:var(--green);">
                     <span>🏷️ Bonus QualiRépar (-25 €)</span>
@@ -2293,7 +2289,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   </div>
 
                   <!-- Codes IRIS — affichage lecture seule + possibilité édition avancée -->
-                  <div id="rep-iris-bloc" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;">
+                  <div id="rep-iris-bloc" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:12px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                       <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Codes IRIS (AgoraPlus)</span>
                       <button type="button" onclick="repToggleIRISEdit()" style="font-size:11px;background:none;border:1px solid var(--border);padding:2px 8px;border-radius:6px;cursor:pointer;color:var(--text-muted);" id="rep-iris-edit-btn">✏️ Modifier</button>
@@ -2301,33 +2297,33 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" id="rep-iris-fields">
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Condition <span style="color:var(--text-muted);">(IRISCondition)</span></label>
-                        <input type="text" id="iris-condition" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="6">
+                        <input type="text" id="iris-condition" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="6">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Symptôme <span style="color:var(--text-muted);">(IRISSymptom)</span></label>
-                        <input type="text" id="iris-symptom" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="E7">
+                        <input type="text" id="iris-symptom" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="E7">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Section <span style="color:var(--text-muted);">(IRISSection)</span></label>
-                        <input type="text" id="iris-section" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="W10">
+                        <input type="text" id="iris-section" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="W10">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Défaut <span style="color:var(--text-muted);">(IRISDefault)</span></label>
-                        <input type="text" id="iris-default" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="08">
+                        <input type="text" id="iris-default" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="08">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Réparation <span style="color:var(--text-muted);">(IRISRepair)</span></label>
-                        <input type="text" id="iris-repair" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="A">
+                        <input type="text" id="iris-repair" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="A">
                       </div>
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Code réparation <span style="color:var(--text-muted);">(RepairCode)</span></label>
-                        <input type="text" id="iris-repaircode" tabindex="-1" style="background:#fff;font-family:monospace;font-size:13px;" placeholder="ELE-DIS-001">
+                        <input type="text" id="iris-repaircode" tabindex="-1" style="background:rgba(255,255,255,0.04);font-family:monospace;font-size:13px;" placeholder="ELE-DIS-001">
                       </div>
                     </div>
                     <div style="margin-top:8px;">
                       <div class="form-group" style="margin-bottom:0;">
                         <label style="font-size:11px;">Description de la panne <span style="color:var(--text-muted);">(FailureDescription)</span></label>
-                        <input type="text" id="iris-failure-desc" style="background:#fff;font-size:13px;" placeholder="Description envoyée à l'éco-organisme">
+                        <input type="text" id="iris-failure-desc" style="background:rgba(255,255,255,0.04);font-size:13px;" placeholder="Description envoyée à l'éco-organisme">
                       </div>
                     </div>
                     <div id="rep-iris-valid" style="margin-top:8px;font-size:12px;"></div>
@@ -2346,7 +2342,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div class="card-title">Aperçu facture</div>
                   <button class="btn btn-primary btn-sm" onclick="repImprimerFacture()">🖨️ Imprimer</button>
                 </div>
-                <div id="rep-preview-content" style="font-size:12px;background:#fff;color:#000;padding:12px;border-radius:8px;max-height:480px;overflow:auto;"></div>
+                <div id="rep-preview-content" style="font-size:12px;background:rgba(255,255,255,0.04);color:#000;padding:12px;border-radius:8px;max-height:480px;overflow:auto;"></div>
               </div>
               <div class="card" id="rep-iris-checklist-card" style="display:none;margin-top:14px;">
                 <div class="card-header"><div class="card-title">✅ Checklist dossier</div></div>
@@ -2366,7 +2362,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
             <div class="card">
               <div class="card-header"><div class="card-title">📤 Envoi à l'éco-organisme</div></div>
-              <div id="rep-qr-recap" style="margin-bottom:16px;padding:14px;background:#f0fdf4;border-radius:10px;border:1px solid var(--green);font-size:13px;line-height:1.9;"></div>
+              <div id="rep-qr-recap" style="margin-bottom:16px;padding:14px;background:rgba(52,211,153,0.06);border-radius:10px;border:1px solid var(--green);font-size:13px;line-height:1.9;"></div>
               <div id="rep-qr-no-bonus" style="display:none;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid var(--border);font-size:13px;color:var(--text-muted);">
                 ℹ️ Aucun bonus QualiRépar n'a été appliqué sur cette réparation.<br>Aucun envoi à effectuer.
               </div>
@@ -2439,7 +2435,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:4px;">Clé API Anthropic (Claude)</div>
           <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Nécessaire pour générer du contenu avec l'IA. Stockée localement sur votre appareil.</div>
           <div style="display:flex;gap:8px;">
-            <input type="password" id="ig-api-key" placeholder="sk-ant-api03-..." style="flex:1;padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
+            <input type="password" id="ig-api-key" placeholder="sk-ant-api03-..." style="flex:1;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
             <button class="btn btn-primary" onclick="saveApiKey()">✅ Enregistrer</button>
           </div>
         </div>
@@ -2489,7 +2485,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 </select>
               </div>
               <div class="form-group"><label>Détails supplémentaires (optionnel)</label>
-                <textarea id="ig-post-details" placeholder="ex: iPhone 15 256Go Grade A à 699€, batterie 94%..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+                <textarea id="ig-post-details" placeholder="ex: iPhone 15 256Go Grade A à 699€, batterie 94%..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
               </div>
               <button class="btn btn-primary" id="ig-gen-btn" onclick="generateCaption()" style="padding:12px;">✨ Générer avec l'IA Claude</button>
             </div>
@@ -2644,14 +2640,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <input type="text" id="story-texte-titre" placeholder="ex: FERMETURE EXCEPTIONNELLE" oninput="renderStoryPreview()" value="Nouveau !">
                   </div>
                   <div class="form-group"><label>Message</label>
-                    <textarea id="story-texte-msg" placeholder="ex: Nous serons fermés le lundi 25 mars..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;" oninput="renderStoryPreview()">Votre message ici</textarea>
+                    <textarea id="story-texte-msg" placeholder="ex: Nous serons fermés le lundi 25 mars..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;" oninput="renderStoryPreview()">Votre message ici</textarea>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Couleur haut</label>
-                      <input type="color" id="story-texte-bg1" value="#e53e3e" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                      <input type="color" id="story-texte-bg1" value="#e53e3e" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
                     </div>
                     <div class="form-group"><label>Couleur bas</label>
-                      <input type="color" id="story-texte-bg2" value="#7b0d0d" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                      <input type="color" id="story-texte-bg2" value="#7b0d0d" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
                     </div>
                   </div>
                 </div>
@@ -2696,7 +2692,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div class="card-header"><div class="card-title">💬 Répondre à un commentaire</div></div>
             <div style="display:flex;flex-direction:column;gap:12px;">
               <div class="form-group"><label>Commentaire reçu *</label>
-                <textarea id="ig-comment" placeholder="ex: C'est quoi le tarif pour une réparation écran iPhone 12 ?" style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:110px;resize:vertical;"></textarea>
+                <textarea id="ig-comment" placeholder="ex: C'est quoi le tarif pour une réparation écran iPhone 12 ?" style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:110px;resize:vertical;"></textarea>
               </div>
               <div class="form-group"><label>Type de commentaire</label>
                 <select id="ig-response-context">
@@ -2795,7 +2791,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 </div>
                 <div class="form-group">
                   <label>Contenu de l'avis *</label>
-                  <textarea id="gmb-avis-text" placeholder="ex: Super boutique, réparation rapide et efficace, je recommande !" style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:100px;resize:vertical;"></textarea>
+                  <textarea id="gmb-avis-text" placeholder="ex: Super boutique, réparation rapide et efficace, je recommande !" style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:100px;resize:vertical;"></textarea>
                 </div>
                 <div class="form-group">
                   <label>Prénom du client (si visible)</label>
@@ -2841,7 +2837,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 </div>
                 <div class="form-group">
                   <label>Détails (optionnel)</label>
-                  <textarea id="gmb-post-details" placeholder="ex: iPhone 15 128Go Grade A à 549€ arrivé ce matin..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:70px;resize:vertical;"></textarea>
+                  <textarea id="gmb-post-details" placeholder="ex: iPhone 15 128Go Grade A à 549€ arrivé ce matin..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:70px;resize:vertical;"></textarea>
                 </div>
                 <button class="btn btn-primary" id="gmb-post-btn" onclick="generateGmbPost()" style="padding:11px;">
                   🤖 Générer le post Google
@@ -2999,7 +2995,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <!-- Sélecteur mois -->
     <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="docs-mois-select" onchange="docsComptableInit()" style="background:#f8fafc;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;">
+      <select id="docs-mois-select" onchange="docsComptableInit()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;">
         <option value="2026-01">Janvier 2026</option>
         <option value="2026-02" selected>Février 2026</option>
         <option value="2026-03">Mars 2026</option>
@@ -3014,7 +3010,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <option value="2026-12">Décembre 2026</option>
       </select>
       <div id="docs-progress-badge" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;"></div>
-      <a id="docs-drive-btn" href="#" target="_blank" style="background:#f8fafc;border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;">
+      <a id="docs-drive-btn" href="#" target="_blank" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;">
         📁 Ouvrir Google Drive
       </a>
     </div>
@@ -3070,7 +3066,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="card-header"><span class="card-title">⚙️ Configuration</span></div>
           <div class="form-group" style="margin-bottom:14px;">
             <label>Lien Google Avis</label>
-            <input id="rl-google-url" type="url" placeholder="https://g.page/r/votre-lien-google" style="width:100%;padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
+            <input id="rl-google-url" type="url" placeholder="https://g.page/r/votre-lien-google" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;">
           </div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
             <a id="rl-preview-link" href="#" target="_blank" class="btn btn-sm" style="text-decoration:none;border-color:var(--blue);color:var(--blue);">🎡 Voir la roue →</a>
@@ -3127,7 +3123,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div class="form-group" style="grid-column:1/-1"><label>Civilité *</label><select id="cl-civilite-tablet" style="width:100%;padding:12px 16px;background:#fff;border:2px solid #e2e8f0;border-radius:12px;color:#1a202c;font-size:20px;" oninput="qrClientValidate()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
+            <div class="form-group" style="grid-column:1/-1"><label>Civilité *</label><select id="cl-civilite-tablet" style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.04);border:2px solid rgba(255,255,255,0.08);border-radius:12px;color:#e8eaf6;font-size:20px;" oninput="qrClientValidate()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
             <div class="form-group"><label>Prénom *</label>
               <input type="text" id="cl-prenom-tablet" placeholder="Jean" autocomplete="given-name" oninput="qrClientValidate()"></div>
             <div class="form-group"><label>Nom *</label>
@@ -3138,14 +3134,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="form-group"><label>✉️ Email</label>
             <input type="email" id="cl-email-tablet" placeholder="votre@email.fr" autocomplete="email" inputmode="email"></div>
           <div class="form-group"><label>💬 Décrivez votre panne</label>
-            <textarea id="cl-panne-tablet" placeholder="Ex : Mon écran est fissuré suite à une chute, le tactile ne répond plus en bas..." rows="4" style="resize:none;font-size:18px;padding:14px 16px;border:2.5px solid #e2e8f0;border-radius:14px;background:#f8fafc;color:#1e293b;width:100%;font-family:inherit;box-sizing:border-box;"></textarea></div>
+            <textarea id="cl-panne-tablet" placeholder="Ex : Mon écran est fissuré suite à une chute, le tactile ne répond plus en bas..." rows="4" style="resize:none;font-size:18px;padding:14px 16px;border:2.5px solid rgba(255,255,255,0.08);border-radius:14px;background:#f8fafc;color:#e8eaf6;width:100%;font-family:inherit;box-sizing:border-box;"></textarea></div>
           <div class="form-group"><label>📱 Quel appareil ?</label>
             <input type="text" id="cl-appareil-tablet" placeholder="Ex : iPhone 13, Samsung Galaxy S21..." oninput="qrClientValidate()"></div>
         </div>
         <button class="qr-client-btn" id="qr-client-validate-btn" onclick="qrClientSubmit()" disabled>
           ✅ Valider mes informations
         </button>
-        <div style="text-align:center;margin-top:16px;font-size:13px;color:#94a3b8;">
+        <div style="text-align:center;margin-top:16px;font-size:13px;color:rgba(255,255,255,0.3);">
           🔒 Vos données restent confidentielles · Solution Phone
         </div>
       </div>
@@ -3180,7 +3176,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="qr-panel">
             <div class="qr-panel-title">👤 Coordonnées client</div>
             <div class="form-grid" style="gap:12px;">
-              <div class="form-group"><label>Civilité *</label><select id="qr-civilite" style="width:100%;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;" oninput="qrValidStep1()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
+              <div class="form-group"><label>Civilité *</label><select id="qr-civilite" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;" oninput="qrValidStep1()"><option value="">-- Choisir --</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
               <div class="form-group"><label>Prénom *</label><input type="text" id="qr-prenom" placeholder="Jean" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Nom *</label><input type="text" id="qr-nom" placeholder="Dupont" oninput="qrValidStep1()"></div>
               <div class="form-group"><label>Téléphone *</label><input type="tel" id="qr-tel" placeholder="06 XX XX XX XX" oninput="qrValidStep1()"></div>
@@ -3218,16 +3214,16 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div class="qr-panel-title">🔍 IMEI <span style="font-size:11px;font-weight:400;color:var(--text-dim);">— *#06# sur l'appareil</span></div>
             <div style="display:flex;gap:10px;margin-bottom:14px;">
               <button class="qr-scan-btn" onclick="qrOpenCam()"
-                style="border-color:var(--blue);color:var(--blue);background:#eff6ff;">
+                style="border-color:var(--blue);color:var(--blue);background:rgba(96,165,250,0.06);">
                 <span class="qr-scan-icon">📷</span>
                 <span style="font-size:14px;font-weight:700;">Caméra</span>
-                <span style="font-size:11px;color:#64748b;">Pointer sur l'IMEI</span>
+                <span style="font-size:11px;color:rgba(255,255,255,0.5);">Pointer sur l'IMEI</span>
               </button>
               <button class="qr-scan-btn" onclick="document.getElementById('qr-imei-file').click()"
-                style="border-color:var(--warning);color:var(--warning);background:#fffbeb;">
+                style="border-color:var(--warning);color:var(--warning);background:rgba(255,149,0,0.06);">
                 <span class="qr-scan-icon">🖼️</span>
                 <span style="font-size:14px;font-weight:700;">Photo</span>
-                <span style="font-size:11px;color:#64748b;">Depuis la galerie</span>
+                <span style="font-size:11px;color:rgba(255,255,255,0.5);">Depuis la galerie</span>
               </button>
               <input type="file" id="qr-imei-file" accept="image/*" style="display:none;" onchange="qrProcessFile(this)">
             </div>
@@ -3386,7 +3382,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </select>
       </div>
       <div class="form-group"><label>Note / Idée</label>
-        <textarea id="ig-plan-note" placeholder="ex: Mettre en avant l'iPhone 15 Pro arrivé cette semaine..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+        <textarea id="ig-plan-note" placeholder="ex: Mettre en avant l'iPhone 15 Pro arrivé cette semaine..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
@@ -3461,7 +3457,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div class="modal">
     <div class="modal-title">➕ Nouveau client</div>
     <div class="form-grid">
-      <div class="form-group"><label>Civilité</label><select id="cl-civilite" style="width:100%;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"><option value="">--</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
+      <div class="form-group"><label>Civilité</label><select id="cl-civilite" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"><option value="">--</option><option value="M.">M.</option><option value="Mme">Mme</option></select></div>
       <div class="form-group"><label>Prénom *</label><input type="text" id="cl-prenom" placeholder="ex: Jean"></div>
       <div class="form-group"><label>Nom *</label><input type="text" id="cl-nom" placeholder="ex: Dupont"></div>
       <div class="form-group"><label>Téléphone</label><input type="text" id="cl-tel" placeholder="ex: 06 12 34 56 78"></div>
@@ -3469,7 +3465,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <div class="form-group"><label>Adresse</label><input type="text" id="cl-adresse" placeholder="Adresse"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="cl-cp" maxlength="5" placeholder="CP" inputmode="numeric"></div><div class="form-group"><label>Ville</label><input type="text" id="cl-ville" placeholder="Ville"></div></div>
     </div>
     <div class="form-group" style="margin-top:10px;"><label>Notes</label>
-      <textarea id="cl-notes" placeholder="Notes sur ce client..." style="padding:9px 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
+      <textarea id="cl-notes" placeholder="Notes sur ce client..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
       <button class="btn btn-primary" onclick="addClient()">✅ Enregistrer</button>
@@ -3595,7 +3591,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </label>
       <div style="display:flex;align-items:center;gap:6px;font-size:13px;">
         <label>Qté :</label>
-        <input type="number" id="etiq-qty" value="1" min="1" max="99" style="width:52px;padding:4px 6px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);">
+        <input type="number" id="etiq-qty" value="1" min="1" max="99" style="width:52px;padding:4px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);">
       </div>
     </div>
 
@@ -3904,14 +3900,14 @@ async function chargerCaisseArchive(mois){
   var tot={ttc:0,cb:0,esp:0,ch:0,vir:0,quali:0,dEsp:0,dCh:0,aS:0};
   res.forEach(function(c){tot.ttc+=c.ttc;tot.cb+=c.cb||0;tot.esp+=c.especes||0;tot.ch+=c.cheque||0;tot.vir+=c.virement||0;tot.quali+=c.quali||0;tot.dEsp+=c.depotEsp||0;tot.dCh+=c.depotCheque||0;tot.aS+=c.achatSmart||0;});
   document.getElementById('caisse-totaux').innerHTML =
-    '<div class="caisse-card" style="background:#fef2f2;"><div class="caisse-label">📁 '+label+' (archivé)</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
+    '<div class="caisse-card" style="background:rgba(255,59,48,0.08);"><div class="caisse-label">📁 '+label+' (archivé)</div><div class="caisse-value">'+tot.ttc.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CA HT</div><div class="caisse-value">'+(tot.ttc/1.2).toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">CB</div><div class="caisse-value">'+tot.cb.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">Espèces</div><div class="caisse-value">'+tot.esp.toFixed(2)+' €</div></div>'+
     '<div class="caisse-card"><div class="caisse-label">QualiRépar</div><div class="caisse-value" style="color:var(--green)">'+tot.quali.toFixed(2)+' €</div></div>';
   document.getElementById('caisse-table').innerHTML = res.map(function(c,i){
     var ttc=c.ttc, ht=(ttc/1.2).toFixed(2), tva=(ttc-ttc/1.2).toFixed(2);
-    return '<tr style="background:#fff9f9;"><td>'+fmtDate(c.date)+'</td><td><b>'+ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?c.quali.toFixed(2)+' €':'—')+'</td><td>'+fin[i].toFixed(2)+' €</td><td><span style="font-size:11px;color:var(--text-muted);">🔒 archivé</span></td></tr>';
+    return '<tr style="background:rgba(255,59,48,0.04);"><td>'+fmtDate(c.date)+'</td><td><b>'+ttc.toFixed(2)+' €</b></td><td>'+ht+' €</td><td>'+tva+' €</td><td>'+(c.cb||0).toFixed(2)+' €</td><td>'+(c.especes||0).toFixed(2)+' €</td><td>'+(c.cheque||0).toFixed(2)+' €</td><td>'+(c.virement||0).toFixed(2)+' €</td><td>'+(c.depotEsp||0).toFixed(2)+' €</td><td>'+(c.depotCheque||0).toFixed(2)+' €</td><td>'+(c.achatSmart||0).toFixed(2)+' €</td><td>'+((c.quali||0)>0?c.quali.toFixed(2)+' €':'—')+'</td><td>'+fin[i].toFixed(2)+' €</td><td><span style="font-size:11px;color:var(--text-muted);">🔒 archivé</span></td></tr>';
   }).join('');
   showNotif('📁 Données archivées de '+label+' chargées','success');
 }
@@ -4142,12 +4138,12 @@ function renderFacturesSearch(){
     var bg = i%2===0?'#fff':'#f8fafc';
     var mc = modeColors[(tx.mode||'CB').toUpperCase()]||'#666';
     var typeLabel = tx.type==='reparation'
-      ? '<span style="background:#fef2f2;color:#c0392b;padding:2px 6px;border-radius:10px;font-size:11px;">🔧 Réparation</span>'
-      : '<span style="background:#f0fdf4;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:11px;">📱 Vente</span>';
+      ? '<span style="background:rgba(255,59,48,0.08);color:#c0392b;padding:2px 6px;border-radius:10px;font-size:11px;">🔧 Réparation</span>'
+      : '<span style="background:rgba(52,211,153,0.06);color:#16a34a;padding:2px 6px;border-radius:10px;font-size:11px;">📱 Vente</span>';
     var actions = tx.type==='reparation' && tx.dossier
       ? '<button onclick="repOuvrirDossierFromCaisse('+JSON.stringify(String(tx.dossier.id))+')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">\u{1F4C4} Voir</button>'
       : '';
-    if(tx.kiwizRef) actions += ' <span style="font-size:10px;color:#1e40af;" title="Certifié NF525">🔒</span>';
+    if(tx.kiwizRef) actions += ' <span style="font-size:10px;color:#60a5fa;" title="Certifié NF525">🔒</span>';
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
       '<td style="padding:8px;font-family:monospace;font-size:12px;font-weight:700;">'+tx.numero+'</td>'+
       '<td style="padding:8px;white-space:nowrap;">'+fmtDate(tx.date)+'</td>'+
@@ -4268,7 +4264,7 @@ function naRenderGrille(){
              'border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;'+
              'transition:all .15s;user-select:none;position:relative;'+
              (active?'box-shadow:0 4px 12px rgba(0,0,0,0.15);transform:scale(1.02);':'')+'">'+
-      (qteEnPanier>0 ? '<div style="position:absolute;top:6px;right:6px;background:#fff;color:'+a.couleur+';border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">'+qteEnPanier+'</div>' : '')+
+      (qteEnPanier>0 ? '<div style="position:absolute;top:6px;right:6px;background:rgba(255,255,255,0.04);color:'+a.couleur+';border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;">'+qteEnPanier+'</div>' : '')+
       '<div style="font-size:28px;margin-bottom:6px;">'+a.emoji+'</div>'+
       '<div style="font-size:12px;font-weight:700;line-height:1.3;margin-bottom:4px;">'+a.nom+'</div>'+
       '<div style="font-size:15px;font-weight:900;">'+a.prix.toFixed(2)+' €</div>'+
@@ -4464,7 +4460,7 @@ function naConfigPrix(){
   var html = '<div style="padding:16px;max-height:70vh;overflow-y:auto;">'+
     '<h3 style="margin-bottom:16px;">✏️ Modifier les articles et prix</h3>'+
     '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
-    '<thead><tr style="background:#f1f5f9;">'+
+    '<thead><tr style="background:rgba(255,255,255,0.04);">'+
       '<th style="padding:8px;text-align:left;">Article</th>'+
       '<th style="padding:8px;text-align:center;width:100px;">Prix TTC (€)</th>'+
       '<th style="padding:8px;text-align:center;width:80px;">Actif</th>'+
@@ -4489,14 +4485,14 @@ function naConfigPrix(){
   html += '</tbody></table>'+
     '<div style="display:flex;gap:10px;margin-top:16px;">'+
       '<button onclick="naSavePrix()" style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:15px;">💾 Enregistrer</button>'+
-      '<button onclick="naFermerConfigPrix()" style="flex:1;padding:12px;background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;">Annuler</button>'+
+      '<button onclick="naFermerConfigPrix()" style="flex:1;padding:12px;background:rgba(255,255,255,0.06);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:15px;">Annuler</button>'+
     '</div>'+
   '</div>';
 
   var modal = document.createElement('div');
   modal.id = 'modal-na-config';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px;';
-  modal.innerHTML = '<div style="background:#fff;border-radius:16px;max-width:500px;width:100%;max-height:85vh;overflow:hidden;">'+html+'</div>';
+  modal.innerHTML = '<div style="background:rgba(255,255,255,0.04);border-radius:16px;max-width:500px;width:100%;max-height:85vh;overflow:hidden;">'+html+'</div>';
   document.body.appendChild(modal);
 }
 
@@ -4730,7 +4726,7 @@ function renderCaisseJour(){
   txSmart.forEach(function(tx){totSmart.total+=tx.montant;var m=(tx.mode||'CB').toUpperCase();if(m==='CB')totSmart.cb+=tx.montant;else if(m==='ESPECES')totSmart.especes+=tx.montant;else if(m==='CHEQUE')totSmart.cheque+=tx.montant;else if(m==='VIREMENT')totSmart.virement+=tx.montant;});
   // ── Modes paiement + détail réparations
   var modesDiv=document.getElementById('caisse-z-modes');
-  if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
+  if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
   var dtb=document.getElementById('caisse-z-detail-tbody');
   if(dtb){var mc2={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};dtb.innerHTML=txRep.map(function(tx,i){var mc=mc2[(tx.mode||'CB').toUpperCase()]||'#666';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';border-bottom:1px solid var(--border);"><td style="padding:5px 6px;color:var(--text-muted);">'+tx.heure+'</td><td style="padding:5px 6px;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="padding:10px;text-align:center;color:var(--text-muted);">Aucune réparation</td></tr>';}
   // ── Modes paiement + détail smartphones
@@ -4966,7 +4962,7 @@ async function envoyerFactureEmail(){
         '<b style="font-size:18px;color:#c0392b;">Montant : '+prixAffiche.toFixed(2)+' € TTC</b>'+
         (bonusQR?'<br><span style="color:#16a34a;font-size:12px;">✅ Bonus QualiRépar -25€ déduit</span>':'')+
       '</div>'+
-      '<div style="background:#eff6ff;border-radius:6px;padding:10px;font-size:11px;color:#1e40af;margin-top:16px;">'+
+      '<div style="background:rgba(96,165,250,0.06);border-radius:6px;padding:10px;font-size:11px;color:#60a5fa;margin-top:16px;">'+
         '<b>🔒 NF525</b> · Facture certifiée conforme loi anti-fraude TVA · Art. 286 CGI'+
       '</div>'+
       '<p style="color:#666;font-size:12px;margin-top:16px;">Merci de votre confiance !<br><b>L\'équipe Solution Phone</b></p>'+
@@ -6443,7 +6439,7 @@ function buildEtiquetteHTML(p, opts){
   var prixAffiche = p.vente ? String(p.vente) : (p.prix ? String(p.prix) : '—');
 
   // Conteneur principal 90mm × 29mm
-  var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
+  var html = '<div style="width:90mm;height:29mm;background:rgba(255,255,255,0.04);color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
 
   // BANDE ROUGE GAUCHE — simple liseré
   html += '<div style="width:4mm;background:#c0392b;flex-shrink:0;"></div>';
@@ -6535,7 +6531,7 @@ function printEtiquetteBrother(){
   var qty = parseInt(document.getElementById('etiq-qty').value)||1;
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>Etiquette '+_etiquettePhone.modele+'</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:#fff;}'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:rgba(255,255,255,0.04);}'+
     '@page{size:90mm 29mm;margin:0;}'+
     '@media print{.no-print{display:none!important;}.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}}'+
     'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
@@ -6603,7 +6599,7 @@ function buildA4HTML(opts){
   '<title>'+typeBadge+' '+opts.numero+'</title>'+
   '<style>'+
     '*{margin:0;padding:0;box-sizing:border-box;}'+
-    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;background:#fff;font-size:14px;}'+
+    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;background:rgba(255,255,255,0.04);font-size:14px;}'+
     '.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;position:relative;}'+
     '@media print{.no-print{display:none!important;}.page{padding:10mm 12mm;margin:0;width:100%;}}'+
     '@page{size:A4;margin:0;}'+
@@ -6624,7 +6620,7 @@ function buildA4HTML(opts){
       (logo ? '<img src="'+logo+'" style="height:80px;width:auto;object-fit:contain;">' : '')+
       '<div>'+
         '<div style="font-size:22px;font-weight:900;color:'+couleur+';letter-spacing:-0.5px;">SOLUTION PHONE</div>'+
-        '<div style="font-size:12px;color:#555;margin-top:3px;">Réparation Smartphone · Tablette · PC</div>'+
+        '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;">Réparation Smartphone · Tablette · PC</div>'+
         '<div style="font-size:11px;color:#777;margin-top:6px;line-height:1.7;">'+
           '21 Rue Gambetta · 71000 Mâcon<br>'+
           'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
@@ -6647,8 +6643,8 @@ function buildA4HTML(opts){
       '<div style="background:#f8f8f8;border-left:4px solid '+couleur+';padding:12px 18px;min-width:200px;max-width:260px;">'+
         '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:6px;">Client</div>'+
         '<div style="font-weight:700;font-size:14px;">'+( opts.clientNom||'—')+'</div>'+
-        (opts.clientAdresse ? '<div style="font-size:12px;color:#555;margin-top:3px;">'+opts.clientAdresse+'</div>' : '')+
-        (opts.clientEmail ? '<div style="font-size:12px;color:#555;">'+opts.clientEmail+'</div>' : '')+
+        (opts.clientAdresse ? '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:3px;">'+opts.clientAdresse+'</div>' : '')+
+        (opts.clientEmail ? '<div style="font-size:12px;color:rgba(255,255,255,0.5);">'+opts.clientEmail+'</div>' : '')+
       '</div>'+
     '</div>'+
 
@@ -6695,14 +6691,14 @@ function buildA4HTML(opts){
     })()+
 
     // NOTES / GARANTIE
-    (opts.notes||opts.garantie ? '<div style="background:#fff8e1;border-left:4px solid #f39c12;padding:10px 14px;border-radius:4px;margin-bottom:6mm;font-size:12px;color:#555;line-height:1.7;">'+
+    (opts.notes||opts.garantie ? '<div style="background:rgba(255,149,0,0.08);border-left:4px solid rgba(255,149,0,0.5);padding:10px 14px;border-radius:4px;margin-bottom:6mm;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.7;">'+
       (opts.garantie ? '✅ Garantie : <b>'+opts.garantie+'</b><br>' : '')+
       (opts.notes ? opts.notes : '')+
     '</div>' : '')+
 
     // MODE RÈGLEMENT
     (opts.mode ? '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8mm;">'+
-      '<div style="background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:8px 16px;font-size:12px;color:#555;">'+
+      '<div style="background:#f8f8f8;border:1px solid #eee;border-radius:6px;padding:8px 16px;font-size:12px;color:rgba(255,255,255,0.5);">'+
         '💳 Mode de règlement : <b style="color:#1a1a1a;">'+opts.mode+'</b>'+
       '</div>'+
     '</div>' : '')+
@@ -7985,7 +7981,7 @@ function renderComptable() {
   var moisLabel = moisNoms[parts[1]] + ' ' + parts[0];
 
   var html = '<div id="compta-print-zone">' +
-    '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;">' +
+    '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;">' +
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
     '<div>' +
     '<div style="font-size:22px;font-weight:800;color:var(--red);">SOLUTION PHONE</div>' +
@@ -8095,7 +8091,7 @@ function renderComptable() {
         '</tr>';
       }).join('');
       // Ligne totaux
-      rows += '<tr style="background:#f1f5f9;border-top:2px solid #cbd5e1;font-weight:700;">'+
+      rows += '<tr style="background:rgba(255,255,255,0.04);border-top:2px solid #cbd5e1;font-weight:700;">'+
         '<td><b>TOTAL</b></td>'+
         '<td style="text-align:right;color:var(--red);">'+totalTTC.toFixed(2)+' €</td>'+
         '<td style="text-align:right;">'+totalCB.toFixed(2)+' €</td>'+
@@ -8362,7 +8358,7 @@ function renderDashboard(){
   var nonConf = dossiers.filter(function(d){return d.statut==='NonConform';});
   if(qrAlerts){
     qrAlerts.innerHTML = nonConf.length > 0
-      ? '<div style="background:#fef2f2;border:1px solid var(--red);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--red);font-size:13px;">🔴 <b>'+nonConf.length+' dossier(s) QualiRépar</b> à corriger</div>'
+      ? '<div style="background:rgba(255,59,48,0.08);border:1px solid var(--red);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--red);font-size:13px;">🔴 <b>'+nonConf.length+' dossier(s) QualiRépar</b> à corriger</div>'
       : '';
   }
 
@@ -8559,7 +8555,7 @@ function showDraftFull(i){
   document.getElementById('ig-last-result').value=d.text;
   var safe=d.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   document.getElementById('ig-caption-result').innerHTML=
-    '<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:340px;overflow-y:auto;">'+safe+'</div>'+
+    '<div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:13px;line-height:1.7;max-height:340px;overflow-y:auto;">'+safe+'</div>'+
     '<div style="display:flex;gap:8px;margin-top:12px;"><button class="btn btn-primary btn-sm" onclick="copyIgCaption()">📋 Copier</button></div>';
 }
 
@@ -8700,7 +8696,7 @@ function renderIgIdeas(){
     available.slice(0,8).map(function(p){
       var marge=p.vente-p.achat;
       var enc=encodeURIComponent(p.modele);
-      return '<div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">'+
+      return '<div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">'+
         '<div style="display:flex;justify-content:space-between;align-items:start;">'+
         '<div><div style="font-weight:700;font-size:14px;">📱 '+p.modele+'</div>'+
         '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Grade '+(p.grade||'A')+' · '+(p.stockage||'?')+'Go · '+(p.batterie||'?')+'%</div></div>'+
@@ -9540,7 +9536,7 @@ function renderEcransTable(tbodyId, data, tableKey){
           '<div style="display:flex;align-items:center;justify-content:center;gap:4px;">'+
           '<input type="number" value="'+p+'" min="0" max="999" '+
             'onchange="updateEcranPrix(\''+tableKey+'\','+ri+','+ci+',this.value)" '+
-            'style="width:60px;padding:5px 6px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-weight:700;text-align:center;">'+
+            'style="width:60px;padding:5px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-weight:700;text-align:center;">'+
           '<span style="font-size:12px;color:var(--text-muted);">€</span>'+
           '<button onclick="toggleEcran(\''+tableKey+'\','+ri+','+ci+')" title="Mettre ✗" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:11px;padding:2px;">✗</button>'+
           '</div>'+
@@ -9775,7 +9771,7 @@ function renderBatteriesTable(tbodyId, data, tableKey){
         '<div style="display:flex;align-items:center;justify-content:center;gap:4px;">'+
         '<input type="number" value="'+p+'" min="0" max="999" '+
           'onchange="updateBatteriePrix(\''+tableKey+'\','+ri+','+ci+',this.value)" '+
-          'style="width:65px;padding:6px 6px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:'+(p>0?colColors[ci]:'var(--text-muted)')+';font-size:14px;font-weight:700;text-align:center;">'+
+          'style="width:65px;padding:6px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:'+(p>0?colColors[ci]:'var(--text-muted)')+';font-size:14px;font-weight:700;text-align:center;">'+
         '<span style="font-size:12px;color:var(--text-muted);">€</span>'+
         '</div></td>';
     }).join('');
@@ -9876,7 +9872,7 @@ function printBatteriesA4(){
     '<title>Prix Batteries iPhone — Solution Phone</title>'+
     '<style>'+
       '*{margin:0;padding:0;box-sizing:border-box;}'+
-      'body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;}'+
+      'body{font-family:Arial,sans-serif;background:rgba(255,255,255,0.04);color:#1a1a1a;}'+
       '.page{width:210mm;margin:0 auto;padding:7mm 10mm;}'+
       '.no-print{text-align:right;padding:8px;}'+
       '@media print{.no-print{display:none!important;}@page{size:A4 portrait;margin:0;}}'+
@@ -9890,7 +9886,7 @@ function printBatteriesA4(){
           (logo?'<img src="'+logo+'" style="height:48px;width:auto;">':'')+
           '<div>'+
             '<div style="font-size:18px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-            '<div style="font-size:10px;color:#555;">Réparation SMARTPHONE · TABLETTE · PC</div>'+
+            '<div style="font-size:10px;color:rgba(255,255,255,0.5);">Réparation SMARTPHONE · TABLETTE · PC</div>'+
           '</div>'+
         '</div>'+
         '<div style="text-align:right;">'+
@@ -10399,7 +10395,7 @@ function docsRenderChecklist(){
       '<input type="checkbox" ' + (checked?'checked':'') + ' onchange="docsToggle(\''+item.id+'\')" style="width:16px;height:16px;accent-color:var(--red);">'+
       '<span style="flex:1;font-size:13px;'+(checked?'text-decoration:line-through;color:var(--text-muted);':'')+'">'+item.label+'</span>'+
       '<span style="font-size:11px;color:'+(item.auto?'var(--green)':'var(--warning)')+';">'+(item.auto?'📧 Auto':'📥 Manuel')+'</span>'+
-      '<a href="'+driveLink+'" target="_blank" onclick="event.stopPropagation()" style="background:#f8fafc;border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-size:11px;text-decoration:none;flex-shrink:0;">📁</a>'+
+      '<a href="'+driveLink+'" target="_blank" onclick="event.stopPropagation()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-size:11px;text-decoration:none;flex-shrink:0;">📁</a>'+
     '</label>';
   });
 
@@ -11521,7 +11517,7 @@ function renderRepHistorique(){
       {l:'📄 Chèque',    v: totalCh.toFixed(2)+' €',  c:'#d97706'},
       {l:'🏷️ Bonus QR',  v: totalQR.toFixed(2)+' €',  c:'#16a34a'},
     ].map(function(s){
-      return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'+
+      return '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'+
         '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">'+s.l+'</div>'+
         '<div style="font-weight:800;font-size:15px;color:'+s.c+';">'+s.v+'</div>'+
       '</div>';
@@ -11644,8 +11640,8 @@ function renderRepTermines(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR '+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
-        : '<span style="background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
+        ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR '+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
+        : '<span style="background:rgba(255,59,48,0.08);color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
     }
 
     var id = String(d.id);
@@ -11660,7 +11656,7 @@ function renderRepTermines(){
       '<td style="padding:8px;text-align:center;">'+qrBadge+'</td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         (d.avis_demande
-          ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
+          ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
           : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&(d.client.tel||d.client.telephone)?(d.client.tel||d.client.telephone).replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" title="Ouvrir">📂</button>'+
@@ -11708,8 +11704,8 @@ function renderRepListe(){
     if(d.bonusQR){
       var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId || d.qrEnvoi.ecologicClaimId || d.qrEnvoi.ecosystemId || d.qrEnvoi.claimId);
       qrBadge = envoye
-        ? '<span style="background:#dcfce7;color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
-        : '<span style="background:#fef2f2;color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
+        ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u2705 QR</span>'
+        : '<span style="background:rgba(255,59,48,0.08);color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
     }
     var id = String(d.id);
     return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;">'+
@@ -12052,7 +12048,7 @@ async function repGenererFacture(){
 
   // Verrouiller bouton
   var btnF=document.getElementById('btn-generer-facture');
-  if(btnF){btnF.disabled=true;btnF.style.cssText='background:#94a3b8;border-color:#94a3b8;cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';}
+  if(btnF){btnF.disabled=true;btnF.style.cssText='background:#94a3b8;border-color:rgba(255,255,255,0.3);cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;';btnF.textContent='\u2705 Facture '+d.facture.numero+' d\u00e9j\u00e0 g\u00e9n\u00e9r\u00e9e';}
   // Afficher boutons envoi
   var divEc=document.getElementById('div-envoi-facture-cloture');
   if(divEc){divEc.style.display='flex';divEc.style.gap='8px';divEc.style.marginTop='10px';divEc.innerHTML='<button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">\uD83D\uDCE7 Email facture</button><button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">\uD83D\uDCF1 SMS facture</button>';}
@@ -12141,7 +12137,7 @@ function repImprimerFacture(d){
 
   var irisHtml = '';
   if(f.irisLines && f.irisLines.length > 0){
-    irisHtml = '<tr style="background:#f0f9ff;"><td colspan="6" style="padding:6px 10px;font-size:10px;color:#0369a1;">'+
+    irisHtml = '<tr style="background:#f0f9ff;"><td colspan="6" style="padding:6px 10px;font-size:10px;color:#60a5fa;">'+
       '<b>Codes IRIS (QualiRépar) :</b> ';
     irisHtml += (f.irisLines||[]).map(function(l,i){
       return 'L'+(i+1)+': Cond.'+l.condition+' / Sym.'+l.symptom+' / Sec.'+l.section+' / Réf.'+l.repairCode;
@@ -12216,7 +12212,7 @@ function repImprimerFacture(d){
         '</tr>'+
         (f.bonusQR?'<tr style="background:#f0fff4;">'+
           '<td><b>Bonus Réparation QualiRépar</b><br>'+
-            '<span style="font-size:10px;color:#166534;">Dispositif Loi AGEC - Remise Ecosystem/Ecologic</span></td>'+
+            '<span style="font-size:10px;color:#34d399;">Dispositif Loi AGEC - Remise Ecosystem/Ecologic</span></td>'+
           '<td style="text-align:right;">0,00 €</td>'+
           '<td style="text-align:center;">1</td>'+
           '<td style="text-align:right;">0,00 €</td>'+
@@ -12233,7 +12229,7 @@ function repImprimerFacture(d){
       '</tfoot>'+
     '</table>'+
     // MENTIONS
-    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#166534;line-height:1.6;margin-bottom:10px;">'+
+    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
       '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale).<br>'+
       (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -25€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.':'')+'</div>'+
     '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'+
@@ -12247,9 +12243,9 @@ function repImprimerFacture(d){
         'SOLUTION PHONE · RCS Mâcon B 801 044 785 · contact@solution-phone.fr · www.solution-phone.fr'+
       '</div>'+
       // Mention NF525 obligatoire
-      '<div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;">'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f8fafc;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:6px 12px;">'+
         '<div style="background:#1e40af;color:#fff;font-size:8px;font-weight:900;padding:3px 6px;border-radius:3px;letter-spacing:1px;">NF525</div>'+
-        '<div style="font-size:8px;color:#555;line-height:1.4;">'+
+        '<div style="font-size:8px;color:rgba(255,255,255,0.5);line-height:1.4;">'+
           'Logiciel de caisse certifié NF525 · Conforme loi anti-fraude TVA (Art. 88 LF 2016 — Art. 286 CGI)<br>'+
           'Données inaltérables, sécurisées, conservées et archivées · Certification AFNOR/Infocert via Kiwiz'+
           (d.facture && d.facture.kiwizRef ? ' · Réf. certification : <b>'+d.facture.kiwizRef+'</b>' : '')+
@@ -12594,8 +12590,8 @@ function repUpdateStep5(){
       +chk(sigOk,   'Signature client + facture')
       +chk(credOk,  'Identifiants '+organisme+' configurés')
       +(allOk
-        ? '<div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;border:1px solid #22c55e;font-size:13px;font-weight:700;color:#166534;">✅ Dossier complet — prêt à envoyer</div>'
-        : '<div style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:8px;border:1px solid #fca5a5;font-size:13px;font-weight:700;color:#dc2626;">❌ Compléter les points manquants avant envoi</div>'
+        ? '<div style="margin-top:10px;padding:8px 12px;background:rgba(52,211,153,0.06);border-radius:8px;border:1px solid #22c55e;font-size:13px;font-weight:700;color:#34d399;">✅ Dossier complet — prêt à envoyer</div>'
+        : '<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,0.08);border-radius:8px;border:1px solid #fca5a5;font-size:13px;font-weight:700;color:#dc2626;">❌ Compléter les points manquants avant envoi</div>'
       );
     
     // Désactiver le bouton si pas prêt
@@ -13016,7 +13012,7 @@ function repSelectClient(id){
   if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
 
   var box = document.getElementById('rep-client-results');
-  var html2 = '<div style="background:#f0fdf4;padding:10px 12px;border-radius:8px;font-size:13px;color:var(--green);margin-bottom:8px;">✅ '+(c.prenom?c.prenom+' ':'')+c.nom+' chargé</div>';
+  var html2 = '<div style="background:rgba(52,211,153,0.06);padding:10px 12px;border-radius:8px;font-size:13px;color:var(--green);margin-bottom:8px;">✅ '+(c.prenom?c.prenom+' ':'')+c.nom+' chargé</div>';
   if(hist.length > 0){
     html2 += '<div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">🔧 '+hist.length+' réparation(s) précédente(s) :</div>';
     html2 += '<div style="max-height:180px;overflow-y:auto;">';
@@ -13153,9 +13149,9 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
 
   if(erreur.type === 'imei_double'){
     statut.innerHTML =
-      '<div style="background:#fff8e1;border:1.5px solid #f59e0b;padding:14px;border-radius:10px;">' +
-      '<div style="font-weight:700;color:#92400e;margin-bottom:6px;">⚠️ IMEI déjà utilisé</div>' +
-      '<div style="font-size:13px;color:#92400e;">'+erreur.detail+'</div>' +
+      '<div style="background:rgba(255,149,0,0.08);border:1.5px solid rgba(255,149,0,0.3);padding:14px;border-radius:10px;">' +
+      '<div style="font-weight:700;color:#ff9500;margin-bottom:6px;">⚠️ IMEI déjà utilisé</div>' +
+      '<div style="font-size:13px;color:#ff9500;">'+erreur.detail+'</div>' +
       '<div style="margin-top:8px;font-size:12px;color:#78350f;">Ce téléphone ne peut pas bénéficier du bonus QualiRépar avant 6 mois.</div>' +
       '</div>';
     return;
@@ -13184,9 +13180,9 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
   }
 
   statut.innerHTML =
-    '<div style="background:#fef2f2;border:1.5px solid #fca5a5;padding:14px;border-radius:10px;">' +
+    '<div style="background:rgba(255,59,48,0.08);border:1.5px solid #fca5a5;padding:14px;border-radius:10px;">' +
     '<div style="font-weight:700;color:#dc2626;margin-bottom:6px;">❌ Erreur '+organisme+'</div>' +
-    '<div style="font-size:13px;color:#991b1b;word-break:break-word;">'+erreur.detail+'</div>' +
+    '<div style="font-size:13px;color:#ff6b63;word-break:break-word;">'+erreur.detail+'</div>' +
     champsHtml +
     '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #fca5a5;display:flex;gap:8px;flex-wrap:wrap;">' +
     '<button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="background:#dc2626;border-color:#dc2626;font-size:13px;">🔄 Renvoyer après correction</button>'
@@ -13312,10 +13308,10 @@ async function qrEnvoyerEcologicComplet(d){
     var msg="&#9989; Ecologic OK! ClaimId: "+claimId;
     if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer: "+errs.join(", ")+"</small>";
     msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
-    if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
+    if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("&#9989; ClaimId: "+claimId,"success");
   }catch(e){
-    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
     showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
   }
 }
@@ -13341,10 +13337,10 @@ async function qrEnvoyerEcosystemComplet(d){
     if(typeof renderRepTermines==="function")renderRepTermines();
     var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
     msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
-    if(el)el.innerHTML="<div style='background:#f0fdf4;padding:12px;border-radius:8px;'>"+msg+"</div>";
+    if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("&#9989; Ecosystem OK!","success");
   }catch(e){
-    if(el)el.innerHTML="<div style='background:#fef2f2;padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
+    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
   }
 }
@@ -13572,7 +13568,7 @@ function repCheckIMEI(imei){
       'Cet IMEI a bénéficié d\'un bonus de −25€ le <b>' + fmtDate(r.date) + '</b> (facture '+r.numero+').<br>' +
       '<b>Délai minimum : 6 mois entre deux bonus.</b><br>' +
       'Prochaine date éligible : <b>' + fmtDateEligible(r.date) + '</b><br>' +
-      '<span style="font-size:11px;color:#991b1b;">Ne pas appliquer le bonus QualiRépar sur cette réparation.</span>';
+      '<span style="font-size:11px;color:#ff6b63;">Ne pas appliquer le bonus QualiRépar sur cette réparation.</span>';
     // Décocher et désactiver le bonus QR
     var cbQR = document.getElementById('rep-qr-actif');
     if(cbQR){ cbQR.checked = false; cbQR.disabled = true; repToggleQR(); }
@@ -14410,8 +14406,8 @@ function repUpdateChecklist(){
         (i.val?' <span style="color:var(--text-muted);font-weight:400;">('+i.val+')</span>':'')+'</span>'+
     '</div>';
   }).join('') +
-  (allOk ? '<div style="margin-top:10px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:var(--green);font-weight:700;">✅ Dossier complet — Prêt pour l\'envoi AgoraPlus</div>'
-          : '<div style="margin-top:10px;padding:8px 12px;background:#fef2f2;border-radius:8px;font-size:12px;color:var(--red);font-weight:700;">⚠️ Complétez les champs manquants avant d\'envoyer</div>');
+  (allOk ? '<div style="margin-top:10px;padding:8px 12px;background:rgba(52,211,153,0.06);border-radius:8px;font-size:12px;color:var(--green);font-weight:700;">✅ Dossier complet — Prêt pour l\'envoi AgoraPlus</div>'
+          : '<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,0.08);border-radius:8px;font-size:12px;color:var(--red);font-weight:700;">⚠️ Complétez les champs manquants avant d\'envoyer</div>');
 }
 
 function repToggleIRISEdit(){
@@ -14915,10 +14911,10 @@ function printTicketCommande(c){
     document.body.appendChild(modal);
   }
   modal.innerHTML =
-    '<div style="background:#fff;border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
+    '<div style="background:rgba(255,255,255,0.04);border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
       '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson</button>' +
       '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
-      '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
+      '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
     '<div style="display:flex;justify-content:center;padding:16px;">' +
       '<div class="ticket-box" style="background:#fff!important;color:#000!important;border-radius:8px;padding:16px;width:100%;max-width:380px;font-family:Courier New,monospace;font-size:13px;color-scheme:light;">' + ticketBody + '</div>' +
@@ -15226,7 +15222,7 @@ function renderBonsCommande(){
           '<span style="font-size:12px;font-weight:800;color:#ff3b30;">'+c.numero+'</span>'+
           statutSelect+
         '</div>'+
-        '<div style="font-size:14px;font-weight:700;color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">'+c.client.nom+' · '+c.client.tel+'</div>'+
+        '<div style="font-size:14px;font-weight:700;color:#e8eaf6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">'+c.client.nom+' · '+c.client.tel+'</div>'+
         '<div style="font-size:12px;color:#6e6e73;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.detail+'</div>'+
         (needsRelance(c) ? '<div style="margin-top:3px;"><span style="background:#ff9500;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;animation:pulse 2s infinite;">⏰ Relance — arrive depuis '+joursDepuis(c.dateArrivee)+' jours</span></div>' : '')+
       '</div>'+
@@ -15749,7 +15745,7 @@ function printBonDepot(d){
 
   var html2 = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
     '<title>DEVIS '+d.numero+' — Solution Phone</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;font-size:12px;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;}}@page{size:A4;margin:0;}table{border-collapse:collapse;width:100%;}th,td{padding:6px 10px;}'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;background:rgba(255,255,255,0.04);color:#1a1a1a;font-size:12px;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}@media print{.no-print{display:none!important;}.page{padding:6mm 8mm;}}@page{size:A4;margin:0;}table{border-collapse:collapse;width:100%;}th,td{padding:6px 10px;}'+
     '</style></head><body>'+
 
     '<div class="no-print" style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#f8f8f8;border-bottom:1px solid #eee;">'+
@@ -15835,7 +15831,7 @@ function printBonDepot(d){
             '<td style="text-align:right;font-weight:700;">'+(pieHT*1.2).toFixed(2)+' €</td>'+
           '</tr>'+
           // Ligne Bonus QR (conditionnelle)
-          (bonusQRActif ? '<tr style="background:#f0fff4;"><td><b>Bonus Réparation QualiRépar</b><br><span style="font-size:10px;color:#166534;">Remise Ecosystem / Ecologic — dispositif Loi AGEC</span></td>'+
+          (bonusQRActif ? '<tr style="background:#f0fff4;"><td><b>Bonus Réparation QualiRépar</b><br><span style="font-size:10px;color:#34d399;">Remise Ecosystem / Ecologic — dispositif Loi AGEC</span></td>'+
             '<td style="text-align:right;">0,00 €</td>'+
             '<td style="text-align:center;">1</td>'+
             '<td style="text-align:right;">0,00 €</td>'+
@@ -15866,7 +15862,7 @@ function printBonDepot(d){
     '</div>'+
 
     // MENTIONS LÉGALES + SIGNATURE
-    '<div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:10px;color:#92400e;line-height:1.6;">'+
+    '<div style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:10px;color:#ff9500;line-height:1.6;">'+
       '<b>Attestation hors garantie :</b> Le client certifie que l\'appareil est hors garantie fabricant et commerciale. '+
       'Garantie réparation : 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale). '+
       'Le Bonus Réparation (-25€) est accordé dans le cadre du dispositif QualiRépar (loi AGEC).'+
@@ -16122,7 +16118,7 @@ function printMoisVentes(mois){
       '<td style="padding:8px 10px;font-size:12px;font-weight:700;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td>'+
       '<td style="padding:8px 10px;font-size:11px;text-align:center;">'+(p.grade||'—')+'</td>'+
       '<td style="padding:8px 10px;font-size:10px;color:#888;font-family:monospace;">'+(p.imei||'—')+'</td>'+
-      '<td style="padding:8px 10px;font-size:11px;color:#555;">'+(p.fournisseur?p.fournisseur:'Particulier')+'</td>'+
+      '<td style="padding:8px 10px;font-size:11px;color:rgba(255,255,255,0.5);">'+(p.fournisseur?p.fournisseur:'Particulier')+'</td>'+
       '<td style="padding:8px 10px;text-align:right;font-size:12px;">'+p.achat.toFixed(2)+'€</td>'+
       '<td style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;">'+p.vente.toFixed(2)+'€</td>'+
       '<td style="padding:8px 10px;text-align:right;font-size:12px;color:#27ae60;font-weight:700;">'+marge.toFixed(2)+'€</td>'+
@@ -16132,7 +16128,7 @@ function printMoisVentes(mois){
   }).join('');
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Ventes '+moisLabel+'</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#fff;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}@page{size:A4 landscape;margin:0;}}</style>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:rgba(255,255,255,0.04);}.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;}@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;}@page{size:A4 landscape;margin:0;}}</style>'+
     '</head><body>'+
     '<div class="no-print" style="text-align:right;padding:10px;"><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
     '<div class="page">'+
@@ -16456,8 +16452,8 @@ function rlRenderPrizes() {
     var pct = total > 0 ? ((p.weight / total) * 100).toFixed(0) : 0;
     var tr = document.createElement('tr');
     tr.innerHTML =
-      '<td><input value="'+p.emoji+'" style="width:52px;text-align:center;font-size:20px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);" onchange="rlPrizes['+i+'].emoji=this.value"></td>'+
-      '<td><input value="'+p.label.replace(/"/g,'&quot;')+'" style="width:100%;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;" onchange="rlPrizes['+i+'].label=this.value"></td>'+
+      '<td><input value="'+p.emoji+'" style="width:52px;text-align:center;font-size:20px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;padding:4px;color:var(--text);" onchange="rlPrizes['+i+'].emoji=this.value"></td>'+
+      '<td><input value="'+p.label.replace(/"/g,'&quot;')+'" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;" onchange="rlPrizes['+i+'].label=this.value"></td>'+
       '<td><input type="color" value="'+p.color+'" style="width:44px;height:32px;border:none;border-radius:6px;cursor:pointer;background:none;" onchange="rlPrizes['+i+'].color=this.value"></td>'+
       '<td><div style="display:flex;align-items:center;gap:8px;"><input type="range" min="1" max="50" value="'+p.weight+'" style="width:90px;" oninput="rlPrizes['+i+'].weight=+this.value;rlRenderPrizes()"><span style="font-size:13px;color:var(--text-muted);min-width:40px;">'+pct+'%</span></div></td>'+
       '<td><button class="btn btn-sm" style="color:var(--red);border-color:rgba(229,62,62,0.3);" onclick="rlRemovePrize('+i+')">✕</button></td>';
@@ -17432,8 +17428,8 @@ function showQrModeSelector() {
   btnClient.innerHTML = '<span style="font-size:36px;">&#x1F464;</span><span>Mode Client</span><span style="font-size:11px;font-weight:400;opacity:.8;">Le client saisit lui-même</span>';
   btnClient.onclick = function(){ qrOpenClientMode(); };
   var btnTech = document.createElement('button');
-  btnTech.style.cssText = 'padding:18px 12px;background:#f8fafc;color:#374151;border:2px solid #e2e8f0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
-  btnTech.innerHTML = '<span style="font-size:36px;">&#x1F527;</span><span>Mode Technicien</span><span style="font-size:11px;font-weight:400;color:#94a3b8;">Saisie directe</span>';
+  btnTech.style.cssText = 'padding:18px 12px;background:#f8fafc;color:rgba(255,255,255,0.7);border:2px solid rgba(255,255,255,0.08);border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;';
+  btnTech.innerHTML = '<span style="font-size:36px;">&#x1F527;</span><span>Mode Technicien</span><span style="font-size:11px;font-weight:400;color:rgba(255,255,255,0.3);">Saisie directe</span>';
   btnTech.onclick = function(){ div.remove(); };
   var grid = document.createElement('div');
   grid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
@@ -17487,10 +17483,10 @@ function renderSuiviQR(){
     var rejected = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Rejected'; }).length;
     stats.innerHTML =
       '<div class="card" style="text-align:center;padding:12px 8px;"><div style="font-size:11px;color:var(--text-muted);">Total</div><div style="font-size:22px;font-weight:800;">'+dossiers.length+'</div><div style="font-size:11px;color:var(--text-muted);">'+(dossiers.length*25)+' € attendus</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:#fef3c7;border-color:#f59e0b;"><div style="font-size:11px;color:#92400e;">En vérification</div><div style="font-size:22px;font-weight:800;color:#92400e;">'+sent+'</div><div style="font-size:11px;color:#92400e;">'+(sent*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:#f0fdf4;border-color:#22c55e;"><div style="font-size:11px;color:#166534;">Approuvés</div><div style="font-size:22px;font-weight:800;color:#166534;">'+approved+'</div><div style="font-size:11px;color:#166534;">'+(approved*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:#eff6ff;border-color:#3b82f6;"><div style="font-size:11px;color:#1d4ed8;">Remboursés</div><div style="font-size:22px;font-weight:800;color:#1d4ed8;">'+paid+'</div><div style="font-size:11px;color:#1d4ed8;">'+(paid*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:#fef2f2;border-color:#fca5a5;"><div style="font-size:11px;color:#dc2626;">Refusés</div><div style="font-size:22px;font-weight:800;color:#dc2626;">'+rejected+'</div><div style="font-size:11px;color:#dc2626;">'+(rejected*25)+' €</div></div>';
+      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(255,149,0,0.08);border-color:#f59e0b;"><div style="font-size:11px;color:#ff9500;">En vérification</div><div style="font-size:22px;font-weight:800;color:#ff9500;">'+sent+'</div><div style="font-size:11px;color:#ff9500;">'+(sent*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(52,211,153,0.06);border-color:#22c55e;"><div style="font-size:11px;color:#34d399;">Approuvés</div><div style="font-size:22px;font-weight:800;color:#34d399;">'+approved+'</div><div style="font-size:11px;color:#34d399;">'+(approved*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(96,165,250,0.06);border-color:#3b82f6;"><div style="font-size:11px;color:#60a5fa;">Remboursés</div><div style="font-size:22px;font-weight:800;color:#60a5fa;">'+paid+'</div><div style="font-size:11px;color:#60a5fa;">'+(paid*25)+' €</div></div>'+
+      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(255,59,48,0.08);border-color:#fca5a5;"><div style="font-size:11px;color:#dc2626;">Refusés</div><div style="font-size:22px;font-weight:800;color:#dc2626;">'+rejected+'</div><div style="font-size:11px;color:#dc2626;">'+(rejected*25)+' €</div></div>';
   }
 
   function buildRows(list, idCol){
@@ -18014,7 +18010,7 @@ function showCalToast(title,body){
     <div style="overflow-x:auto;">
       <table style="width:100%;font-size:13px;">
         <thead>
-          <tr style="background:#f0fdf4;">
+          <tr style="background:rgba(52,211,153,0.06);">
             <th style="padding:8px 10px;text-align:left;">Dossier</th>
             <th style="padding:8px 10px;text-align:left;">Client</th>
             <th style="padding:8px 10px;text-align:left;">Appareil</th>
@@ -18040,7 +18036,7 @@ function showCalToast(title,body){
     <div style="overflow-x:auto;">
       <table style="width:100%;font-size:13px;">
         <thead>
-          <tr style="background:#eff6ff;">
+          <tr style="background:rgba(96,165,250,0.06);">
             <th style="padding:8px 10px;text-align:left;">Dossier</th>
             <th style="padding:8px 10px;text-align:left;">Client</th>
             <th style="padding:8px 10px;text-align:left;">Appareil</th>
@@ -18282,7 +18278,7 @@ function showCalToast(title,body){
 .sp-sc{background:#111;border:1px solid #1a1a1a;border-radius:8px;padding:10px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;}
 .sp-sc:hover{background:#141414;border-color:#222;}
 .sp-sc-ico{font-size:15px;}
-.sp-sc-lbl{font-size:12px;font-weight:600;color:#555;letter-spacing:0.3px;}
+.sp-sc-lbl{font-size:12px;font-weight:600;color:rgba(255,255,255,0.5);letter-spacing:0.3px;}
 #sp-bottom{padding:10px 16px 14px;border-top:1px solid #141414;display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
 .sp-leg{text-align:center;}
 .sp-leg-b{font-size:8px;color:#2a2a2a;letter-spacing:1px;}
