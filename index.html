@@ -1870,24 +1870,40 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div id="params-shopify-status" style="font-size:12px;color:var(--text-muted);">⚠️ Non configurée</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="form-group">
-            <label>URL de la boutique</label>
-            <input type="text" id="params-shopify-store" placeholder="ma-boutique.myshopify.com">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Sans https:// — juste le domaine .myshopify.com</div>
+
+          <!-- Bloc connexion OAuth -->
+          <div id="shopify-connect-block">
+            <div class="form-group">
+              <label>URL de la boutique</label>
+              <input type="text" id="params-shopify-store" placeholder="ma-boutique.myshopify.com">
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Sans https:// — juste le domaine .myshopify.com</div>
+            </div>
+            <button class="btn btn-primary" style="background:#96bf48;border-color:#96bf48;width:100%;margin-top:10px;font-size:15px;padding:12px;" onclick="shopifyOAuthInstall()">
+              🔗 Connecter ma boutique Shopify
+            </button>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center;">
+              Vous serez redirigé vers Shopify pour autoriser l'accès. Le token sera récupéré automatiquement.
+            </div>
           </div>
-          <div class="form-group">
-            <label>Token Admin API</label>
-            <input type="password" id="params-shopify-token" placeholder="shpat_…">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Paramètres → Apps → Développer des apps → Token Admin API</div>
+
+          <!-- Bloc déjà connecté (caché par défaut) -->
+          <div id="shopify-connected-block" style="display:none;">
+            <div style="background:rgba(150,191,72,0.1);border:1px solid #96bf48;border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:28px;margin-bottom:6px;">✅</div>
+              <div style="font-weight:600;color:#96bf48;">Boutique connectée</div>
+              <div id="shopify-connected-store" style="font-size:13px;color:var(--text-muted);margin-top:4px;"></div>
+            </div>
+            <button class="btn" style="width:100%;margin-top:10px;color:#f85149;border-color:#f85149;" onclick="shopifyDisconnect()">🔌 Déconnecter</button>
           </div>
+
+          <!-- Options (toujours visible) -->
           <div class="form-group">
             <label>Sync automatique</label>
-            <select id="params-shopify-autosync">
+            <select id="params-shopify-autosync" onchange="paramsSaveShopifyAutosync()">
               <option value="1">Oui — publier auto sur Shopify à l'ajout d'un téléphone</option>
               <option value="0">Non — publier manuellement avec le bouton</option>
             </select>
           </div>
-          <button class="btn btn-primary" style="background:#96bf48;border-color:#96bf48;width:100%;" onclick="paramsSaveShopify()">💾 Enregistrer</button>
           <button class="btn" style="width:100%;" onclick="paramsTestShopify()">🧪 Tester la connexion Shopify</button>
         </div>
       </div>
@@ -10857,10 +10873,8 @@ function paramsLoad(){
 
   // Shopify
   el=document.getElementById('params-shopify-store');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
-  el=document.getElementById('params-shopify-token');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
   el=document.getElementById('params-shopify-autosync'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyAutosync)||'1';
-  var stSh=document.getElementById('params-shopify-status');
-  if(stSh) stSh.innerHTML=localStorage.getItem(PARAMS_KEYS.shopifyToken) ? '<span style="color:var(--green);">✅ Connectée</span>' : '<span style="color:var(--text-muted);">⚠️ Non configurée</span>';
+  if(typeof shopifyUpdateUI === 'function') shopifyUpdateUI();
 
   paramsUpdateStatus();
 }
@@ -15211,22 +15225,70 @@ async function paramsTestClaude() {
 // ══  SHOPIFY — Intégration boutique en ligne  ══════════════
 // ══════════════════════════════════════════════════════════════
 
+// ── Lancer l'OAuth Shopify ──
+function shopifyOAuthInstall(){
+  var store = (document.getElementById('params-shopify-store')||{value:''}).value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+  if(!store || store.indexOf('.myshopify.com')===-1){
+    showNotif('Entrez l\'URL de votre boutique (ex: ma-boutique.myshopify.com)','error');
+    return;
+  }
+  // Sauvegarder le store avant la redirection
+  localStorage.setItem(PARAMS_KEYS.shopifyStore, store);
+  if(typeof supaSettingSave === 'function') supaSettingSave('shopify_store', store);
+  // Rediriger vers OAuth
+  window.location.href = '/api/shopify-auth?shop=' + encodeURIComponent(store);
+}
+
+// ── Déconnecter Shopify ──
+function shopifyDisconnect(){
+  if(!confirm('Déconnecter votre boutique Shopify ?')) return;
+  localStorage.removeItem(PARAMS_KEYS.shopifyStore);
+  localStorage.removeItem(PARAMS_KEYS.shopifyToken);
+  if(typeof supaSettingSave === 'function'){
+    supaSettingSave('shopify_store', '');
+    supaSettingSave('shopify_token', '');
+  }
+  shopifyUpdateUI();
+  showNotif('Shopify déconnecté','success');
+}
+
+// ── Sauvegarder l'option autosync ──
+function paramsSaveShopifyAutosync(){
+  var auto = (document.getElementById('params-shopify-autosync')||{value:'1'}).value;
+  localStorage.setItem(PARAMS_KEYS.shopifyAutosync, auto);
+  if(typeof supaSettingSave === 'function') supaSettingSave('shopify_autosync', auto);
+  showNotif(auto==='1' ? '✅ Sync auto activé' : 'Sync auto désactivé','success');
+}
+
+// ── Mettre à jour l'UI Shopify (connecté/déconnecté) ──
+function shopifyUpdateUI(){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  var connected = store && token;
+  var connectBlock = document.getElementById('shopify-connect-block');
+  var connectedBlock = document.getElementById('shopify-connected-block');
+  var connectedStore = document.getElementById('shopify-connected-store');
+  var statusEl = document.getElementById('params-shopify-status');
+  if(connectBlock) connectBlock.style.display = connected ? 'none' : 'block';
+  if(connectedBlock) connectedBlock.style.display = connected ? 'block' : 'none';
+  if(connectedStore) connectedStore.textContent = store;
+  if(statusEl) statusEl.innerHTML = connected
+    ? '<span style="color:var(--green);">✅ Connectée</span>'
+    : '<span style="color:var(--text-muted);">⚠️ Non configurée</span>';
+  // Bouton bulk Shopify
+  var bulkBtn=document.getElementById('btn-shopify-bulk');
+  if(bulkBtn) bulkBtn.style.display = connected ? 'inline-flex' : 'none';
+}
+
+// Ancien paramsSaveShopify (compatibilité si token manuel)
 function paramsSaveShopify(){
   var store = (document.getElementById('params-shopify-store')||{value:''}).value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
-  var token = (document.getElementById('params-shopify-token')||{value:''}).value.trim();
-  var auto  = (document.getElementById('params-shopify-autosync')||{value:'1'}).value;
-  if(!store||!token){ showNotif('Remplissez l\'URL et le token Shopify','error'); return; }
-  localStorage.setItem(PARAMS_KEYS.shopifyStore, store);
-  localStorage.setItem(PARAMS_KEYS.shopifyToken, token);
-  localStorage.setItem(PARAMS_KEYS.shopifyAutosync, auto);
-  if(typeof supaSettingSave === 'function'){
-    supaSettingSave('shopify_store', store);
-    supaSettingSave('shopify_token', token);
-    supaSettingSave('shopify_autosync', auto);
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(store){
+    localStorage.setItem(PARAMS_KEYS.shopifyStore, store);
+    if(typeof supaSettingSave === 'function') supaSettingSave('shopify_store', store);
   }
-  showNotif('✅ Shopify configuré !','success');
-  var st=document.getElementById('params-shopify-status');
-  if(st) st.innerHTML='<span style="color:var(--green);">✅ Connectée</span>';
+  shopifyUpdateUI();
 }
 
 async function paramsTestShopify(){
