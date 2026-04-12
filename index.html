@@ -11,8 +11,19 @@
 <meta name="theme-color" content="#0a0a1a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<link rel="stylesheet" href="./css/style.css">
-<link rel="stylesheet" href="./css/sp-futur-theme.css">
+<link rel="stylesheet" href="./css/style.css?v=20260412">
+<link rel="stylesheet" href="./css/sp-futur-theme.css?v=20260412">
+<script>
+// Force kill ALL service workers and caches on load
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(r){r.unregister();console.log('[SW] Unregistered',r);});
+  });
+  caches.keys().then(function(names){
+    names.forEach(function(n){caches.delete(n);console.log('[CACHE] Deleted',n);});
+  });
+}
+</script>
 <script src="pave.js"></script>
 <script>
 // ── Tampon + Signature Solution Phone ───────────────────────
