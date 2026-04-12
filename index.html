@@ -15351,45 +15351,54 @@ async function shopifyAPI(method, endpoint, body){
   return res.json();
 }
 
-// ── Déterminer le type de produit et les infos Shopify ──
+// ── Déterminer le type de produit, tags, template (selon doc Shopify) ──
 function shopifyProductType(phone){
   var modele = (phone.modele||'').toLowerCase();
   var grade = (phone.grade||'').toUpperCase();
   var isReconditione = grade && grade !== 'NEUF' && grade !== '';
+
+  // Détection marque
   var marque = 'autre';
   if(modele.indexOf('iphone')!==-1 || modele.indexOf('apple')!==-1) marque='iphone';
   else if(modele.indexOf('samsung')!==-1 || modele.indexOf('galaxy')!==-1) marque='samsung';
   else if(modele.indexOf('xiaomi')!==-1 || modele.indexOf('redmi')!==-1 || modele.indexOf('poco')!==-1) marque='xiaomi';
   else if(modele.indexOf('motorola')!==-1 || modele.indexOf('moto ')!==-1) marque='motorola';
 
+  // Tags selon matrice de décision (section 2.3 du doc)
   var tags = [];
   var templateSuffix = '';
   var typeLabel = '';
 
   if(isReconditione){
-    tags.push(marque+'-reconditione','telephone-reconditione');
+    // Tag marque + tag parent
+    tags.push(marque+'-reconditione', 'telephone-reconditione');
     templateSuffix = 'smartphones-reconditione';
     typeLabel = 'Smartphone reconditionné';
   } else {
-    tags.push(marque+'-neuf','telephone-neuf');
+    tags.push(marque+'-neuf', 'telephone-neuf');
     templateSuffix = 'smartphone-neuf';
     typeLabel = 'Smartphone neuf';
   }
   return { marque:marque, tags:tags, templateSuffix:templateSuffix, typeLabel:typeLabel, isReconditione:isReconditione };
 }
 
-// ── Générer le titre Shopify ──
+// ── Générer le titre Shopify (section 3.1 du doc) ──
+// Reconditionné : [Marque] [Modèle] - [Stockage] - [Couleur] - [Grade] - Reconditionné
+// Neuf : [Marque] [Modèle] - [Stockage] - [Couleur]
 function shopifyTitle(phone){
   var info = shopifyProductType(phone);
   var parts = [(phone.modele||'Téléphone')];
   if(phone.stockage) parts.push(phone.stockage+'Go');
   if(phone.couleur) parts.push(phone.couleur);
-  if(info.isReconditione && phone.grade) parts.push('Grade '+phone.grade);
-  if(info.isReconditione) parts.push('Reconditionné');
+  if(info.isReconditione){
+    if(phone.grade) parts.push('Grade '+phone.grade);
+    parts.push('Reconditionné');
+  }
   return parts.join(' - ');
 }
 
-// ── Générer le handle URL ──
+// ── Générer le handle URL (section 3.2 / 7.3 du doc) ──
+// Format : [marque]-[modele]-[stockage]-[couleur]-[grade]-reconditionne
 function shopifyHandle(phone){
   var title = shopifyTitle(phone);
   return title.toLowerCase()
@@ -15397,7 +15406,7 @@ function shopifyHandle(phone){
     .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
 }
 
-// ── Générer la description HTML ──
+// ── Générer la description HTML (section 5 du doc) ──
 function shopifyDescription(phone){
   var info = shopifyProductType(phone);
   var modele = phone.modele||'Téléphone';
@@ -15405,6 +15414,7 @@ function shopifyDescription(phone){
   var couleur = phone.couleur||'';
   var stockage = phone.stockage ? phone.stockage+'Go' : '';
 
+  // Paragraphe d'accroche personnalisé
   var accroche = '';
   if(info.isReconditione){
     accroche = '<p><strong>'+modele+' reconditionné Grade '+grade+' — Vérifié et garanti par Solution Phone.</strong></p>'+
@@ -15415,39 +15425,45 @@ function shopifyDescription(phone){
       '<p>Smartphone neuf, sous garantie constructeur. Disponible immédiatement en boutique au 21 Rue Gambetta, 71000 Mâcon.</p>';
   }
 
+  // Tableau de spécifications techniques (template HTML du doc section 5.2)
   var specs = '<section style="max-width:640px;margin:40px 0;font-family:sans-serif;font-size:14px;">'+
     '<h2 style="font-size:16px;font-weight:bold;margin-bottom:12px;">Spécificités Techniques</h2>'+
-    '<table style="width:100%;border-collapse:collapse;">';
+    '<table style="width:100%;border-collapse:collapse;"><tbody>';
 
   function row(label,val){
+    if(!val) return '';
     return '<tr><td style="font-weight:bold;padding:8px 12px;background:#f5f5f5;border:1px solid #e0e0e0;width:160px;">'+label+'</td>'+
       '<td style="padding:8px 12px;border:1px solid #e0e0e0;">'+val+'</td></tr>';
   }
-  if(couleur) specs += row('Couleur', couleur);
-  if(grade && info.isReconditione) specs += row('Grade', grade);
-  if(stockage) specs += row('Stockage', stockage);
-  if(phone.batterie) specs += row('Batterie', phone.batterie+'%'+(info.isReconditione?' — vérifiée par nos techniciens':''));
+
+  specs += row('Couleur', couleur);
+  if(info.isReconditione) specs += row('Grade', grade);
+  specs += row('Stockage', stockage);
+  if(phone.batterie) specs += row('Autonomie', 'Batterie '+(phone.batterie||'')+'%'+(info.isReconditione?' — vérifiée par nos techniciens':''));
+  specs += row('Protection', 'N/A');
   specs += row('État', info.isReconditione ? 'Reconditionné — Garanti 12 mois' : 'Neuf — Garantie constructeur');
   specs += row('Disponibilité', 'Retrait en boutique — 21 Rue Gambetta, 71000 Mâcon');
-  specs += '</table></section>';
 
+  specs += '</tbody></table></section>';
   return accroche + specs;
 }
 
-// ── Générer les métadonnées SEO ──
+// ── Générer les métadonnées SEO (section 7 du doc) ──
+// Titre : [Marque] [Modèle] [État] Mâcon - [Argument clé] | Solution Accessoires
+// Desc : max 155 chars, modèle + état + garantie + localité + appel à l'action
 function shopifySEO(phone){
   var info = shopifyProductType(phone);
   var modele = phone.modele||'Téléphone';
   var etat = info.isReconditione ? 'Reconditionné' : 'Neuf';
-  var seoTitle = modele+' '+etat+' Mâcon'+(info.isReconditione?' - Garanti 12 mois':' - Prix Expert')+' | Solution Accessoires';
+  var seoTitle = modele+' '+etat+' Mâcon - '+(info.isReconditione?'Garanti 12 mois':'Prix Expert')+' | Solution Accessoires';
   var seoDesc = modele+' '+etat.toLowerCase()+(info.isReconditione?' Grade '+(phone.grade||'A'):'')+
-    ' à Mâcon.'+(info.isReconditione?' Testé par nos techniciens, garanti 12 mois.':' Neuf sous garantie.')+
+    ' à Mâcon. '+(info.isReconditione?'Testé par nos techniciens, garanti 12 mois.':'Neuf sous garantie.')+
     ' Retrait en boutique au 21 Rue Gambetta.';
   if(seoDesc.length > 155) seoDesc = seoDesc.substring(0,152)+'...';
   return { title: seoTitle, description: seoDesc };
 }
 
-// ══ PUBLIER UN TÉLÉPHONE SUR SHOPIFY ══
+// ══ PUBLIER UN TÉLÉPHONE SUR SHOPIFY (section 6 + 8 du doc) ══
 async function shopifyPublishPhone(phoneId){
   var phone = (phones||[]).find(function(p){ return p.id === phoneId; });
   if(!phone){ showNotif('Téléphone introuvable','error'); return; }
@@ -15475,6 +15491,7 @@ async function shopifyPublishPhone(phoneId){
       }
     } catch(e){}
 
+    // Structure produit conforme au doc (section 6 + 8)
     var productData = {
       product: {
         title: title,
@@ -15499,26 +15516,40 @@ async function shopifyPublishPhone(phoneId){
 
     var result;
     if(existing){
-      // Mise à jour
       productData.product.id = existing.id;
       result = await shopifyAPI('PUT','products/'+existing.id+'.json', productData);
       showNotif('✅ Mis à jour sur Shopify — '+title,'success');
     } else {
-      // Création
       result = await shopifyAPI('POST','products.json', productData);
       showNotif('✅ Publié sur Shopify — '+title,'success');
     }
 
-    // Sauvegarder l'ID Shopify dans la fiche phone (pour référence)
+    // Sauvegarder le shopify_id dans Supabase
     if(result && result.product && result.product.id){
       phone.shopify_id = result.product.id;
-      // Update Supabase avec le shopify_id
       try {
         await supaFetch('phones', 'PATCH', { shopify_id: result.product.id }, '?id=eq.'+phoneId);
       } catch(e){}
+
+      // Mettre le stock à 1 via l'API inventaire
+      try {
+        var variant = result.product.variants[0];
+        if(variant && variant.inventory_item_id){
+          // Récupérer la location
+          var locRes = await shopifyAPI('GET','locations.json');
+          if(locRes && locRes.locations && locRes.locations.length > 0){
+            var locationId = locRes.locations[0].id;
+            await shopifyAPI('POST','inventory_levels/set.json', {
+              location_id: locationId,
+              inventory_item_id: variant.inventory_item_id,
+              available: 1
+            });
+          }
+        }
+      } catch(e){ console.warn('[Shopify] Erreur stock:', e.message); }
     }
 
-    renderPhones(); // Refresh la liste
+    renderPhones();
     return result;
 
   } catch(e){
