@@ -15244,12 +15244,15 @@ function shopifyDisconnect(){
   if(!confirm('Déconnecter votre boutique Shopify ?')) return;
   localStorage.removeItem(PARAMS_KEYS.shopifyStore);
   localStorage.removeItem(PARAMS_KEYS.shopifyToken);
+  localStorage.removeItem('sp_shopify_store');
+  localStorage.removeItem('sp_shopify_token');
+  // Supprimer aussi dans Supabase (valeur vide = supprimé)
   if(typeof supaSettingSave === 'function'){
-    supaSettingSave('shopify_store', '');
-    supaSettingSave('shopify_token', '');
+    try { supaSettingSave('shopify_store', ''); } catch(e){}
+    try { supaSettingSave('shopify_token', ''); } catch(e){}
   }
-  shopifyUpdateUI();
-  showNotif('Shopify déconnecté','success');
+  showNotif('Shopify déconnecté — rechargement...','success');
+  setTimeout(function(){ location.reload(); }, 500);
 }
 
 // ── Sauvegarder l'option autosync ──
