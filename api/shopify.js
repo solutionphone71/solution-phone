@@ -34,9 +34,12 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Endpoint non autorisé: ' + endpoint });
   }
 
-  // ── Construire l'URL Shopify Admin API
+  // ── Construire l'URL Shopify Admin API (avec query params supplémentaires)
   const apiVersion = '2024-10';
-  const shopifyUrl = `https://${store}/admin/api/${apiVersion}/${endpoint}`;
+  const { endpoint: _ep, ...extraParams } = req.query;
+  let shopifyUrl = `https://${store}/admin/api/${apiVersion}/${endpoint}`;
+  const extraQs = new URLSearchParams(extraParams).toString();
+  if (extraQs) shopifyUrl += '?' + extraQs;
 
   try {
     const fetchOptions = {

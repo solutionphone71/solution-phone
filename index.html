@@ -15580,7 +15580,13 @@ async function shopifyAPI(method, endpoint, body){
     }
   };
   if(body && (method==='POST'||method==='PUT')) opts.body = JSON.stringify(body);
-  var res = await fetch('/api/shopify?endpoint='+encodeURIComponent(endpoint), opts);
+  // Séparer l'endpoint du query string pour éviter le double-encodage
+  var qIdx = endpoint.indexOf('?');
+  var epPath = qIdx > -1 ? endpoint.substring(0, qIdx) : endpoint;
+  var epQuery = qIdx > -1 ? endpoint.substring(qIdx + 1) : '';
+  var url = '/api/shopify?endpoint=' + encodeURIComponent(epPath);
+  if(epQuery) url += '&' + epQuery;
+  var res = await fetch(url, opts);
   if(!res.ok){
     var err = await res.json().catch(function(){return {error:res.statusText};});
     throw new Error(err.errors||err.error||'Erreur Shopify '+res.status);
