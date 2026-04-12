@@ -10911,10 +10911,15 @@ var SUPABASE_KEYS_MAP = {
 
 // Sauvegarde UNE clé dans Supabase settings
 async function supaSettingSave(supaKey, value) {
-  if(!value || !supaKey) return;
+  if(!supaKey) return;
   try {
     var existing = await supaFetch('settings', 'GET', null, '?key=eq.' + supaKey);
-    if(existing && existing.length > 0) {
+    if(!value && value !== 0) {
+      // Valeur vide → supprimer de Supabase
+      if(existing && existing.length > 0) {
+        await supaFetch('settings', 'DELETE', null, '?key=eq.' + supaKey);
+      }
+    } else if(existing && existing.length > 0) {
       await supaFetch('settings', 'PATCH', {key: supaKey, value: value}, '?key=eq.' + supaKey);
     } else {
       await supaFetch('settings', 'POST', {key: supaKey, value: value});
@@ -10934,9 +10939,14 @@ async function paramsLoadFromSupabase() {
       var lsKey = Object.keys(SUPABASE_KEYS_MAP).find(function(k) {
         return SUPABASE_KEYS_MAP[k] === row.key;
       });
-      if(lsKey && row.value) {
-        localStorage.setItem(lsKey, row.value);
-        loaded++;
+      if(lsKey) {
+        if(row.value) {
+          localStorage.setItem(lsKey, row.value);
+          loaded++;
+        } else {
+          // Valeur vide dans Supabase = supprimée → nettoyer aussi le localStorage
+          localStorage.removeItem(lsKey);
+        }
       }
     });
     // Sync ARIA key
@@ -15242,17 +15252,19 @@ function shopifyOAuthInstall(){
 // ── Déconnecter Shopify ──
 function shopifyDisconnect(){
   if(!confirm('Déconnecter votre boutique Shopify ?')) return;
+  // 1. Supprimer du localStorage
   localStorage.removeItem(PARAMS_KEYS.shopifyStore);
   localStorage.removeItem(PARAMS_KEYS.shopifyToken);
   localStorage.removeItem('sp_shopify_store');
   localStorage.removeItem('sp_shopify_token');
-  // Supprimer aussi dans Supabase (valeur vide = supprimé)
+  // 2. Supprimer de Supabase (pour que ça ne revienne pas)
   if(typeof supaSettingSave === 'function'){
-    try { supaSettingSave('shopify_store', ''); } catch(e){}
-    try { supaSettingSave('shopify_token', ''); } catch(e){}
+    supaSettingSave('shopify_store', '');
+    supaSettingSave('shopify_token', '');
   }
-  showNotif('Shopify déconnecté — rechargement...','success');
-  setTimeout(function(){ location.reload(); }, 500);
+  // 3. Mettre à jour l'UI sans recharger la page
+  shopifyUpdateUI();
+  showNotif('Shopify déconnecté','success');
 }
 
 // ── Sauvegarder l'option autosync ──
