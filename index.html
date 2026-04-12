@@ -467,12 +467,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
 
     <div class="nav-sep"></div>
-    <div class="nav-group-label">Accessoires &amp; neufs</div>
-    <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Tél. neufs &amp; access.</span></div>
+    <div class="nav-group-label">Accessoires &amp; Neufs</div>
+    <div class="nav-item" onclick="showPage('phones-neufs',this)"><span class="nav-icon">📱</span><span>Stock tél. neufs</span></div>
+    <div class="nav-item" onclick="showPage('ventes-neufs',this);renderVentesNeufs();"><span class="nav-icon">📤</span><span>Vente tél. neufs</span></div>
+    <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Accessoires</span></div>
     <div class="nav-item" onclick="showPage('commande', this)"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
 
     <div class="nav-sep"></div>
-    <div class="nav-group-label">Smartphones</div>
+    <div class="nav-group-label">Smartphones Occasion</div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📥</span><span>Achat smartphones</span></div>
     <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">📤</span><span>Vente smartphones</span></div>
     <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
@@ -723,8 +725,154 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : STOCK TELEPHONES NEUFS (TVA 20%)     -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="page" id="page-phones-neufs">
+      <div class="page-title">📱 Smartphones Neufs</div>
+      <div class="page-sub">Gestion du stock — TVA 20%</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Stock Neufs</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="text" id="search-phones-neufs" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhonesNeufs()">
+            <button class="btn btn-primary" onclick="openModal('modal-add-phone-neuf')">➕ Ajouter</button>
+            <button class="btn" id="btn-shopify-bulk-neufs" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublishNeufs()">🛒 Tout publier Shopify</button>
+          </div>
+        </div>
+        <!-- Badges compteurs -->
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;" id="phones-neufs-badges"></div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>Modèle</th><th>Stock.</th><th>Couleur</th><th>IMEI</th><th>Achat HT</th><th>Vente TTC</th><th>Marge</th><th>État</th><th>Actions</th></tr></thead>
+          <tbody id="phones-neufs-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL AJOUT TELEPHONE NEUF -->
+    <div class="modal-overlay" id="modal-add-phone-neuf" onclick="if(event.target===this)closeModal('modal-add-phone-neuf')">
+      <div class="modal" style="max-width:520px;">
+        <div class="modal-header">
+          <div class="modal-title">Ajouter un téléphone neuf</div>
+          <button onclick="closeModal('modal-add-phone-neuf')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>Modèle *</label>
+            <input type="text" id="pn-modele" placeholder="iPhone 16, Samsung S25...">
+          </div>
+          <div class="form-group">
+            <label>Stockage (Go)</label>
+            <select id="pn-stockage"><option value="64">64 Go</option><option value="128" selected>128 Go</option><option value="256">256 Go</option><option value="512">512 Go</option><option value="1000">1 To</option></select>
+          </div>
+          <div class="form-group">
+            <label>Couleur</label>
+            <input type="text" id="pn-couleur" placeholder="Noir, Blanc...">
+          </div>
+          <div class="form-group">
+            <label>IMEI</label>
+            <input type="text" id="pn-imei" placeholder="Numéro IMEI">
+          </div>
+          <div class="form-group">
+            <label>Fournisseur</label>
+            <input type="text" id="pn-fournisseur" placeholder="Nom fournisseur">
+          </div>
+          <div class="form-group">
+            <label>Prix achat HT *</label>
+            <input type="number" id="pn-achat" placeholder="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Prix vente TTC *</label>
+            <input type="number" id="pn-vente" placeholder="0" step="0.01">
+          </div>
+          <div class="form-group" style="grid-column:span 2;">
+            <label>Date d'achat</label>
+            <input type="date" id="pn-date">
+          </div>
+        </div>
+        <div style="padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn" onclick="closeModal('modal-add-phone-neuf')">Annuler</button>
+          <button class="btn btn-primary" onclick="savePhoneNeuf()">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL EDITION TELEPHONE NEUF -->
+    <div class="modal-overlay" id="modal-edit-phone-neuf" onclick="if(event.target===this)closeModal('modal-edit-phone-neuf')">
+      <div class="modal" style="max-width:520px;">
+        <div class="modal-header">
+          <div class="modal-title">Modifier téléphone neuf</div>
+          <button onclick="closeModal('modal-edit-phone-neuf')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <input type="hidden" id="pne-id">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>Modèle *</label>
+            <input type="text" id="pne-modele">
+          </div>
+          <div class="form-group">
+            <label>Stockage (Go)</label>
+            <select id="pne-stockage"><option value="64">64 Go</option><option value="128">128 Go</option><option value="256">256 Go</option><option value="512">512 Go</option><option value="1000">1 To</option></select>
+          </div>
+          <div class="form-group">
+            <label>Couleur</label>
+            <input type="text" id="pne-couleur">
+          </div>
+          <div class="form-group">
+            <label>IMEI</label>
+            <input type="text" id="pne-imei">
+          </div>
+          <div class="form-group">
+            <label>Fournisseur</label>
+            <input type="text" id="pne-fournisseur">
+          </div>
+          <div class="form-group">
+            <label>Prix achat HT</label>
+            <input type="number" id="pne-achat" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Prix vente TTC</label>
+            <input type="number" id="pne-vente" step="0.01">
+          </div>
+        </div>
+        <div style="padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end;">
+          <button class="btn" onclick="closeModal('modal-edit-phone-neuf')">Annuler</button>
+          <button class="btn btn-primary" onclick="updatePhoneNeuf()">💾 Enregistrer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : VENTES TELEPHONES NEUFS               -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="page" id="page-ventes-neufs">
+      <div class="page-title">📤 Ventes Smartphones Neufs</div>
+      <div class="page-sub">Rapport mensuel — TVA 20%</div>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:0;">
+          <label>Année</label>
+          <select id="vn-annee" onchange="renderVentesNeufs()" style="width:110px;">
+            <option value="2026">2026</option><option value="2025">2025</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:0;">
+          <label>Mois</label>
+          <select id="vn-mois" onchange="renderVentesNeufs()" style="width:150px;">
+            <option value="">Tous les mois</option>
+            <option value="01">Janvier</option><option value="02">Février</option>
+            <option value="03">Mars</option><option value="04">Avril</option>
+            <option value="05">Mai</option><option value="06">Juin</option>
+            <option value="07">Juillet</option><option value="08">Août</option>
+            <option value="09">Septembre</option><option value="10">Octobre</option>
+            <option value="11">Novembre</option><option value="12">Décembre</option>
+          </select>
+        </div>
+      </div>
+      <div id="ventes-neufs-content"></div>
+    </div>
+
         <div class="page" id="page-neufs-access">
-      <div class="page-title">Téléphones neufs &amp; Accessoires</div>
+      <div class="page-title">Accessoires</div>
 
       <!-- Onglets -->
       <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border);">
@@ -3844,6 +3992,8 @@ function initRealtime() {
         phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null};});
         renderPhones(); renderDashboard();
       }
+      // Charger les téléphones neufs
+      loadPhonesNeufs();
     } catch(e) { console.log('Sync error:', e); }
   }, 90000);
   console.log('🔄 Synchronisation temps réel activée (30s)');
@@ -3909,6 +4059,8 @@ async function loadFromSupabase() {
     supabaseReady=true;
     initRealtime();
     showNotif('✅ Connecté','success');
+    // Charger les téléphones neufs
+    loadPhonesNeufs();
     // Charger les clés API depuis Supabase
     setTimeout(function(){ if(typeof paramsLoadFromSupabase==='function') paramsLoadFromSupabase(); }, 800);
   } catch(e){console.error(e);showNotif('Mode local actif','error');}
@@ -15944,6 +16096,363 @@ async function shopifyDeleteProduct(shopifyId){
   } catch(e){
     console.error('[Shopify Delete]', e);
   }
+}
+
+// ══════════════════════════════════════════════════════════
+// SMARTPHONES NEUFS — Stock, ventes, TVA 20%
+// ══════════════════════════════════════════════════════════
+
+var phonesNeufs = [];
+
+// ── Charger les téléphones neufs depuis Supabase ──
+async function loadPhonesNeufs(){
+  if(!supabaseReady) return;
+  try {
+    var data = await supaFetch('phones_neufs','GET',null,'?order=id.desc');
+    phonesNeufs = (data||[]).map(function(x){
+      return {
+        id: x.id, modele: x.modele||'', stockage: x.stockage||'128',
+        couleur: x.couleur||'', imei: x.imei||'',
+        achat: parseFloat(x.achat)||0, vente: parseFloat(x.vente)||0,
+        fournisseur: x.fournisseur||'', date_achat: x.date_achat||'',
+        etat: x.etat||'DISPONIBLE', date_vente: x.date_vente||null,
+        mode_vente: x.mode_vente||'CB', shopify_id: x.shopify_id||null,
+        photo_face: x.photo_face||'', photo_dos: x.photo_dos||''
+      };
+    });
+    renderPhonesNeufs();
+  } catch(e){ console.error('[Phones Neufs] Load error:', e); }
+}
+
+// ── Sauvegarder un téléphone neuf ──
+async function savePhoneNeufToDB(p){
+  if(!supabaseReady) return;
+  var row = {
+    modele: p.modele, stockage: p.stockage, couleur: p.couleur, imei: p.imei,
+    achat: p.achat, vente: p.vente, fournisseur: p.fournisseur,
+    date_achat: p.date_achat, etat: p.etat, date_vente: p.date_vente,
+    mode_vente: p.mode_vente, shopify_id: p.shopify_id,
+    photo_face: p.photo_face, photo_dos: p.photo_dos
+  };
+  try {
+    if(p.id){
+      await supaFetch('phones_neufs','PATCH', row, '?id=eq.'+p.id);
+    } else {
+      var res = await supaFetch('phones_neufs','POST', row);
+      if(res && res[0] && res[0].id) p.id = res[0].id;
+    }
+  } catch(e){ console.error('[Phones Neufs] Save error:', e); }
+}
+
+// ── Ajouter un téléphone neuf (depuis le modal) ──
+function savePhoneNeuf(){
+  var modele = document.getElementById('pn-modele').value.trim();
+  var achat = parseFloat(document.getElementById('pn-achat').value)||0;
+  var vente = parseFloat(document.getElementById('pn-vente').value)||0;
+  if(!modele){ showNotif('Modèle obligatoire','error'); return; }
+  if(!achat && !vente){ showNotif('Prix obligatoire','error'); return; }
+
+  var p = {
+    modele: modele,
+    stockage: document.getElementById('pn-stockage').value||'128',
+    couleur: document.getElementById('pn-couleur').value.trim(),
+    imei: document.getElementById('pn-imei').value.trim(),
+    fournisseur: document.getElementById('pn-fournisseur').value.trim(),
+    achat: achat, vente: vente,
+    date_achat: document.getElementById('pn-date').value || new Date().toISOString().split('T')[0],
+    etat: 'DISPONIBLE', date_vente: null, mode_vente: 'CB',
+    shopify_id: null, photo_face: '', photo_dos: ''
+  };
+  phonesNeufs.unshift(p);
+  savePhoneNeufToDB(p);
+  closeModal('modal-add-phone-neuf');
+  renderPhonesNeufs();
+  showNotif('✅ '+modele+' ajouté au stock neufs','success');
+  // Reset form
+  ['pn-modele','pn-couleur','pn-imei','pn-fournisseur','pn-achat','pn-vente'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+}
+
+// ── Modifier un téléphone neuf ──
+function editPhoneNeuf(id){
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  document.getElementById('pne-id').value = id;
+  document.getElementById('pne-modele').value = p.modele;
+  document.getElementById('pne-stockage').value = p.stockage;
+  document.getElementById('pne-couleur').value = p.couleur;
+  document.getElementById('pne-imei').value = p.imei;
+  document.getElementById('pne-fournisseur').value = p.fournisseur;
+  document.getElementById('pne-achat').value = p.achat;
+  document.getElementById('pne-vente').value = p.vente;
+  openModal('modal-edit-phone-neuf');
+}
+function updatePhoneNeuf(){
+  var id = parseInt(document.getElementById('pne-id').value);
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  p.modele = document.getElementById('pne-modele').value.trim();
+  p.stockage = document.getElementById('pne-stockage').value;
+  p.couleur = document.getElementById('pne-couleur').value.trim();
+  p.imei = document.getElementById('pne-imei').value.trim();
+  p.fournisseur = document.getElementById('pne-fournisseur').value.trim();
+  p.achat = parseFloat(document.getElementById('pne-achat').value)||0;
+  p.vente = parseFloat(document.getElementById('pne-vente').value)||0;
+  savePhoneNeufToDB(p);
+  closeModal('modal-edit-phone-neuf');
+  renderPhonesNeufs();
+  showNotif('✅ '+p.modele+' modifié','success');
+}
+
+// ── Supprimer un téléphone neuf ──
+async function deletePhoneNeuf(id){
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!confirm('Supprimer '+p.modele+' du stock neufs ?')) return;
+  // Supprimer de Shopify si publié
+  if(p.shopify_id){ try{ await shopifyDeleteProduct(p.shopify_id); }catch(e){} }
+  // Supprimer de Supabase
+  try{ await supaFetch('phones_neufs','DELETE',null,'?id=eq.'+id); }catch(e){}
+  phonesNeufs = phonesNeufs.filter(function(x){ return x.id!==id; });
+  renderPhonesNeufs();
+  showNotif('🗑️ '+p.modele+' supprimé','success');
+}
+
+// ── Marquer vendu (TVA 20% → Z caisse principal) ──
+function marquerVenduNeuf(id){
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var modes = ['CB','ESPECES','CHEQUE','VIREMENT'];
+  var modeChoix = prompt('Mode de paiement : 1=CB  2=Espèces  3=Chèque  4=Virement  (Entrée=CB)', '1');
+  var modeMap = {'1':'CB','2':'ESPECES','3':'CHEQUE','4':'VIREMENT'};
+  var mode = modeMap[modeChoix] || 'CB';
+  if(!confirm('Marquer '+p.modele+' comme VENDU ('+p.vente+'€ TTC — '+mode+') ?')) return;
+
+  p.etat = 'VENDU';
+  p.date_vente = new Date().toISOString().split('T')[0];
+  p.mode_vente = mode;
+  savePhoneNeufToDB(p);
+
+  // ── Alimentation Z de caisse PRINCIPAL (TVA 20%) ──
+  caisseFromVente({
+    prixTTC: p.vente,
+    mode: mode,
+    date: p.date_vente,
+    description: 'Vente neuf '+p.modele+' IMEI '+(p.imei||'—')
+  });
+
+  // ── Supprimer de Shopify ──
+  if(p.shopify_id){
+    shopifyDeleteProduct(p.shopify_id).then(function(){
+      p.shopify_id = null;
+      savePhoneNeufToDB(p);
+    }).catch(function(e){ console.error('[Shopify] Suppression neuf:', e); });
+  }
+
+  renderPhonesNeufs();
+  showNotif('✅ '+p.modele+' vendu ('+p.vente+'€ '+mode+') — enregistré en caisse principal','success');
+}
+
+// ── Remettre en stock ──
+function remettreEnStockNeuf(id){
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!confirm('Remettre '+p.modele+' en stock ?')) return;
+  p.etat = 'DISPONIBLE';
+  p.date_vente = null;
+  savePhoneNeufToDB(p);
+  renderPhonesNeufs();
+  showNotif(p.modele+' remis en stock neufs','success');
+}
+
+// ── Rendu du tableau stock neufs ──
+function renderPhonesNeufs(){
+  var search = (document.getElementById('search-phones-neufs')||{}).value||'';
+  search = search.toLowerCase();
+
+  // Filtrer : seulement DISPONIBLE dans le stock
+  var dispo = phonesNeufs.filter(function(p){
+    if(p.etat==='VENDU') return false;
+    if(search && p.modele.toLowerCase().indexOf(search)===-1 && (p.imei||'').indexOf(search)===-1) return false;
+    return true;
+  });
+  var nbVendus = phonesNeufs.filter(function(p){ return p.etat==='VENDU'; }).length;
+
+  // Badges
+  var badgesDiv = document.getElementById('phones-neufs-badges');
+  if(badgesDiv){
+    badgesDiv.innerHTML =
+      '<span class="badge badge-green">✅ Disponibles : '+dispo.length+'</span>'+
+      '<span class="badge badge-red">💹 Vendus : '+nbVendus+'</span>';
+  }
+
+  var tbody = document.getElementById('phones-neufs-table');
+  if(!tbody) return;
+
+  if(dispo.length===0){
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-muted);">Aucun téléphone neuf en stock</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = dispo.map(function(p){
+    var marge = p.vente - (p.achat * 1.2); // Marge = vente TTC - achat HT * 1.2 (car revente TVA 20%)
+    var margeColor = marge >= 0 ? 'var(--green)' : 'var(--red)';
+    var jours = p.date_achat ? Math.floor((Date.now()-new Date(p.date_achat).getTime())/(1000*60*60*24)) : 0;
+    return '<tr>'+
+      '<td><b>'+p.modele+'</b>'+
+        (p.fournisseur?'<br><span style="font-size:11px;color:var(--blue);">📦 '+p.fournisseur+'</span>':'')+
+        (jours>0?'<br><span style="font-size:11px;color:var(--text-muted);">⏰ '+jours+'j en stock</span>':'')+
+      '</td>'+
+      '<td>'+p.stockage+'Go</td>'+
+      '<td>'+(p.couleur||'—')+'</td>'+
+      '<td style="font-size:12px;">'+(p.imei||'—')+'</td>'+
+      '<td>'+p.achat.toFixed(0)+' €</td>'+
+      '<td><b>'+p.vente.toFixed(0)+' €</b></td>'+
+      '<td style="color:'+margeColor+';font-weight:700;">'+marge.toFixed(0)+' €</td>'+
+      '<td><span class="badge badge-green">DISPO</span></td>'+
+      '<td style="white-space:nowrap;">'+
+        '<button class="btn btn-sm" onclick="editPhoneNeuf('+p.id+')" title="Modifier">✏️</button> '+
+        '<button class="btn btn-sm btn-primary" onclick="marquerVenduNeuf('+p.id+')" title="Vendu">✅ Vendu</button> '+
+        '<button class="btn btn-sm" onclick="shopifyPublishPhoneNeuf('+p.id+')" title="Shopify" style="color:#96bf48;">🛒</button> '+
+        '<button class="btn btn-sm" onclick="deletePhoneNeuf('+p.id+')" title="Supprimer" style="color:var(--red);">🗑️</button>'+
+      '</td></tr>';
+  }).join('');
+
+  // Shopify bulk button visibility
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  var bulkBtn = document.getElementById('btn-shopify-bulk-neufs');
+  if(bulkBtn) bulkBtn.style.display = (store && token) ? 'inline-flex' : 'none';
+}
+
+// ── Publier un téléphone neuf sur Shopify ──
+async function shopifyPublishPhoneNeuf(id){
+  var p = phonesNeufs.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify dans Paramètres','error'); return; }
+
+  try {
+    showNotif('⏳ Publication Shopify...','info');
+    var info = shopifyProductType({modele:p.modele, grade:'NEUF'});
+    var title = p.modele + ' - ' + p.stockage + 'Go' + (p.couleur ? ' - '+p.couleur : '');
+    var handle = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+
+    var productData = {
+      product: {
+        title: title,
+        body_html: '<p>Smartphone neuf '+p.modele+' '+p.stockage+'Go'+(p.couleur?' couleur '+p.couleur:'')+'.</p>',
+        vendor: 'SolutionPhoneFR',
+        product_type: 'Smartphone neuf',
+        tags: info.tags.join(', '),
+        handle: handle,
+        template_suffix: info.templateSuffix,
+        status: 'active',
+        variants: [{
+          price: p.vente.toFixed(2),
+          inventory_management: 'shopify',
+          inventory_policy: 'deny',
+          sku: 'SPN-'+(p.imei||p.id),
+          requires_shipping: false
+        }],
+        images: []
+      }
+    };
+    if(p.photo_face) productData.product.images.push({ src: p.photo_face, alt: title+' - Face' });
+    if(p.photo_dos) productData.product.images.push({ src: p.photo_dos, alt: title+' - Dos' });
+    if(productData.product.images.length===0) delete productData.product.images;
+
+    var result;
+    if(p.shopify_id){
+      productData.product.id = p.shopify_id;
+      result = await shopifyAPI('PUT','products/'+p.shopify_id+'.json', productData);
+      showNotif('✅ Mis à jour sur Shopify — '+title,'success');
+    } else {
+      result = await shopifyAPI('POST','products.json', productData);
+      showNotif('✅ Publié sur Shopify — '+title,'success');
+    }
+
+    if(result && result.product && result.product.id){
+      p.shopify_id = result.product.id;
+      savePhoneNeufToDB(p);
+      // Stock à 1
+      try {
+        var variant = result.product.variants[0];
+        if(variant && variant.inventory_item_id){
+          var locRes = await shopifyAPI('GET','locations.json');
+          if(locRes && locRes.locations && locRes.locations.length > 0){
+            await shopifyAPI('POST','inventory_levels/set.json', {
+              location_id: locRes.locations[0].id,
+              inventory_item_id: variant.inventory_item_id,
+              available: 1
+            });
+          }
+        }
+      } catch(e){ console.error('[Shopify Neuf] Stock error:', e); }
+    }
+    renderPhonesNeufs();
+  } catch(e){
+    showNotif('❌ Shopify: '+e.message,'error');
+    console.error('[Shopify Neuf]', e);
+  }
+}
+
+// ── Publier tous les neufs sur Shopify ──
+async function shopifyBulkPublishNeufs(){
+  var dispo = phonesNeufs.filter(function(p){ return p.etat==='DISPONIBLE'; });
+  if(!dispo.length){ showNotif('Aucun téléphone neuf à publier','info'); return; }
+  if(!confirm('Publier '+dispo.length+' téléphone(s) neuf(s) sur Shopify ?')) return;
+  var ok=0, fail=0;
+  for(var i=0;i<dispo.length;i++){
+    try { await shopifyPublishPhoneNeuf(dispo[i].id); ok++; } catch(e){ fail++; }
+    if(i<dispo.length-1) await new Promise(function(r){setTimeout(r,600);});
+  }
+  showNotif('✅ Shopify neufs: '+ok+' publié(s)'+(fail>0?', '+fail+' erreur(s)':''),'success');
+}
+
+// ── Rapport ventes neufs ──
+function renderVentesNeufs(){
+  var annee = (document.getElementById('vn-annee')||{}).value || '2026';
+  var mois = (document.getElementById('vn-mois')||{}).value || '';
+  var prefix = mois ? annee+'-'+mois : annee;
+
+  var vendus = phonesNeufs.filter(function(p){
+    return p.etat==='VENDU' && p.date_vente && p.date_vente.startsWith(prefix);
+  });
+
+  var ca = vendus.reduce(function(s,p){ return s+p.vente; },0);
+  var totalAchat = vendus.reduce(function(s,p){ return s+p.achat; },0);
+  var marge = ca - (totalAchat * 1.2);
+  var tva = ca - (ca / 1.2);
+
+  var container = document.getElementById('ventes-neufs-content');
+  if(!container) return;
+
+  if(!vendus.length){
+    container.innerHTML = '<div class="card" style="text-align:center;padding:40px;color:var(--text-muted);">Aucune vente de smartphone neuf sur cette période</div>';
+    return;
+  }
+
+  var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">'+
+    '<div class="card" style="text-align:center;"><div style="font-size:12px;color:var(--text-muted);">Téléphones vendus</div><div style="font-size:24px;font-weight:800;">'+vendus.length+'</div></div>'+
+    '<div class="card" style="text-align:center;"><div style="font-size:12px;color:var(--text-muted);">CA TTC</div><div style="font-size:24px;font-weight:800;color:var(--primary);">'+ca.toFixed(2)+' €</div></div>'+
+    '<div class="card" style="text-align:center;"><div style="font-size:12px;color:var(--text-muted);">TVA collectée (20%)</div><div style="font-size:24px;font-weight:800;color:var(--blue);">'+tva.toFixed(2)+' €</div></div>'+
+    '<div class="card" style="text-align:center;"><div style="font-size:12px;color:var(--text-muted);">Marge nette</div><div style="font-size:24px;font-weight:800;color:var(--green);">'+marge.toFixed(2)+' €</div></div>'+
+  '</div>';
+
+  html += '<div class="card"><div class="card-header"><div class="card-title">Détail des ventes</div></div>'+
+    '<div style="overflow-x:auto;"><table><thead><tr><th>Date</th><th>Modèle</th><th>Stockage</th><th>Couleur</th><th>Achat HT</th><th>Vente TTC</th><th>Marge</th><th>Mode</th></tr></thead><tbody>';
+
+  vendus.forEach(function(p){
+    var m = p.vente - (p.achat * 1.2);
+    html += '<tr><td>'+p.date_vente+'</td><td><b>'+p.modele+'</b></td><td>'+p.stockage+'Go</td>'+
+      '<td>'+(p.couleur||'—')+'</td><td>'+p.achat.toFixed(2)+' €</td><td><b>'+p.vente.toFixed(2)+' €</b></td>'+
+      '<td style="color:'+(m>=0?'var(--green)':'var(--red)')+';font-weight:700;">'+m.toFixed(2)+' €</td>'+
+      '<td><span class="badge" style="background:'+(p.mode_vente==='CB'?'#3b82f6':p.mode_vente==='ESPECES'?'#16a34a':'#d97706')+';color:#fff;">'+p.mode_vente+'</span></td></tr>';
+  });
+
+  html += '</tbody></table></div></div>';
+  container.innerHTML = html;
 }
 
 // ══════════════════════════════════════════════════════════
