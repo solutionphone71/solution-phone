@@ -643,6 +643,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
+            <button class="btn" id="btn-shopify-bulk" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublish()">🛒 Tout publier Shopify</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -1859,6 +1860,35 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
           <button class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;width:100%;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
           <button class="btn" style="width:100%;" onclick="paramsTestClaude()">🧪 Tester la connexion</button>
+        </div>
+      </div>
+
+      <!-- ═══ SHOPIFY ═══ -->
+      <div class="card" style="border:1.5px solid #96bf48;">
+        <div class="card-header">
+          <div class="card-title" style="color:#96bf48;">🛒 Shopify — Boutique en ligne</div>
+          <div id="params-shopify-status" style="font-size:12px;color:var(--text-muted);">⚠️ Non configurée</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group">
+            <label>URL de la boutique</label>
+            <input type="text" id="params-shopify-store" placeholder="ma-boutique.myshopify.com">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Sans https:// — juste le domaine .myshopify.com</div>
+          </div>
+          <div class="form-group">
+            <label>Token Admin API</label>
+            <input type="password" id="params-shopify-token" placeholder="shpat_…">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Paramètres → Apps → Développer des apps → Token Admin API</div>
+          </div>
+          <div class="form-group">
+            <label>Sync automatique</label>
+            <select id="params-shopify-autosync">
+              <option value="1">Oui — publier auto sur Shopify à l'ajout d'un téléphone</option>
+              <option value="0">Non — publier manuellement avec le bouton</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" style="background:#96bf48;border-color:#96bf48;width:100%;" onclick="paramsSaveShopify()">💾 Enregistrer</button>
+          <button class="btn" style="width:100%;" onclick="paramsTestShopify()">🧪 Tester la connexion Shopify</button>
         </div>
       </div>
       </div>
@@ -6401,6 +6431,10 @@ function addPhone(){
   var _pprev=document.getElementById('p-photo-preview');if(_pprev)_pprev.style.display='none';
   closeModal('modal-add-phone');renderPhones();renderDashboard();
   showNotif(modele+' ajouté !','success');
+  // ── Auto-sync Shopify si activé ──
+  if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
+    setTimeout(function(){ shopifyPublishPhone(phone.id); }, 1000);
+  }
 }
 
 // Déduction sortie caisse pour achat smartphone en espèces
@@ -6421,6 +6455,9 @@ function caisseSortieAchat(date, montant, modele) {
 }
 
 function renderPhones(){
+  // Afficher/cacher le bouton bulk Shopify
+  var bulkBtn=document.getElementById('btn-shopify-bulk');
+  if(bulkBtn) bulkBtn.style.display=localStorage.getItem('sp_shopify_token')?'inline-flex':'none';
   var s=(document.getElementById('search-phones')?document.getElementById('search-phones').value:'').toLowerCase();
   // Afficher UNIQUEMENT les téléphones non vendus dans le stock
   var f=phones.filter(function(p){
@@ -6484,6 +6521,7 @@ function renderPhones(){
         '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
         '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
         '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Marquer vendu">✅ Vendu</button>'+
+        (localStorage.getItem('sp_shopify_token')?'<button class="btn btn-sm" style="color:#96bf48;border-color:#96bf48;" onclick="shopifyPublishPhone('+p.id+')" title="Publier sur Shopify">🛒</button>':'')+
         '<button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button>'+
       '</td></tr>';
   }).join('')||'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim)">📦 Aucun smartphone en stock</td></tr>';
@@ -6555,7 +6593,7 @@ function annulerVente(id){
   renderDashboard();
   showNotif('↩️ '+p.modele+' remis en stock','success');
 }
-function deletePhone(id){if(!confirm('Supprimer ?'))return;phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
+function deletePhone(id){if(!confirm('Supprimer ?'))return;var p=phones.find(function(x){return x.id===id;});if(p&&p.shopify_id)shopifyDeleteProduct(p.shopify_id);phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
 
 var curPhone=null;
 var _etiquettePhone = null;
@@ -10753,7 +10791,10 @@ var PARAMS_KEYS = {
   brevoSender:    'sp_brevo_sender',
   brevoSenderName:'sp_brevo_sender_name',
   claudeKey:   'sp_claude_key',
-  claudeModel: 'sp_claude_model'
+  claudeModel: 'sp_claude_model',
+  shopifyStore:    'sp_shopify_store',
+  shopifyToken:    'sp_shopify_token',
+  shopifyAutosync: 'sp_shopify_autosync'
 };
 
 
@@ -10814,6 +10855,13 @@ function paramsLoad(){
   if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
   if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
 
+  // Shopify
+  el=document.getElementById('params-shopify-store');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  el=document.getElementById('params-shopify-token');    if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  el=document.getElementById('params-shopify-autosync'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.shopifyAutosync)||'1';
+  var stSh=document.getElementById('params-shopify-status');
+  if(stSh) stSh.innerHTML=localStorage.getItem(PARAMS_KEYS.shopifyToken) ? '<span style="color:var(--green);">✅ Connectée</span>' : '<span style="color:var(--text-muted);">⚠️ Non configurée</span>';
+
   paramsUpdateStatus();
 }
 
@@ -10841,7 +10889,10 @@ var SUPABASE_KEYS_MAP = {
   'sp_ecologic_siteid':    'ecologic_siteid',
   'sp_claude_key':         'claude_api_key',
   'sp_claude_model':       'claude_model',
-  'sp_nas_ip':             'nas_ip'
+  'sp_nas_ip':             'nas_ip',
+  'sp_shopify_store':      'shopify_store',
+  'sp_shopify_token':      'shopify_token',
+  'sp_shopify_autosync':   'shopify_autosync'
 };
 
 // Sauvegarde UNE clé dans Supabase settings
@@ -15153,6 +15204,288 @@ async function paramsTestClaude() {
   } catch(e) {
     if(st){ st.textContent='❌ Erreur: ' + e.message.substring(0,50); st.style.color='var(--red)'; }
     showNotif('❌ Claude API: ' + e.message.substring(0,60), 'danger');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ══  SHOPIFY — Intégration boutique en ligne  ══════════════
+// ══════════════════════════════════════════════════════════════
+
+function paramsSaveShopify(){
+  var store = (document.getElementById('params-shopify-store')||{value:''}).value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+  var token = (document.getElementById('params-shopify-token')||{value:''}).value.trim();
+  var auto  = (document.getElementById('params-shopify-autosync')||{value:'1'}).value;
+  if(!store||!token){ showNotif('Remplissez l\'URL et le token Shopify','error'); return; }
+  localStorage.setItem(PARAMS_KEYS.shopifyStore, store);
+  localStorage.setItem(PARAMS_KEYS.shopifyToken, token);
+  localStorage.setItem(PARAMS_KEYS.shopifyAutosync, auto);
+  if(typeof supaSettingSave === 'function'){
+    supaSettingSave('shopify_store', store);
+    supaSettingSave('shopify_token', token);
+    supaSettingSave('shopify_autosync', auto);
+  }
+  showNotif('✅ Shopify configuré !','success');
+  var st=document.getElementById('params-shopify-status');
+  if(st) st.innerHTML='<span style="color:var(--green);">✅ Connectée</span>';
+}
+
+async function paramsTestShopify(){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify d\'abord','error'); return; }
+  var st = document.getElementById('params-shopify-status');
+  if(st) st.innerHTML='⏳ Test en cours...';
+  try {
+    var res = await shopifyAPI('GET','shop.json');
+    if(res && res.shop){
+      if(st) st.innerHTML='<span style="color:var(--green);">✅ '+res.shop.name+' — connectée</span>';
+      showNotif('✅ Shopify OK — '+res.shop.name,'success');
+    } else {
+      if(st) st.innerHTML='<span style="color:red;">❌ Erreur connexion</span>';
+      showNotif('❌ Shopify — erreur de connexion','error');
+    }
+  } catch(e){
+    if(st) st.innerHTML='<span style="color:red;">❌ '+e.message+'</span>';
+    showNotif('❌ '+e.message,'error');
+  }
+}
+
+// ── Appel API Shopify via le proxy serverless ──
+async function shopifyAPI(method, endpoint, body){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token) throw new Error('Shopify non configuré');
+  var opts = {
+    method: method,
+    headers: {
+      'Content-Type':'application/json',
+      'X-Shopify-Store': store,
+      'X-Shopify-Token': token
+    }
+  };
+  if(body && (method==='POST'||method==='PUT')) opts.body = JSON.stringify(body);
+  var res = await fetch('/api/shopify?endpoint='+encodeURIComponent(endpoint), opts);
+  if(!res.ok){
+    var err = await res.json().catch(function(){return {error:res.statusText};});
+    throw new Error(err.errors||err.error||'Erreur Shopify '+res.status);
+  }
+  if(res.status === 204) return null;
+  return res.json();
+}
+
+// ── Déterminer le type de produit et les infos Shopify ──
+function shopifyProductType(phone){
+  var modele = (phone.modele||'').toLowerCase();
+  var grade = (phone.grade||'').toUpperCase();
+  var isReconditione = grade && grade !== 'NEUF' && grade !== '';
+  var marque = 'autre';
+  if(modele.indexOf('iphone')!==-1 || modele.indexOf('apple')!==-1) marque='iphone';
+  else if(modele.indexOf('samsung')!==-1 || modele.indexOf('galaxy')!==-1) marque='samsung';
+  else if(modele.indexOf('xiaomi')!==-1 || modele.indexOf('redmi')!==-1 || modele.indexOf('poco')!==-1) marque='xiaomi';
+  else if(modele.indexOf('motorola')!==-1 || modele.indexOf('moto ')!==-1) marque='motorola';
+
+  var tags = [];
+  var templateSuffix = '';
+  var typeLabel = '';
+
+  if(isReconditione){
+    tags.push(marque+'-reconditione','telephone-reconditione');
+    templateSuffix = 'smartphones-reconditione';
+    typeLabel = 'Smartphone reconditionné';
+  } else {
+    tags.push(marque+'-neuf','telephone-neuf');
+    templateSuffix = 'smartphone-neuf';
+    typeLabel = 'Smartphone neuf';
+  }
+  return { marque:marque, tags:tags, templateSuffix:templateSuffix, typeLabel:typeLabel, isReconditione:isReconditione };
+}
+
+// ── Générer le titre Shopify ──
+function shopifyTitle(phone){
+  var info = shopifyProductType(phone);
+  var parts = [(phone.modele||'Téléphone')];
+  if(phone.stockage) parts.push(phone.stockage+'Go');
+  if(phone.couleur) parts.push(phone.couleur);
+  if(info.isReconditione && phone.grade) parts.push('Grade '+phone.grade);
+  if(info.isReconditione) parts.push('Reconditionné');
+  return parts.join(' - ');
+}
+
+// ── Générer le handle URL ──
+function shopifyHandle(phone){
+  var title = shopifyTitle(phone);
+  return title.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+// ── Générer la description HTML ──
+function shopifyDescription(phone){
+  var info = shopifyProductType(phone);
+  var modele = phone.modele||'Téléphone';
+  var grade = phone.grade||'';
+  var couleur = phone.couleur||'';
+  var stockage = phone.stockage ? phone.stockage+'Go' : '';
+
+  var accroche = '';
+  if(info.isReconditione){
+    accroche = '<p><strong>'+modele+' reconditionné Grade '+grade+' — Vérifié et garanti par Solution Phone.</strong></p>'+
+      '<p>Ce '+modele+' a été entièrement testé, nettoyé et remis en état par nos techniciens certifiés à Mâcon. '+
+      'Batterie vérifiée, écran contrôlé, fonctionnalités testées. Garanti 12 mois — retrait en boutique au 21 Rue Gambetta.</p>';
+  } else {
+    accroche = '<p><strong>'+modele+' neuf — Disponible chez Solution Phone Mâcon.</strong></p>'+
+      '<p>Smartphone neuf, sous garantie constructeur. Disponible immédiatement en boutique au 21 Rue Gambetta, 71000 Mâcon.</p>';
+  }
+
+  var specs = '<section style="max-width:640px;margin:40px 0;font-family:sans-serif;font-size:14px;">'+
+    '<h2 style="font-size:16px;font-weight:bold;margin-bottom:12px;">Spécificités Techniques</h2>'+
+    '<table style="width:100%;border-collapse:collapse;">';
+
+  function row(label,val){
+    return '<tr><td style="font-weight:bold;padding:8px 12px;background:#f5f5f5;border:1px solid #e0e0e0;width:160px;">'+label+'</td>'+
+      '<td style="padding:8px 12px;border:1px solid #e0e0e0;">'+val+'</td></tr>';
+  }
+  if(couleur) specs += row('Couleur', couleur);
+  if(grade && info.isReconditione) specs += row('Grade', grade);
+  if(stockage) specs += row('Stockage', stockage);
+  if(phone.batterie) specs += row('Batterie', phone.batterie+'%'+(info.isReconditione?' — vérifiée par nos techniciens':''));
+  specs += row('État', info.isReconditione ? 'Reconditionné — Garanti 12 mois' : 'Neuf — Garantie constructeur');
+  specs += row('Disponibilité', 'Retrait en boutique — 21 Rue Gambetta, 71000 Mâcon');
+  specs += '</table></section>';
+
+  return accroche + specs;
+}
+
+// ── Générer les métadonnées SEO ──
+function shopifySEO(phone){
+  var info = shopifyProductType(phone);
+  var modele = phone.modele||'Téléphone';
+  var etat = info.isReconditione ? 'Reconditionné' : 'Neuf';
+  var seoTitle = modele+' '+etat+' Mâcon'+(info.isReconditione?' - Garanti 12 mois':' - Prix Expert')+' | Solution Accessoires';
+  var seoDesc = modele+' '+etat.toLowerCase()+(info.isReconditione?' Grade '+(phone.grade||'A'):'')+
+    ' à Mâcon.'+(info.isReconditione?' Testé par nos techniciens, garanti 12 mois.':' Neuf sous garantie.')+
+    ' Retrait en boutique au 21 Rue Gambetta.';
+  if(seoDesc.length > 155) seoDesc = seoDesc.substring(0,152)+'...';
+  return { title: seoTitle, description: seoDesc };
+}
+
+// ══ PUBLIER UN TÉLÉPHONE SUR SHOPIFY ══
+async function shopifyPublishPhone(phoneId){
+  var phone = (_allPhones||[]).find(function(p){ return p.id === phoneId; });
+  if(!phone){ showNotif('Téléphone introuvable','error'); return; }
+
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify dans Paramètres d\'abord','error'); return; }
+
+  showNotif('⏳ Publication sur Shopify...','info');
+
+  try {
+    var info = shopifyProductType(phone);
+    var title = shopifyTitle(phone);
+    var handle = shopifyHandle(phone);
+    var desc = shopifyDescription(phone);
+    var seo = shopifySEO(phone);
+    var prix = phone.vente || 0;
+
+    // Vérifier si le produit existe déjà (par handle)
+    var existing = null;
+    try {
+      var searchRes = await shopifyAPI('GET','products.json?handle='+encodeURIComponent(handle)+'&limit=1');
+      if(searchRes && searchRes.products && searchRes.products.length > 0){
+        existing = searchRes.products[0];
+      }
+    } catch(e){}
+
+    var productData = {
+      product: {
+        title: title,
+        body_html: desc,
+        vendor: 'SolutionPhoneFR',
+        product_type: info.typeLabel,
+        tags: info.tags.join(', '),
+        handle: handle,
+        template_suffix: info.templateSuffix,
+        status: 'active',
+        metafields_global_title_tag: seo.title,
+        metafields_global_description_tag: seo.description,
+        variants: [{
+          price: prix.toFixed(2),
+          inventory_management: 'shopify',
+          inventory_policy: 'deny',
+          sku: 'SP-'+(phone.imei||phone.id),
+          requires_shipping: false
+        }]
+      }
+    };
+
+    var result;
+    if(existing){
+      // Mise à jour
+      productData.product.id = existing.id;
+      result = await shopifyAPI('PUT','products/'+existing.id+'.json', productData);
+      showNotif('✅ Mis à jour sur Shopify — '+title,'success');
+    } else {
+      // Création
+      result = await shopifyAPI('POST','products.json', productData);
+      showNotif('✅ Publié sur Shopify — '+title,'success');
+    }
+
+    // Sauvegarder l'ID Shopify dans la fiche phone (pour référence)
+    if(result && result.product && result.product.id){
+      phone.shopify_id = result.product.id;
+      // Update Supabase avec le shopify_id
+      try {
+        await supaFetch('phones', '?id=eq.'+phoneId, 'PATCH', { shopify_id: result.product.id });
+      } catch(e){}
+    }
+
+    renderPhones(); // Refresh la liste
+    return result;
+
+  } catch(e){
+    showNotif('❌ Shopify: '+e.message,'error');
+    console.error('[Shopify]', e);
+    return null;
+  }
+}
+
+// ══ PUBLIER TOUS LES TÉLÉPHONES DISPONIBLES SUR SHOPIFY ══
+async function shopifyBulkPublish(){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify dans Paramètres','error'); return; }
+
+  var dispo = (_allPhones||[]).filter(function(p){ return p.etat==='DISPONIBLE'; });
+  if(dispo.length===0){ showNotif('Aucun téléphone disponible à publier','info'); return; }
+
+  if(!confirm('Publier '+dispo.length+' téléphone(s) sur Shopify ?')) return;
+
+  showNotif('⏳ Publication de '+dispo.length+' produits...','info');
+  var ok=0, fail=0;
+
+  for(var i=0; i<dispo.length; i++){
+    try {
+      await shopifyPublishPhone(dispo[i].id);
+      ok++;
+    } catch(e){
+      fail++;
+      console.error('[Shopify Bulk] Erreur pour #'+dispo[i].id, e);
+    }
+    // Petit délai pour éviter le rate limit Shopify (2 req/sec)
+    if(i < dispo.length-1) await new Promise(function(r){ setTimeout(r, 600); });
+  }
+
+  showNotif('✅ Shopify: '+ok+' publié(s)'+(fail>0?', '+fail+' erreur(s)':''),'success');
+}
+
+// ══ SUPPRIMER UN PRODUIT SHOPIFY ══
+async function shopifyDeleteProduct(shopifyId){
+  if(!shopifyId) return;
+  try {
+    await shopifyAPI('DELETE','products/'+shopifyId+'.json');
+  } catch(e){
+    console.error('[Shopify Delete]', e);
   }
 }
 
