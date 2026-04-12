@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<!-- v20260412_dark_theme -->
-<html lang="fr">
+<!-- v20260412_dark_light_toggle -->
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
@@ -267,6 +267,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
   <div class="mob-menu-item" onclick="showPageMobile('calendrier','');loadCalItems();closeMobileMenu()"><span class="mob-menu-icon">📅</span>Calendrier Éditorial</div>
   <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
+  <div class="mob-menu-item" onclick="toggleTheme();closeMobileMenu()" id="mob-theme-btn"><span class="mob-menu-icon" id="mob-theme-icon">🌙</span><span id="mob-theme-label">Mode sombre</span></div>
 </div>
 
 <div id="login-screen">
@@ -362,6 +363,15 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
     <div class="nav-item" onclick="showPage('calendrier',this);loadCalItems()"><span class="nav-icon">📅</span><span>Calendrier Éditorial</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
+
+    <!-- ══ TOGGLE DARK/LIGHT ══ -->
+    <div class="theme-toggle-wrap" onclick="toggleTheme()">
+      <span class="theme-toggle-icon" id="theme-icon">🌙</span>
+      <span class="theme-toggle-label" id="theme-label">Mode sombre</span>
+      <div class="theme-toggle-track">
+        <div class="theme-toggle-thumb"></div>
+      </div>
+    </div>
   </div>
   <div class="main">
 
@@ -3714,6 +3724,40 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 
+
+/* ══ THEME TOGGLE — Dark / Light ══ */
+function toggleTheme(){
+  var html = document.documentElement;
+  var current = html.getAttribute('data-theme') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try{ localStorage.setItem('sp-theme', next); }catch(e){}
+}
+function applyTheme(theme){
+  var html = document.documentElement;
+  html.setAttribute('data-theme', theme);
+  var icon = document.getElementById('theme-icon');
+  var label = document.getElementById('theme-label');
+  if(icon) icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  if(label) label.textContent = theme === 'dark' ? 'Mode sombre' : 'Mode clair';
+  // Mobile toggle too
+  var mobIcon = document.getElementById('mob-theme-icon');
+  var mobLabel = document.getElementById('mob-theme-label');
+  if(mobIcon) mobIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  if(mobLabel) mobLabel.textContent = theme === 'dark' ? 'Mode sombre' : 'Mode clair';
+  // Update meta theme-color
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.content = theme === 'dark' ? '#0a0a1a' : '#f0f0f3';
+  // Update color-scheme meta
+  var cs = document.querySelector('meta[name="color-scheme"]');
+  if(cs) cs.content = theme;
+}
+// Init theme from localStorage on load
+(function(){
+  var saved = 'dark';
+  try{ saved = localStorage.getItem('sp-theme') || 'dark'; }catch(e){}
+  applyTheme(saved);
+})();
 
 function showPage(id,el){
   // Sécurité : bloquer accès pages patron pour les employés
@@ -18575,6 +18619,8 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
 
   function darkify(el){
     if(!el || !el.style) return;
+    // Skip if light mode is active
+    if(document.documentElement.getAttribute('data-theme') === 'light') return;
     // Skip ticket modal
     if(el.closest && el.closest('#modal-ticket-commande')) return;
     var bg = el.style.backgroundColor || el.style.background;
