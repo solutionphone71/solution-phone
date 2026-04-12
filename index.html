@@ -645,6 +645,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
             <button class="btn" id="btn-shopify-bulk" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublish()">🛒 Tout publier Shopify</button>
             <button class="btn" id="btn-shopify-stock" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyFixAllStock()">📦 Corriger stocks Shopify</button>
+            <button class="btn" id="btn-shopify-activate" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyActivateAll()">✅ Activer brouillons Shopify</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -15419,6 +15420,8 @@ function shopifyUpdateUI(){
   if(bulkBtn) bulkBtn.style.display = connected ? 'inline-flex' : 'none';
   var stockBtn=document.getElementById('btn-shopify-stock');
   if(stockBtn) stockBtn.style.display = connected ? 'inline-flex' : 'none';
+  var activateBtn=document.getElementById('btn-shopify-activate');
+  if(activateBtn) activateBtn.style.display = connected ? 'inline-flex' : 'none';
 }
 
 // Ancien paramsSaveShopify (compatibilité si token manuel)
@@ -15727,9 +15730,8 @@ async function shopifyPublishPhone(phoneId){
       }
     } catch(e){}
 
-    // Status : active si photo présente, draft si absente (section 8 du doc)
-    var hasPhoto = phone.photo_face || phone.photo_dos || false;
-    var productStatus = hasPhoto ? 'active' : 'draft';
+    // Status : toujours active pour que le produit soit visible sur la boutique
+    var productStatus = 'active';
 
     // Préparer les images pour Shopify
     var shopifyImages = [];
@@ -15892,6 +15894,53 @@ async function shopifyFixAllStock(){
   } catch(e){
     showNotif('❌ Erreur: '+e.message,'error');
     console.error('[Stock Fix]', e);
+  }
+}
+
+// ══ ACTIVER TOUS LES PRODUITS EN BROUILLON SUR SHOPIFY ══
+async function shopifyActivateAll(){
+  var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
+  var token = localStorage.getItem(PARAMS_KEYS.shopifyToken)||'';
+  if(!store||!token){ showNotif('Configurez Shopify d\'abord','error'); return; }
+
+  showNotif('⏳ Récupération des produits brouillon...','info');
+
+  try {
+    // Récupérer tous les produits en draft
+    var allDrafts = [];
+    var page = 1;
+    var hasMore = true;
+    while(hasMore){
+      var res = await shopifyAPI('GET','products.json?status=draft&limit=250&page='+page);
+      if(res && res.products && res.products.length > 0){
+        allDrafts = allDrafts.concat(res.products);
+        if(res.products.length < 250) hasMore = false;
+        page++;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    if(!allDrafts.length){ showNotif('✅ Aucun produit en brouillon !','success'); return; }
+    if(!confirm('Activer '+allDrafts.length+' produit(s) en brouillon ?')) return;
+
+    var ok = 0, fail = 0;
+    for(var i = 0; i < allDrafts.length; i++){
+      try {
+        await shopifyAPI('PUT','products/'+allDrafts[i].id+'.json', {
+          product: { id: allDrafts[i].id, status: 'active' }
+        });
+        ok++;
+      } catch(e){
+        fail++;
+        console.error('[Activate] Erreur produit', allDrafts[i].title, e.message);
+      }
+      if(i < allDrafts.length-1) await new Promise(function(r){ setTimeout(r, 500); });
+    }
+    showNotif('✅ '+ok+' produit(s) activé(s)'+(fail>0?', '+fail+' erreur(s)':''), 'success');
+  } catch(e){
+    showNotif('❌ Erreur: '+e.message,'error');
+    console.error('[Activate All]', e);
   }
 }
 
