@@ -15425,24 +15425,25 @@ function shopifyDescription(phone){
       '<p>Smartphone neuf, sous garantie constructeur. Disponible immédiatement en boutique au 21 Rue Gambetta, 71000 Mâcon.</p>';
   }
 
-  // Tableau de spécifications techniques (template HTML du doc section 5.2)
+  // Tableau de spécifications techniques (template HTML exact du doc section 5.2)
   var specs = '<section style="max-width:640px;margin:40px 0;font-family:sans-serif;font-size:14px;">'+
     '<h2 style="font-size:16px;font-weight:bold;margin-bottom:12px;">Spécificités Techniques</h2>'+
     '<table style="width:100%;border-collapse:collapse;"><tbody>';
 
   function row(label,val){
-    if(!val) return '';
     return '<tr><td style="font-weight:bold;padding:8px 12px;background:#f5f5f5;border:1px solid #e0e0e0;width:160px;">'+label+'</td>'+
       '<td style="padding:8px 12px;border:1px solid #e0e0e0;">'+val+'</td></tr>';
   }
 
-  specs += row('Couleur', couleur);
-  if(info.isReconditione) specs += row('Grade', grade);
-  specs += row('Stockage', stockage);
-  if(phone.batterie) specs += row('Autonomie', 'Batterie '+(phone.batterie||'')+'%'+(info.isReconditione?' — vérifiée par nos techniciens':''));
-  specs += row('Protection', 'N/A');
-  specs += row('État', info.isReconditione ? 'Reconditionné — Garanti 12 mois' : 'Neuf — Garantie constructeur');
-  specs += row('Disponibilité', 'Retrait en boutique — 21 Rue Gambetta, 71000 Mâcon');
+  specs += row('Couleur', couleur || 'N/A');
+  if(info.isReconditione) specs += row('Grade', grade || 'N/A');
+  specs += row('Stockage', stockage || 'N/A');
+  specs += row('Mémoire Vive', phone.ram ? phone.ram+' Go RAM' : 'N/A');
+  specs += row('Écran', phone.ecran || 'N/A');
+  specs += row('Processeur', phone.processeur || 'N/A');
+  specs += row('Photo', phone.photo || 'N/A');
+  specs += row('Autonomie', phone.batterie ? 'Batterie '+phone.batterie+'%'+(phone.mah?' - '+phone.mah+' mAh':'')+(info.isReconditione?' — vérifiée par nos techniciens':'') : 'N/A');
+  specs += row('Protection', phone.protection || 'N/A');
 
   specs += '</tbody></table></section>';
   return accroche + specs;
