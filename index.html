@@ -3589,6 +3589,28 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
     </div>
     <div id="marge-preview" style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;color:var(--text-muted);">💡 Marge calculée automatiquement</div>
+    <!-- Photos Shopify -->
+    <div style="margin-top:16px;padding:14px;background:rgba(150,191,72,0.08);border:1px solid rgba(150,191,72,0.3);border-radius:10px;">
+      <div style="font-size:11px;color:#96bf48;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">📸 Photos produit (Shopify)</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <!-- Photo Face -->
+        <div style="flex:1;min-width:140px;text-align:center;">
+          <div id="p-photo-face-preview" style="width:100%;height:120px;border:2px dashed rgba(150,191,72,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:rgba(0,0,0,0.1);" onclick="document.getElementById('p-photo-face-input').click()">
+            <span id="p-photo-face-text" style="font-size:12px;color:var(--text-muted);">📱 Face<br><span style="font-size:10px;">Cliquez pour prendre</span></span>
+            <img id="p-photo-face-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
+          </div>
+          <input type="file" id="p-photo-face-input" accept="image/*" capture="environment" style="display:none;" onchange="previewPhonePhoto(this,'face')">
+        </div>
+        <!-- Photo Dos -->
+        <div style="flex:1;min-width:140px;text-align:center;">
+          <div id="p-photo-dos-preview" style="width:100%;height:120px;border:2px dashed rgba(150,191,72,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:rgba(0,0,0,0.1);" onclick="document.getElementById('p-photo-dos-input').click()">
+            <span id="p-photo-dos-text" style="font-size:12px;color:var(--text-muted);">📱 Dos<br><span style="font-size:10px;">Cliquez pour prendre</span></span>
+            <img id="p-photo-dos-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;">
+          </div>
+          <input type="file" id="p-photo-dos-input" accept="image/*" capture="environment" style="display:none;" onchange="previewPhonePhoto(this,'dos')">
+        </div>
+      </div>
+    </div>
     <div id="p-photo-preview" style="display:none;margin-top:12px;">
       <img id="p-photo-img" src="" alt="Photo" style="max-width:100%;border-radius:8px;max-height:120px;object-fit:cover;">
     </div>
@@ -3795,7 +3817,7 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||''};});
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null};});
         renderPhones(); renderDashboard();
       }
     } catch(e) { console.log('Sync error:', e); }
@@ -6443,14 +6465,45 @@ function addPhone(){
   var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);savePhone(phone);
+
+  // ── Upload photos si présentes ──
+  if(_pendingPhotoFace || _pendingPhotoDos){
+    showNotif('⏳ Upload des photos...','info');
+    uploadPendingPhotos(phone).then(function(urls){
+      if(urls.face) phone.photo_face = urls.face;
+      if(urls.dos) phone.photo_dos = urls.dos;
+      // Mettre à jour dans Supabase
+      var photoUpdate = {};
+      if(urls.face) photoUpdate.photo_face = urls.face;
+      if(urls.dos) photoUpdate.photo_dos = urls.dos;
+      if(Object.keys(photoUpdate).length > 0 && supabaseReady){
+        supaFetch('phones', 'PATCH', photoUpdate, '?id=eq.'+phone.id);
+      }
+      showNotif('📸 Photos uploadées !','success');
+      // Auto-sync Shopify si activé (après upload photos)
+      if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
+        setTimeout(function(){ shopifyPublishPhone(phone.id); }, 500);
+      }
+    }).catch(function(e){
+      console.error('[Photo Upload]', e);
+      showNotif('⚠️ Photos non uploadées: '+e.message,'error');
+      // Publier quand même sur Shopify sans photos
+      if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
+        setTimeout(function(){ shopifyPublishPhone(phone.id); }, 500);
+      }
+    });
+  } else {
+    // ── Auto-sync Shopify si activé (sans photos) ──
+    if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
+      setTimeout(function(){ shopifyPublishPhone(phone.id); }, 1000);
+    }
+  }
+
   ['p-modele','p-achat','p-vente','p-batterie','p-imei','p-couleur','p-vendeur-nom','p-vendeur-adresse','p-vendeur-ci','p-vendeur-ci-date','p-photo'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var _pprev=document.getElementById('p-photo-preview');if(_pprev)_pprev.style.display='none';
+  resetPhotoFields();
   closeModal('modal-add-phone');renderPhones();renderDashboard();
   showNotif(modele+' ajouté !','success');
-  // ── Auto-sync Shopify si activé ──
-  if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
-    setTimeout(function(){ shopifyPublishPhone(phone.id); }, 1000);
-  }
 }
 
 // Déduction sortie caisse pour achat smartphone en espèces
@@ -15328,6 +15381,96 @@ async function paramsTestShopify(){
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// ══  PHOTOS PRODUIT — Capture, Upload, Preview  ═════════════
+// ══════════════════════════════════════════════════════════════
+
+// Variables temporaires pour stocker les fichiers photo en attente d'upload
+var _pendingPhotoFace = null;
+var _pendingPhotoDos = null;
+
+// Preview de la photo après sélection
+function previewPhonePhoto(input, side){
+  if(!input.files||!input.files[0]) return;
+  var file = input.files[0];
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = document.getElementById('p-photo-'+side+'-img');
+    var text = document.getElementById('p-photo-'+side+'-text');
+    if(img){ img.src = e.target.result; img.style.display='block'; }
+    if(text) text.style.display='none';
+    if(side==='face') _pendingPhotoFace = file;
+    if(side==='dos') _pendingPhotoDos = file;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Compresser et redimensionner une image avant upload (max 1200px, qualité 0.8)
+function compressImage(file, maxWidth, quality){
+  return new Promise(function(resolve){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var canvas = document.createElement('canvas');
+        var w = img.width, h = img.height;
+        if(w > maxWidth){ h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', quality || 0.8);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Upload une photo vers Supabase Storage via le proxy
+async function uploadPhonePhoto(file, fileName){
+  var compressed = await compressImage(file, 1200, 0.8);
+  var res = await fetch('/api/supabase-storage?bucket=phone-photos&fileName='+encodeURIComponent(fileName), {
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg' },
+    body: compressed
+  });
+  if(!res.ok) throw new Error('Upload échoué: '+res.status);
+  var data = await res.json();
+  return data.url;
+}
+
+// Upload les photos en attente pour un téléphone et retourner les URLs
+async function uploadPendingPhotos(phone){
+  var urls = { face: null, dos: null };
+  var handle = shopifyHandle(phone);
+
+  if(_pendingPhotoFace){
+    try {
+      urls.face = await uploadPhonePhoto(_pendingPhotoFace, handle+'-face.jpg');
+    } catch(e){ console.error('[Photo Face]', e); }
+  }
+  if(_pendingPhotoDos){
+    try {
+      urls.dos = await uploadPhonePhoto(_pendingPhotoDos, handle+'-dos.jpg');
+    } catch(e){ console.error('[Photo Dos]', e); }
+  }
+  return urls;
+}
+
+// Réinitialiser les champs photo du formulaire
+function resetPhotoFields(){
+  _pendingPhotoFace = null;
+  _pendingPhotoDos = null;
+  ['face','dos'].forEach(function(side){
+    var img = document.getElementById('p-photo-'+side+'-img');
+    var text = document.getElementById('p-photo-'+side+'-text');
+    var input = document.getElementById('p-photo-'+side+'-input');
+    if(img){ img.src=''; img.style.display='none'; }
+    if(text) text.style.display='block';
+    if(input) input.value='';
+  });
+}
+
 // ── Appel API Shopify via le proxy serverless ──
 async function shopifyAPI(method, endpoint, body){
   var store = localStorage.getItem(PARAMS_KEYS.shopifyStore)||'';
@@ -15493,8 +15636,13 @@ async function shopifyPublishPhone(phoneId){
     } catch(e){}
 
     // Status : active si photo présente, draft si absente (section 8 du doc)
-    var hasPhoto = phone.photo_url || phone.image_url || phone.photos || false;
+    var hasPhoto = phone.photo_face || phone.photo_dos || false;
     var productStatus = hasPhoto ? 'active' : 'draft';
+
+    // Préparer les images pour Shopify
+    var shopifyImages = [];
+    if(phone.photo_face) shopifyImages.push({ src: phone.photo_face, alt: title + ' - Face' });
+    if(phone.photo_dos) shopifyImages.push({ src: phone.photo_dos, alt: title + ' - Dos' });
 
     // Structure produit conforme au doc (section 6 + 8)
     var productData = {
@@ -15515,7 +15663,8 @@ async function shopifyPublishPhone(phoneId){
           inventory_policy: 'deny',
           sku: 'SP-'+(phone.imei||phone.id),
           requires_shipping: false
-        }]
+        }],
+        images: shopifyImages.length > 0 ? shopifyImages : undefined
       }
     };
 

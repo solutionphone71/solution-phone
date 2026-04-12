@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   // Buckets autorises
-  const ALLOWED_BUCKETS = ['photos', 'phones', 'reparations'];
+  const ALLOWED_BUCKETS = ['photos', 'phones', 'reparations', 'phone-photos'];
   if (!ALLOWED_BUCKETS.includes(bucket)) {
     return res.status(403).json({ error: 'Bucket non autorise: ' + bucket });
   }
