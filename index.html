@@ -7897,6 +7897,18 @@ async function loadSalariesFromSupabase() {
     console.warn('Erreur chargement salariés:', e);
     salaries = [];
   }
+  // Pré-remplir si vide (données bulletins mars 2026)
+  if (salaries.length === 0) {
+    salaries = [
+      {prenom:'Evan',nom:'ANGOSTO',secu:'1 03 02 69 384 052 77',matricule:'00004',dateEntree:'2022-01-10',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1823.07',anciennete:'4',pas:'0',adresse:'289 Route des Goguelins',cp:'69820',ville:'Fleurie',iban:'',apprentiPct:'0',paies:{}},
+      {prenom:'Nawfel',nom:'CRANCE',secu:'1 03 12 71 270 162 01',matricule:'00006',dateEntree:'2024-11-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1823.07',anciennete:'3',pas:'0',adresse:'96 Rue Jules Ferry',cp:'01750',ville:'Saint Laurent sur Saône',iban:'',apprentiPct:'0',paies:{}},
+      {prenom:'Rahim',nom:'HASSANI',secu:'1 05 12 98 511 033 27',matricule:'00007',dateEntree:'2025-10-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1823.07',anciennete:'3',pas:'0',adresse:'4 Rue de Bretagne',cp:'71000',ville:'Mâcon',iban:'',apprentiPct:'0',paies:{}},
+      {prenom:'Raphaël',nom:'JOUIN',secu:'1 06 01 78 646 471 25',matricule:'00009',dateEntree:'2024-08-01',type:'apprenti',categorie:'Apprenti',niveau:'Apprenti Vendeur',salaire:'929.77',anciennete:'1',pas:'0',adresse:'47 Impasse de la Grisière',cp:'71118',ville:'Saint Martin Belle Roche',iban:'',apprentiPct:'51',paies:{}},
+      {prenom:'Martin',nom:'CHAVET',secu:'1 08 10 01 451 206 20',matricule:'00010',dateEntree:'2024-09-01',type:'apprenti',categorie:'Apprenti',niveau:'Apprenti',salaire:'711.00',anciennete:'1',pas:'0',adresse:'189 Chemin des Rollets',cp:'01140',ville:'Illiat',iban:'',apprentiPct:'39',paies:{}}
+    ];
+    await saveSalariesToSupabase();
+    console.log('✅ 5 salariés pré-remplis depuis bulletins mars 2026');
+  }
 }
 
 async function saveSalariesToSupabase() {
