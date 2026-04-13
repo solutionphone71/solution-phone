@@ -806,6 +806,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
+            <button class="btn" style="color:#f39c12;border-color:#f39c12;" onclick="document.getElementById('wegacell-occ-pdf-input').click()">📄 Import Wegacell</button>
+            <input type="file" id="wegacell-occ-pdf-input" accept=".pdf" style="display:none" onchange="importWegacellOccasionPDF(this)">
             <button class="btn" id="btn-shopify-bulk" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublish()">🛒 Tout publier Shopify</button>
             <button class="btn" id="btn-shopify-stock" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyFixAllStock()">📦 Corriger stocks Shopify</button>
             <button class="btn" id="btn-shopify-activate" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyActivateAll()">✅ Activer brouillons Shopify</button>
@@ -1033,6 +1035,41 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div style="display:flex;gap:10px;">
               <button class="btn" onclick="closeModal('modal-import-wegacell')">Annuler</button>
               <button class="btn btn-primary" onclick="confirmWegacellImport()">✅ Importer tout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL IMPORT WEGACELL OCCASION -->
+    <div class="modal-overlay" id="modal-import-wegacell-occ" onclick="if(event.target===this)closeModal('modal-import-wegacell-occ')">
+      <div class="modal" style="max-width:850px;">
+        <div class="modal-header">
+          <div class="modal-title">📄 Import Wegacell Occasion — Vérification</div>
+          <button onclick="closeModal('modal-import-wegacell-occ')" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div style="padding:20px;">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Vérifiez les smartphones occasion détectés. Ajustez les prix de vente (TVA sur marge Art.297A CGI).</div>
+          <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead><tr style="background:rgba(255,255,255,0.04);position:sticky;top:0;">
+                <th style="padding:8px;text-align:center;width:40px;">✓</th>
+                <th style="padding:8px;text-align:left;">Modèle</th>
+                <th style="padding:8px;">Stock.</th>
+                <th style="padding:8px;">Couleur</th>
+                <th style="padding:8px;">Grade</th>
+                <th style="padding:8px;">Qté / IMEI</th>
+                <th style="padding:8px;">Achat €</th>
+                <th style="padding:8px;">Vente €</th>
+              </tr></thead>
+              <tbody id="wegacell-occ-import-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div id="wegacell-occ-import-count" style="font-size:13px;color:var(--text-muted);"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn" onclick="closeModal('modal-import-wegacell-occ')">Annuler</button>
+              <button class="btn btn-primary" onclick="confirmWegacellOccasionImport()">✅ Importer dans Stock Occasion</button>
             </div>
           </div>
         </div>
@@ -17616,6 +17653,161 @@ async function confirmWegacellImport(){
   renderPhonesNeufs();
   showNotif('✅ '+count+' téléphone(s) importé(s) depuis Wegacell','success');
   _wegacellImportData = [];
+}
+
+// ══════════════════════════════════════════════════════════
+// IMPORT WEGACELL OCCASION (stock smartphones TVA marge)
+// ══════════════════════════════════════════════════════════
+var _wegacellOccImportData = [];
+
+async function importWegacellOccasionPDF(input){
+  if(!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  showNotif('⏳ Lecture du PDF Wegacell (occasion)...','info');
+
+  try {
+    await loadPdfJs();
+    var arrayBuffer = await file.arrayBuffer();
+    var pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    var allText = '';
+
+    for(var i = 1; i <= pdf.numPages; i++){
+      var page = await pdf.getPage(i);
+      var content = await page.getTextContent();
+      var lines = [];
+      var lastY = null;
+      content.items.forEach(function(item){
+        if(lastY !== null && Math.abs(item.transform[5] - lastY) > 5){
+          lines.push('\n');
+        }
+        lines.push(item.str);
+        lastY = item.transform[5];
+      });
+      allText += lines.join(' ') + '\n';
+    }
+
+    console.log('[Wegacell Occasion PDF] Texte extrait:', allText.substring(0, 2000));
+
+    // Extraire la date de la facture
+    var dateMatch = allText.match(/Belegdatum\s*:\s*(\d{2})\.(\d{2})\.(\d{4})/);
+    var dateFacture = dateMatch ? dateMatch[3]+'-'+dateMatch[2]+'-'+dateMatch[1] : new Date().toISOString().split('T')[0];
+
+    // Réutiliser le parser Wegacell existant
+    var products = parseWegacellText(allText);
+
+    if(products.length === 0){
+      showNotif('⚠️ Aucun téléphone détecté dans le PDF','error');
+      console.log('[Wegacell Occasion PDF] TEXTE COMPLET:', allText);
+      input.value = '';
+      return;
+    }
+
+    // Enrichir chaque produit avec les données occasion
+    products.forEach(function(p){
+      p.dateFacture = dateFacture;
+      // Détecter le grade depuis le texte brut
+      if(p.raw && /used/i.test(p.raw)){
+        p.grade = 'B';
+      } else if(p.raw && /refurbished/i.test(p.raw)){
+        p.grade = 'A';
+      } else {
+        p.grade = 'B';
+      }
+      // Prix de vente occasion : marge ~40-60% sur l'achat (TVA sur marge)
+      p.vente = p.achat > 0 ? Math.ceil(p.achat * 1.5 / 5) * 5 : 0;
+    });
+
+    _wegacellOccImportData = products;
+    renderWegacellOccPreview();
+    openModal('modal-import-wegacell-occ');
+    var totalUnits = products.reduce(function(s,p){ return s + (p.serials && p.serials.length > 0 ? p.serials.length : p.qty); }, 0);
+    showNotif('✅ '+products.length+' ligne(s) · '+totalUnits+' téléphone(s) occasion détecté(s)','success');
+  } catch(e){
+    showNotif('❌ Erreur lecture PDF: '+e.message,'error');
+    console.error('[Wegacell Occasion PDF]', e);
+  }
+  input.value = '';
+}
+
+function renderWegacellOccPreview(){
+  var tbody = document.getElementById('wegacell-occ-import-tbody');
+  if(!tbody) return;
+
+  var totalQty = 0;
+  var totalAchat = 0;
+  tbody.innerHTML = _wegacellOccImportData.map(function(p, i){
+    var nbUnits = p.serials && p.serials.length > 0 ? p.serials.length : p.qty;
+    totalQty += nbUnits;
+    totalAchat += p.achat * nbUnits;
+    var imeiList = (p.serials||[]).map(function(s){ return '<div style="font-size:10px;color:var(--green);font-family:monospace;">'+s+'</div>'; }).join('');
+    return '<tr style="border-bottom:1px solid var(--border);">'+
+      '<td style="padding:6px;text-align:center;"><input type="checkbox" '+(p.selected?'checked':'')+' onchange="_wegacellOccImportData['+i+'].selected=this.checked"></td>'+
+      '<td style="padding:6px;"><input type="text" value="'+p.modele.replace(/"/g,'&quot;')+'" onchange="_wegacellOccImportData['+i+'].modele=this.value" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;"></td>'+
+      '<td style="padding:6px;text-align:center;">'+p.stockage+'Go</td>'+
+      '<td style="padding:6px;"><input type="text" value="'+(p.couleur||'').replace(/"/g,'&quot;')+'" onchange="_wegacellOccImportData['+i+'].couleur=this.value" style="width:70px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;"></td>'+
+      '<td style="padding:6px;text-align:center;"><select onchange="_wegacellOccImportData['+i+'].grade=this.value" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px;color:var(--text);font-size:12px;">'+
+        '<option value="A"'+(p.grade==='A'?' selected':'')+'>A</option>'+
+        '<option value="B"'+(p.grade==='B'?' selected':'')+'>B</option>'+
+        '<option value="C"'+(p.grade==='C'?' selected':'')+'>C</option>'+
+      '</select></td>'+
+      '<td style="padding:6px;text-align:center;font-size:12px;"><b>×'+nbUnits+'</b>'+imeiList+'</td>'+
+      '<td style="padding:6px;text-align:center;"><input type="number" value="'+p.achat.toFixed(2)+'" step="0.01" onchange="_wegacellOccImportData['+i+'].achat=parseFloat(this.value)||0" style="width:75px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right;"></td>'+
+      '<td style="padding:6px;text-align:center;"><input type="number" value="'+p.vente.toFixed(2)+'" step="0.01" onchange="_wegacellOccImportData['+i+'].vente=parseFloat(this.value)||0" style="width:75px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;padding:4px 6px;color:var(--text);font-size:12px;text-align:right;font-weight:700;"></td>'+
+    '</tr>';
+  }).join('');
+
+  var countDiv = document.getElementById('wegacell-occ-import-count');
+  if(countDiv) countDiv.innerHTML = '<b>'+_wegacellOccImportData.length+'</b> ligne(s) · <b>'+totalQty+'</b> smartphone(s) occasion · Total achat : <b>'+totalAchat.toFixed(2)+' €</b>';
+}
+
+async function confirmWegacellOccasionImport(){
+  var selected = _wegacellOccImportData.filter(function(p){ return p.selected; });
+  if(!selected.length){ showNotif('Aucun produit sélectionné','error'); return; }
+
+  showNotif('⏳ Import occasion en cours...','info');
+  var count = 0;
+  var today = new Date().toISOString().split('T')[0];
+
+  for(var i = 0; i < selected.length; i++){
+    var item = selected[i];
+    var serials = item.serials || [];
+    var nbToCreate = serials.length > 0 ? serials.length : item.qty;
+
+    for(var q = 0; q < nbToCreate; q++){
+      var phone = {
+        id: Date.now() + count,
+        modele: item.modele,
+        stockage: parseInt(item.stockage) || 128,
+        grade: item.grade || 'B',
+        batterie: null,
+        imei: serials[q] || '',
+        achat: item.achat,
+        vente: item.vente,
+        mode: 'VIREMENT',
+        dateAchat: item.dateFacture || today,
+        couleur: item.couleur || '',
+        vendeurNom: 'Wegacell GmbH',
+        vendeurAdresse: 'Piepersberg 23, 42653 Solingen, Allemagne',
+        vendeurCI: '',
+        vendeurCIDate: '',
+        typeAchat: 'FOURNISSEUR',
+        fournisseur: 'Wegacell',
+        numPolice: phones.length + 1,
+        etat: 'DISPONIBLE',
+        dateVente: null,
+        isNew: true
+      };
+
+      phones.push(phone);
+      await savePhone(phone);
+      count++;
+    }
+  }
+
+  closeModal('modal-import-wegacell-occ');
+  renderPhones();
+  showNotif('✅ '+count+' smartphone(s) occasion importé(s) depuis Wegacell','success');
+  _wegacellOccImportData = [];
 }
 
 // ══════════════════════════════════════════════════════════
