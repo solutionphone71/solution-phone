@@ -505,6 +505,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-item" onclick="showPage('calendrier',this);loadCalItems()"><span class="nav-icon">📅</span><span>Calendrier Éditorial</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
 
+    <div class="nav-sep"></div>
+    <div class="nav-item" onclick="openLiensRapides()" style="background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.15);border-radius:8px;margin:4px 8px;"><span class="nav-icon">🔗</span><span>Liens rapides</span></div>
+
     <!-- ══ TOGGLE DARK/LIGHT ══ -->
     <div class="theme-toggle-wrap" onclick="toggleTheme()">
       <span class="theme-toggle-icon" id="theme-icon">🌙</span>
@@ -20523,6 +20526,54 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
 // Service Worker — mode hors-ligne
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').then(function(){console.log('[SW] OK');}).catch(function(){});
+}
+
+// ══════════════════════════════════════════════════
+// ██  LIENS RAPIDES — Fournisseurs & Comptabilité
+// ══════════════════════════════════════════════════
+function openLiensRapides(){
+  var overlay=document.getElementById('liens-rapides-overlay');
+  if(overlay){overlay.style.display='flex';return;}
+  overlay=document.createElement('div');
+  overlay.id='liens-rapides-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.onclick=function(e){if(e.target===overlay)overlay.style.display='none';};
+
+  var links=[
+    {cat:'Fournisseurs',items:[
+      {name:'Utopya',url:'https://www.utopya.fr',icon:'🏪',color:'#e74c3c'},
+      {name:'Mobilax',url:'https://www.mobilax.fr',icon:'📦',color:'#3498db'},
+      {name:'MobileSentrix',url:'https://www.mobilesentrix.eu',icon:'🔩',color:'#2ecc71'},
+      {name:'Wegacell',url:'https://www.wegacell.de',icon:'🇩🇪',color:'#f39c12'},
+      {name:'PartnerTele',url:'https://www.partnertele.com',icon:'🤝',color:'#9b59b6'}
+    ]},
+    {cat:'Comptabilité & Outils',items:[
+      {name:'Phonilab',url:'https://fr.phonilab.app/admin/index.php#edit_repair',icon:'🔧',color:'#1abc9c'},
+      {name:'Pennylane',url:'https://app.pennylane.com/auth/login',icon:'📊',color:'#2563eb'}
+    ]}
+  ];
+
+  var html='<div style="background:var(--card-bg,#1a1a2e);border:1px solid rgba(255,0,51,0.3);border-radius:16px;padding:28px 32px;max-width:520px;width:90%;max-height:85vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,0.5);">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">'+
+    '<div style="font-size:18px;font-weight:800;">🔗 Liens rapides</div>'+
+    '<div onclick="document.getElementById(\'liens-rapides-overlay\').style.display=\'none\'" style="cursor:pointer;font-size:22px;color:#999;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.05);">✕</div>'+
+    '</div>';
+
+  links.forEach(function(cat){
+    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#888;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.08);">'+cat.cat+'</div>';
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+    cat.items.forEach(function(l){
+      html+='<a href="'+l.url+'" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;text-decoration:none;color:inherit;transition:all .2s;cursor:pointer;" onmouseover="this.style.background=\'rgba(255,255,255,0.08)\';this.style.borderColor=\''+l.color+'\';this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 15px rgba(0,0,0,0.3)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\';this.style.borderColor=\'rgba(255,255,255,0.08)\';this.style.transform=\'none\';this.style.boxShadow=\'none\'">'+
+        '<div style="width:36px;height:36px;border-radius:8px;background:'+l.color+'22;border:1px solid '+l.color+'44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">'+l.icon+'</div>'+
+        '<div><div style="font-weight:700;font-size:13px;">'+l.name+'</div><div style="font-size:10px;color:#888;margin-top:1px;">'+l.url.replace('https://','').replace('http://','').split('/')[0]+'</div></div>'+
+      '</a>';
+    });
+    html+='</div>';
+  });
+
+  html+='</div>';
+  overlay.innerHTML=html;
+  document.body.appendChild(overlay);
 }
 </script>
 </body>
