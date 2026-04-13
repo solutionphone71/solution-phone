@@ -379,7 +379,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
-  <div class="mob-menu-item" onclick="showPageMobile('suivi-qr','');renderSuiviQR();closeMobileMenu()"><span class="mob-menu-icon">🔄</span>Suivi QualiRépar</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
   <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
@@ -463,7 +462,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-group-label">Réparations</div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
-    <div class="nav-item" onclick="showPage('suivi-qr',this);renderSuiviQR()"><span class="nav-icon">🔄</span><span>Suivi QR</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
 
     <div class="nav-sep"></div>
@@ -2262,6 +2260,80 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
 
         <div class="page" id="page-reparations">
+
+      <!-- ══ BENTO WIDGETS RÉPARATIONS ══ -->
+      <div id="rep-bento-widgets" style="margin-bottom:16px;">
+        <div class="bento" style="grid-auto-rows:minmax(100px,auto);">
+
+          <!-- CA Réparations Live -->
+          <div class="bw bw-2x" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,rgba(22,22,34,0.9),rgba(40,15,20,0.9));">
+            <div class="bw-glow" style="top:-20px;right:-20px;background:#FF0033;"></div>
+            <div class="bw-label"><span class="pulse-dot" style="background:#FF0033;box-shadow:0 0 12px #FF0033;"></span> CA Réparations ce mois</div>
+            <div id="rep-w-ca" class="bw-val" style="color:#FF0033;">0 €</div>
+            <div style="display:flex;gap:20px;margin-top:8px;">
+              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Bonus QR</div><div id="rep-w-qr-bonus" style="font-size:16px;font-weight:800;color:#34d399;">0 €</div></div>
+              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Nb réparations</div><div id="rep-w-nb-rep" style="font-size:16px;font-weight:800;color:#60a5fa;">0</div></div>
+              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Ticket moyen</div><div id="rep-w-ticket" style="font-size:16px;font-weight:800;color:#fbbf24;">0 €</div></div>
+            </div>
+          </div>
+
+          <!-- Réparations en cours -->
+          <div class="bw" style="background:linear-gradient(135deg,rgba(15,25,15,0.9),rgba(20,40,25,0.9));">
+            <div class="bw-label">🔧 En cours</div>
+            <div id="rep-w-encours" class="bw-val" style="color:#34d399;font-size:36px;">0</div>
+            <div id="rep-w-encours-sub" class="bw-sub">dossiers ouverts</div>
+          </div>
+
+          <!-- QR en attente -->
+          <div class="bw" onclick="document.getElementById('rep-qr-suivi-section').style.display='block';document.getElementById('rep-qr-suivi-section').scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,rgba(20,15,35,0.9),rgba(35,20,50,0.9));">
+            <div class="bw-glow" style="bottom:-20px;right:-20px;background:#a78bfa;"></div>
+            <div class="bw-label">🏷️ QualiRépar</div>
+            <div id="rep-w-qr-pending" class="bw-val" style="color:#a78bfa;font-size:28px;">0</div>
+            <div id="rep-w-qr-status" class="bw-sub">en attente de remboursement</div>
+          </div>
+
+          <!-- Top pannes du mois -->
+          <div class="bw" style="background:rgba(22,22,34,0.85);">
+            <div class="bw-label">🔥 Top pannes</div>
+            <div id="rep-w-top-pannes" style="font-size:12px;"></div>
+          </div>
+
+          <!-- Réparations du jour -->
+          <div class="bw" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,50,70,0.9));">
+            <div class="bw-label">⚡ Aujourd'hui</div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div><div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#60a5fa;">0</div><div style="font-size:10px;color:rgba(255,255,255,0.3);">réparations</div></div>
+              <div style="width:1px;height:30px;background:rgba(255,255,255,0.06);"></div>
+              <div><div id="rep-w-today-ca" style="font-size:28px;font-weight:900;color:#fbbf24;">0€</div><div style="font-size:10px;color:rgba(255,255,255,0.3);">CA du jour</div></div>
+            </div>
+          </div>
+
+          <!-- Taux succès QR -->
+          <div class="bw" style="background:rgba(22,22,34,0.85);">
+            <div class="bw-label">✅ Taux QR</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <svg width="60" height="60" viewBox="0 0 60 60">
+                <circle class="ring-track" cx="30" cy="30" r="24" stroke-width="8"/>
+                <circle class="ring-fill" id="rep-w-qr-ring" cx="30" cy="30" r="24" stroke-width="8" stroke="#34d399" stroke-dasharray="151" stroke-dashoffset="151" transform="rotate(-90 30 30)"/>
+                <text x="30" y="34" text-anchor="middle" fill="#34d399" font-size="14" font-weight="900" id="rep-w-qr-pct">0%</text>
+              </svg>
+              <div>
+                <div id="rep-w-qr-approved" style="font-size:12px;font-weight:700;color:#34d399;">0 approuvés</div>
+                <div id="rep-w-qr-rejected" style="font-size:11px;color:rgba(255,255,255,0.3);">0 refusés</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Actions rapides réparations -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="btn btn-primary" onclick="repNewDossier()" style="flex:1;padding:12px;font-size:13px;font-weight:700;">🔧 Nouvelle réparation</button>
+          <button class="btn" onclick="showPage('qualirepar',null);qrInit();" style="flex:1;padding:12px;font-size:13px;font-weight:700;border-color:#a78bfa;color:#a78bfa;">🏷️ Nouvelle répa QualiRépar</button>
+          <button class="btn btn-sm" onclick="repLoadDossiers();renderRepListe();renderRepTermines();" style="padding:12px;font-size:13px;">🔄</button>
+        </div>
+      </div>
+
       <!-- ── LISTE DES DOSSIERS ── -->
       <div id="rep-liste-view">
         <div class="card">
@@ -2339,6 +2411,43 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               </thead>
               <tbody id="rep-hist-table"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SUIVI QUALIREPAR INTÉGRÉ ── -->
+      <div class="card" style="margin-top:16px;border:1.5px solid #a78bfa;display:none;" id="rep-qr-suivi-section">
+        <div class="card-header" style="background:rgba(167,139,250,0.06);cursor:pointer;" onclick="var b=document.getElementById('rep-qr-suivi-body');b.style.display=b.style.display==='none'?'block':'none';">
+          <div class="card-title" style="color:#a78bfa;">
+            🏷️ Suivi QualiRépar
+            <span id="rep-qr-suivi-badge" style="background:#a78bfa;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:8px;"></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn btn-sm" onclick="event.stopPropagation();qrVerifierTousLesStatuts();showNotif('Vérification en cours...','info');" style="border-color:#a78bfa;color:#a78bfa;font-size:11px;">🔄 Vérifier statuts</button>
+          </div>
+        </div>
+        <div id="rep-qr-suivi-body">
+          <!-- Stats QR -->
+          <div id="rep-qr-suivi-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;"></div>
+          <!-- Tableau Ecosystem -->
+          <div style="padding:0 12px 6px;">
+            <div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ecosystem (Apple/Samsung)</div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr style="background:rgba(167,139,250,0.06);"><th style="padding:6px;">Réf</th><th style="padding:6px;">Client</th><th style="padding:6px;">Appareil</th><th style="padding:6px;">Date</th><th style="padding:6px;text-align:center;">Statut</th><th style="padding:6px;text-align:center;">Action</th></tr></thead>
+                <tbody id="rep-qr-eco-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Tableau Ecologic -->
+          <div style="padding:0 12px 12px;">
+            <div style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ecologic / Agora (Autres marques)</div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr style="background:rgba(52,211,153,0.06);"><th style="padding:6px;">Réf</th><th style="padding:6px;">Client</th><th style="padding:6px;">Appareil</th><th style="padding:6px;">Date</th><th style="padding:6px;text-align:center;">Statut</th><th style="padding:6px;text-align:center;">Action</th></tr></thead>
+                <tbody id="rep-qr-agora-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -12408,8 +12517,99 @@ function repLoadDossiers(){
   });
   renderRepListe();
   renderRepTermines();
+  renderRepBentoWidgets();
 }
 
+// ══════════════════════════════════════════════
+// ██  WIDGETS BENTO — Page Réparations
+// ══════════════════════════════════════════════
+function renderRepBentoWidgets(){
+  var moisCourant=getMoisActuel();
+  var todayStr=new Date().toISOString().split('T')[0];
+
+  // CA réparations du mois (depuis caisse)
+  var caRepMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var bonusQR=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
+
+  // Nb réparations du mois (dossiers facturés/clos ce mois)
+  var repFactMois=repDossiers.filter(function(d){return d.facture&&d.facture.date&&d.facture.date.startsWith(moisCourant);});
+  var nbRepMois=repFactMois.length;
+  var ticketMoyen=nbRepMois>0?(caRepMois/nbRepMois):0;
+
+  var el1=document.getElementById('rep-w-ca');if(el1)el1.textContent=caRepMois.toFixed(0)+' €';
+  var el2=document.getElementById('rep-w-qr-bonus');if(el2)el2.textContent=bonusQR.toFixed(0)+' €';
+  var el3=document.getElementById('rep-w-nb-rep');if(el3)el3.textContent=nbRepMois;
+  var el4=document.getElementById('rep-w-ticket');if(el4)el4.textContent=ticketMoyen.toFixed(0)+' €';
+
+  // En cours
+  var enCours=repDossiers.filter(function(d){return d.statut==='depot'||d.statut==='devis';}).length;
+  var el5=document.getElementById('rep-w-encours');if(el5)el5.textContent=enCours;
+  var el5b=document.getElementById('rep-w-encours-sub');if(el5b)el5b.textContent=enCours>1?'dossiers ouverts':'dossier ouvert';
+
+  // QR en attente
+  var qrDossiers=repDossiers.filter(function(d){return d.qrEnvoi&&d.qrEnvoi.statut;});
+  var qrPending=qrDossiers.filter(function(d){var s=d.qrEnvoi.statut;return s==='Sent'||s==='Pending'||s==='Processing';}).length;
+  var qrApproved=qrDossiers.filter(function(d){return d.qrEnvoi.statut==='Approved'||d.qrEnvoi.statut==='Paid';}).length;
+  var qrRejected=qrDossiers.filter(function(d){return d.qrEnvoi.statut==='Rejected';}).length;
+  var el6=document.getElementById('rep-w-qr-pending');if(el6)el6.textContent=qrPending;
+  var el6b=document.getElementById('rep-w-qr-status');if(el6b)el6b.textContent=qrPending>0?'en attente de remboursement':'aucun en attente';
+
+  // Taux QR (anneau)
+  var qrTotal=qrApproved+qrRejected;
+  var qrPct=qrTotal>0?Math.round(qrApproved/qrTotal*100):0;
+  var circ=2*Math.PI*24; // ~151
+  var ring=document.getElementById('rep-w-qr-ring');if(ring)setTimeout(function(){ring.style.strokeDashoffset=circ-(qrPct/100*circ);},100);
+  var pctEl=document.getElementById('rep-w-qr-pct');if(pctEl)pctEl.textContent=qrPct+'%';
+  var apEl=document.getElementById('rep-w-qr-approved');if(apEl)apEl.textContent=qrApproved+' approuvé'+(qrApproved>1?'s':'');
+  var rjEl=document.getElementById('rep-w-qr-rejected');if(rjEl)rjEl.textContent=qrRejected+' refusé'+(qrRejected>1?'s':'');
+
+  // Top pannes
+  var pannes={};repFactMois.forEach(function(d){var p=d.panne||d.appareil&&d.appareil.panne||'Autre';if(p){pannes[p]=(pannes[p]||0)+1;}});
+  var topPannes=Object.keys(pannes).sort(function(a,b){return pannes[b]-pannes[a];}).slice(0,4);
+  var tpEl=document.getElementById('rep-w-top-pannes');
+  if(tpEl){
+    tpEl.innerHTML=topPannes.length>0?topPannes.map(function(p,i){
+      return '<div style="display:flex;justify-content:space-between;padding:3px 0;'+(i<topPannes.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':'')+'"><span style="font-size:11px;">'+p.substring(0,25)+'</span><span style="font-weight:800;">'+pannes[p]+'</span></div>';
+    }).join(''):'<div style="color:rgba(255,255,255,0.3);font-size:11px;padding:6px 0;">Aucune donnée</div>';
+  }
+
+  // Aujourd'hui
+  var repToday=repDossiers.filter(function(d){return d.facture&&d.facture.date===todayStr;});
+  var caToday=caisse.filter(function(c){return c.date===todayStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var tn=document.getElementById('rep-w-today-nb');if(tn)tn.textContent=repToday.length;
+  var tc=document.getElementById('rep-w-today-ca');if(tc)tc.textContent=caToday.toFixed(0)+'€';
+
+  // Suivi QR section — rendre visible si des dossiers QR existent
+  var qrSection=document.getElementById('rep-qr-suivi-section');
+  if(qrSection&&qrDossiers.length>0){
+    qrSection.style.display='block';
+    var badge=document.getElementById('rep-qr-suivi-badge');if(badge)badge.textContent=qrDossiers.length+' dossier'+(qrDossiers.length>1?'s':'');
+
+    // Stats cards
+    var statsEl=document.getElementById('rep-qr-suivi-stats');
+    if(statsEl){
+      var statsData=[
+        {l:'Total',v:qrDossiers.length,c:'#a78bfa'},
+        {l:'En attente',v:qrPending,c:'#fbbf24'},
+        {l:'Approuvés',v:qrApproved,c:'#34d399'},
+        {l:'Refusés',v:qrRejected,c:'#f87171'},
+        {l:'Bonus total',v:bonusQR.toFixed(0)+' €',c:'#60a5fa'}
+      ];
+      statsEl.innerHTML=statsData.map(function(s){return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">'+s.l+'</div><div style="font-size:20px;font-weight:900;color:'+s.c+';margin-top:2px;">'+s.v+'</div></div>';}).join('');
+    }
+
+    // Tables QR (Ecosystem + Ecologic)
+    var ecoRows='',agoraRows='';
+    var statusLabels={Sent:'🟡 En vérif.',Approved:'✅ Approuvé',Paid:'💰 Remboursé',Rejected:'❌ Refusé',Pending:'⏳ Attente',Processing:'🔄 Traitement'};
+    qrDossiers.forEach(function(d){
+      var qr=d.qrEnvoi;var cl=d.client||{};var ap=d.appareil||{};
+      var row='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:6px;">'+(d.numero||'—')+'</td><td style="padding:6px;">'+(cl.nom||'—')+'</td><td style="padding:6px;">'+(ap.marque||'')+' '+(ap.modele||'')+'</td><td style="padding:6px;font-size:11px;">'+(qr.date?fmtDate(qr.date):'—')+'</td><td style="padding:6px;text-align:center;font-size:11px;">'+(statusLabels[qr.statut]||qr.statut)+'</td><td style="padding:6px;text-align:center;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:10px;">🔄</button></td></tr>';
+      if(qr.ecosystemId)ecoRows+=row;else agoraRows+=row;
+    });
+    var ecoTb=document.getElementById('rep-qr-eco-tbody');if(ecoTb)ecoTb.innerHTML=ecoRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecosystem</td></tr>';
+    var agTb=document.getElementById('rep-qr-agora-tbody');if(agTb)agTb.innerHTML=agoraRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecologic</td></tr>';
+  }
+}
 
 // ═══════════════════════════════════════════════════════════
 // HISTORIQUE RÉPARATIONS PAR JOUR — Vue type Phonilab
