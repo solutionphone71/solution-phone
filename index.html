@@ -557,11 +557,111 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <div id="dash-alerts"></div>
       <div id="dash-qr-alerts"></div>
 
-      <!-- KPI du jour -->
-      <div class="dash-grid" id="dash-cards" style="margin-bottom:18px;"></div>
+      <!-- ══ WIDGETS iOS ══ -->
+      <style>
+        .ios-w{background:var(--card-bg,#16161e);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;position:relative;overflow:hidden;transition:all .25s;}
+        .ios-w:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 8px 30px rgba(0,0,0,0.3);}
+        .ios-w-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .ios-w-big{font-size:28px;font-weight:900;line-height:1.1;}
+        .ios-w-sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
+        .ios-w-click{cursor:pointer;}
+        .ios-w-click:hover{transform:translateY(-2px);}
+        .ios-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:8px;}
+        .ios-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
+        .ios-mini-chart{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:8px;}
+        .ios-mini-bar{flex:1;border-radius:3px 3px 0 0;min-width:0;transition:height .4s;}
+      </style>
+
+      <!-- ROW 1 : Horloge + Météo + Objectif CA + Activité du jour -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;" id="dash-widgets-row1">
+
+        <!-- Horloge -->
+        <div class="ios-w" style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);">
+          <div class="ios-w-title">🕐 Horloge</div>
+          <div id="wg-clock" class="ios-w-big" style="color:#00F5FF;font-family:'Share Tech Mono',monospace;font-size:32px;"></div>
+          <div id="wg-clock-date" class="ios-w-sub"></div>
+        </div>
+
+        <!-- Météo Mâcon -->
+        <div class="ios-w" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);">
+          <div class="ios-w-title">🌤️ Météo Mâcon</div>
+          <div id="wg-meteo" style="display:flex;align-items:center;gap:12px;">
+            <div id="wg-meteo-icon" style="font-size:36px;">⏳</div>
+            <div>
+              <div id="wg-meteo-temp" class="ios-w-big" style="color:#fbbf24;">--°</div>
+              <div id="wg-meteo-desc" class="ios-w-sub">Chargement...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objectif CA mensuel -->
+        <div class="ios-w ios-w-click" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,#1a0a0a 0%,#2d1020 100%);">
+          <div class="ios-w-title">🎯 Objectif CA du mois</div>
+          <div id="wg-objectif-val" class="ios-w-big" style="color:#FF0033;">0 €</div>
+          <div id="wg-objectif-sub" class="ios-w-sub">sur 10 000 €</div>
+          <div class="ios-bar"><div id="wg-objectif-bar" class="ios-bar-fill" style="width:0%;background:linear-gradient(90deg,#FF0033,#ff6b6b);"></div></div>
+        </div>
+
+        <!-- Activité du jour -->
+        <div class="ios-w" style="background:linear-gradient(135deg,#0a1a0a 0%,#102d10 100%);">
+          <div class="ios-w-title">⚡ Aujourd'hui</div>
+          <div id="wg-today" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div style="text-align:center;"><div id="wg-today-rep" style="font-size:22px;font-weight:900;color:#34d399;">0</div><div style="font-size:10px;color:var(--text-muted);">Réparations</div></div>
+            <div style="text-align:center;"><div id="wg-today-ventes" style="font-size:22px;font-weight:900;color:#60a5fa;">0</div><div style="font-size:10px;color:var(--text-muted);">Ventes</div></div>
+            <div style="text-align:center;"><div id="wg-today-ca" style="font-size:22px;font-weight:900;color:#fbbf24;">0€</div><div style="font-size:10px;color:var(--text-muted);">CA TTC</div></div>
+            <div style="text-align:center;"><div id="wg-today-clients" style="font-size:22px;font-weight:900;color:#a78bfa;">0</div><div style="font-size:10px;color:var(--text-muted);">Clients</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2 : CA semaine (mini chart) + Stock + Top modèles + Marge -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;" id="dash-widgets-row2">
+
+        <!-- CA semaine graphique -->
+        <div class="ios-w ios-w-click" onclick="showPage('stats',null)">
+          <div class="ios-w-title">📊 CA 7 derniers jours</div>
+          <div id="wg-week-total" class="ios-w-big" style="color:#60a5fa;font-size:22px;">0 €</div>
+          <div class="ios-mini-chart" id="wg-week-chart"></div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:3px;" id="wg-week-labels"></div>
+        </div>
+
+        <!-- Stock global -->
+        <div class="ios-w ios-w-click" onclick="showPage('phones',null)">
+          <div class="ios-w-title">📱 Stock smartphones</div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div>
+              <div id="wg-stock-occ" class="ios-w-big" style="color:#a78bfa;font-size:22px;">0</div>
+              <div class="ios-w-sub">Occasion</div>
+            </div>
+            <div style="width:1px;height:36px;background:rgba(255,255,255,0.08);"></div>
+            <div>
+              <div id="wg-stock-neuf" class="ios-w-big" style="color:#34d399;font-size:22px;">0</div>
+              <div class="ios-w-sub">Neufs</div>
+            </div>
+          </div>
+          <div id="wg-stock-valeur" class="ios-w-sub" style="margin-top:8px;"></div>
+        </div>
+
+        <!-- Top modèles vendus -->
+        <div class="ios-w ios-w-click" onclick="showPage('ventes-smart',null);renderVentesSmartphones();">
+          <div class="ios-w-title">🏆 Top ventes du mois</div>
+          <div id="wg-top-models" style="font-size:12px;"></div>
+        </div>
+
+        <!-- Marge du mois -->
+        <div class="ios-w ios-w-click" onclick="showPage('comptable',null)">
+          <div class="ios-w-title">💎 Marge du mois</div>
+          <div id="wg-marge-val" class="ios-w-big" style="color:#34d399;font-size:22px;">0 €</div>
+          <div id="wg-marge-sub" class="ios-w-sub"></div>
+          <div class="ios-bar"><div id="wg-marge-bar" class="ios-bar-fill" style="width:0%;background:linear-gradient(90deg,#059669,#34d399);"></div></div>
+        </div>
+      </div>
+
+      <!-- KPI du jour (existant) -->
+      <div class="dash-grid" id="dash-cards" style="margin-bottom:12px;"></div>
 
       <!-- Grille principale : réparations + clients -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;" id="dash-main-grid">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;" id="dash-main-grid">
 
         <!-- Réparations récentes -->
         <div class="card" id="dash-rep-card">
@@ -586,7 +686,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
 
       <!-- Ligne basse : smartphones + caisse + QR -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;" id="dash-bottom-grid">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" id="dash-bottom-grid">
 
         <div class="card"><div class="card-header"><div class="card-title">📱 Derniers smartphones</div></div>
           <table><thead><tr><th>Modèle</th><th>Grade</th><th>Prix</th><th>État</th></tr></thead>
@@ -9020,6 +9120,107 @@ function renderDashboard(){
       var el = document.getElementById(id); if(el) el.style.display='none';
     });
   }
+
+  // ══════════════════════════════════════
+  // ██  WIDGETS iOS — Alimentation data
+  // ══════════════════════════════════════
+
+  // 🕐 Horloge live
+  function updateClock(){
+    var now=new Date();
+    var h=String(now.getHours()).padStart(2,'0');
+    var m=String(now.getMinutes()).padStart(2,'0');
+    var s=String(now.getSeconds()).padStart(2,'0');
+    var ce=document.getElementById('wg-clock');if(ce)ce.textContent=h+':'+m+':'+s;
+    var de=document.getElementById('wg-clock-date');
+    if(de){var jn=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];var mn=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];de.textContent=jn[now.getDay()]+' '+now.getDate()+' '+mn[now.getMonth()]+' '+now.getFullYear();}
+  }
+  updateClock();
+  if(window._clockInterval)clearInterval(window._clockInterval);
+  window._clockInterval=setInterval(updateClock,1000);
+
+  // 🌤️ Météo Mâcon (Open-Meteo API gratuite)
+  if(!window._meteoLoaded){
+    window._meteoLoaded=true;
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=46.3&longitude=4.83&current=temperature_2m,weather_code&timezone=Europe/Paris')
+      .then(function(r){return r.json();}).then(function(d){
+        var t=d.current.temperature_2m;var wc=d.current.weather_code;
+        var icons={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌧️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+        var descs={0:'Ensoleillé',1:'Peu nuageux',2:'Partiellement couvert',3:'Couvert',45:'Brouillard',48:'Brouillard givrant',51:'Bruine légère',53:'Bruine',55:'Bruine forte',61:'Pluie légère',63:'Pluie',65:'Forte pluie',71:'Neige légère',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orage',96:'Orage grêle',99:'Orage violent'};
+        var ie=document.getElementById('wg-meteo-icon');if(ie)ie.textContent=icons[wc]||'🌡️';
+        var te=document.getElementById('wg-meteo-temp');if(te)te.textContent=Math.round(t)+'°';
+        var de2=document.getElementById('wg-meteo-desc');if(de2)de2.textContent=descs[wc]||'';
+      }).catch(function(){});
+  }
+
+  // 🎯 Objectif CA mensuel
+  var objectifCA=10000;
+  var oe=document.getElementById('wg-objectif-val');if(oe)oe.textContent=caTotal.toFixed(0)+' €';
+  var os=document.getElementById('wg-objectif-sub');if(os)os.textContent='sur '+objectifCA.toFixed(0)+' € · '+(caTotal>=objectifCA?'✅ Objectif atteint!':Math.round(caTotal/objectifCA*100)+'%');
+  var ob=document.getElementById('wg-objectif-bar');if(ob)ob.style.width=Math.min(100,caTotal/objectifCA*100)+'%';
+
+  // ⚡ Activité du jour
+  var todayStr2=today.toISOString().split('T')[0];
+  var repAuj=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date===todayStr2;}).length;
+  var ventesAuj=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente===todayStr2;}).length;
+  var neufsAuj=(window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente===todayStr2;}).length;
+  var caAuj=caisse.filter(function(c){return c.date===todayStr2;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var clientsAuj=clients.filter(function(c){return c.dateCreation&&c.dateCreation===todayStr2;}).length;
+  var e1=document.getElementById('wg-today-rep');if(e1)e1.textContent=repAuj;
+  var e2=document.getElementById('wg-today-ventes');if(e2)e2.textContent=ventesAuj+neufsAuj;
+  var e3=document.getElementById('wg-today-ca');if(e3)e3.textContent=caAuj.toFixed(0)+'€';
+  var e4=document.getElementById('wg-today-clients');if(e4)e4.textContent=clientsAuj;
+
+  // 📊 CA 7 derniers jours (mini barres)
+  var jours7=[];var totalSem=0;
+  for(var di=6;di>=0;di--){
+    var dd=new Date(today);dd.setDate(today.getDate()-di);
+    var ds=dd.toISOString().split('T')[0];
+    var ca7=caisse.filter(function(c){return c.date===ds;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+    jours7.push({date:ds,ca:ca7,jour:['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dd.getDay()]});
+    totalSem+=ca7;
+  }
+  var maxCA7=Math.max.apply(null,jours7.map(function(j){return j.ca;}))||1;
+  var wChart=document.getElementById('wg-week-chart');
+  var wLabels=document.getElementById('wg-week-labels');
+  var wTotal=document.getElementById('wg-week-total');
+  if(wTotal)wTotal.textContent=totalSem.toFixed(0)+' €';
+  if(wChart)wChart.innerHTML=jours7.map(function(j){
+    var h=Math.max(4,j.ca/maxCA7*40);
+    var isToday=j.date===todayStr2;
+    return '<div class="ios-mini-bar" style="height:'+h+'px;background:'+(isToday?'linear-gradient(180deg,#FF0033,#ff6b6b)':'rgba(96,165,250,0.5)')+';'+(isToday?'box-shadow:0 0 8px rgba(255,0,51,0.4);':'')+'"></div>';
+  }).join('');
+  if(wLabels)wLabels.innerHTML=jours7.map(function(j){var isToday=j.date===todayStr2;return '<span style="flex:1;text-align:center;'+(isToday?'color:#FF0033;font-weight:700;':'')+'">'+j.jour+'</span>';}).join('');
+
+  // 📱 Stock global
+  var stockOcc=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var stockNeuf=(window.phonesNeufs||[]).filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var valStock=phones.filter(function(p){return p.etat==='DISPONIBLE';}).reduce(function(s,p){return s+(Number(p.vente)||0);},0);
+  var valNeuf=(window.phonesNeufs||[]).filter(function(p){return p.etat==='DISPONIBLE';}).reduce(function(s,p){return s+(Number(p.vente)||0);},0);
+  var so=document.getElementById('wg-stock-occ');if(so)so.textContent=stockOcc;
+  var sn=document.getElementById('wg-stock-neuf');if(sn)sn.textContent=stockNeuf;
+  var sv=document.getElementById('wg-stock-valeur');if(sv)sv.textContent='Valeur totale : '+(valStock+valNeuf).toFixed(0)+' €';
+
+  // 🏆 Top ventes du mois
+  var ventesM=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
+  var modeles={};ventesM.forEach(function(p){var m=p.modele.split(' ').slice(0,3).join(' ');modeles[m]=(modeles[m]||0)+1;});
+  var topM=Object.keys(modeles).sort(function(a,b){return modeles[b]-modeles[a];}).slice(0,4);
+  var tmEl=document.getElementById('wg-top-models');
+  if(tmEl){
+    tmEl.innerHTML=topM.length>0?topM.map(function(m,i){
+      var colors=['#fbbf24','#94a3b8','#cd7f32','#888'];
+      var medals=['🥇','🥈','🥉',''];
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;'+(i<topM.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':'')+'"><span>'+medals[i]+' '+m+'</span><span style="font-weight:800;color:'+colors[i]+';">'+modeles[m]+'</span></div>';
+    }).join(''):'<div style="text-align:center;padding:10px;color:var(--text-muted);font-size:11px;">Aucune vente ce mois</div>';
+  }
+
+  // 💎 Marge du mois
+  var margeRepM=caReparMois*0.6; // estimation marge répa ~60%
+  var margeNeufsM=(window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);}).reduce(function(s,p){return s+((Number(p.vente)||0)-(Number(p.achat)||0));},0);
+  var margeTotaleM=mgSmartMois+margeNeufsM;
+  var mv=document.getElementById('wg-marge-val');if(mv)mv.textContent=margeTotaleM.toFixed(0)+' €';
+  var ms=document.getElementById('wg-marge-sub');if(ms)ms.textContent='Occasion: '+mgSmartMois.toFixed(0)+'€ · Neufs: '+margeNeufsM.toFixed(0)+'€';
+  var mb=document.getElementById('wg-marge-bar');if(mb){var mTarget=3000;mb.style.width=Math.min(100,margeTotaleM/mTarget*100)+'%';}
 }
 
 // ============================================================
