@@ -557,107 +557,137 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <div id="dash-alerts"></div>
       <div id="dash-qr-alerts"></div>
 
-      <!-- ══ WIDGETS iOS ══ -->
+      <!-- ══ BENTO DASHBOARD iOS ══ -->
       <style>
-        .ios-w{background:var(--card-bg,#16161e);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px;position:relative;overflow:hidden;transition:all .25s;}
-        .ios-w:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 8px 30px rgba(0,0,0,0.3);}
-        .ios-w-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-        .ios-w-big{font-size:28px;font-weight:900;line-height:1.1;}
-        .ios-w-sub{font-size:12px;color:var(--text-muted);margin-top:4px;}
-        .ios-w-click{cursor:pointer;}
-        .ios-w-click:hover{transform:translateY(-2px);}
-        .ios-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:8px;}
-        .ios-bar-fill{height:100%;border-radius:3px;transition:width .6s ease;}
-        .ios-mini-chart{display:flex;align-items:flex-end;gap:3px;height:40px;margin-top:8px;}
-        .ios-mini-bar{flex:1;border-radius:3px 3px 0 0;min-width:0;transition:height .4s;}
+        .bento{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(120px,auto);gap:14px;margin-bottom:14px;}
+        .bw{background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;position:relative;overflow:hidden;transition:all .35s cubic-bezier(.4,0,.2,1);cursor:pointer;}
+        .bw:hover{border-color:rgba(255,255,255,0.12);box-shadow:0 12px 40px rgba(0,0,0,0.35);transform:translateY(-3px);}
+        .bw-2x{grid-column:span 2;}
+        .bw-tall{grid-row:span 2;}
+        .bw-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,255,255,0.4);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .bw-val{font-size:32px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;}
+        .bw-sub{font-size:12px;color:rgba(255,255,255,0.35);margin-top:6px;}
+        .bw-glow{position:absolute;width:120px;height:120px;border-radius:50%;filter:blur(50px);opacity:.15;pointer-events:none;}
+        /* Pulse dot */
+        .pulse-dot{width:10px;height:10px;border-radius:50%;display:inline-block;animation:bpulse 1.5s ease-in-out infinite;}
+        @keyframes bpulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+        /* Counter anim */
+        @keyframes countUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+        .bw-val,.bw-sub{animation:countUp .6s ease-out both;}
+        .bw-sub{animation-delay:.15s;}
+        /* Ring */
+        .ring-track{fill:none;stroke:rgba(255,255,255,0.06);stroke-linecap:round;}
+        .ring-fill{fill:none;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+        /* Stock carousel */
+        .stock-scroll{display:flex;gap:10px;overflow-x:auto;padding:4px 0;scrollbar-width:none;-ms-overflow-style:none;}
+        .stock-scroll::-webkit-scrollbar{display:none;}
+        .stock-card{flex:0 0 130px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px;transition:all .2s;}
+        .stock-card:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);}
+        /* Mini chart bars */
+        .bento-chart{display:flex;align-items:flex-end;gap:3px;height:50px;margin-top:10px;}
+        .bento-bar{flex:1;border-radius:4px 4px 0 0;min-width:0;transition:height .5s cubic-bezier(.4,0,.2,1);}
       </style>
 
-      <!-- ROW 1 : Horloge + Météo + Objectif CA + Activité du jour -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;" id="dash-widgets-row1">
+      <!-- BENTO GRID -->
+      <div class="bento" id="dash-bento">
 
-        <!-- Horloge -->
-        <div class="ios-w" style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);">
-          <div class="ios-w-title">🕐 Horloge</div>
-          <div id="wg-clock" class="ios-w-big" style="color:#00F5FF;font-family:'Share Tech Mono',monospace;font-size:32px;"></div>
-          <div id="wg-clock-date" class="ios-w-sub"></div>
+        <!-- ① PERFORMANCE LIVE (2x wide) -->
+        <div class="bw bw-2x" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,rgba(22,22,34,0.9),rgba(30,20,40,0.9));">
+          <div class="bw-glow" style="top:-20px;right:-20px;background:#FF0033;"></div>
+          <div class="bw-label"><span id="wg-perf-dot" class="pulse-dot" style="background:#34d399;box-shadow:0 0 12px #34d399;"></span> Performance Live</div>
+          <div id="wg-perf-val" class="bw-val" style="color:#fff;">0 €</div>
+          <div id="wg-perf-compare" class="bw-sub" style="font-size:13px;"></div>
+          <div id="wg-perf-detail" style="display:flex;gap:20px;margin-top:12px;">
+            <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Ce mois</div><div id="wg-perf-mois" style="font-size:18px;font-weight:800;color:#FF0033;">0 €</div></div>
+            <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Mois dernier</div><div id="wg-perf-last" style="font-size:18px;font-weight:800;color:rgba(255,255,255,0.4);">0 €</div></div>
+            <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Évolution</div><div id="wg-perf-pct" style="font-size:18px;font-weight:800;">—</div></div>
+          </div>
         </div>
 
-        <!-- Météo Mâcon -->
-        <div class="ios-w" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);">
-          <div class="ios-w-title">🌤️ Météo Mâcon</div>
-          <div id="wg-meteo" style="display:flex;align-items:center;gap:12px;">
-            <div id="wg-meteo-icon" style="font-size:36px;">⏳</div>
+        <!-- ② YESTERDAY'S FLASHBACK -->
+        <div class="bw" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,58,95,0.8));">
+          <div class="bw-glow" style="bottom:-20px;left:-20px;background:#60a5fa;"></div>
+          <div class="bw-label">⏪ Hier</div>
+          <div id="wg-hier-ca" class="bw-val" style="color:#60a5fa;font-size:26px;">0 €</div>
+          <div id="wg-hier-detail" class="bw-sub"></div>
+          <div id="wg-hier-best" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.3);"></div>
+        </div>
+
+        <!-- ③ MÉTÉO MÂCON -->
+        <div class="bw" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(20,40,60,0.9));">
+          <div class="bw-label">🌤️ Mâcon</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="wg-meteo-icon" style="font-size:40px;">⏳</div>
             <div>
-              <div id="wg-meteo-temp" class="ios-w-big" style="color:#fbbf24;">--°</div>
-              <div id="wg-meteo-desc" class="ios-w-sub">Chargement...</div>
+              <div id="wg-meteo-temp" class="bw-val" style="color:#fbbf24;font-size:34px;">--°</div>
+              <div id="wg-meteo-desc" class="bw-sub">Chargement...</div>
             </div>
           </div>
         </div>
 
-        <!-- Objectif CA mensuel -->
-        <div class="ios-w ios-w-click" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,#1a0a0a 0%,#2d1020 100%);">
-          <div class="ios-w-title">🎯 Objectif CA du mois</div>
-          <div id="wg-objectif-val" class="ios-w-big" style="color:#FF0033;">0 €</div>
-          <div id="wg-objectif-sub" class="ios-w-sub">sur 10 000 €</div>
-          <div class="ios-bar"><div id="wg-objectif-bar" class="ios-bar-fill" style="width:0%;background:linear-gradient(90deg,#FF0033,#ff6b6b);"></div></div>
-        </div>
-
-        <!-- Activité du jour -->
-        <div class="ios-w" style="background:linear-gradient(135deg,#0a1a0a 0%,#102d10 100%);">
-          <div class="ios-w-title">⚡ Aujourd'hui</div>
-          <div id="wg-today" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <div style="text-align:center;"><div id="wg-today-rep" style="font-size:22px;font-weight:900;color:#34d399;">0</div><div style="font-size:10px;color:var(--text-muted);">Réparations</div></div>
-            <div style="text-align:center;"><div id="wg-today-ventes" style="font-size:22px;font-weight:900;color:#60a5fa;">0</div><div style="font-size:10px;color:var(--text-muted);">Ventes</div></div>
-            <div style="text-align:center;"><div id="wg-today-ca" style="font-size:22px;font-weight:900;color:#fbbf24;">0€</div><div style="font-size:10px;color:var(--text-muted);">CA TTC</div></div>
-            <div style="text-align:center;"><div id="wg-today-clients" style="font-size:22px;font-weight:900;color:#a78bfa;">0</div><div style="font-size:10px;color:var(--text-muted);">Clients</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ROW 2 : CA semaine (mini chart) + Stock + Top modèles + Marge -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px;" id="dash-widgets-row2">
-
-        <!-- CA semaine graphique -->
-        <div class="ios-w ios-w-click" onclick="showPage('stats',null)">
-          <div class="ios-w-title">📊 CA 7 derniers jours</div>
-          <div id="wg-week-total" class="ios-w-big" style="color:#60a5fa;font-size:22px;">0 €</div>
-          <div class="ios-mini-chart" id="wg-week-chart"></div>
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:3px;" id="wg-week-labels"></div>
-        </div>
-
-        <!-- Stock global -->
-        <div class="ios-w ios-w-click" onclick="showPage('phones',null)">
-          <div class="ios-w-title">📱 Stock smartphones</div>
-          <div style="display:flex;align-items:center;gap:16px;">
-            <div>
-              <div id="wg-stock-occ" class="ios-w-big" style="color:#a78bfa;font-size:22px;">0</div>
-              <div class="ios-w-sub">Occasion</div>
-            </div>
-            <div style="width:1px;height:36px;background:rgba(255,255,255,0.08);"></div>
-            <div>
-              <div id="wg-stock-neuf" class="ios-w-big" style="color:#34d399;font-size:22px;">0</div>
-              <div class="ios-w-sub">Neufs</div>
+        <!-- ④ SANTÉ DU MAGASIN — Anneaux Apple Watch (2x wide + tall) -->
+        <div class="bw bw-2x bw-tall" onclick="showPage('stats',null)" style="background:linear-gradient(160deg,rgba(10,10,18,0.95),rgba(20,15,30,0.95));">
+          <div class="bw-glow" style="top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:#FF0033;opacity:.08;"></div>
+          <div class="bw-label">❤️ Santé du magasin</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:40px;margin-top:6px;">
+            <!-- Anneaux SVG -->
+            <svg width="160" height="160" viewBox="0 0 160 160" id="wg-rings">
+              <!-- Anneau CA (extérieur, rouge) -->
+              <circle class="ring-track" cx="80" cy="80" r="70" stroke-width="12"/>
+              <circle class="ring-fill" id="ring-ca" cx="80" cy="80" r="70" stroke-width="12" stroke="#FF0033" stroke-dasharray="440" stroke-dashoffset="440" transform="rotate(-90 80 80)"/>
+              <!-- Anneau Réparations (milieu, vert) -->
+              <circle class="ring-track" cx="80" cy="80" r="55" stroke-width="12"/>
+              <circle class="ring-fill" id="ring-rep" cx="80" cy="80" r="55" stroke-width="12" stroke="#34d399" stroke-dasharray="346" stroke-dashoffset="346" transform="rotate(-90 80 80)"/>
+              <!-- Anneau Accessoires (intérieur, cyan) -->
+              <circle class="ring-track" cx="80" cy="80" r="40" stroke-width="12"/>
+              <circle class="ring-fill" id="ring-acc" cx="80" cy="80" r="40" stroke-width="12" stroke="#00F5FF" stroke-dasharray="251" stroke-dashoffset="251" transform="rotate(-90 80 80)"/>
+            </svg>
+            <!-- Légendes -->
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#FF0033;"></div><div><div style="font-size:12px;font-weight:700;">CA Mensuel</div><div id="ring-ca-val" style="font-size:11px;color:rgba(255,255,255,0.4);">0 / 10 000 €</div></div></div>
+              <div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#34d399;"></div><div><div style="font-size:12px;font-weight:700;">Réparations</div><div id="ring-rep-val" style="font-size:11px;color:rgba(255,255,255,0.4);">0 / 50</div></div></div>
+              <div style="display:flex;align-items:center;gap:8px;"><div style="width:12px;height:12px;border-radius:50%;background:#00F5FF;"></div><div><div style="font-size:12px;font-weight:700;">Accessoires</div><div id="ring-acc-val" style="font-size:11px;color:rgba(255,255,255,0.4);">0 / 30</div></div></div>
             </div>
           </div>
-          <div id="wg-stock-valeur" class="ios-w-sub" style="margin-top:8px;"></div>
         </div>
 
-        <!-- Top modèles vendus -->
-        <div class="ios-w ios-w-click" onclick="showPage('ventes-smart',null);renderVentesSmartphones();">
-          <div class="ios-w-title">🏆 Top ventes du mois</div>
+        <!-- ⑤ STOCK OCCASION CARROUSEL (2x wide) -->
+        <div class="bw bw-2x" onclick="showPage('phones',null)" style="background:rgba(22,22,34,0.85);">
+          <div class="bw-label">📱 Stock Occasion</div>
+          <div class="stock-scroll" id="wg-stock-scroll"></div>
+        </div>
+
+        <!-- ⑥ CA 7 JOURS -->
+        <div class="bw" onclick="showPage('stats',null)">
+          <div class="bw-label">📊 7 derniers jours</div>
+          <div id="wg-week-total" class="bw-val" style="color:#60a5fa;font-size:24px;">0 €</div>
+          <div class="bento-chart" id="wg-week-chart"></div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.25);margin-top:3px;" id="wg-week-labels"></div>
+        </div>
+
+        <!-- ⑦ TOP VENTES -->
+        <div class="bw" onclick="showPage('ventes-smart',null);renderVentesSmartphones();">
+          <div class="bw-label">🏆 Top ventes</div>
           <div id="wg-top-models" style="font-size:12px;"></div>
         </div>
 
-        <!-- Marge du mois -->
-        <div class="ios-w ios-w-click" onclick="showPage('comptable',null)">
-          <div class="ios-w-title">💎 Marge du mois</div>
-          <div id="wg-marge-val" class="ios-w-big" style="color:#34d399;font-size:22px;">0 €</div>
-          <div id="wg-marge-sub" class="ios-w-sub"></div>
-          <div class="ios-bar"><div id="wg-marge-bar" class="ios-bar-fill" style="width:0%;background:linear-gradient(90deg,#059669,#34d399);"></div></div>
+        <!-- ⑧ MARGE -->
+        <div class="bw" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,rgba(5,25,15,0.9),rgba(10,40,25,0.9));">
+          <div class="bw-glow" style="bottom:-20px;right:-20px;background:#34d399;"></div>
+          <div class="bw-label">💎 Marge du mois</div>
+          <div id="wg-marge-val" class="bw-val" style="color:#34d399;font-size:26px;">0 €</div>
+          <div id="wg-marge-sub" class="bw-sub"></div>
+        </div>
+
+        <!-- ⑨ HORLOGE LIVE -->
+        <div class="bw" style="background:linear-gradient(135deg,rgba(22,22,40,0.9),rgba(20,30,50,0.9));">
+          <div class="bw-label">🕐 Live</div>
+          <div id="wg-clock" class="bw-val" style="color:#00F5FF;font-family:'Share Tech Mono',monospace;font-size:36px;letter-spacing:2px;"></div>
+          <div id="wg-clock-date" class="bw-sub"></div>
         </div>
       </div>
 
-      <!-- KPI du jour (existant) -->
+      <!-- KPI existant (compact) -->
       <div class="dash-grid" id="dash-cards" style="margin-bottom:12px;"></div>
 
       <!-- Grille principale : réparations + clients -->
@@ -9121,9 +9151,11 @@ function renderDashboard(){
     });
   }
 
-  // ══════════════════════════════════════
-  // ██  WIDGETS iOS — Alimentation data
-  // ══════════════════════════════════════
+  // ══════════════════════════════════════════════
+  // ██  BENTO WIDGETS — Alimentation data
+  // ══════════════════════════════════════════════
+
+  var todayStr2=today.toISOString().split('T')[0];
 
   // 🕐 Horloge live
   function updateClock(){
@@ -9139,7 +9171,7 @@ function renderDashboard(){
   if(window._clockInterval)clearInterval(window._clockInterval);
   window._clockInterval=setInterval(updateClock,1000);
 
-  // 🌤️ Météo Mâcon (Open-Meteo API gratuite)
+  // 🌤️ Météo Mâcon
   if(!window._meteoLoaded){
     window._meteoLoaded=true;
     fetch('https://api.open-meteo.com/v1/forecast?latitude=46.3&longitude=4.83&current=temperature_2m,weather_code&timezone=Europe/Paris')
@@ -9153,31 +9185,86 @@ function renderDashboard(){
       }).catch(function(){});
   }
 
-  // 🎯 Objectif CA mensuel
-  var objectifCA=10000;
-  var oe=document.getElementById('wg-objectif-val');if(oe)oe.textContent=caTotal.toFixed(0)+' €';
-  var os=document.getElementById('wg-objectif-sub');if(os)os.textContent='sur '+objectifCA.toFixed(0)+' € · '+(caTotal>=objectifCA?'✅ Objectif atteint!':Math.round(caTotal/objectifCA*100)+'%');
-  var ob=document.getElementById('wg-objectif-bar');if(ob)ob.style.width=Math.min(100,caTotal/objectifCA*100)+'%';
+  // ① PERFORMANCE LIVE — Comparaison mois dernier
+  var lastMonth=new Date(today.getFullYear(),today.getMonth()-1,1);
+  var lastMoisStr=lastMonth.getFullYear()+'-'+String(lastMonth.getMonth()+1).padStart(2,'0');
+  var jourDuMois=today.getDate();
+  // CA ce mois jusqu'à aujourd'hui
+  var caMoisActuel=caTotal;
+  // CA mois dernier jusqu'au même jour
+  var caLastMois=caisse.filter(function(c){
+    if(!c.date||!c.date.startsWith(lastMoisStr))return false;
+    var jour=parseInt(c.date.split('-')[2]);return jour<=jourDuMois;
+  }).reduce(function(s,c){return s+(c.ttc||0);},0);
+  // Ajouter smartphones vendus le mois dernier
+  var caSmartLast=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(lastMoisStr)&&parseInt(p.dateVente.split('-')[2])<=jourDuMois;}).reduce(function(s,p){return s+(p.vente||0);},0);
+  caLastMois+=caSmartLast;
+  var perfDiff=caLastMois>0?((caMoisActuel-caLastMois)/caLastMois*100):0;
+  var perfUp=perfDiff>=0;
+  var moisNoms3=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var pv=document.getElementById('wg-perf-val');if(pv)pv.textContent=caMoisActuel.toFixed(0)+' €';
+  var pc=document.getElementById('wg-perf-compare');
+  if(pc){
+    if(caLastMois>0){
+      pc.innerHTML='<span style="color:'+(perfUp?'#34d399':'#f59e0b')+';font-weight:700;">'+(perfUp?'▲':'▼')+' '+Math.abs(perfDiff).toFixed(1)+'%</span> <span style="color:rgba(255,255,255,0.35);">vs '+moisNoms3[lastMonth.getMonth()]+' au '+jourDuMois+'e jour</span>';
+    } else {
+      pc.textContent='Pas de données le mois dernier';
+    }
+  }
+  var pd=document.getElementById('wg-perf-dot');if(pd){pd.style.background=perfUp?'#34d399':'#f59e0b';pd.style.boxShadow='0 0 12px '+(perfUp?'#34d399':'#f59e0b');}
+  var pm=document.getElementById('wg-perf-mois');if(pm)pm.textContent=caMoisActuel.toFixed(0)+' €';
+  var pl=document.getElementById('wg-perf-last');if(pl)pl.textContent=caLastMois.toFixed(0)+' €';
+  var pp=document.getElementById('wg-perf-pct');if(pp){pp.textContent=(perfUp?'+':'')+perfDiff.toFixed(1)+'%';pp.style.color=perfUp?'#34d399':'#f59e0b';}
 
-  // ⚡ Activité du jour
-  var todayStr2=today.toISOString().split('T')[0];
-  var repAuj=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date===todayStr2;}).length;
-  var ventesAuj=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente===todayStr2;}).length;
-  var neufsAuj=(window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente===todayStr2;}).length;
-  var caAuj=caisse.filter(function(c){return c.date===todayStr2;}).reduce(function(s,c){return s+(c.ttc||0);},0);
-  var clientsAuj=clients.filter(function(c){return c.dateCreation&&c.dateCreation===todayStr2;}).length;
-  var e1=document.getElementById('wg-today-rep');if(e1)e1.textContent=repAuj;
-  var e2=document.getElementById('wg-today-ventes');if(e2)e2.textContent=ventesAuj+neufsAuj;
-  var e3=document.getElementById('wg-today-ca');if(e3)e3.textContent=caAuj.toFixed(0)+'€';
-  var e4=document.getElementById('wg-today-clients');if(e4)e4.textContent=clientsAuj;
+  // ② YESTERDAY'S FLASHBACK
+  var hier=new Date(today);hier.setDate(today.getDate()-1);
+  var hierStr=hier.toISOString().split('T')[0];
+  var caHier=caisse.filter(function(c){return c.date===hierStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var repHier=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date===hierStr;}).length;
+  var ventesHier=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente===hierStr;}).length;
+  var hc=document.getElementById('wg-hier-ca');if(hc)hc.textContent=caHier.toFixed(0)+' €';
+  var hd=document.getElementById('wg-hier-detail');if(hd)hd.textContent=repHier+' répa · '+ventesHier+' vente(s)';
+  var hb=document.getElementById('wg-hier-best');
+  if(hb){
+    var hierPhones=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente===hierStr;});
+    hb.textContent=hierPhones.length>0?'⭐ '+hierPhones[0].modele:'';
+  }
 
-  // 📊 CA 7 derniers jours (mini barres)
+  // ④ SANTÉ — Anneaux Apple Watch (animation)
+  var objectifCA2=10000,objectifRep=50,objectifAcc=30;
+  var nbRepMois=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date&&r.date.startsWith(moisCourant);}).length;
+  var nbAccMois=(JSON.parse(localStorage.getItem('na_ventes')||'[]')).filter(function(v){return v.date&&v.date.startsWith(moisCourant);}).length;
+  // Anneaux : circumference = 2*PI*r
+  var circCA=2*Math.PI*70; // ~440
+  var circRep=2*Math.PI*55; // ~346
+  var circAcc=2*Math.PI*40; // ~251
+  setTimeout(function(){
+    var rca=document.getElementById('ring-ca');if(rca)rca.style.strokeDashoffset=circCA-(Math.min(1,caTotal/objectifCA2)*circCA);
+    var rrp=document.getElementById('ring-rep');if(rrp)rrp.style.strokeDashoffset=circRep-(Math.min(1,nbRepMois/objectifRep)*circRep);
+    var rac=document.getElementById('ring-acc');if(rac)rac.style.strokeDashoffset=circAcc-(Math.min(1,nbAccMois/objectifAcc)*circAcc);
+  },200);
+  var rcv=document.getElementById('ring-ca-val');if(rcv)rcv.textContent=caTotal.toFixed(0)+' / '+objectifCA2.toFixed(0)+' € ('+Math.round(caTotal/objectifCA2*100)+'%)';
+  var rrv=document.getElementById('ring-rep-val');if(rrv)rrv.textContent=nbRepMois+' / '+objectifRep+' ('+Math.round(nbRepMois/objectifRep*100)+'%)';
+  var rav=document.getElementById('ring-acc-val');if(rav)rav.textContent=nbAccMois+' / '+objectifAcc+' ('+Math.round(nbAccMois/objectifAcc*100)+'%)';
+
+  // ⑤ STOCK OCCASION CARROUSEL
+  var stockDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).slice(-15).reverse();
+  var scrollEl=document.getElementById('wg-stock-scroll');
+  if(scrollEl){
+    scrollEl.innerHTML=stockDispo.length>0?stockDispo.map(function(p){
+      var gradeColors={'A+':'#34d399','A':'#60a5fa','B':'#fbbf24','C':'#f87171'};
+      var gc=gradeColors[p.grade]||'#888';
+      return '<div class="stock-card"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.modele+'</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;"><span style="background:'+gc+'22;color:'+gc+';padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;">'+(p.grade||'—')+'</span><span style="font-weight:800;font-size:13px;">'+p.vente+'€</span></div>'+(p.stockage?'<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:4px;">'+p.stockage+' Go</div>':'')+'</div>';
+    }).join(''):'<div style="padding:10px;color:rgba(255,255,255,0.3);font-size:12px;">Aucun stock</div>';
+  }
+
+  // ⑥ CA 7 derniers jours
   var jours7=[];var totalSem=0;
   for(var di=6;di>=0;di--){
     var dd=new Date(today);dd.setDate(today.getDate()-di);
     var ds=dd.toISOString().split('T')[0];
     var ca7=caisse.filter(function(c){return c.date===ds;}).reduce(function(s,c){return s+(c.ttc||0);},0);
-    jours7.push({date:ds,ca:ca7,jour:['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dd.getDay()]});
+    jours7.push({date:ds,ca:ca7,jour:['D','L','M','M','J','V','S'][dd.getDay()]});
     totalSem+=ca7;
   }
   var maxCA7=Math.max.apply(null,jours7.map(function(j){return j.ca;}))||1;
@@ -9186,41 +9273,29 @@ function renderDashboard(){
   var wTotal=document.getElementById('wg-week-total');
   if(wTotal)wTotal.textContent=totalSem.toFixed(0)+' €';
   if(wChart)wChart.innerHTML=jours7.map(function(j){
-    var h=Math.max(4,j.ca/maxCA7*40);
+    var h=Math.max(4,j.ca/maxCA7*50);
     var isToday=j.date===todayStr2;
-    return '<div class="ios-mini-bar" style="height:'+h+'px;background:'+(isToday?'linear-gradient(180deg,#FF0033,#ff6b6b)':'rgba(96,165,250,0.5)')+';'+(isToday?'box-shadow:0 0 8px rgba(255,0,51,0.4);':'')+'"></div>';
+    return '<div class="bento-bar" style="height:'+h+'px;background:'+(isToday?'linear-gradient(180deg,#FF0033,#ff6b6b)':'rgba(96,165,250,0.4)')+';'+(isToday?'box-shadow:0 0 10px rgba(255,0,51,0.4);':'')+'"></div>';
   }).join('');
   if(wLabels)wLabels.innerHTML=jours7.map(function(j){var isToday=j.date===todayStr2;return '<span style="flex:1;text-align:center;'+(isToday?'color:#FF0033;font-weight:700;':'')+'">'+j.jour+'</span>';}).join('');
 
-  // 📱 Stock global
-  var stockOcc=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var stockNeuf=(window.phonesNeufs||[]).filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var valStock=phones.filter(function(p){return p.etat==='DISPONIBLE';}).reduce(function(s,p){return s+(Number(p.vente)||0);},0);
-  var valNeuf=(window.phonesNeufs||[]).filter(function(p){return p.etat==='DISPONIBLE';}).reduce(function(s,p){return s+(Number(p.vente)||0);},0);
-  var so=document.getElementById('wg-stock-occ');if(so)so.textContent=stockOcc;
-  var sn=document.getElementById('wg-stock-neuf');if(sn)sn.textContent=stockNeuf;
-  var sv=document.getElementById('wg-stock-valeur');if(sv)sv.textContent='Valeur totale : '+(valStock+valNeuf).toFixed(0)+' €';
-
-  // 🏆 Top ventes du mois
+  // ⑦ Top ventes du mois
   var ventesM=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
   var modeles={};ventesM.forEach(function(p){var m=p.modele.split(' ').slice(0,3).join(' ');modeles[m]=(modeles[m]||0)+1;});
   var topM=Object.keys(modeles).sort(function(a,b){return modeles[b]-modeles[a];}).slice(0,4);
   var tmEl=document.getElementById('wg-top-models');
   if(tmEl){
     tmEl.innerHTML=topM.length>0?topM.map(function(m,i){
-      var colors=['#fbbf24','#94a3b8','#cd7f32','#888'];
       var medals=['🥇','🥈','🥉',''];
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;'+(i<topM.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':'')+'"><span>'+medals[i]+' '+m+'</span><span style="font-weight:800;color:'+colors[i]+';">'+modeles[m]+'</span></div>';
-    }).join(''):'<div style="text-align:center;padding:10px;color:var(--text-muted);font-size:11px;">Aucune vente ce mois</div>';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;'+(i<topM.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':'')+'"><span style="font-size:12px;">'+medals[i]+' '+m+'</span><span style="font-weight:800;font-size:13px;">'+modeles[m]+'</span></div>';
+    }).join(''):'<div style="text-align:center;padding:14px;color:rgba(255,255,255,0.3);font-size:11px;">Aucune vente</div>';
   }
 
-  // 💎 Marge du mois
-  var margeRepM=caReparMois*0.6; // estimation marge répa ~60%
+  // ⑧ Marge du mois
   var margeNeufsM=(window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);}).reduce(function(s,p){return s+((Number(p.vente)||0)-(Number(p.achat)||0));},0);
   var margeTotaleM=mgSmartMois+margeNeufsM;
   var mv=document.getElementById('wg-marge-val');if(mv)mv.textContent=margeTotaleM.toFixed(0)+' €';
-  var ms=document.getElementById('wg-marge-sub');if(ms)ms.textContent='Occasion: '+mgSmartMois.toFixed(0)+'€ · Neufs: '+margeNeufsM.toFixed(0)+'€';
-  var mb=document.getElementById('wg-marge-bar');if(mb){var mTarget=3000;mb.style.width=Math.min(100,margeTotaleM/mTarget*100)+'%';}
+  var ms2=document.getElementById('wg-marge-sub');if(ms2)ms2.textContent='Occasion '+mgSmartMois.toFixed(0)+'€ · Neufs '+margeNeufsM.toFixed(0)+'€';
 }
 
 // ============================================================
