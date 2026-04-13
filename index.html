@@ -629,14 +629,43 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
 
-      <!-- Actions rapides -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:18px;">
-        <button class="btn btn-primary" onclick="showPage('reparations',null)">➕ Nouvelle réparation</button>
-        <button class="btn" style="border-color:var(--blue);color:var(--blue);" onclick="showPage('phones',null)">📱 Achat smartphone</button>
-        <button class="btn" onclick="showPage('reparations',null);repLoadDossiers();repNewDossier();">🏷️ Nouvelle répa QualiRépar</button>
+      <!-- ══ RACCOURCIS RAPIDES ══ -->
+      <div style="margin-top:18px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:10px;">⚡ Actions rapides</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;" id="dash-shortcuts">
+
+          <div onclick="showPage('reparations',null)" style="cursor:pointer;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.2);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(192,57,43,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">🔧</div>
+            <div style="font-size:11px;font-weight:700;">Nouvelle répa</div>
+          </div>
+
+          <div onclick="showPage('phones',null)" style="cursor:pointer;background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.2);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(37,99,235,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">📱</div>
+            <div style="font-size:11px;font-weight:700;">Achat smartphone</div>
+          </div>
+
+          <div onclick="showPage('caisse',null)" style="cursor:pointer;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(245,158,11,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">💰</div>
+            <div style="font-size:11px;font-weight:700;">Z de caisse</div>
+          </div>
+
+          <div onclick="showPage('neufs-access',null);naLoad();naRender();" style="cursor:pointer;background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.2);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(5,150,105,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">📦</div>
+            <div style="font-size:11px;font-weight:700;">Accessoires</div>
+          </div>
+
+          <div onclick="showPage('comptable',null)" style="cursor:pointer;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(139,92,246,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">📋</div>
+            <div style="font-size:11px;font-weight:700;">Récap comptable</div>
+          </div>
+
+          <div onclick="openLiensRapides()" style="cursor:pointer;background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.15);border-radius:10px;padding:14px 10px;text-align:center;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,245,255,0.15)'" onmouseout="this.style.transform='none';this.style.boxShadow='none'">
+            <div style="font-size:22px;margin-bottom:4px;">🔗</div>
+            <div style="font-size:11px;font-weight:700;">Liens rapides</div>
+          </div>
+
+        </div>
       </div>
-      <!-- Bouton ARIA flottant -->
-      <!-- aria-fab supprimé -->
     </div>
 
     <div class="page" id="page-phones">
@@ -8921,6 +8950,10 @@ function renderDashboard(){
       cards.appendChild(dashCard('Répa en cours', repEnCours+'', '', 'reparations', 'color:var(--green)'));
       cards.appendChild(dashCard('Commandes', cmdEnAttente+' en attente', relances>0?'⏰ '+relances+' relance(s)':'', 'commandes', 'color:var(--blue)'));
       cards.appendChild(dashCard('Stock dispo', dispo+' tél.', 'Smartphones', 'phones', ''));
+      // Neufs du mois
+      var neufsVMois = (window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);});
+      var caNeufsM = neufsVMois.reduce(function(s,p){return s+(Number(p.vente)||0);},0);
+      cards.appendChild(dashCard('CA tél. neufs', caNeufsM.toFixed(0)+' €', neufsVMois.length+' vendu(s)', 'ventes-neufs', 'color:var(--green)'));
       cards.appendChild(dashCard('Bonus QR encaissé', bonusQRMois.toFixed(0)+' €', 'ce mois', 'qualirepar', 'color:var(--green)'));
     }
   }
