@@ -1424,7 +1424,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;cursor:pointer;" onclick="document.getElementById('caisse-z-smart-detail').style.display=document.getElementById('caisse-z-smart-detail').style.display==='none'?'block':'none'">
               📋 Détail des ventes ▾
             </div>
-            <div id="caisse-z-smart-detail" style="display:none;overflow-x:auto;">
+            <div id="caisse-z-smart-detail" style="overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
                 <thead><tr style="background:#f5f3ff;"><th style="padding:6px;text-align:left;">Description</th><th style="padding:6px;text-align:right;">Prix vente</th><th style="padding:6px;text-align:right;">Prix achat</th><th style="padding:6px;text-align:right;">Marge</th><th style="padding:6px;text-align:center;">Mode</th></tr></thead>
                 <tbody id="caisse-z-smart-tbody"></tbody>
@@ -5477,8 +5477,30 @@ function renderCaisseJour(){
 
   // Calculer les totaux du jour
   // Z PRINCIPAL = réparations + accessoires + téléphones NEUFS (TVA 20%)
-  // Z SMARTPHONES = téléphones OCCASION uniquement (TVA sur marge)
-  var txSmart=txJour.filter(function(tx){ return tx.type==='vente_occasion'; });
+  // Z SMARTPHONES = téléphones OCCASION — vue mensuelle (TVA sur marge)
+  var moisFiltreSmart = window._caisseMoisFiltre || today.substring(0,7);
+
+  // Collecter TOUTES les ventes occasion du mois sélectionné (pas juste aujourd'hui)
+  var txSmart = [];
+  phones.forEach(function(p){
+    if(p.etat !== 'VENDU') return;
+    var dv = (p.dateVente||'').substring(0,10);
+    if(dv.substring(0,7) !== moisFiltreSmart) return;
+    txSmart.push({
+      heure:   '--:--',
+      type:    'vente_occasion',
+      label:   '📱',
+      date:    dv,
+      desc:    fmtDate(dv) + ' — ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
+      montant: p.vente || 0,
+      achat:   p.achat || 0,
+      mode:    p.modeVente || 'CB',
+      quali:   0
+    });
+  });
+  // Trier par date
+  txSmart.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
+
   var txRep=txJour.filter(function(tx){ return tx.type!=='vente_occasion'; });
 
   // Ventilation par catégorie pour le Z Principal
@@ -5583,14 +5605,21 @@ function renderCaisseJour(){
   if(stb&&txSmart.length>0){var mc3={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};var mg=0;stb.innerHTML=txSmart.map(function(tx,i){var mc=mc3[(tx.mode||'CB').toUpperCase()]||'#666';var ach=tx.achat||0;var m2=tx.montant-ach;mg+=m2;return '<tr style="background:'+(i%2===0?'#fff':'#f5f3ff')+';border-bottom:1px solid var(--border);"><td style="padding:5px 6px;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:right;color:var(--text-muted);">'+(ach>0?ach.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:right;color:#16a34a;font-weight:700;">'+(ach>0?m2.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')+'<tr style="background:#f5f3ff;font-weight:800;border-top:2px solid #ddd6fe;"><td style="padding:6px;">TOTAL</td><td style="padding:6px;text-align:right;">'+totSmart.total.toFixed(2)+' €</td><td></td><td style="padding:6px;text-align:right;color:#16a34a;">'+mg.toFixed(2)+' €</td><td></td></tr>';}
   transactions=txRep;window._caisseJourTotaux=totJour;window._smartJourTotaux=totSmart;window._txSmart=txSmart;
   var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.style.display=totSmart.nb>0?'block':'none';
+  // Titre du bloc smartphones avec le mois
+  var smartTitre=document.querySelector('#caisse-z-smart-block > div:first-child');
+  if(smartTitre){
+    var moisNom=new Date(moisFiltreSmart+'-15').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+moisNom+'</span>';
+  }
   var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.innerHTML='<b>'+totSmart.nb+' vente(s) smartphone</b> · Total : <b>'+totSmart.total.toFixed(2)+' €</b> · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' €';}
 }
 
 function genererZCaisseSmartphones(){
   var tot=window._smartJourTotaux||{total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
   var txS=window._txSmart||[];
-  if(!tot.nb){showNotif("Aucune vente smartphone aujourd’hui","error");return;}
-  var dateStr=new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  if(!tot.nb){showNotif("Aucune vente smartphone ce mois","error");return;}
+  var moisF=window._caisseMoisFiltre||new Date().toISOString().split(‘T’)[0].substring(0,7);
+  var dateStr=new Date(moisF+’-15’).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
   var heureStr=new Date().toLocaleTimeString("fr-FR");
   var html="<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Z Smartphones</title>"+
   "<style>*{margin:0;padding:0;}body{font-family:\"Courier New\",monospace;font-size:12px;width:80mm;padding:4mm;}"+
@@ -5602,7 +5631,8 @@ function genererZCaisseSmartphones(){
   "<div class=\"line\"></div>"+
   "<div class=\"center bold\">Z CAISSE — SMARTPHONES OCCASION</div>"+
   "<div class=\"center\" style=\"font-size:10px;\">TVA sur marge — Art. 297A CGI</div>"+
-  "<div class=\"center\">"+dateStr+"</div>"+
+  "<div class=\"center\">Mois de "+dateStr+"</div>"+
+  "<div class=\"center\" style=\"font-size:9px;\">Édité le "+new Date().toLocaleDateString("fr-FR")+" à "+heureStr+"</div>"+
   "<div class=\"line\"></div>";
   txS.forEach(function(tx){html+="<div class=\"row\"><span>"+(tx.desc||"").substring(0,30)+"</span><span>"+tx.montant.toFixed(2)+" €</span></div><div style=\"font-size:10px;color:#666;\">"+tx.mode+"</div>";});
   html+="<div class=\"line\"></div>"+
@@ -6161,6 +6191,7 @@ function initCaisseMoisSelect(){
 function filtrerCaisseMois(mois){
   window._caisseMoisFiltre = mois || getMoisActuel();
   renderCaisse();
+  renderCaisseJour(); // Mettre à jour le Z Smartphones Occasion pour le mois sélectionné
 }
 
 function renderCaisse(){
