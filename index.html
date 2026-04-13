@@ -14702,7 +14702,7 @@ async function qrEnvoyerEcologicComplet(d){
   var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey]||{repair:'ELO',condition:'5',symptom:'XX1',section:'XX',def:'09'};
   console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
-  var today=(d.date ? new Date(d.date+'T12:00:00').toISOString() : new Date().toISOString());
+  var today=d.date || new Date().toISOString().split('T')[0];
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
   // API Ecologic v1.4 (Avril 2024) : CreateClaim directement, sans CreateSupportRequest
   var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSection:irisData.repair,RepairCode:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
@@ -14985,12 +14985,24 @@ function repCheckIMEI(imei){
   if(qrConflits.length > 0){
     var r = qrConflits[0];
     alertBox.style.display = 'block';
+    // Vérifier si IMEI2 est disponible dans le dossier courant
+    var imei2Dispo = repDossierCourant && repDossierCourant.appareil && repDossierCourant.appareil.imei2;
+    var btnImei2Html = '';
+    if(imei2Dispo){
+      btnImei2Html = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,59,48,0.2);">' +
+        '<b style="color:#16a34a;">📱 IMEI 2 détecté : ' + imei2Dispo + '</b><br>' +
+        '<button onclick="repBasculerIMEI2()" style="margin-top:6px;padding:8px 16px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">🔄 Utiliser IMEI 2 à la place</button>' +
+        '</div>';
+    } else {
+      btnImei2Html = '<div style="margin-top:6px;font-size:11px;color:#92400e;">💡 Astuce : reprenez la photo IMEI — si l\'appareil a 2 IMEI, le second sera proposé automatiquement.</div>';
+    }
     alertBox.innerHTML =
       '⚠️ <b>ATTENTION — Bonus QualiRépar déjà utilisé !</b><br>' +
       'Cet IMEI a bénéficié d\'un bonus de −25€ le <b>' + fmtDate(r.date) + '</b> (facture '+r.numero+').<br>' +
       '<b>Délai minimum : 6 mois entre deux bonus.</b><br>' +
       'Prochaine date éligible : <b>' + fmtDateEligible(r.date) + '</b><br>' +
-      '<span style="font-size:11px;color:#ff6b63;">Ne pas appliquer le bonus QualiRépar sur cette réparation.</span>';
+      '<span style="font-size:11px;color:#ff6b63;">Ne pas appliquer le bonus QualiRépar sur cette réparation.</span>' +
+      btnImei2Html;
     // Décocher et désactiver le bonus QR
     var cbQR = document.getElementById('rep-qr-actif');
     if(cbQR){ cbQR.checked = false; cbQR.disabled = true; repToggleQR(); }
@@ -15029,6 +15041,29 @@ function fmtDateEligible(dateStr){
   var d = new Date(dateStr);
   d.setMonth(d.getMonth() + 6);
   return d.toLocaleDateString('fr-FR');
+}
+
+// ── Basculer IMEI1 → IMEI2 quand IMEI1 est bloqué 6 mois ──
+function repBasculerIMEI2(){
+  if(!repDossierCourant || !repDossierCourant.appareil || !repDossierCourant.appareil.imei2){
+    showNotif('Aucun IMEI 2 disponible','error'); return;
+  }
+  var imei2 = repDossierCourant.appareil.imei2;
+  // Sauvegarder l'ancien IMEI1 comme référence
+  repDossierCourant.appareil.imei1_original = repDossierCourant.appareil.imei || '';
+  // Mettre IMEI2 dans le champ principal
+  repDossierCourant.appareil.imei = imei2;
+  var imeiEl = document.getElementById('dep-imei');
+  if(imeiEl) imeiEl.value = imei2;
+  // Relancer les vérifications sur le nouvel IMEI
+  repCheckIMEI(imei2);
+  repValidateIMEI(imei2);
+  repAutoSave();
+  // Réactiver le bonus QR si IMEI2 est clean
+  var cbQR = document.getElementById('rep-qr-actif');
+  if(cbQR) cbQR.disabled = false;
+  showNotif('✅ Basculé sur IMEI 2 : ' + imei2, 'success');
+  console.log('[IMEI] Bascule IMEI1 → IMEI2 :', repDossierCourant.appareil.imei1_original, '→', imei2);
 }
 
 // ── OCR IMEI depuis caméra (réutilise la fonction Claude Vision) ──
@@ -15117,20 +15152,28 @@ async function repOCRImei(){
         }
       } catch(e){ console.log('Upload photo:', e); }
 
-      // OCR IMEI avec Claude Vision
+      // OCR IMEI avec Claude Vision — détecte IMEI1 et IMEI2
       status.textContent='🤖 Lecture IMEI par IA...';
-      var imeiLu = null;
+      var imeiResult = null;
       try {
-        imeiLu = await qrExtractIMEI(base64Full);
+        imeiResult = await qrExtractIMEI(base64Full);
       } catch(e){
         console.log('OCR error:', e);
       }
 
       // Afficher résultat
-      if(imeiLu){
+      if(imeiResult && imeiResult.imei1){
         var imeiEl = document.getElementById('dep-imei');
-        if(imeiEl){ imeiEl.value = imeiLu; repAutoSave(); repCheckIMEI(imeiLu); repValidateIMEI(imeiLu); }
-        status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">✅ IMEI lu : '+imeiLu+'</span>';
+        if(imeiEl){ imeiEl.value = imeiResult.imei1; repAutoSave(); repCheckIMEI(imeiResult.imei1); repValidateIMEI(imeiResult.imei1); }
+        // Stocker IMEI2 dans le dossier si détecté
+        if(repDossierCourant){
+          if(!repDossierCourant.appareil) repDossierCourant.appareil = {};
+          repDossierCourant.appareil.imei2 = imeiResult.imei2 || null;
+          if(imeiResult.imei2) console.log('[OCR] IMEI2 détecté et stocké :', imeiResult.imei2);
+        }
+        var txt = '✅ IMEI 1 lu : ' + imeiResult.imei1;
+        if(imeiResult.imei2) txt += '<br>📱 IMEI 2 détecté : ' + imeiResult.imei2;
+        status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">' + txt + '</span>';
       } else {
         status.innerHTML = '<span style="color:#fbbf24;">⚠️ IMEI non détecté — saisissez-le manuellement</span>';
       }
@@ -18311,6 +18354,7 @@ async function loadBonsDepot(){
             marque:  x.appareil_marque||'',
             modele:  x.appareil_modele||'',
             imei:    x.appareil_imei||'',
+            imei2:   x.appareil_imei2||null,
             couleur: x.appareil_couleur||'',
             code:    x.appareil_code||''
           },
@@ -18345,7 +18389,8 @@ async function saveBonDepotSupabase(d){
     client_tel: d.client.tel, client_email: d.client.email||'',
     client_adresse: d.client.adresse||'', client_cp: d.client.cp||'', client_ville: d.client.ville||'',
     appareil_marque: d.appareil.marque, appareil_modele: d.appareil.modele,
-    appareil_imei: d.appareil.imei, appareil_couleur: d.appareil.couleur,
+    appareil_imei: d.appareil.imei, appareil_imei2: d.appareil.imei2||null,
+    appareil_couleur: d.appareil.couleur,
     appareil_code: d.appareil.code,
     etat: d.etat, etat_autre: d.etatAutre,
     accessoires: d.accessoires,
@@ -19569,20 +19614,22 @@ async function qrExtractIMEI(base64Image) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-5',
-      max_tokens: 200,
+      max_tokens: 300,
       messages: [{
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64Image } },
-          { type: 'text', text: "Extrait uniquement le numéro IMEI de cette image. L'IMEI est un numéro de 15 chiffres. Réponds UNIQUEMENT avec le numéro IMEI sans aucun autre texte. Si tu ne trouves pas d'IMEI, réponds 'NON_TROUVE'." }
+          { type: 'text', text: "Extrait TOUS les numéros IMEI visibles sur cette image. Les IMEI sont des numéros de 15 chiffres, souvent étiquetés IMEI1 et IMEI2 sur les plaques signalétiques. Réponds UNIQUEMENT avec les IMEI séparés par une virgule (ex: 353840107634406,353840107634407). Si tu ne trouves qu'un seul IMEI, donne-le seul. Si tu ne trouves pas d'IMEI, réponds 'NON_TROUVE'." }
         ]
       }]
     })
   });
   var data = await resp.json();
   var text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : 'NON_TROUVE';
-  var match = text.match(/\d{15}/);
-  return match ? match[0] : null;
+  var matches = text.match(/\d{15}/g);
+  if(!matches || matches.length === 0) return null;
+  // Retourner un objet avec imei1 et imei2 (ou juste imei1)
+  return { imei1: matches[0], imei2: matches.length > 1 ? matches[1] : null };
 }
 
 async function qrProcessImage(dataUrl) {
@@ -19598,14 +19645,21 @@ async function qrProcessImage(dataUrl) {
   }
   try {
     var base64 = dataUrl.split(',')[1];
-    var imei = await qrExtractIMEI(base64);
-    if(imei){
-      document.getElementById('qr-imei').value = imei;
+    var imeiResult = await qrExtractIMEI(base64);
+    if(imeiResult && imeiResult.imei1){
+      document.getElementById('qr-imei').value = imeiResult.imei1;
+      // Stocker IMEI2 dans qrData si disponible
+      if(typeof qrData !== 'undefined' && qrData.appareil){
+        qrData.appareil.imei2 = imeiResult.imei2 || null;
+      }
       if(status){
         status.style.background = 'rgba(72,187,120,0.1)';
         status.style.border = '1px solid var(--green)';
         status.style.color = 'var(--green)';
-        status.innerHTML = '✅ IMEI détecté : <b>'+imei+'</b> — Vérifiez et corrigez si nécessaire';
+        var txt = '✅ IMEI 1 détecté : <b>'+imeiResult.imei1+'</b>';
+        if(imeiResult.imei2) txt += '<br>📱 IMEI 2 : <b>'+imeiResult.imei2+'</b>';
+        txt += ' — Vérifiez et corrigez si nécessaire';
+        status.innerHTML = txt;
       }
     } else {
       if(status){
@@ -19897,7 +19951,7 @@ async function qrSendEcologic() {
   var montantTTC = +(montantHT * 1.2).toFixed(2);
   var soutien    = parseFloat(dev.bonusMontant) || 25;
   var refFact    = d.refRep || ('QR-' + Date.now());
-  var today      = (d.date ? new Date(d.date+'T12:00:00').toISOString() : new Date().toISOString());
+  var today      = d.date || new Date().toISOString().split('T')[0];
 
   // ① Résoudre BrandId Ecologic
   qrSetAgoraBadge('\u23F3', 'Recherche marque\u2026', marque, '#f39c12');
@@ -20048,7 +20102,7 @@ async function qrSendEcosystem() {
   var montantHT = parseFloat(dev.prixHT) || 0;
   var soutien   = parseFloat(dev.bonusMontant) || 25;
   var refFact   = d.refRep || ('QR-' + Date.now());
-  var today     = new Date().toISOString().split('T')[0];
+  var today     = d.date || new Date().toISOString().split('T')[0];
 
   qrSetAgoraBadge('\u23f3', 'Authentification...', 'Ecosystem', '#f39c12');
 
