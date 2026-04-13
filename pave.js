@@ -294,20 +294,8 @@ async function checkPin(){
     if(window.innerWidth <= 768){
       document.getElementById('mobile-nav').style.display='block';
     }
-    // Charger uniquement les données essentielles au démarrage
-    loadFromSupabase().then(function(){
-      renderDashboard();renderPhones();renderFactures();renderCaisse();
-      populateFournisseurSelects();
-      loadApiKeyFromSupabase();
-      loadClientsEnAttente();
-      loadHistoriqueReparations();
-      setTimeout(function(){
-        loadBonsCommande();
-        loadBonsDepot();
-        loadPhonilabData();
-        loadSalariesFromSupabase().then(function(){ renderSalaries(); });
-      }, 3000);
-    });
+    // Charger les données avec retry automatique
+    _loadDataWithRetry(3);
     renderEcrans();
     renderBatteries();
     androidInit();
@@ -348,3 +336,75 @@ async function checkPin(){
 }
 
 function doLogin(){ checkPin(); }
+
+// Chargement données avec retry automatique + indicateur visuel
+async function _loadDataWithRetry(maxRetries) {
+  var retries = 0;
+  // Afficher un indicateur de chargement
+  var loadingEl = document.createElement('div');
+  loadingEl.id = '_loading-indicator';
+  loadingEl.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#e53e3e,#f39c12,#e53e3e);background-size:200% 100%;animation:_loadSlide 1.5s ease infinite;height:4px;';
+  var style = document.createElement('style');
+  style.textContent = '@keyframes _loadSlide{0%{background-position:200% 0}100%{background-position:-200% 0}}';
+  document.head.appendChild(style);
+  document.body.appendChild(loadingEl);
+
+  // Afficher un message dans le dashboard
+  var banner = document.createElement('div');
+  banner.id = '_loading-banner';
+  banner.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:99998;background:rgba(0,0,0,0.85);color:#fff;padding:24px 40px;border-radius:16px;font-size:16px;font-weight:600;text-align:center;backdrop-filter:blur(10px);';
+  banner.innerHTML = '⏳ Chargement des données...';
+  document.body.appendChild(banner);
+
+  while (retries < maxRetries) {
+    try {
+      banner.innerHTML = retries > 0
+        ? '🔄 Tentative ' + (retries+1) + '/' + maxRetries + '...'
+        : '⏳ Chargement des données...';
+
+      await loadFromSupabase();
+
+      // Vérifier qu'on a bien reçu des données
+      if (supabaseReady && (phones.length > 0 || caisse.length > 0)) {
+        // Succès !
+        renderDashboard(); renderPhones(); renderFactures(); renderCaisse();
+        populateFournisseurSelects();
+        loadApiKeyFromSupabase();
+        loadClientsEnAttente();
+        loadHistoriqueReparations();
+        setTimeout(function(){
+          loadBonsCommande();
+          loadBonsDepot();
+          loadPhonilabData();
+          loadSalariesFromSupabase().then(function(){ renderSalaries(); });
+        }, 3000);
+
+        // Retirer les indicateurs
+        if(loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+        if(banner.parentNode) banner.parentNode.removeChild(banner);
+        return;
+      }
+
+      // supaFetch a retourné vide — retry
+      retries++;
+      if (retries < maxRetries) {
+        banner.innerHTML = '⚠️ Données non reçues — nouvelle tentative dans 3s...';
+        await new Promise(function(r){ setTimeout(r, 3000); });
+      }
+    } catch(e) {
+      console.error('loadData tentative ' + (retries+1) + ' échouée:', e);
+      retries++;
+      if (retries < maxRetries) {
+        banner.innerHTML = '⚠️ Erreur connexion — nouvelle tentative dans 3s...';
+        await new Promise(function(r){ setTimeout(r, 3000); });
+      }
+    }
+  }
+
+  // Toutes les tentatives échouées
+  if(loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+  banner.style.background = 'rgba(220,38,38,0.95)';
+  banner.innerHTML = '❌ Impossible de charger les données<br>' +
+    '<span style="font-size:13px;font-weight:400;">Vérifiez votre connexion internet</span><br>' +
+    '<button onclick="this.parentNode.remove();_loadDataWithRetry(3);" style="margin-top:12px;padding:10px 24px;background:#fff;color:#dc2626;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Réessayer</button>';
+}
