@@ -401,7 +401,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div class="mob-menu-item" onclick="showPageMobile('batteries','');closeMobileMenu()"><span class="mob-menu-icon">🔋</span>Prix batteries</div>
   <div class="mob-menu-item" onclick="showPageMobile('roulette','');initRouletteAdmin();closeMobileMenu()"><span class="mob-menu-icon">🎡</span>Roue cadeaux</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Administration</div>
-  <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés</div>
+  <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés & Paie TESE</div>
   <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
   <div class="mob-menu-item" onclick="showPageMobile('calendrier','');loadCalItems();closeMobileMenu()"><span class="mob-menu-icon">📅</span>Calendrier Éditorial</div>
   <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
@@ -499,7 +499,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Administration</div>
-    <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés</span></div>
+    <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés & Paie</span></div>
     <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
     <div class="nav-item" onclick="showPage('calendrier',this);loadCalItems()"><span class="nav-icon">📅</span><span>Calendrier Éditorial</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
@@ -1897,16 +1897,89 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
   <!-- ═══ PAGE SALARIÉS ═══ -->
   <div class="page" id="page-salaries">
-    <div class="page-title">👷 Salariés</div>
-    <div class="page-sub">Gestion des salariés · Bulletins de paie indicatifs</div>
+    <div class="page-title">👷 Salariés & Paie TESE</div>
+    <div class="page-sub">Gestion des salariés · Bulletins de paie · Déclaration TESE</div>
 
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="sal-mois-sel" onchange="renderSalaries()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;"></select>
-      <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)">➕ Ajouter un salarié</button>
+    <!-- ── BENTO WIDGETS PAIE ── -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <select id="sal-mois-sel" onchange="renderSalaries()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:12px;font-size:14px;font-family:inherit;"></select>
+      <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)" style="border-radius:12px;">➕ Nouveau salarié</button>
+      <button class="btn" onclick="exportPayslipsPDF()" style="border-color:var(--blue);color:var(--blue);border-radius:12px;">🖨️ Tous les bulletins</button>
+      <button class="btn" onclick="exportRecapTESE()" style="border-color:#f39c12;color:#f39c12;border-radius:12px;">📋 Export CSV TESE</button>
+      <a href="https://www.letese.urssaf.fr" target="_blank" class="btn" style="border-color:#00c853;color:#00c853;border-radius:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">🌐 Déclarer sur TESE</a>
     </div>
 
-    <div class="dash-grid" id="sal-summary-cards" style="margin-bottom:18px;"></div>
+    <div class="bento" id="sal-bento-widgets" style="display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:minmax(110px,auto);gap:14px;margin-bottom:20px;">
+      <!-- Widget Effectif -->
+      <div class="bw" style="background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Effectif</div>
+        <div id="sal-w-effectif" style="font-size:36px;font-weight:800;margin-top:4px;">0</div>
+        <div id="sal-w-effectif-detail" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+      </div>
+      <!-- Widget Masse salariale brute -->
+      <div class="bw" style="background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Masse brute</div>
+        <div id="sal-w-brut" style="font-size:28px;font-weight:800;color:#FF9500;margin-top:4px;">0 €</div>
+        <div id="sal-w-brut-moy" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+      </div>
+      <!-- Widget Net à payer -->
+      <div class="bw" style="background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Net à payer total</div>
+        <div id="sal-w-net" style="font-size:28px;font-weight:800;color:#34C759;margin-top:4px;">0 €</div>
+        <div id="sal-w-net-moy" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+      </div>
+      <!-- Widget Coût employeur -->
+      <div class="bw" style="background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;">
+        <div style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;">Coût employeur</div>
+        <div id="sal-w-cout" style="font-size:28px;font-weight:800;color:#FF3B30;margin-top:4px;">0 €</div>
+        <div id="sal-w-charges" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+      </div>
+      <!-- Widget Anneau charges (2x) -->
+      <div class="bw" style="background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:18px 20px;grid-column:span 2;display:flex;align-items:center;gap:20px;">
+        <svg width="130" height="130" viewBox="0 0 130 130" id="sal-rings">
+          <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+          <circle class="ring-fill" id="sal-ring-net" cx="65" cy="65" r="55" fill="none" stroke-width="10" stroke="#34C759" stroke-linecap="round" stroke-dasharray="345.6" stroke-dashoffset="345.6" transform="rotate(-90 65 65)"/>
+          <circle cx="65" cy="65" r="42" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+          <circle class="ring-fill" id="sal-ring-charges" cx="65" cy="65" r="42" fill="none" stroke-width="10" stroke="#FF9500" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9" transform="rotate(-90 65 65)"/>
+          <circle cx="65" cy="65" r="29" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10"/>
+          <circle class="ring-fill" id="sal-ring-ir" cx="65" cy="65" r="29" fill="none" stroke-width="10" stroke="#FF3B30" stroke-linecap="round" stroke-dasharray="182.2" stroke-dashoffset="182.2" transform="rotate(-90 65 65)"/>
+        </svg>
+        <div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Répartition du coût</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#34C759;"></span><span style="font-size:12px;color:rgba(255,255,255,0.6);">Net salarié</span><span id="sal-ring-net-pct" style="font-size:12px;font-weight:700;margin-left:auto;"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FF9500;"></span><span style="font-size:12px;color:rgba(255,255,255,0.6);">Charges</span><span id="sal-ring-charges-pct" style="font-size:12px;font-weight:700;margin-left:auto;"></span></div>
+          <div style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#FF3B30;"></span><span style="font-size:12px;color:rgba(255,255,255,0.6);">PAS (IR)</span><span id="sal-ring-ir-pct" style="font-size:12px;font-weight:700;margin-left:auto;"></span></div>
+        </div>
+      </div>
+      <!-- Widget TESE Status (2x) -->
+      <div class="bw" style="background:linear-gradient(135deg,rgba(0,200,83,0.12),rgba(0,200,83,0.03));backdrop-filter:blur(20px);border:1px solid rgba(0,200,83,0.15);border-radius:24px;padding:18px 20px;grid-column:span 2;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;">🌐 Déclaration TESE</div>
+          <div id="sal-tese-status" style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,165,0,0.15);color:#f39c12;">En attente</div>
+        </div>
+        <div id="sal-tese-recap" style="font-size:12px;color:rgba(255,255,255,0.5);"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <a href="https://www.letese.urssaf.fr" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:rgba(0,200,83,0.15);border:1px solid rgba(0,200,83,0.3);border-radius:12px;color:#00c853;font-size:12px;font-weight:600;text-decoration:none;cursor:pointer;">🌐 Ouvrir TESE</a>
+          <button onclick="copyTESEData()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;background:rgba(0,122,255,0.15);border:1px solid rgba(0,122,255,0.3);border-radius:12px;color:#007AFF;font-size:12px;font-weight:600;cursor:pointer;">📋 Copier les données</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LISTE DES SALARIÉS ── -->
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(255,255,255,0.4);margin-bottom:10px;">Fiches salariés</div>
     <div id="sal-list"></div>
+
+    <!-- ── SECTION TESE DÉTAILLÉE ── -->
+    <div style="margin-top:24px;background:rgba(22,22,34,0.8);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06);border-radius:24px;padding:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div style="font-size:15px;font-weight:700;">📋 Récapitulatif TESE — Données à déclarer</div>
+        <button onclick="copyTESEData()" class="btn btn-sm" style="border-color:#007AFF;color:#007AFF;">📋 Copier tout</button>
+      </div>
+      <div id="sal-tese-table" style="overflow-x:auto;"></div>
+      <div style="margin-top:12px;padding:10px 14px;background:rgba(255,165,0,0.08);border:1px solid rgba(255,165,0,0.15);border-radius:12px;font-size:11px;color:rgba(255,255,255,0.5);">
+        💡 <b>Workflow TESE :</b> 1) Saisir les heures/primes ci-dessus pour chaque salarié → 2) Cliquer "Copier les données" → 3) Ouvrir le portail TESE → 4) Reporter les montants bruts dans le volet salarié TESE → 5) TESE calcule et génère les bulletins officiels + déclarations URSSAF automatiquement.
+      </div>
+    </div>
 
     <!-- Modal Salarié -->
     <div id="modal-salarie" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;overflow-y:auto;">
@@ -7865,26 +7938,95 @@ function initDepensesMoisSel() {
 }
 
 function renderSalaries() {
-  renderSalSummary();
+  renderSalBentoWidgets();
   renderSalList();
+  renderTESETable();
 }
 
-function renderSalSummary() {
+function renderSalBentoWidgets() {
   var mois = document.getElementById('sal-mois-sel') ? document.getElementById('sal-mois-sel').value : '';
-  var totalBrut = 0, totalNet = 0, totalCout = 0;
+  var totalBrut=0, totalNet=0, totalCout=0, totalCotSal=0, totalCotPat=0, totalIR=0;
+  var nbCDI=0, nbCDD=0, nbApprenti=0, nbPaieValidees=0;
   salaries.forEach(function(s) {
-    var calc = calculerBulletin(s, 0, 0, 0, 0);
-    totalBrut += calc.brutTotal;
-    totalNet  += calc.netAPayer;
-    totalCout += calc.coutEmployeur;
+    var pd = s.paies && s.paies[mois];
+    var cp  = pd ? (pd.cpPris||0) : 0;
+    var abs = pd ? (pd.absJours||0) : 0;
+    var hs  = pd ? (pd.heuresSup||0) : 0;
+    var pr  = pd ? (pd.prime||0) : 0;
+    var c   = calculerBulletin(s, cp, abs, hs, pr);
+    totalBrut += c.brutTotal;
+    totalNet  += c.netAPayer;
+    totalCout += c.coutEmployeur;
+    totalCotSal += c.cotSal;
+    totalCotPat += c.cotPat;
+    totalIR += c.ir;
+    if (s.type==='apprenti') nbApprenti++; else if (s.type==='cdd') nbCDD++; else nbCDI++;
+    if (pd) nbPaieValidees++;
   });
-  var el = document.getElementById('sal-summary-cards');
-  if (!el) return;
-  el.innerHTML =
-    '<div class="dash-card"><div class="dash-card-label">Salariés</div><div class="dash-card-value">' + salaries.length + '</div></div>' +
-    '<div class="dash-card"><div class="dash-card-label">Masse salariale brute</div><div class="dash-card-value">' + totalBrut.toFixed(0) + ' €</div></div>' +
-    '<div class="dash-card"><div class="dash-card-label">Net à payer total</div><div class="dash-card-value" style="color:var(--green);">' + totalNet.toFixed(0) + ' €</div></div>' +
-    '<div class="dash-card"><div class="dash-card-label">Coût employeur total</div><div class="dash-card-value" style="color:var(--red);">' + totalCout.toFixed(0) + ' €</div></div>';
+  var n = salaries.length;
+
+  // Widget Effectif
+  var wEff = document.getElementById('sal-w-effectif');
+  var wEffD = document.getElementById('sal-w-effectif-detail');
+  if (wEff) wEff.textContent = n;
+  if (wEffD) wEffD.textContent = nbCDI + ' CDI · ' + nbApprenti + ' apprenti' + (nbApprenti>1?'s':'') + (nbCDD?' · '+nbCDD+' CDD':'');
+
+  // Widget Masse brute
+  var wBrut = document.getElementById('sal-w-brut');
+  var wBrutM = document.getElementById('sal-w-brut-moy');
+  if (wBrut) wBrut.textContent = totalBrut.toFixed(0) + ' €';
+  if (wBrutM) wBrutM.textContent = 'Moy. ' + (n>0?(totalBrut/n).toFixed(0):'0') + ' € / salarié';
+
+  // Widget Net
+  var wNet = document.getElementById('sal-w-net');
+  var wNetM = document.getElementById('sal-w-net-moy');
+  if (wNet) wNet.textContent = totalNet.toFixed(0) + ' €';
+  if (wNetM) wNetM.textContent = 'Moy. ' + (n>0?(totalNet/n).toFixed(0):'0') + ' € / salarié';
+
+  // Widget Coût employeur
+  var wCout = document.getElementById('sal-w-cout');
+  var wCharges = document.getElementById('sal-w-charges');
+  if (wCout) wCout.textContent = totalCout.toFixed(0) + ' €';
+  if (wCharges) wCharges.textContent = 'Charges : ' + (totalCotSal+totalCotPat).toFixed(0) + ' € (' + (totalCout>0?((totalCotSal+totalCotPat)/totalCout*100).toFixed(0):'0') + '%)';
+
+  // Activity rings
+  if (totalCout > 0) {
+    var pctNet = totalNet / totalCout;
+    var pctCharges = (totalCotSal + totalCotPat) / totalCout;
+    var pctIR = totalIR / totalCout;
+    var ringNet = document.getElementById('sal-ring-net');
+    var ringCharges = document.getElementById('sal-ring-charges');
+    var ringIR = document.getElementById('sal-ring-ir');
+    if (ringNet) ringNet.style.strokeDashoffset = (345.6 * (1 - pctNet)).toFixed(1);
+    if (ringCharges) ringCharges.style.strokeDashoffset = (263.9 * (1 - pctCharges)).toFixed(1);
+    if (ringIR) ringIR.style.strokeDashoffset = (182.2 * (1 - Math.min(pctIR * 5, 1))).toFixed(1);
+    var pctNetEl = document.getElementById('sal-ring-net-pct');
+    var pctChEl = document.getElementById('sal-ring-charges-pct');
+    var pctIREl = document.getElementById('sal-ring-ir-pct');
+    if (pctNetEl) pctNetEl.textContent = (pctNet*100).toFixed(0) + '%';
+    if (pctChEl) pctChEl.textContent = (pctCharges*100).toFixed(0) + '%';
+    if (pctIREl) pctIREl.textContent = totalIR.toFixed(0) + ' €';
+  }
+
+  // TESE status widget
+  var teseStatus = document.getElementById('sal-tese-status');
+  var teseRecap = document.getElementById('sal-tese-recap');
+  if (teseStatus && teseRecap) {
+    if (nbPaieValidees === n && n > 0) {
+      teseStatus.textContent = '✅ Prêt à déclarer';
+      teseStatus.style.background = 'rgba(52,199,89,0.15)';
+      teseStatus.style.color = '#34C759';
+    } else if (nbPaieValidees > 0) {
+      teseStatus.textContent = nbPaieValidees + '/' + n + ' validées';
+      teseStatus.style.background = 'rgba(255,165,0,0.15)';
+      teseStatus.style.color = '#f39c12';
+    } else {
+      teseStatus.textContent = 'En attente';
+      teseStatus.style.background = 'rgba(255,59,48,0.15)';
+      teseStatus.style.color = '#FF3B30';
+    }
+    teseRecap.textContent = n + ' salariés · Brut total ' + totalBrut.toFixed(0) + ' € · Coût total ' + totalCout.toFixed(0) + ' € · ' + nbPaieValidees + '/' + n + ' fiches validées';
+  }
 }
 
 function renderSalList() {
@@ -8285,6 +8427,86 @@ function exportRecapTESE() {
 }
 
 function renderFichesPaie() { renderSalaries(); }
+
+function renderTESETable() {
+  var el = document.getElementById('sal-tese-table');
+  if (!el) return;
+  var mois = document.getElementById('sal-mois-sel') ? document.getElementById('sal-mois-sel').value : '';
+  if (salaries.length === 0) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);">Aucun salarié</div>'; return; }
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  html += '<thead><tr style="background:rgba(255,255,255,0.04);"><th style="padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Salarié</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Heures</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">H.Sup</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Abs/CP</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Prime</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Brut</th>';
+  html += '<th style="padding:8px 10px;text-align:right;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Net</th>';
+  html += '<th style="padding:8px 10px;text-align:center;font-size:10px;text-transform:uppercase;color:rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.08);">Statut</th></tr></thead><tbody>';
+  var totBrut=0, totNet=0;
+  salaries.forEach(function(s) {
+    var pd = s.paies && s.paies[mois];
+    var cp  = pd ? (pd.cpPris||0) : 0;
+    var abs = pd ? (pd.absJours||0) : 0;
+    var hs  = pd ? (pd.heuresSup||0) : 0;
+    var pr  = pd ? (pd.prime||0) : 0;
+    var c   = calculerBulletin(s, cp, abs, hs, pr);
+    totBrut += c.brutTotal; totNet += c.netAPayer;
+    var statut = pd ? '<span style="color:#34C759;">✅</span>' : '<span style="color:#FF3B30;">⏳</span>';
+    html += '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">';
+    html += '<td style="padding:8px 10px;font-weight:600;">' + s.prenom + ' ' + s.nom.toUpperCase() + ' <span style="font-weight:400;color:rgba(255,255,255,0.3);font-size:10px;">' + (s.type==='apprenti'?'🎓':'👔') + '</span></td>';
+    html += '<td style="padding:8px 10px;text-align:right;">151.67</td>';
+    html += '<td style="padding:8px 10px;text-align:right;">' + (hs>0?hs+'h':'—') + '</td>';
+    html += '<td style="padding:8px 10px;text-align:right;">' + (abs>0?abs+'j abs':'') + (cp>0?(abs>0?' + ':'')+cp+'j CP':'') + (abs===0&&cp===0?'—':'') + '</td>';
+    html += '<td style="padding:8px 10px;text-align:right;">' + (pr>0?pr.toFixed(0)+' €':'—') + '</td>';
+    html += '<td style="padding:8px 10px;text-align:right;font-weight:600;color:#FF9500;">' + c.brutTotal.toFixed(2) + ' €</td>';
+    html += '<td style="padding:8px 10px;text-align:right;font-weight:600;color:#34C759;">' + c.netAPayer.toFixed(2) + ' €</td>';
+    html += '<td style="padding:8px 10px;text-align:center;">' + statut + '</td>';
+    html += '</tr>';
+  });
+  html += '<tr style="background:rgba(255,255,255,0.04);font-weight:700;"><td style="padding:10px;">TOTAUX</td><td></td><td></td><td></td><td></td>';
+  html += '<td style="padding:10px;text-align:right;color:#FF9500;">' + totBrut.toFixed(2) + ' €</td>';
+  html += '<td style="padding:10px;text-align:right;color:#34C759;">' + totNet.toFixed(2) + ' €</td><td></td></tr>';
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function copyTESEData() {
+  var mois = document.getElementById('sal-mois-sel') ? document.getElementById('sal-mois-sel').value : '';
+  var moisNoms = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var parts = mois.split('-');
+  var moisLabel = moisNoms[parseInt(parts[1])] + ' ' + parts[0];
+  var lines = ['DÉCLARATION TESE — ' + moisLabel, '═══════════════════════════════════════', ''];
+  var totBrut=0, totNet=0, totCout=0;
+  salaries.forEach(function(s, i) {
+    var pd = s.paies && s.paies[mois];
+    var cp  = pd ? (pd.cpPris||0) : 0;
+    var abs = pd ? (pd.absJours||0) : 0;
+    var hs  = pd ? (pd.heuresSup||0) : 0;
+    var pr  = pd ? (pd.prime||0) : 0;
+    var c   = calculerBulletin(s, cp, abs, hs, pr);
+    totBrut += c.brutTotal; totNet += c.netAPayer; totCout += c.coutEmployeur;
+    lines.push('▶ ' + s.prenom + ' ' + s.nom.toUpperCase());
+    lines.push('  N° Sécu : ' + (s.secu||'—'));
+    lines.push('  Contrat : ' + (s.type||'CDI').toUpperCase());
+    lines.push('  Heures travaillées : 151.67' + (hs>0?' + '+hs+'h sup':''));
+    if (cp>0) lines.push('  Congés payés pris : ' + cp + ' jours');
+    if (abs>0) lines.push('  Absences : ' + abs + ' jours');
+    if (pr>0) lines.push('  Prime exceptionnelle : ' + pr.toFixed(2) + ' €');
+    lines.push('  ➜ Rémunération brute à déclarer : ' + c.brutTotal.toFixed(2) + ' €');
+    lines.push('');
+  });
+  lines.push('═══════════════════════════════════════');
+  lines.push('TOTAUX : Brut ' + totBrut.toFixed(2) + ' € | Net ' + totNet.toFixed(2) + ' € | Coût employeur ' + totCout.toFixed(2) + ' €');
+  var text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    showNotif('Données TESE copiées dans le presse-papiers ✅', 'success');
+  }).catch(function() {
+    // Fallback
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showNotif('Données TESE copiées ✅', 'success');
+  });
+}
 
 // ── FIN MODULE SALARIÉS ──
 
@@ -21067,7 +21289,8 @@ function openLiensRapides(){
     ]},
     {cat:'Comptabilité & Outils',items:[
       {name:'Phonilab',url:'https://fr.phonilab.app/admin/index.php#edit_repair',icon:'🔧',color:'#1abc9c'},
-      {name:'Pennylane',url:'https://app.pennylane.com/auth/login',icon:'📊',color:'#2563eb'}
+      {name:'Pennylane',url:'https://app.pennylane.com/auth/login',icon:'📊',color:'#2563eb'},
+      {name:'TESE (URSSAF)',url:'https://www.letese.urssaf.fr',icon:'🏛️',color:'#00c853'}
     ]}
   ];
 
