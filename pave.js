@@ -1,8 +1,15 @@
-// ── SYSTÈME PIN (SHA-256) ──
+// ── SYSTÈME PIN (SHA-256) — v3 sécurisé ──
 var _pin = '';
-var _pinCode      = ''; // Hash SHA-256 chargé depuis Supabase
-var _pinEmployee  = ''; // Hash SHA-256 chargé depuis Supabase
+var _pinCode      = ''; // Hash SHA-256 patron (depuis Supabase uniquement)
+var _pinEmployee  = ''; // Hash SHA-256 employé (depuis Supabase uniquement)
+var _pinComptable = ''; // Hash SHA-256 comptable (depuis Supabase uniquement)
 var _pinsLoaded   = false;
+
+// Anti brute-force
+var _pinAttempts   = 0;
+var _pinMaxAttempts = 5;
+var _pinLockUntil  = 0; // timestamp
+var _pinLockDuration = 120000; // 2 minutes
 
 // Hache une chaîne en SHA-256 (retourne une promesse de chaîne hex)
 async function sha256(str) {
@@ -24,14 +31,27 @@ async function loadPinsFromSupabase() {
       var needsMigration = false;
       var migrated = Object.assign({}, data);
 
-      // Migration v2 : nouveaux PINs 6 chiffres
-      if (!data.version || data.version !== 'v2') {
-        migrated.patron  = await sha256('160978');
-        migrated.employe = await sha256('555555');
-        migrated.version = 'v2';
+      // Migration v3 : ajout rôle comptable
+      if (!data.version || data.version !== 'v3') {
+        // Garder patron/employe existants s'ils sont déjà hashés
+        if (data.patron && isSha256Hash(data.patron)) {
+          migrated.patron = data.patron;
+        } else if (data.patron) {
+          migrated.patron = await sha256(data.patron);
+        }
+        if (data.employe && isSha256Hash(data.employe)) {
+          migrated.employe = data.employe;
+        } else if (data.employe) {
+          migrated.employe = await sha256(data.employe);
+        }
+        // Ajouter comptable si pas encore présent
+        if (!data.comptable) {
+          migrated.comptable = await sha256('469577');
+        }
+        migrated.version = 'v3';
         needsMigration = true;
       } else {
-        // Migration SHA-256 si encore en clair
+        // V3 déjà en place, vérifier les hash
         if (data.patron && !isSha256Hash(data.patron)) {
           migrated.patron = await sha256(data.patron);
           needsMigration = true;
@@ -40,75 +60,143 @@ async function loadPinsFromSupabase() {
           migrated.employe = await sha256(data.employe);
           needsMigration = true;
         }
+        if (data.comptable && !isSha256Hash(data.comptable)) {
+          migrated.comptable = await sha256(data.comptable);
+          needsMigration = true;
+        }
       }
 
-      _pinCode     = migrated.patron  || await sha256('160978');
-      _pinEmployee = migrated.employe || await sha256('555555');
+      _pinCode      = migrated.patron   || '';
+      _pinEmployee  = migrated.employe  || '';
+      _pinComptable = migrated.comptable || '';
 
       if (needsMigration) {
         try {
           await supaFetch('settings', 'PATCH', {value: JSON.stringify(migrated)}, '?key=eq.pins_config');
-          console.info('✅ PINs migrés v2 avec succès');
+          console.info('✅ PINs migrés v3 (+ comptable)');
         } catch(e) {
           console.warn('Migration PIN impossible :', e);
         }
       }
       _pinsLoaded = true;
     } else {
-      // Aucun PIN en base → créer avec les nouvelles valeurs
-      var newData = {
-        patron:  await sha256('160978'),
-        employe: await sha256('555555'),
-        version: 'v2'
-      };
-      _pinCode     = newData.patron;
-      _pinEmployee = newData.employe;
-      try {
-        await supaFetch('settings', 'POST', {key:'pins_config', value: JSON.stringify(newData)});
-      } catch(e) {}
+      // Aucun PIN en base → signaler l'erreur (ne plus stocker en dur)
+      console.error('⚠️ Aucun PIN configuré en base Supabase. Veuillez initialiser pins_config.');
       _pinsLoaded = true;
     }
   } catch(e) {
     console.warn('Erreur chargement PINs:', e);
-    // Fallback : hashes des PINs par défaut
-    _pinCode     = await sha256('160978');
-    _pinEmployee = await sha256('555555');
-    _pinsLoaded  = true;
+    _pinsLoaded = true;
   }
 }
-var _userRole     = 'patron'; // 'patron' ou 'employe'
 
-// Modules cachés pour les employés
-var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries'];
+var _userRole = 'patron'; // 'patron', 'employe' ou 'comptable'
+
+// Modules par rôle
+var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries','docs-comptable'];
+var _modulesComptable  = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries','docs-comptable'];
+var _modulesEmploye    = []; // employés voient tout SAUF _modulesPatronOnly
 
 function appliquerRole(){
-  var isEmploye = _userRole === 'employe';
-  var ids = ['nav-caisse','nav-comptable','nav-bilan','nav-depenses','nav-comparaison','nav-stats','nav-salaries'];
-  ids.forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.style.display = isEmploye ? 'none' : '';
+  var isEmploye   = _userRole === 'employe';
+  var isComptable = _userRole === 'comptable';
+  var isPatron    = _userRole === 'patron';
+
+  // Navigation sidebar desktop
+  var allNavItems = document.querySelectorAll('.nav-item[onclick]');
+  allNavItems.forEach(function(el){
+    var onclick = el.getAttribute('onclick') || '';
+    // Extraire le nom de page du onclick showPage('xxx',...)
+    var match = onclick.match(/showPage\(['"]([^'"]+)['"]/);
+    if (!match) return;
+    var pageName = match[1];
+
+    if (isPatron) {
+      el.style.display = '';
+    } else if (isComptable) {
+      // Comptable : ne voit QUE les modules compta + salariés + dashboard
+      var allowed = _modulesComptable.concat(['dashboard']);
+      el.style.display = allowed.indexOf(pageName) !== -1 ? '' : 'none';
+    } else if (isEmploye) {
+      // Employé : ne voit PAS les modules patron-only
+      el.style.display = _modulesPatronOnly.indexOf(pageName) !== -1 ? 'none' : '';
+    }
   });
+
+  // Nav group labels — cacher "Comptabilité" pour les employés, cacher groupes non-compta pour comptable
+  var navGroups = document.querySelectorAll('.nav-group-label');
+  navGroups.forEach(function(label){
+    var nextSibling = label.nextElementSibling;
+    if (!nextSibling) return;
+    // Compter les items visibles dans ce groupe
+    var group = [];
+    var el = label.nextElementSibling;
+    while (el && !el.classList.contains('nav-sep') && !el.classList.contains('nav-group-label')) {
+      if (el.classList.contains('nav-item')) group.push(el);
+      el = el.nextElementSibling;
+    }
+    var visibles = group.filter(function(g){ return g.style.display !== 'none'; });
+    label.style.display = visibles.length > 0 ? '' : 'none';
+    // Also hide the separator before if group is empty
+  });
+
+  // Nav separators — cacher ceux qui sont entre des groupes vides
+  var navSeps = document.querySelectorAll('.nav-sep');
+  navSeps.forEach(function(sep){
+    var prev = sep.previousElementSibling;
+    var next = sep.nextElementSibling;
+    if (prev && prev.style && prev.style.display === 'none') {
+      sep.style.display = 'none';
+    } else if (next && next.style && next.style.display === 'none') {
+      sep.style.display = 'none';
+    } else {
+      sep.style.display = '';
+    }
+  });
+
   // Menu mobile items
   var mobItems = document.querySelectorAll('.mob-menu-item');
-  var cacheMobile = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries'];
   mobItems.forEach(function(item){
     var txt = item.getAttribute('onclick')||'';
-    var cacher = cacheMobile.some(function(m){ return txt.indexOf(m) !== -1; });
-    if(cacher) item.style.display = isEmploye ? 'none' : '';
+    if (isPatron) {
+      item.style.display = '';
+    } else if (isComptable) {
+      var shown = _modulesComptable.concat(['dashboard']).some(function(m){ return txt.indexOf(m) !== -1; });
+      item.style.display = shown ? '' : 'none';
+    } else if (isEmploye) {
+      var cacher = _modulesPatronOnly.some(function(m){ return txt.indexOf(m) !== -1; });
+      item.style.display = cacher ? 'none' : '';
+    }
   });
+
   // Bouton Z de caisse nav mobile bas
   var mobCaisse = document.getElementById('mob-btn-caisse');
   if(mobCaisse) mobCaisse.style.display = isEmploye ? 'none' : '';
+
   // Badge rôle
   var badge = document.getElementById('role-badge');
   if(badge){
-    badge.textContent = isEmploye ? '👤 Employé' : '👑 Patron';
-    badge.style.color = isEmploye ? 'var(--blue)' : 'var(--warning)';
+    if (isComptable) {
+      badge.textContent = '📊 Comptable';
+      badge.style.color = '#2563eb';
+    } else if (isEmploye) {
+      badge.textContent = '👤 Employé';
+      badge.style.color = 'var(--blue)';
+    } else {
+      badge.textContent = '👑 Patron';
+      badge.style.color = 'var(--warning)';
+    }
   }
 }
 
 function pinPress(n){
   if(n === '') return;
+  // Anti brute-force : vérifier le verrouillage
+  if (_pinLockUntil > Date.now()) {
+    var secsLeft = Math.ceil((_pinLockUntil - Date.now()) / 1000);
+    document.getElementById('pin-msg').textContent = '🔒 Verrouillé — ' + secsLeft + 's';
+    return;
+  }
   if(_pin.length >= 6) return;
   _pin += String(n);
   updatePinDisplay();
@@ -116,6 +204,7 @@ function pinPress(n){
 }
 
 function pinClear(){
+  if (_pinLockUntil > Date.now()) return;
   _pin = _pin.slice(0, -1);
   updatePinDisplay();
   document.getElementById('pin-msg').textContent = '';
@@ -131,14 +220,41 @@ function updatePinDisplay(){
 }
 
 async function checkPin(){
+  // Anti brute-force
+  if (_pinLockUntil > Date.now()) {
+    _pin = '';
+    updatePinDisplay();
+    return;
+  }
+
   // Charger les PINs depuis Supabase si pas encore fait
   if (!_pinsLoaded) {
     await loadPinsFromSupabase();
   }
+
+  // Vérifier qu'on a au moins un PIN configuré
+  if (!_pinCode && !_pinEmployee && !_pinComptable) {
+    document.getElementById('pin-msg').textContent = '⚠️ Aucun PIN configuré en base';
+    _pin = '';
+    setTimeout(function(){ updatePinDisplay(); document.getElementById('pin-msg').textContent = ''; }, 2000);
+    return;
+  }
+
   var pinSaisi = _pin;
   var hashSaisi = await sha256(pinSaisi);
-  if(hashSaisi === _pinCode || hashSaisi === _pinEmployee){
-    _userRole = (hashSaisi === _pinEmployee) ? 'employe' : 'patron';
+
+  if(hashSaisi === _pinCode || hashSaisi === _pinEmployee || hashSaisi === _pinComptable){
+    // Succès — reset tentatives
+    _pinAttempts = 0;
+
+    if (hashSaisi === _pinComptable) {
+      _userRole = 'comptable';
+    } else if (hashSaisi === _pinEmployee) {
+      _userRole = 'employe';
+    } else {
+      _userRole = 'patron';
+    }
+
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
     if(window.innerWidth <= 768){
@@ -151,9 +267,6 @@ async function checkPin(){
       loadApiKeyFromSupabase();
       loadClientsEnAttente();
       loadHistoriqueReparations();
-      // Charger la base clients complète au démarrage (pagination 1000 par batch)
-      // Clients : chargés à la demande (onglet ou recherche)
-      // Chargement secondaire en arrière-plan (non bloquant)
       setTimeout(function(){
         loadBonsCommande();
         loadBonsDepot();
@@ -161,7 +274,6 @@ async function checkPin(){
         loadSalariesFromSupabase().then(function(){ renderSalaries(); });
       }, 3000);
     });
-    // Écrans, batteries et android = chargement lazy à l'ouverture des onglets uniquement
     renderEcrans();
     renderBatteries();
     androidInit();
@@ -169,15 +281,35 @@ async function checkPin(){
     updatePinDisplay();
     setTimeout(appliquerRole, 100);
   } else {
-    document.getElementById('pin-msg').textContent = '❌ Code incorrect';
-    var box = document.querySelector('.login-box');
-    box.classList.add('pin-shake');
-    setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
-    _pin = '';
-    setTimeout(function(){
+    // Échec
+    _pinAttempts++;
+    if (_pinAttempts >= _pinMaxAttempts) {
+      _pinLockUntil = Date.now() + _pinLockDuration;
+      document.getElementById('pin-msg').textContent = '🔒 Trop de tentatives — verrouillé 2 min';
+      _pin = '';
       updatePinDisplay();
-      document.getElementById('pin-msg').textContent = '';
-    }, 600);
+      // Compte à rebours
+      var lockTimer = setInterval(function(){
+        var secsLeft = Math.ceil((_pinLockUntil - Date.now()) / 1000);
+        if (secsLeft <= 0) {
+          clearInterval(lockTimer);
+          _pinAttempts = 0;
+          document.getElementById('pin-msg').textContent = '';
+        } else {
+          document.getElementById('pin-msg').textContent = '🔒 Verrouillé — ' + secsLeft + 's';
+        }
+      }, 1000);
+    } else {
+      document.getElementById('pin-msg').textContent = '❌ Code incorrect (' + _pinAttempts + '/' + _pinMaxAttempts + ')';
+      var box = document.querySelector('.login-box');
+      box.classList.add('pin-shake');
+      setTimeout(function(){ box.classList.remove('pin-shake'); }, 400);
+      _pin = '';
+      setTimeout(function(){
+        updatePinDisplay();
+        document.getElementById('pin-msg').textContent = '';
+      }, 1500);
+    }
   }
 }
 
