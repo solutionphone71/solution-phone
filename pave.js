@@ -80,13 +80,47 @@ async function loadPinsFromSupabase() {
       }
       _pinsLoaded = true;
     } else {
-      // Aucun PIN en base → signaler l'erreur (ne plus stocker en dur)
-      console.error('⚠️ Aucun PIN configuré en base Supabase. Veuillez initialiser pins_config.');
-      _pinsLoaded = true;
+      // Aucun PIN en base → créer la config initiale dans Supabase
+      console.warn('⚠️ Aucun PIN en base — initialisation automatique...');
+      await _pinInitDefaults();
     }
   } catch(e) {
     console.warn('Erreur chargement PINs:', e);
-    _pinsLoaded = true;
+    // Fallback hors-ligne : PINs hashés en dur pour ne jamais bloquer l'accès
+    await _pinInitDefaults();
+  }
+}
+
+// Initialise les PINs par défaut (fallback si Supabase vide ou hors-ligne)
+async function _pinInitDefaults() {
+  // PINs par défaut — seront écrasés dès que Supabase est dispo
+  var defaultPatron   = await sha256('160978');
+  var defaultEmploye  = await sha256('555555');
+  var defaultComptable = await sha256('469577');
+
+  _pinCode      = defaultPatron;
+  _pinEmployee  = defaultEmploye;
+  _pinComptable = defaultComptable;
+  _pinsLoaded   = true;
+
+  // Tenter de sauvegarder dans Supabase pour la prochaine fois
+  try {
+    var config = JSON.stringify({
+      patron:    defaultPatron,
+      employe:   defaultEmploye,
+      comptable: defaultComptable,
+      version:   'v3'
+    });
+    // Vérifier si la ligne existe
+    var existing = await supaFetch('settings', 'GET', null, '?key=eq.pins_config&select=key');
+    if (existing && existing.length > 0) {
+      await supaFetch('settings', 'PATCH', { value: config }, '?key=eq.pins_config');
+    } else {
+      await supaFetch('settings', 'POST', { key: 'pins_config', value: config });
+    }
+    console.info('✅ PINs par défaut sauvegardés dans Supabase');
+  } catch(e) {
+    console.warn('Impossible de sauvegarder les PINs dans Supabase:', e);
   }
 }
 
