@@ -16473,7 +16473,7 @@ function printTicketCommande(c){
   }
   modal.innerHTML =
     '<div style="background:rgba(255,255,255,0.04);border-bottom:1px solid #e2e8f0;padding:14px 16px;display:flex;gap:8px;flex-wrap:wrap;margin-top:env(safe-area-inset-top,0px);">' +
-      '<button onclick="eposPrint(window._currentTicket)" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson</button>' +
+      '<button id="btn-epson-ticket" style="flex:1;min-width:130px;padding:14px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ Epson</button>' +
       '<button onclick="window.print()" style="flex:1;min-width:80px;padding:14px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">🖨️ PC</button>' +
       '<button onclick="fermerTicket()" style="flex:1;min-width:80px;padding:14px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:15px;font-weight:800;cursor:pointer;">✖ Fermer</button>' +
     '</div>' +
@@ -16482,6 +16482,14 @@ function printTicketCommande(c){
     '</div>';
   window._currentTicket = c;
   modal.style.display = 'block';
+  // Attacher le handler directement sur le bouton (plus fiable que window._currentTicket)
+  var btnEpson = document.getElementById('btn-epson-ticket');
+  if(btnEpson){
+    btnEpson.onclick = function(){
+      console.log('[btn-epson-ticket] Clic — ticket=', c);
+      eposPrint(c);
+    };
+  }
 }
 
 function fermerTicket(){
@@ -17991,16 +17999,23 @@ function playNotifSound(){
 
 var _eposPrintLock = {};
 function eposPrint(c) {
-  if(!c) return;
+  console.log('[eposPrint] Appel avec c=', c);
+  if(!c) {
+    showNotif('⚠️ Ticket introuvable (c=null) — recharge la page','error');
+    console.warn('[eposPrint] c est null/undefined — window._currentTicket perdu');
+    return;
+  }
   // Anti-doublon : 1 seul ticket par bon pendant 60s
   var lockKey = c.id || c.numero || 'unknown';
   var now = Date.now();
   if(_eposPrintLock[lockKey] && (now - _eposPrintLock[lockKey]) < 60000) {
-    console.log('eposPrint BLOQUE doublon pour', lockKey);
+    var remaining = Math.ceil((60000 - (now - _eposPrintLock[lockKey]))/1000);
+    showNotif('⏱️ Ticket déjà imprimé (attends '+remaining+'s pour réimprimer)','warning');
+    console.log('[eposPrint] BLOQUE doublon pour', lockKey, 'reste', remaining, 's');
     return;
   }
   _eposPrintLock[lockKey] = now;
-  console.log('eposPrint ENVOI pour', lockKey);
+  console.log('[eposPrint] ENVOI pour', lockKey);
   var nasIp = getNasUrl();
   if(!nasIp){
     showNotif('⚠️ IP NAS non configurée — impression PC','info');
