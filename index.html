@@ -2365,6 +2365,22 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
           <button class="btn" style="width:100%;" onclick="paramsTestShopify()">🧪 Tester la connexion Shopify</button>
         </div>
+
+        <!-- Standardisation photos produit (remove.bg) -->
+        <div style="background:rgba(150,191,72,0.08);border:1px solid rgba(150,191,72,0.3);border-radius:12px;padding:16px;margin-top:14px;">
+          <div style="font-size:12px;color:#96bf48;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">🪄 Photos produit — remove.bg</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Clé API utilisée pour détourer automatiquement les photos avant de générer le composite 1080×1080. <a href="https://www.remove.bg/dashboard#api-key" target="_blank" style="color:#96bf48;">Obtenir une clé →</a></div>
+          <div class="form-group">
+            <label>Clé API remove.bg</label>
+            <input type="password" id="params-removebg-key" placeholder="Ex: Xxx...xxxXxx" autocomplete="off">
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="paramsSaveRemoveBg()">💾 Enregistrer</button>
+            <button class="btn" onclick="paramsToggleRemoveBgKey()">👁️ Afficher</button>
+          </div>
+          <div id="params-removebg-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
+        </div>
+
       </div>
       </div>
       </div>
@@ -4227,6 +4243,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <input type="file" id="p-photo-dos-input" accept="image/*" capture="environment" style="display:none;" onchange="previewPhonePhoto(this,'dos')">
         </div>
       </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg,#96bf48,#7ea838);color:#fff;border:none;" onclick="standardizePhotos('add')">🪄 Standardiser (1080×1080)</button>
+        <span id="p-photo-standardize-status" style="font-size:11px;color:var(--text-muted);"></span>
+      </div>
+      <div id="p-photo-standardized-preview" style="display:none;margin-top:10px;text-align:center;">
+        <div style="font-size:10px;color:#96bf48;margin-bottom:4px;">✨ Aperçu standardisé</div>
+        <img id="p-photo-standardized-img" src="" style="max-width:280px;width:100%;border:1px solid rgba(150,191,72,0.3);border-radius:8px;">
+      </div>
     </div>
     <div id="p-photo-preview" style="display:none;margin-top:12px;">
       <img id="p-photo-img" src="" alt="Photo" style="max-width:100%;border-radius:8px;max-height:120px;object-fit:cover;">
@@ -4317,6 +4341,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
           <input type="file" id="edit-photo-dos-input" accept="image/*" capture="environment" style="display:none;" onchange="previewEditPhoto(this,'dos')">
         </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-sm" style="background:linear-gradient(135deg,#96bf48,#7ea838);color:#fff;border:none;" onclick="standardizePhotos('edit')">🪄 Standardiser (1080×1080)</button>
+        <span id="edit-photo-standardize-status" style="font-size:11px;color:var(--text-muted);"></span>
+      </div>
+      <div id="edit-photo-standardized-preview" style="display:none;margin-top:10px;text-align:center;">
+        <div style="font-size:10px;color:#96bf48;margin-bottom:4px;">✨ Aperçu standardisé</div>
+        <img id="edit-photo-standardized-img" src="" style="max-width:280px;width:100%;border:1px solid rgba(150,191,72,0.3);border-radius:8px;">
       </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
@@ -12069,6 +12101,13 @@ function paramsLoad(){
   el=document.getElementById('params-kiwiz-user'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizUser)||'';
   // NAS IP
   el=document.getElementById('params-nas-ip'); if(el) el.value=localStorage.getItem(NAS_PRINT_KEY)||'';
+  // Clé remove.bg
+  el=document.getElementById('params-removebg-key'); if(el) el.value=localStorage.getItem(REMOVEBG_KEY_STORAGE)||'';
+  var rbgSt=document.getElementById('params-removebg-status');
+  if(rbgSt){
+    var k=localStorage.getItem(REMOVEBG_KEY_STORAGE)||'';
+    rbgSt.innerHTML = k ? '<span style="color:#96bf48;">✅ Clé enregistrée ('+k.length+' caractères)</span>' : '<span style="color:var(--text-muted);">Non configurée</span>';
+  }
   var nasSt=document.getElementById('params-nas-status');
   if(nasSt) nasSt.innerHTML = localStorage.getItem(NAS_PRINT_KEY) ? '<span style="color:var(--green);">✅ '+localStorage.getItem(NAS_PRINT_KEY)+'</span>' : '';
   el=document.getElementById('params-kiwiz-pass'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizPass)||'';
@@ -16526,6 +16565,24 @@ function buildNasUrl(ip){
   return scheme + ip;
 }
 
+function paramsSaveRemoveBg(){
+  var el = document.getElementById('params-removebg-key');
+  var v = (el && el.value || '').trim();
+  setRemoveBgKey(v);
+  var st = document.getElementById('params-removebg-status');
+  if(st){
+    if(v){ st.innerHTML = '<span style="color:#96bf48;">✅ Clé enregistrée ('+v.length+' caractères)</span>'; }
+    else { st.innerHTML = '<span style="color:#e53e3e;">⚠️ Clé vide</span>'; }
+  }
+  showNotif(v ? '✅ Clé remove.bg enregistrée' : '⚠️ Clé supprimée', v?'success':'warning');
+}
+
+function paramsToggleRemoveBgKey(){
+  var el = document.getElementById('params-removebg-key');
+  if(!el) return;
+  el.type = (el.type === 'password') ? 'text' : 'password';
+}
+
 function paramsSaveNas() {
   var ip = (document.getElementById('params-nas-ip')||{value:''}).value.trim();
   localStorage.setItem(NAS_PRINT_KEY, ip);
@@ -16803,6 +16860,188 @@ function previewEditPhoto(input, side){
   reader.readAsDataURL(file);
 }
 
+// ═════════════════════════════════════════════════════════════
+// STANDARDISATION PHOTOS — remove.bg + Canvas 1080x1080
+// Reproduit le rendu catalogue (dos à gauche + face à droite)
+// Style de référence : Galaxy S24 fond blanc
+// ═════════════════════════════════════════════════════════════
+var REMOVEBG_KEY_STORAGE = 'sp_removebg_key';
+
+// Proportions calibrées sur la référence Galaxy S24 (1080x1080)
+// Le téléphone DOS est à gauche, FACE à droite, légèrement superposés
+var STD_LAYOUT = {
+  canvas: 1080,
+  bg: '#ffffff',
+  // Hauteur cible d'un téléphone (en px, sur canvas 1080)
+  phoneTargetHeight: 940,
+  // Centre horizontal de chaque téléphone (en px)
+  dosCenterX: 380,
+  faceCenterX: 700,
+  centerY: 540
+};
+
+function getRemoveBgKey(){
+  return localStorage.getItem(REMOVEBG_KEY_STORAGE) || '';
+}
+
+function setRemoveBgKey(k){
+  localStorage.setItem(REMOVEBG_KEY_STORAGE, (k||'').trim());
+}
+
+// Appelle remove.bg sur un fichier → retourne un Blob PNG transparent
+async function removeBgApi(file){
+  var key = getRemoveBgKey();
+  if(!key) throw new Error('Clé remove.bg manquante (Paramètres)');
+  var fd = new FormData();
+  fd.append('image_file', file);
+  fd.append('size', 'auto');
+  fd.append('format', 'png');
+  var res = await fetch('https://api.remove.bg/v1.0/removebg', {
+    method: 'POST',
+    headers: { 'X-Api-Key': key },
+    body: fd
+  });
+  if(!res.ok){
+    var txt = await res.text();
+    throw new Error('remove.bg ' + res.status + ': ' + txt.slice(0,200));
+  }
+  return await res.blob();
+}
+
+// Charge un Blob dans un HTMLImageElement
+function blobToImage(blob){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    var url = URL.createObjectURL(blob);
+    img.onload = function(){ URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = function(e){ URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+// Calcule la bounding box des pixels non-transparents d'une image PNG
+function getBoundingBox(img){
+  var c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  var ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  var data = ctx.getImageData(0,0,c.width,c.height).data;
+  var minX=c.width, minY=c.height, maxX=0, maxY=0;
+  var hasPixel = false;
+  for(var y=0; y<c.height; y++){
+    for(var x=0; x<c.width; x++){
+      var a = data[(y*c.width+x)*4 + 3];
+      if(a > 20){
+        if(x<minX) minX=x;
+        if(x>maxX) maxX=x;
+        if(y<minY) minY=y;
+        if(y>maxY) maxY=y;
+        hasPixel = true;
+      }
+    }
+  }
+  if(!hasPixel) return null;
+  return { x:minX, y:minY, w:maxX-minX+1, h:maxY-minY+1, src:c };
+}
+
+// Dessine un téléphone sur le canvas final en respectant le centre et la hauteur cible
+function drawPhoneAtPosition(destCtx, img, centerX, centerY, targetHeight){
+  var bb = getBoundingBox(img);
+  if(!bb) return;
+  // Ratio pour atteindre la hauteur cible
+  var ratio = targetHeight / bb.h;
+  var drawW = bb.w * ratio;
+  var drawH = bb.h * ratio;
+  var destX = centerX - drawW/2;
+  var destY = centerY - drawH/2;
+  destCtx.drawImage(bb.src, bb.x, bb.y, bb.w, bb.h, destX, destY, drawW, drawH);
+}
+
+// Fonction principale : standardise les 2 photos en un composite 1080x1080
+async function standardizePhotos(mode){
+  var prefix = mode === 'edit' ? 'edit-photo' : 'p-photo';
+  var statusEl = document.getElementById(prefix + '-standardize-status');
+  var previewWrap = document.getElementById(prefix + '-standardized-preview');
+  var previewImg = document.getElementById(prefix + '-standardized-img');
+
+  function setStatus(txt, color){
+    if(statusEl){ statusEl.textContent = txt; statusEl.style.color = color || 'var(--text-muted)'; }
+  }
+
+  // Vérifier clé API
+  var key = getRemoveBgKey();
+  if(!key){
+    var saisie = prompt('Clé API remove.bg (stockée localement) :');
+    if(!saisie){ setStatus('Clé manquante', '#e53e3e'); return; }
+    setRemoveBgKey(saisie);
+  }
+
+  // Récupérer les 2 fichiers
+  var faceFile = mode === 'edit' ? _editPendingPhotoFace : _pendingPhotoFace;
+  var dosFile  = mode === 'edit' ? _editPendingPhotoDos  : _pendingPhotoDos;
+  if(!faceFile || !dosFile){
+    setStatus('⚠️ Il faut les 2 photos (face + dos)', '#e53e3e');
+    showNotif('⚠️ Dépose la photo de FACE et de DOS avant de standardiser','warning');
+    return;
+  }
+
+  try {
+    setStatus('🔄 Suppression fonds (remove.bg)...', '#96bf48');
+    var [faceBlob, dosBlob] = await Promise.all([
+      removeBgApi(faceFile),
+      removeBgApi(dosFile)
+    ]);
+    setStatus('🎨 Génération composite 1080×1080...', '#96bf48');
+    var [faceImg, dosImg] = await Promise.all([
+      blobToImage(faceBlob),
+      blobToImage(dosBlob)
+    ]);
+
+    // Canvas final
+    var canvas = document.createElement('canvas');
+    canvas.width = STD_LAYOUT.canvas;
+    canvas.height = STD_LAYOUT.canvas;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = STD_LAYOUT.bg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Dessiner DOS d'abord (arrière-plan), puis FACE devant
+    drawPhoneAtPosition(ctx, dosImg,  STD_LAYOUT.dosCenterX,  STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
+    drawPhoneAtPosition(ctx, faceImg, STD_LAYOUT.faceCenterX, STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
+
+    // Export en Blob JPEG (plus léger) pour Shopify
+    var finalBlob = await new Promise(function(resolve){
+      canvas.toBlob(function(b){ resolve(b); }, 'image/jpeg', 0.92);
+    });
+
+    // Remplacer le fichier FACE par le composite (deviendra l'image principale Shopify)
+    var finalFile = new File([finalBlob], 'composite-standardise.jpg', { type:'image/jpeg' });
+    if(mode === 'edit'){
+      _editPendingPhotoFace = finalFile;
+    } else {
+      _pendingPhotoFace = finalFile;
+    }
+
+    // Aperçu
+    var dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    if(previewImg) previewImg.src = dataUrl;
+    if(previewWrap) previewWrap.style.display = 'block';
+
+    // Mettre à jour la miniature FACE pour refléter le composite
+    var faceThumb = document.getElementById(prefix + '-face-img');
+    var faceText  = document.getElementById(prefix + '-face-text');
+    if(faceThumb){ faceThumb.src = dataUrl; faceThumb.style.display='block'; }
+    if(faceText) faceText.style.display='none';
+
+    setStatus('✅ Photo standardisée (1080×1080) — sera utilisée comme photo principale', '#96bf48');
+    showNotif('✨ Photo standardisée générée !','success');
+  } catch(err) {
+    console.error('[standardizePhotos]', err);
+    setStatus('❌ ' + err.message, '#e53e3e');
+    showNotif('Erreur standardisation : ' + err.message, 'error');
+  }
+}
+
 // Réinitialiser les champs photo du formulaire
 function resetPhotoFields(){
   _pendingPhotoFace = null;
@@ -16815,6 +17054,11 @@ function resetPhotoFields(){
     if(text) text.style.display='block';
     if(input) input.value='';
   });
+  // Reset aperçu standardisé
+  var prev = document.getElementById('p-photo-standardized-preview');
+  if(prev) prev.style.display='none';
+  var stat = document.getElementById('p-photo-standardize-status');
+  if(stat) stat.textContent = '';
 }
 
 // ── Appel API Shopify via le proxy serverless ──
