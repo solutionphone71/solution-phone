@@ -18032,6 +18032,11 @@ function eposPrint(c) {
   }
   _eposPrintLock[lockKey] = now;
   console.log('[eposPrint] ENVOI pour', lockKey);
+  // Marquer comme déjà imprimé pour bloquer l'auto-print (boucle 15s) sur TOUS les appareils
+  if(c.id){
+    var prevGlobal = parseInt(localStorage.getItem('_globalLastPrintedId')||'0');
+    if(c.id > prevGlobal) localStorage.setItem('_globalLastPrintedId', String(c.id));
+  }
   var nasIp = getNasUrl();
   if(!nasIp){
     showNotif('⚠️ IP NAS non configurée — impression PC','info');
