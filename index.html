@@ -16503,8 +16503,14 @@ function fermerTicket(){
 // IMPRESSION EPSON — NAS Synology
 // ══════════════════════════════════════════════════════════
 var NAS_PRINT_KEY = 'sp_nas_ip';
-// Pré-remplir IP NAS par défaut si non configurée
-if(!localStorage.getItem(NAS_PRINT_KEY)) localStorage.setItem(NAS_PRINT_KEY, '192.168.10.164:3000');
+// URL HTTPS publique du NAS (reverse proxy Synology + Let's Encrypt)
+var NAS_DEFAULT_URL = 'https://nas.solution-phone.fr';
+// Migration auto : si ancienne IP locale détectée, on passe à l'URL HTTPS
+var _currentNas = localStorage.getItem(NAS_PRINT_KEY);
+if(!_currentNas || _currentNas.indexOf('192.168.')===0 || _currentNas.indexOf('10.164')>-1){
+  localStorage.setItem(NAS_PRINT_KEY, NAS_DEFAULT_URL);
+  if(typeof supaSettingSave === 'function') { try { supaSettingSave('nas_ip', NAS_DEFAULT_URL); } catch(e){} }
+}
 
 function getNasUrl() {
   return localStorage.getItem(NAS_PRINT_KEY) || '';
