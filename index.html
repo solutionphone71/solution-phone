@@ -7251,31 +7251,55 @@ function savePhoneEdit() {
 
   // Upload des nouvelles photos si ajoutées
   if(_editPendingPhotoFace || _editPendingPhotoDos){
-    showNotif('⏳ Upload des photos...','info');
+    showNotif('⏳ Upload des photos sur le serveur...','info');
     var handle = shopifyHandle(p);
     var photoPromises = [];
     if(_editPendingPhotoFace){
+      console.log('[SavePhoto] Upload FACE — taille:', _editPendingPhotoFace.size, 'bytes');
       photoPromises.push(
-        uploadPhonePhoto(_editPendingPhotoFace, handle+'-face.jpg').then(function(url){ p.photo_face = url; })
+        uploadPhonePhoto(_editPendingPhotoFace, handle+'-face.jpg').then(function(url){
+          console.log('[SavePhoto] FACE uploadée:', url);
+          p.photo_face = url;
+          return url;
+        })
       );
     }
     if(_editPendingPhotoDos){
+      console.log('[SavePhoto] Upload DOS — taille:', _editPendingPhotoDos.size, 'bytes');
       photoPromises.push(
-        uploadPhonePhoto(_editPendingPhotoDos, handle+'-dos.jpg').then(function(url){ p.photo_dos = url; })
+        uploadPhonePhoto(_editPendingPhotoDos, handle+'-dos.jpg').then(function(url){
+          console.log('[SavePhoto] DOS uploadée:', url);
+          p.photo_dos = url;
+          return url;
+        })
       );
     }
-    Promise.all(photoPromises).then(function(){
+    Promise.all(photoPromises).then(async function(){
+      console.log('[SavePhoto] Toutes photos uploadées — persistance en DB');
+      // RE-SAUVEGARDER via savePhone pour garantir que les URLs sont persistées partout
+      try {
+        await savePhone(p);
+        console.log('[SavePhoto] savePhone OK (photos persistées)');
+      } catch(e){ console.error('[SavePhoto] savePhone fail', e); }
+      // PATCH direct aussi en sécurité
       var photoUpdate = {};
       if(p.photo_face) photoUpdate.photo_face = p.photo_face;
       if(p.photo_dos) photoUpdate.photo_dos = p.photo_dos;
       if(Object.keys(photoUpdate).length > 0 && supabaseReady){
-        supaFetch('phones', 'PATCH', photoUpdate, '?id=eq.'+p.id);
+        try {
+          await supaFetch('phones', 'PATCH', photoUpdate, '?id=eq.'+p.id);
+          console.log('[SavePhoto] PATCH Supabase OK', photoUpdate);
+        } catch(e){ console.error('[SavePhoto] PATCH fail', e); }
+      } else if(!supabaseReady){
+        console.warn('[SavePhoto] supabaseReady=false — photo sauvée localement seulement');
       }
       _editPendingPhotoFace = null;
       _editPendingPhotoDos = null;
-      showNotif('📸 Photos mises à jour !','success');
+      renderPhones();
+      showNotif('📸 Photos sauvegardées !','success');
     }).catch(function(e){
-      showNotif('⚠️ Erreur upload photo: '+e.message,'error');
+      console.error('[SavePhoto] ERREUR UPLOAD', e);
+      showNotif('⚠️ Erreur upload photo: '+(e.message||e),'error');
     });
   }
 }
@@ -17070,8 +17094,8 @@ async function standardizePhotos(mode){
     if(faceThumb){ faceThumb.src = dataUrl; faceThumb.style.display='block'; }
     if(faceText) faceText.style.display='none';
 
-    setStatus('✅ Photo standardisée (1080×1080) — sera utilisée comme photo principale', '#96bf48');
-    showNotif('✨ Photo standardisée générée !','success');
+    setStatus('✅ Standardisée ! ⚠️ Clique "Enregistrer" pour sauver la photo', '#96bf48');
+    showNotif('✨ Photo standardisée — clique maintenant sur ENREGISTRER pour la sauver','success');
   } catch(err) {
     console.error('[standardizePhotos]', err);
     setStatus('❌ ' + err.message, '#e53e3e');
