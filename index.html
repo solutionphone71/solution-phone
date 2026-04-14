@@ -16979,25 +16979,17 @@ async function standardizePhotos(mode){
   // Récupérer les 2 fichiers
   var faceFile = mode === 'edit' ? _editPendingPhotoFace : _pendingPhotoFace;
   var dosFile  = mode === 'edit' ? _editPendingPhotoDos  : _pendingPhotoDos;
-  if(!faceFile || !dosFile){
-    setStatus('⚠️ Il faut les 2 photos (face + dos)', '#e53e3e');
-    showNotif('⚠️ Dépose la photo de FACE et de DOS avant de standardiser','warning');
+  if(!faceFile && !dosFile){
+    setStatus('⚠️ Dépose au moins 1 photo', '#e53e3e');
+    showNotif('⚠️ Il faut au moins 1 photo pour standardiser','warning');
     return;
   }
 
-  try {
-    setStatus('🔄 Suppression fonds (remove.bg)...', '#96bf48');
-    var [faceBlob, dosBlob] = await Promise.all([
-      removeBgApi(faceFile),
-      removeBgApi(dosFile)
-    ]);
-    setStatus('🎨 Génération composite 1080×1080...', '#96bf48');
-    var [faceImg, dosImg] = await Promise.all([
-      blobToImage(faceBlob),
-      blobToImage(dosBlob)
-    ]);
+  // MODE COMPOSITE : 1 seule photo fournie (face OU dos) → elle contient déjà les 2 téléphones côte à côte
+  // On détoure et on la centre sur canvas 1080×1080
+  var singleMode = (!faceFile || !dosFile);
 
-    // Canvas final
+  try {
     var canvas = document.createElement('canvas');
     canvas.width = STD_LAYOUT.canvas;
     canvas.height = STD_LAYOUT.canvas;
@@ -17005,9 +16997,38 @@ async function standardizePhotos(mode){
     ctx.fillStyle = STD_LAYOUT.bg;
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // Dessiner DOS d'abord (arrière-plan), puis FACE devant
-    drawPhoneAtPosition(ctx, dosImg,  STD_LAYOUT.dosCenterX,  STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
-    drawPhoneAtPosition(ctx, faceImg, STD_LAYOUT.faceCenterX, STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
+    if(singleMode){
+      var onlyFile = faceFile || dosFile;
+      setStatus('🔄 Détourage (remove.bg)...', '#96bf48');
+      var blob = await removeBgApi(onlyFile);
+      setStatus('🎨 Centrage sur canvas 1080×1080...', '#96bf48');
+      var img = await blobToImage(blob);
+      var bb = getBoundingBox(img);
+      if(!bb) throw new Error('Aucun contenu détecté après détourage');
+      // Scale pour que le composite fasse ~96% du canvas (marge ~2% de chaque côté)
+      var maxContentW = STD_LAYOUT.canvas * 0.96;
+      var maxContentH = STD_LAYOUT.canvas * 0.96;
+      var ratio = Math.min(maxContentW / bb.w, maxContentH / bb.h);
+      var drawW = bb.w * ratio;
+      var drawH = bb.h * ratio;
+      var destX = (STD_LAYOUT.canvas - drawW) / 2;
+      var destY = (STD_LAYOUT.canvas - drawH) / 2;
+      ctx.drawImage(bb.src, bb.x, bb.y, bb.w, bb.h, destX, destY, drawW, drawH);
+    } else {
+      // MODE 2 PHOTOS : dos à gauche + face à droite (layout catalogue Galaxy S24)
+      setStatus('🔄 Suppression fonds (remove.bg)...', '#96bf48');
+      var [faceBlob, dosBlob] = await Promise.all([
+        removeBgApi(faceFile),
+        removeBgApi(dosFile)
+      ]);
+      setStatus('🎨 Génération composite 1080×1080...', '#96bf48');
+      var [faceImg, dosImg] = await Promise.all([
+        blobToImage(faceBlob),
+        blobToImage(dosBlob)
+      ]);
+      drawPhoneAtPosition(ctx, dosImg,  STD_LAYOUT.dosCenterX,  STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
+      drawPhoneAtPosition(ctx, faceImg, STD_LAYOUT.faceCenterX, STD_LAYOUT.centerY, STD_LAYOUT.phoneTargetHeight);
+    }
 
     // Export en Blob JPEG (plus léger) pour Shopify
     var finalBlob = await new Promise(function(resolve){
