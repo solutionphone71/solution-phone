@@ -16510,6 +16510,16 @@ function getNasUrl() {
   return localStorage.getItem(NAS_PRINT_KEY) || '';
 }
 
+// Helper : construit l'URL complète avec le bon protocole
+// Si l'IP est déjà préfixée http:// ou https://, on garde tel quel
+// Sinon : si la page est en HTTPS, force HTTPS (iOS/Safari compatible)
+function buildNasUrl(ip){
+  if(!ip) return '';
+  if(ip.indexOf('http://')===0 || ip.indexOf('https://')===0) return ip;
+  var scheme = (location.protocol === 'https:') ? 'https://' : 'http://';
+  return scheme + ip;
+}
+
 function paramsSaveNas() {
   var ip = (document.getElementById('params-nas-ip')||{value:''}).value.trim();
   localStorage.setItem(NAS_PRINT_KEY, ip);
@@ -16527,7 +16537,7 @@ async function paramsTestNas() {
   if(st) st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test en cours...</span>';
   try {
     // OPTIONS est supporté par le serveur (CORS preflight)
-    var r = await fetch('http://' + ip, {method:'OPTIONS', signal: AbortSignal.timeout(4000)});
+    var r = await fetch(buildNasUrl(ip), {method:'OPTIONS', signal: AbortSignal.timeout(4000)});
     if(st) st.innerHTML = '<span style="color:var(--green);">✅ NAS joignable !</span>';
     showNotif('✅ NAS joignable','success');
   } catch(e) {
@@ -18084,7 +18094,7 @@ function eposPrint(c) {
   lines.push('');
   showNotif('&#9203; Envoi imprimante...','info');
   var ticket = lines.join('\n') + '\n\x1d\x56\x42\x03';
-  fetch('http://' + nasIp, {
+  fetch(buildNasUrl(nasIp), {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({title: 'SOLUTION PHONE', content: ticket})
