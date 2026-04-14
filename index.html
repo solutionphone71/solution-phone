@@ -3814,13 +3814,60 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
 
+      <!-- ═══ STATISTIQUES PARTICIPATIONS ═══ -->
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header">
+          <span class="card-title">📊 Statistiques de la roue</span>
+          <button class="btn btn-sm" onclick="rlLoadStats()">🔄 Actualiser</button>
+        </div>
+        <div id="rl-stats-loading" style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Chargement…</div>
+        <div id="rl-stats-content" style="display:none;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px;">
+            <div style="background:rgba(0,240,200,0.08);border:1px solid rgba(0,240,200,0.3);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:26px;font-weight:900;color:#00f0c8;" id="rl-stat-total">0</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Participations totales</div>
+            </div>
+            <div style="background:rgba(255,40,60,0.08);border:1px solid rgba(255,40,60,0.3);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:26px;font-weight:900;color:#ff2840;" id="rl-stat-today">0</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Aujourd'hui</div>
+            </div>
+            <div style="background:rgba(246,201,14,0.08);border:1px solid rgba(246,201,14,0.3);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:26px;font-weight:900;color:#f6c90e;" id="rl-stat-week">0</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">7 derniers jours</div>
+            </div>
+            <div style="background:rgba(66,133,244,0.08);border:1px solid rgba(66,133,244,0.3);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:26px;font-weight:900;color:#4285f4;" id="rl-stat-month">0</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Ce mois-ci</div>
+            </div>
+          </div>
+
+          <div style="margin-top:18px;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--text);">🏆 Répartition des lots gagnés</div>
+          <div id="rl-stat-breakdown" style="display:flex;flex-direction:column;gap:6px;"></div>
+
+          <div style="margin-top:18px;margin-bottom:10px;font-size:13px;font-weight:700;color:var(--text);">📋 10 derniers gagnants</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;font-size:12px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border);">Date</th>
+                  <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border);">Téléphone</th>
+                  <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border);">Lot gagné</th>
+                </tr>
+              </thead>
+              <tbody id="rl-stat-recent"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="card" style="background:rgba(66,153,225,0.07);border-color:rgba(66,153,225,0.25);">
         <div class="card-title" style="margin-bottom:10px;color:var(--blue);">💡 Comment ça marche ?</div>
         <div style="font-size:13px;color:var(--text-muted);line-height:1.9;">
           <b style="color:var(--text);">1.</b> Après chaque réparation, montrez le QR code ou partagez le lien au client<br>
-          <b style="color:var(--text);">2.</b> Il laisse un avis Google 5 ⭐ sur votre fiche<br>
-          <b style="color:var(--text);">3.</b> Il tourne la roue et gagne un cadeau<br>
-          <b style="color:var(--text);">4.</b> Il montre l'écran à votre équipe pour récupérer son lot<br><br>
+          <b style="color:var(--text);">2.</b> Il entre son numéro (anti-doublon) puis clique sur "Notez sur Google"<br>
+          <b style="color:var(--text);">3.</b> Après 20 secondes il revient et tourne la roue<br>
+          <b style="color:var(--text);">4.</b> Il gagne un cadeau → email envoyé automatiquement sur <b>contact@solution-phone.fr</b><br>
+          <b style="color:var(--text);">5.</b> Il montre l'écran ou l'email à votre équipe pour récupérer son lot<br><br>
           <span style="color:var(--warning);">⚡ La config (lots + lien Google) est partagée automatiquement avec la page roulette dès que vous cliquez sur Enregistrer.</span>
         </div>
       </div>
@@ -19322,6 +19369,86 @@ function initRouletteAdmin() {
     rlPrizes    = JSON.parse(JSON.stringify(RL_DEFAULT_PRIZES));
     rlGoogleUrl = '';
     rlRenderPrizes();
+  });
+  // Charger aussi les statistiques de participation
+  rlLoadStats();
+}
+
+// Statistiques de la roulette — compte les participations et lots gagnes
+function rlLoadStats() {
+  var loading = document.getElementById('rl-stats-loading');
+  var content = document.getElementById('rl-stats-content');
+  if (loading) loading.style.display = 'block';
+  if (content) content.style.display = 'none';
+
+  supaFetch('roulette_participations','GET',null,'?select=telephone,lot_gagne,date_participation&order=date_participation.desc&limit=500').then(function(rows){
+    if (!Array.isArray(rows)) rows = [];
+    var now    = new Date();
+    var today  = now.toISOString().substring(0,10);
+    var dWeek  = new Date(now.getTime() - 7*24*3600*1000);
+    var month  = now.toISOString().substring(0,7);
+
+    var total = rows.length;
+    var nToday = 0, nWeek = 0, nMonth = 0;
+    var breakdown = {};
+    rows.forEach(function(r){
+      var d = (r.date_participation||'').substring(0,10);
+      if (d === today) nToday++;
+      if (r.date_participation && new Date(r.date_participation) >= dWeek) nWeek++;
+      if (d.substring(0,7) === month) nMonth++;
+      var lot = r.lot_gagne || '(inconnu)';
+      breakdown[lot] = (breakdown[lot] || 0) + 1;
+    });
+
+    var set = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+    set('rl-stat-total', total);
+    set('rl-stat-today', nToday);
+    set('rl-stat-week',  nWeek);
+    set('rl-stat-month', nMonth);
+
+    // Barres de repartition
+    var bd = document.getElementById('rl-stat-breakdown');
+    if (bd) {
+      var entries = Object.keys(breakdown).map(function(k){ return {lot:k, n:breakdown[k]}; }).sort(function(a,b){ return b.n - a.n; });
+      if (entries.length === 0) {
+        bd.innerHTML = '<div style="color:var(--text-muted);font-size:12px;font-style:italic;">Aucune participation enregistree pour le moment.</div>';
+      } else {
+        var max = entries[0].n;
+        bd.innerHTML = entries.map(function(e){
+          var pct = total > 0 ? ((e.n/total)*100).toFixed(0) : 0;
+          var barPct = max > 0 ? (e.n/max)*100 : 0;
+          return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;">' +
+                 '<div style="flex:0 0 180px;color:var(--text);">'+e.lot.replace(/</g,'&lt;')+'</div>' +
+                 '<div style="flex:1;height:18px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">' +
+                   '<div style="width:'+barPct+'%;height:100%;background:linear-gradient(90deg,#00f0c8,#4285f4);"></div>' +
+                 '</div>' +
+                 '<div style="flex:0 0 60px;text-align:right;font-weight:700;color:var(--text);">'+e.n+' <span style="color:var(--text-muted);font-weight:400;">('+pct+'%)</span></div>' +
+                 '</div>';
+        }).join('');
+      }
+    }
+
+    // 10 derniers gagnants
+    var recent = document.getElementById('rl-stat-recent');
+    if (recent) {
+      if (rows.length === 0) {
+        recent.innerHTML = '<tr><td colspan="3" style="padding:10px;color:var(--text-muted);font-style:italic;font-size:12px;text-align:center;">Aucun gagnant pour le moment</td></tr>';
+      } else {
+        recent.innerHTML = rows.slice(0,10).map(function(r){
+          var dStr = r.date_participation ? new Date(r.date_participation).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+          var tel = (r.telephone||'—').replace(/(\d{2})(?=\d)/g,'$1 ').trim();
+          return '<tr><td style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.04);">'+dStr+'</td>'+
+                 '<td style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.04);font-family:monospace;">'+tel+'</td>'+
+                 '<td style="padding:6px;border-bottom:1px solid rgba(255,255,255,0.04);">'+(r.lot_gagne||'—')+'</td></tr>';
+        }).join('');
+      }
+    }
+
+    if (loading) loading.style.display = 'none';
+    if (content) content.style.display = 'block';
+  }).catch(function(e){
+    console.warn('Erreur chargement stats roulette:', e);
+    if (loading) loading.textContent = '❌ Erreur chargement (table roulette_participations manquante ?)';
   });
 }
 

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
     'salaries', 'phonilab_import', 'police', 'phones_neufs',
     'bons_depot', 'bons_commande', 'historique_reparations', 'ventes_neufs_access',
-    'calendrier_editorial', 'roulette_config'
+    'calendrier_editorial', 'roulette_config', 'roulette_participations'
   ];
   if (!ALLOWED_TABLES.includes(table)) {
     return res.status(403).json({ error: 'Table non autorisee: ' + table });
