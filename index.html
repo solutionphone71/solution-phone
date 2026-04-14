@@ -16977,9 +16977,24 @@ async function standardizePhotos(mode){
     setRemoveBgKey(saisie);
   }
 
-  // Récupérer les 2 fichiers
+  // Récupérer les 2 fichiers (ou depuis l'aperçu affiché en mode édition)
   var faceFile = mode === 'edit' ? _editPendingPhotoFace : _pendingPhotoFace;
   var dosFile  = mode === 'edit' ? _editPendingPhotoDos  : _pendingPhotoDos;
+
+  // Helper : si pas de File mais une image déjà affichée, on la récupère
+  async function fileFromThumb(side){
+    var img = document.getElementById(prefix + '-' + side + '-img');
+    if(!img || !img.src || img.style.display === 'none') return null;
+    try {
+      var res = await fetch(img.src);
+      var blob = await res.blob();
+      return new File([blob], side+'.jpg', { type: blob.type || 'image/jpeg' });
+    } catch(e){ console.warn('[fileFromThumb] '+side, e); return null; }
+  }
+
+  if(!faceFile) faceFile = await fileFromThumb('face');
+  if(!dosFile)  dosFile  = await fileFromThumb('dos');
+
   if(!faceFile && !dosFile){
     setStatus('⚠️ Dépose au moins 1 photo', '#e53e3e');
     showNotif('⚠️ Il faut au moins 1 photo pour standardiser','warning');
