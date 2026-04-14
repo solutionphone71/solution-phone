@@ -5092,7 +5092,7 @@ function naAddToPanier(id){
   if(existing){
     existing.qte++;
   } else {
-    _naPanier.push({article:article, qte:1});
+    _naPanier.push({article:article, qte:1, prix:article.prix});
   }
 
   naRenderPanier();
@@ -5123,7 +5123,9 @@ function naRenderPanier(){
   var count  = document.getElementById('na-panier-count');
   var btnVal = document.getElementById('na-btn-valider');
 
-  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.article.prix*p.qte; }, 0);
+  // Normaliser : chaque ligne doit avoir son propre prix
+  _naPanier.forEach(function(p){ if(typeof p.prix !== 'number') p.prix = p.article.prix; });
+  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.prix*p.qte; }, 0);
   var totalHT  = totalTTC / 1.2;
   var totalTVA = totalTTC - totalHT;
   var nbArticles = _naPanier.reduce(function(s,p){ return s+p.qte; }, 0);
@@ -5151,20 +5153,32 @@ function naRenderPanier(){
     return;
   }
 
-  liste.innerHTML = _naPanier.map(function(p){
+  liste.innerHTML = _naPanier.map(function(p,i){
     return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">'+
       '<span style="font-size:20px;">'+p.article.emoji+'</span>'+
-      '<div style="flex:1;">'+
+      '<div style="flex:1;min-width:0;">'+
         '<div style="font-size:13px;font-weight:700;">'+p.article.nom+'</div>'+
-        '<div style="font-size:12px;color:var(--text-muted);">'+p.article.prix.toFixed(2)+' € × '+p.qte+' = '+(p.article.prix*p.qte).toFixed(2)+' €</div>'+
+        '<div style="font-size:11px;color:var(--text-muted);">× '+p.qte+' = '+(p.prix*p.qte).toFixed(2)+' €</div>'+
       '</div>'+
-      '<div style="display:flex;align-items:center;gap:4px;">'+
+      '<input type="number" step="0.01" min="0" value="'+p.prix.toFixed(2)+'" data-idx="'+i+'" onchange="naSetPrix(this.dataset.idx, this.value)" onclick="this.select()" title="Modifier le prix" style="width:62px;padding:4px 6px;border:1px solid var(--primary);border-radius:6px;font-size:13px;font-weight:700;text-align:right;color:var(--primary);background:#fff;"/>'+
+      '<span style="font-size:12px;font-weight:700;color:var(--primary);">€</span>'+
+      '<div style="display:flex;align-items:center;gap:4px;margin-left:4px;">'+
         '<button data-id="'+p.article.id+'" onclick="naRetireDuPanier(this.dataset.id)" style="width:26px;height:26px;border-radius:50%;border:1px solid #ddd;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:700;">−</button>'+
         '<span style="font-size:14px;font-weight:700;min-width:20px;text-align:center;">'+p.qte+'</span>'+
         '<button data-id="'+p.article.id+'" onclick="naAddToPanier(this.dataset.id)" style="width:26px;height:26px;border-radius:50%;border:1px solid var(--primary);background:var(--primary);color:#fff;cursor:pointer;font-size:14px;font-weight:700;">+</button>'+
       '</div>'+
     '</div>';
   }).join('');
+}
+
+function naSetPrix(idx, val){
+  var i = parseInt(idx,10);
+  var prix = parseFloat(String(val).replace(',','.'));
+  if(isNaN(prix) || prix < 0) prix = 0;
+  if(_naPanier[i]){
+    _naPanier[i].prix = prix;
+    naRenderPanier();
+  }
 }
 
 function naSetMode(mode){
@@ -5187,7 +5201,8 @@ function naSetMode(mode){
 
 function naValiderVente(){
   if(_naPanier.length===0){ showNotif('Panier vide','error'); return; }
-  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.article.prix*p.qte; }, 0);
+  _naPanier.forEach(function(p){ if(typeof p.prix !== 'number') p.prix = p.article.prix; });
+  var totalTTC = _naPanier.reduce(function(s,p){ return s+p.prix*p.qte; }, 0);
   var desc = _naPanier.map(function(p){ return p.qte+'× '+p.article.nom; }).join(', ');
   var num  = 'ACC-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(0,14);
 
@@ -5233,7 +5248,8 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   '<div class="line"></div>';
 
   _naPanier.forEach(function(p){
-    html += '<div class="row"><span>'+p.article.emoji+' '+p.article.nom+(p.qte>1?' ×'+p.qte:'')+'</span><span>'+(p.article.prix*p.qte).toFixed(2)+' €</span></div>';
+    var _prix = (typeof p.prix === 'number') ? p.prix : p.article.prix;
+    html += '<div class="row"><span>'+p.article.emoji+' '+p.article.nom+(p.qte>1?' ×'+p.qte:'')+'</span><span>'+(_prix*p.qte).toFixed(2)+' €</span></div>';
   });
 
   html += '<div class="line"></div>'+
