@@ -7297,6 +7297,13 @@ function savePhoneEdit() {
       _editPendingPhotoDos = null;
       renderPhones();
       showNotif('📸 Photos sauvegardées !','success');
+      // ── Auto-sync Shopify si activé (re-push photos sur produit existant) ──
+      if(localStorage.getItem(PARAMS_KEYS.shopifyAutosync)==='1' && localStorage.getItem(PARAMS_KEYS.shopifyToken)){
+        console.log('[SavePhoto] Auto-sync Shopify déclenché');
+        setTimeout(function(){
+          try { shopifyPublishPhone(p.id); } catch(e){ console.error('[SavePhoto] Shopify sync fail', e); }
+        }, 600);
+      }
     }).catch(function(e){
       console.error('[SavePhoto] ERREUR UPLOAD', e);
       showNotif('⚠️ Erreur upload photo: '+(e.message||e),'error');
