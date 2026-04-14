@@ -12101,8 +12101,9 @@ function paramsLoad(){
   el=document.getElementById('params-kiwiz-user'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizUser)||'';
   // NAS IP
   el=document.getElementById('params-nas-ip'); if(el) el.value=localStorage.getItem(NAS_PRINT_KEY)||'';
-  // Clé remove.bg
-  el=document.getElementById('params-removebg-key'); if(el) el.value=localStorage.getItem(REMOVEBG_KEY_STORAGE)||'';
+  // Clé remove.bg (ne pas écraser la saisie en cours)
+  el=document.getElementById('params-removebg-key');
+  if(el && document.activeElement !== el) el.value=localStorage.getItem(REMOVEBG_KEY_STORAGE)||'';
   var rbgSt=document.getElementById('params-removebg-status');
   if(rbgSt){
     var k=localStorage.getItem(REMOVEBG_KEY_STORAGE)||'';
