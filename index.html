@@ -891,20 +891,36 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     </div>
 
     <!-- ══════════════════════════════════════════════ -->
-    <!-- PAGE : FACTURES PDF (TVA 20%)               -->
+    <!-- PAGE : FACTURES & DEVIS PDF                 -->
     <!-- ══════════════════════════════════════════════ -->
     <div class="page" id="page-factures-pdf">
-      <div class="page-title">📄 Factures PDF</div>
-      <div class="page-sub">Génération de factures PDF avec TVA 20% — calcul automatique</div>
+      <div class="page-title">📄 Factures & Devis PDF</div>
+      <div class="page-sub">Génération de documents professionnels</div>
+
+      <!-- Onglets -->
+      <div style="display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;">
+        <button class="btn fpdf-tab active" id="fpdf-tab-facture" onclick="fpdfShowTab('facture')" style="padding:10px 20px;font-weight:700;">🧾 Facture TVA 20%</button>
+        <button class="btn fpdf-tab" id="fpdf-tab-devis" onclick="fpdfShowTab('devis')" style="padding:10px 20px;font-weight:700;">📝 Devis</button>
+        <button class="btn fpdf-tab" id="fpdf-tab-occasion" onclick="fpdfShowTab('occasion')" style="padding:10px 20px;font-weight:700;">📱 Facture Occasion</button>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
         <!-- Formulaire -->
         <div class="card">
-          <div class="card-header"><div class="card-title">➕ Nouvelle facture PDF</div></div>
+          <div class="card-header"><div class="card-title" id="fpdf-form-title">➕ Nouvelle facture</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-group"><label>N° Facture</label><input type="text" id="fpdf-numero" placeholder="Auto"></div>
+              <div class="form-group"><label>N° Document</label><input type="text" id="fpdf-numero" placeholder="Auto"></div>
               <div class="form-group"><label>Date</label><input type="date" id="fpdf-date"></div>
+            </div>
+            <!-- Validité (devis uniquement) -->
+            <div class="form-group fpdf-devis-only" style="display:none;"><label>Validité</label>
+              <select id="fpdf-validite">
+                <option value="30 jours" selected>30 jours</option>
+                <option value="15 jours">15 jours</option>
+                <option value="60 jours">60 jours</option>
+                <option value="90 jours">90 jours</option>
+              </select>
             </div>
             <div class="form-group"><label>Nom client</label><input type="text" id="fpdf-client-nom" placeholder="Nom complet"></div>
             <div class="form-group"><label>Adresse client</label><input type="text" id="fpdf-client-adresse" placeholder="Adresse"></div>
@@ -924,19 +940,21 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
             <!-- Lignes articles -->
             <div style="margin-top:6px;">
-              <label style="font-weight:600;font-size:13px;">Articles / Prestations</label>
+              <label style="font-weight:600;font-size:13px;" id="fpdf-lignes-label">Articles / Prestations</label>
               <div id="fpdf-lignes" style="display:flex;flex-direction:column;gap:8px;margin-top:6px;"></div>
               <button class="btn" style="margin-top:8px;font-size:12px;" onclick="fpdfAddLigne()">➕ Ajouter une ligne</button>
             </div>
 
             <!-- Totaux -->
             <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:14px;margin-top:8px;">
-              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Total HT</span><span id="fpdf-total-ht" style="font-weight:700;">0,00 €</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>TVA 20%</span><span id="fpdf-total-tva" style="font-weight:700;">0,00 €</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:16px;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;">Total TTC</span><span id="fpdf-total-ttc" style="font-weight:700;color:var(--blue);">0,00 €</span></div>
+              <div class="fpdf-tva-row" style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Total HT</span><span id="fpdf-total-ht" style="font-weight:700;">0,00 €</span></div>
+              <div class="fpdf-tva-row" style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>TVA 20%</span><span id="fpdf-total-tva" style="font-weight:700;">0,00 €</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:16px;border-top:1px solid var(--border);padding-top:8px;"><span style="font-weight:700;" id="fpdf-total-label">Total TTC</span><span id="fpdf-total-ttc" style="font-weight:700;color:var(--blue);">0,00 €</span></div>
+              <!-- Mention occasion -->
+              <div id="fpdf-mention-occasion" style="display:none;font-size:11px;color:var(--text-dim);margin-top:8px;">TVA non applicable — Art. 297 A du CGI (régime de la marge)</div>
             </div>
 
-            <button class="btn btn-primary" style="margin-top:8px;padding:12px;" onclick="fpdfGenerer()">📄 Générer le PDF</button>
+            <button class="btn btn-primary" style="margin-top:8px;padding:12px;" id="fpdf-btn-generer" onclick="fpdfGenerer()">📄 Générer</button>
           </div>
         </div>
 
@@ -951,9 +969,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- Historique -->
       <div class="card" style="margin-top:18px;">
-        <div class="card-header"><div class="card-title">📋 Historique factures PDF</div></div>
+        <div class="card-header"><div class="card-title">📋 Historique</div></div>
         <div style="overflow-x:auto;">
-          <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>TTC</th><th>Actions</th></tr></thead>
+          <table><thead><tr><th>Type</th><th>N°</th><th>Date</th><th>Client</th><th>Montant</th><th>Actions</th></tr></thead>
           <tbody id="fpdf-historique"></tbody></table>
         </div>
       </div>
@@ -22293,55 +22311,102 @@ function openLiensRapides(){
 }
 
 // ══════════════════════════════════════════════════════
-// FACTURES PDF — TVA 20% avec calcul automatique
+// FACTURES & DEVIS PDF — 3 types : Facture TVA 20%, Devis, Facture Occasion
 // ══════════════════════════════════════════════════════
 
 var _fpdfFactures = [];
 var FPDF_STORAGE_KEY = 'sp_factures_pdf';
+var _fpdfCurrentTab = 'facture'; // 'facture' | 'devis' | 'occasion'
 
 function fpdfInit(){
-  // Charger depuis localStorage
   try { _fpdfFactures = JSON.parse(localStorage.getItem(FPDF_STORAGE_KEY)||'[]'); } catch(e){ _fpdfFactures = []; }
-  // Date du jour
   var d = document.getElementById('fpdf-date');
   if(d && !d.value) d.value = new Date().toISOString().slice(0,10);
-  // Numéro auto
-  var num = document.getElementById('fpdf-numero');
-  if(num && !num.value){
-    var nextNum = (_fpdfFactures.length > 0) ? Math.max.apply(null, _fpdfFactures.map(function(f){ return parseInt(f.numero)||0; })) + 1 : 1;
-    num.value = 'FP-' + String(nextNum).padStart(4,'0');
-  }
-  // Au moins 1 ligne
+  fpdfShowTab(_fpdfCurrentTab);
   var container = document.getElementById('fpdf-lignes');
   if(container && container.children.length === 0) fpdfAddLigne();
   fpdfRenderHistorique();
   fpdfUpdateTotaux();
 }
 
+function fpdfShowTab(tab){
+  _fpdfCurrentTab = tab;
+  // Active tab style
+  document.querySelectorAll('.fpdf-tab').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('fpdf-tab-'+tab);
+  if(btn) btn.classList.add('active');
+
+  // Devis-only fields
+  document.querySelectorAll('.fpdf-devis-only').forEach(function(el){
+    el.style.display = tab === 'devis' ? '' : 'none';
+  });
+
+  // TVA rows visibility
+  var showTVA = (tab === 'facture');
+  document.querySelectorAll('.fpdf-tva-row').forEach(function(el){
+    el.style.display = showTVA ? 'flex' : 'none';
+  });
+
+  // Mention occasion
+  var mentionOcc = document.getElementById('fpdf-mention-occasion');
+  if(mentionOcc) mentionOcc.style.display = (tab === 'occasion') ? 'block' : 'none';
+
+  // Labels
+  var titles = { facture: '➕ Nouvelle facture TVA 20%', devis: '➕ Nouveau devis', occasion: '➕ Nouvelle facture occasion' };
+  var btnLabels = { facture: '📄 Générer la facture', devis: '📄 Générer le devis', occasion: '📄 Générer la facture' };
+  var totalLabels = { facture: 'Total TTC', devis: 'Total TTC', occasion: 'Total' };
+  document.getElementById('fpdf-form-title').textContent = titles[tab] || titles.facture;
+  document.getElementById('fpdf-btn-generer').textContent = btnLabels[tab] || btnLabels.facture;
+  document.getElementById('fpdf-total-label').textContent = totalLabels[tab] || 'Total TTC';
+
+  // Auto numéro
+  fpdfAutoNumero();
+  fpdfUpdateTotaux();
+}
+
+function fpdfAutoNumero(){
+  var prefixes = { facture: 'FP', devis: 'DV', occasion: 'FO' };
+  var prefix = prefixes[_fpdfCurrentTab] || 'FP';
+  var sameType = _fpdfFactures.filter(function(f){ return (f.type||'facture') === _fpdfCurrentTab; });
+  var maxNum = 0;
+  sameType.forEach(function(f){
+    var n = parseInt(String(f.numero).replace(/\D/g,'')) || 0;
+    if(n > maxNum) maxNum = n;
+  });
+  document.getElementById('fpdf-numero').value = prefix + '-' + String(maxNum + 1).padStart(4, '0');
+}
+
 function fpdfAddLigne(){
   var container = document.getElementById('fpdf-lignes');
-  var idx = container.children.length;
+  var isOccasion = (_fpdfCurrentTab === 'occasion');
   var row = document.createElement('div');
   row.style.cssText = 'display:grid;grid-template-columns:1fr 60px 100px 30px;gap:6px;align-items:center;';
   row.innerHTML =
     '<input type="text" placeholder="Description" class="fpdf-desc" oninput="fpdfUpdateTotaux()" style="padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;">'+
     '<input type="number" placeholder="Qté" value="1" min="1" class="fpdf-qty" oninput="fpdfUpdateTotaux()" style="padding:7px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;text-align:center;">'+
-    '<input type="number" placeholder="Prix TTC" step="0.01" class="fpdf-prix" oninput="fpdfUpdateTotaux()" style="padding:7px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;text-align:right;">'+
+    '<input type="number" placeholder="'+(isOccasion?'Prix':'Prix TTC')+'" step="0.01" class="fpdf-prix" oninput="fpdfUpdateTotaux()" style="padding:7px 6px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;text-align:right;">'+
     '<button onclick="this.parentElement.remove();fpdfUpdateTotaux()" style="background:none;border:none;color:#e74c3c;font-size:16px;cursor:pointer;">✕</button>';
   container.appendChild(row);
 }
 
 function fpdfGetLignes(){
   var lignes = [];
+  var isOccasion = (_fpdfCurrentTab === 'occasion');
   var rows = document.querySelectorAll('#fpdf-lignes > div');
   rows.forEach(function(row){
     var desc = row.querySelector('.fpdf-desc').value.trim();
     var qty = parseInt(row.querySelector('.fpdf-qty').value) || 1;
-    var prixTTC = parseFloat(row.querySelector('.fpdf-prix').value) || 0;
-    if(desc && prixTTC > 0){
-      var prixHT = Math.round((prixTTC / 1.20) * 100) / 100;
-      var tva = Math.round((prixTTC - prixHT) * 100) / 100;
-      lignes.push({ desc: desc, qty: qty, prixUnitaireTTC: prixTTC, prixUnitaireHT: prixHT, totalHT: Math.round(prixHT * qty * 100) / 100, totalTVA: Math.round(tva * qty * 100) / 100, totalTTC: Math.round(prixTTC * qty * 100) / 100 });
+    var prix = parseFloat(row.querySelector('.fpdf-prix').value) || 0;
+    if(desc && prix > 0){
+      if(isOccasion){
+        // Pas de TVA — prix = prix final
+        lignes.push({ desc: desc, qty: qty, pu: prix, total: Math.round(prix * qty * 100) / 100 });
+      } else {
+        // TVA 20%
+        var prixHT = Math.round((prix / 1.20) * 100) / 100;
+        var tva = Math.round((prix - prixHT) * 100) / 100;
+        lignes.push({ desc: desc, qty: qty, prixUnitaireTTC: prix, prixUnitaireHT: prixHT, pu: prixHT, totalHT: Math.round(prixHT * qty * 100) / 100, totalTVA: Math.round(tva * qty * 100) / 100, totalTTC: Math.round(prix * qty * 100) / 100, total: Math.round(prix * qty * 100) / 100 });
+      }
     }
   });
   return lignes;
@@ -22349,10 +22414,17 @@ function fpdfGetLignes(){
 
 function fpdfUpdateTotaux(){
   var lignes = fpdfGetLignes();
+  var isOccasion = (_fpdfCurrentTab === 'occasion');
   var ht = 0, tva = 0, ttc = 0;
-  lignes.forEach(function(l){ ht += l.totalHT; tva += l.totalTVA; ttc += l.totalTTC; });
-  document.getElementById('fpdf-total-ht').textContent = ht.toFixed(2) + ' €';
-  document.getElementById('fpdf-total-tva').textContent = tva.toFixed(2) + ' €';
+  if(isOccasion){
+    lignes.forEach(function(l){ ttc += l.total; });
+  } else {
+    lignes.forEach(function(l){ ht += l.totalHT; tva += l.totalTVA; ttc += l.totalTTC; });
+  }
+  var elHT = document.getElementById('fpdf-total-ht');
+  var elTVA = document.getElementById('fpdf-total-tva');
+  if(elHT) elHT.textContent = ht.toFixed(2) + ' €';
+  if(elTVA) elTVA.textContent = tva.toFixed(2) + ' €';
   document.getElementById('fpdf-total-ttc').textContent = ttc.toFixed(2) + ' €';
   fpdfUpdateApercu(lignes, ht, tva, ttc);
 }
@@ -22365,43 +22437,60 @@ function fpdfUpdateApercu(lignes, ht, tva, ttc){
   var numero = (document.getElementById('fpdf-numero').value||'').trim();
   var date = document.getElementById('fpdf-date').value || '';
   var paiement = (document.getElementById('fpdf-paiement').value||'CB');
+  var isDevis = (_fpdfCurrentTab === 'devis');
+  var isOccasion = (_fpdfCurrentTab === 'occasion');
+  var couleur = '#c0392b';
 
-  var html = '<div style="font-family:Arial,sans-serif;">';
-  // En-tête
-  html += '<div style="display:flex;justify-content:space-between;margin-bottom:20px;">';
-  html += '<div><div style="font-size:16px;font-weight:700;color:#1a73e8;">Solution Phone</div>';
-  html += '<div style="font-size:10px;color:#666;line-height:1.6;">21 Rue Gambetta<br>71000 Mâcon<br>Tél : 03 85 33 06 89<br>contact@solution-phone.fr<br>SIRET : 801 044 785 00021</div></div>';
-  html += '<div style="text-align:right;"><div style="font-size:14px;font-weight:700;">FACTURE</div>';
-  html += '<div style="font-size:11px;color:#666;">N° '+numero+'</div>';
-  html += '<div style="font-size:11px;color:#666;">Date : '+(date?date.split('-').reverse().join('/'):'—')+'</div></div></div>';
+  var typeBadge = isDevis ? 'DEVIS' : 'FACTURE';
+  var clientAdresseFull = [adresse, (cp||'')+(cp&&ville?' ':'')+ville].filter(Boolean).join(', ');
+
+  // Mini aperçu en utilisant le style buildA4HTML
+  var html = '<div style="font-family:Helvetica Neue,Arial,sans-serif;color:#1a1a1a;">';
+  // Header
+  html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:8px;border-bottom:3px solid '+couleur+';margin-bottom:12px;">';
+  html += '<div><div style="font-size:14px;font-weight:900;color:'+couleur+';">SOLUTION PHONE</div>';
+  html += '<div style="font-size:8px;color:#777;line-height:1.6;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · contact@solution-phone.fr<br>SIRET : 801 044 785 00021</div></div>';
+  html += '<div style="text-align:right;"><div style="background:'+couleur+';color:#fff;padding:4px 12px;border-radius:4px;font-size:12px;font-weight:900;display:inline-block;margin-bottom:4px;">'+typeBadge+'</div>';
+  html += '<div style="font-size:10px;font-weight:700;">N° '+numero+'</div>';
+  html += '<div style="font-size:9px;color:#777;">Date : '+(date?date.split('-').reverse().join('/'):'—')+'</div>';
+  if(isDevis) html += '<div style="font-size:9px;color:#777;">Validité : '+(document.getElementById('fpdf-validite').value||'30 jours')+'</div>';
+  html += '</div></div>';
   // Client
-  html += '<div style="background:#f8f9fa;padding:10px 12px;border-radius:6px;margin-bottom:14px;font-size:11px;">';
-  html += '<div style="font-weight:700;margin-bottom:4px;">Client</div>';
-  html += (nom||'—')+'<br>'+(adresse||'')+(cp||ville ? '<br>'+cp+' '+ville : '')+'</div>';
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><div style="background:#f8f8f8;border-left:3px solid '+couleur+';padding:8px 12px;min-width:160px;">';
+  html += '<div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Client</div>';
+  html += '<div style="font-weight:700;font-size:11px;">'+(nom||'—')+'</div>';
+  if(clientAdresseFull) html += '<div style="font-size:9px;color:#777;">'+clientAdresseFull+'</div>';
+  html += '</div></div>';
   // Tableau
-  html += '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px;">';
-  html += '<thead><tr style="background:#1a73e8;color:#fff;"><th style="padding:6px;text-align:left;">Description</th><th style="padding:6px;text-align:center;width:40px;">Qté</th><th style="padding:6px;text-align:right;width:70px;">P.U. HT</th><th style="padding:6px;text-align:right;width:70px;">Total HT</th></tr></thead><tbody>';
+  var puLabel = isOccasion ? 'P.U.' : 'P.U. HT';
+  var totColLabel = isOccasion ? 'Total' : 'Total HT';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:8px;">';
+  html += '<thead><tr style="background:'+couleur+';color:#fff;"><th style="padding:4px 6px;text-align:left;">Désignation</th><th style="padding:4px;text-align:center;width:30px;">Qté</th><th style="padding:4px;text-align:right;width:55px;">'+puLabel+'</th><th style="padding:4px;text-align:right;width:55px;">'+totColLabel+'</th></tr></thead><tbody>';
   if(lignes.length===0){
-    html += '<tr><td colspan="4" style="padding:20px;text-align:center;color:#aaa;">Ajoutez des lignes...</td></tr>';
+    html += '<tr><td colspan="4" style="padding:14px;text-align:center;color:#aaa;">Ajoutez des lignes...</td></tr>';
   } else {
-    lignes.forEach(function(l){
-      html += '<tr style="border-bottom:1px solid #eee;"><td style="padding:5px 6px;">'+l.desc+'</td><td style="padding:5px;text-align:center;">'+l.qty+'</td><td style="padding:5px;text-align:right;">'+l.prixUnitaireHT.toFixed(2)+' €</td><td style="padding:5px;text-align:right;">'+l.totalHT.toFixed(2)+' €</td></tr>';
+    lignes.forEach(function(l,i){
+      var puVal = isOccasion ? l.pu : l.prixUnitaireHT;
+      var totVal = isOccasion ? l.total : l.totalHT;
+      html += '<tr style="border-bottom:1px solid #eee;'+(i%2===0?'background:#f8f9fa;':'')+'"><td style="padding:4px 6px;">'+l.desc+'</td><td style="padding:4px;text-align:center;">'+l.qty+'</td><td style="padding:4px;text-align:right;">'+puVal.toFixed(2)+' €</td><td style="padding:4px;text-align:right;font-weight:700;">'+totVal.toFixed(2)+' €</td></tr>';
     });
   }
   html += '</tbody></table>';
   // Totaux
-  html += '<div style="display:flex;justify-content:flex-end;"><div style="width:200px;font-size:11px;">';
-  html += '<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>Total HT</span><span>'+ht.toFixed(2)+' €</span></div>';
-  html += '<div style="display:flex;justify-content:space-between;padding:3px 0;"><span>TVA 20%</span><span>'+tva.toFixed(2)+' €</span></div>';
-  html += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:2px solid #1a73e8;font-weight:700;font-size:13px;"><span>Total TTC</span><span>'+ttc.toFixed(2)+' €</span></div>';
+  html += '<div style="display:flex;justify-content:flex-end;"><div style="min-width:180px;font-size:9px;">';
+  if(!isOccasion){
+    html += '<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#f8f8f8;"><span>Total HT</span><span>'+ht.toFixed(2)+' €</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;padding:3px 8px;background:#f8f8f8;margin-bottom:3px;"><span>TVA 20%</span><span>'+tva.toFixed(2)+' €</span></div>';
+  }
+  html += '<div style="display:flex;justify-content:space-between;padding:8px 10px;background:'+couleur+';color:#fff;border-radius:4px;font-weight:700;font-size:11px;"><span>'+(isOccasion?'TOTAL':'TOTAL TTC')+'</span><span>'+ttc.toFixed(2)+' €</span></div>';
   html += '</div></div>';
-  // Paiement
-  html += '<div style="margin-top:10px;font-size:10px;color:#666;">Mode de paiement : '+paiement+'</div>';
+  if(isOccasion) html += '<div style="font-size:8px;color:#999;margin-top:6px;">TVA non applicable — Art. 297 A du CGI (régime de la marge)</div>';
+  html += '<div style="font-size:8px;color:#999;margin-top:6px;">Règlement : '+paiement+'</div>';
   html += '</div>';
   document.getElementById('fpdf-apercu').innerHTML = html;
 }
 
-async function fpdfGenerer(){
+function fpdfGenerer(){
   var lignes = fpdfGetLignes();
   if(lignes.length === 0){ showNotif('Ajoutez au moins une ligne','error'); return; }
   var nom = (document.getElementById('fpdf-client-nom').value||'').trim();
@@ -22414,155 +22503,60 @@ async function fpdfGenerer(){
   var ville = (document.getElementById('fpdf-client-ville').value||'').trim();
   var email = (document.getElementById('fpdf-client-email').value||'').trim();
   var paiement = (document.getElementById('fpdf-paiement').value||'CB');
+  var validite = (document.getElementById('fpdf-validite').value||'30 jours');
 
+  var isDevis = (_fpdfCurrentTab === 'devis');
+  var isOccasion = (_fpdfCurrentTab === 'occasion');
+
+  var clientAdresse = [adresse, (cp||'')+(cp&&ville?' ':'')+ville].filter(Boolean).join(', ');
+
+  // Calculer totaux
   var ht=0, tva=0, ttc=0;
-  lignes.forEach(function(l){ ht+=l.totalHT; tva+=l.totalTVA; ttc+=l.totalTTC; });
-
-  showNotif('⏳ Génération du PDF...','info');
-
-  // Charger jsPDF
-  if(!window.jspdf){
-    await new Promise(function(res,rej){
-      var s=document.createElement('script');
-      s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      s.onload=res;s.onerror=rej;document.head.appendChild(s);
-    });
-  }
-
-  var pdf = new window.jspdf.jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  var lm = 20; // left margin
-  var pw = 170; // page width usable
-  var y = 20;
-
-  // ── En-tête société ──
-  pdf.setFontSize(20);
-  pdf.setTextColor(26, 115, 232);
-  pdf.setFont('helvetica','bold');
-  pdf.text('Solution Phone', lm, y);
-  y += 7;
-  pdf.setFontSize(9);
-  pdf.setTextColor(100);
-  pdf.setFont('helvetica','normal');
-  pdf.text('21 Rue Gambetta · 71000 Mâcon', lm, y); y+=4;
-  pdf.text('Tél : 03 85 33 06 89 · contact@solution-phone.fr', lm, y); y+=4;
-  pdf.text('SIRET : 801 044 785 00021 · TVA : FR10801044785', lm, y);
-
-  // ── FACTURE titre ──
-  pdf.setFontSize(22);
-  pdf.setTextColor(30);
-  pdf.setFont('helvetica','bold');
-  pdf.text('FACTURE', 190, 25, { align:'right' });
-  pdf.setFontSize(10);
-  pdf.setFont('helvetica','normal');
-  pdf.setTextColor(100);
-  pdf.text('N° ' + numero, 190, 32, { align:'right' });
-  pdf.text('Date : ' + date.split('-').reverse().join('/'), 190, 37, { align:'right' });
-
-  // ── Ligne séparatrice ──
-  y = 48;
-  pdf.setDrawColor(26, 115, 232);
-  pdf.setLineWidth(0.8);
-  pdf.line(lm, y, 190, y);
-  y += 10;
-
-  // ── Client ──
-  pdf.setFillColor(248, 249, 250);
-  pdf.roundedRect(lm, y-2, pw, adresse ? 28 : 20, 3, 3, 'F');
-  pdf.setFontSize(10);
-  pdf.setTextColor(30);
-  pdf.setFont('helvetica','bold');
-  pdf.text('Client', lm+4, y+5);
-  pdf.setFont('helvetica','normal');
-  pdf.setFontSize(10);
-  pdf.text(nom, lm+4, y+11);
-  if(adresse){
-    pdf.setFontSize(9);
-    pdf.setTextColor(80);
-    pdf.text(adresse, lm+4, y+17);
-    if(cp||ville) pdf.text(cp + ' ' + ville, lm+4, y+22);
-    y += 34;
+  var a4Lignes = [];
+  if(isOccasion){
+    lignes.forEach(function(l){ ttc += l.total; a4Lignes.push({ desc: l.desc, qte: l.qty, pu: l.pu }); });
   } else {
-    y += 26;
+    lignes.forEach(function(l){ ht += l.totalHT; tva += l.totalTVA; ttc += l.totalTTC; a4Lignes.push({ desc: l.desc, qte: l.qty, pu: isOccasion ? l.pu : l.prixUnitaireHT }); });
   }
 
-  // ── Tableau des articles ──
-  var colX = [lm, lm+95, lm+115, lm+140];
-  var colW = [95, 20, 25, 30];
+  // Utiliser buildA4HTML pour cohérence
+  var opts = {
+    type: isDevis ? 'devis' : 'facture',
+    isDevis: isDevis,
+    numero: numero,
+    date: date,
+    clientNom: nom,
+    clientAdresse: clientAdresse,
+    clientEmail: email,
+    mode: paiement,
+    lignes: a4Lignes,
+    total: ttc,
+    validite: isDevis ? validite : null,
+    notes: isDevis ? 'Ce devis est valable ' + validite + '. Pour toute question : contact@solution-phone.fr' : null
+  };
 
-  // Header
-  pdf.setFillColor(26, 115, 232);
-  pdf.rect(lm, y, pw, 8, 'F');
-  pdf.setFontSize(9);
-  pdf.setTextColor(255);
-  pdf.setFont('helvetica','bold');
-  pdf.text('Description', colX[0]+3, y+5.5);
-  pdf.text('Qté', colX[1]+3, y+5.5, { align:'center' });
-  pdf.text('P.U. HT', colX[2]+colW[2]-2, y+5.5, { align:'right' });
-  pdf.text('Total HT', colX[3]+colW[3]-2, y+5.5, { align:'right' });
-  y += 10;
+  // Pour occasion : override htTotal et forcer pas de TVA
+  if(isOccasion){
+    opts.htTotal = ttc; // HT = TTC (pas de TVA)
+    opts.isOccasion = true;
+  }
 
-  // Rows
-  pdf.setFont('helvetica','normal');
-  pdf.setTextColor(40);
-  lignes.forEach(function(l, i){
-    if(i % 2 === 0){
-      pdf.setFillColor(245, 247, 250);
-      pdf.rect(lm, y-4, pw, 8, 'F');
-    }
-    pdf.setFontSize(9);
-    pdf.text(l.desc.substring(0,50), colX[0]+3, y);
-    pdf.text(String(l.qty), colX[1]+10, y, { align:'center' });
-    pdf.text(l.prixUnitaireHT.toFixed(2)+' €', colX[2]+colW[2]-2, y, { align:'right' });
-    pdf.text(l.totalHT.toFixed(2)+' €', colX[3]+colW[3]-2, y, { align:'right' });
-    y += 8;
-  });
+  var html = buildA4HTML(opts);
 
-  // Ligne sous tableau
-  y += 2;
-  pdf.setDrawColor(220);
-  pdf.line(lm, y, 190, y);
-  y += 8;
+  // Override le footer pour occasion (remplacer la mention TVA si besoin)
+  if(isOccasion){
+    // Le buildA4HTML met déjà "TVA non applicable — Art. 297 A du CGI (régime de la marge)" dans le footer
+    // Mais la section totaux montre TVA 20% = 0.00€, on va corriger en post-processing
+    html = html.replace(/TVA 20%<\/span>[^<]*<span[^>]*>[\d.,]+\s*€/g, 'TVA<\/span><span style="font-size:13px;">Non applicable');
+    html = html.replace(/Total HT<\/span>[^<]*<span[^>]*>[\d.,]+\s*€/g, 'Total<\/span><span style="font-size:13px;">'+ttc.toFixed(2)+' €');
+  }
 
-  // ── Totaux ──
-  var tx = 130;
-  pdf.setFontSize(10);
-  pdf.setTextColor(80);
-  pdf.setFont('helvetica','normal');
-  pdf.text('Total HT', tx, y);
-  pdf.text(ht.toFixed(2) + ' €', 190, y, { align:'right' });
-  y += 6;
-  pdf.text('TVA 20%', tx, y);
-  pdf.text(tva.toFixed(2) + ' €', 190, y, { align:'right' });
-  y += 3;
-  pdf.setDrawColor(26, 115, 232);
-  pdf.setLineWidth(0.6);
-  pdf.line(tx, y, 190, y);
-  y += 7;
-  pdf.setFontSize(13);
-  pdf.setTextColor(26, 115, 232);
-  pdf.setFont('helvetica','bold');
-  pdf.text('Total TTC', tx, y);
-  pdf.text(ttc.toFixed(2) + ' €', 190, y, { align:'right' });
-
-  // ── Mode de paiement ──
-  y += 14;
-  pdf.setFontSize(9);
-  pdf.setTextColor(100);
-  pdf.setFont('helvetica','normal');
-  pdf.text('Mode de paiement : ' + paiement, lm, y);
-
-  // ── Pied de page ──
-  pdf.setFontSize(8);
-  pdf.setTextColor(150);
-  pdf.text('Solution Phone · 21 Rue Gambetta · 71000 Mâcon · SIRET 801 044 785 00021 · TVA FR10801044785', 105, 285, { align:'center' });
-
-  // Sauvegarder et ouvrir
-  var fileName = 'Facture_'+numero+'_'+nom.replace(/\s+/g,'_')+'.pdf';
-  pdf.save(fileName);
+  ouvrirA4(html);
 
   // Sauvegarder dans historique
   var record = {
     id: Date.now(),
+    type: _fpdfCurrentTab,
     numero: numero,
     date: date,
     clientNom: nom,
@@ -22571,24 +22565,25 @@ async function fpdfGenerer(){
     clientVille: ville,
     clientEmail: email,
     paiement: paiement,
+    validite: isDevis ? validite : null,
     lignes: lignes,
-    totalHT: ht,
-    totalTVA: tva,
+    totalHT: isOccasion ? ttc : ht,
+    totalTVA: isOccasion ? 0 : tva,
     totalTTC: ttc
   };
   _fpdfFactures.push(record);
   localStorage.setItem(FPDF_STORAGE_KEY, JSON.stringify(_fpdfFactures));
 
-  // Sauver dans Supabase aussi
-  if(supabaseReady){
-    try { await supaFetch('factures_pdf','POST', record); } catch(e){ console.warn('[FPDF] Supabase save fail', e); }
+  // Sauver dans Supabase
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('factures_pdf','POST', record); } catch(e){ console.warn('[FPDF] Supabase save fail', e); }
   }
 
-  showNotif('✅ Facture '+numero+' générée !','success');
+  var typeLabels = { facture: 'Facture', devis: 'Devis', occasion: 'Facture occasion' };
+  showNotif('✅ '+typeLabels[_fpdfCurrentTab]+' '+numero+' générée !','success');
 
-  // Reset pour prochaine facture
-  var nextNum = Math.max.apply(null, _fpdfFactures.map(function(f){ return parseInt(String(f.numero).replace(/\D/g,''))||0; })) + 1;
-  document.getElementById('fpdf-numero').value = 'FP-' + String(nextNum).padStart(4,'0');
+  // Reset
+  fpdfAutoNumero();
   document.getElementById('fpdf-client-nom').value = '';
   document.getElementById('fpdf-client-adresse').value = '';
   document.getElementById('fpdf-client-cp').value = '';
@@ -22604,16 +22599,18 @@ function fpdfRenderHistorique(){
   var tbody = document.getElementById('fpdf-historique');
   if(!tbody) return;
   if(_fpdfFactures.length === 0){
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune facture PDF</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun document</td></tr>';
     return;
   }
+  var badges = { facture: '🧾 Facture', devis: '📝 Devis', occasion: '📱 Occasion' };
   tbody.innerHTML = _fpdfFactures.slice().reverse().map(function(f){
     return '<tr>'+
+      '<td>'+(badges[f.type||'facture']||'🧾 Facture')+'</td>'+
       '<td><b>'+f.numero+'</b></td>'+
       '<td>'+(f.date||'').split('-').reverse().join('/')+'</td>'+
       '<td>'+f.clientNom+'</td>'+
       '<td><b>'+f.totalTTC.toFixed(2)+' €</b></td>'+
-      '<td><button class="btn btn-sm" onclick="fpdfRegenerer('+f.id+')" title="Re-générer PDF">📄</button>'+
+      '<td><button class="btn btn-sm" onclick="fpdfRegenerer('+f.id+')" title="Re-générer">📄</button>'+
       '<button class="btn btn-sm" style="color:#e74c3c;" onclick="fpdfSupprimer('+f.id+')" title="Supprimer">🗑️</button></td>'+
     '</tr>';
   }).join('');
@@ -22621,9 +22618,11 @@ function fpdfRenderHistorique(){
 
 function fpdfRegenerer(id){
   var f = _fpdfFactures.find(function(x){ return x.id === id; });
-  if(!f){ showNotif('Facture introuvable','error'); return; }
+  if(!f){ showNotif('Document introuvable','error'); return; }
 
-  // Remplir le formulaire avec les données
+  // Basculer sur le bon onglet
+  fpdfShowTab(f.type || 'facture');
+
   document.getElementById('fpdf-numero').value = f.numero;
   document.getElementById('fpdf-date').value = f.date;
   document.getElementById('fpdf-client-nom').value = f.clientNom;
@@ -22632,8 +22631,8 @@ function fpdfRegenerer(id){
   document.getElementById('fpdf-client-ville').value = f.clientVille || '';
   document.getElementById('fpdf-client-email').value = f.clientEmail || '';
   document.getElementById('fpdf-paiement').value = f.paiement || 'Carte bancaire';
+  if(f.validite) document.getElementById('fpdf-validite').value = f.validite;
 
-  // Remplir les lignes
   var container = document.getElementById('fpdf-lignes');
   container.innerHTML = '';
   (f.lignes||[]).forEach(function(l){
@@ -22641,18 +22640,18 @@ function fpdfRegenerer(id){
     var row = container.lastElementChild;
     row.querySelector('.fpdf-desc').value = l.desc;
     row.querySelector('.fpdf-qty').value = l.qty;
-    row.querySelector('.fpdf-prix').value = l.prixUnitaireTTC;
+    row.querySelector('.fpdf-prix').value = l.prixUnitaireTTC || l.pu || 0;
   });
   fpdfUpdateTotaux();
-  showNotif('📄 Facture '+f.numero+' chargée — cliquez Générer pour re-créer le PDF','info');
+  showNotif('📄 '+f.numero+' chargé — cliquez Générer pour re-créer','info');
 }
 
 function fpdfSupprimer(id){
-  if(!confirm('Supprimer cette facture de l\'historique ?')) return;
+  if(!confirm('Supprimer ce document de l\'historique ?')) return;
   _fpdfFactures = _fpdfFactures.filter(function(f){ return f.id !== id; });
   localStorage.setItem(FPDF_STORAGE_KEY, JSON.stringify(_fpdfFactures));
   fpdfRenderHistorique();
-  showNotif('🗑️ Facture supprimée','success');
+  showNotif('🗑️ Document supprimé','success');
 }
 
 </script>
