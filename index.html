@@ -4726,39 +4726,9 @@ function initRealtime() {
   }, 90000);
   console.log('🔄 Synchronisation temps réel activée (30s)');
 
-  // Auto-impression : detecter les nouveaux bons de commande (depuis iPad)
-  // localStorage partage entre TOUS les onglets du meme navigateur
-  var _autoPrintBusy = false;
-  // Init : recuperer le dernier ID sans await (initRealtime n'est pas async)
-  supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1').then(function(initRes){
-    if (initRes && initRes.length) {
-      var current = parseInt(localStorage.getItem('_globalLastPrintedId') || '0');
-      if (initRes[0].id > current) localStorage.setItem('_globalLastPrintedId', String(initRes[0].id));
-    }
-    console.log('Auto-print: dernier ID global =', localStorage.getItem('_globalLastPrintedId'));
-  }).catch(function(e){});
-  setInterval(async function() {
-    if (!supabaseReady || !getNasUrl() || _autoPrintBusy) return;
-    _autoPrintBusy = true;
-    try {
-      var res = await supaFetch('bons_commande','GET',null,'?order=id.desc&limit=1');
-      if (!res || !res.length) { _autoPrintBusy = false; return; }
-      var newId = res[0].id;
-      var globalLastId = parseInt(localStorage.getItem('_globalLastPrintedId') || '0');
-      if (newId <= globalLastId) { _autoPrintBusy = false; return; }
-      // Marquer IMMEDIATEMENT dans localStorage (bloque les autres onglets)
-      localStorage.setItem('_globalLastPrintedId', String(newId));
-      await loadBonsCommande();
-      var cmd = bonsCommande.find(function(c){ return c.id === newId; });
-      if (cmd) {
-        console.log('Auto-print: impression bon', cmd.numero, 'id=', newId);
-        playNotifSound();
-        showNotif('🖨️ Nouveau bon ' + cmd.numero + ' — impression auto...', 'success');
-        eposPrint(cmd);
-      }
-    } catch(e) { console.log('Auto-print error:', e); }
-    _autoPrintBusy = false;
-  }, 15000);
+  // Auto-impression désactivée — l'impression passe par le NAS directement
+  // L'ancien système de polling Supabase toutes les 15s causait des doublons
+  console.log('Auto-print: désactivé (impression via NAS)');
 }
 
 async function loadFromSupabase() {
@@ -16634,8 +16604,6 @@ function validerNouvelleCommande() {
 
   // 1. Sauvegarder dans bonsCommande + Supabase
   bonsCommande.push(cmd);
-  // Bloquer l'auto-print AVANT Supabase pour éviter double impression
-  localStorage.setItem('_globalLastPrintedId', String(cmd.id));
   saveBonsCommande();
   saveBonCommandeSupabase(cmd);
   renderBonsCommande();
@@ -16711,9 +16679,6 @@ function genererBonCommande(){
     traite: false
   };
   bonsCommande.push(cmd);
-  // Bloquer l'auto-print AVANT la sauvegarde Supabase
-  // pour éviter la double impression (auto-print 15s détecte le nouveau bon)
-  localStorage.setItem('_globalLastPrintedId', String(cmd.id));
   saveBonCommandeSupabase(cmd);
   renderBonsCommande();
   printTicketCommande(cmd);
