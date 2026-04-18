@@ -3792,7 +3792,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
       <div style="overflow-x:auto;">
-        <table><thead><tr><th>Date</th><th>Client</th><th>Modèle</th><th>Panne</th><th>Devis</th><th>Prix</th><th>Jours</th><th>Rendu</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Modèle</th><th>Panne</th><th>Devis</th><th>Prix</th><th>Jours</th><th>Rendu</th><th>Actions</th></tr></thead>
         <tbody id="mlx-table"></tbody></table>
       </div>
     </div>
@@ -22621,8 +22621,17 @@ function mlxAjouter(){
   var devis20 = document.getElementById('mlx-devis-check').checked;
   var prixText = (document.getElementById('mlx-prix').value||'').trim();
 
+  // Numéro automatique MLX-MMAA-NNN
+  var moisNum = date.slice(5,7); // MM
+  var anneeNum = date.slice(2,4); // AA
+  var prefix = 'MLX-' + moisNum + anneeNum + '-';
+  var moisDossiers = _mlxDossiers.filter(function(d){ return d.numero && d.numero.indexOf(prefix)===0; });
+  var nextNum = moisDossiers.length + 1;
+  var numero = prefix + ('000'+nextNum).slice(-3);
+
   var dossier = {
     id: Date.now(),
+    numero: numero,
     date: date,
     nom: nom,
     tel: tel,
@@ -22647,6 +22656,7 @@ function mlxAjouter(){
 
   showNotif('✅ Dossier Mobilax créé — impression...','success');
   mlxImprimerTicket(dossier);
+  mlxPrintEtiquette(dossier);
   mlxRender();
   mlxCheckAlertes();
 
@@ -22680,6 +22690,7 @@ function mlxImprimerTicket(d){
     lines.push('*** SOUS-TRAITANCE MOBILAX ***');
     lines.push(copyLabel);
     lines.push('================================');
+    lines.push('N° : ' + (d.numero || '-'));
     lines.push('DATE : ' + dateFormatted);
     lines.push('--------------------------------');
     lines.push('Client  : ' + esc(d.nom));
@@ -22747,6 +22758,7 @@ function mlxImprimerTicketPopup(d){
       '<div style="text-align:center;font-size:14px;font-weight:900;margin-bottom:2mm;">SOLUTION PHONE</div>'+
       '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:3mm;">Sous-traitance MOBILAX</div>'+
       '<div style="text-align:center;font-size:10px;color:#888;margin-bottom:2mm;">'+copyLabel+'</div>'+
+      '<div style="text-align:center;font-size:12px;font-weight:900;color:#8b5cf6;margin-bottom:2mm;">'+(d.numero||'')+'</div>'+
       '<div style="border-top:2px dashed #000;border-bottom:2px dashed #000;padding:3mm 0;margin-bottom:3mm;">'+
         '<div style="margin-bottom:2mm;"><b style="font-size:14px;">'+dateFormatted+'</b></div>'+
         '<div style="margin-bottom:2mm;">Client : '+d.nom+'</div>'+
@@ -22766,6 +22778,88 @@ function mlxImprimerTicketPopup(d){
     '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Imprimer</button></div>'+
     ticketHTML('EXEMPLAIRE BOUTIQUE')+ticketHTML('EXEMPLAIRE CLIENT')+'</body></html>';
   var w = window.open('','_blank','width=400,height=800');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── Étiquette Brother DK-11201 (29×90mm) pour Mobilax ──
+function mlxBuildEtiquetteHTML(d){
+  var dateF = d.date ? d.date.split('-').reverse().join('/') : '-';
+  var devisText = (d.devis20!==false) ? '20€' : '';
+  var prixText = d.prix || '';
+  var lockShort = d.lockType==='code' ? 'Code:'+d.lockValue : d.lockType==='schema' ? 'Schema' : '';
+
+  var html = '<div style="width:90mm;height:29mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:row;overflow:hidden;box-sizing:border-box;border:0.3mm solid #ddd;">';
+
+  // Bande violette gauche (Mobilax = violet)
+  html += '<div style="width:4mm;background:#8b5cf6;flex-shrink:0;"></div>';
+
+  // Contenu principal
+  html += '<div style="flex:1;display:flex;flex-direction:row;padding:1mm 1.5mm;gap:1mm;overflow:hidden;">';
+
+  // Colonne gauche — infos
+  html += '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;">';
+
+  // Numéro + Modèle en gras
+  html += '<div style="display:flex;align-items:baseline;gap:1.5mm;overflow:hidden;">';
+  html += '<span style="font-size:5.5pt;font-weight:900;color:#8b5cf6;white-space:nowrap;">'+(d.numero||'')+'</span>';
+  html += '<span style="font-size:10pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;">'+(d.modele||'-')+'</span>';
+  html += '</div>';
+
+  // Badges : Panne + Devis
+  html += '<div style="display:flex;flex-wrap:nowrap;gap:1mm;align-items:center;">';
+  html += '<span style="background:#8b5cf6;color:#fff;font-size:5.5pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;white-space:nowrap;max-width:30mm;overflow:hidden;text-overflow:ellipsis;">'+(d.panne||'-')+'</span>';
+  if(devisText) html += '<span style="background:#c0392b;color:#fff;font-size:5.5pt;font-weight:900;padding:0.5mm 1.5mm;border-radius:1mm;white-space:nowrap;">Devis '+devisText+'</span>';
+  html += '</div>';
+
+  // Client + tel
+  html += '<div style="font-size:5.5pt;color:#333;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(d.nom||'-')+(d.tel?' - '+d.tel:'')+'</div>';
+
+  // Verrouillage + date
+  html += '<div style="display:flex;gap:2mm;font-size:4.5pt;color:#666;">';
+  if(lockShort) html += '<span>'+lockShort+'</span>';
+  html += '<span>'+dateF+'</span>';
+  html += '</div>';
+
+  // Pied
+  html += '<div style="font-size:3.5pt;color:#aaa;border-top:0.2mm solid #eee;padding-top:0.3mm;white-space:nowrap;">MOBILAX · Solution Phone · Macon</div>';
+
+  html += '</div>'; // fin colonne gauche
+
+  // Colonne droite — prix
+  html += '<div style="width:20mm;min-width:20mm;max-width:20mm;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border-left:0.5mm solid #eee;">';
+  if(prixText){
+    html += '<span style="font-size:9pt;font-weight:900;color:#8b5cf6;line-height:1.1;text-align:center;">'+prixText+'&euro;</span>';
+  } else {
+    html += '<span style="font-size:7pt;color:#aaa;">—</span>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // fin contenu
+  html += '</div>'; // fin étiquette
+  return html;
+}
+
+function mlxPrintEtiquette(d){
+  if(typeof d === 'number'){
+    d = _mlxDossiers.find(function(x){ return x.id===d; });
+    if(!d) return;
+  }
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+    '<title>Etiquette Mobilax '+d.modele+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}html,body{width:90mm;background:#fff;}'+
+    '@page{size:90mm 29mm;margin:0;}'+
+    '@media print{.no-print{display:none!important;}.etiq-wrap{page-break-after:always;}.etiq-wrap:last-child{page-break-after:avoid;}}'+
+    'body{font-family:Arial,Helvetica,sans-serif;}</style></head><body>'+
+    '<div class="no-print" style="padding:10px;background:#f5f5f5;text-align:center;margin-bottom:10px;">'+
+      '<b style="color:#8b5cf6;">Brother QL-820NWB &bull; DK-11201 &bull; 29&times;90mm</b><br>'+
+      '<small>S&eacute;lectionnez <b>Brother QL-820NWB</b> dans la liste des imprimantes</small><br><br>'+
+      '<button onclick="window.print()" style="background:#8b5cf6;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">'+
+        '&#128438; Imprimer &eacute;tiquette</button>'+
+    '</div>';
+  html += '<div class="etiq-wrap">'+mlxBuildEtiquetteHTML(d)+'</div>';
+  html += '</body></html>';
+  var w = window.open('','_blank','width=800,height=400');
   w.document.write(html);
   w.document.close();
 }
@@ -22813,7 +22907,7 @@ function mlxRender(){
   });
 
   if(filtered.length === 0){
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun dossier</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun dossier</td></tr>';
     return;
   }
 
@@ -22827,6 +22921,7 @@ function mlxRender(){
     var prixDisplay = d.prix ? '<b>'+d.prix+' €</b>' : '<span style="color:var(--text-dim);">—</span>';
 
     return '<tr>'+
+      '<td style="font-size:11px;font-weight:700;color:#8b5cf6;white-space:nowrap;">'+(d.numero||'-')+'</td>'+
       '<td>'+d.date.split('-').reverse().join('/')+'</td>'+
       '<td><b>'+d.nom+'</b>'+(d.tel?'<br><span style="font-size:11px;color:var(--text-dim);">'+d.tel+'</span>':'')+'</td>'+
       '<td><b>'+d.modele+'</b></td>'+
@@ -22836,7 +22931,8 @@ function mlxRender(){
       '<td style="font-weight:700;color:'+joursColor+';">'+jours+'j</td>'+
       '<td style="text-align:center;">'+renduCheckbox+'</td>'+
       '<td style="display:flex;gap:4px;">'+
-        '<button class="btn btn-sm" onclick="mlxImprimerTicket('+JSON.stringify(d).replace(/"/g,'&quot;')+')" title="Réimprimer">🖨️</button>'+
+        '<button class="btn btn-sm" onclick="mlxImprimerTicket('+JSON.stringify(d).replace(/"/g,'&quot;')+')" title="Réimprimer ticket">🖨️</button>'+
+        '<button class="btn btn-sm" style="color:#8b5cf6;" onclick="mlxPrintEtiquette('+d.id+')" title="Étiquette Brother">🏷️</button>'+
         '<button class="btn btn-sm" style="color:#e74c3c;" onclick="mlxSupprimer('+d.id+')" title="Supprimer">🗑️</button>'+
       '</td>'+
     '</tr>';
