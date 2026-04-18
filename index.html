@@ -397,6 +397,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div class="mob-menu-item" onclick="showPageMobile('comparaison','');closeMobileMenu()"><span class="mob-menu-icon">📈</span>Comparaison</div>
   <div class="mob-menu-item" onclick="showPageMobile('bilan','');closeMobileMenu()"><span class="mob-menu-icon">📅</span>Bilan annuel</div>
   <div class="mob-menu-item" onclick="showPageMobile('docs-comptable','');docsComptableInit();closeMobileMenu()"><span class="mob-menu-icon">📂</span>Documents comptable</div>
+  <div class="mob-menu-item" onclick="showPageMobile('mobilax','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Sous-traitant Mobilax</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Catalogue &amp; prix</div>
   <div class="mob-menu-item" onclick="showPageMobile('ecrans','');closeMobileMenu()"><span class="mob-menu-icon">🖥️</span>Prix écrans iPhone</div>
   <div class="mob-menu-item" onclick="showPageMobile('batteries','');closeMobileMenu()"><span class="mob-menu-icon">🔋</span>Prix batteries</div>
@@ -498,6 +499,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-item" onclick="showPage('batteries',this)"><span class="nav-icon">🔋</span><span>Prix batteries</span></div>
     <div class="nav-item" onclick="showPage('prix-android',this);androidInit();"><span class="nav-icon">🤖</span><span>Prix Android</span></div>
     <div class="nav-item" onclick="showPage('roulette',this);initRouletteAdmin();"><span class="nav-icon">🎡</span><span>Roue cadeaux</span></div>
+
+    <div class="nav-item" onclick="showPage('mobilax',this)"><span class="nav-icon">🔧</span><span>Sous-traitant Mobilax</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Administration</div>
@@ -3673,6 +3676,95 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
   <!-- ========== FIN PAGE INSTAGRAM ========== -->
 
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- PAGE : SOUS-TRAITANT MOBILAX                -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="page" id="page-mobilax">
+    <div class="page-title">🔧 Sous-traitant Mobilax</div>
+    <div class="page-sub">Suivi des appareils envoyés en sous-traitance</div>
+
+    <!-- Alerte dossiers > 10 jours -->
+    <div id="mobilax-alertes" style="display:none;margin-bottom:16px;"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <!-- Formulaire -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">➕ Nouveau dossier</div></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group"><label>Date d'envoi</label><input type="date" id="mlx-date"></div>
+          <div class="form-group"><label>Nom du client *</label><input type="text" id="mlx-nom" placeholder="Nom complet"></div>
+          <div class="form-group"><label>Numéro de téléphone</label><input type="tel" id="mlx-tel" placeholder="06 12 34 56 78"></div>
+          <div class="form-group"><label>Marque & Modèle *</label><input type="text" id="mlx-modele" placeholder="ex: iPhone 14 Pro Max"></div>
+
+          <!-- Code ou schéma -->
+          <div class="form-group"><label>Déverrouillage</label>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <button class="btn mlx-lock-btn active" id="mlx-lock-code-btn" onclick="mlxSetLockType('code')" style="flex:1;font-size:12px;">🔢 Code</button>
+              <button class="btn mlx-lock-btn" id="mlx-lock-schema-btn" onclick="mlxSetLockType('schema')" style="flex:1;font-size:12px;">⬡ Schéma</button>
+              <button class="btn mlx-lock-btn" id="mlx-lock-aucun-btn" onclick="mlxSetLockType('aucun')" style="flex:1;font-size:12px;">🔓 Aucun</button>
+            </div>
+            <div id="mlx-code-wrap"><input type="text" id="mlx-code" placeholder="Code de déverrouillage"></div>
+            <div id="mlx-schema-wrap" style="display:none;">
+              <canvas id="mlx-schema-canvas" width="240" height="240" style="background:#1a1a2e;border-radius:12px;cursor:pointer;display:block;margin:0 auto;border:1px solid var(--border);"></canvas>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:6px;">
+                <button class="btn btn-sm" onclick="mlxSchemaReset()" style="font-size:11px;">🔄 Effacer</button>
+              </div>
+              <div id="mlx-schema-sequence" style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:4px;"></div>
+            </div>
+          </div>
+
+          <!-- Panne -->
+          <div class="form-group"><label>Panne *</label>
+            <select id="mlx-panne" onchange="mlxPanneChange()">
+              <option value="">— Sélectionner —</option>
+              <option value="Carte mère">Carte mère</option>
+              <option value="Trappe LCD">Trappe LCD</option>
+              <option value="Trappe batterie">Trappe batterie</option>
+              <option value="Gmail">Gmail</option>
+              <option value="Court circuit">Court circuit</option>
+              <option value="Tactile iPad">Tactile iPad</option>
+              <option value="Connecteur de charge">Connecteur de charge</option>
+              <option value="HDMI console">HDMI console</option>
+              <option value="Pas de réseau">Pas de réseau</option>
+              <option value="Autre">Autre</option>
+            </select>
+            <input type="text" id="mlx-panne-autre" placeholder="Précisez la panne..." style="display:none;margin-top:6px;">
+          </div>
+
+          <div class="form-group"><label>Observations</label><textarea id="mlx-obs" rows="2" placeholder="Notes supplémentaires..." style="padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;resize:vertical;"></textarea></div>
+
+          <button class="btn btn-primary" style="padding:12px;" onclick="mlxAjouter()">✅ Enregistrer & Imprimer ticket</button>
+        </div>
+      </div>
+
+      <!-- Aperçu ticket -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎫 Aperçu ticket</div></div>
+        <div id="mlx-ticket-preview" style="background:#fff;color:#000;padding:16px;border-radius:8px;min-height:200px;font-family:'Courier New',monospace;font-size:12px;">
+          <div style="text-align:center;color:#aaa;padding:30px;">Remplissez le formulaire</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste des dossiers -->
+    <div class="card" style="margin-top:18px;">
+      <div class="card-header">
+        <div class="card-title">📋 Dossiers en cours</div>
+        <div style="display:flex;gap:8px;">
+          <select id="mlx-filtre" onchange="mlxRender()" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminés</option>
+            <option value="tous">Tous</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table><thead><tr><th>Date</th><th>Client</th><th>Modèle</th><th>Panne</th><th>Jours</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody id="mlx-table"></tbody></table>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== PAGE PRIX ÉCRANS IPHONE ========== -->
   <div class="page" id="page-ecrans">
     <div class="page-title">🖥️ Prix Écrans iPhone</div>
@@ -4813,6 +4905,7 @@ function showPage(id,el){
   if(id==='batteries'){loadBatteriesFromSupabase().then(function(){ renderBatteries(); });}
   if(id==='factures')renderFactures();
   if(id==='factures-pdf')fpdfInit();
+  if(id==='mobilax')mlxInit();
   if(id==='phones')renderPhones();
   if(id==='ventes-smart')renderVentesSmartphones();
   if(id==='calendrier')loadCalItems();
@@ -22309,6 +22402,373 @@ function openLiensRapides(){
   overlay.innerHTML=html;
   document.body.appendChild(overlay);
 }
+
+// ══════════════════════════════════════════════════════
+// SOUS-TRAITANT MOBILAX
+// ══════════════════════════════════════════════════════
+
+var _mlxDossiers = [];
+var MLX_STORAGE_KEY = 'sp_mobilax';
+var _mlxLockType = 'code';
+var _mlxSchemaPoints = [];
+var _mlxSchemaDrawing = false;
+
+function mlxInit(){
+  try { _mlxDossiers = JSON.parse(localStorage.getItem(MLX_STORAGE_KEY)||'[]'); } catch(e){ _mlxDossiers = []; }
+  var d = document.getElementById('mlx-date');
+  if(d && !d.value) d.value = new Date().toISOString().slice(0,10);
+  mlxSchemaSetup();
+  mlxRender();
+  mlxCheckAlertes();
+  // Charger depuis Supabase
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    supaFetch('mobilax','GET').then(function(data){
+      if(data && data.length){
+        _mlxDossiers = data;
+        localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+        mlxRender();
+        mlxCheckAlertes();
+      }
+    }).catch(function(){});
+  }
+}
+
+function mlxSetLockType(type){
+  _mlxLockType = type;
+  document.querySelectorAll('.mlx-lock-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('mlx-lock-'+type+'-btn').classList.add('active');
+  document.getElementById('mlx-code-wrap').style.display = type==='code' ? '' : 'none';
+  document.getElementById('mlx-schema-wrap').style.display = type==='schema' ? '' : 'none';
+  if(type==='schema') mlxSchemaReset();
+}
+
+function mlxPanneChange(){
+  var sel = document.getElementById('mlx-panne').value;
+  document.getElementById('mlx-panne-autre').style.display = sel==='Autre' ? '' : 'none';
+}
+
+// ── Schéma de déverrouillage (grille 3x3) ──
+function mlxSchemaSetup(){
+  var canvas = document.getElementById('mlx-schema-canvas');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  mlxSchemaDraw(ctx, []);
+
+  // Touch & Mouse
+  var getPoint = function(e){
+    var rect = canvas.getBoundingClientRect();
+    var x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    var y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    var scale = 240 / rect.width;
+    x *= scale; y *= scale;
+    // Check which dot (3x3 grid, centers at 60,120,180)
+    for(var r=0; r<3; r++){
+      for(var c=0; c<3; c++){
+        var cx = 60 + c*80, cy = 60 + r*80;
+        if(Math.hypot(x-cx, y-cy) < 30){
+          var idx = r*3+c+1;
+          if(_mlxSchemaPoints.indexOf(idx)===-1) return idx;
+        }
+      }
+    }
+    return null;
+  };
+
+  var onStart = function(e){
+    e.preventDefault();
+    _mlxSchemaDrawing = true;
+    _mlxSchemaPoints = [];
+    var p = getPoint(e);
+    if(p){ _mlxSchemaPoints.push(p); mlxSchemaDraw(ctx, _mlxSchemaPoints); }
+  };
+  var onMove = function(e){
+    if(!_mlxSchemaDrawing) return;
+    e.preventDefault();
+    var p = getPoint(e);
+    if(p){ _mlxSchemaPoints.push(p); mlxSchemaDraw(ctx, _mlxSchemaPoints); }
+  };
+  var onEnd = function(){
+    _mlxSchemaDrawing = false;
+    document.getElementById('mlx-schema-sequence').textContent = _mlxSchemaPoints.length > 0 ? 'Schéma : ' + _mlxSchemaPoints.join(' → ') : '';
+  };
+
+  canvas.addEventListener('mousedown', onStart);
+  canvas.addEventListener('mousemove', onMove);
+  canvas.addEventListener('mouseup', onEnd);
+  canvas.addEventListener('touchstart', onStart, {passive:false});
+  canvas.addEventListener('touchmove', onMove, {passive:false});
+  canvas.addEventListener('touchend', onEnd);
+}
+
+function mlxSchemaDraw(ctx, points){
+  ctx.clearRect(0,0,240,240);
+  // Background
+  ctx.fillStyle = '#1a1a2e';
+  ctx.fillRect(0,0,240,240);
+
+  // Draw lines
+  if(points.length > 1){
+    ctx.strokeStyle = '#60a5fa';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for(var i=0; i<points.length; i++){
+      var p = points[i]-1;
+      var cx = 60 + (p%3)*80, cy = 60 + Math.floor(p/3)*80;
+      if(i===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+    }
+    ctx.stroke();
+  }
+
+  // Draw dots
+  for(var r=0; r<3; r++){
+    for(var c=0; c<3; c++){
+      var idx = r*3+c+1;
+      var cx = 60+c*80, cy = 60+r*80;
+      var isActive = points.indexOf(idx) !== -1;
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, 20, 0, Math.PI*2);
+      ctx.strokeStyle = isActive ? '#60a5fa' : 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Inner dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, isActive?8:5, 0, Math.PI*2);
+      ctx.fillStyle = isActive ? '#60a5fa' : 'rgba(255,255,255,0.3)';
+      ctx.fill();
+      // Number
+      ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.15)';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(idx), cx, cy-24);
+    }
+  }
+}
+
+function mlxSchemaReset(){
+  _mlxSchemaPoints = [];
+  var canvas = document.getElementById('mlx-schema-canvas');
+  if(canvas) mlxSchemaDraw(canvas.getContext('2d'), []);
+  document.getElementById('mlx-schema-sequence').textContent = '';
+}
+
+function mlxGetSchemaImage(){
+  var canvas = document.getElementById('mlx-schema-canvas');
+  return canvas ? canvas.toDataURL('image/png') : '';
+}
+
+// ── Ajout dossier + impression ──
+function mlxAjouter(){
+  var nom = (document.getElementById('mlx-nom').value||'').trim();
+  var tel = (document.getElementById('mlx-tel').value||'').trim();
+  var modele = (document.getElementById('mlx-modele').value||'').trim();
+  var panneVal = document.getElementById('mlx-panne').value;
+  var panne = panneVal === 'Autre' ? (document.getElementById('mlx-panne-autre').value||'').trim() : panneVal;
+  var date = document.getElementById('mlx-date').value || new Date().toISOString().slice(0,10);
+  var obs = (document.getElementById('mlx-obs').value||'').trim();
+
+  if(!nom){ showNotif('Nom du client requis','error'); return; }
+  if(!modele){ showNotif('Modèle requis','error'); return; }
+  if(!panne){ showNotif('Sélectionnez une panne','error'); return; }
+
+  var lockType = _mlxLockType;
+  var lockValue = '';
+  var schemaImage = '';
+  if(lockType === 'code'){
+    lockValue = (document.getElementById('mlx-code').value||'').trim();
+  } else if(lockType === 'schema'){
+    lockValue = _mlxSchemaPoints.join('-');
+    schemaImage = mlxGetSchemaImage();
+  }
+
+  var dossier = {
+    id: Date.now(),
+    date: date,
+    nom: nom,
+    tel: tel,
+    modele: modele,
+    panne: panne,
+    lockType: lockType,
+    lockValue: lockValue,
+    schemaImage: schemaImage,
+    obs: obs,
+    statut: 'en_cours'
+  };
+
+  _mlxDossiers.push(dossier);
+  localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+
+  // Sauver Supabase
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('mobilax','POST', dossier); } catch(e){}
+  }
+
+  showNotif('✅ Dossier Mobilax créé — impression...','success');
+  mlxImprimerTicket(dossier);
+  mlxRender();
+  mlxCheckAlertes();
+
+  // Reset form
+  ['mlx-nom','mlx-tel','mlx-modele','mlx-code','mlx-panne-autre','mlx-obs'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('mlx-panne').value = '';
+  document.getElementById('mlx-panne-autre').style.display = 'none';
+  mlxSchemaReset();
+}
+
+// ── Ticket impression (2 exemplaires) ──
+function mlxImprimerTicket(d){
+  var dateFormatted = d.date ? d.date.split('-').reverse().join('/') : '—';
+  var lockText = d.lockType==='code' ? 'Code : '+d.lockValue : d.lockType==='schema' ? 'Schéma (voir ci-dessous)' : 'Aucun verrouillage';
+
+  var ticketHTML = function(copyLabel){
+    return '<div style="width:80mm;padding:6mm 4mm;font-family:\'Courier New\',monospace;font-size:12px;color:#000;page-break-after:always;">'+
+      '<div style="text-align:center;font-size:16px;font-weight:900;margin-bottom:3mm;letter-spacing:1px;">MOBILAX</div>'+
+      '<div style="text-align:center;font-size:10px;color:#666;margin-bottom:4mm;">Sous-traitance · Solution Phone</div>'+
+      '<div style="border-top:2px dashed #000;border-bottom:2px dashed #000;padding:3mm 0;margin-bottom:3mm;">'+
+        '<div style="text-align:center;font-size:10px;color:#888;margin-bottom:2mm;">'+copyLabel+'</div>'+
+        '<div style="margin-bottom:2mm;"><b style="font-size:14px;">📅 '+dateFormatted+'</b></div>'+
+        '<div style="margin-bottom:2mm;">Client : '+d.nom+'</div>'+
+        (d.tel ? '<div style="margin-bottom:2mm;">Tél : '+d.tel+'</div>' : '')+
+        '<div style="margin-bottom:2mm;"><b style="font-size:13px;">📱 '+d.modele+'</b></div>'+
+        '<div style="margin-bottom:2mm;"><b style="font-size:13px;">🔧 '+d.panne+'</b></div>'+
+        '<div style="margin-bottom:2mm;font-size:11px;">'+lockText+'</div>'+
+        (d.lockType==='schema' && d.schemaImage ? '<div style="text-align:center;margin:2mm 0;"><img src="'+d.schemaImage+'" style="width:50mm;height:50mm;border:1px solid #ccc;border-radius:6px;"></div>' : '')+
+        (d.obs ? '<div style="font-size:10px;color:#555;margin-top:2mm;">Obs: '+d.obs+'</div>' : '')+
+      '</div>'+
+      '<div style="text-align:center;font-size:9px;color:#aaa;">Solution Phone · 21 Rue Gambetta · 71000 Mâcon</div>'+
+    '</div>';
+  };
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket Mobilax</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}'+
+    '@page{size:80mm auto;margin:0;}'+
+    '@media print{.no-print{display:none!important;}}'+
+    'body{background:#f5f5f5;}</style></head><body>'+
+    '<div class="no-print" style="text-align:center;padding:12px;background:#fff;border-bottom:1px solid #ddd;">'+
+      '<b style="color:#c0392b;">🖨️ 2 exemplaires — Sélectionnez votre imprimante ticket</b><br>'+
+      '<button onclick="window.print()" style="margin-top:8px;background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '</div>'+
+    ticketHTML('📋 Exemplaire BOUTIQUE')+
+    ticketHTML('📋 Exemplaire CLIENT')+
+    '</body></html>';
+
+  var w = window.open('','_blank','width=400,height=800');
+  w.document.write(html);
+  w.document.close();
+}
+
+// ── Alertes > 10 jours ──
+function mlxCheckAlertes(){
+  var alertDiv = document.getElementById('mobilax-alertes');
+  if(!alertDiv) return;
+  var now = new Date();
+  var alertes = _mlxDossiers.filter(function(d){
+    if(d.statut !== 'en_cours') return false;
+    var diff = Math.floor((now - new Date(d.date)) / 86400000);
+    return diff >= 10;
+  });
+
+  if(alertes.length === 0){
+    alertDiv.style.display = 'none';
+    return;
+  }
+
+  alertDiv.style.display = 'block';
+  alertDiv.innerHTML = alertes.map(function(d){
+    var jours = Math.floor((now - new Date(d.date)) / 86400000);
+    return '<div style="background:rgba(255,59,48,0.12);border:1px solid rgba(255,59,48,0.3);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">'+
+      '<div style="font-size:24px;">⚠️</div>'+
+      '<div style="flex:1;">'+
+        '<div style="font-weight:700;color:#ff3b30;">'+d.modele+' — '+d.nom+'</div>'+
+        '<div style="font-size:12px;color:var(--text-dim);">Envoyé le '+d.date.split('-').reverse().join('/')+' · <b>'+jours+' jours</b> chez Mobilax</div>'+
+      '</div>'+
+      '<button class="btn btn-sm" style="border-color:#ff3b30;color:#ff3b30;" onclick="mlxTerminer('+d.id+')">✅ Terminé</button>'+
+    '</div>';
+  }).join('');
+}
+
+// ── Render liste ──
+function mlxRender(){
+  var tbody = document.getElementById('mlx-table');
+  if(!tbody) return;
+  var filtre = (document.getElementById('mlx-filtre')||{value:'en_cours'}).value;
+  var now = new Date();
+  var filtered = _mlxDossiers.filter(function(d){
+    if(filtre==='en_cours') return d.statut==='en_cours';
+    if(filtre==='termine') return d.statut==='termine';
+    return true;
+  });
+
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun dossier</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.slice().reverse().map(function(d){
+    var jours = Math.floor((now - new Date(d.date)) / 86400000);
+    var joursColor = d.statut==='termine' ? 'var(--green)' : jours >= 10 ? '#ff3b30' : jours >= 7 ? '#ff9500' : 'var(--text)';
+    var statutBadge = d.statut==='termine'
+      ? '<span style="background:rgba(52,211,153,0.15);color:#34d399;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">✅ Terminé</span>'
+      : '<span style="background:rgba(96,165,250,0.15);color:#60a5fa;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;">🔧 En cours</span>';
+
+    return '<tr>'+
+      '<td>'+d.date.split('-').reverse().join('/')+'</td>'+
+      '<td><b>'+d.nom+'</b>'+(d.tel?'<br><span style="font-size:11px;color:var(--text-dim);">'+d.tel+'</span>':'')+'</td>'+
+      '<td><b>'+d.modele+'</b></td>'+
+      '<td>'+d.panne+'</td>'+
+      '<td style="font-weight:700;color:'+joursColor+';">'+jours+'j</td>'+
+      '<td>'+statutBadge+'</td>'+
+      '<td style="display:flex;gap:4px;">'+
+        '<button class="btn btn-sm" onclick="mlxImprimerTicket('+JSON.stringify(d).replace(/"/g,'&quot;')+')" title="Réimprimer">🖨️</button>'+
+        (d.statut==='en_cours' ? '<button class="btn btn-sm" style="color:var(--green);" onclick="mlxTerminer('+d.id+')" title="Terminé">✅</button>' : '')+
+        '<button class="btn btn-sm" style="color:#e74c3c;" onclick="mlxSupprimer('+d.id+')" title="Supprimer">🗑️</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function mlxTerminer(id){
+  var d = _mlxDossiers.find(function(x){ return x.id===id; });
+  if(!d) return;
+  d.statut = 'termine';
+  d.dateRetour = new Date().toISOString().slice(0,10);
+  localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('mobilax','PATCH',{statut:'termine',dateRetour:d.dateRetour},'?id=eq.'+id); } catch(e){}
+  }
+  showNotif('✅ Dossier '+d.modele+' terminé','success');
+  mlxRender();
+  mlxCheckAlertes();
+}
+
+function mlxSupprimer(id){
+  if(!confirm('Supprimer ce dossier Mobilax ?')) return;
+  _mlxDossiers = _mlxDossiers.filter(function(x){ return x.id !== id; });
+  localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('mobilax','DELETE',null,'?id=eq.'+id); } catch(e){}
+  }
+  mlxRender();
+  mlxCheckAlertes();
+  showNotif('🗑️ Dossier supprimé','success');
+}
+
+// Vérifier alertes au chargement global (pas seulement quand on ouvre l'onglet)
+setTimeout(function(){
+  try {
+    var mlxData = JSON.parse(localStorage.getItem(MLX_STORAGE_KEY)||'[]');
+    var now = new Date();
+    var retards = mlxData.filter(function(d){
+      return d.statut==='en_cours' && Math.floor((now - new Date(d.date))/86400000) >= 10;
+    });
+    if(retards.length > 0){
+      showNotif('⚠️ '+retards.length+' dossier'+(retards.length>1?'s':'')+' Mobilax en retard (>10 jours)','error');
+    }
+  } catch(e){}
+}, 3000);
 
 // ══════════════════════════════════════════════════════
 // FACTURES & DEVIS PDF — 3 types : Facture TVA 20%, Devis, Facture Occasion
