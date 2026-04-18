@@ -3783,7 +3783,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="card" style="margin-top:18px;">
       <div class="card-header">
         <div class="card-title">📋 Dossiers en cours</div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="text" id="mlx-search" placeholder="🔍 Rechercher client, modèle, n°..." oninput="mlxRender()" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;min-width:200px;">
           <select id="mlx-filtre" onchange="mlxRender()" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
             <option value="en_cours">En cours</option>
             <option value="termine">Terminés</option>
@@ -22899,10 +22900,15 @@ function mlxRender(){
   var tbody = document.getElementById('mlx-table');
   if(!tbody) return;
   var filtre = (document.getElementById('mlx-filtre')||{value:'en_cours'}).value;
+  var searchVal = (document.getElementById('mlx-search')||{value:''}).value.trim().toLowerCase();
   var now = new Date();
   var filtered = _mlxDossiers.filter(function(d){
-    if(filtre==='en_cours') return d.statut==='en_cours';
-    if(filtre==='termine') return d.statut==='termine';
+    if(filtre==='en_cours' && d.statut!=='en_cours') return false;
+    if(filtre==='termine' && d.statut!=='termine') return false;
+    if(searchVal){
+      var haystack = ((d.nom||'')+(d.tel||'')+(d.modele||'')+(d.panne||'')+(d.numero||'')).toLowerCase();
+      if(haystack.indexOf(searchVal)===-1) return false;
+    }
     return true;
   });
 
@@ -22951,6 +22957,36 @@ function mlxTerminer(id){
   showNotif('✅ Dossier '+d.modele+' terminé','success');
   mlxRender();
   mlxCheckAlertes();
+
+  // ── Envoi SMS client : produit prêt ──
+  if(d.tel){
+    var brevoKey = localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+    var senderName = (localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'SolPhone').substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone';
+    if(brevoKey){
+      var tel = d.tel.replace(/\s/g,'');
+      var telIntl = tel.startsWith('0') ? '+33'+tel.substring(1) : tel;
+      var msg = 'Solution Phone Macon - Bonjour '+(d.nom.split(' ')[0]||'')+
+        ', votre '+(d.modele||'appareil')+' ('+( d.numero||'')+ ') est pret ! '+
+        'Vous pouvez venir le recuperer au 21 Rue Gambetta, Macon. A bientot !';
+      fetch('/api/brevo?type=sms', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          sender: senderName,
+          recipient: telIntl,
+          content: msg,
+          type: 'transactional'
+        })
+      }).then(function(r){
+        if(r.ok) showNotif('📱 SMS envoyé à '+d.nom+' — appareil prêt','success');
+        else showNotif('⚠️ SMS non envoyé (vérifiez Brevo)','error');
+      }).catch(function(){
+        showNotif('⚠️ SMS non envoyé — erreur réseau','error');
+      });
+    } else {
+      showNotif('💡 Astuce : configurez Brevo pour envoyer un SMS automatique au client','info');
+    }
+  }
 }
 
 function mlxSupprimer(id){
