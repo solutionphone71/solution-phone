@@ -3749,10 +3749,17 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <input type="text" id="mlx-panne-autre" placeholder="Précisez la panne..." style="display:none;margin-top:6px;">
           </div>
 
-          <!-- Devis / Prix -->
-          <div class="form-group"><label>Devis (prix sous-traitance)</label>
+          <!-- Devis 20€ checkbox -->
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+              <input type="checkbox" id="mlx-devis-check" checked style="width:20px;height:20px;accent-color:#c0392b;">
+              <span style="font-weight:700;font-size:15px;">Devis 20 €</span>
+            </label>
+          </div>
+          <!-- Prix / Fourchette -->
+          <div class="form-group"><label>Prix estimé (fourchette)</label>
             <div style="display:flex;align-items:center;gap:8px;">
-              <input type="number" id="mlx-prix" value="20" step="0.01" min="0" style="padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:16px;font-weight:700;width:120px;text-align:right;">
+              <input type="text" id="mlx-prix" placeholder="ex: 120-170" style="padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:16px;font-weight:700;width:180px;">
               <span style="font-size:16px;font-weight:700;">€</span>
             </div>
           </div>
@@ -3785,7 +3792,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
       <div style="overflow-x:auto;">
-        <table><thead><tr><th>Date</th><th>Client</th><th>Modèle</th><th>Panne</th><th>Devis</th><th>Jours</th><th>Rendu</th><th>Actions</th></tr></thead>
+        <table><thead><tr><th>Date</th><th>Client</th><th>Modèle</th><th>Panne</th><th>Devis</th><th>Prix</th><th>Jours</th><th>Rendu</th><th>Actions</th></tr></thead>
         <tbody id="mlx-table"></tbody></table>
       </div>
     </div>
@@ -22611,7 +22618,8 @@ function mlxAjouter(){
     schemaImage = mlxGetSchemaImage();
   }
 
-  var prix = parseFloat(document.getElementById('mlx-prix').value) || 20;
+  var devis20 = document.getElementById('mlx-devis-check').checked;
+  var prixText = (document.getElementById('mlx-prix').value||'').trim();
 
   var dossier = {
     id: Date.now(),
@@ -22620,7 +22628,8 @@ function mlxAjouter(){
     tel: tel,
     modele: modele,
     panne: panne,
-    prix: prix,
+    devis20: devis20,
+    prix: prixText,
     lockType: lockType,
     lockValue: lockValue,
     schemaImage: schemaImage,
@@ -22647,7 +22656,8 @@ function mlxAjouter(){
   });
   document.getElementById('mlx-panne').value = '';
   document.getElementById('mlx-panne-autre').style.display = 'none';
-  document.getElementById('mlx-prix').value = '20';
+  document.getElementById('mlx-devis-check').checked = true;
+  document.getElementById('mlx-prix').value = '';
   mlxSchemaReset();
 }
 
@@ -22656,7 +22666,8 @@ function mlxImprimerTicket(d){
   function esc(s){ return (s||'').replace(/—/g,'-').replace(/–/g,'-').replace(/'/g,"'").replace(/[éèê]/g,'e').replace(/[àâ]/g,'a').replace(/[ùû]/g,'u').replace(/[ôö]/g,'o').replace(/[îï]/g,'i').replace(/[ç]/g,'c').replace(/[É]/g,'E').replace(/[€]/g,'EUR'); }
   var dateFormatted = d.date ? d.date.split('-').reverse().join('/') : '-';
   var lockText = d.lockType==='code' ? 'Code : '+(d.lockValue||'-') : d.lockType==='schema' ? 'Schema : '+(d.lockValue||'-').replace(/-/g,' > ') : 'Pas de verrou';
-  var prix = d.prix || 20;
+  var devisText = (d.devis20!==false) ? '20.00 EUR' : 'Non';
+  var prixText = d.prix ? esc(d.prix) + ' EUR' : '-';
 
   function buildTicketLines(copyLabel){
     var lines = [];
@@ -22679,7 +22690,8 @@ function mlxImprimerTicket(d){
     lines.push('--------------------------------');
     lines.push(lockText);
     lines.push('--------------------------------');
-    lines.push('DEVIS   : ' + prix.toFixed(2) + ' EUR');
+    lines.push('DEVIS   : ' + devisText);
+    lines.push('PRIX    : ' + prixText);
     lines.push('================================');
     if(d.obs) lines.push('Obs: ' + esc(d.obs));
     lines.push('');
@@ -22801,7 +22813,7 @@ function mlxRender(){
   });
 
   if(filtered.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun dossier</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun dossier</td></tr>';
     return;
   }
 
@@ -22811,12 +22823,16 @@ function mlxRender(){
     var renduChecked = d.statut==='termine' ? ' checked disabled' : '';
     var renduCheckbox = '<input type="checkbox" onchange="mlxTerminer('+d.id+')"'+renduChecked+' style="width:18px;height:18px;cursor:pointer;">';
 
+    var devisTag = (d.devis20!==false) ? '<span style="background:rgba(192,57,43,0.15);color:#e74c3c;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">20€</span>' : '<span style="color:var(--text-dim);font-size:11px;">—</span>';
+    var prixDisplay = d.prix ? '<b>'+d.prix+' €</b>' : '<span style="color:var(--text-dim);">—</span>';
+
     return '<tr>'+
       '<td>'+d.date.split('-').reverse().join('/')+'</td>'+
       '<td><b>'+d.nom+'</b>'+(d.tel?'<br><span style="font-size:11px;color:var(--text-dim);">'+d.tel+'</span>':'')+'</td>'+
       '<td><b>'+d.modele+'</b></td>'+
       '<td>'+d.panne+'</td>'+
-      '<td style="font-weight:700;">'+(d.prix!=null?d.prix.toFixed(2)+' \u20ac':'20.00 \u20ac')+'</td>'+
+      '<td style="text-align:center;">'+devisTag+'</td>'+
+      '<td>'+prixDisplay+'</td>'+
       '<td style="font-weight:700;color:'+joursColor+';">'+jours+'j</td>'+
       '<td style="text-align:center;">'+renduCheckbox+'</td>'+
       '<td style="display:flex;gap:4px;">'+
