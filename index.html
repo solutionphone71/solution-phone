@@ -4743,7 +4743,31 @@ async function loadFromSupabase() {
     ]);
     var p=results[0], f=results[1], c=results[2], r=results[3], cl=null;
     console.log('[Supabase] Résultats:', 'phones='+(p?p.length:'null'), 'factures='+(f?f.length:'null'), 'caisse='+(c?c.length:'null'), 'reports='+(r?r.length:'null'));
-    if(p) phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||''};});
+    if(p){
+      var prevCount = phones.length;
+      phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||''};});
+      console.log('[Supabase] Phones chargés:', phones.length, '(avant:', prevCount, ')');
+      // Si Supabase retourne moins de phones, vérifier le backup local
+      if(phones.length < prevCount && prevCount > 0){
+        console.warn('[Supabase] ⚠️ Moins de phones qu\'avant ! Vérification backup...');
+        try {
+          var backup = JSON.parse(localStorage.getItem('sp_phones_backup')||'[]');
+          var supaIds = {};
+          phones.forEach(function(ph){ supaIds[ph.imei||ph.id] = true; });
+          var missing = backup.filter(function(bp){ return !supaIds[bp.imei||bp.id]; });
+          if(missing.length > 0){
+            console.warn('[Supabase] '+missing.length+' phone(s) manquant(s) — restauration depuis backup');
+            missing.forEach(function(mp){
+              phones.push(mp);
+              showNotif('⚠️ '+mp.modele+' restauré depuis backup local','warning');
+              // Re-sauver dans Supabase
+              savePhone(mp);
+            });
+          }
+        } catch(e){ console.error('[Backup] Erreur:', e); }
+      }
+      try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+    }
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
     if(c) caisse=c.map(function(x){return{date:x.date,ttc:Number(x.ttc)||0,cb:Number(x.cb)||0,especes:Number(x.especes)||0,cheque:Number(x.cheque)||0,virement:Number(x.virement)||0,quali:Number(x.quali)||0,depotEsp:Number(x.depot_esp)||0,depotCheque:Number(x.depot_cheque)||0,achatSmart:Number(x.achat_smart)||0};});
     if(r) r.forEach(function(x){reportsMois[x.mois]=Number(x.montant);});
@@ -4767,10 +4791,24 @@ async function loadFromSupabase() {
 }
 
 async function savePhone(phone) {
-  if(!supabaseReady) return;
+  if(!supabaseReady){ console.warn('[savePhone] Supabase pas prêt — téléphone NON sauvé !', phone.modele); return; }
   var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
-  if(phone.supaId || (phone.id && phone.id<100000)){await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));}
-  else{var res=await supaFetch('phones','POST',data);if(res&&res[0]){phone.supaId=res[0].id;phone.id=res[0].id;}}
+  console.log('[savePhone] Mode:', phone.supaId ? 'PATCH(supaId)' : phone.id < 100000 ? 'PATCH(id)' : 'POST', 'phone=', phone.modele, 'id=', phone.id);
+  if(phone.supaId || (phone.id && phone.id<100000)){
+    await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));
+    console.log('[savePhone] PATCH OK pour', phone.modele);
+  } else {
+    var res=await supaFetch('phones','POST',data);
+    console.log('[savePhone] POST résultat:', res);
+    if(res&&res[0]){
+      phone.supaId=res[0].id;
+      phone.id=res[0].id;
+      console.log('[savePhone] Nouveau ID Supabase:', res[0].id, 'pour', phone.modele);
+    } else {
+      console.error('[savePhone] POST ÉCHOUÉ pour', phone.modele, '— le téléphone va disparaître à la prochaine synchro !');
+      showNotif('⚠️ Erreur sauvegarde '+phone.modele+' sur Supabase — vérifiez la connexion','error');
+    }
+  }
 }
 
 async function saveCaisseRow(row) {
@@ -7525,7 +7563,10 @@ function addPhone(){
   if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
   var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
-  phones.push(phone);savePhone(phone);
+  phones.push(phone);
+  // Sauvegarder en local en backup (évite la perte si Supabase échoue)
+  try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+  savePhone(phone);
 
   // ── Réutilisation photo depuis la bibliothèque (pas de re-upload) ──
   if((_suggestedPhotoFaceUrl || _suggestedPhotoDosUrl) && !_pendingPhotoFace && !_pendingPhotoDos){
