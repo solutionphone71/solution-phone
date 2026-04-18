@@ -875,6 +875,13 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div class="form-group"><label>Nom client</label><input type="text" id="f-client-nom" placeholder="ex: Jean Dupont" oninput="updateFacturePreview()"></div>
             <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="Adresse" oninput="updateFacturePreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="f-client-cp" maxlength="5" inputmode="numeric" oninput="updateFacturePreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="f-client-ville" placeholder="Ville" oninput="updateFacturePreview()"></div></div>
             <div class="form-group"><label>Email client</label><input type="email" id="f-client-email" placeholder="ex: client@gmail.com"></div>
+            <div class="form-group"><label>Mode de paiement</label>
+              <select id="f-mode-paiement">
+                <option value="Carte bancaire" selected>💳 Carte bancaire</option>
+                <option value="Espèces">💵 Espèces</option>
+                <option value="Virement">🏦 Virement</option>
+              </select>
+            </div>
             <button class="btn btn-primary" onclick="genererFacture()">🧾 Générer la facture</button>
           </div>
         </div>
@@ -923,6 +930,13 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <option value="15 jours">15 jours</option>
                 <option value="60 jours">60 jours</option>
                 <option value="90 jours">90 jours</option>
+              </select>
+            </div>
+            <!-- Sélection téléphone occasion -->
+            <div class="form-group fpdf-occasion-only" style="display:none;">
+              <label>📱 Téléphone vendu</label>
+              <select id="fpdf-phone-select" onchange="fpdfPhoneSelected()" style="font-weight:700;font-size:14px;">
+                <option value="">— Sélectionner un téléphone —</option>
               </select>
             </div>
             <div class="form-group"><label>Nom client</label><input type="text" id="fpdf-client-nom" placeholder="Nom complet"></div>
@@ -7885,7 +7899,7 @@ function printCertificat(id){
 var curFacPhone=null;
 function renderFactures(){
   var sel=document.getElementById('f-phone');
-  if(sel){sel.innerHTML='<option value="">-- Sélectionner --</option>'+phones.filter(function(p){return p.etat==='DISPONIBLE';}).map(function(p){return'<option value="'+p.id+'">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' - '+p.vente+'€</option>';}).join('');}
+  if(sel){sel.innerHTML='<option value="">-- Sélectionner un smartphone --</option>'+phones.filter(function(p){return p.etat==='DISPONIBLE';}).map(function(p){return'<option value="'+p.id+'" style="font-weight:700;font-size:14px;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€</option>';}).join('');sel.style.fontWeight='700';sel.style.fontSize='14px';}
   document.getElementById('factures-table').innerHTML=factures.map(function(f){var p=phones.find(function(x){return x.id===f.phoneId;});return'<tr><td><b>'+(f.numero||'')+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(f.clientNom||'—')+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmail('+f.id+')">📧</button></td></tr>';}).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune facture</td></tr>';
 }
 
@@ -8091,10 +8105,12 @@ function genererFacture(){
   if(!client){showNotif('Nom client requis','error');return;}
   var num='FAC-'+new Date().getFullYear()+'-'+String(factures.length+1).padStart(3,'0');
   var date=new Date().toISOString().split('T')[0];
+  var modePaiement=(document.getElementById('f-mode-paiement')||{value:'Carte bancaire'}).value;
   var marge=p.vente-p.achat;var ht=marge/1.2;var tva=ht*0.2;
   var fac={id:Date.now(),numero:num,date:date,phoneId:p.id,
     clientNom:client,clientAdresse:getAdresse('f-client'),
     clientEmail:document.getElementById('f-client-email').value.trim(),
+    modePaiement:modePaiement,
     ttc:p.vente,ht:parseFloat(ht.toFixed(2)),tva:parseFloat(tva.toFixed(2))};
   factures.push(fac);p.etat='VENDU';p.dateVente=date;savePhone(p);
   if(supabaseReady)supaFetch('factures','POST',{numero:fac.numero,date:fac.date,phone_id:fac.phoneId,
@@ -8111,10 +8127,11 @@ function imprimerFactureData(fac,p){
   var html=buildA4HTML({
     type:'facture',numero:fac.numero,date:fac.date,
     clientNom:fac.clientNom,clientAdresse:fac.clientAdresse,clientEmail:fac.clientEmail||'',
-    mode:'',garantie:'6 mois',
+    mode:fac.modePaiement||'',garantie:'6 mois',
     lignes:[{
       desc:'<b>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' — Grade '+(p.grade||'A')+'</b>'+
            (p.imei?'<br><span style="font-size:11px;color:#888;">IMEI : '+p.imei+'</span>':'')+
+           (p.couleur?'<br><span style="font-size:11px;color:#888;">Couleur : '+p.couleur+'</span>':'')+
            '<br><span style="font-size:11px;color:#888;">Smartphone reconditionné certifié · Garantie 6 mois</span>',
       qte:1,pu:p.vente
     }],
@@ -22801,6 +22818,12 @@ function fpdfShowTab(tab){
     el.style.display = tab === 'devis' ? '' : 'none';
   });
 
+  // Occasion-only fields (sélection téléphone)
+  document.querySelectorAll('.fpdf-occasion-only').forEach(function(el){
+    el.style.display = tab === 'occasion' ? '' : 'none';
+  });
+  if(tab === 'occasion') fpdfLoadPhones();
+
   // TVA rows visibility
   var showTVA = (tab === 'facture');
   document.querySelectorAll('.fpdf-tva-row').forEach(function(el){
@@ -22812,7 +22835,7 @@ function fpdfShowTab(tab){
   if(mentionOcc) mentionOcc.style.display = (tab === 'occasion') ? 'block' : 'none';
 
   // Labels
-  var titles = { facture: '➕ Nouvelle facture TVA 20%', devis: '➕ Nouveau devis', occasion: '➕ Nouvelle facture occasion' };
+  var titles = { facture: '➕ Nouvelle facture TVA 20%', devis: '➕ Nouveau devis', occasion: '➕ Facture occasion (TVA sur marge)' };
   var btnLabels = { facture: '📄 Générer la facture', devis: '📄 Générer le devis', occasion: '📄 Générer la facture' };
   var totalLabels = { facture: 'Total TTC', devis: 'Total TTC', occasion: 'Total' };
   document.getElementById('fpdf-form-title').textContent = titles[tab] || titles.facture;
@@ -22821,6 +22844,37 @@ function fpdfShowTab(tab){
 
   // Auto numéro
   fpdfAutoNumero();
+  fpdfUpdateTotaux();
+}
+
+// Charger les téléphones dans le dropdown occasion
+function fpdfLoadPhones(){
+  var sel = document.getElementById('fpdf-phone-select');
+  if(!sel) return;
+  var dispo = (typeof phones !== 'undefined' ? phones : []).filter(function(p){ return p.etat==='DISPONIBLE'; });
+  sel.innerHTML = '<option value="">— Sélectionner un téléphone —</option>' +
+    dispo.map(function(p){
+      return '<option value="'+p.id+'" style="font-weight:700;font-size:14px;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€</option>';
+    }).join('');
+  sel.style.fontWeight = '700';
+  sel.style.fontSize = '14px';
+}
+
+// Quand un téléphone est sélectionné, pré-remplir la ligne
+function fpdfPhoneSelected(){
+  var sel = document.getElementById('fpdf-phone-select');
+  var pid = parseInt(sel.value);
+  if(!pid) return;
+  var p = (typeof phones !== 'undefined' ? phones : []).find(function(x){ return x.id === pid; });
+  if(!p) return;
+
+  // Pré-remplir la 1ère ligne ou en ajouter une
+  var container = document.getElementById('fpdf-lignes');
+  if(container.children.length === 0) fpdfAddLigne();
+  var row = container.children[0];
+  row.querySelector('.fpdf-desc').value = p.modele + (p.stockage ? ' ' + p.stockage + 'Go' : '') + (p.grade ? ' — Grade ' + p.grade : '') + (p.couleur ? ' — ' + p.couleur : '') + (p.imei ? ' — IMEI: ' + p.imei : '');
+  row.querySelector('.fpdf-prix').value = p.vente;
+  row.querySelector('.fpdf-qty').value = 1;
   fpdfUpdateTotaux();
 }
 
