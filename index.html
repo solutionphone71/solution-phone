@@ -16634,6 +16634,8 @@ function validerNouvelleCommande() {
 
   // 1. Sauvegarder dans bonsCommande + Supabase
   bonsCommande.push(cmd);
+  // Bloquer l'auto-print AVANT Supabase pour éviter double impression
+  localStorage.setItem('_globalLastPrintedId', String(cmd.id));
   saveBonsCommande();
   saveBonCommandeSupabase(cmd);
   renderBonsCommande();
@@ -16709,6 +16711,9 @@ function genererBonCommande(){
     traite: false
   };
   bonsCommande.push(cmd);
+  // Bloquer l'auto-print AVANT la sauvegarde Supabase
+  // pour éviter la double impression (auto-print 15s détecte le nouveau bon)
+  localStorage.setItem('_globalLastPrintedId', String(cmd.id));
   saveBonCommandeSupabase(cmd);
   renderBonsCommande();
   printTicketCommande(cmd);
