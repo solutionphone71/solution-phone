@@ -12494,10 +12494,9 @@ async function paramsLoadFromSupabase() {
         if(row.value) {
           localStorage.setItem(lsKey, row.value);
           loaded++;
-        } else {
-          // Valeur vide dans Supabase = supprimée → nettoyer aussi le localStorage
-          localStorage.removeItem(lsKey);
         }
+        // Ne PAS supprimer les clés locales si Supabase a une valeur vide
+        // (ça causait la perte de clés API sur un autre ordinateur)
       }
     });
     // Sync ARIA key
