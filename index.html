@@ -12456,7 +12456,8 @@ var SUPABASE_KEYS_MAP = {
   'sp_nas_ip':             'nas_ip',
   'sp_shopify_store':      'shopify_store',
   'sp_shopify_token':      'shopify_token',
-  'sp_shopify_autosync':   'shopify_autosync'
+  'sp_shopify_autosync':   'shopify_autosync',
+  'sp_removebg_key':       'removebg_key'
 };
 
 // Sauvegarde UNE clé dans Supabase settings
@@ -16882,6 +16883,8 @@ function paramsSaveRemoveBg(){
   var el = document.getElementById('params-removebg-key');
   var v = (el && el.value || '').trim();
   setRemoveBgKey(v);
+  // Sync Supabase
+  if(typeof supaSettingSave === 'function') supaSettingSave('removebg_key', v);
   var st = document.getElementById('params-removebg-status');
   if(st){
     if(v){ st.innerHTML = '<span style="color:#96bf48;">✅ Clé enregistrée ('+v.length+' caractères)</span>'; }
