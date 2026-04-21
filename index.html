@@ -4783,6 +4783,8 @@ async function loadFromSupabase() {
     supabaseReady=true;
     initRealtime();
     showNotif('✅ Connecté','success');
+    // Charger les bons de commande depuis Supabase
+    loadBonsCommande();
     // Charger les téléphones neufs
     loadPhonesNeufs();
     // Charger les clés API depuis Supabase
@@ -4946,6 +4948,7 @@ function showPage(id,el){
   if(id==='ecrans'){loadEcransFromSupabase().then(function(){ renderEcrans(); });}
   if(id==='batteries'){loadBatteriesFromSupabase().then(function(){ renderBatteries(); });}
   if(id==='factures')renderFactures();
+  if(id==='commande'){ loadBonsCommande(); }
   if(id==='factures-pdf')fpdfInit();
   if(id==='mobilax')mlxInit();
   if(id==='phones')renderPhones();
@@ -16524,37 +16527,52 @@ function importPhonilabCSV(input){
 
 var bonsCommande = [];
 var _cmdType = 'reparation';
+// Charger immédiatement depuis localStorage au démarrage
+try { var _bcLocal = localStorage.getItem('sp_bons_commande'); if(_bcLocal) bonsCommande = JSON.parse(_bcLocal); } catch(e){}
 
 function saveBonsCommande(){ localStorage.setItem('sp_bons_commande', JSON.stringify(bonsCommande)); }
 
 async function loadBonsCommande(){
-  // Charger depuis Supabase en priorité
+  // Charger depuis localStorage d'abord (backup fiable)
+  var localBons = {};
+  try {
+    var local = localStorage.getItem('sp_bons_commande');
+    if(local){
+      var parsed = JSON.parse(local);
+      parsed.forEach(function(b){ localBons[b.id] = b; });
+      if(!bonsCommande.length) bonsCommande = parsed;
+    }
+  } catch(e){}
+
+  // Puis enrichir avec Supabase
   try {
     var res = await supaFetch('bons_commande','GET',null,'?order=id.desc');
-    if(res && res.length >= 0){
+    if(res && res.length > 0){
       bonsCommande = res.map(function(x){
+        // Récupérer les données locales pour les champs que Supabase ne stocke peut-être pas encore
+        var lb = localBons[x.id] || {};
+        var statut = x.statut || lb.statut || 'a_commander';
+        var traite = (x.traite === true) || (lb.traite === true) || (statut === 'remis');
         return {
           id: x.id, numero: x.numero, date: x.date,
           type: x.type,
           client: { nom: x.client_nom, tel: x.client_tel },
           detail: x.detail,
           prix: Number(x.prix)||0,
-          acompte: Number(x.acompte)||0,
-          modeReglement: x.mode_reglement||'ESPECES',
-          statut: x.statut||'a_commander',
-          reste: Math.max(0,(Number(x.prix)||0)-(Number(x.acompte)||0)),
-          paye: x.paye||false,
-          traite: x.traite||false,
-          dateArrivee: x.date_arrivee||'',
-          traiteDate: x.traite_date||''
+          acompte: Number(x.acompte) || Number(lb.acompte) || 0,
+          modeReglement: x.mode_reglement || lb.modeReglement || 'ESPECES',
+          statut: statut,
+          reste: Math.max(0,(Number(x.prix)||0)-(Number(x.acompte)||Number(lb.acompte)||0)),
+          paye: (x.paye === true) || (lb.paye === true) || false,
+          traite: traite,
+          dateArrivee: x.date_arrivee || lb.dateArrivee || '',
+          traiteDate: x.traite_date || lb.traiteDate || ''
         };
       });
       saveBonsCommande(); // sync local
     }
   } catch(e){
-    // Fallback localStorage
-    var local = localStorage.getItem('sp_bons_commande');
-    if(local) bonsCommande = JSON.parse(local);
+    console.log('[loadBonsCommande] Erreur Supabase, fallback local', e);
   }
   renderBonsCommande();
 }
