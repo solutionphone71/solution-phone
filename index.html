@@ -16565,7 +16565,12 @@ async function saveBonCommandeSupabase(cmd){
     type: cmd.type,
     client_nom: cmd.client.nom, client_tel: cmd.client.tel,
     detail: cmd.detail, prix: cmd.prix,
+    acompte: cmd.acompte||0,
+    mode_reglement: cmd.modeReglement||'ESPECES',
     statut: cmd.statut||'a_commander',
+    traite: cmd.traite||false,
+    traite_date: cmd.traiteDate||null,
+    paye: cmd.paye||false,
     date_arrivee: cmd.dateArrivee||null
   };
   try {
@@ -19013,12 +19018,16 @@ function envoyerSMSCommande(id){
     msg = 'Bonjour '+c.client.nom+', bonne nouvelle ! La piece pour votre '+appareil+' est arrivee. Passez en boutique avec votre appareil, comptez environ 1h de reparation. A bientot, Solution Phone - 03 85 33 06 89';
   }
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
+
+  // Archiver en traité
   c.traite = true;
   c.statut = 'remis';
   c.traiteDate = new Date().toISOString().split('T')[0];
   saveBonCommandeSupabase(c);
+  saveBonsCommande();
   renderBonsCommande();
-  showNotif(c.client.nom+' archivé ✓','success');
+  showNotif('✅ '+c.client.nom+' — SMS envoyé + archivé','success');
+
   // Brevo SMS si dispo
   var brevoKey = localStorage.getItem('sp_brevo_key')||'';
   if(brevoKey && tel.length >= 10){
