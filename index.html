@@ -1536,7 +1536,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             </div>
             <div id="caisse-z-smart-detail" style="overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:#ede9fe;color:#1a1a2e;"><th style="padding:6px;text-align:left;color:#7c3aed;">Description</th><th style="padding:6px;text-align:right;color:#7c3aed;">Prix vente</th><th style="padding:6px;text-align:right;color:#7c3aed;">Prix achat</th><th style="padding:6px;text-align:right;color:#7c3aed;">Marge</th><th style="padding:6px;text-align:center;color:#7c3aed;">Mode</th></tr></thead>
+                <thead><tr style="background:#ede9fe;color:#1a1a2e;"><th style="padding:6px;text-align:left;color:#7c3aed;">Description</th><th style="padding:6px;text-align:right;color:#7c3aed;">Prix vente</th><th style="padding:6px;text-align:right;color:#7c3aed;">Reprise</th><th style="padding:6px;text-align:right;color:#7c3aed;">Net encaissé</th><th style="padding:6px;text-align:right;color:#7c3aed;">Prix achat</th><th style="padding:6px;text-align:right;color:#7c3aed;">Marge</th><th style="padding:6px;text-align:center;color:#7c3aed;">Mode</th></tr></thead>
                 <tbody id="caisse-z-smart-tbody"></tbody>
               </table>
             </div>
@@ -4491,6 +4491,38 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   </div>
 </div>
 
+<!-- ══ MODAL REPRISE (trade-in lors de la vente) ══ -->
+<div class="modal-overlay" id="modal-reprise" onclick="if(event.target===this)closeModal('modal-reprise')">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:22px;">🔄</span>
+      <span>Vente avec Reprise</span>
+    </div>
+    <div id="reprise-vente-info" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:12px;margin-bottom:14px;"></div>
+    <div style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="font-weight:800;font-size:15px;color:#c0392b;margin-bottom:8px;">📱 Téléphone repris</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-group"><label>Modèle repris *</label><input type="text" id="rep-modele" placeholder="ex: iPhone 11"></div>
+        <div class="form-group"><label>Montant reprise (€) *</label><input type="number" id="rep-montant" placeholder="ex: 140" step="0.01" min="0" oninput="updateRepriseRecap()"></div>
+        <div class="form-group"><label>Stockage (Go)</label><input type="number" id="rep-stockage" placeholder="ex: 128"></div>
+        <div class="form-group"><label>Grade</label><select id="rep-grade" style="width:100%;padding:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+          <option value="">--</option><option value="A+">A+</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+        </select></div>
+        <div class="form-group"><label>IMEI</label><input type="text" id="rep-imei" placeholder="IMEI du téléphone repris"></div>
+        <div class="form-group"><label>Couleur</label><input type="text" id="rep-couleur" placeholder="ex: Noir"></div>
+        <div class="form-group"><label>Batterie (%)</label><input type="number" id="rep-batterie" placeholder="ex: 85" min="0" max="100"></div>
+        <div class="form-group"><label>Prix revente estimé (€)</label><input type="number" id="rep-revente" placeholder="ex: 200" step="0.01" min="0"></div>
+      </div>
+    </div>
+    <div id="reprise-recap" style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:14px;"></div>
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <button class="btn btn-primary" onclick="confirmerVenteReprise()" style="background:#8b5cf6;border-color:#8b5cf6;">✅ Confirmer la vente + reprise</button>
+      <button class="btn" onclick="confirmerVenteSansReprise()" style="border-color:#16a34a;color:#16a34a;">💰 Vente sans reprise</button>
+      <button class="btn" onclick="closeModal('modal-reprise')">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-add-client">
   <div class="modal">
     <div class="modal-title">➕ Nouveau client</div>
@@ -4717,7 +4749,7 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null};});
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null,modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||''};});
         renderPhones(); renderDashboard();
       }
       // Charger les téléphones neufs
@@ -4745,7 +4777,7 @@ async function loadFromSupabase() {
     console.log('[Supabase] Résultats:', 'phones='+(p?p.length:'null'), 'factures='+(f?f.length:'null'), 'caisse='+(c?c.length:'null'), 'reports='+(r?r.length:'null'));
     if(p){
       var prevCount = phones.length;
-      phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||''};});
+      phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||''};});
       console.log('[Supabase] Phones chargés:', phones.length, '(avant:', prevCount, ')');
       // Si Supabase retourne moins de phones, vérifier le backup local
       if(phones.length < prevCount && prevCount > 0){
@@ -4794,7 +4826,7 @@ async function loadFromSupabase() {
 
 async function savePhone(phone) {
   if(!supabaseReady){ console.warn('[savePhone] Supabase pas prêt — téléphone NON sauvé !', phone.modele); return; }
-  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||''};
+  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||'',mode_vente:phone.modeVente||null,is_reprise:phone.isReprise||false,reprise_amount:phone.repriseAmount||null,reprise_modele:phone.repriseModele||null,reprise_phone_id:phone.reprisePhoneId||null,reprise_from_vente:phone.repriseFromVente||null,reprise_from_modele:phone.repriseFromModele||null};
   console.log('[savePhone] Mode:', phone.supaId ? 'PATCH(supaId)' : phone.id < 100000 ? 'PATCH(id)' : 'POST', 'phone=', phone.modele, 'id=', phone.id);
   if(phone.supaId || (phone.id && phone.id<100000)){
     await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));
@@ -5825,16 +5857,25 @@ function renderCaisseJour(){
     if(p.etat !== 'VENDU') return;
     var dv = (p.dateVente||'').substring(0,10);
     if(dv.substring(0,7) !== moisFiltreSmart) return;
+    var repInfo = '';
+    var netEncaisse = p.vente || 0;
+    if(p.repriseAmount && p.repriseAmount > 0){
+      repInfo = ' 🔄 Reprise '+(p.repriseModele||'')+' -'+p.repriseAmount+'€';
+      netEncaisse = (p.vente||0) - p.repriseAmount;
+    }
     txSmart.push({
       heure:   '--:--',
       type:    'vente_occasion',
       label:   '📱',
       date:    dv,
-      desc:    fmtDate(dv) + ' — ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
+      desc:    fmtDate(dv) + ' — ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:'') + repInfo,
       montant: p.vente || 0,
       achat:   p.achat || 0,
       mode:    p.modeVente || 'CB',
-      quali:   0
+      quali:   0,
+      repriseAmount: p.repriseAmount || 0,
+      repriseModele: p.repriseModele || '',
+      netEncaisse: netEncaisse
     });
   });
   // Trier par date
@@ -5927,8 +5968,18 @@ function renderCaisseJour(){
   }
 
   // Stocker pour le Z de caisse
-  var totSmart={total:0,cb:0,especes:0,cheque:0,virement:0,nb:txSmart.length};
-  txSmart.forEach(function(tx){totSmart.total+=tx.montant;var m=(tx.mode||'CB').toUpperCase();if(m==='CB')totSmart.cb+=tx.montant;else if(m==='ESPECES')totSmart.especes+=tx.montant;else if(m==='CHEQUE')totSmart.cheque+=tx.montant;else if(m==='VIREMENT')totSmart.virement+=tx.montant;});
+  var totSmart={total:0,cb:0,especes:0,cheque:0,virement:0,nb:txSmart.length,reprises:0,netEncaisse:0};
+  txSmart.forEach(function(tx){
+    totSmart.total+=tx.montant;
+    totSmart.reprises+=(tx.repriseAmount||0);
+    totSmart.netEncaisse+=(tx.netEncaisse||tx.montant);
+    var net=tx.netEncaisse||tx.montant;
+    var m=(tx.mode||'CB').toUpperCase();
+    if(m==='CB')totSmart.cb+=net;
+    else if(m==='ESPECES')totSmart.especes+=net;
+    else if(m==='CHEQUE')totSmart.cheque+=net;
+    else if(m==='VIREMENT')totSmart.virement+=net;
+  });
   // ── Modes paiement + détail réparations
   var modesDiv=document.getElementById('caisse-z-modes');
   if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
@@ -5941,7 +5992,7 @@ function renderCaisseJour(){
   var smDiv=document.getElementById('caisse-z-smart-modes');
   if(smDiv&&totSmart.nb>0){smDiv.innerHTML=[{l:'CB',v:totSmart.cb,c:'#2563eb'},{l:'Esp.',v:totSmart.especes,c:'#16a34a'},{l:'Chèque',v:totSmart.cheque,c:'#d97706'},{l:'Virement',v:totSmart.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
   var stb=document.getElementById('caisse-z-smart-tbody');
-  if(stb&&txSmart.length>0){var mc3={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};var mg=0;stb.innerHTML=txSmart.map(function(tx,i){var mc=mc3[(tx.mode||'CB').toUpperCase()]||'#666';var ach=tx.achat||0;var m2=tx.montant-ach;mg+=m2;return '<tr style="background:'+(i%2===0?'#fff':'#f5f3ff')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:right;color:#666;">'+(ach>0?ach.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:right;color:#16a34a;font-weight:700;">'+(ach>0?m2.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')+'<tr style="background:#ede9fe;color:#1a1a2e;font-weight:800;border-top:2px solid #8b5cf6;"><td style="padding:6px;color:#1a1a2e;">TOTAL</td><td style="padding:6px;text-align:right;color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</td><td></td><td style="padding:6px;text-align:right;color:#16a34a;">'+mg.toFixed(2)+' €</td><td></td></tr>';}
+  if(stb&&txSmart.length>0){var mc3={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};var mg=0;stb.innerHTML=txSmart.map(function(tx,i){var mc=mc3[(tx.mode||'CB').toUpperCase()]||'#666';var ach=tx.achat||0;var m2=tx.montant-ach;mg+=m2;var repTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="color:#c0392b;font-weight:700;">-'+tx.repriseAmount.toFixed(2)+' €</span><br><span style="font-size:9px;color:#666;">'+tx.repriseModele+'</span>':'—';var netTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="font-weight:700;color:#8b5cf6;">'+tx.netEncaisse.toFixed(2)+' €</span>':tx.montant.toFixed(2)+' €';return '<tr style="background:'+(i%2===0?'#fff':'#f5f3ff')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc.replace(/ 🔄.*$/,'')+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:right;">'+repTxt+'</td><td style="padding:5px 6px;text-align:right;">'+netTxt+'</td><td style="padding:5px 6px;text-align:right;color:#666;">'+(ach>0?ach.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:right;color:#16a34a;font-weight:700;">'+(ach>0?m2.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')+'<tr style="background:#ede9fe;color:#1a1a2e;font-weight:800;border-top:2px solid #8b5cf6;"><td style="padding:6px;color:#1a1a2e;">TOTAL</td><td style="padding:6px;text-align:right;color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</td><td style="padding:6px;text-align:right;color:#c0392b;">'+(totSmart.reprises>0?'-'+totSmart.reprises.toFixed(2)+' €':'—')+'</td><td style="padding:6px;text-align:right;color:#8b5cf6;font-weight:900;">'+totSmart.netEncaisse.toFixed(2)+' €</td><td></td><td style="padding:6px;text-align:right;color:#16a34a;">'+mg.toFixed(2)+' €</td><td></td></tr>';}
   transactions=txRep;window._caisseJourTotaux=totJour;window._smartJourTotaux=totSmart;window._txSmart=txSmart;
   var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.style.display=totSmart.nb>0?'block':'none';
   // Titre du bloc smartphones avec le mois
@@ -5950,7 +6001,7 @@ function renderCaisseJour(){
     var moisNom=new Date(moisFiltreSmart+'-15').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
     smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+moisNom+'</span>';
   }
-  var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.innerHTML='<b>'+totSmart.nb+' vente(s) smartphone</b> · Total : <b>'+totSmart.total.toFixed(2)+' €</b> · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' €';}
+  var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){var repTxt=totSmart.reprises>0?' · Reprises : <b style="color:#c0392b;">-'+totSmart.reprises.toFixed(2)+' €</b> · Net encaissé : <b style="color:#8b5cf6;">'+totSmart.netEncaisse.toFixed(2)+' €</b>':'';sr.innerHTML='<b>'+totSmart.nb+' vente(s) smartphone</b> · Total ventes : <b>'+totSmart.total.toFixed(2)+' €</b>'+repTxt+' · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' €';}
 }
 
 function genererZCaisseSmartphones(){
@@ -5973,9 +6024,22 @@ function genererZCaisseSmartphones(){
   "<div class=\"center\">Mois de "+dateStr+"</div>"+
   "<div class=\"center\" style=\"font-size:9px;\">Édité le "+new Date().toLocaleDateString("fr-FR")+" à "+heureStr+"</div>"+
   "<div class=\"line\"></div>";
-  txS.forEach(function(tx){html+="<div class=\"row\"><span>"+(tx.desc||"").substring(0,30)+"</span><span>"+tx.montant.toFixed(2)+" €</span></div><div style=\"font-size:10px;color:#666;\">"+tx.mode+"</div>";});
+  txS.forEach(function(tx){
+    var descClean = (tx.desc||"").replace(/ 🔄.*$/,"").substring(0,30);
+    html+="<div class=\"row\"><span>"+descClean+"</span><span>"+tx.montant.toFixed(2)+" €</span></div>";
+    if(tx.repriseAmount && tx.repriseAmount > 0){
+      html+="<div style=\"font-size:10px;color:#666;\">"+tx.mode+" · Reprise "+(tx.repriseModele||"")+": -"+tx.repriseAmount.toFixed(2)+" € → Net: "+tx.netEncaisse.toFixed(2)+" €</div>";
+    } else {
+      html+="<div style=\"font-size:10px;color:#666;\">"+tx.mode+"</div>";
+    }
+  });
   html+="<div class=\"line\"></div>"+
-  "<div class=\"row bold\"><span>TOTAL</span><span>"+tot.total.toFixed(2)+" €</span></div>"+
+  "<div class=\"row bold\"><span>TOTAL VENTES</span><span>"+tot.total.toFixed(2)+" €</span></div>";
+  if(tot.reprises > 0){
+    html+="<div class=\"row\"><span>Total reprises</span><span>-"+tot.reprises.toFixed(2)+" €</span></div>"+
+    "<div class=\"row bold\"><span>NET ENCAISSÉ</span><span>"+tot.netEncaisse.toFixed(2)+" €</span></div>";
+  }
+  html+="<div class=\"line\"></div>"+
   "<div class=\"row\"><span>CB</span><span>"+tot.cb.toFixed(2)+" €</span></div>"+
   "<div class=\"row\"><span>Espèces</span><span>"+tot.especes.toFixed(2)+" €</span></div>"+
   "<div class=\"row\"><span>Chèque</span><span>"+tot.cheque.toFixed(2)+" €</span></div>"+
@@ -7685,7 +7749,7 @@ function renderPhones(){
     var badge=p.etat==='EN_REPARATION'?'badge-blue':'badge-green';
     var etatLabel=p.etat==='EN_REPARATION'?'🔧 EN RÉPA':'✅ DISPO';
     var photoHtml=p.photo?'<img src="'+p.photo+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;margin-right:6px;vertical-align:middle;">':'';
-    var sourceHtml=p.fournisseur?'<br><span style="font-size:11px;color:var(--blue)">🏢 '+p.fournisseur+'</span>':p.typeAchat==='PARTICULIER'?'<br><span style="font-size:11px;color:var(--text-muted)">👤 Particulier</span>':'';
+    var sourceHtml=p.isReprise?'<br><span style="font-size:11px;color:#8b5cf6;">🔄 Reprise'+(p.repriseFromModele?' ('+p.repriseFromModele+')':'')+'</span>':p.fournisseur?'<br><span style="font-size:11px;color:var(--blue)">🏢 '+p.fournisseur+'</span>':p.typeAchat==='PARTICULIER'?'<br><span style="font-size:11px;color:var(--text-muted)">👤 Particulier</span>':'';
     var joursStock='';
     if(p.etat==='DISPONIBLE'&&p.dateAchat){
       var days=Math.floor((new Date()-new Date(p.dateAchat))/86400000);
@@ -7738,26 +7802,141 @@ async function verifierIMEI(imei) {
   showNotif('✅ IMEI non trouvé dans votre stock', 'success');
 }
 
+// ── Variable temporaire pour la vente en cours (avec/sans reprise) ──
+var _venteEnCours = null;
+
 function marquerVendu(id){
   var p=phones.find(function(x){return x.id===id;});
   if(!p)return;
   // Demander le mode de paiement
-  var modes = ['CB','ESPECES','CHEQUE','VIREMENT'];
-  var modeChoix = prompt('Mode de paiement : 1=CB  2=Esp\u00e8ces  3=Ch\u00e8que  4=Virement  (Entr\u00e9e=CB)', '1');
+  var modeChoix = prompt('Mode de paiement : 1=CB  2=Espèces  3=Chèque  4=Virement  (Entrée=CB)', '1');
   var modeMap = {'1':'CB','2':'ESPECES','3':'CHEQUE','4':'VIREMENT'};
   var mode = modeMap[modeChoix] || 'CB';
-  if(!confirm('Marquer '+p.modele+' comme VENDU ('+p.vente+'€ — '+mode+') ?\nIl sera retiré du stock.'))return;
+
+  // Stocker la vente en cours et ouvrir le modal reprise
+  _venteEnCours = { phoneId: id, mode: mode };
+
+  // Remplir les infos de la vente dans le modal
+  var infoDiv = document.getElementById('reprise-vente-info');
+  if(infoDiv){
+    infoDiv.innerHTML = '<div style="font-weight:800;font-size:15px;color:#8b5cf6;margin-bottom:4px;">📱 Vente en cours</div>'+
+      '<div style="font-size:14px;"><b>'+p.modele+'</b>'+(p.stockage?' '+p.stockage+'Go':'')+' — <b style="color:#16a34a;">'+p.vente+' €</b> — '+mode+'</div>';
+  }
+  // Vider les champs reprise
+  ['rep-modele','rep-montant','rep-stockage','rep-imei','rep-couleur','rep-batterie','rep-revente'].forEach(function(fid){
+    var el=document.getElementById(fid); if(el) el.value='';
+  });
+  var gradeEl=document.getElementById('rep-grade'); if(gradeEl) gradeEl.value='';
+  // Mettre à jour le récap
+  updateRepriseRecap();
+  openModal('modal-reprise');
+}
+
+function updateRepriseRecap(){
+  var recap = document.getElementById('reprise-recap');
+  if(!recap || !_venteEnCours) return;
+  var p = phones.find(function(x){return x.id===_venteEnCours.phoneId;});
+  if(!p) return;
+  var repMontant = parseFloat(document.getElementById('rep-montant').value) || 0;
+  var net = p.vente - repMontant;
+  if(repMontant > 0){
+    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;margin-bottom:4px;">💰 Récapitulatif</div>'+
+      '<div>Prix de vente : <b>'+p.vente.toFixed(2)+' €</b></div>'+
+      '<div>Reprise : <b style="color:#c0392b;">-'+repMontant.toFixed(2)+' €</b></div>'+
+      '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#16a34a;">Net encaissé : '+net.toFixed(2)+' € ('+_venteEnCours.mode+')</div>';
+    recap.style.display='block';
+  } else {
+    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;">💰 Pas de reprise — Encaissement : <b>'+p.vente.toFixed(2)+' €</b> ('+_venteEnCours.mode+')</div>';
+    recap.style.display='block';
+  }
+}
+
+// Écouter les changements sur le montant reprise
+document.addEventListener('DOMContentLoaded', function(){
+  var repM = document.getElementById('rep-montant');
+  if(repM) repM.addEventListener('input', updateRepriseRecap);
+});
+
+function finaliserVente(repriseData){
+  if(!_venteEnCours) return;
+  var p = phones.find(function(x){return x.id===_venteEnCours.phoneId;});
+  if(!p) return;
+  var mode = _venteEnCours.mode;
+  var repMontant = repriseData ? (parseFloat(repriseData.montant)||0) : 0;
+  var netEncaisse = p.vente - repMontant;
+
+  if(netEncaisse < 0){ showNotif('⚠️ Le montant de la reprise dépasse le prix de vente !','error'); return; }
+
+  // Confirmation
+  var confMsg = 'Confirmer la vente de '+p.modele+' à '+p.vente+'€';
+  if(repMontant > 0) confMsg += '\nReprise : -'+repMontant+'€ ('+repriseData.modele+')';
+  confMsg += '\nNet encaissé : '+netEncaisse+'€ ('+mode+')';
+  if(!confirm(confMsg)) return;
+
+  // ── Marquer comme vendu ──
   p.etat='VENDU';
   p.dateVente=new Date().toISOString().split('T')[0];
   p.modeVente = mode;
+
+  // ── Stocker les infos reprise sur le téléphone vendu ──
+  if(repMontant > 0 && repriseData){
+    p.repriseAmount = repMontant;
+    p.repriseModele = repriseData.modele || '';
+    p.reprisePhoneId = repriseData.newPhoneId || null;
+  }
+
   savePhone(p);
-  // ── Alimentation automatique caisse ──
+
+  // ── Alimentation caisse avec le NET encaissé ──
   caisseFromVente({
-    prixTTC: p.vente,
+    prixTTC: netEncaisse,
     mode: mode,
     date: p.dateVente,
-    description: 'Vente '+p.modele+' IMEI '+p.imei
+    description: 'Vente '+p.modele+' IMEI '+(p.imei||'')+(repMontant>0?' (reprise '+repMontant+'€ '+repriseData.modele+')':'')
   });
+
+  // ── Créer automatiquement le téléphone repris en stock ──
+  if(repMontant > 0 && repriseData){
+    var reprisePhone = {
+      id: Date.now() + 1,
+      modele: repriseData.modele,
+      stockage: parseInt(repriseData.stockage) || null,
+      grade: repriseData.grade || '',
+      batterie: parseInt(repriseData.batterie) || null,
+      imei: (repriseData.imei||'').trim(),
+      achat: repMontant,
+      vente: parseFloat(repriseData.revente) || Math.round(repMontant * 1.5),
+      mode: 'REPRISE',
+      dateAchat: p.dateVente,
+      couleur: (repriseData.couleur||'').trim(),
+      vendeurNom: '',
+      vendeurAdresse: '',
+      vendeurCI: '',
+      vendeurCIDate: '',
+      typeAchat: 'PARTICULIER',
+      fournisseur: '',
+      numPolice: phones.length + 1,
+      etat: 'DISPONIBLE',
+      dateVente: null,
+      isNew: true,
+      isReprise: true,
+      repriseFromVente: p.id,
+      repriseFromModele: p.modele
+    };
+
+    phones.push(reprisePhone);
+    try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+    savePhone(reprisePhone);
+
+    // Stocker l'ID du téléphone repris sur le téléphone vendu
+    p.reprisePhoneId = reprisePhone.id;
+    savePhone(p);
+
+    // NOTE: mode 'REPRISE' → pas de sortie caisse espèces
+    // car le "paiement" est déduit de la vente (déjà comptabilisé dans le net encaissé)
+    console.log('🔄 Reprise créée :', reprisePhone.modele, repMontant+'€', '→ stock');
+  }
+
   // ── Supprimer automatiquement de Shopify ──
   if(p.shopify_id){
     shopifyDeleteProduct(p.shopify_id).then(function(){
@@ -7766,9 +7945,36 @@ function marquerVendu(id){
       console.log('[Shopify] Produit supprimé (vendu):', p.modele);
     }).catch(function(e){ console.error('[Shopify] Erreur suppression:', e); });
   }
+
+  closeModal('modal-reprise');
+  _venteEnCours = null;
   renderPhones();
   renderDashboard();
-  showNotif('✅ '+p.modele+' vendu ('+p.vente+'€ '+mode+') — enregistré en caisse','success');
+  var msg = '✅ '+p.modele+' vendu ('+p.vente+'€)';
+  if(repMontant > 0) msg += ' — Reprise '+repriseData.modele+' ('+repMontant+'€) — Net encaissé : '+netEncaisse+'€';
+  msg += ' — '+mode;
+  showNotif(msg,'success');
+}
+
+function confirmerVenteReprise(){
+  var modele = (document.getElementById('rep-modele').value||'').trim();
+  var montant = parseFloat(document.getElementById('rep-montant').value);
+  if(!modele){ showNotif('Modèle du téléphone repris requis','error'); return; }
+  if(!montant || montant <= 0){ showNotif('Montant de la reprise requis','error'); return; }
+  finaliserVente({
+    modele: modele,
+    montant: montant,
+    stockage: document.getElementById('rep-stockage').value,
+    grade: document.getElementById('rep-grade').value,
+    imei: document.getElementById('rep-imei').value,
+    couleur: document.getElementById('rep-couleur').value,
+    batterie: document.getElementById('rep-batterie').value,
+    revente: document.getElementById('rep-revente').value
+  });
+}
+
+function confirmerVenteSansReprise(){
+  finaliserVente(null);
 }
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
 
@@ -7780,9 +7986,28 @@ function goToVentesSmartphones(){
 function annulerVente(id){
   var p=phones.find(function(x){return x.id===id;});
   if(!p)return;
-  if(!confirm('Remettre '+p.modele+' en stock ?\nIl sera retiré du rapport des ventes.'))return;
+  var repMsg = '';
+  if(p.reprisePhoneId){
+    var repPhone = phones.find(function(x){return x.id===p.reprisePhoneId;});
+    if(repPhone) repMsg = '\n⚠️ Le téléphone repris ('+repPhone.modele+') sera aussi supprimé du stock.';
+  }
+  if(!confirm('Remettre '+p.modele+' en stock ?\nIl sera retiré du rapport des ventes.'+repMsg))return;
+  // Si cette vente avait une reprise, supprimer le téléphone repris
+  if(p.reprisePhoneId){
+    var repIdx = phones.findIndex(function(x){return x.id===p.reprisePhoneId;});
+    if(repIdx >= 0){
+      var repP = phones[repIdx];
+      phones.splice(repIdx, 1);
+      if(supabaseReady) supaFetch('phones','DELETE',null,'?id=eq.'+repP.id);
+      showNotif('🗑️ Reprise '+repP.modele+' supprimée','info');
+    }
+  }
   p.etat='DISPONIBLE';
   p.dateVente=null;
+  p.modeVente=null;
+  p.repriseAmount=0;
+  p.repriseModele='';
+  p.reprisePhoneId=null;
   savePhone(p);
   renderVentesSmartphones();
   renderDashboard();
@@ -19658,6 +19883,7 @@ function renderVentesSmartphones(){
           '<th>Source</th>'+
           '<th style="text-align:right">Prix Achat</th>'+
           '<th style="text-align:right">Prix Vente</th>'+
+          '<th style="text-align:right;color:#8b5cf6">Reprise</th>'+
           '<th style="text-align:right;color:var(--green)">Marge Brute</th>'+
           '<th style="text-align:right;color:var(--warning)">TVA/marge</th>'+
           '<th style="text-align:right">Marge HT</th>'+
@@ -19670,6 +19896,7 @@ function renderVentesSmartphones(){
           var margeHT = marge - tva;
           var bg = i%2===0 ? '' : 'background:rgba(0,0,0,0.02);';
           var source = p.fournisseur ? ('🏢 '+p.fournisseur) : '👤 Particulier';
+          var repCell = (p.repriseAmount && p.repriseAmount > 0) ? '<span style="color:#c0392b;font-weight:700;">-'+p.repriseAmount.toFixed(2)+' €</span><br><span style="font-size:10px;color:var(--text-muted);">🔄 '+(p.repriseModele||'')+'</span>' : '—';
           return '<tr style="'+bg+'">'+
             '<td><b>'+p.modele+'</b></td>'+
             '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
@@ -19679,6 +19906,7 @@ function renderVentesSmartphones(){
             '<td style="font-size:11px;">'+source+'</td>'+
             '<td style="text-align:right">'+p.achat.toFixed(2)+' €</td>'+
             '<td style="text-align:right;font-weight:700">'+p.vente.toFixed(2)+' €</td>'+
+            '<td style="text-align:right">'+repCell+'</td>'+
             '<td style="text-align:right;color:var(--green);font-weight:700">'+marge.toFixed(2)+' €</td>'+
             '<td style="text-align:right;color:var(--warning)">'+tva.toFixed(2)+' €</td>'+
             '<td style="text-align:right">'+margeHT.toFixed(2)+' €</td>'+
@@ -19690,6 +19918,7 @@ function renderVentesSmartphones(){
           '<td colspan="6" style="padding:10px 12px;color:var(--red);">TOTAL '+moisLabel.toUpperCase()+' ('+liste.length+' tél.)</td>'+
           '<td style="text-align:right;padding:10px 12px;">'+mAchat.toFixed(2)+' €</td>'+
           '<td style="text-align:right;padding:10px 12px;">'+mVente.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;padding:10px 12px;color:#8b5cf6;">'+(function(){var r=0;liste.forEach(function(pp){r+=(pp.repriseAmount||0);});return r>0?'-'+r.toFixed(2)+' €':'—';}())+'</td>'+
           '<td style="text-align:right;padding:10px 12px;color:var(--green)">'+mMarge.toFixed(2)+' €</td>'+
           '<td style="text-align:right;padding:10px 12px;color:var(--warning)">'+mTVA.toFixed(2)+' €</td>'+
           '<td style="text-align:right;padding:10px 12px;">'+(mMarge-mTVA).toFixed(2)+' €</td>'+
