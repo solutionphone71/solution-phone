@@ -8022,6 +8022,7 @@ function finaliserVente(repriseData){
   }
 
   closeModal('modal-reprise');
+  var venduId = p.id;
   _venteEnCours = null;
   renderPhones();
   renderDashboard();
@@ -8029,6 +8030,11 @@ function finaliserVente(repriseData){
   if(repMontant > 0) msg += ' — Reprise '+repriseData.modele+' ('+repMontant+'€) — Net encaissé : '+netEncaisse+'€';
   msg += ' — '+mode;
   showNotif(msg,'success');
+
+  // Proposer l'impression de la fiche de vente
+  setTimeout(function(){
+    if(confirm('📄 Imprimer la fiche de vente A4 ?')) imprimerFicheVente(venduId);
+  }, 300);
 }
 
 function confirmerVenteAuto(){
@@ -8063,6 +8069,241 @@ function confirmerVenteAuto(){
 // Anciens noms gardés pour compatibilité
 function confirmerVenteReprise(){ confirmerVenteAuto(); }
 function confirmerVenteSansReprise(){ finaliserVente(null); }
+
+// ═══════════════════════════════════════════════════════════
+// FICHE DE VENTE A4 — Suivi physique des ventes smartphones
+// ═══════════════════════════════════════════════════════════
+function imprimerFicheVente(id){
+  var p = phones.find(function(x){return x.id===id;});
+  if(!p){ showNotif('Téléphone introuvable','error'); return; }
+
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var dateVente = fmtDate(p.dateVente) || fmtDate(new Date().toISOString().split('T')[0]);
+  var dateAchat = fmtDate(p.dateAchat) || '—';
+  var modeLabels = {CB:'💳 Carte Bancaire', ESPECES:'💵 Espèces', VIREMENT:'🏦 Virement', CHEQUE:'📄 Chèque'};
+  var modeLabel = modeLabels[(p.modeVente||'CB').toUpperCase()] || p.modeVente || 'CB';
+  var repMontant = p.repriseAmount || 0;
+  var netEncaisse = p.vente - repMontant;
+  var marge = p.vente - p.achat;
+
+  // Trouver le téléphone repris si existant
+  var repPhone = null;
+  if(p.reprisePhoneId) repPhone = phones.find(function(x){return x.id===p.reprisePhoneId;});
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+  '<title>Fiche Vente — '+p.modele+'</title>'+
+  '<style>'+
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;font-size:13px;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;position:relative;}'+
+    '@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;margin:0;width:100%;}}'+
+    '@page{size:A4;margin:0;}'+
+    '.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:5mm;border-bottom:3px solid #c0392b;margin-bottom:5mm;}'+
+    '.info-grid{display:grid;grid-template-columns:140px 1fr;gap:3px 10px;font-size:12px;}'+
+    '.info-grid .label{font-weight:700;color:#555;padding:4px 0;}'+
+    '.info-grid .val{font-weight:600;color:#1a1a1a;padding:4px 0;border-bottom:1px dotted #ccc;}'+
+    '.section{border:1.5px solid #ddd;border-radius:6px;margin-bottom:4mm;overflow:hidden;}'+
+    '.section-title{background:#f5f5f5;padding:6px 12px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#333;border-bottom:1px solid #ddd;}'+
+    '.section-body{padding:10px 12px;}'+
+    '.ticket-zone{border:2px dashed #bbb;border-radius:8px;min-height:35mm;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px;font-weight:600;background:#fafafa;}'+
+    '.paiement-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}'+
+    '.paiement-item{border:1.5px solid #ddd;border-radius:6px;padding:8px 6px;text-align:center;font-size:11px;}'+
+    '.paiement-item.active{border-color:#16a34a;background:#f0fff4;}'+
+    '.paiement-item .icon{font-size:18px;}'+
+    '.paiement-item .lbl{font-weight:700;margin-top:2px;}'+
+    '.total-box{background:#c0392b;color:#fff;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;margin-top:4mm;}'+
+    '.reprise-box{background:#fff3f3;border:1.5px solid #c0392b;border-radius:6px;padding:10px 12px;margin-top:6px;}'+
+    '.recap-grid{display:grid;grid-template-columns:1fr auto;gap:2px 16px;font-size:13px;padding:8px 0;}'+
+    '.recap-grid .r-label{color:#555;}'+
+    '.recap-grid .r-val{text-align:right;font-weight:700;}'+
+    '.footer-sigs{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6mm;}'+
+    '.sig-box{border:1px solid #ddd;border-radius:6px;padding:8px 10px;min-height:25mm;}'+
+    '.sig-box .sig-title{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;}'+
+    '.ref-bar{background:#f0f0f0;border-radius:4px;padding:4px 10px;font-size:10px;color:#888;text-align:center;margin-top:4mm;}'+
+    '.check-row{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;}'+
+    '.check-box{width:14px;height:14px;border:1.5px solid #888;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#16a34a;font-weight:900;}'+
+  '</style></head><body>'+
+  '<div class="page">'+
+
+    // Bouton imprimer
+    '<div class="no-print" style="text-align:right;margin-bottom:6px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '</div>'+
+
+    // HEADER
+    '<div class="header">'+
+      '<div style="display:flex;align-items:center;gap:12px;">'+
+        (logo ? '<img src="'+logo+'" style="height:60px;width:auto;">' : '')+
+        '<div>'+
+          '<div style="font-size:20px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:11px;color:#777;margin-top:2px;">21 Rue Gambetta · 71000 Mâcon</div>'+
+          '<div style="font-size:11px;color:#777;">Tél : 03 85 33 06 89</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="background:#c0392b;color:#fff;padding:6px 16px;border-radius:6px;font-size:18px;font-weight:900;display:inline-block;margin-bottom:6px;">FICHE DE VENTE</div>'+
+        '<div style="font-size:14px;font-weight:700;color:#333;">'+dateVente+'</div>'+
+        '<div style="font-size:11px;color:#777;margin-top:2px;">Réf. : #'+p.id+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── SECTION 1 : APPAREIL VENDU ──
+    '<div class="section">'+
+      '<div class="section-title">📱 Appareil vendu</div>'+
+      '<div class="section-body" style="display:flex;gap:12px;">'+
+        // Infos
+        '<div style="flex:1;">'+
+          '<div class="info-grid">'+
+            '<span class="label">Modèle :</span><span class="val" style="font-size:15px;font-weight:900;">'+p.modele+'</span>'+
+            '<span class="label">Stockage :</span><span class="val">'+(p.stockage ? p.stockage+' Go' : '—')+'</span>'+
+            '<span class="label">Grade :</span><span class="val">'+(p.grade || '—')+'</span>'+
+            '<span class="label">Couleur :</span><span class="val">'+(p.couleur || '—')+'</span>'+
+            '<span class="label">IMEI :</span><span class="val" style="font-family:monospace;font-size:12px;">'+(p.imei || '—')+'</span>'+
+            '<span class="label">Batterie :</span><span class="val">'+(p.batterie ? p.batterie+'%' : '—')+'</span>'+
+            '<span class="label">N° Police :</span><span class="val">'+(p.numPolice || '—')+'</span>'+
+            '<span class="label">Date achat :</span><span class="val">'+dateAchat+'</span>'+
+            '<span class="label">Prix achat :</span><span class="val">'+p.achat.toFixed(2)+' €</span>'+
+            '<span class="label">Prix vente :</span><span class="val" style="font-size:15px;color:#c0392b;font-weight:900;">'+p.vente.toFixed(2)+' €</span>'+
+            '<span class="label">Marge :</span><span class="val" style="color:#16a34a;">'+marge.toFixed(2)+' €</span>'+
+          '</div>'+
+        '</div>'+
+        // Zone pour coller le ticket étiquette
+        '<div style="width:48mm;">'+
+          '<div class="ticket-zone" style="height:100%;">'+
+            '<div style="text-align:center;">📋<br>Coller le ticket<br>étiquette ici</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── SECTION 2 : PAIEMENT ──
+    '<div class="section">'+
+      '<div class="section-title">💰 Paiement</div>'+
+      '<div class="section-body">'+
+        // Cases à cocher mode paiement
+        '<div class="paiement-box">'+
+          '<div class="paiement-item'+((p.modeVente||'CB')==='CB'?' active':'')+'"><div class="icon">💳</div><div class="lbl">CB</div></div>'+
+          '<div class="paiement-item'+((p.modeVente||'')==='ESPECES'?' active':'')+'"><div class="icon">💵</div><div class="lbl">Espèces</div></div>'+
+          '<div class="paiement-item'+((p.modeVente||'')==='VIREMENT'?' active':'')+'"><div class="icon">🏦</div><div class="lbl">Virement</div></div>'+
+          '<div class="paiement-item'+((p.modeVente||'')==='CHEQUE'?' active':'')+'"><div class="icon">📄</div><div class="lbl">Chèque</div></div>'+
+        '</div>'+
+        // Détail paiement manuscrit
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">'+
+          '<div style="border:1px solid #ddd;border-radius:4px;padding:6px 8px;min-height:20mm;">'+
+            '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Détail paiement (si multi-mode)</div>'+
+            '<div style="font-size:11px;color:#aaa;line-height:2;">CB : .......................... €<br>Espèces : .................. €<br>Virement : ................. €</div>'+
+          '</div>'+
+          '<div style="border:1px solid #ddd;border-radius:4px;padding:6px 8px;min-height:20mm;">'+
+            '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Notes</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── SECTION 3 : REPRISE (si applicable) ──
+    (repMontant > 0 ?
+    '<div class="section" style="border-color:#c0392b;">'+
+      '<div class="section-title" style="background:#fff3f3;color:#c0392b;">🔄 Reprise</div>'+
+      '<div class="section-body">'+
+        '<div style="display:flex;gap:12px;">'+
+          '<div style="flex:1;">'+
+            '<div class="info-grid">'+
+              '<span class="label">Modèle repris :</span><span class="val" style="font-weight:900;">'+(p.repriseModele||'—')+'</span>'+
+              (repPhone ? '<span class="label">Stockage :</span><span class="val">'+(repPhone.stockage?repPhone.stockage+' Go':'—')+'</span>'+
+              '<span class="label">Grade :</span><span class="val">'+(repPhone.grade||'—')+'</span>'+
+              '<span class="label">IMEI :</span><span class="val" style="font-family:monospace;">'+(repPhone.imei||'—')+'</span>'+
+              '<span class="label">Couleur :</span><span class="val">'+(repPhone.couleur||'—')+'</span>' : '')+
+              '<span class="label">Montant reprise :</span><span class="val" style="font-size:15px;color:#c0392b;font-weight:900;">-'+repMontant.toFixed(2)+' €</span>'+
+              (repPhone ? '<span class="label">Prix revente est. :</span><span class="val">'+repPhone.vente.toFixed(2)+' €</span>' : '')+
+            '</div>'+
+          '</div>'+
+          '<div style="width:48mm;">'+
+            '<div class="ticket-zone" style="height:100%;">'+
+              '<div style="text-align:center;">📋<br>Coller le ticket<br>reprise ici</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>' :
+    // Section reprise vide (pour pouvoir écrire à la main si besoin)
+    '<div class="section" style="border-color:#ddd;">'+
+      '<div class="section-title" style="color:#999;">🔄 Reprise (si applicable)</div>'+
+      '<div class="section-body" style="display:flex;gap:12px;">'+
+        '<div style="flex:1;">'+
+          '<div class="info-grid">'+
+            '<span class="label">Modèle repris :</span><span class="val" style="min-width:150px;"> </span>'+
+            '<span class="label">IMEI :</span><span class="val"> </span>'+
+            '<span class="label">Montant reprise :</span><span class="val"> </span>'+
+          '</div>'+
+        '</div>'+
+        '<div style="width:48mm;">'+
+          '<div class="ticket-zone" style="height:100%;min-height:22mm;">'+
+            '<div style="text-align:center;font-size:11px;">📋<br>Coller le ticket<br>reprise ici</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>')+
+
+    // ── SECTION 4 : RÉCAPITULATIF ──
+    '<div class="section" style="border-color:#16a34a;">'+
+      '<div class="section-title" style="background:#f0fff4;color:#16a34a;">✅ Récapitulatif</div>'+
+      '<div class="section-body">'+
+        '<div class="recap-grid">'+
+          '<span class="r-label">Prix de vente TTC :</span><span class="r-val">'+p.vente.toFixed(2)+' €</span>'+
+          (repMontant > 0 ? '<span class="r-label">Reprise ('+(p.repriseModele||'')+') :</span><span class="r-val" style="color:#c0392b;">- '+repMontant.toFixed(2)+' €</span>' : '')+
+          '<span class="r-label" style="font-size:15px;font-weight:900;color:#1a1a1a;border-top:2px solid #16a34a;padding-top:6px;margin-top:4px;">NET ENCAISSÉ :</span>'+
+          '<span class="r-val" style="font-size:18px;color:#16a34a;border-top:2px solid #16a34a;padding-top:6px;margin-top:4px;">'+netEncaisse.toFixed(2)+' €</span>'+
+          '<span class="r-label">Mode de paiement :</span><span class="r-val">'+modeLabel+'</span>'+
+          '<span class="r-label">Marge brute :</span><span class="r-val" style="color:#16a34a;">'+marge.toFixed(2)+' €</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── VÉRIFICATIONS ──
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:3mm;">'+
+      '<div class="section" style="margin-bottom:0;">'+
+        '<div class="section-title" style="font-size:10px;">🔍 Vérifications vendeur</div>'+
+        '<div class="section-body" style="padding:6px 10px;">'+
+          '<div class="check-row"><span class="check-box"></span> Téléphone testé / fonctionnel</div>'+
+          '<div class="check-row"><span class="check-box"></span> Réinitialisation usine faite</div>'+
+          '<div class="check-row"><span class="check-box"></span> Compte iCloud / Google déconnecté</div>'+
+          '<div class="check-row"><span class="check-box"></span> Carte SIM retirée</div>'+
+          '<div class="check-row"><span class="check-box"></span> Accessoires remis (câble, boîte...)</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="section" style="margin-bottom:0;">'+
+        '<div class="section-title" style="font-size:10px;">📝 Observations</div>'+
+        '<div class="section-body" style="min-height:30mm;padding:6px 10px;">'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── SIGNATURES ──
+    '<div class="footer-sigs">'+
+      '<div class="sig-box">'+
+        '<div class="sig-title">Signature du vendeur (Solution Phone)</div>'+
+      '</div>'+
+      '<div class="sig-box">'+
+        '<div class="sig-title">Signature de l\'acheteur</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── BARRE DE RÉFÉRENCE ──
+    '<div class="ref-bar">'+
+      'ID : '+p.id+' · IMEI : '+(p.imei||'—')+' · Date vente : '+dateVente+' · '+
+      'Mode : '+(p.modeVente||'CB')+
+      (repMontant > 0 ? ' · Reprise : '+p.repriseModele+' (-'+repMontant+'€)' : '')+
+      ' · SOLUTION PHONE — www.solution-phone.fr'+
+    '</div>'+
+
+  '</div></body></html>';
+
+  var w = window.open('','_blank','width=750,height=1050');
+  w.document.write(html);
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
 
 function goToVentesSmartphones(){
@@ -19997,7 +20238,7 @@ function renderVentesSmartphones(){
             '<td style="text-align:right;color:var(--green);font-weight:700">'+marge.toFixed(2)+' €</td>'+
             '<td style="text-align:right;color:var(--warning)">'+tva.toFixed(2)+' €</td>'+
             '<td style="text-align:right">'+margeHT.toFixed(2)+' €</td>'+
-            '<td><button class="btn btn-sm" onclick="annulerVente('+p.id+')" title="Remettre en stock" style="color:var(--text-muted);font-size:11px;">↩️</button></td>'+
+            '<td style="display:flex;gap:3px;"><button class="btn btn-sm" onclick="imprimerFicheVente('+p.id+')" title="Fiche de vente A4" style="color:#c0392b;font-size:11px;">📄</button><button class="btn btn-sm" onclick="annulerVente('+p.id+')" title="Remettre en stock" style="color:var(--text-muted);font-size:11px;">↩️</button></td>'+
           '</tr>';
         }).join('')+
         // Ligne total du mois
