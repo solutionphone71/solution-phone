@@ -3,46 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#f5f5f7">
 <title>🎡 Tentez votre chance — Solution Phone</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
-  --red:    #e53e3e;
-  --red2:   #c0392b;
-  --gold:   #f6c90e;
-  --gold2:  #d4a017;
-  --dark:   #0a0a0f;
-  --dark2:  #111118;
-  --dark3:  #1c1c26;
-  --dark4:  #252535;
-  --border: #2a2a3a;
-  --text:   #f0f0f5;
-  --muted:  #7878a0;
-  --green:  #48bb78;
+  --red:    #ff3b30;
+  --red2:   #c9251b;
+  --gold:   #f59e0b;
+  --gold2:  #d97706;
+  --bg:     #f5f5f7;
+  --white:  #ffffff;
+  --card:   rgba(255,255,255,0.75);
+  --border: rgba(0,0,0,0.06);
+  --text:   #1d1d1f;
+  --muted:  #6e6e73;
+  --green:  #34c759;
+  --shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --glass:  rgba(255,255,255,0.6);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
 html, body {
   height:100%; overflow:hidden;
-  background:var(--dark);
+  background:var(--bg);
   color:var(--text);
-  font-family:'Plus Jakarta Sans', sans-serif;
+  font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing:antialiased;
 }
 
 /* ── BACKGROUND ── */
 .bg-fx {
   position:fixed; inset:0; pointer-events:none; z-index:0;
   background:
-    radial-gradient(ellipse 90% 60% at 50% -5%,  rgba(229,62,62,0.22) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 35% at 5%  95%,  rgba(229,62,62,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse 40% 30% at 95% 80%,  rgba(246,201,14,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 50% at 30% -10%, rgba(255,59,48,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(245,158,11,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.5) 0%, transparent 80%);
 }
-.bg-noise {
-  position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.035;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:200px;
+.bg-dots {
+  position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.4;
+  background-image:radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size:24px 24px;
 }
 
 /* ── SCREENS ── */
@@ -52,39 +55,67 @@ html, body {
   padding:24px 20px;
   text-align:center;
   opacity:0; pointer-events:none;
-  transform:translateY(16px);
-  transition:opacity 0.4s ease, transform 0.4s ease;
+  transform:translateY(12px) scale(0.98);
+  transition:opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1);
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
 }
-.screen.active { opacity:1; pointer-events:all; transform:translateY(0); }
+.screen.active { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
 
 /* ── LOGO ── */
 .logo-sp {
-  font-family:'Syne', sans-serif;
-  font-size:10px; font-weight:700;
-  letter-spacing:4px; color:var(--red);
-  text-transform:uppercase; opacity:0.6;
+  display:flex; align-items:center; gap:10px;
   margin-bottom:32px;
+}
+.logo-icon {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  box-shadow:0 4px 12px rgba(255,59,48,0.3);
+}
+.logo-text {
+  font-size:13px; font-weight:700; color:var(--muted);
+  letter-spacing:0.02em;
 }
 
 /* ── SCREEN 0: PHONE ── */
-.phone-icon   { font-size:52px; margin-bottom:14px; }
-.phone-title  { font-size:26px; font-weight:900; font-family:'Syne', sans-serif; margin-bottom:8px; }
-.phone-sub    { font-size:14px; color:var(--muted); margin-bottom:28px; line-height:1.8; max-width:300px; }
+.phone-icon {
+  width:72px; height:72px; border-radius:20px;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; margin-bottom:20px;
+  box-shadow:0 8px 24px rgba(255,59,48,0.25);
+  animation:icon-float 3s ease-in-out infinite;
+}
+@keyframes icon-float {
+  0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);}
+}
+.phone-title {
+  font-size:26px; font-weight:900; letter-spacing:-0.03em;
+  margin-bottom:8px; line-height:1.15;
+}
+.phone-sub {
+  font-size:14px; color:var(--muted); margin-bottom:28px;
+  line-height:1.7; max-width:300px;
+}
 .phone-input-wrap { width:100%; max-width:320px; margin-bottom:14px; }
 .phone-input {
-  width:100%; padding:17px 20px; font-size:26px; font-weight:700;
-  background:var(--dark3); border:2px solid var(--border); border-radius:16px;
+  width:100%; padding:18px 20px; font-size:26px; font-weight:700;
+  background:var(--white); border:2px solid var(--border); border-radius:16px;
   color:var(--text); text-align:center; letter-spacing:4px;
-  font-family:'Plus Jakarta Sans', sans-serif;
+  font-family:'Inter', sans-serif;
   transition:border-color .2s, box-shadow .2s;
+  box-shadow:var(--shadow);
 }
-.phone-input:focus { outline:none; border-color:var(--red); box-shadow:0 0 0 4px rgba(229,62,62,0.12); }
-.phone-input::placeholder { color:var(--muted); letter-spacing:1px; font-size:16px; font-weight:400; }
+.phone-input:focus {
+  outline:none; border-color:var(--red);
+  box-shadow:0 0 0 4px rgba(255,59,48,0.1), var(--shadow);
+}
+.phone-input::placeholder { color:#c7c7cc; letter-spacing:1px; font-size:16px; font-weight:400; }
 
 .phone-already {
-  background:rgba(229,62,62,0.08); border:1.5px solid rgba(229,62,62,0.4);
+  background:rgba(255,59,48,0.06); border:1.5px solid rgba(255,59,48,0.2);
   border-radius:16px; padding:20px 22px; text-align:center;
   display:none; margin-bottom:14px; max-width:320px;
   animation:shake 0.4s ease;
@@ -99,30 +130,45 @@ html, body {
 
 /* ── SCREEN 1: INTRO ── */
 .intro-emoji {
-  font-size:80px;
-  animation:float 3s ease-in-out infinite;
-  margin-bottom:18px;
-  filter:drop-shadow(0 0 36px rgba(229,62,62,0.45));
+  font-size:72px;
+  animation:bounce-in 0.6s cubic-bezier(0.34,1.56,0.64,1) both, float 3s ease-in-out 0.6s infinite;
+  margin-bottom:20px;
+  filter:drop-shadow(0 8px 24px rgba(255,59,48,0.2));
 }
 @keyframes float {
-  0%,100%{transform:translateY(0) rotate(-4deg);}
-  50%{transform:translateY(-16px) rotate(4deg);}
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-12px) rotate(2deg);}
+}
+@keyframes bounce-in {
+  from{transform:scale(0) rotate(-15deg);opacity:0}
+  to{transform:scale(1) rotate(0);opacity:1}
 }
 h1 {
-  font-family:'Syne', sans-serif;
-  font-size:clamp(30px, 8vw, 46px);
-  font-weight:900; line-height:1.05; margin-bottom:12px;
+  font-size:clamp(28px, 7vw, 42px);
+  font-weight:900; line-height:1.08;
+  letter-spacing:-0.04em;
+  margin-bottom:12px;
 }
-h1 .acc { color:var(--red); }
-.subtitle { font-size:15px; color:var(--muted); line-height:1.8; max-width:300px; margin-bottom:40px; }
+h1 .acc {
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.subtitle {
+  font-size:15px; color:var(--muted); line-height:1.7;
+  max-width:300px; margin-bottom:32px;
+}
 
-.prizes-preview { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:40px; max-width:360px; }
+.prizes-preview { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:36px; max-width:360px; }
 .prize-chip {
-  background:var(--dark3); border:1px solid var(--border);
-  border-radius:30px; padding:7px 14px;
-  font-size:13px; color:var(--muted);
+  background:var(--white); border:1px solid var(--border);
+  border-radius:30px; padding:8px 14px;
+  font-size:13px; color:var(--muted); font-weight:500;
   display:flex; align-items:center; gap:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  transition:transform 0.2s, box-shadow 0.2s;
 }
+.prize-chip:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.08); }
 
 /* ── BUTTONS ── */
 .btn-main {
@@ -131,37 +177,46 @@ h1 .acc { color:var(--red); }
   padding:18px 48px; border-radius:50px;
   font-size:17px; font-weight:700;
   cursor:pointer;
-  font-family:'Syne', sans-serif;
-  box-shadow:0 0 40px rgba(229,62,62,0.4), 0 2px 0 rgba(255,255,255,0.08) inset;
+  font-family:'Inter', sans-serif;
+  box-shadow:0 8px 32px rgba(255,59,48,0.35), 0 2px 0 rgba(255,255,255,0.15) inset;
   transition:transform 0.15s, box-shadow 0.15s;
-  animation:pulse-glow 2.5s ease-in-out infinite;
-  letter-spacing:0.5px;
+  animation:btn-pulse 2.5s ease-in-out infinite;
+  letter-spacing:-0.01em;
+  position:relative; overflow:hidden;
 }
-@keyframes pulse-glow {
-  0%,100%{box-shadow:0 0 30px rgba(229,62,62,0.4);}
-  50%{box-shadow:0 0 60px rgba(229,62,62,0.7), 0 0 0 8px rgba(229,62,62,0.08);}
+.btn-main::before {
+  content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition:left 0.6s;
 }
-.btn-main:active { transform:scale(0.96); animation:none; }
+.btn-main:hover::before { left:100%; }
+@keyframes btn-pulse {
+  0%,100%{box-shadow:0 8px 28px rgba(255,59,48,0.3);}
+  50%{box-shadow:0 8px 48px rgba(255,59,48,0.5), 0 0 0 6px rgba(255,59,48,0.06);}
+}
+.btn-main:active { transform:scale(0.97); animation:none; }
 .btn-main:disabled { opacity:0.45; cursor:not-allowed; animation:none; box-shadow:none; }
 
 .btn-secondary {
-  background:transparent; color:var(--muted);
+  background:var(--white); color:var(--muted);
   border:1px solid var(--border);
   padding:13px 22px; border-radius:12px;
   font-size:14px; font-weight:600;
   cursor:pointer; width:100%; margin-top:10px;
   transition:all 0.2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
 }
 .btn-secondary:hover { border-color:var(--red); color:var(--red); }
 
-/* ── SCREEN 2: REVIEW (style épuré 3 étapes) ── */
+/* ── SCREEN 2: REVIEW ── */
 .review-card {
-  background:#fff;
+  background:var(--white);
   border-radius:28px;
   padding:44px 28px 28px;
   max-width:400px; width:100%;
-  box-shadow:0 32px 80px rgba(0,0,0,0.65);
+  box-shadow:0 20px 60px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.05);
   position:relative;
+  border:1px solid rgba(0,0,0,0.04);
 }
 .review-g-logo {
   position:absolute; top:-34px; left:50%;
@@ -169,31 +224,33 @@ h1 .acc { color:var(--red); }
   width:68px; height:68px;
   background:#fff; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 20px rgba(0,0,0,0.2);
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
 }
 .review-card h2 {
-  font-family:'Syne', sans-serif;
   font-size:22px; font-weight:900;
-  color:#1a1a1a; text-align:center;
+  color:var(--text); text-align:center;
+  letter-spacing:-0.03em;
   margin-bottom:22px;
 }
 .steps-list { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
 .step-item {
   display:flex; align-items:center; gap:14px;
-  background:#f4f4f6; border-radius:14px;
+  background:var(--bg); border-radius:14px;
   padding:14px 16px;
+  transition:transform 0.2s;
 }
-.step-item.highlight { background:#fef2f2; }
+.step-item:hover { transform:translateX(4px); }
+.step-item.highlight { background:rgba(255,59,48,0.06); }
 .step-num {
   width:36px; height:36px; flex-shrink:0;
-  background:var(--red); color:#fff;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff;
   border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   font-weight:900; font-size:17px;
-  font-family:'Syne', sans-serif;
-  box-shadow:0 3px 12px rgba(229,62,62,0.35);
+  box-shadow:0 4px 12px rgba(255,59,48,0.3);
 }
-.step-text { font-size:15px; font-weight:700; color:#1a1a1a; }
+.step-text { font-size:15px; font-weight:700; color:var(--text); }
 
 .stars-row { display:flex; justify-content:center; gap:5px; margin-bottom:18px; }
 .star { font-size:28px; animation:star-pop 0.4s ease both; }
@@ -206,23 +263,24 @@ h1 .acc { color:var(--red); }
 }
 .btn-google {
   display:flex; align-items:center; justify-content:center; gap:10px;
-  width:100%; background:var(--red); color:#fff;
+  width:100%; background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff;
   border:none; padding:17px 24px;
   border-radius:50px; font-size:17px; font-weight:800;
   cursor:pointer; text-decoration:none;
-  font-family:'Syne', sans-serif;
+  font-family:'Inter', sans-serif;
   transition:transform 0.15s, box-shadow 0.2s;
-  box-shadow:0 8px 30px rgba(229,62,62,0.5);
-  letter-spacing:0.5px;
+  box-shadow:0 8px 28px rgba(255,59,48,0.35);
+  letter-spacing:-0.01em;
   margin-bottom:0;
 }
-.btn-google:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(229,62,62,0.6); }
+.btn-google:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(255,59,48,0.45); }
 .btn-google:active { transform:scale(0.97); }
 
 .countdown-zone { display:none; margin-top:14px; }
-.lock-info { font-size:13px; color:#999; text-align:center; margin-bottom:10px; }
+.lock-info { font-size:13px; color:var(--muted); text-align:center; margin-bottom:10px; }
 .countdown-bar-wrap {
-  height:5px; background:#e8e8e8; border-radius:4px;
+  height:5px; background:#e8e8ed; border-radius:4px;
   margin:0 0 14px; overflow:hidden;
 }
 .countdown-bar {
@@ -231,21 +289,23 @@ h1 .acc { color:var(--red); }
 }
 .btn-play-now {
   width:100%; font-size:16px; padding:16px;
-  animation:pulse-glow 1.5s ease-in-out infinite;
+  animation:btn-pulse 1.5s ease-in-out infinite;
   opacity:0; pointer-events:none; transition:opacity 0.4s;
 }
 .btn-play-now.ready { opacity:1; pointer-events:all; }
 
 /* ── SCREEN 3: SPIN ── */
-.spin-title { font-family:'Syne', sans-serif; font-size:28px; font-weight:900; margin-bottom:6px; }
-.spin-sub   { font-size:14px; color:var(--muted); margin-bottom:24px; }
+.spin-title {
+  font-size:28px; font-weight:900; margin-bottom:6px;
+  letter-spacing:-0.03em;
+}
+.spin-sub { font-size:14px; color:var(--muted); margin-bottom:24px; }
 
 .wheel-wrap {
   position:relative;
-  width:min(300px, 84vw);
-  height:min(300px, 84vw);
+  width:min(310px, 82vw);
+  height:min(310px, 82vw);
   margin:0 auto 28px;
-  /* espace à droite pour le pointeur */
   margin-right:calc(auto + 20px);
 }
 .wheel-pointer {
@@ -253,26 +313,26 @@ h1 .acc { color:var(--red); }
   right:-26px; top:50%;
   transform:translateY(-50%);
   z-index:20;
-  filter:drop-shadow(0 0 8px rgba(229,62,62,0.9));
+  filter:drop-shadow(0 2px 8px rgba(255,59,48,0.5));
 }
 #wheel-canvas {
   width:100%; height:100%;
   border-radius:50%; display:block;
   box-shadow:
-    0 0 0 3px rgba(229,62,62,0.2),
-    0 0 60px rgba(229,62,62,0.2),
-    0 0 120px rgba(229,62,62,0.08);
+    0 0 0 4px rgba(255,59,48,0.1),
+    0 16px 48px rgba(0,0,0,0.12),
+    0 4px 16px rgba(0,0,0,0.06);
 }
 .wheel-center {
   position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%);
   width:56px; height:56px;
-  background:radial-gradient(circle, #2a2a3a 0%, var(--dark) 100%);
+  background:var(--white);
   border:3px solid var(--red);
   border-radius:50%; z-index:15;
   display:flex; align-items:center; justify-content:center;
   font-size:22px;
-  box-shadow:0 0 24px rgba(229,62,62,0.5), 0 0 0 6px rgba(229,62,62,0.08);
+  box-shadow:0 4px 16px rgba(255,59,48,0.25), 0 0 0 6px rgba(255,59,48,0.06);
 }
 
 .btn-spin {
@@ -280,17 +340,17 @@ h1 .acc { color:var(--red); }
   color:#fff; border:none;
   padding:18px 64px; border-radius:50px;
   font-size:19px; font-weight:800;
-  cursor:pointer; font-family:'Syne', sans-serif;
-  box-shadow:0 8px 40px rgba(229,62,62,0.5);
+  cursor:pointer; font-family:'Inter', sans-serif;
+  box-shadow:0 8px 36px rgba(255,59,48,0.4);
   transition:transform 0.15s;
-  animation:pulse-glow 2s ease-in-out infinite;
-  letter-spacing:1px;
+  animation:btn-pulse 2s ease-in-out infinite;
+  letter-spacing:-0.01em;
   position:relative; overflow:hidden;
 }
 .btn-spin::after {
   content:''; position:absolute;
   top:-50%; left:-60%; width:40%; height:200%;
-  background:rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.2);
   transform:skewX(-20deg);
   animation:shimmer 3s infinite;
 }
@@ -301,38 +361,42 @@ h1 .acc { color:var(--red); }
 
 /* ── SCREEN 4: WIN ── */
 .win-emoji-big {
-  font-size:88px;
+  font-size:80px;
   animation:pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
-  filter:drop-shadow(0 0 44px rgba(246,201,14,0.55));
+  filter:drop-shadow(0 8px 24px rgba(245,158,11,0.3));
   margin-bottom:14px;
 }
 @keyframes pop-in {
   from{transform:scale(0) rotate(-15deg);opacity:0}
   to{transform:scale(1) rotate(0);opacity:1}
 }
-.win-h { font-family:'Syne', sans-serif; font-size:36px; font-weight:900; margin-bottom:20px; }
+.win-h {
+  font-size:34px; font-weight:900; margin-bottom:20px;
+  letter-spacing:-0.04em;
+}
 
 .prize-reveal {
-  background:linear-gradient(135deg, rgba(246,201,14,0.12), rgba(246,201,14,0.04));
-  border:1.5px solid rgba(246,201,14,0.4);
+  background:var(--white);
+  border:1.5px solid rgba(245,158,11,0.25);
   border-radius:22px; padding:26px 36px;
   margin-bottom:20px; max-width:340px; width:100%;
   position:relative; overflow:hidden;
+  box-shadow:0 8px 32px rgba(245,158,11,0.1);
 }
 .prize-reveal::before {
   content:''; position:absolute; inset:-1px;
-  background:linear-gradient(135deg, rgba(246,201,14,0.3), transparent, rgba(246,201,14,0.2));
+  background:linear-gradient(135deg, rgba(245,158,11,0.15), transparent, rgba(245,158,11,0.1));
   border-radius:22px; pointer-events:none;
 }
 .prize-reveal-label {
   font-size:11px; font-weight:700;
   text-transform:uppercase; letter-spacing:2px;
-  color:var(--gold); margin-bottom:8px;
+  color:var(--gold2); margin-bottom:8px;
 }
 .prize-reveal-name {
-  font-family:'Syne', sans-serif;
   font-size:22px; font-weight:900;
-  color:#fff; line-height:1.3;
+  color:var(--text); line-height:1.3;
+  letter-spacing:-0.02em;
 }
 
 .win-instruction {
@@ -343,17 +407,18 @@ h1 .acc { color:var(--red); }
 
 /* Email box */
 .email-box {
-  background:var(--dark2); border:1px solid var(--border);
+  background:var(--white); border:1px solid var(--border);
   border-radius:20px; padding:20px;
   width:100%; max-width:340px; margin-bottom:10px;
+  box-shadow:var(--shadow);
 }
 .email-label { font-size:14px; color:var(--text); margin-bottom:10px; font-weight:600; }
 .email-input {
   width:100%; padding:13px 16px;
-  background:var(--dark3); border:1px solid var(--border);
-  border-radius:10px; color:var(--text); font-size:15px;
+  background:var(--bg); border:1.5px solid var(--border);
+  border-radius:12px; color:var(--text); font-size:15px;
   outline:none; transition:border-color 0.2s;
-  font-family:'Plus Jakarta Sans', sans-serif;
+  font-family:'Inter', sans-serif;
 }
 .email-input:focus { border-color:var(--red); }
 .email-sent-msg { display:none; margin-top:10px; font-size:13px; color:var(--green); text-align:center; }
@@ -365,26 +430,27 @@ h1 .acc { color:var(--red); }
 .toast {
   position:fixed; bottom:28px; left:50%;
   transform:translateX(-50%) translateY(80px);
-  background:var(--dark2); border:1px solid var(--border);
-  border-radius:12px; padding:12px 22px;
+  background:var(--white); border:1px solid var(--border);
+  border-radius:14px; padding:14px 24px;
   font-size:13px; color:var(--text); z-index:600; white-space:nowrap;
   transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
-  box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  box-shadow:0 8px 32px rgba(0,0,0,0.12);
+  font-weight:500;
 }
 .toast.show { transform:translateX(-50%) translateY(0); }
 
 /* ── ANTI-TRICHE LOCK BADGE ── */
 .lock-badge {
   display:inline-flex; align-items:center; gap:6px;
-  background:rgba(246,201,14,0.1); border:1px solid rgba(246,201,14,0.3);
+  background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2);
   border-radius:30px; padding:6px 14px;
-  font-size:12px; color:var(--gold);
+  font-size:12px; color:var(--gold2);
   margin-bottom:14px; font-weight:600;
 }
 
 /* ── SPINNER LOADER ── */
 .spinner {
-  width:20px; height:20px;
+  width:18px; height:18px;
   border:2px solid var(--border);
   border-top-color:var(--red);
   border-radius:50%;
@@ -392,17 +458,25 @@ h1 .acc { color:var(--red); }
   display:inline-block; vertical-align:middle; margin-right:8px;
 }
 @keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1); border-radius:4px; }
 </style>
 </head>
 <body>
 
 <div class="bg-fx"></div>
-<div class="bg-noise"></div>
+<div class="bg-dots"></div>
 <canvas id="confetti-canvas"></canvas>
 
 <!-- ╔═══════════════ SCREEN 0 : TÉLÉPHONE ╗ -->
 <div class="screen active" id="s-phone">
-  <div class="logo-sp">Solution Phone — Mâcon</div>
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
   <div class="phone-icon">📱</div>
   <div class="phone-title">Entrez votre<br>numéro de téléphone</div>
   <div class="phone-sub">1 participation par personne.<br>Votre numéro reste strictement confidentiel.</div>
@@ -428,7 +502,10 @@ h1 .acc { color:var(--red); }
 
 <!-- ╔═══════════════ SCREEN 1 : INTRO ╗ -->
 <div class="screen" id="s-intro">
-  <div class="logo-sp">Solution Phone — Mâcon</div>
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
   <div class="intro-emoji">🎡</div>
   <h1>Tentez votre<br><span class="acc">chance !</span></h1>
   <p class="subtitle">Votre réparation est terminée 🎉<br>Laissez-nous un avis et tournez la roue pour gagner un cadeau.</p>
@@ -481,7 +558,7 @@ h1 .acc { color:var(--red); }
       <div class="countdown-bar-wrap">
         <div class="countdown-bar" id="countdown-bar" style="width:100%;"></div>
       </div>
-      <button class="btn-main btn-play-now" id="btn-play-now" onclick="goTo('s-spin')" style="width:100%;font-size:16px;padding:16px;background:linear-gradient(135deg,#e53e3e,#c0392b);color:#fff;">
+      <button class="btn-main btn-play-now" id="btn-play-now" onclick="goTo('s-spin')" style="width:100%;font-size:16px;padding:16px;">
         ✅ J'ai laissé mon avis → JOUER !
       </button>
     </div>
@@ -499,16 +576,19 @@ h1 .acc { color:var(--red); }
   <div class="spin-sub">Tournez la roue et découvrez votre cadeau</div>
 
   <div class="wheel-wrap">
-    <!-- Pointeur DROITE (triangle pointant vers la gauche) -->
+    <!-- Pointeur DROITE -->
     <svg class="wheel-pointer" width="30" height="24" viewBox="0 0 30 24">
       <defs>
         <linearGradient id="ptr-grad" x1="1" y1="0" x2="0" y2="0">
-          <stop offset="0%" stop-color="#ff6666"/>
-          <stop offset="100%" stop-color="#c0392b"/>
+          <stop offset="0%" stop-color="#ff5555"/>
+          <stop offset="100%" stop-color="#c9251b"/>
         </linearGradient>
+        <filter id="ptr-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#ff3b30" flood-opacity="0.4"/>
+        </filter>
       </defs>
-      <polygon points="0,12 28,2 28,22" fill="url(#ptr-grad)"/>
-      <circle cx="24" cy="12" r="5" fill="#fff" opacity="0.9"/>
+      <polygon points="0,12 28,2 28,22" fill="url(#ptr-grad)" filter="url(#ptr-shadow)"/>
+      <circle cx="24" cy="12" r="4" fill="#fff" opacity="0.9"/>
     </svg>
     <canvas id="wheel-canvas" width="640" height="640"></canvas>
     <div class="wheel-center">⭐</div>
@@ -519,7 +599,10 @@ h1 .acc { color:var(--red); }
 
 <!-- ╔═══════════════ SCREEN 4 : GAIN ╗ -->
 <div class="screen" id="s-win">
-  <div class="logo-sp">Solution Phone — Mâcon</div>
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
   <div class="win-emoji-big" id="win-emoji">🎁</div>
   <div class="win-h">Félicitations !</div>
   <div class="prize-reveal">
@@ -548,21 +631,20 @@ h1 .acc { color:var(--red); }
 // ─────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────
-// Proxies securises Vercel — plus aucune cle en dur cote client
-const SUPA_PROXY  = '/api/supabase';
-const BREVO_PROXY = '/api/brevo?type=email';
-const SHOP_EMAIL  = 'contact@solution-phone.fr';
-const SHOP_NAME   = 'Solution Phone';
+const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
+const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
+const BREVO_KEY = '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';
+const SHOP_EMAIL = 'solution.phone71@gmail.com';
 
 const DEFAULT_CONFIG = {
   googleUrl: 'https://g.page/r/CbyQ_wiFpddjEBM/review',
   prizes: [
-    { label: "Protection d'écran offerte",  emoji:'🛡️', color:'#c0392b', color2:'#922b21', weight:20 },
-    { label: 'Nettoyant écran offert',       emoji:'🧴', color:'#b7770d', color2:'#8b5e0a', weight:15 },
-    { label: '-10% prochaine réparation',    emoji:'⚡', color:'#1d6fa8', color2:'#155580', weight:15 },
-    { label: 'Housse de protection offerte', emoji:'🎁', color:'#1a7a44', color2:'#145c33', weight:20 },
-    { label: 'Câble de charge offert',       emoji:'🔌', color:'#7b2fbe', color2:'#5c228f', weight:20 },
-    { label: '-5€ prochaine réparation',     emoji:'💶', color:'#c0392b', color2:'#962d22', weight:10 },
+    { label: "Protection d'écran offerte",  emoji:'🛡️', color:'#e53e3e', color2:'#c0392b', weight:20 },
+    { label: 'Nettoyant écran offert',       emoji:'🧴', color:'#d97706', color2:'#b45309', weight:15 },
+    { label: '-10% prochaine réparation',    emoji:'⚡', color:'#2563eb', color2:'#1d4ed8', weight:15 },
+    { label: 'Housse de protection offerte', emoji:'🎁', color:'#16a34a', color2:'#15803d', weight:20 },
+    { label: 'Câble de charge offert',       emoji:'🔌', color:'#7c3aed', color2:'#6d28d9', weight:20 },
+    { label: '-5€ prochaine réparation',     emoji:'💶', color:'#e53e3e', color2:'#c0392b', weight:10 },
   ]
 };
 
@@ -572,10 +654,11 @@ let TOTAL  = PRIZES.reduce((s,p) => s + p.weight, 0);
 
 async function loadConfig() {
   try {
-    const res  = await fetch(SUPA_PROXY + '?table=roulette_config&query=' + encodeURIComponent('?id=eq.1'));
+    const res  = await fetch(SUPA_URL + '/rest/v1/roulette_config?id=eq.1', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
     const data = await res.json();
     if (data && data[0]) {
-      // Ajouter color2 aux lots si manquant
       const prizes = (data[0].prizes || DEFAULT_CONFIG.prizes).map((p,i) => ({
         ...DEFAULT_CONFIG.prizes[i] || {}, ...p
       }));
@@ -608,7 +691,7 @@ async function initRoulette() {
 initRoulette();
 
 // ─────────────────────────────────────────────────────────────
-// WHEEL DRAWING — Version premium avec gradients + LEDs
+// WHEEL DRAWING — Version premium light
 // ─────────────────────────────────────────────────────────────
 const canvas = document.getElementById('wheel-canvas');
 const ctx    = canvas.getContext('2d');
@@ -616,7 +699,6 @@ const CX = 320, CY = 320, R = 295;
 let rotation = 0;
 
 function lighten(hex, pct) {
-  // Simple hex lightening
   const n = parseInt(hex.replace('#',''), 16);
   const r = Math.min(255, (n>>16) + pct);
   const g = Math.min(255, ((n>>8)&0xff) + pct);
@@ -627,8 +709,24 @@ function lighten(hex, pct) {
 function drawWheel(rot) {
   ctx.clearRect(0, 0, 640, 640);
 
+  // === OMBRE SOUS LA ROUE ===
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY+4, R+2, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.filter = 'blur(8px)';
+  ctx.fill();
+  ctx.filter = 'none';
+  ctx.restore();
+
+  // === FOND BLANC SOUS SEGMENTS ===
+  ctx.beginPath();
+  ctx.arc(CX, CY, R-2, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
   // === SEGMENTS ===
-  let a = rot; // pointer à droite (angle 0 = est)
+  let a = rot;
 
   PRIZES.forEach((p) => {
     const slice = (p.weight / TOTAL) * Math.PI * 2;
@@ -639,30 +737,30 @@ function drawWheel(rot) {
     const gx = CX + R * 0.3 * Math.cos(mid);
     const gy = CY + R * 0.3 * Math.sin(mid);
     const grad = ctx.createRadialGradient(gx, gy, 0, CX, CY, R);
-    grad.addColorStop(0,   lighten(p.color, 55));
-    grad.addColorStop(0.4, p.color);
+    grad.addColorStop(0,   lighten(p.color, 45));
+    grad.addColorStop(0.5, p.color);
     grad.addColorStop(1,   p.color2 || lighten(p.color, -20));
 
     ctx.beginPath();
     ctx.moveTo(CX, CY);
-    ctx.arc(CX, CY, R - 16, a, end);
+    ctx.arc(CX, CY, R - 18, a, end);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // — Séparateur blanc léger
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 1.5;
+    // — Séparateur blanc
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     // — Emoji
     ctx.save();
     ctx.translate(CX, CY);
     ctx.rotate(mid);
-    ctx.font = '44px serif';
+    ctx.font = '40px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(p.emoji, (R - 16) * 0.72, 0);
+    ctx.fillText(p.emoji, (R - 18) * 0.72, 0);
     ctx.restore();
 
     // — Label (2 lignes max)
@@ -673,63 +771,57 @@ function drawWheel(rot) {
     const half  = Math.ceil(words.length / 2);
     const l1 = words.slice(0, half).join(' ');
     const l2 = words.slice(half).join(' ');
-    ctx.fillStyle = 'rgba(255,255,255,0.92)';
-    ctx.font = 'bold 18px Plus Jakarta Sans, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = 'bold 17px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Ombre douce
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur  = 4;
-    ctx.fillText(l1, (R - 16) * 0.35, l2 ? -11 : 0);
-    if (l2) ctx.fillText(l2, (R - 16) * 0.35, 12);
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur  = 3;
+    ctx.fillText(l1, (R - 18) * 0.36, l2 ? -10 : 0);
+    if (l2) ctx.fillText(l2, (R - 18) * 0.36, 12);
     ctx.shadowBlur = 0;
     ctx.restore();
 
     a = end;
   });
 
-  // === ANNEAU DÉCORATIF EXTÉRIEUR (LEDs) ===
-  const numLed = 40;
-  const led_r  = R - 4;
+  // === ANNEAU DÉCORATIF EXTÉRIEUR (perles) ===
+  const numLed = 36;
+  const led_r  = R - 6;
   for (let i = 0; i < numLed; i++) {
     const angle = (i / numLed) * Math.PI * 2 + rot;
     const lx = CX + led_r * Math.cos(angle);
     const ly = CY + led_r * Math.sin(angle);
-    const isGold = i % 2 === 0;
     ctx.beginPath();
-    ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
-    const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, 5);
-    glow.addColorStop(0, isGold ? '#f6c90e' : '#e53e3e');
-    glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = glow;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = isGold ? '#fff7cc' : '#ffaaaa';
+    ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.5)';
     ctx.fill();
   }
 
-  // === RING MÉTALLIQUE ===
-  const ringGrad = ctx.createLinearGradient(CX - R, CY, CX + R, CY);
-  ringGrad.addColorStop(0,   'rgba(229,62,62,0.6)');
-  ringGrad.addColorStop(0.5, 'rgba(246,201,14,0.5)');
-  ringGrad.addColorStop(1,   'rgba(229,62,62,0.6)');
+  // === RING EXTÉRIEUR ===
   ctx.beginPath();
   ctx.arc(CX, CY, R, 0, Math.PI * 2);
-  ctx.strokeStyle = ringGrad;
-  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(255,59,48,0.2)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Ring intérieur subtil
+  ctx.beginPath();
+  ctx.arc(CX, CY, R - 18, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
   ctx.stroke();
 
   // === CENTRE HUB ===
-  const hubGrad = ctx.createRadialGradient(CX, CY, 0, CX, CY, 30);
-  hubGrad.addColorStop(0,   '#3a3a5a');
-  hubGrad.addColorStop(0.7, '#1a1a2e');
-  hubGrad.addColorStop(1,   '#0f0f1a');
+  const hubGrad = ctx.createRadialGradient(CX, CY-4, 0, CX, CY, 28);
+  hubGrad.addColorStop(0,   '#ffffff');
+  hubGrad.addColorStop(0.6, '#f8f8fa');
+  hubGrad.addColorStop(1,   '#e8e8ed');
   ctx.beginPath();
-  ctx.arc(CX, CY, 30, 0, Math.PI * 2);
+  ctx.arc(CX, CY, 28, 0, Math.PI * 2);
   ctx.fillStyle = hubGrad;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(229,62,62,0.6)';
+  ctx.strokeStyle = 'rgba(255,59,48,0.35)';
   ctx.lineWidth = 2.5;
   ctx.stroke();
 }
@@ -744,7 +836,6 @@ let spinning = false;
 function spinWheel() {
   if (spinning) return;
 
-  // Anti-replay session
   if (sessionStorage.getItem('sp_played')) {
     showToast('Vous avez déjà joué lors de cette visite 😊');
     return;
@@ -753,7 +844,6 @@ function spinWheel() {
   spinning = true;
   document.getElementById('btn-spin').disabled = true;
 
-  // Sélection pondérée
   const rand = Math.random() * TOTAL;
   let cum = 0, winIdx = 0;
   for (let i = 0; i < PRIZES.length; i++) {
@@ -761,7 +851,6 @@ function spinWheel() {
     if (rand < cum) { winIdx = i; break; }
   }
 
-  // Angle cible
   const segAngles = PRIZES.map(p => (p.weight / TOTAL) * Math.PI * 2);
   let cumAngle = 0;
   for (let i = 0; i < winIdx; i++) cumAngle += segAngles[i];
@@ -825,7 +914,7 @@ function launchConfetti() {
   cc.width  = window.innerWidth;
   cc.height = window.innerHeight;
   const c = cc.getContext('2d');
-  const cols = ['#e53e3e','#f6c90e','#48bb78','#4299e1','#ed8936','#fff','#f687b3','#b794f4'];
+  const cols = ['#ff3b30','#f59e0b','#34c759','#007aff','#ff9500','#af52de','#ff2d55','#5ac8fa'];
   const bits = [];
   const shapes = ['rect','circle','star'];
 
@@ -917,12 +1006,9 @@ function onReviewClick() {
 
       if (count <= 0) {
         clearInterval(interval);
-        // Débloquer le bouton de jeu
         if (btnPlay) btnPlay.classList.add('ready');
-        // Afficher le bypass pour ceux qui ont déjà un avis
         const bypass = document.getElementById('btn-already-bypass');
         if (bypass) bypass.style.display = 'block';
-        // Message final
         const lock = document.querySelector('.lock-badge');
         if (lock) lock.innerHTML = '🟢 Roue débloquée ! Cliquez ci-dessous';
       }
@@ -947,82 +1033,70 @@ async function sendPrizeEmail() {
   const htmlContent = `
 <!DOCTYPE html>
 <html>
-<body style="background:#0f0f0f;color:#f0f0f0;font-family:sans-serif;margin:0;padding:0;">
-<div style="max-width:480px;margin:0 auto;background:#1a1a1a;border-radius:16px;overflow:hidden;">
-  <div style="background:linear-gradient(135deg,#c0392b,#e53e3e);padding:36px 28px;text-align:center;">
+<body style="background:#f5f5f7;color:#1d1d1f;font-family:-apple-system,sans-serif;margin:0;padding:20px;">
+<div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:linear-gradient(135deg,#ff3b30,#c9251b);padding:36px 28px;text-align:center;">
     <div style="font-size:56px;margin-bottom:10px;">🎡</div>
     <h1 style="font-size:26px;font-weight:900;color:#fff;margin:0;">Félicitations !</h1>
-    <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:15px;">Vous avez gagné à la Roue Solution Phone</p>
+    <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;">Vous avez gagné à la Roue Solution Phone</p>
   </div>
   <div style="padding:32px 28px;text-align:center;">
-    <div style="background:rgba(246,201,14,0.12);border:1.5px solid rgba(246,201,14,0.4);border-radius:16px;padding:24px;margin-bottom:24px;">
-      <p style="font-size:11px;color:#f6c90e;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">🎉 Votre cadeau</p>
-      <p style="font-size:22px;font-weight:900;color:#fff;margin:0;">${winPrizeName}</p>
+    <div style="background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.2);border-radius:16px;padding:24px;margin-bottom:24px;">
+      <p style="font-size:11px;color:#d97706;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">🎉 Votre cadeau</p>
+      <p style="font-size:22px;font-weight:900;color:#1d1d1f;margin:0;">${winPrizeName}</p>
     </div>
-    <p style="color:#888;font-size:14px;line-height:1.8;">
-      Pour récupérer votre cadeau, <strong style="color:#f0f0f0;">venez en boutique</strong><br>
+    <p style="color:#6e6e73;font-size:14px;line-height:1.8;">
+      Pour récupérer votre cadeau, <strong style="color:#1d1d1f;">venez en boutique</strong><br>
       avec cet email ou montrez l'écran de gain.
     </p>
-    <div style="margin-top:24px;padding:18px;background:#252525;border-radius:12px;">
-      <p style="font-size:13px;color:#888;margin:0;">📍 Solution Phone — 21 Rue Gambetta, 71000 Mâcon<br>📞 03 85 33 06 89</p>
+    <div style="margin-top:24px;padding:18px;background:#f5f5f7;border-radius:12px;">
+      <p style="font-size:13px;color:#6e6e73;margin:0;">📍 Solution Phone — 21 Rue Gambetta, 71000 Mâcon<br>📞 03 85 33 06 89</p>
     </div>
   </div>
-  <div style="padding:16px 28px;text-align:center;border-top:1px solid #2a2a2a;">
-    <p style="font-size:12px;color:#555;margin:0;">Solution Phone · Certifié QualiRépar · Mâcon</p>
+  <div style="padding:16px 28px;text-align:center;border-top:1px solid rgba(0,0,0,0.06);">
+    <p style="font-size:12px;color:#aeaeb2;margin:0;">Solution Phone · Certifié QualiRépar · Mâcon</p>
   </div>
 </div>
 </body>
 </html>`;
 
   try {
-    // Email au client via proxy Brevo
-    await fetch(BREVO_PROXY, {
+    const r1 = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sender:  { name: SHOP_NAME + ' — Roue Cadeaux', email: SHOP_EMAIL },
+        sender:  { name: 'Solution Phone Roue', email: SHOP_EMAIL },
         to:      [{ email: email }],
         subject: '🎡 Votre cadeau Solution Phone — ' + winPrizeName,
         htmlContent
       })
     });
 
-    // Notification a la boutique (contact@solution-phone.fr)
-    notifyShop(winPrizeName, email);
+    await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender:  { name: 'Roue Cadeaux', email: SHOP_EMAIL },
+        to:      [{ email: SHOP_EMAIL, name: 'Solution Phone' }],
+        subject: '🎁 Nouveau gain roue — ' + winPrizeName,
+        htmlContent: `<p>Nouveau gagnant à la roue !</p>
+          <p><strong>Lot :</strong> ${winPrizeName}</p>
+          <p><strong>Email client :</strong> ${email}</p>
+          <p><strong>Téléphone :</strong> ${_phoneVerifie || 'non renseigné'}</p>
+          <p><strong>Date :</strong> ${new Date().toLocaleString('fr-FR')}</p>`
+      })
+    });
 
     document.getElementById('email-sent-msg').style.display = 'block';
     btn.textContent = '✅ Email envoyé !';
   } catch(e) {
-    // Fallback mailto si proxy KO
-    console.warn('Brevo proxy failed, fallback mailto', e);
+    console.warn('Brevo failed, fallback mailto', e);
     const subject = encodeURIComponent('🎡 Cadeau Roue — ' + winPrizeName);
-    const body    = encodeURIComponent('Client : ' + email + '\nLot : ' + winPrizeName + '\nTél : ' + (_phoneVerifie || '-'));
+    const body    = encodeURIComponent(`Client : ${email}\nLot : ${winPrizeName}\nTél : ${_phoneVerifie || '-'}`);
     window.open('mailto:' + SHOP_EMAIL + '?subject=' + subject + '&body=' + body, '_blank');
     document.getElementById('email-sent-msg').style.display = 'block';
     btn.textContent = '✅ Email préparé !';
   }
-}
-
-// Notification vers contact@solution-phone.fr — envoyee automatiquement a chaque gain
-async function notifyShop(prizeName, clientEmail) {
-  try {
-    await fetch(BREVO_PROXY, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sender:  { name: 'Roue Cadeaux', email: SHOP_EMAIL },
-        to:      [{ email: SHOP_EMAIL, name: SHOP_NAME }],
-        subject: '🎁 Nouveau gain roue — ' + prizeName,
-        htmlContent:
-          '<h2>🎡 Nouveau gagnant à la roue !</h2>' +
-          '<p><strong>Lot :</strong> ' + prizeName + '</p>' +
-          '<p><strong>Téléphone :</strong> ' + (_phoneVerifie || '—') + '</p>' +
-          '<p><strong>Email client :</strong> ' + (clientEmail || '<em>non renseigné</em>') + '</p>' +
-          '<p><strong>Date :</strong> ' + new Date().toLocaleString('fr-FR') + '</p>' +
-          '<hr><p style="color:#888;font-size:12px;">Suivi complet dans l\'app Solution Phone → Roue cadeaux → Statistiques</p>'
-      })
-    });
-  } catch(e) { console.warn('notifyShop failed', e); }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1055,18 +1129,17 @@ async function checkPhone() {
   if (loading) loading.style.display = 'flex';
 
   try {
-    var q    = '?telephone=eq.' + digits + '&select=id,lot_gagne';
-    var res  = await fetch(SUPA_PROXY + '?table=roulette_participations&query=' + encodeURIComponent(q));
+    var res  = await fetch(SUPA_URL + '/rest/v1/roulette_participations?telephone=eq.' + digits + '&select=id,lot_gagne', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
     var data = await res.json();
 
     if (loading) loading.style.display = 'none';
 
     if (data && data.length > 0) {
-      // Déjà participé
       var msg = document.getElementById('phone-already-msg');
       if (msg) {
         msg.style.display = 'block';
-        // Afficher aussi le lot déjà gagné
         var lotGagne = data[0].lot_gagne || '';
         if (lotGagne) {
           msg.querySelector('.phone-already-sub').innerHTML =
@@ -1090,17 +1163,20 @@ async function checkPhone() {
 async function saveParticipation(prizeName) {
   if (!_phoneVerifie) return;
   try {
-    await fetch(SUPA_PROXY + '?table=roulette_participations', {
+    await fetch(SUPA_URL + '/rest/v1/roulette_participations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
       body: JSON.stringify({
         telephone: _phoneVerifie,
         lot_gagne: prizeName,
         date_participation: new Date().toISOString()
       })
     });
-    // Notification immediate a la boutique (meme si pas d'email client)
-    notifyShop(prizeName, null);
   } catch(e) { console.warn('Erreur sauvegarde:', e); }
 }
 
