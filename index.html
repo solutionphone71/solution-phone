@@ -4546,6 +4546,26 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     </div>
 
     <div id="reprise-recap" style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:14px;"></div>
+
+    <!-- INFOS CLIENT (pour facture) -->
+    <div style="background:rgba(37,99,235,0.08);border:1px solid rgba(37,99,235,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleClientSection()">
+        <div style="font-weight:800;font-size:15px;color:#2563eb;">👤 Infos client (pour facture)</div>
+        <span id="client-toggle-icon" style="font-size:18px;color:#2563eb;">▶</span>
+      </div>
+      <div id="client-fields" style="display:none;margin-top:10px;">
+        <div class="form-grid" style="grid-template-columns:1fr;gap:8px;">
+          <div class="form-group"><label>Nom du client</label><input type="text" id="vente-client-nom" placeholder="ex: Jean Dupont"></div>
+          <div class="form-group"><label>Adresse</label><input type="text" id="vente-client-adresse" placeholder="ex: 15 Rue de la République"></div>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+            <div class="form-group"><label>Code postal</label><input type="text" id="vente-client-cp" maxlength="5" inputmode="numeric" placeholder="71000"></div>
+            <div class="form-group"><label>Ville</label><input type="text" id="vente-client-ville" placeholder="Mâcon"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">💡 Remplissez pour générer la facture automatiquement après la vente.</div>
+      </div>
+    </div>
+
     <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
       <button class="btn btn-primary" id="btn-confirmer-vente" onclick="confirmerVenteAuto()" style="background:#16a34a;border-color:#16a34a;flex:1;min-width:200px;padding:14px;font-size:15px;">✅ Confirmer la vente</button>
       <button class="btn" onclick="closeModal('modal-reprise')" style="padding:14px;">Annuler</button>
@@ -4779,7 +4799,7 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null,modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||''};});
+        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',shopify_id:x.shopify_id||null,modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
         renderPhones(); renderDashboard();
       }
       // Charger les téléphones neufs
@@ -4807,7 +4827,7 @@ async function loadFromSupabase() {
     console.log('[Supabase] Résultats:', 'phones='+(p?p.length:'null'), 'factures='+(f?f.length:'null'), 'caisse='+(c?c.length:'null'), 'reports='+(r?r.length:'null'));
     if(p){
       var prevCount = phones.length;
-      phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||''};});
+      phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
       console.log('[Supabase] Phones chargés:', phones.length, '(avant:', prevCount, ')');
       // Si Supabase retourne moins de phones, vérifier le backup local
       if(phones.length < prevCount && prevCount > 0){
@@ -4856,7 +4876,7 @@ async function loadFromSupabase() {
 
 async function savePhone(phone) {
   if(!supabaseReady){ console.warn('[savePhone] Supabase pas prêt — téléphone NON sauvé !', phone.modele); return; }
-  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||'',mode_vente:phone.modeVente||null,is_reprise:phone.isReprise||false,reprise_amount:phone.repriseAmount||null,reprise_modele:phone.repriseModele||null,reprise_phone_id:phone.reprisePhoneId||null,reprise_from_vente:phone.repriseFromVente||null,reprise_from_modele:phone.repriseFromModele||null};
+  var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||'',mode_vente:phone.modeVente||null,is_reprise:phone.isReprise||false,reprise_amount:phone.repriseAmount||null,reprise_modele:phone.repriseModele||null,reprise_phone_id:phone.reprisePhoneId||null,reprise_from_vente:phone.repriseFromVente||null,reprise_from_modele:phone.repriseFromModele||null,client_nom:phone.clientNom||null,client_adresse:phone.clientAdresse||null,client_cp:phone.clientCP||null,client_ville:phone.clientVille||null};
   console.log('[savePhone] Mode:', phone.supaId ? 'PATCH(supaId)' : phone.id < 100000 ? 'PATCH(id)' : 'POST', 'phone=', phone.modele, 'id=', phone.id);
   if(phone.supaId || (phone.id && phone.id<100000)){
     await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));
@@ -7874,6 +7894,19 @@ function toggleRepriseSection(){
   }
 }
 
+function toggleClientSection(){
+  var fields = document.getElementById('client-fields');
+  var icon = document.getElementById('client-toggle-icon');
+  if(!fields) return;
+  if(fields.style.display === 'none'){
+    fields.style.display = 'block';
+    if(icon) icon.textContent = '▼';
+  } else {
+    fields.style.display = 'none';
+    if(icon) icon.textContent = '▶';
+  }
+}
+
 function marquerVendu(id){
   var p=phones.find(function(x){return x.id===id;});
   if(!p)return;
@@ -7898,6 +7931,15 @@ function marquerVendu(id){
   if(reprFields) reprFields.style.display = 'none';
   var togIcon = document.getElementById('reprise-toggle-icon');
   if(togIcon) togIcon.textContent = '▶';
+
+  // Vider et replier les champs client
+  ['vente-client-nom','vente-client-adresse','vente-client-cp','vente-client-ville'].forEach(function(fid){
+    var el=document.getElementById(fid); if(el) el.value='';
+  });
+  var clientFields = document.getElementById('client-fields');
+  if(clientFields) clientFields.style.display = 'none';
+  var clientIcon = document.getElementById('client-toggle-icon');
+  if(clientIcon) clientIcon.textContent = '▶';
 
   // Sélectionner CB par défaut
   selectModeVente('CB');
@@ -7952,6 +7994,16 @@ function finaliserVente(repriseData){
   p.etat='VENDU';
   p.dateVente=new Date().toISOString().split('T')[0];
   p.modeVente = mode;
+
+  // ── Stocker les infos client (depuis le modal) ──
+  var cNom = (document.getElementById('vente-client-nom')||{}).value||'';
+  var cAdresse = (document.getElementById('vente-client-adresse')||{}).value||'';
+  var cCP = (document.getElementById('vente-client-cp')||{}).value||'';
+  var cVille = (document.getElementById('vente-client-ville')||{}).value||'';
+  p.clientNom = cNom.trim();
+  p.clientAdresse = cAdresse.trim();
+  p.clientCP = cCP.trim();
+  p.clientVille = cVille.trim();
 
   // ── Stocker les infos reprise sur le téléphone vendu ──
   if(repMontant > 0 && repriseData){
@@ -8031,9 +8083,12 @@ function finaliserVente(repriseData){
   msg += ' — '+mode;
   showNotif(msg,'success');
 
-  // Proposer l'impression de la fiche de vente
+  // Proposer l'impression de la fiche de vente + facture
   setTimeout(function(){
     if(confirm('📄 Imprimer la fiche de vente A4 ?')) imprimerFicheVente(venduId);
+    setTimeout(function(){
+      if(confirm('🧾 Générer la facture occasion (TVA marge) ?')) genererFactureOccasion(venduId);
+    }, 400);
   }, 300);
 }
 
@@ -8469,6 +8524,209 @@ function renderFactures(){
 // ============================================================
 //  TEMPLATE A4 — FACTURES & DEVIS — Solution Phone
 // ============================================================
+
+// ═══════════════════════════════════════════════════════════
+// FACTURE OCCASION A4 — TVA sur marge (Art. 297A CGI)
+// ═══════════════════════════════════════════════════════════
+function genererFactureOccasion(phoneId){
+  var p = phones.find(function(x){return x.id===phoneId;});
+  if(!p){ showNotif('Téléphone introuvable','error'); return; }
+  if(p.etat !== 'VENDU'){ showNotif('Ce téléphone n\'est pas encore vendu','error'); return; }
+
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var couleur = '#c0392b';
+  var dateVente = fmtDate(p.dateVente) || fmtDate(new Date().toISOString().split('T')[0]);
+  var repMontant = p.repriseAmount || 0;
+  var netAPayer = p.vente - repMontant;
+  var modeLabels = {CB:'Carte bancaire', ESPECES:'Espèces', VIREMENT:'Virement', CHEQUE:'Chèque'};
+  var modePaiement = modeLabels[(p.modeVente||'CB').toUpperCase()] || p.modeVente || 'CB';
+
+  // Numéro facture auto
+  var numFact = 'FO-' + (p.dateVente||new Date().toISOString().split('T')[0]).replace(/-/g,'').slice(2) + '-' + (p.id % 10000);
+
+  // Client
+  var clientNom = p.clientNom || '';
+  var clientAdresse = p.clientAdresse || '';
+  var clientCP = p.clientCP || '';
+  var clientVille = p.clientVille || '';
+  var clientFull = [clientAdresse, (clientCP||'')+(clientCP&&clientVille?' ':'')+clientVille].filter(Boolean).join(', ');
+
+  // Description du téléphone
+  var phoneDesc = p.modele + (p.stockage ? ' ' + p.stockage + ' Go' : '') +
+    (p.grade ? ' — Grade ' + p.grade : '') +
+    (p.couleur ? ' — ' + p.couleur : '') +
+    (p.imei ? ' — IMEI : ' + p.imei : '');
+
+  // Construire les lignes du tableau
+  var lignesHTML = '<tr style="border-bottom:1px solid #eee;background:#f8f9fa;">'+
+    '<td style="padding:12px 14px;font-size:13px;">'+phoneDesc+'</td>'+
+    '<td style="padding:12px 14px;text-align:center;font-size:13px;">1</td>'+
+    '<td style="padding:12px 14px;text-align:right;font-size:13px;">'+p.vente.toFixed(2)+' €</td>'+
+    '<td style="padding:12px 14px;text-align:right;font-size:13px;font-weight:700;">'+p.vente.toFixed(2)+' €</td>'+
+    '</tr>';
+
+  // Ligne reprise si applicable
+  if(repMontant > 0){
+    var repriseDesc = '🔄 Reprise ' + (p.repriseModele || 'téléphone');
+    lignesHTML += '<tr style="border-bottom:1px solid #eee;">'+
+      '<td style="padding:12px 14px;font-size:13px;color:#c0392b;">'+repriseDesc+'</td>'+
+      '<td style="padding:12px 14px;text-align:center;font-size:13px;">1</td>'+
+      '<td style="padding:12px 14px;text-align:right;font-size:13px;color:#c0392b;">- '+repMontant.toFixed(2)+' €</td>'+
+      '<td style="padding:12px 14px;text-align:right;font-size:13px;font-weight:700;color:#c0392b;">- '+repMontant.toFixed(2)+' €</td>'+
+      '</tr>';
+  }
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'+
+  '<title>FACTURE '+numFact+'</title>'+
+  '<style>'+
+    '*{margin:0;padding:0;box-sizing:border-box;}'+
+    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;background:#fff;font-size:14px;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;position:relative;}'+
+    '@media print{.no-print{display:none!important;}.page{padding:10mm 12mm;margin:0;width:100%;}}'+
+    '@page{size:A4;margin:0;}'+
+  '</style></head><body>'+
+
+  '<div class="page">'+
+
+    // Bouton imprimer
+    '<div class="no-print" style="text-align:right;margin-bottom:10px;">'+
+    '<button onclick="window.print()" style="background:'+couleur+';color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
+    '</div>'+
+
+    // HEADER
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8mm;padding-bottom:6mm;border-bottom:3px solid '+couleur+';">'+
+      '<div style="display:flex;align-items:center;gap:14px;">'+
+      (logo ? '<img src="'+logo+'" style="height:80px;width:auto;object-fit:contain;">' : '')+
+      '<div>'+
+        '<div style="font-size:22px;font-weight:900;color:'+couleur+';letter-spacing:-0.5px;">SOLUTION PHONE</div>'+
+        '<div style="font-size:12px;color:#999;margin-top:3px;">Réparation Smartphone · Tablette · PC</div>'+
+        '<div style="font-size:11px;color:#777;margin-top:6px;line-height:1.7;">'+
+          '21 Rue Gambetta · 71000 Mâcon<br>'+
+          'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
+          'SIRET : 801 044 785 00021'+
+        '</div>'+
+      '</div></div>'+
+
+      '<div style="text-align:right;">'+
+        '<div style="background:'+couleur+';color:#fff;padding:8px 20px;border-radius:6px;font-size:22px;font-weight:900;letter-spacing:1px;display:inline-block;margin-bottom:8px;">FACTURE</div>'+
+        '<div style="font-size:15px;font-weight:700;color:#333;">N° '+numFact+'</div>'+
+        '<div style="font-size:12px;color:#777;margin-top:4px;">Date : '+dateVente+'</div>'+
+        '<div style="font-size:12px;color:#777;margin-top:2px;">Règlement : '+modePaiement+'</div>'+
+      '</div>'+
+    '</div>'+
+
+    // BLOC CLIENT
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:8mm;">'+
+      '<div style="background:#f8f8f8;border-left:4px solid '+couleur+';padding:12px 18px;min-width:200px;max-width:280px;">'+
+        '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:6px;">Client</div>'+
+        '<div style="font-weight:700;font-size:14px;">'+(clientNom||'—')+'</div>'+
+        (clientFull ? '<div style="font-size:12px;color:#777;margin-top:3px;">'+clientFull+'</div>' : '')+
+      '</div>'+
+    '</div>'+
+
+    // BADGE OCCASION
+    '<div style="display:inline-block;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:6px;padding:5px 14px;font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4mm;">'+
+      '📱 Téléphone d\'occasion — Régime TVA sur la marge'+
+    '</div>'+
+
+    // TABLEAU
+    '<table style="width:100%;border-collapse:collapse;margin-bottom:6mm;">'+
+      '<thead><tr style="background:'+couleur+';color:#fff;">'+
+        '<th style="padding:10px 14px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Désignation</th>'+
+        '<th style="padding:10px 14px;text-align:center;font-size:12px;text-transform:uppercase;width:60px;">Qté</th>'+
+        '<th style="padding:10px 14px;text-align:right;font-size:12px;text-transform:uppercase;width:100px;">P.U.</th>'+
+        '<th style="padding:10px 14px;text-align:right;font-size:12px;text-transform:uppercase;width:100px;">Total</th>'+
+      '</tr></thead>'+
+      '<tbody>'+lignesHTML+'</tbody>'+
+    '</table>'+
+
+    // TOTAUX
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:8mm;">'+
+      '<div style="min-width:280px;">'+
+        // Total vente
+        '<div style="display:flex;justify-content:space-between;padding:8px 14px;background:#f8f8f8;border-radius:4px 4px 0 0;margin-bottom:1px;">'+
+          '<span style="font-size:12px;color:#777;">Prix de vente</span>'+
+          '<span style="font-size:13px;font-weight:700;">'+p.vente.toFixed(2)+' €</span>'+
+        '</div>'+
+        // Reprise si applicable
+        (repMontant > 0 ?
+          '<div style="display:flex;justify-content:space-between;padding:6px 14px;background:#f8f8f8;margin-bottom:1px;">'+
+            '<span style="font-size:12px;color:#c0392b;">Reprise '+(p.repriseModele||'')+'</span>'+
+            '<span style="font-size:13px;color:#c0392b;font-weight:700;">- '+repMontant.toFixed(2)+' €</span>'+
+          '</div>' : '')+
+        // NET À PAYER
+        '<div style="display:flex;justify-content:space-between;padding:14px 16px;background:'+couleur+';color:#fff;border-radius:0 0 6px 6px;">'+
+          '<span style="font-size:15px;font-weight:700;">'+(repMontant > 0 ? 'NET À PAYER' : 'TOTAL')+'</span>'+
+          '<span style="font-size:20px;font-weight:900;">'+netAPayer.toFixed(2)+' €</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // MENTION TVA MARGE
+    '<div style="background:rgba(139,92,246,0.06);border-left:4px solid rgba(139,92,246,0.5);padding:10px 14px;border-radius:4px;margin-bottom:6mm;font-size:12px;color:#666;line-height:1.7;">'+
+      '<b>TVA non applicable</b> — Article 297 A du Code Général des Impôts<br>'+
+      'Régime de la TVA sur la marge · Bien d\'occasion'+
+    '</div>'+
+
+    // ZONE SIGNATURE
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:10mm;margin-top:4mm;">'+
+      '<div style="border:1px solid #eee;border-radius:6px;padding:10px;">'+
+        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Signature du client</div>'+
+        '<div style="height:60px;border-bottom:1px solid #ccc;"></div>'+
+      '</div>'+
+      '<div style="border:1px solid #eee;border-radius:6px;padding:10px;text-align:center;">'+
+        '<div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Cachet Solution Phone</div>'+
+        (typeof _tampStr!=='undefined'&&_tampStr?'<img src="'+_tampStr+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;border-bottom:1px solid #ccc;"></div>')+
+      '</div>'+
+    '</div>'+
+
+    // PIED DE PAGE
+    '<div style="position:absolute;bottom:12mm;left:14mm;right:14mm;border-top:2px solid '+couleur+';padding-top:5mm;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-size:10px;color:#aaa;line-height:1.8;">'+
+          '<b style="color:'+couleur+';">Solution Phone</b> · 21 Rue Gambetta · 71000 Mâcon<br>'+
+          'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
+          'SIRET : 801 044 785 00021 · TVA non applicable — Art. 297 A du CGI (régime de la marge)'+
+        '</div>'+
+        '<div style="text-align:right;font-size:10px;color:#ccc;">FACTURE '+numFact+'</div>'+
+      '</div>'+
+    '</div>'+
+
+  '</div>'+
+  '<script>var b=document.querySelector(".no-print button");if(b)b.onclick=function(){window.print();}<\/script>'+
+  '</body></html>';
+
+  ouvrirA4(html);
+
+  // Sauvegarder dans l'historique des factures PDF
+  try {
+    var record = {
+      id: Date.now(),
+      type: 'occasion',
+      numero: numFact,
+      date: p.dateVente || new Date().toISOString().split('T')[0],
+      clientNom: clientNom,
+      clientAdresse: clientAdresse,
+      clientCP: clientCP,
+      clientVille: clientVille,
+      paiement: modePaiement,
+      lignes: [{ desc: phoneDesc, qty: 1, pu: p.vente, total: p.vente }],
+      repriseAmount: repMontant,
+      repriseModele: p.repriseModele || '',
+      totalTTC: netAPayer,
+      phoneId: p.id
+    };
+    if(repMontant > 0) record.lignes.push({ desc: 'Reprise '+(p.repriseModele||''), qty: 1, pu: -repMontant, total: -repMontant });
+    _fpdfFactures.push(record);
+    localStorage.setItem(FPDF_STORAGE_KEY, JSON.stringify(_fpdfFactures));
+    if(typeof supabaseReady !== 'undefined' && supabaseReady){
+      try { supaFetch('factures_pdf','POST', record); } catch(e){}
+    }
+  } catch(e){ console.warn('Erreur sauvegarde facture occasion:', e); }
+
+  showNotif('📄 Facture occasion '+numFact+' générée !','success');
+  return numFact;
+}
 
 function buildA4HTML(opts){
   var _tampStr = _tampStr || '';
@@ -20214,7 +20472,7 @@ function renderVentesSmartphones(){
             '<td style="text-align:right;color:var(--green);font-weight:700">'+marge.toFixed(2)+' €</td>'+
             '<td style="text-align:right;color:var(--warning)">'+tva.toFixed(2)+' €</td>'+
             '<td style="text-align:right">'+margeHT.toFixed(2)+' €</td>'+
-            '<td style="display:flex;gap:3px;"><button class="btn btn-sm" onclick="imprimerFicheVente('+p.id+')" title="Fiche de vente A4" style="color:#c0392b;font-size:11px;">📄</button><button class="btn btn-sm" onclick="annulerVente('+p.id+')" title="Remettre en stock" style="color:var(--text-muted);font-size:11px;">↩️</button></td>'+
+            '<td style="display:flex;gap:3px;"><button class="btn btn-sm" onclick="imprimerFicheVente('+p.id+')" title="Fiche de vente A4" style="color:#c0392b;font-size:11px;">📄</button><button class="btn btn-sm" onclick="genererFactureOccasion('+p.id+')" title="Facture TVA marge" style="color:#7c3aed;font-size:11px;">🧾</button><button class="btn btn-sm" onclick="annulerVente('+p.id+')" title="Remettre en stock" style="color:var(--text-muted);font-size:11px;">↩️</button></td>'+
           '</tr>';
         }).join('')+
         // Ligne total du mois
