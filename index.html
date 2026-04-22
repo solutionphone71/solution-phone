@@ -4493,32 +4493,62 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
 <!-- ══ MODAL REPRISE (trade-in lors de la vente) ══ -->
 <div class="modal-overlay" id="modal-reprise" onclick="if(event.target===this)closeModal('modal-reprise')">
-  <div class="modal" style="max-width:520px;">
+  <div class="modal" style="max-width:540px;">
     <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:22px;">🔄</span>
-      <span>Vente avec Reprise</span>
+      <span style="font-size:22px;">💰</span>
+      <span>Vente Smartphone</span>
     </div>
     <div id="reprise-vente-info" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.3);border-radius:10px;padding:12px;margin-bottom:14px;"></div>
-    <div style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
-      <div style="font-weight:800;font-size:15px;color:#c0392b;margin-bottom:8px;">📱 Téléphone repris</div>
-      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:8px;">
-        <div class="form-group"><label>Modèle repris *</label><input type="text" id="rep-modele" placeholder="ex: iPhone 11"></div>
-        <div class="form-group"><label>Montant reprise (€) *</label><input type="number" id="rep-montant" placeholder="ex: 140" step="0.01" min="0" oninput="updateRepriseRecap()"></div>
-        <div class="form-group"><label>Stockage (Go)</label><input type="number" id="rep-stockage" placeholder="ex: 128"></div>
-        <div class="form-group"><label>Grade</label><select id="rep-grade" style="width:100%;padding:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);">
-          <option value="">--</option><option value="A+">A+</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
-        </select></div>
-        <div class="form-group"><label>IMEI</label><input type="text" id="rep-imei" placeholder="IMEI du téléphone repris"></div>
-        <div class="form-group"><label>Couleur</label><input type="text" id="rep-couleur" placeholder="ex: Noir"></div>
-        <div class="form-group"><label>Batterie (%)</label><input type="number" id="rep-batterie" placeholder="ex: 85" min="0" max="100"></div>
-        <div class="form-group"><label>Prix revente estimé (€)</label><input type="number" id="rep-revente" placeholder="ex: 200" step="0.01" min="0"></div>
+
+    <!-- MODE DE PAIEMENT -->
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:800;font-size:14px;color:var(--text);margin-bottom:8px;">💳 Mode de paiement</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="reprise-modes">
+        <button type="button" onclick="selectModeVente('CB')" id="mode-btn-CB" class="mode-vente-btn" style="padding:12px 8px;border-radius:10px;border:2px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;text-align:center;transition:all .2s;">
+          <div style="font-size:20px;">💳</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;">CB</div>
+        </button>
+        <button type="button" onclick="selectModeVente('ESPECES')" id="mode-btn-ESPECES" class="mode-vente-btn" style="padding:12px 8px;border-radius:10px;border:2px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;text-align:center;transition:all .2s;">
+          <div style="font-size:20px;">💵</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;">Espèces</div>
+        </button>
+        <button type="button" onclick="selectModeVente('VIREMENT')" id="mode-btn-VIREMENT" class="mode-vente-btn" style="padding:12px 8px;border-radius:10px;border:2px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;text-align:center;transition:all .2s;">
+          <div style="font-size:20px;">🏦</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;">Virement</div>
+        </button>
+        <button type="button" onclick="selectModeVente('CHEQUE')" id="mode-btn-CHEQUE" class="mode-vente-btn" style="padding:12px 8px;border-radius:10px;border:2px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;text-align:center;transition:all .2s;">
+          <div style="font-size:20px;">📄</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;">Chèque</div>
+        </button>
       </div>
     </div>
+
+    <!-- SECTION REPRISE (pliable) -->
+    <div style="background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleRepriseSection()">
+        <div style="font-weight:800;font-size:15px;color:#c0392b;">🔄 Reprise d'un téléphone</div>
+        <span id="reprise-toggle-icon" style="font-size:18px;color:#c0392b;">▶</span>
+      </div>
+      <div id="reprise-fields" style="display:none;margin-top:10px;">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="form-group"><label>Modèle repris *</label><input type="text" id="rep-modele" placeholder="ex: iPhone 11"></div>
+          <div class="form-group"><label>Montant reprise (€) *</label><input type="number" id="rep-montant" placeholder="ex: 140" step="0.01" min="0" oninput="updateRepriseRecap()"></div>
+          <div class="form-group"><label>Stockage (Go)</label><input type="number" id="rep-stockage" placeholder="ex: 128"></div>
+          <div class="form-group"><label>Grade</label><select id="rep-grade" style="width:100%;padding:8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+            <option value="">--</option><option value="A+">A+</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+          </select></div>
+          <div class="form-group"><label>IMEI</label><input type="text" id="rep-imei" placeholder="IMEI du téléphone repris"></div>
+          <div class="form-group"><label>Couleur</label><input type="text" id="rep-couleur" placeholder="ex: Noir"></div>
+          <div class="form-group"><label>Batterie (%)</label><input type="number" id="rep-batterie" placeholder="ex: 85" min="0" max="100"></div>
+          <div class="form-group"><label>Prix revente estimé (€)</label><input type="number" id="rep-revente" placeholder="ex: 200" step="0.01" min="0"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="reprise-recap" style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:14px;"></div>
-    <div style="display:flex;gap:10px;margin-top:10px;">
-      <button class="btn btn-primary" onclick="confirmerVenteReprise()" style="background:#8b5cf6;border-color:#8b5cf6;">✅ Confirmer la vente + reprise</button>
-      <button class="btn" onclick="confirmerVenteSansReprise()" style="border-color:#16a34a;color:#16a34a;">💰 Vente sans reprise</button>
-      <button class="btn" onclick="closeModal('modal-reprise')">Annuler</button>
+    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-confirmer-vente" onclick="confirmerVenteAuto()" style="background:#16a34a;border-color:#16a34a;flex:1;min-width:200px;padding:14px;font-size:15px;">✅ Confirmer la vente</button>
+      <button class="btn" onclick="closeModal('modal-reprise')" style="padding:14px;">Annuler</button>
     </div>
   </div>
 </div>
@@ -7805,28 +7835,73 @@ async function verifierIMEI(imei) {
 // ── Variable temporaire pour la vente en cours (avec/sans reprise) ──
 var _venteEnCours = null;
 
+function selectModeVente(mode){
+  if(!_venteEnCours) return;
+  _venteEnCours.mode = mode;
+  // Highlight bouton sélectionné
+  ['CB','ESPECES','VIREMENT','CHEQUE'].forEach(function(m){
+    var btn = document.getElementById('mode-btn-'+m);
+    if(!btn) return;
+    if(m === mode){
+      btn.style.border = '2px solid #16a34a';
+      btn.style.background = 'rgba(22,163,74,0.15)';
+      btn.style.boxShadow = '0 0 0 2px rgba(22,163,74,0.3)';
+    } else {
+      btn.style.border = '2px solid var(--border)';
+      btn.style.background = 'rgba(255,255,255,0.04)';
+      btn.style.boxShadow = 'none';
+    }
+  });
+  updateRepriseRecap();
+}
+
+function toggleRepriseSection(){
+  var fields = document.getElementById('reprise-fields');
+  var icon = document.getElementById('reprise-toggle-icon');
+  if(!fields) return;
+  if(fields.style.display === 'none'){
+    fields.style.display = 'block';
+    if(icon) icon.textContent = '▼';
+  } else {
+    fields.style.display = 'none';
+    if(icon) icon.textContent = '▶';
+    // Vider les champs si on referme
+    ['rep-modele','rep-montant','rep-stockage','rep-imei','rep-couleur','rep-batterie','rep-revente'].forEach(function(fid){
+      var el=document.getElementById(fid); if(el) el.value='';
+    });
+    var gradeEl=document.getElementById('rep-grade'); if(gradeEl) gradeEl.value='';
+    updateRepriseRecap();
+  }
+}
+
 function marquerVendu(id){
   var p=phones.find(function(x){return x.id===id;});
   if(!p)return;
-  // Demander le mode de paiement
-  var modeChoix = prompt('Mode de paiement : 1=CB  2=Espèces  3=Chèque  4=Virement  (Entrée=CB)', '1');
-  var modeMap = {'1':'CB','2':'ESPECES','3':'CHEQUE','4':'VIREMENT'};
-  var mode = modeMap[modeChoix] || 'CB';
 
-  // Stocker la vente en cours et ouvrir le modal reprise
-  _venteEnCours = { phoneId: id, mode: mode };
+  // Stocker la vente en cours — mode par défaut CB
+  _venteEnCours = { phoneId: id, mode: 'CB' };
 
   // Remplir les infos de la vente dans le modal
   var infoDiv = document.getElementById('reprise-vente-info');
   if(infoDiv){
     infoDiv.innerHTML = '<div style="font-weight:800;font-size:15px;color:#8b5cf6;margin-bottom:4px;">📱 Vente en cours</div>'+
-      '<div style="font-size:14px;"><b>'+p.modele+'</b>'+(p.stockage?' '+p.stockage+'Go':'')+' — <b style="color:#16a34a;">'+p.vente+' €</b> — '+mode+'</div>';
+      '<div style="font-size:15px;"><b>'+p.modele+'</b>'+(p.stockage?' '+p.stockage+'Go':'')+
+      (p.grade?' · Grade '+p.grade:'')+
+      ' — <b style="color:#16a34a;font-size:18px;">'+p.vente+' €</b></div>';
   }
-  // Vider les champs reprise
+  // Vider les champs reprise et replier la section
   ['rep-modele','rep-montant','rep-stockage','rep-imei','rep-couleur','rep-batterie','rep-revente'].forEach(function(fid){
     var el=document.getElementById(fid); if(el) el.value='';
   });
   var gradeEl=document.getElementById('rep-grade'); if(gradeEl) gradeEl.value='';
+  var reprFields = document.getElementById('reprise-fields');
+  if(reprFields) reprFields.style.display = 'none';
+  var togIcon = document.getElementById('reprise-toggle-icon');
+  if(togIcon) togIcon.textContent = '▶';
+
+  // Sélectionner CB par défaut
+  selectModeVente('CB');
+
   // Mettre à jour le récap
   updateRepriseRecap();
   openModal('modal-reprise');
@@ -7837,25 +7912,25 @@ function updateRepriseRecap(){
   if(!recap || !_venteEnCours) return;
   var p = phones.find(function(x){return x.id===_venteEnCours.phoneId;});
   if(!p) return;
+  var mode = _venteEnCours.mode || 'CB';
+  var modeLabels = {CB:'💳 CB', ESPECES:'💵 Espèces', VIREMENT:'🏦 Virement', CHEQUE:'📄 Chèque'};
+  var modeLabel = modeLabels[mode] || mode;
   var repMontant = parseFloat(document.getElementById('rep-montant').value) || 0;
   var net = p.vente - repMontant;
   if(repMontant > 0){
-    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;margin-bottom:4px;">💰 Récapitulatif</div>'+
-      '<div>Prix de vente : <b>'+p.vente.toFixed(2)+' €</b></div>'+
-      '<div>Reprise : <b style="color:#c0392b;">-'+repMontant.toFixed(2)+' €</b></div>'+
-      '<div style="font-size:16px;font-weight:900;margin-top:4px;color:#16a34a;">Net encaissé : '+net.toFixed(2)+' € ('+_venteEnCours.mode+')</div>';
+    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;margin-bottom:6px;">💰 Récapitulatif</div>'+
+      '<div style="display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px;">'+
+        '<span>Prix de vente :</span><span style="text-align:right;font-weight:700;">'+p.vente.toFixed(2)+' €</span>'+
+        '<span>Reprise :</span><span style="text-align:right;font-weight:700;color:#c0392b;">-'+repMontant.toFixed(2)+' €</span>'+
+        '<span style="font-size:16px;font-weight:900;color:#16a34a;border-top:2px solid rgba(22,163,74,0.3);padding-top:6px;margin-top:4px;">Net encaissé :</span>'+
+        '<span style="text-align:right;font-size:16px;font-weight:900;color:#16a34a;border-top:2px solid rgba(22,163,74,0.3);padding-top:6px;margin-top:4px;">'+net.toFixed(2)+' € '+modeLabel+'</span>'+
+      '</div>';
     recap.style.display='block';
   } else {
-    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;">💰 Pas de reprise — Encaissement : <b>'+p.vente.toFixed(2)+' €</b> ('+_venteEnCours.mode+')</div>';
+    recap.innerHTML = '<div style="font-weight:800;color:#16a34a;font-size:15px;">💰 Encaissement : <b>'+p.vente.toFixed(2)+' €</b> '+modeLabel+'</div>';
     recap.style.display='block';
   }
 }
-
-// Écouter les changements sur le montant reprise
-document.addEventListener('DOMContentLoaded', function(){
-  var repM = document.getElementById('rep-montant');
-  if(repM) repM.addEventListener('input', updateRepriseRecap);
-});
 
 function finaliserVente(repriseData){
   if(!_venteEnCours) return;
@@ -7956,26 +8031,38 @@ function finaliserVente(repriseData){
   showNotif(msg,'success');
 }
 
-function confirmerVenteReprise(){
+function confirmerVenteAuto(){
+  // Vérifier qu'un mode de paiement est choisi
+  if(!_venteEnCours || !_venteEnCours.mode){
+    showNotif('Choisissez un mode de paiement','error'); return;
+  }
+  // Vérifier si la section reprise est ouverte et remplie
+  var repriseVisible = document.getElementById('reprise-fields') && document.getElementById('reprise-fields').style.display !== 'none';
   var modele = (document.getElementById('rep-modele').value||'').trim();
-  var montant = parseFloat(document.getElementById('rep-montant').value);
-  if(!modele){ showNotif('Modèle du téléphone repris requis','error'); return; }
-  if(!montant || montant <= 0){ showNotif('Montant de la reprise requis','error'); return; }
-  finaliserVente({
-    modele: modele,
-    montant: montant,
-    stockage: document.getElementById('rep-stockage').value,
-    grade: document.getElementById('rep-grade').value,
-    imei: document.getElementById('rep-imei').value,
-    couleur: document.getElementById('rep-couleur').value,
-    batterie: document.getElementById('rep-batterie').value,
-    revente: document.getElementById('rep-revente').value
-  });
+  var montant = parseFloat(document.getElementById('rep-montant').value) || 0;
+
+  if(repriseVisible && montant > 0){
+    // Vente AVEC reprise
+    if(!modele){ showNotif('Modèle du téléphone repris requis','error'); return; }
+    finaliserVente({
+      modele: modele,
+      montant: montant,
+      stockage: document.getElementById('rep-stockage').value,
+      grade: document.getElementById('rep-grade').value,
+      imei: document.getElementById('rep-imei').value,
+      couleur: document.getElementById('rep-couleur').value,
+      batterie: document.getElementById('rep-batterie').value,
+      revente: document.getElementById('rep-revente').value
+    });
+  } else {
+    // Vente SANS reprise
+    finaliserVente(null);
+  }
 }
 
-function confirmerVenteSansReprise(){
-  finaliserVente(null);
-}
+// Anciens noms gardés pour compatibilité
+function confirmerVenteReprise(){ confirmerVenteAuto(); }
+function confirmerVenteSansReprise(){ finaliserVente(null); }
 function marquerDispo(id){var p=phones.find(function(x){return x.id===id;});if(!p)return;p.etat='DISPONIBLE';p.dateVente=null;savePhone(p);renderPhones();renderDashboard();showNotif(p.modele+' remis en stock','success');}
 
 function goToVentesSmartphones(){
