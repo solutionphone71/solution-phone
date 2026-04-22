@@ -8094,206 +8094,182 @@ function imprimerFicheVente(id){
   '<title>Fiche Vente — '+p.modele+'</title>'+
   '<style>'+
     '*{margin:0;padding:0;box-sizing:border-box;}'+
-    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;font-size:13px;}'+
-    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:10mm 12mm;position:relative;}'+
-    '@media print{.no-print{display:none!important;}.page{padding:8mm 10mm;margin:0;width:100%;}}'+
+    'body{font-family:"Helvetica Neue",Arial,sans-serif;color:#1a1a1a;font-size:11px;}'+
+    '.page{width:210mm;height:297mm;margin:0 auto;padding:6mm 8mm;position:relative;overflow:hidden;}'+
+    '@media print{.no-print{display:none!important;}.page{padding:5mm 7mm;margin:0;width:100%;height:auto;}}'+
     '@page{size:A4;margin:0;}'+
-    '.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:5mm;border-bottom:3px solid #c0392b;margin-bottom:5mm;}'+
-    '.info-grid{display:grid;grid-template-columns:140px 1fr;gap:3px 10px;font-size:12px;}'+
-    '.info-grid .label{font-weight:700;color:#555;padding:4px 0;}'+
-    '.info-grid .val{font-weight:600;color:#1a1a1a;padding:4px 0;border-bottom:1px dotted #ccc;}'+
-    '.section{border:1.5px solid #ddd;border-radius:6px;margin-bottom:4mm;overflow:hidden;}'+
-    '.section-title{background:#f5f5f5;padding:6px 12px;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#333;border-bottom:1px solid #ddd;}'+
-    '.section-body{padding:10px 12px;}'+
-    '.ticket-zone{border:2px dashed #bbb;border-radius:8px;min-height:35mm;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:13px;font-weight:600;background:#fafafa;}'+
-    '.paiement-box{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}'+
-    '.paiement-item{border:1.5px solid #ddd;border-radius:6px;padding:8px 6px;text-align:center;font-size:11px;}'+
-    '.paiement-item.active{border-color:#16a34a;background:#f0fff4;}'+
-    '.paiement-item .icon{font-size:18px;}'+
-    '.paiement-item .lbl{font-weight:700;margin-top:2px;}'+
-    '.total-box{background:#c0392b;color:#fff;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;margin-top:4mm;}'+
-    '.reprise-box{background:#fff3f3;border:1.5px solid #c0392b;border-radius:6px;padding:10px 12px;margin-top:6px;}'+
-    '.recap-grid{display:grid;grid-template-columns:1fr auto;gap:2px 16px;font-size:13px;padding:8px 0;}'+
-    '.recap-grid .r-label{color:#555;}'+
-    '.recap-grid .r-val{text-align:right;font-weight:700;}'+
-    '.footer-sigs{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:6mm;}'+
-    '.sig-box{border:1px solid #ddd;border-radius:6px;padding:8px 10px;min-height:25mm;}'+
-    '.sig-box .sig-title{font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;}'+
-    '.ref-bar{background:#f0f0f0;border-radius:4px;padding:4px 10px;font-size:10px;color:#888;text-align:center;margin-top:4mm;}'+
-    '.check-row{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;}'+
-    '.check-box{width:14px;height:14px;border:1.5px solid #888;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#16a34a;font-weight:900;}'+
+    '.header{display:flex;justify-content:space-between;align-items:center;padding-bottom:3mm;border-bottom:2.5px solid #c0392b;margin-bottom:3mm;}'+
+    '.ig{display:grid;grid-template-columns:90px 1fr;gap:1px 6px;font-size:11px;}'+
+    '.ig .l{font-weight:700;color:#555;padding:2px 0;}'+
+    '.ig .v{font-weight:600;color:#1a1a1a;padding:2px 0;border-bottom:1px dotted #ccc;}'+
+    '.s{border:1.5px solid #ddd;border-radius:5px;margin-bottom:2.5mm;overflow:hidden;}'+
+    '.st{background:#f5f5f5;padding:3px 8px;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:#333;border-bottom:1px solid #ddd;}'+
+    '.sb{padding:5px 8px;}'+
+    '.tz{border:2px dashed #bbb;border-radius:6px;min-height:28mm;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px;font-weight:600;background:#fafafa;}'+
+    '.pb{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}'+
+    '.pi{border:1.5px solid #ddd;border-radius:5px;padding:4px 3px;text-align:center;font-size:10px;}'+
+    '.pi.on{border-color:#16a34a;background:#f0fff4;}'+
+    '.pi .ic{font-size:14px;}'+
+    '.pi .lb{font-weight:700;margin-top:1px;}'+
+    '.rg{display:grid;grid-template-columns:1fr auto;gap:1px 12px;font-size:12px;padding:4px 0;}'+
+    '.rg .rl{color:#555;}.rg .rv{text-align:right;font-weight:700;}'+
+    '.fs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2.5mm;}'+
+    '.sb2{border:1px solid #ddd;border-radius:5px;padding:4px 6px;min-height:18mm;}'+
+    '.sb2 .st2{font-size:9px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:2px;}'+
+    '.cr{display:flex;align-items:center;gap:4px;margin:2px 0;font-size:11px;}'+
+    '.cb{width:12px;height:12px;border:1.5px solid #888;border-radius:2px;flex-shrink:0;}'+
+    '.ref{background:#f0f0f0;border-radius:3px;padding:2px 6px;font-size:9px;color:#888;text-align:center;margin-top:2mm;}'+
   '</style></head><body>'+
   '<div class="page">'+
 
     // Bouton imprimer
-    '<div class="no-print" style="text-align:right;margin-bottom:6px;">'+
-      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '<div class="no-print" style="text-align:right;margin-bottom:4px;">'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:8px 20px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
     '</div>'+
 
-    // HEADER
+    // HEADER compact
     '<div class="header">'+
-      '<div style="display:flex;align-items:center;gap:12px;">'+
-        (logo ? '<img src="'+logo+'" style="height:60px;width:auto;">' : '')+
+      '<div style="display:flex;align-items:center;gap:8px;">'+
+        (logo ? '<img src="'+logo+'" style="height:40px;width:auto;">' : '')+
         '<div>'+
-          '<div style="font-size:20px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-          '<div style="font-size:11px;color:#777;margin-top:2px;">21 Rue Gambetta · 71000 Mâcon</div>'+
-          '<div style="font-size:11px;color:#777;">Tél : 03 85 33 06 89</div>'+
+          '<div style="font-size:16px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+          '<div style="font-size:9px;color:#777;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>'+
         '</div>'+
       '</div>'+
       '<div style="text-align:right;">'+
-        '<div style="background:#c0392b;color:#fff;padding:6px 16px;border-radius:6px;font-size:18px;font-weight:900;display:inline-block;margin-bottom:6px;">FICHE DE VENTE</div>'+
-        '<div style="font-size:14px;font-weight:700;color:#333;">'+dateVente+'</div>'+
-        '<div style="font-size:11px;color:#777;margin-top:2px;">Réf. : #'+p.id+'</div>'+
+        '<div style="background:#c0392b;color:#fff;padding:4px 12px;border-radius:4px;font-size:14px;font-weight:900;display:inline-block;">FICHE DE VENTE</div>'+
+        '<div style="font-size:12px;font-weight:700;color:#333;margin-top:3px;">'+dateVente+' · Réf #'+p.id+'</div>'+
       '</div>'+
     '</div>'+
 
-    // ── SECTION 1 : APPAREIL VENDU ──
-    '<div class="section">'+
-      '<div class="section-title">📱 Appareil vendu</div>'+
-      '<div class="section-body" style="display:flex;gap:12px;">'+
-        // Infos
+    // ── APPAREIL VENDU + TICKET côte à côte ──
+    '<div class="s">'+
+      '<div class="st">📱 Appareil vendu</div>'+
+      '<div class="sb" style="display:flex;gap:8px;">'+
         '<div style="flex:1;">'+
-          '<div class="info-grid">'+
-            '<span class="label">Modèle :</span><span class="val" style="font-size:15px;font-weight:900;">'+p.modele+'</span>'+
-            '<span class="label">Stockage :</span><span class="val">'+(p.stockage ? p.stockage+' Go' : '—')+'</span>'+
-            '<span class="label">Grade :</span><span class="val">'+(p.grade || '—')+'</span>'+
-            '<span class="label">Couleur :</span><span class="val">'+(p.couleur || '—')+'</span>'+
-            '<span class="label">IMEI :</span><span class="val" style="font-family:monospace;font-size:12px;">'+(p.imei || '—')+'</span>'+
-            '<span class="label">Batterie :</span><span class="val">'+(p.batterie ? p.batterie+'%' : '—')+'</span>'+
-            '<span class="label">N° Police :</span><span class="val">'+(p.numPolice || '—')+'</span>'+
-            '<span class="label">Date achat :</span><span class="val">'+dateAchat+'</span>'+
-            '<span class="label">Prix achat :</span><span class="val">'+p.achat.toFixed(2)+' €</span>'+
-            '<span class="label">Prix vente :</span><span class="val" style="font-size:15px;color:#c0392b;font-weight:900;">'+p.vente.toFixed(2)+' €</span>'+
-            '<span class="label">Marge :</span><span class="val" style="color:#16a34a;">'+marge.toFixed(2)+' €</span>'+
+          '<div class="ig">'+
+            '<span class="l">Modèle :</span><span class="v" style="font-size:13px;font-weight:900;">'+p.modele+'</span>'+
+            '<span class="l">Stockage :</span><span class="v">'+(p.stockage ? p.stockage+' Go' : '—')+'</span>'+
+            '<span class="l">Grade :</span><span class="v">'+(p.grade || '—')+'</span>'+
+            '<span class="l">Couleur :</span><span class="v">'+(p.couleur || '—')+'</span>'+
+            '<span class="l">IMEI :</span><span class="v" style="font-family:monospace;font-size:10px;">'+(p.imei || '—')+'</span>'+
+            '<span class="l">Batterie :</span><span class="v">'+(p.batterie ? p.batterie+'%' : '—')+'</span>'+
+            '<span class="l">N° Police :</span><span class="v">'+(p.numPolice || '—')+'</span>'+
+            '<span class="l">Date achat :</span><span class="v">'+dateAchat+'</span>'+
+            '<span class="l">Prix achat :</span><span class="v">'+p.achat.toFixed(2)+' €</span>'+
+            '<span class="l">Prix vente :</span><span class="v" style="font-size:14px;color:#c0392b;font-weight:900;">'+p.vente.toFixed(2)+' €</span>'+
+            '<span class="l">Marge :</span><span class="v" style="color:#16a34a;">'+marge.toFixed(2)+' €</span>'+
           '</div>'+
         '</div>'+
-        // Zone pour coller le ticket étiquette
-        '<div style="width:48mm;">'+
-          '<div class="ticket-zone" style="height:100%;">'+
-            '<div style="text-align:center;">📋<br>Coller le ticket<br>étiquette ici</div>'+
+        '<div style="width:42mm;">'+
+          '<div class="tz" style="height:100%;"><div style="text-align:center;">📋<br>Coller ticket<br>étiquette ici</div></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── PAIEMENT + NOTES sur une ligne ──
+    '<div class="s">'+
+      '<div class="st">💰 Paiement</div>'+
+      '<div class="sb">'+
+        '<div class="pb">'+
+          '<div class="pi'+((p.modeVente||'CB')==='CB'?' on':'')+'"><div class="ic">💳</div><div class="lb">CB</div></div>'+
+          '<div class="pi'+((p.modeVente||'')==='ESPECES'?' on':'')+'"><div class="ic">💵</div><div class="lb">Espèces</div></div>'+
+          '<div class="pi'+((p.modeVente||'')==='VIREMENT'?' on':'')+'"><div class="ic">🏦</div><div class="lb">Virement</div></div>'+
+          '<div class="pi'+((p.modeVente||'')==='CHEQUE'?' on':'')+'"><div class="ic">📄</div><div class="lb">Chèque</div></div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">'+
+          '<div style="border:1px solid #ddd;border-radius:3px;padding:3px 6px;min-height:12mm;">'+
+            '<div style="font-size:9px;color:#888;font-weight:700;text-transform:uppercase;">Détail paiement (si multi-mode)</div>'+
+            '<div style="font-size:10px;color:#bbb;line-height:1.8;">CB : .................. € · Esp : .................. € · Vir : .................. €</div>'+
+          '</div>'+
+          '<div style="border:1px solid #ddd;border-radius:3px;padding:3px 6px;min-height:12mm;">'+
+            '<div style="font-size:9px;color:#888;font-weight:700;text-transform:uppercase;">Notes</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
     '</div>'+
 
-    // ── SECTION 2 : PAIEMENT ──
-    '<div class="section">'+
-      '<div class="section-title">💰 Paiement</div>'+
-      '<div class="section-body">'+
-        // Cases à cocher mode paiement
-        '<div class="paiement-box">'+
-          '<div class="paiement-item'+((p.modeVente||'CB')==='CB'?' active':'')+'"><div class="icon">💳</div><div class="lbl">CB</div></div>'+
-          '<div class="paiement-item'+((p.modeVente||'')==='ESPECES'?' active':'')+'"><div class="icon">💵</div><div class="lbl">Espèces</div></div>'+
-          '<div class="paiement-item'+((p.modeVente||'')==='VIREMENT'?' active':'')+'"><div class="icon">🏦</div><div class="lbl">Virement</div></div>'+
-          '<div class="paiement-item'+((p.modeVente||'')==='CHEQUE'?' active':'')+'"><div class="icon">📄</div><div class="lbl">Chèque</div></div>'+
-        '</div>'+
-        // Détail paiement manuscrit
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">'+
-          '<div style="border:1px solid #ddd;border-radius:4px;padding:6px 8px;min-height:20mm;">'+
-            '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Détail paiement (si multi-mode)</div>'+
-            '<div style="font-size:11px;color:#aaa;line-height:2;">CB : .......................... €<br>Espèces : .................. €<br>Virement : ................. €</div>'+
-          '</div>'+
-          '<div style="border:1px solid #ddd;border-radius:4px;padding:6px 8px;min-height:20mm;">'+
-            '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:3px;">Notes</div>'+
-          '</div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-
-    // ── SECTION 3 : REPRISE (si applicable) ──
+    // ── REPRISE ──
     (repMontant > 0 ?
-    '<div class="section" style="border-color:#c0392b;">'+
-      '<div class="section-title" style="background:#fff3f3;color:#c0392b;">🔄 Reprise</div>'+
-      '<div class="section-body">'+
-        '<div style="display:flex;gap:12px;">'+
-          '<div style="flex:1;">'+
-            '<div class="info-grid">'+
-              '<span class="label">Modèle repris :</span><span class="val" style="font-weight:900;">'+(p.repriseModele||'—')+'</span>'+
-              (repPhone ? '<span class="label">Stockage :</span><span class="val">'+(repPhone.stockage?repPhone.stockage+' Go':'—')+'</span>'+
-              '<span class="label">Grade :</span><span class="val">'+(repPhone.grade||'—')+'</span>'+
-              '<span class="label">IMEI :</span><span class="val" style="font-family:monospace;">'+(repPhone.imei||'—')+'</span>'+
-              '<span class="label">Couleur :</span><span class="val">'+(repPhone.couleur||'—')+'</span>' : '')+
-              '<span class="label">Montant reprise :</span><span class="val" style="font-size:15px;color:#c0392b;font-weight:900;">-'+repMontant.toFixed(2)+' €</span>'+
-              (repPhone ? '<span class="label">Prix revente est. :</span><span class="val">'+repPhone.vente.toFixed(2)+' €</span>' : '')+
-            '</div>'+
+    '<div class="s" style="border-color:#c0392b;">'+
+      '<div class="st" style="background:#fff3f3;color:#c0392b;">🔄 Reprise</div>'+
+      '<div class="sb" style="display:flex;gap:8px;">'+
+        '<div style="flex:1;">'+
+          '<div class="ig">'+
+            '<span class="l">Modèle repris :</span><span class="v" style="font-weight:900;">'+(p.repriseModele||'—')+'</span>'+
+            (repPhone ? '<span class="l">IMEI :</span><span class="v" style="font-family:monospace;font-size:10px;">'+(repPhone.imei||'—')+'</span>'+
+            '<span class="l">Stockage :</span><span class="v">'+(repPhone.stockage?repPhone.stockage+' Go':'—')+' · Grade '+(repPhone.grade||'—')+' · '+(repPhone.couleur||'')+'</span>' : '')+
+            '<span class="l">Montant :</span><span class="v" style="font-size:14px;color:#c0392b;font-weight:900;">-'+repMontant.toFixed(2)+' €</span>'+
           '</div>'+
-          '<div style="width:48mm;">'+
-            '<div class="ticket-zone" style="height:100%;">'+
-              '<div style="text-align:center;">📋<br>Coller le ticket<br>reprise ici</div>'+
-            '</div>'+
-          '</div>'+
+        '</div>'+
+        '<div style="width:42mm;">'+
+          '<div class="tz" style="height:100%;"><div style="text-align:center;font-size:10px;">📋<br>Coller ticket<br>reprise ici</div></div>'+
         '</div>'+
       '</div>'+
     '</div>' :
-    // Section reprise vide (pour pouvoir écrire à la main si besoin)
-    '<div class="section" style="border-color:#ddd;">'+
-      '<div class="section-title" style="color:#999;">🔄 Reprise (si applicable)</div>'+
-      '<div class="section-body" style="display:flex;gap:12px;">'+
+    '<div class="s" style="border-color:#eee;">'+
+      '<div class="st" style="color:#aaa;">🔄 Reprise (si applicable)</div>'+
+      '<div class="sb" style="display:flex;gap:8px;">'+
         '<div style="flex:1;">'+
-          '<div class="info-grid">'+
-            '<span class="label">Modèle repris :</span><span class="val" style="min-width:150px;"> </span>'+
-            '<span class="label">IMEI :</span><span class="val"> </span>'+
-            '<span class="label">Montant reprise :</span><span class="val"> </span>'+
+          '<div class="ig">'+
+            '<span class="l">Modèle repris :</span><span class="v"> </span>'+
+            '<span class="l">IMEI :</span><span class="v"> </span>'+
+            '<span class="l">Montant :</span><span class="v"> </span>'+
           '</div>'+
         '</div>'+
-        '<div style="width:48mm;">'+
-          '<div class="ticket-zone" style="height:100%;min-height:22mm;">'+
-            '<div style="text-align:center;font-size:11px;">📋<br>Coller le ticket<br>reprise ici</div>'+
-          '</div>'+
+        '<div style="width:42mm;">'+
+          '<div class="tz" style="height:100%;min-height:16mm;"><div style="text-align:center;font-size:10px;">📋<br>Ticket reprise</div></div>'+
         '</div>'+
       '</div>'+
     '</div>')+
 
-    // ── SECTION 4 : RÉCAPITULATIF ──
-    '<div class="section" style="border-color:#16a34a;">'+
-      '<div class="section-title" style="background:#f0fff4;color:#16a34a;">✅ Récapitulatif</div>'+
-      '<div class="section-body">'+
-        '<div class="recap-grid">'+
-          '<span class="r-label">Prix de vente TTC :</span><span class="r-val">'+p.vente.toFixed(2)+' €</span>'+
-          (repMontant > 0 ? '<span class="r-label">Reprise ('+(p.repriseModele||'')+') :</span><span class="r-val" style="color:#c0392b;">- '+repMontant.toFixed(2)+' €</span>' : '')+
-          '<span class="r-label" style="font-size:15px;font-weight:900;color:#1a1a1a;border-top:2px solid #16a34a;padding-top:6px;margin-top:4px;">NET ENCAISSÉ :</span>'+
-          '<span class="r-val" style="font-size:18px;color:#16a34a;border-top:2px solid #16a34a;padding-top:6px;margin-top:4px;">'+netEncaisse.toFixed(2)+' €</span>'+
-          '<span class="r-label">Mode de paiement :</span><span class="r-val">'+modeLabel+'</span>'+
-          '<span class="r-label">Marge brute :</span><span class="r-val" style="color:#16a34a;">'+marge.toFixed(2)+' €</span>'+
+    // ── RÉCAPITULATIF (compact) ──
+    '<div class="s" style="border-color:#16a34a;">'+
+      '<div class="st" style="background:#f0fff4;color:#16a34a;">✅ Récapitulatif</div>'+
+      '<div class="sb">'+
+        '<div class="rg">'+
+          '<span class="rl">Prix de vente TTC :</span><span class="rv">'+p.vente.toFixed(2)+' €</span>'+
+          (repMontant > 0 ? '<span class="rl">Reprise ('+(p.repriseModele||'')+') :</span><span class="rv" style="color:#c0392b;">- '+repMontant.toFixed(2)+' €</span>' : '')+
+          '<span class="rl" style="font-size:14px;font-weight:900;color:#1a1a1a;border-top:2px solid #16a34a;padding-top:3px;margin-top:2px;">NET ENCAISSÉ :</span>'+
+          '<span class="rv" style="font-size:16px;color:#16a34a;border-top:2px solid #16a34a;padding-top:3px;margin-top:2px;">'+netEncaisse.toFixed(2)+' €</span>'+
+          '<span class="rl">Paiement : '+modeLabel+'</span><span class="rv" style="color:#16a34a;">Marge : '+marge.toFixed(2)+' €</span>'+
         '</div>'+
       '</div>'+
     '</div>'+
 
-    // ── VÉRIFICATIONS ──
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:3mm;">'+
-      '<div class="section" style="margin-bottom:0;">'+
-        '<div class="section-title" style="font-size:10px;">🔍 Vérifications vendeur</div>'+
-        '<div class="section-body" style="padding:6px 10px;">'+
-          '<div class="check-row"><span class="check-box"></span> Téléphone testé / fonctionnel</div>'+
-          '<div class="check-row"><span class="check-box"></span> Réinitialisation usine faite</div>'+
-          '<div class="check-row"><span class="check-box"></span> Compte iCloud / Google déconnecté</div>'+
-          '<div class="check-row"><span class="check-box"></span> Carte SIM retirée</div>'+
-          '<div class="check-row"><span class="check-box"></span> Accessoires remis (câble, boîte...)</div>'+
+    // ── VÉRIFICATIONS + OBSERVATIONS côte à côte ──
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">'+
+      '<div class="s" style="margin-bottom:0;">'+
+        '<div class="st" style="font-size:9px;">🔍 Vérifications</div>'+
+        '<div class="sb" style="padding:3px 6px;">'+
+          '<div class="cr"><div class="cb"></div> Téléphone testé / fonctionnel</div>'+
+          '<div class="cr"><div class="cb"></div> Réinitialisation usine faite</div>'+
+          '<div class="cr"><div class="cb"></div> iCloud / Google déconnecté</div>'+
+          '<div class="cr"><div class="cb"></div> Carte SIM retirée</div>'+
+          '<div class="cr"><div class="cb"></div> Accessoires remis</div>'+
         '</div>'+
       '</div>'+
-      '<div class="section" style="margin-bottom:0;">'+
-        '<div class="section-title" style="font-size:10px;">📝 Observations</div>'+
-        '<div class="section-body" style="min-height:30mm;padding:6px 10px;">'+
-        '</div>'+
+      '<div class="s" style="margin-bottom:0;">'+
+        '<div class="st" style="font-size:9px;">📝 Observations</div>'+
+        '<div class="sb" style="min-height:20mm;"></div>'+
       '</div>'+
     '</div>'+
 
-    // ── SIGNATURES ──
-    '<div class="footer-sigs">'+
-      '<div class="sig-box">'+
-        '<div class="sig-title">Signature du vendeur (Solution Phone)</div>'+
+    // ── SIGNATURES côte à côte ──
+    '<div class="fs">'+
+      '<div class="sb2">'+
+        '<div class="st2">Signature vendeur (Solution Phone)</div>'+
       '</div>'+
-      '<div class="sig-box">'+
-        '<div class="sig-title">Signature de l\'acheteur</div>'+
+      '<div class="sb2">'+
+        '<div class="st2">Signature acheteur</div>'+
       '</div>'+
     '</div>'+
 
     // ── BARRE DE RÉFÉRENCE ──
-    '<div class="ref-bar">'+
-      'ID : '+p.id+' · IMEI : '+(p.imei||'—')+' · Date vente : '+dateVente+' · '+
-      'Mode : '+(p.modeVente||'CB')+
-      (repMontant > 0 ? ' · Reprise : '+p.repriseModele+' (-'+repMontant+'€)' : '')+
-      ' · SOLUTION PHONE — www.solution-phone.fr'+
+    '<div class="ref">'+
+      'ID:'+p.id+' · IMEI:'+(p.imei||'—')+' · Vente:'+dateVente+' · '+(p.modeVente||'CB')+
+      (repMontant > 0 ? ' · Reprise:'+p.repriseModele+' -'+repMontant+'€' : '')+
+      ' · SOLUTION PHONE — solution-phone.fr'+
     '</div>'+
 
   '</div></body></html>';
