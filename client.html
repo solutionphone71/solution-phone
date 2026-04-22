@@ -6,7 +6,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=1.0,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a1a">
+<meta name="theme-color" content="#f5f5f7">
 <title>Solution Phone — Prise en charge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap">
@@ -15,13 +15,13 @@
    BASE
 ══════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135deg,#0a0a1a 0%,#111127 40%,#0d1b2a 100%);font-family:'Inter',-apple-system,sans-serif;color:#e8eaf6;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:'Inter',-apple-system,sans-serif;color:#1d1d1f;-webkit-font-smoothing:antialiased;}
 :root{
-  --bg:#0a0a1a;--white:rgba(255,255,255,0.04);--red:#ff3b30;--red-d:#c0392b;
-  --blue:#60a5fa;--green:#34d399;--black:#e8eaf6;--gray:rgba(255,255,255,0.5);--gray2:rgba(255,255,255,0.3);
-  --sh-out:0 8px 32px rgba(0,0,0,0.4),0 0 15px rgba(255,59,48,0.05);
-  --sh-in:inset 0 2px 6px rgba(0,0,0,0.3);
-  --sh-card:0 8px 32px rgba(0,0,0,0.3),0 0 1px rgba(255,255,255,0.08);
+  --bg:#f5f5f7;--white:rgba(255,255,255,0.75);--red:#ff3b30;--red-d:#c0392b;
+  --blue:#007AFF;--green:#34c759;--black:#1d1d1f;--gray:#6e6e73;--gray2:#aeaeb2;
+  --sh-out:6px 6px 16px rgba(174,174,192,0.35),-4px -4px 12px rgba(255,255,255,0.9);
+  --sh-in:inset 3px 3px 8px rgba(174,174,192,0.3),inset -2px -2px 5px rgba(255,255,255,0.8);
+  --sh-card:0 8px 32px rgba(0,0,0,0.08),0 2px 8px rgba(0,0,0,0.04);
   --r:14px;--rL:22px;--rXL:28px;
 }
 
@@ -30,7 +30,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
 ══════════════════════════════════════ */
 #ss {
   position: fixed; inset: 0; z-index: 9999;
-  background: #0a0a12;
+  background: #f5f5f7;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   cursor: pointer; transition: opacity .4s;
@@ -49,7 +49,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
   content: '';
   position: absolute; inset: 0;
   background: radial-gradient(ellipse 60% 60% at 50% 50%,
-    rgba(255,59,48,0.18) 0%, transparent 70%);
+    rgba(255,59,48,0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 /* Contenu au-dessus */
@@ -64,38 +64,40 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
   background: linear-gradient(135deg, #ff3b30, #c9251b);
   border-radius: 24px;
   display: flex; align-items: center; justify-content: center; font-size: 44px;
-  box-shadow: 0 0 50px rgba(255,59,48,.5), 0 10px 30px rgba(0,0,0,.6);
+  box-shadow: 0 10px 40px rgba(255,59,48,.25), 0 4px 16px rgba(0,0,0,.1);
   animation: ss-float 3s ease-in-out infinite;
 }
 @keyframes ss-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
-.ss-name { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -.03em; }
-.ss-city { font-size: 12px; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .1em; }
+.ss-name { font-size: 28px; font-weight: 900; color: #1d1d1f; letter-spacing: -.03em; }
+.ss-city { font-size: 12px; color: #6e6e73; text-transform: uppercase; letter-spacing: .1em; }
 /* Badge roulette */
 .ss-roulette-badge {
   margin-top: 8px;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(0,0,0,.06);
   border-radius: 20px; padding: 10px 22px;
   display: flex; align-items: center; gap: 10px;
   backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.06);
 }
 .ss-badge-txt { text-align: left; }
-.ss-badge-title { font-size: 15px; font-weight: 800; color: #fff; }
-.ss-badge-sub { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.ss-badge-title { font-size: 15px; font-weight: 800; color: #1d1d1f; }
+.ss-badge-sub { font-size: 11px; color: #6e6e73; margin-top: 2px; }
 /* QR */
 .ss-qr-wrap {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(0,212,255,.2);
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(0,0,0,.06);
   border-radius: 16px; padding: 12px 16px;
   display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.06);
 }
 #ss-qr-img { width: 72px; height: 72px; border-radius: 8px; display: block; background: #fff; }
 .ss-qr-info { text-align: left; }
-.ss-qr-title { font-size: 13px; font-weight: 800; color: #fff; }
-.ss-qr-sub { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 3px; }
+.ss-qr-title { font-size: 13px; font-weight: 800; color: #1d1d1f; }
+.ss-qr-sub { font-size: 11px; color: #6e6e73; margin-top: 3px; }
 /* Tap hint */
 .ss-tap {
-  font-size: 12px; color: rgba(255,255,255,.25);
+  font-size: 12px; color: rgba(0,0,0,.25);
   letter-spacing: .04em;
   animation: ss-blink 2.5s ease-in-out infinite;
 }
@@ -104,7 +106,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
 /* ══════════════════════════════════════
    APP SHELL
 ══════════════════════════════════════ */
-#app{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);}
+#app{position:fixed;inset:0;display:none;flex-direction:column;background:#f5f5f7;}
 
 /* Header */
 #hdr{
@@ -294,11 +296,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
 /* Badge QualiRépar */
 .qr-badge {
   display: flex; align-items: center; gap: 10px;
-  background: linear-gradient(135deg, #0a3d1f, #0d5a2c);
-  border: 1.5px solid #22c55e;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1.5px solid #bbf7d0;
   border-radius: var(--r); padding: 10px 16px;
   margin-bottom: 16px;
-  box-shadow: 0 0 20px rgba(34,197,94,0.15);
+  box-shadow: 0 4px 16px rgba(34,197,94,0.1);
 }
 .qr-badge-icon {
   width: 38px; height: 38px; flex-shrink: 0;
@@ -307,12 +309,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
   font-size: 22px;
 }
 .qr-badge-text { flex: 1; }
-.qr-badge-title { font-size: 12px; font-weight: 800; color: #4ade80; letter-spacing: .04em; }
-.qr-badge-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 1px; }
+.qr-badge-title { font-size: 12px; font-weight: 800; color: #16a34a; letter-spacing: .04em; }
+.qr-badge-sub { font-size: 11px; color: #6e6e73; margin-top: 1px; }
 .qr-badge-price {
-  font-size: 22px; font-weight: 900; color: #4ade80;
+  font-size: 22px; font-weight: 900; color: #16a34a;
   font-family: -apple-system,sans-serif; letter-spacing: -.03em;
-  text-shadow: 0 0 12px rgba(74,222,128,0.4);
 }
 
 /* Consent */
@@ -450,27 +451,13 @@ html,body{height:100%;width:100%;overflow:hidden;background:linear-gradient(135d
   .scr{padding:20px 16px 100px;}
 }
 
-/* ═══ FUTUR THEME — DARK GLASS ═══ */
+/* ═══ LIGHT THEME ENHANCEMENTS ═══ */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(255,59,48,0.3);}50%{box-shadow:0 0 20px rgba(255,59,48,0.6);}}
 .scr{animation:fadeInUp 0.5s ease-out both;}
-input,select,textarea{background:rgba(255,255,255,0.06)!important;color:#e8eaf6!important;border:1px solid rgba(255,255,255,0.1)!important;}
-input:focus,select:focus,textarea:focus{border-color:rgba(255,59,48,0.5)!important;box-shadow:0 0 0 3px rgba(255,59,48,0.1),0 0 15px rgba(255,59,48,0.1)!important;}
-input::placeholder{color:rgba(255,255,255,0.25)!important;}
-.panne-btn{background:rgba(255,255,255,0.04)!important;color:rgba(255,255,255,0.7)!important;border:1px solid rgba(255,255,255,0.08)!important;backdrop-filter:blur(8px);}
-.panne-btn.selected{background:linear-gradient(135deg,rgba(255,59,48,0.15),rgba(255,59,48,0.05))!important;color:#ff3b30!important;border-color:rgba(255,59,48,0.3)!important;box-shadow:0 0 15px rgba(255,59,48,0.15)!important;}
-.panne-btn:hover{background:rgba(255,255,255,0.08)!important;color:#fff!important;}
-.btn-main{background:linear-gradient(135deg,#ff3b30,#c0392b)!important;box-shadow:0 4px 20px rgba(255,59,48,0.35)!important;}
-.btn-main:hover{box-shadow:0 6px 30px rgba(255,59,48,0.5)!important;}
-.step-bar .step{color:rgba(255,255,255,0.3)!important;}
-.step-bar .step.active{color:#ff3b30!important;}
-.section-title,.form-title{color:#fff!important;}
-label{color:rgba(255,255,255,0.6)!important;}
-select option{background:#1a1a3a!important;color:#e8eaf6!important;}
 ::-webkit-scrollbar{width:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:rgba(255,59,48,0.3);border-radius:3px;}
-::selection{background:rgba(255,59,48,0.3);color:#fff;}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px;}
+::selection{background:rgba(255,59,48,0.15);color:#1d1d1f;}
 </style>
 </head>
 <body>
@@ -480,8 +467,8 @@ select option{background:#1a1a3a!important;color:#e8eaf6!important;}
   <canvas id="ss-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
   <div id="ss-tap" style="
     position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
-    font-family:-apple-system,sans-serif;font-size:14px;font-weight:600;
-    color:rgba(255,255,255,0.5);letter-spacing:.06em;text-align:center;
+    font-family:'Inter',-apple-system,sans-serif;font-size:14px;font-weight:600;
+    color:rgba(0,0,0,0.3);letter-spacing:.06em;text-align:center;
     pointer-events:none;white-space:nowrap;
   ">Toucher pour commencer</div>
 </div>VER — ROUE FOND PLEIN ÉCRAN ═══ -->
@@ -990,7 +977,7 @@ var _appReady = false;
 
 
 /* ══════════════════════════════════════════════════════════════
-   SCREENSAVER — Canvas full-screen, cyberpunk, iOS-proof
+   SCREENSAVER — Canvas full-screen, modern light, iOS-proof
 ══════════════════════════════════════════════════════════════ */
 var _ssAnim = null;
 var _ssImg = new Image();
@@ -1003,15 +990,10 @@ var _tapDir = 1;
 var _laserY = 0; // Scanneur laser QR
 var _ssColors = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#AF52DE','#FF2D55','#5AC8FA'];
 var _ssPrizes = ['Réduction','Étui','Câble','Verre','5 €','Surprise','Coque','Chance'];
-var _ssOrbitronLoaded = false;
+var _ssInterLoaded = true; // Inter already loaded via stylesheet
 
 function _ssLoadFonts() {
-  if (_ssOrbitronLoaded) return;
-  var lnk = document.createElement('link');
-  lnk.rel = 'stylesheet';
-  lnk.href = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=Rajdhani:wght@700&display=swap';
-  document.head.appendChild(lnk);
-  _ssOrbitronLoaded = true;
+  // Inter is already loaded via stylesheet, no extra fonts needed
 }
 
 function _ssStart() {
@@ -1027,345 +1009,347 @@ function _ssStart() {
 
   var W = window.innerWidth, H = window.innerHeight;
   var leftW = W * 0.5, rightW = W * 0.5;
-  var wheelR = Math.min(rightW, H) * 0.25;
-  var wheelCX = leftW + rightW * 0.5;
-  var wheelCY = H * 0.35;
   var N = _ssColors.length;
+  var ledCount = 24;
 
   function drawFrame() {
     ctx.clearRect(0, 0, W, H);
 
     /* ════════════════════════════════
-       GAUCHE — Pub cyberpunk (inchangée)
+       FOND CLAIR — Style moderne
+    ════════════════════════════════ */
+    ctx.fillStyle = '#f5f5f7';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle dot pattern
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.03)';
+    for (var dotx = 0; dotx < W; dotx += 24) {
+      for (var doty = 0; doty < H; doty += 24) {
+        ctx.beginPath();
+        ctx.arc(dotx, doty, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    // Soft radial accent
+    ctx.save();
+    var gRed = ctx.createRadialGradient(W * 0.7, H * 0.3, 0, W * 0.7, H * 0.3, W * 0.45);
+    gRed.addColorStop(0, 'rgba(255,59,48,0.05)');
+    gRed.addColorStop(1, 'transparent');
+    ctx.fillStyle = gRed;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+
+    /* ════════════════════════════════
+       GAUCHE — Image promo
     ════════════════════════════════ */
     if (_ssImg.complete && _ssImg.naturalWidth > 0) {
       var iAR = _ssImg.naturalWidth / _ssImg.naturalHeight;
-      var bW = leftW, bH = H;
-      var dW = bH * iAR, dH = bH;
-      if (dW < bW) { dW = bW; dH = bW / iAR; }
-      var dx = (bW - dW) / 2, dy = (bH - dH) / 2;
+      var dH2 = H;
+      var dW2 = dH2 * iAR;
+      if (dW2 < leftW) { dW2 = leftW; dH2 = dW2 / iAR; }
+      var imgDx = (leftW - dW2) / 2;
+      var imgDy = (H - dH2) / 2;
       ctx.save();
-      ctx.beginPath(); ctx.rect(0, 0, bW, bH); ctx.clip();
-      ctx.globalAlpha = 0.88;
-      ctx.drawImage(_ssImg, dx, dy, dW, dH);
+      ctx.beginPath(); ctx.rect(0, 0, leftW, H); ctx.clip();
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(_ssImg, imgDx, imgDy, dW2, dH2);
       ctx.globalAlpha = 1;
       ctx.restore();
     } else {
-      ctx.fillStyle = '#0a0a18'; ctx.fillRect(0, 0, leftW, H);
+      ctx.fillStyle = '#ececee';
+      ctx.fillRect(0, 0, leftW, H);
     }
-    // Fondu bord droit pub
-    var gL = ctx.createLinearGradient(leftW * 0.65, 0, leftW, 0);
-    gL.addColorStop(0, 'rgba(3,8,16,0)');
-    gL.addColorStop(1, 'rgba(3,8,16,1)');
+    // Soft fade on right edge
+    var gL = ctx.createLinearGradient(leftW * 0.7, 0, leftW, 0);
+    gL.addColorStop(0, 'rgba(245,245,247,0)');
+    gL.addColorStop(1, 'rgba(245,245,247,1)');
     ctx.fillStyle = gL; ctx.fillRect(0, 0, leftW, H);
 
     /* ════════════════════════════════
-       DROITE — Fond Cyberpunk Premium
+       DROITE — Fond clair moderne
     ════════════════════════════════ */
-    // Fond noir profond
-    ctx.fillStyle = '#030810'; ctx.fillRect(leftW, 0, rightW, H);
+    ctx.fillStyle = '#f5f5f7';
+    ctx.fillRect(leftW, 0, rightW, H);
 
-    // Grille numérique subtile
+    // Subtle separator line
     ctx.save();
-    ctx.strokeStyle = 'rgba(0,255,210,0.04)'; ctx.lineWidth = 0.5;
-    var grid = Math.round(H * 0.05);
-    for (var gx = leftW; gx <= leftW + rightW; gx += grid) {
-      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
-    }
-    for (var gy = 0; gy <= H; gy += grid) {
-      ctx.beginPath(); ctx.moveTo(leftW, gy); ctx.lineTo(leftW + rightW, gy); ctx.stroke();
-    }
-    ctx.restore();
-
-    // Ligne séparatrice néon
-    var lineGrad = ctx.createLinearGradient(leftW, 0, leftW, H);
-    lineGrad.addColorStop(0,   'rgba(255,40,60,0)');
-    lineGrad.addColorStop(0.15,'rgba(255,40,60,0.9)');
-    lineGrad.addColorStop(0.85,'rgba(0,240,200,0.9)');
-    lineGrad.addColorStop(1,   'rgba(0,240,200,0)');
-    ctx.save();
-    ctx.shadowColor = '#ff2840'; ctx.shadowBlur = 18;
-    ctx.strokeStyle = lineGrad; ctx.lineWidth = 2;
+    var sepGrad = ctx.createLinearGradient(leftW, H * 0.1, leftW, H * 0.9);
+    sepGrad.addColorStop(0,   'rgba(0,0,0,0)');
+    sepGrad.addColorStop(0.3, 'rgba(0,0,0,0.06)');
+    sepGrad.addColorStop(0.7, 'rgba(0,0,0,0.06)');
+    sepGrad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.strokeStyle = sepGrad;
+    ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(leftW, 0); ctx.lineTo(leftW, H); ctx.stroke();
     ctx.restore();
 
-    var cx = leftW + rightW * 0.5;
+    var ccx = leftW + rightW * 0.5;
 
     /* ════════════════════════════════
-       TITRE NÉON ROUGE
+       TITRE — Style moderne
     ════════════════════════════════ */
     ctx.save();
-    var titleY = H * 0.1;
-    ctx.font = '900 ' + Math.round(H * 0.038) + 'px Orbitron,-apple-system,sans-serif';
+    var titleY = H * 0.09;
+    ctx.font = '900 ' + Math.round(H * 0.034) + 'px Inter,-apple-system,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    // Glow rouge
-    ctx.shadowColor = '#ff2840';
-    ctx.shadowBlur = 30 + Math.sin(_wheelAngle * 3) * 10;
-    ctx.fillStyle = '#ff4060';
-    ctx.fillText('🎰 GAGNEZ UN CADEAU !', cx, titleY);
-    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#1d1d1f';
+    ctx.fillText('Gagnez un cadeau !', ccx, titleY);
+    ctx.font = '500 ' + Math.round(H * 0.016) + 'px Inter,-apple-system,sans-serif';
+    ctx.fillStyle = '#6e6e73';
+    ctx.fillText('Laissez un avis Google et tentez votre chance', ccx, titleY + H * 0.04);
     ctx.restore();
 
     /* ════════════════════════════════
-       ROULETTE 3D CYBER-TECH
+       ROULETTE — Style moderne clair
     ════════════════════════════════ */
-    var wCX = cx;
+    var wCX = ccx;
     var wCY = H * 0.37;
-    var wR  = Math.min(rightW, H) * 0.24;
-    var N   = _ssColors.length;
+    var wR  = Math.min(rightW, H) * 0.23;
 
-    // Ombre portée / flottement 3D
+    // White circle base with shadow
     ctx.save();
-    ctx.shadowColor = 'rgba(0,240,200,0.4)';
-    ctx.shadowBlur  = 40 + Math.sin(_wheelAngle * 2) * 12;
-    ctx.shadowOffsetY = 6;
+    ctx.shadowColor = 'rgba(0,0,0,0.08)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(wCX, wCY, wR + 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
-    // Segments avec effet métallique
+    // Subtle red ring
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,59,48,0.15)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(wCX, wCY, wR + 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Pearl white LEDs
+    for (var li = 0; li < ledCount; li++) {
+      var ledAngle = (li / ledCount) * Math.PI * 2 + _wheelAngle * 0.5;
+      var ledRad = wR + 7;
+      var lx = wCX + Math.cos(ledAngle) * ledRad;
+      var ly = wCY + Math.sin(ledAngle) * ledRad;
+      var ledBright = (li % 2 === Math.floor(_wheelAngle * 2) % 2) ? 1 : 0.4;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,' + ledBright + ')';
+      ctx.shadowColor = 'rgba(255,59,48,' + (ledBright * 0.4) + ')';
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Segments
     for (var i = 0; i < N; i++) {
       var a0 = _wheelAngle + (i / N) * Math.PI * 2;
       var a1 = _wheelAngle + ((i + 1) / N) * Math.PI * 2;
-      var aMid = (a0 + a1) / 2;
 
-      // Gradient métallique par segment
-      var gx1 = wCX + Math.cos(aMid) * wR * 0.3;
-      var gy1 = wCY + Math.sin(aMid) * wR * 0.3;
-      var gx2 = wCX + Math.cos(aMid) * wR;
-      var gy2 = wCY + Math.sin(aMid) * wR;
-      var segGrad = ctx.createLinearGradient(gx1, gy1, gx2, gy2);
-      var baseColor = _ssColors[i];
-      segGrad.addColorStop(0, baseColor + 'dd');
-      segGrad.addColorStop(0.5, baseColor + 'ff');
-      segGrad.addColorStop(1, baseColor + '88');
-
+      ctx.save();
       ctx.beginPath(); ctx.moveTo(wCX, wCY);
       ctx.arc(wCX, wCY, wR, a0, a1);
-      ctx.fillStyle = segGrad; ctx.fill();
+      ctx.closePath();
+      ctx.fillStyle = _ssColors[i];
+      ctx.fill();
 
-      // Bordure néon fine cyan/rouge alternée
+      // White separator
       ctx.beginPath(); ctx.moveTo(wCX, wCY);
-      ctx.arc(wCX, wCY, wR, a0, a1);
-      ctx.strokeStyle = i % 2 === 0 ? 'rgba(0,240,200,0.7)' : 'rgba(255,40,60,0.7)';
-      ctx.lineWidth = 1.5;
+      ctx.lineTo(wCX + Math.cos(a0) * wR, wCY + Math.sin(a0) * wR);
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.restore();
     }
-    ctx.restore();
 
-    // Reflet lumineux sur la roue (arc blanc semi-transparent en haut)
+    // Reflection on top
     ctx.save();
     var refGrad = ctx.createRadialGradient(wCX, wCY - wR * 0.3, 0, wCX, wCY, wR);
-    refGrad.addColorStop(0,   'rgba(255,255,255,0.18)');
-    refGrad.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+    refGrad.addColorStop(0,   'rgba(255,255,255,0.25)');
+    refGrad.addColorStop(0.4, 'rgba(255,255,255,0.06)');
     refGrad.addColorStop(1,   'rgba(255,255,255,0)');
     ctx.beginPath();
     ctx.arc(wCX, wCY, wR, 0, Math.PI * 2);
     ctx.fillStyle = refGrad; ctx.fill();
     ctx.restore();
 
-    // Icônes/textes segments
+    // Prize text
     for (var i = 0; i < N; i++) {
       ctx.save();
       ctx.translate(wCX, wCY);
       ctx.rotate(_wheelAngle + (i + 0.5) / N * Math.PI * 2);
       ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 6;
-      ctx.font = 'bold ' + Math.round(wR * 0.14) + 'px Orbitron,-apple-system,sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 3;
+      ctx.font = '700 ' + Math.round(wR * 0.12) + 'px Inter,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(_ssPrizes[i], wR * 0.63, 0);
       ctx.restore();
     }
 
-    // Anneau extérieur néon
+    // Center hub — white pearl
     ctx.save();
-    var neonPulse = 0.5 + Math.sin(_wheelAngle * 4) * 0.5;
-    ctx.shadowColor = 'rgba(0,240,200,' + (0.5 + neonPulse * 0.5) + ')';
-    ctx.shadowBlur  = 15 + neonPulse * 15;
-    ctx.strokeStyle = 'rgba(0,240,200,' + (0.6 + neonPulse * 0.4) + ')';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(wCX, wCY, wR + 4, 0, Math.PI * 2); ctx.stroke();
-    // Anneau intérieur rouge
-    ctx.shadowColor = 'rgba(255,40,60,0.6)';
-    ctx.shadowBlur  = 10;
-    ctx.strokeStyle = 'rgba(255,40,60,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(wCX, wCY, wR + 8, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
-
-    // Centre métallique
-    ctx.save();
-    var hubGrad = ctx.createRadialGradient(wCX - wR*0.04, wCY - wR*0.04, 0, wCX, wCY, wR * 0.1);
-    hubGrad.addColorStop(0, '#888'); hubGrad.addColorStop(1, '#111');
-    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 12;
-    ctx.beginPath(); ctx.arc(wCX, wCY, wR * 0.1, 0, Math.PI * 2);
+    var hubGrad = ctx.createRadialGradient(wCX - wR*0.03, wCY - wR*0.03, 0, wCX, wCY, wR * 0.12);
+    hubGrad.addColorStop(0, '#ffffff');
+    hubGrad.addColorStop(1, '#e5e5ea');
+    ctx.shadowColor = 'rgba(0,0,0,0.12)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(wCX, wCY, wR * 0.12, 0, Math.PI * 2);
     ctx.fillStyle = hubGrad; ctx.fill();
-    ctx.strokeStyle = 'rgba(0,240,200,0.8)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#ff3b30';
+    ctx.font = '900 ' + Math.round(wR * 0.09) + 'px Inter,-apple-system,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SP', wCX, wCY);
     ctx.restore();
 
-    // Pointeur néon
+    // Red pointer (right side)
     ctx.save();
-    var pX = wCX - wR - 6;
-    var pPulse = 0.7 + Math.sin(_wheelAngle * 6) * 0.3;
-    ctx.shadowColor = 'rgba(255,40,60,' + pPulse + ')';
-    ctx.shadowBlur = 12 + pPulse * 8;
-    var pGrad = ctx.createLinearGradient(pX - 16, wCY, pX, wCY);
-    pGrad.addColorStop(0, 'rgba(255,40,60,0)');
-    pGrad.addColorStop(1, '#ff2840');
-    ctx.fillStyle = pGrad;
+    var pX = wCX + wR + 14;
+    ctx.shadowColor = 'rgba(255,59,48,0.3)';
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = '#ff3b30';
     ctx.beginPath();
     ctx.moveTo(pX, wCY);
-    ctx.lineTo(pX - 16, wCY - 9);
-    ctx.lineTo(pX - 16, wCY + 9);
+    ctx.lineTo(pX + 18, wCY - 12);
+    ctx.lineTo(pX + 18, wCY + 12);
     ctx.closePath(); ctx.fill();
     ctx.restore();
 
     /* ════════════════════════════════
-       QR CODE — Cadre Cyber-Tech
+       QR CODE — Cadre moderne
     ════════════════════════════════ */
     var qrSize = Math.min(rightW * 0.18, H * 0.13);
-    var qrX = leftW + rightW * 0.12;
-    var qrY = H * 0.625;
-    var qrPad = 6;
-    var qrPulse = 0.3 + Math.sin(_wheelAngle * 3 + 1) * 0.3;
+    var qrX = leftW + rightW * 0.1;
+    var qrY = H * 0.62;
+    var qrPad = 10;
 
-    // Fond verre fumé QR
+    // White card for QR section
     ctx.save();
-    ctx.shadowColor = 'rgba(0,240,200,' + (0.4 + qrPulse) + ')';
-    ctx.shadowBlur = 20 + qrPulse * 15;
-    ctx.fillStyle = 'rgba(0,240,200,0.06)';
-    ctx.strokeStyle = 'rgba(0,240,200,' + (0.5 + qrPulse * 0.5) + ')';
-    ctx.lineWidth = 1.5;
-    var qrFX = qrX - qrPad, qrFY = qrY - qrPad;
-    var qrFW = qrSize + qrPad * 2, qrFH = qrSize + qrPad * 2;
-    roundRect(ctx, qrFX, qrFY, qrFW, qrFH, 8);
-    ctx.fill(); ctx.stroke();
-    ctx.restore();
-
-    // Coins néon cyan
-    var cSize = 14, cW = 2.5;
-    var corners = [[qrFX, qrFY],[qrFX+qrFW, qrFY],[qrFX, qrFY+qrFH],[qrFX+qrFW, qrFY+qrFH]];
-    var cornerDirs = [[1,1],[-1,1],[1,-1],[-1,-1]];
-    ctx.save();
-    ctx.strokeStyle = '#00f0c8'; ctx.lineWidth = cW;
-    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 8;
-    for (var ci = 0; ci < 4; ci++) {
-      var cx2 = corners[ci][0], cy2 = corners[ci][1];
-      var dx2 = cornerDirs[ci][0], dy2 = cornerDirs[ci][1];
-      ctx.beginPath();
-      ctx.moveTo(cx2, cy2 + dy2 * cSize); ctx.lineTo(cx2, cy2); ctx.lineTo(cx2 + dx2 * cSize, cy2);
-      ctx.stroke();
-    }
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#ffffff';
+    var qrCardX = qrX - qrPad - 4;
+    var qrCardY = qrY - qrPad - 4;
+    var qrCardW = rightW * 0.8;
+    var qrCardH = qrSize + qrPad * 2 + 8;
+    roundRect(ctx, qrCardX, qrCardY, qrCardW, qrCardH, 16);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.restore();
 
     // QR image
     if (_qrImg.complete && _qrImg.naturalWidth > 0) {
+      ctx.save();
+      roundRect(ctx, qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 8);
+      ctx.clip();
       ctx.fillStyle = '#ffffff';
-      roundRect(ctx, qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 4);
-      ctx.fill();
+      ctx.fillRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4);
       ctx.drawImage(_qrImg, qrX, qrY, qrSize, qrSize);
+      ctx.restore();
     }
 
-    // Texte QR
-    var qrTX = qrX + qrSize + 14;
-    var qrTY = qrY + qrSize * 0.15;
+    // QR text
+    var qrTX = qrX + qrSize + 16;
+    var qrTY = qrY + qrSize * 0.1;
     ctx.save();
-    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 12;
-    ctx.fillStyle = '#00f0c8';
-    ctx.font = 'bold ' + Math.round(H * 0.021) + 'px Orbitron,-apple-system,sans-serif';
+    ctx.fillStyle = '#ff3b30';
+    ctx.font = '800 ' + Math.round(H * 0.02) + 'px Inter,-apple-system,sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('SCANNEZ', qrTX, qrTY);
-    ctx.fillText('LE QR CODE', qrTX, qrTY + H * 0.027);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.font = Math.round(H * 0.015) + 'px -apple-system,sans-serif';
-    ctx.fillText('Accédez à la roue', qrTX, qrTY + H * 0.065);
-    ctx.fillText('des cadeaux', qrTX, qrTY + H * 0.085);
-    ctx.restore();
-
-    /* Scanneur laser sur QR code */
-    _laserY = (_laserY + H * 0.0008) % (qrSize + 2);
-    var laserGrad = ctx.createLinearGradient(qrX, qrY + _laserY - 4, qrX, qrY + _laserY + 4);
-    laserGrad.addColorStop(0,   'rgba(0,240,200,0)');
-    laserGrad.addColorStop(0.5, 'rgba(0,240,200,0.85)');
-    laserGrad.addColorStop(1,   'rgba(0,240,200,0)');
-    ctx.save();
-    ctx.beginPath(); ctx.rect(qrX, qrY, qrSize, qrSize); ctx.clip();
-    ctx.fillStyle = laserGrad;
-    ctx.fillRect(qrX, qrY + _laserY - 4, qrSize, 8);
-    ctx.shadowColor = '#00f0c8'; ctx.shadowBlur = 8;
-    ctx.strokeStyle = 'rgba(0,240,200,0.9)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(qrX, qrY + _laserY); ctx.lineTo(qrX + qrSize, qrY + _laserY); ctx.stroke();
+    ctx.fillText('Scannez le QR code', qrTX, qrTY);
+    ctx.fillStyle = '#6e6e73';
+    ctx.font = '500 ' + Math.round(H * 0.015) + 'px Inter,-apple-system,sans-serif';
+    ctx.fillText('Accédez à la roue des cadeaux', qrTX, qrTY + H * 0.032);
+    ctx.fillText('depuis votre smartphone', qrTX, qrTY + H * 0.055);
     ctx.restore();
 
     /* ════════════════════════════════
-       3 ÉTAPES — Dalles verre fumé
+       3 ÉTAPES — Cartes modernes
     ════════════════════════════════ */
     var stepData = [
-      {icon:'📲', label:'Scannez le QR code'},
-      {icon:'⭐', label:'Laissez un avis Google'},
-      {icon:'🎰', label:'Tournez & gagnez !'}
+      {icon:'\u{1F4F2}', num:'1', label:'Scannez le QR code'},
+      {icon:'\u2B50', num:'2', label:'Laissez un avis Google'},
+      {icon:'\u{1F381}', num:'3', label:'Tournez la roue !'}
     ];
-    var stepStartY = H * 0.77;
-    var stepH      = (H - stepStartY - H * 0.03) / 3.4;
-    var stepW      = rightW - 28;
-    var stepX      = leftW + 14;
+    var stepStartY = H * 0.78;
+    var stepH      = Math.min((H - stepStartY - H * 0.04) / 3.2, H * 0.058);
+    var stepW      = rightW * 0.82;
+    var stepX      = leftW + (rightW - stepW) / 2;
 
-    // Animation séquentielle : une dalle s'illumine à la fois
     var activeStep = Math.floor((_wheelAngle * 3) / (Math.PI * 2)) % 3;
 
     for (var si = 0; si < 3; si++) {
-      var sy  = stepStartY + si * (stepH + 7);
+      var sy  = stepStartY + si * (stepH + 8);
       var isActive = (si === activeStep);
-      var stepPulse = isActive ? (0.5 + Math.sin(_wheelAngle * 8) * 0.5) : 0;
 
-      // Dalle verre fumé
+      // Card background
       ctx.save();
       if (isActive) {
-        ctx.shadowColor = 'rgba(0,240,200,' + (0.5 + stepPulse * 0.5) + ')';
-        ctx.shadowBlur  = 16 + stepPulse * 12;
+        ctx.shadowColor = 'rgba(255,59,48,0.12)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 4;
+      } else {
+        ctx.shadowColor = 'rgba(0,0,0,0.04)';
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetY = 2;
       }
-      ctx.fillStyle = isActive
-        ? 'rgba(0,240,200,0.08)'
-        : 'rgba(255,255,255,0.03)';
-      ctx.strokeStyle = isActive
-        ? 'rgba(0,240,200,' + (0.5 + stepPulse * 0.5) + ')'
-        : 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = isActive ? 1.5 : 0.8;
-      roundRect(ctx, stepX, sy, stepW, stepH, 10);
-      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255,255,255,0.7)';
+      roundRect(ctx, stepX, sy, stepW, stepH, 12);
+      ctx.fill();
+      if (isActive) {
+        ctx.strokeStyle = 'rgba(255,59,48,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
       ctx.restore();
 
-      // Numéro
+      // Number badge
       ctx.save();
-      ctx.fillStyle = isActive ? '#00f0c8' : 'rgba(255,255,255,0.3)';
-      ctx.shadowColor = '#00f0c8';
-      ctx.shadowBlur  = isActive ? 10 : 0;
-      ctx.font = 'bold ' + Math.round(stepH * 0.5) + 'px Orbitron,-apple-system,sans-serif';
+      var badgeX = stepX + stepH * 0.4;
+      var badgeY = sy + stepH * 0.5;
+      var badgeR = stepH * 0.28;
+      ctx.fillStyle = isActive ? '#ff3b30' : '#e5e5ea';
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = isActive ? '#fff' : '#6e6e73';
+      ctx.font = '800 ' + Math.round(badgeR * 1.1) + 'px Inter,-apple-system,sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(si + 1, stepX + stepH * 0.55, sy + stepH * 0.5);
+      ctx.fillText(stepData[si].num, badgeX, badgeY);
       ctx.restore();
 
-      // Icône
-      ctx.font = Math.round(stepH * 0.45) + 'px sans-serif';
+      // Icon
+      ctx.font = Math.round(stepH * 0.4) + 'px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(stepData[si].icon, stepX + stepH * 1.3, sy + stepH * 0.5);
+      ctx.fillText(stepData[si].icon, stepX + stepH * 1.1, sy + stepH * 0.5);
 
       // Label
       ctx.save();
-      ctx.fillStyle = isActive ? '#fff' : 'rgba(255,255,255,0.5)';
-      ctx.font = 'bold ' + Math.round(H * 0.017) + 'px Rajdhani,-apple-system,sans-serif';
+      ctx.fillStyle = isActive ? '#1d1d1f' : '#6e6e73';
+      ctx.font = '700 ' + Math.round(H * 0.016) + 'px Inter,-apple-system,sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.fillText(stepData[si].label, stepX + stepH * 1.9, sy + stepH * 0.5);
+      ctx.fillText(stepData[si].label, stepX + stepH * 1.6, sy + stepH * 0.5);
       ctx.restore();
     }
 
     // Tap hint
-    _tapAlpha += 0.025 * _tapDir;
-    if (_tapAlpha > 0.7) _tapDir = -1;
-    if (_tapAlpha < 0.15) _tapDir = 1;
+    _tapAlpha += 0.02 * _tapDir;
+    if (_tapAlpha > 0.5) _tapDir = -1;
+    if (_tapAlpha < 0.12) _tapDir = 1;
     ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,' + _tapAlpha + ')';
-    ctx.font = '600 ' + Math.round(H * 0.017) + 'px -apple-system,sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,' + _tapAlpha + ')';
+    ctx.font = '600 ' + Math.round(H * 0.015) + 'px Inter,-apple-system,sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('✦ Toucher pour commencer ✦', W / 2, H - H * 0.025);
+    ctx.fillText('Toucher pour commencer', W / 2, H - H * 0.02);
     ctx.restore();
 
     _wheelAngle += 0.004;
