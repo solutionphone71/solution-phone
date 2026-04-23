@@ -36,6 +36,12 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 /* Dropdown téléphones en gras */
 #f-phone, #fpdf-phone-select, #mlx-panne { font-weight:700 !important; font-size:15px !important; color:#fff !important; }
 #f-phone option, #fpdf-phone-select option, #mlx-panne option { font-weight:700 !important; font-size:14px !important; color:#000; background:#fff; padding:8px 4px; }
+
+/* ══ Z DE CAISSE — FOND BLANC LISIBLE ══ */
+.z-white-block { background:#fff !important; color:#1a1a2e !important; }
+.z-white-block div, .z-white-block span, .z-white-block td, .z-white-block th,
+.z-white-block b, .z-white-block p, .z-white-block label { color:#1a1a2e; }
+.z-white-block th { color:#666 !important; }
 </style>
 <style id="aria-cmd-css">
 /* ══ ARIA COMMAND CENTER — FUTURISTIC ══ */
@@ -1500,7 +1506,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div id="caisse-jour-totaux" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;"></div>
 
         <!-- Transactions du jour -->
-        <div class="card" style="margin-bottom:16px;background:#fff;color:#1a1a2e;">
+        <div class="card z-white-block" style="margin-bottom:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
             <span style="font-weight:700;font-size:15px;color:#1a1a2e;">🧾 Transactions</span>
             <span id="caisse-jour-date" style="font-size:13px;color:#666;"></span>
@@ -1523,7 +1529,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
 
         <!-- Z REPARATIONS -->
-        <div class="card" style="border:2px solid var(--primary);background:#fff;color:#1a1a2e;">
+        <div class="card z-white-block" style="border:2px solid var(--primary);">
           <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--primary);">🔒 Z de Caisse — Principal</div>
           <div style="font-size:11px;color:#666;margin-bottom:8px;">Réparations + Accessoires + Tél. neufs · TVA 20%</div>
           <div id="caisse-z-recap" style="font-size:13px;color:#333;margin-bottom:10px;"></div>
@@ -1546,7 +1552,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <button onclick="genererZCaisse()" class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;font-weight:700;">🔒 Z Caisse Principal</button>
         </div>
         <!-- Z SMARTPHONES -->
-        <div class="card" id="caisse-z-smart-block" style="border:2px solid #8b5cf6;display:none;margin-top:12px;background:#fff;color:#1a1a2e;">
+        <div class="card z-white-block" id="caisse-z-smart-block" style="border:2px solid #8b5cf6;display:none;margin-top:12px;">
           <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:#8b5cf6;">📱 Z de Caisse — Smartphones</div>
           <div style="font-size:11px;color:#666;margin-bottom:8px;">TVA sur marge · Art.297A CGI</div>
           <div id="caisse-z-smart-recap" style="font-size:13px;color:#333;margin-bottom:10px;"></div>
@@ -6133,7 +6139,7 @@ function renderCaisseJour(){
     var moisNom=new Date(moisFiltreSmart+'-15').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
     smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+moisNom+'</span>';
   }
-  var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){var repTxt=totSmart.reprises>0?' · Reprises : <b style="color:#c0392b;">-'+totSmart.reprises.toFixed(2)+' €</b> · Net encaissé : <b style="color:#8b5cf6;">'+totSmart.netEncaisse.toFixed(2)+' €</b>':'';sr.innerHTML='<b style="color:#1a1a2e;">'+totSmart.nb+' vente(s) smartphone</b> · Total ventes : <b style="color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</b>'+repTxt+' · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' € · Chèque : '+totSmart.cheque.toFixed(2)+' € · Virement : '+totSmart.virement.toFixed(2)+' €';}
+  var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.style.color='#333';var repTxt=totSmart.reprises>0?' · Reprises : <b style="color:#c0392b;">-'+totSmart.reprises.toFixed(2)+' €</b> · Net encaissé : <b style="color:#8b5cf6;">'+totSmart.netEncaisse.toFixed(2)+' €</b>':'';sr.innerHTML='<b style="color:#1a1a2e;">'+totSmart.nb+' vente(s) smartphone</b> · Total ventes : <b style="color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</b>'+repTxt+' · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' € · Chèque : '+totSmart.cheque.toFixed(2)+' € · Virement : '+totSmart.virement.toFixed(2)+' €';}
 }
 
 function genererZCaisseSmartphones(){
