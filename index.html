@@ -1487,49 +1487,58 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- VUE : CAISSE DU JOUR -->
       <div id="caisse-view-jour">
-        <!-- Totaux du jour -->
+        <!-- Sélecteur de mois pour Z de Caisse -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <span style="font-weight:700;font-size:14px;">📅 Période :</span>
+          <select id="caisse-z-mois-select" onchange="changerMoisZCaisse(this.value)"
+            style="padding:8px 14px;border:2px solid var(--primary);border-radius:8px;font-size:14px;font-weight:700;background:var(--bg-card);color:var(--primary);cursor:pointer;">
+          </select>
+          <span id="caisse-z-mois-label" style="font-size:13px;color:var(--text-muted);"></span>
+        </div>
+
+        <!-- Totaux du jour/mois -->
         <div id="caisse-jour-totaux" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;"></div>
 
         <!-- Transactions du jour -->
-        <div class="card" style="margin-bottom:16px;">
+        <div class="card" style="margin-bottom:16px;background:#fff;color:#1a1a2e;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <span style="font-weight:700;font-size:15px;">🧾 Transactions du jour</span>
-            <span id="caisse-jour-date" style="font-size:13px;color:var(--text-muted);"></span>
+            <span style="font-weight:700;font-size:15px;color:#1a1a2e;">🧾 Transactions</span>
+            <span id="caisse-jour-date" style="font-size:13px;color:#666;"></span>
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
-              <tr style="background:rgba(255,255,255,0.04);text-align:left;">
-                <th style="padding:8px;">Heure</th>
-                <th style="padding:8px;">Type</th>
-                <th style="padding:8px;">Description</th>
-                <th style="padding:8px;text-align:right;">Montant TTC</th>
-                <th style="padding:8px;text-align:center;">Mode</th>
+              <tr style="background:#f8fafc;text-align:left;color:#1a1a2e;">
+                <th style="padding:8px;color:#666;">Heure</th>
+                <th style="padding:8px;color:#666;">Type</th>
+                <th style="padding:8px;color:#666;">Description</th>
+                <th style="padding:8px;text-align:right;color:#666;">Montant TTC</th>
+                <th style="padding:8px;text-align:center;color:#666;">Mode</th>
               </tr>
             </thead>
             <tbody id="caisse-jour-tbody"></tbody>
           </table>
-          <div id="caisse-jour-empty" style="text-align:center;padding:24px;color:var(--text-muted);display:none;">
-            Aucune transaction aujourd'hui
+          <div id="caisse-jour-empty" style="text-align:center;padding:24px;color:#999;display:none;">
+            Aucune transaction pour cette période
           </div>
         </div>
 
         <!-- Z REPARATIONS -->
-        <div class="card" style="border:2px solid var(--primary);">
-          <div style="font-weight:700;font-size:15px;margin-bottom:4px;">🔒 Z de Caisse — Principal</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Réparations + Accessoires + Tél. neufs · TVA 20%</div>
-          <div id="caisse-z-recap" style="font-size:13px;color:var(--text-muted);margin-bottom:10px;"></div>
+        <div class="card" style="border:2px solid var(--primary);background:#fff;color:#1a1a2e;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--primary);">🔒 Z de Caisse — Principal</div>
+          <div style="font-size:11px;color:#666;margin-bottom:8px;">Réparations + Accessoires + Tél. neufs · TVA 20%</div>
+          <div id="caisse-z-recap" style="font-size:13px;color:#333;margin-bottom:10px;"></div>
           <!-- Modes de paiement -->
           <div id="caisse-z-modes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
           <!-- Ventilation par catégorie -->
           <div id="caisse-z-categories" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;"></div>
           <!-- Détail transactions -->
           <div id="caisse-z-detail-wrap" style="margin-bottom:12px;">
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px;cursor:pointer;" onclick="document.getElementById('caisse-z-detail').style.display=document.getElementById('caisse-z-detail').style.display==='none'?'block':'none'">
+            <div style="font-size:12px;font-weight:700;color:#666;margin-bottom:6px;cursor:pointer;" onclick="document.getElementById('caisse-z-detail').style.display=document.getElementById('caisse-z-detail').style.display==='none'?'block':'none'">
               📋 Détail des transactions ▾
             </div>
             <div id="caisse-z-detail" style="display:none;overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:rgba(255,255,255,0.04);"><th style="padding:6px;text-align:left;">Heure</th><th style="padding:6px;text-align:left;">Description</th><th style="padding:6px;text-align:right;">Montant</th><th style="padding:6px;text-align:center;">Mode</th></tr></thead>
+                <thead><tr style="background:#fef2f2;color:#1a1a2e;"><th style="padding:6px;text-align:left;color:#c0392b;">Heure</th><th style="padding:6px;text-align:left;color:#c0392b;">Description</th><th style="padding:6px;text-align:right;color:#c0392b;">Montant</th><th style="padding:6px;text-align:center;color:#c0392b;">Mode</th></tr></thead>
                 <tbody id="caisse-z-detail-tbody"></tbody>
               </table>
             </div>
@@ -5816,47 +5825,101 @@ function caisseShowTab(tab){
   if(tab==='factures')  { renderFacturesSearch(); }
 }
 
-function renderCaisseJour(){
-  var today = new Date().toISOString().split('T')[0];
-  var dateEl = document.getElementById('caisse-jour-date');
-  if(dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+function initZMoisSelect(){
+  var sel=document.getElementById('caisse-z-mois-select');
+  if(!sel) return;
+  var moisNoms=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var moisSet={};
+  // Collecter tous les mois disponibles depuis les réparations
+  (repDossiers||[]).concat(bonsDepot||[]).forEach(function(d){
+    if(d.facture&&d.facture.date) moisSet[d.facture.date.substring(0,7)]=true;
+    if(d.date) moisSet[d.date.substring(0,7)]=true;
+  });
+  // Depuis les phones vendus
+  (phones||[]).forEach(function(p){
+    if(p.dateVente) moisSet[p.dateVente.substring(0,7)]=true;
+  });
+  // Depuis la caisse
+  (caisse||[]).forEach(function(c){
+    if(c.date) moisSet[c.date.substring(0,7)]=true;
+  });
+  // Toujours ajouter le mois actuel
+  var current=new Date().toISOString().split('T')[0].substring(0,7);
+  moisSet[current]=true;
+  var moisArr=Object.keys(moisSet).sort().reverse();
+  sel.innerHTML=moisArr.map(function(m){
+    var p=m.split('-');
+    var label=moisNoms[parseInt(p[1])-1]+' '+p[0];
+    return '<option value="'+m+'"'+(m===current?' selected':'')+'>'+label+'</option>';
+  }).join('');
+  if(!window._zMoisFiltre) window._zMoisFiltre=current;
+  sel.value=window._zMoisFiltre;
+}
 
-  // Collecter toutes les transactions du jour
+function changerMoisZCaisse(mois){
+  window._zMoisFiltre=mois;
+  window._caisseMoisFiltre=mois; // sync smartphone Z
+  renderCaisseJour();
+}
+
+function renderCaisseJour(){
+  var zMois=window._zMoisFiltre||new Date().toISOString().split('T')[0].substring(0,7);
+  var today = new Date().toISOString().split('T')[0];
+  var isCurrentMonth=(zMois===today.substring(0,7));
+  var moisNoms=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  var mp=zMois.split('-');
+  var moisLabel=moisNoms[parseInt(mp[1])-1]+' '+mp[0];
+  var dateEl = document.getElementById('caisse-jour-date');
+  if(dateEl) dateEl.textContent = isCurrentMonth ? new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : moisLabel;
+  var labelEl=document.getElementById('caisse-z-mois-label');
+  if(labelEl) labelEl.textContent=isCurrentMonth?'(mois en cours)':'';
+  initZMoisSelect();
+
+  // Collecter toutes les transactions du mois sélectionné
   var txJour = [];
 
-  // 1. Réparations facturées aujourd'hui
-  // Lire depuis repDossiers (plus à jour) ET bonsDepot (fallback)
+  // Fonction de comparaison : mois complet ou jour précis
+  function matchDate(dateStr){
+    if(!dateStr) return false;
+    var d=dateStr.substring(0,10);
+    if(isCurrentMonth) return d===today; // mois en cours → aujourd'hui seulement
+    return d.substring(0,7)===zMois; // mois passé → tout le mois
+  }
+
+  // 1. Réparations facturées
   var idsVus = {};
   var sourceDossiers = (repDossiers && repDossiers.length > 0) ? repDossiers : bonsDepot;
   sourceDossiers.forEach(function(d){
     if(!d.facture) return;
-    if(idsVus[d.id]) return; // éviter doublons
+    if(idsVus[d.id]) return;
     var dateFacture = (d.facture.date || d.date || '').substring(0,10);
-    if(dateFacture !== today) return;
+    if(!matchDate(dateFacture)) return;
     idsVus[d.id] = true;
     var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
     var prixClient = d.facture.prix || d.devis || 0;
     var prixReel = bonusQR ? prixClient + 25 : prixClient;
     txJour.push({
       heure:   d.facture.date ? new Date(d.facture.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+      date:    dateFacture,
       type:    'reparation',
       label:   '🔧',
-      desc:    'Réparation ' + (d.facture.numero||d.numero||'') + ' — ' + (d.client ? (d.client.prenom||'')+' '+(d.client.nom||'') : ''),
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(dateFacture)+'</span> ')+'Réparation ' + (d.facture.numero||d.numero||'') + ' — ' + (d.client ? (d.client.prenom||'')+' '+(d.client.nom||'') : ''),
       montant: prixReel,
       mode:    d.facture.mode || 'CB',
       quali:   bonusQR ? 25 : 0
     });
   });
 
-  // 2. Ventes smartphones OCCASION du jour (depuis phones)
+  // 2. Ventes smartphones OCCASION
   phones.forEach(function(p){
     if(p.etat !== 'VENDU') return;
-    if((p.dateVente||'').substring(0,10) !== today) return;
+    if(!matchDate(p.dateVente)) return;
     txJour.push({
       heure:   '--:--',
+      date:    (p.dateVente||'').substring(0,10),
       type:    'vente_occasion',
       label:   '📱',
-      desc:    'Vente occasion ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(p.dateVente)+'</span> ')+'Vente occasion ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
       montant: p.vente || 0,
       achat:   p.achat || 0,
       mode:    p.modeVente || 'CB',
@@ -5864,15 +5927,16 @@ function renderCaisseJour(){
     });
   });
 
-  // 3. Ventes smartphones NEUFS du jour (depuis phonesNeufs)
+  // 3. Ventes smartphones NEUFS
   (phonesNeufs||[]).forEach(function(p){
     if(p.etat !== 'VENDU') return;
-    if((p.date_vente||'').substring(0,10) !== today) return;
+    if(!matchDate(p.date_vente)) return;
     txJour.push({
       heure:   '--:--',
+      date:    (p.date_vente||'').substring(0,10),
       type:    'vente_neuf',
       label:   '📱✨',
-      desc:    'Vente neuf ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(p.date_vente)+'</span> ')+'Vente neuf ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
       montant: p.vente || 0,
       achat:   p.achat || 0,
       mode:    p.mode_vente || 'CB',
@@ -5880,30 +5944,32 @@ function renderCaisseJour(){
     });
   });
 
-  // 4. Ventes accessoires du jour (depuis ventes_neufs_access en localStorage)
+  // 4. Ventes accessoires
   var naVentes = JSON.parse(localStorage.getItem('na_ventes')||'[]');
   naVentes.forEach(function(v){
-    if(!v.date || v.date.substring(0,10) !== today) return;
+    if(!v.date || !matchDate(v.date)) return;
     txJour.push({
       heure:   v.date ? new Date(v.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+      date:    (v.date||'').substring(0,10),
       type:    'accessoire',
       label:   '🛍️',
-      desc:    'Accessoires — ' + (v.desc||v.description||'vente'),
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(v.date)+'</span> ')+'Accessoires — ' + (v.desc||v.description||'vente'),
       montant: v.ttc || v.montant || 0,
       mode:    v.mode || 'CB',
       quali:   0
     });
   });
 
-  // 5. Achats smartphones du jour payés en espèces → sortie caisse
+  // 5. Achats smartphones payés en espèces → sortie caisse
   phones.forEach(function(p){
-    if((p.dateAchat||'').substring(0,10) !== today) return;
+    if(!matchDate(p.dateAchat)) return;
     if((p.mode||'').toUpperCase() !== 'ESPECES') return;
     txJour.push({
       heure:   '--:--',
+      date:    (p.dateAchat||'').substring(0,10),
       type:    'achat',
       label:   '🛒',
-      desc:    'Achat ' + p.modele + (p.imei ? ' — IMEI '+p.imei : ''),
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(p.dateAchat)+'</span> ')+'Achat ' + p.modele + (p.imei ? ' — IMEI '+p.imei : ''),
       montant: -(p.achat || 0),
       mode:    'ESPECES',
       quali:   0
@@ -5913,7 +5979,7 @@ function renderCaisseJour(){
   // Calculer les totaux du jour
   // Z PRINCIPAL = réparations + accessoires + téléphones NEUFS (TVA 20%)
   // Z SMARTPHONES = téléphones OCCASION — vue mensuelle (TVA sur marge)
-  var moisFiltreSmart = window._caisseMoisFiltre || today.substring(0,7);
+  var moisFiltreSmart = zMois;
 
   // Collecter TOUTES les ventes occasion du mois sélectionné (pas juste aujourd'hui)
   var txSmart = [];
@@ -5945,6 +6011,8 @@ function renderCaisseJour(){
   // Trier par date
   txSmart.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
 
+  // Trier par date si mois complet
+  if(!isCurrentMonth) txJour.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
   var txRep=txJour.filter(function(tx){ return tx.type!=='vente_occasion'; });
 
   // Ventilation par catégorie pour le Z Principal
@@ -5973,7 +6041,7 @@ function renderCaisseJour(){
   var totDiv = document.getElementById('caisse-jour-totaux');
   if(totDiv){
     var cards = [
-      {label:'CA TTC du jour', value: totJour.total.toFixed(2)+' €', color:'var(--primary)', icon:'💰'},
+      {label:isCurrentMonth?'CA TTC du jour':'CA TTC '+moisLabel, value: totJour.total.toFixed(2)+' €', color:'var(--primary)', icon:'💰'},
       {label:'CA HT', value: (totJour.total/1.2).toFixed(2)+' €', color:'var(--text)', icon:'📊'},
       {label:'💳 CB', value: totJour.cb.toFixed(2)+' €', color:'var(--blue)', icon:''},
       {label:'💵 Espèces', value: totJour.especes.toFixed(2)+' €', color:'var(--green)', icon:''},
@@ -6025,7 +6093,7 @@ function renderCaisseJour(){
   // Recap Z de caisse
   var zDiv = document.getElementById('caisse-z-recap');
   if(zDiv){
-    zDiv.innerHTML = '<b>'+totJour.nb+' réparation(s)</b> · Total TTC : <b>'+totJour.total.toFixed(2)+' €</b> · '+
+    zDiv.innerHTML = '<b style="color:#1a1a2e;">'+totJour.nb+' transaction(s)'+(isCurrentMonth?' (aujourd\'hui)':' — '+moisLabel)+'</b> · Total TTC : <b style="color:#1a1a2e;">'+totJour.total.toFixed(2)+' €</b> · '+
       'CB : '+totJour.cb.toFixed(2)+' € · Espèces : '+totJour.especes.toFixed(2)+' € · '+
       'Chèque : '+totJour.cheque.toFixed(2)+' € · Virement : '+totJour.virement.toFixed(2)+' €'+
       (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '');
@@ -6046,12 +6114,12 @@ function renderCaisseJour(){
   });
   // ── Modes paiement + détail réparations
   var modesDiv=document.getElementById('caisse-z-modes');
-  if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
+  if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:#666;">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
   // ── Ventilation par catégorie
   var catDiv=document.getElementById('caisse-z-categories');
   if(catDiv){var cats=window._caisseCategories||{};catDiv.innerHTML=[{l:'🔧 Réparations',nb:(cats.reparations||{}).nb||0,v:(cats.reparations||{}).total||0,bg:'#fef2f2',bc:'#fecaca',c:'#c0392b'},{l:'🛍️ Accessoires',nb:(cats.accessoires||{}).nb||0,v:(cats.accessoires||{}).total||0,bg:'#eff6ff',bc:'#bfdbfe',c:'#2563eb'},{l:'📱 Tél. neufs',nb:(cats.neufs||{}).nb||0,v:(cats.neufs||{}).total||0,bg:'#ecfdf5',bc:'#a7f3d0',c:'#059669'}].map(function(c){return '<div style="background:'+c.bg+';border:1px solid '+c.bc+';border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:'+c.c+';">'+c.l+'</div><div style="font-weight:800;font-size:14px;color:'+c.c+';">'+c.v.toFixed(2)+' €</div><div style="font-size:10px;color:var(--text-muted);">'+c.nb+' transaction'+(c.nb>1?'s':'')+'</div></div>';}).join('');}
   var dtb=document.getElementById('caisse-z-detail-tbody');
-  if(dtb){var mc2={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};dtb.innerHTML=txRep.map(function(tx,i){var mc=mc2[(tx.mode||'CB').toUpperCase()]||'#666';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';border-bottom:1px solid var(--border);"><td style="padding:5px 6px;color:var(--text-muted);">'+tx.heure+'</td><td style="padding:5px 6px;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="padding:10px;text-align:center;color:var(--text-muted);">Aucune réparation</td></tr>';}
+  if(dtb){var mc2={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};dtb.innerHTML=txRep.map(function(tx,i){var mc=mc2[(tx.mode||'CB').toUpperCase()]||'#666';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#888;">'+tx.heure+'</td><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#fff;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucune réparation</td></tr>';}
   // ── Modes paiement + détail smartphones
   var smDiv=document.getElementById('caisse-z-smart-modes');
   if(smDiv&&totSmart.nb>0){smDiv.innerHTML=[{l:'CB',v:totSmart.cb,c:'#2563eb'},{l:'Esp.',v:totSmart.especes,c:'#16a34a'},{l:'Chèque',v:totSmart.cheque,c:'#d97706'},{l:'Virement',v:totSmart.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:#f5f3ff;border:1px solid #d8d0f0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:#666;">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
