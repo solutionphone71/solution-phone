@@ -8571,7 +8571,7 @@ function filterPhoneFacture(q){
     html+='<div onclick="selectPhoneFacture('+p.id+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.04);transition:background .12s;font-size:13px;" onmouseover="this.style.background=\'rgba(255,59,48,0.04)\'" onmouseout="this.style.background=\'transparent\'">';
     html+='<div style="font-weight:700;">'+(p.numPolice?'<span style="background:#ff3b30;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:800;margin-right:6px;">N°'+p.numPolice+'</span>':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'<span style="float:right;color:#ff3b30;font-weight:800;">'+p.vente+' €</span></div>';
     html+='<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">';
-    html+=(p.grade?'Grade '+p.grade:'')+(p.couleur?' · '+p.couleur:'')+(p.imei?' · IMEI …'+p.imei.slice(-4):'')+dateStr+clientStr;
+    html+=(p.grade?'Grade '+p.grade:'')+(p.couleur?' · '+p.couleur:'')+(p.imei?' · IMEI '+p.imei:'')+dateStr+clientStr;
     html+='</div></div>';
   });
 
