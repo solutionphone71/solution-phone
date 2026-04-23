@@ -875,7 +875,21 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="card-header"><div class="card-title">➕ Nouvelle facture</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group"><label>Smartphone</label>
-              <select id="f-phone" onchange="updateFacturePreview()"><option value="">-- Sélectionner --</option></select></div>
+              <div style="position:relative;">
+                <input type="text" id="f-phone-search" placeholder="🔍 Rechercher par modèle, IMEI, couleur…" autocomplete="off"
+                  oninput="filterPhoneFacture(this.value)" onfocus="filterPhoneFacture(this.value)"
+                  style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:14px;font-weight:600;background:var(--bg-card);">
+                <input type="hidden" id="f-phone" value="">
+                <div id="f-phone-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:300;
+                  background:var(--bg-card);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.18);border:1px solid var(--border);
+                  max-height:320px;overflow-y:auto;"></div>
+              </div>
+              <div id="f-phone-selected" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:13px;font-weight:600;color:#16a34a;
+                display:flex;align-items:center;justify-content:space-between;">
+                <span id="f-phone-selected-text"></span>
+                <span onclick="clearPhoneFacture()" style="cursor:pointer;font-size:16px;opacity:0.6;" title="Effacer">✕</span>
+              </div>
+            </div>
             <div class="form-group"><label>Nom client</label><input type="text" id="f-client-nom" placeholder="ex: Jean Dupont" oninput="updateFacturePreview()"></div>
             <div class="form-group"><label>Adresse client</label><input type="text" id="f-client-adresse" placeholder="Adresse" oninput="updateFacturePreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="f-client-cp" maxlength="5" inputmode="numeric" oninput="updateFacturePreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="f-client-ville" placeholder="Ville" oninput="updateFacturePreview()"></div></div>
             <div class="form-group"><label>Email client</label><input type="email" id="f-client-email" placeholder="ex: client@gmail.com"></div>
@@ -8515,9 +8529,104 @@ function printCertificat(id){
 }
 
 var curFacPhone=null;
+// ── Cache de téléphones pour la recherche facture ──
+var _factPhoneCache = [];
+
+function buildFactPhoneCache(){
+  var vendus = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente;})
+    .sort(function(a,b){return (b.dateVente||'').localeCompare(a.dateVente||'');});
+  var dispos = phones.filter(function(p){return p.etat==='DISPONIBLE';})
+    .sort(function(a,b){return (a.modele||'').localeCompare(b.modele||'');});
+  _factPhoneCache = [];
+  vendus.forEach(function(p){ _factPhoneCache.push({phone:p, group:'vendu'}); });
+  dispos.forEach(function(p){ _factPhoneCache.push({phone:p, group:'dispo'}); });
+}
+
+function phoneFactureLabel(p){
+  return (p.numPolice?'N°'+p.numPolice+' · ':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€';
+}
+
+function filterPhoneFacture(q){
+  var dd=document.getElementById('f-phone-dropdown');
+  if(!dd) return;
+  q=(q||'').toLowerCase().trim();
+  var html='';
+  var lastGroup='';
+
+  _factPhoneCache.forEach(function(item){
+    var p=item.phone;
+    var label=phoneFactureLabel(p);
+    var searchStr=((p.numPolice?p.numPolice+' ':'')+p.modele+' '+(p.imei||'')+' '+(p.couleur||'')+' '+(p.grade||'')+' '+(p.stockage||'')+' '+(p.clientNom||'')).toLowerCase();
+    if(q && searchStr.indexOf(q)<0) return;
+
+    if(item.group!==lastGroup){
+      if(item.group==='vendu') html+='<div style="padding:6px 14px;font-size:11px;font-weight:800;color:#ff3b30;text-transform:uppercase;letter-spacing:.06em;background:rgba(255,59,48,0.05);border-bottom:1px solid var(--border);">📱 Vendus récemment</div>';
+      else html+='<div style="padding:6px 14px;font-size:11px;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:.06em;background:rgba(34,197,94,0.05);border-bottom:1px solid var(--border);">✅ En stock</div>';
+      lastGroup=item.group;
+    }
+
+    var dateStr=item.group==='vendu'&&p.dateVente?' · Vendu le '+fmtDate(p.dateVente):'';
+    var clientStr=item.group==='vendu'&&p.clientNom?' · '+p.clientNom:'';
+
+    html+='<div onclick="selectPhoneFacture('+p.id+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.04);transition:background .12s;font-size:13px;" onmouseover="this.style.background=\'rgba(255,59,48,0.04)\'" onmouseout="this.style.background=\'transparent\'">';
+    html+='<div style="font-weight:700;">'+(p.numPolice?'<span style="background:#ff3b30;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:800;margin-right:6px;">N°'+p.numPolice+'</span>':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'<span style="float:right;color:#ff3b30;font-weight:800;">'+p.vente+' €</span></div>';
+    html+='<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">';
+    html+=(p.grade?'Grade '+p.grade:'')+(p.couleur?' · '+p.couleur:'')+(p.imei?' · IMEI …'+p.imei.slice(-4):'')+dateStr+clientStr;
+    html+='</div></div>';
+  });
+
+  if(!html) html='<div style="padding:16px;text-align:center;font-size:13px;color:var(--text-muted);">Aucun résultat</div>';
+  dd.innerHTML=html;
+  dd.style.display='block';
+}
+
+function selectPhoneFacture(id){
+  var p=phones.find(function(x){return x.id===id;});
+  if(!p) return;
+  document.getElementById('f-phone').value=id;
+  document.getElementById('f-phone-search').value=phoneFactureLabel(p);
+  document.getElementById('f-phone-dropdown').style.display='none';
+
+  // Badge vert
+  var badge=document.getElementById('f-phone-selected');
+  var badgeTxt=document.getElementById('f-phone-selected-text');
+  if(badge&&badgeTxt){
+    badgeTxt.textContent=(p.etat==='VENDU'?'✅ ':'📱 ')+(p.numPolice?'N°'+p.numPolice+' · ':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' — '+p.vente+'€'+(p.etat==='VENDU'?' (vendu le '+fmtDate(p.dateVente)+')':'');
+    badge.style.display='flex';
+  }
+
+  // Pré-remplir les infos client si vendu
+  if(p.etat==='VENDU'){
+    if(p.clientNom) document.getElementById('f-client-nom').value=p.clientNom;
+    if(p.clientAdresse) document.getElementById('f-client-adresse').value=p.clientAdresse;
+    if(p.clientCP) document.getElementById('f-client-cp').value=p.clientCP;
+    if(p.clientVille) document.getElementById('f-client-ville').value=p.clientVille;
+    if(p.modeVente){
+      var modeMap={CB:'Carte bancaire',ESPECES:'Espèces',VIREMENT:'Virement',CHEQUE:'Chèque'};
+      var selMode=document.getElementById('f-mode-paiement');
+      if(selMode && modeMap[p.modeVente]) selMode.value=modeMap[p.modeVente];
+    }
+  }
+  updateFacturePreview();
+}
+
+function clearPhoneFacture(){
+  document.getElementById('f-phone').value='';
+  document.getElementById('f-phone-search').value='';
+  var badge=document.getElementById('f-phone-selected');
+  if(badge) badge.style.display='none';
+  updateFacturePreview();
+}
+
+// Fermer dropdown si clic en dehors
+document.addEventListener('click', function(e){
+  var dd=document.getElementById('f-phone-dropdown');
+  var inp=document.getElementById('f-phone-search');
+  if(dd && inp && !dd.contains(e.target) && e.target!==inp) dd.style.display='none';
+});
+
 function renderFactures(){
-  var sel=document.getElementById('f-phone');
-  if(sel){sel.innerHTML='<option value="">-- Sélectionner un smartphone --</option>'+phones.filter(function(p){return p.etat==='DISPONIBLE';}).map(function(p){return'<option value="'+p.id+'" style="font-weight:700;font-size:14px;">'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€</option>';}).join('');sel.style.fontWeight='700';sel.style.fontSize='14px';}
+  buildFactPhoneCache();
   document.getElementById('factures-table').innerHTML=factures.map(function(f){var p=phones.find(function(x){return x.id===f.phoneId;});return'<tr><td><b>'+(f.numero||'')+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(f.clientNom||'—')+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmail('+f.id+')">📧</button></td></tr>';}).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune facture</td></tr>';
 }
 
@@ -8940,6 +9049,8 @@ function genererFacture(){
   imprimerFactureData(fac,p);
   ['f-client-nom','f-client-adresse','f-client-cp','f-client-ville','f-client-email'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-phone').value='';
+  var srchInp=document.getElementById('f-phone-search'); if(srchInp) srchInp.value='';
+  var selBadge=document.getElementById('f-phone-selected'); if(selBadge) selBadge.style.display='none';
   document.getElementById('facture-preview-card').style.display='none';
   showNotif('Facture '+num+' créée !','success');
 }
