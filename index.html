@@ -17518,18 +17518,30 @@ async function loadBonsCommande(){
     }
   } catch(e){}
 
-  // Supabase = SOURCE DE VÉRITÉ pour traite/statut
+  // Supabase = SOURCE DE VÉRITÉ, mais local peut avoir des infos plus récentes
   try {
     var res = await supaFetch('bons_commande','GET',null,'?order=id.desc');
     if(res && res.length > 0){
+      var needPush = []; // Bons archivés localement mais pas dans Supabase
       bonsCommande = res.map(function(x){
         var lb = localBons[x.id] || {};
-        // Supabase est la source de vérité — booléen OU string "true"
         var traiteDB = (x.traite === true || x.traite === 'true');
         var traiteLocal = (lb.traite === true);
+        var statutLocal = lb.statut || '';
         var statut = x.statut || lb.statut || 'a_commander';
         var traite = traiteDB || traiteLocal || (statut === 'remis');
         var payeDB = (x.paye === true || x.paye === 'true');
+
+        // Détecter si le local a des infos plus récentes que Supabase
+        if(!traiteDB && traiteLocal){
+          needPush.push({id:x.id, traite:true, statut:'remis', traite_date:lb.traiteDate||null, paye:lb.paye||false});
+          console.log('[BonsCommande] ⚠️ Bon', x.numero, 'archivé localement mais PAS dans Supabase → push');
+        }
+        if(!traiteDB && !traiteLocal && statutLocal && statutLocal !== x.statut && statutLocal !== 'a_commander'){
+          needPush.push({id:x.id, statut:statutLocal, date_arrivee:lb.dateArrivee||null});
+          console.log('[BonsCommande] ⚠️ Bon', x.numero, 'statut local', statutLocal, '≠ Supabase', x.statut, '→ push');
+        }
+
         return {
           id: x.id, numero: x.numero, date: x.date,
           type: x.type,
@@ -17538,7 +17550,7 @@ async function loadBonsCommande(){
           prix: Number(x.prix)||0,
           acompte: Number(x.acompte) || Number(lb.acompte) || 0,
           modeReglement: x.mode_reglement || lb.modeReglement || 'ESPECES',
-          statut: statut,
+          statut: traite ? 'remis' : statut,
           reste: Math.max(0,(Number(x.prix)||0)-(Number(x.acompte)||Number(lb.acompte)||0)),
           paye: payeDB || (lb.paye === true) || false,
           traite: traite,
@@ -17546,8 +17558,19 @@ async function loadBonsCommande(){
           traiteDate: x.traite_date || lb.traiteDate || ''
         };
       });
-      saveBonsCommande(); // sync local
+      saveBonsCommande();
       console.log('[BonsCommande] Synchro Supabase OK:', bonsCommande.length, 'bons');
+
+      // Pousser les bons locaux non synchronisés vers Supabase
+      if(needPush.length > 0){
+        console.log('[BonsCommande] 🔄 Push', needPush.length, 'bons vers Supabase...');
+        for(var i=0; i<needPush.length; i++){
+          try {
+            await supaFetch('bons_commande','PATCH',needPush[i],'?id=eq.'+needPush[i].id);
+            console.log('[BonsCommande] ✅ Push OK pour id', needPush[i].id);
+          } catch(e){ console.error('[BonsCommande] ❌ Push échoué pour id', needPush[i].id, e); }
+        }
+      }
     }
   } catch(e){
     console.log('[loadBonsCommande] Erreur Supabase, fallback local', e);
