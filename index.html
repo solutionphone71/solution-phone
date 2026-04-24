@@ -16267,9 +16267,9 @@ async function qrEnvoyerEcologicComplet(d){
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var ecoToken=localStorage.getItem('sp_ecologic_token')||'';
   if(!ecoToken){showNotif&&showNotif("Token Ecologic manquant — allez dans Paramètres","error");return;}
-  console.log('[Ecologic] Token utilisé:',ecoToken.substring(0,8)+'... (len='+ecoToken.length+')');
-  var ecoHeaders={"Content-Type":"application/json","Authorization":"Bearer "+ecoToken,"ApiKey":ecoToken,"X-Api-Key":ecoToken};
-  var ecoAuth='&ApiKey='+encodeURIComponent(ecoToken);
+  console.log('[Ecologic] Token utilisé:','['+ecoToken+'] (len='+ecoToken.length+')');
+  var ecoHeaders={"Content-Type":"application/json","Authorization":ecoToken,"ApiKey":ecoToken,"X-Api-Key":ecoToken,"api-key":ecoToken};
+  var ecoAuth='&ApiKey='+encodeURIComponent(ecoToken)+'&apiKey='+encodeURIComponent(ecoToken)+'&api_key='+encodeURIComponent(ecoToken);
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
   // Mapping IRIS_CODES key → données Ecologic (codes officiels Phonilab)
@@ -16312,6 +16312,7 @@ async function qrEnvoyerEcologicComplet(d){
     var r2=await fetch(proxy+"/CreateClaim?RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref)+ecoAuth,{method:"POST",headers:ecoHeaders,body:body});
     var r2Text=await r2.text();
     console.log('[Ecologic] CreateClaim response status:',r2.status,'body:',r2Text.substring(0,500));
+    if(r2.status===401||r2.status===403){throw new Error("Ecologic 401 — Token rejeté. Token utilisé: "+ecoToken.substring(0,10)+"... Vérifiez dans Phonilab → Paramètres Ecologic");}
     var j2;try{j2=JSON.parse(r2Text);}catch(pe){throw new Error("Ecologic a répondu (HTTP "+r2.status+"): "+r2Text.substring(0,200));}
     var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
     if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));

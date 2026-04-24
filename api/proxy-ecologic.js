@@ -20,22 +20,21 @@ export default async function handler(req, res) {
       'Content-Type': req.headers['content-type'] || 'application/json',
     };
 
-    if (req.headers['authorization']) {
-      headers['Authorization'] = req.headers['authorization'];
-    }
-    if (req.headers['x-api-key']) {
-      headers['X-Api-Key'] = req.headers['x-api-key'];
-    }
-    if (req.headers['apikey']) {
-      headers['ApiKey'] = req.headers['apikey'];
-    }
+    // Récupérer la clé API de toutes les sources possibles
+    const apiKey = req.headers['apikey']
+      || req.headers['x-api-key']
+      || req.headers['api-key']
+      || url.searchParams.get('ApiKey')
+      || url.searchParams.get('apiKey')
+      || url.searchParams.get('api_key')
+      || (req.headers['authorization'] || '').replace('Bearer ', '');
 
-    // Extraire ApiKey du query string si pas déjà dans les headers
-    if (!headers['ApiKey']) {
-      const qsKey = url.searchParams.get('ApiKey');
-      if (qsKey) {
-        headers['ApiKey'] = qsKey;
-      }
+    if (apiKey) {
+      // Envoyer dans TOUS les formats possibles vers Ecologic
+      headers['ApiKey'] = apiKey;
+      headers['X-Api-Key'] = apiKey;
+      headers['api-key'] = apiKey;
+      headers['Authorization'] = apiKey;
     }
 
     let body = undefined;
