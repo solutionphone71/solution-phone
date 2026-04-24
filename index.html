@@ -3718,7 +3718,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <!-- ═══ HEADER ═══ -->
         <header class="ag-header">
           <div>
-            <div class="ag-eyebrow">// AVIS GOOGLE v26</div>
+            <div class="ag-eyebrow">// AVIS GOOGLE v27</div>
             <h1 class="ag-title" style="font-size:32px;">Avis Google.</h1>
             <p class="ag-subtitle">Surveilles. Brouillons par l'IA. Publies en 1 clic.</p>
           </div>
@@ -3729,6 +3729,11 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <button class="ag-btn ag-btn-ghost" onclick="AvisGoogle.openConfig()">&#9881;</button>
           </div>
         </header>
+
+        <!-- ═══ SELECTEUR MAGASIN ═══ -->
+        <div id="ag-location-bar" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+          <button class="ag-filter active" data-loc="all" onclick="AvisGoogle.setLocation('all')">Tous les magasins</button>
+        </div>
 
         <!-- ═══ STATS ═══ -->
         <div class="ag-stats" id="ag-stats">
@@ -24657,7 +24662,7 @@ function fpdfSupprimer(id){
 // MODULE AVIS GOOGLE — Frontend JS
 // ═══════════════════════════════════════════════════════════════════
 var AvisGoogle = (function(){
-  var state = { reviews: [], filter: 'all', loading: false };
+  var state = { reviews: [], filter: 'all', location: 'all', loading: false };
 
   function formatDate(iso){
     if(!iso) return '';
@@ -24694,6 +24699,7 @@ var AvisGoogle = (function(){
       var res = await fetch(url);
       var data = await res.json();
       state.reviews = data.reviews || [];
+      buildLocationBar();
       agRender();
     } catch(err){
       if(list) list.innerHTML = '<div class="ag-empty">Erreur : '+agEscape(err.message)+'</div>';
@@ -24702,18 +24708,24 @@ var AvisGoogle = (function(){
     }
   }
 
+  function getByLocation(){
+    if(state.location==='all') return state.reviews;
+    return state.reviews.filter(function(r){return r.location_id===state.location;});
+  }
+
   function getFiltered(){
+    var base = getByLocation();
     switch(state.filter){
-      case 'pending':   return state.reviews.filter(function(r){return r.reply_status==='pending';});
-      case 'draft':     return state.reviews.filter(function(r){return r.reply_status==='draft';});
-      case 'published': return state.reviews.filter(function(r){return r.reply_status==='published';});
-      case 'negative':  return state.reviews.filter(function(r){return r.star_rating<=3;});
-      default:          return state.reviews;
+      case 'pending':   return base.filter(function(r){return r.reply_status==='pending';});
+      case 'draft':     return base.filter(function(r){return r.reply_status==='draft';});
+      case 'published': return base.filter(function(r){return r.reply_status==='published';});
+      case 'negative':  return base.filter(function(r){return r.star_rating<=3;});
+      default:          return base;
     }
   }
 
   function renderStats(){
-    var all = state.reviews;
+    var all = getByLocation();
     var count = all.length;
     var avg = count ? (all.reduce(function(s,r){return s+r.star_rating;},0)/count).toFixed(1) : '—';
     var withReply = all.filter(function(r){return r.reply_status==='published'||r.reply_status==='skipped';}).length;
@@ -24874,10 +24886,45 @@ var AvisGoogle = (function(){
     if(typeof showNotif==='function') showNotif('Configuration sauvegardee','success');
   }
 
+  // Map location IDs to friendly names
+  var LOC_NAMES = {
+    'locations/14540413940622226098': 'Solution Accessoires',
+    'locations/5671465993402376698':  'Solution Phone'
+  };
+
+  function buildLocationBar(){
+    var bar = document.getElementById('ag-location-bar');
+    if(!bar) return;
+    var locs = {};
+    state.reviews.forEach(function(r){
+      if(r.location_id && !locs[r.location_id]) locs[r.location_id] = true;
+    });
+    var locIds = Object.keys(locs);
+    if(locIds.length <= 1){ bar.style.display='none'; return; }
+    bar.style.display='flex';
+    var html = '<button class="ag-filter'+(state.location==='all'?' active':'')+'" data-loc="all" onclick="AvisGoogle.setLocation(\'all\')">Tous</button>';
+    locIds.forEach(function(locId){
+      var name = LOC_NAMES[locId] || locId;
+      var active = state.location===locId ? ' active' : '';
+      html += '<button class="ag-filter'+active+'" data-loc="'+agEscape(locId)+'" onclick="AvisGoogle.setLocation(\''+agEscape(locId)+'\')">'+agEscape(name)+'</button>';
+    });
+    bar.innerHTML = html;
+  }
+
+  function setLocation(locId){
+    state.location = locId;
+    var bar = document.getElementById('ag-location-bar');
+    if(bar) bar.querySelectorAll('.ag-filter').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-loc')===locId);
+    });
+    agRender();
+  }
+
   function init(){
     document.querySelectorAll('#ig-tab-gmb .ag-filter').forEach(function(btn){
+      if(btn.closest('#ag-location-bar')) return;
       btn.onclick = function(){
-        document.querySelectorAll('#ig-tab-gmb .ag-filter').forEach(function(b){b.classList.remove('active');});
+        document.querySelectorAll('#ig-tab-gmb .ag-filters .ag-filter').forEach(function(b){b.classList.remove('active');});
         btn.classList.add('active');
         state.filter = btn.dataset.filter;
         agRender();
@@ -24886,7 +24933,7 @@ var AvisGoogle = (function(){
     loadReviews();
   }
 
-  return { init:init, refresh:refresh, publish:publish, regenerate:regenerate, openConfig:openConfig, closeConfig:closeConfig, saveConfig:saveConfig };
+  return { init:init, refresh:refresh, publish:publish, regenerate:regenerate, openConfig:openConfig, closeConfig:closeConfig, saveConfig:saveConfig, setLocation:setLocation };
 })();
 
 </script>
