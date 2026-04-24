@@ -43,6 +43,9 @@ export default async function handler(req, res) {
       body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     }
 
+    console.log('[proxy-ecologic] →', req.method, targetUrl);
+    console.log('[proxy-ecologic] Headers envoyés:', JSON.stringify(headers));
+
     const response = await fetch(targetUrl, {
       method: req.method,
       headers,
@@ -50,6 +53,7 @@ export default async function handler(req, res) {
     });
 
     const responseText = await response.text();
+    console.log('[proxy-ecologic] ← status:', response.status, 'body:', responseText.substring(0, 300));
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);
 

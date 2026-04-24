@@ -16267,6 +16267,7 @@ async function qrEnvoyerEcologicComplet(d){
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var ecoToken=localStorage.getItem('sp_ecologic_token')||'';
   if(!ecoToken){showNotif&&showNotif("Token Ecologic manquant — allez dans Paramètres","error");return;}
+  console.log('[Ecologic] Token utilisé:',ecoToken.substring(0,8)+'... (len='+ecoToken.length+')');
   var ecoHeaders={"Content-Type":"application/json","Authorization":"Bearer "+ecoToken,"ApiKey":ecoToken,"X-Api-Key":ecoToken};
   var ecoAuth='&ApiKey='+encodeURIComponent(ecoToken);
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
