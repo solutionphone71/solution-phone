@@ -3,7 +3,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://app.solution-phone.fr');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, X-Api-Key, ApiKey');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -22,6 +22,12 @@ export default async function handler(req, res) {
 
     if (req.headers['authorization']) {
       headers['Authorization'] = req.headers['authorization'];
+    }
+    if (req.headers['x-api-key']) {
+      headers['X-Api-Key'] = req.headers['x-api-key'];
+    }
+    if (req.headers['apikey']) {
+      headers['ApiKey'] = req.headers['apikey'];
     }
 
     let body = undefined;

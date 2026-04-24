@@ -16264,8 +16264,8 @@ async function qrEnvoyerEcologicComplet(d){
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var ecoToken=localStorage.getItem('sp_ecologic_token')||'';
-  var ecoHeaders={"Content-Type":"application/json"};
-  if(ecoToken) ecoHeaders["Authorization"]="Bearer "+ecoToken;
+  var ecoHeaders={"Content-Type":"application/json","Authorization":"Bearer "+ecoToken};
+  var ecoAuth='&ApiKey='+encodeURIComponent(ecoToken);
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
   // Mapping IRIS_CODES key → données Ecologic (codes officiels Phonilab)
@@ -16305,17 +16305,17 @@ async function qrEnvoyerEcologicComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/3...</div>";
   console.log('[Ecologic] CreateClaim body:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
   try{
-    var r2=await fetch(proxy+"/CreateClaim?RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref),{method:"POST",headers:ecoHeaders,body:body});
+    var r2=await fetch(proxy+"/CreateClaim?RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref)+ecoAuth,{method:"POST",headers:ecoHeaders,body:body});
     var j2=await r2.json();
     var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
     if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
     var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/3...</div>";
-    if(d.facture&&typeof repFactureToPDFBase64==="function"){try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice",{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}}
-    if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate",{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
-    if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation",{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
+    if(d.facture&&typeof repFactureToPDFBase64==="function"){try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}}
+    if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
+    if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
-    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
+    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId+ecoAuth,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
     d.statut="qr";
