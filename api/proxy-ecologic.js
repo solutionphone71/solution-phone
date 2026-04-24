@@ -1,7 +1,7 @@
 // api/proxy-ecologic.js — Proxy Vercel pour Ecologic GesCo QualiRépar
 // La clé API est injectée côté serveur via env var ECOLOGIC_API_KEY
 
-const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY || '';
+const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
