@@ -5071,6 +5071,8 @@ async function loadFromSupabase() {
     showNotif('✅ Connecté','success');
     // Charger les bons de commande depuis Supabase
     loadBonsCommande();
+    // Charger les bons de dépôt (réparations) — nécessaire pour dashboard
+    loadBonsDepot().then(function(){ renderDashboard(); }).catch(function(){});
     // Charger les téléphones neufs
     loadPhonesNeufs();
     // Charger les clés API depuis Supabase
@@ -16264,7 +16266,8 @@ async function qrEnvoyerEcologicComplet(d){
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   var ecoToken=localStorage.getItem('sp_ecologic_token')||'';
-  var ecoHeaders={"Content-Type":"application/json","Authorization":"Bearer "+ecoToken};
+  if(!ecoToken){showNotif&&showNotif("Token Ecologic manquant — allez dans Paramètres","error");return;}
+  var ecoHeaders={"Content-Type":"application/json","Authorization":"Bearer "+ecoToken,"ApiKey":ecoToken,"X-Api-Key":ecoToken};
   var ecoAuth='&ApiKey='+encodeURIComponent(ecoToken);
   var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
   var ht=(moHT+pHT>0)?moHT+pHT:Math.round(ttc/1.2*100)/100;
@@ -16306,7 +16309,9 @@ async function qrEnvoyerEcologicComplet(d){
   console.log('[Ecologic] CreateClaim body:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
   try{
     var r2=await fetch(proxy+"/CreateClaim?RepairEndDate="+today+"&RepairSiteId="+siteId+"&ConsumerInvoiceNumber="+encodeURIComponent(ref)+ecoAuth,{method:"POST",headers:ecoHeaders,body:body});
-    var j2=await r2.json();
+    var r2Text=await r2.text();
+    console.log('[Ecologic] CreateClaim response status:',r2.status,'body:',r2Text.substring(0,500));
+    var j2;try{j2=JSON.parse(r2Text);}catch(pe){throw new Error("Ecologic a répondu (HTTP "+r2.status+"): "+r2Text.substring(0,200));}
     var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
     if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
     var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
@@ -22023,7 +22028,8 @@ function qrGetSignatureB64() {
 async function qrLoadEcologicBrands() {
   if (QR_ECOLOGIC_BRANDS_REF) return QR_ECOLOGIC_BRANDS_REF;
   try {
-    var r = await fetch(QR_ECOLOGIC_PROXY + '/printbrandlist');
+    var _bToken=localStorage.getItem('sp_ecologic_token')||'';
+    var r = await fetch(QR_ECOLOGIC_PROXY + '/printbrandlist?ApiKey='+encodeURIComponent(_bToken),{headers:{"ApiKey":_bToken,"X-Api-Key":_bToken,"Authorization":"Bearer "+_bToken}});
     var d = await r.json();
     if (d.ResponseData) {
       QR_ECOLOGIC_BRANDS_REF = {};
@@ -22118,16 +22124,21 @@ async function qrSendEcologic() {
   else if(_typeNorm.includes('bouton')) _symptome='MEC';
 
   // ② CreateClaim
+  var _ecoToken2=localStorage.getItem('sp_ecologic_token')||'';
+  if(!_ecoToken2){throw new Error("Token Ecologic manquant — allez dans Paramètres");}
+  var _ecoHeaders2={"Content-Type":"application/json","Authorization":"Bearer "+_ecoToken2,"ApiKey":_ecoToken2,"X-Api-Key":_ecoToken2};
+  var _ecoAuth2='&ApiKey='+encodeURIComponent(_ecoToken2);
   qrSetAgoraBadge('\u23F3', 'Création dossier\u2026', 'Ecologic GesCo', '#f39c12');
 
   var claimUrl = QR_ECOLOGIC_PROXY + '/createclaim'
     + '?repairEndDate='          + encodeURIComponent(today)
     + '&repairSiteId='           + encodeURIComponent(QR_ECOLOGIC_SITE_ID)
-    + '&consumerInvoiceNumber='  + encodeURIComponent(refFact);
+    + '&consumerInvoiceNumber='  + encodeURIComponent(refFact)
+    + _ecoAuth2;
 
   var claimResp = await fetch(claimUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: _ecoHeaders2,
     body: JSON.stringify({
       Consumer: {
         Title: 3, LastName: nom, FirstName: prenom,
@@ -22153,7 +22164,9 @@ async function qrSendEcologic() {
     })
   });
 
-  var claimData = await claimResp.json();
+  var _claimText = await claimResp.text();
+  console.log('[QR Ecologic] CreateClaim status:',claimResp.status,'body:',_claimText.substring(0,500));
+  var claimData;try{claimData=JSON.parse(_claimText);}catch(_pe){throw new Error("Ecologic a répondu (HTTP "+claimResp.status+"): "+_claimText.substring(0,200));}
   console.log('[QR Ecologic] CreateClaim:', JSON.stringify(claimData).substring(0,300));
 
   if (!claimData.ResponseData || !claimData.ResponseData.ClaimId) {
@@ -22170,9 +22183,10 @@ async function qrSendEcologic() {
     qrSetAgoraBadge('\u23F3', 'Signature\u2026', 'Dossier #' + claimId, '#e67e22');
     await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
       + '?ClaimId=' + claimId
-      + '&FileName=signature&FileExtension=png&DocumentType=ConsumerValidation', {
+      + '&FileName=signature&FileExtension=png&DocumentType=ConsumerValidation'
+      + _ecoAuth2, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: _ecoHeaders2,
       body: JSON.stringify({ FileContent: sigB64 })
     });
   }
@@ -22183,9 +22197,10 @@ async function qrSendEcologic() {
     qrSetAgoraBadge('\u23F3', 'Photo IMEI\u2026', 'Dossier #' + claimId, '#e67e22');
     await fetch(QR_ECOLOGIC_PROXY + '/AttachFile'
       + '?ClaimId=' + claimId
-      + '&FileName=plaque_imei&FileExtension=png&DocumentType=NamePlate', {
+      + '&FileName=plaque_imei&FileExtension=png&DocumentType=NamePlate'
+      + _ecoAuth2, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: _ecoHeaders2,
       body: JSON.stringify({ FileContent: imeiB64 })
     });
   }
@@ -22194,8 +22209,8 @@ async function qrSendEcologic() {
   qrSetAgoraBadge('\u{1F680}', 'Soumission\u2026', 'Dossier #' + claimId, '#e67e22');
 
   var subResp = await fetch(
-    QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+    QR_ECOLOGIC_PROXY + '/submitclaim?claimId=' + claimId + _ecoAuth2,
+    { method: 'POST', headers: _ecoHeaders2 }
   );
   var subData = await subResp.json();
   console.log('[QR Ecologic] SubmitClaim:', JSON.stringify(subData).substring(0,300));
@@ -22579,10 +22594,12 @@ async function qrVerifierStatutEcosystem(dossier){
 async function qrVerifierStatutEcologic(dossier) {
   if (!dossier || !dossier.agoraClaimId) return null;
   try {
+    var _sToken=localStorage.getItem('sp_ecologic_token')||'';
     var r = await fetch(
-      QR_ECOLOGIC_PROXY + '/getclaimstatus?ClaimId=' + dossier.agoraClaimId
+      QR_ECOLOGIC_PROXY + '/getclaimstatus?ClaimId=' + dossier.agoraClaimId + '&ApiKey='+encodeURIComponent(_sToken),
+      {headers:{"ApiKey":_sToken,"X-Api-Key":_sToken,"Authorization":"Bearer "+_sToken}}
     );
-    var data = await r.json();
+    var _sText=await r.text();var data;try{data=JSON.parse(_sText);}catch(e){console.warn('Ecologic status non-JSON:',_sText.substring(0,200));return null;}
     var rd = data.ResponseData || {};
     return {
       claimId:  dossier.agoraClaimId,

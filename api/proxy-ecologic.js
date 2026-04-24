@@ -1,7 +1,7 @@
 // api/proxy-ecologic.js — Proxy Vercel pour Ecologic GesCo QualiRépar
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://app.solution-phone.fr');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, X-Api-Key, ApiKey');
 
@@ -28,6 +28,14 @@ export default async function handler(req, res) {
     }
     if (req.headers['apikey']) {
       headers['ApiKey'] = req.headers['apikey'];
+    }
+
+    // Extraire ApiKey du query string si pas déjà dans les headers
+    if (!headers['ApiKey']) {
+      const qsKey = url.searchParams.get('ApiKey');
+      if (qsKey) {
+        headers['ApiKey'] = qsKey;
+      }
     }
 
     let body = undefined;
