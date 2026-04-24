@@ -4833,8 +4833,10 @@ function initRealtime() {
       }
       // Charger les téléphones neufs
       loadPhonesNeufs();
+      // Synchro bons de commande (multi-poste)
+      loadBonsCommande();
     } catch(e) { console.log('Sync error:', e); }
-  }, 90000);
+  }, 30000);
   console.log('🔄 Synchronisation temps réel activée (30s)');
 
   // Auto-impression désactivée — l'impression passe par le NAS directement
