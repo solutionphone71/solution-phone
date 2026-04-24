@@ -15069,29 +15069,30 @@ async function repGenererFacture(){
   var divEc=document.getElementById('div-envoi-facture-cloture');
   if(divEc){divEc.style.display='flex';divEc.style.gap='8px';divEc.style.marginTop='10px';divEc.innerHTML='<button onclick="repShowEnvoiFacture(repDossierCourant)" class="btn btn-primary" style="flex:1;padding:12px;font-size:14px;">\uD83D\uDCE7 Email facture</button><button onclick="repEnvoyerSMSFactureCloture()" class="btn" style="flex:1;padding:12px;font-size:14px;background:#16a34a;color:#fff;border:none;border-radius:8px;">\uD83D\uDCF1 SMS facture</button>';}
 
-  // Envoi auto QualiRepar
-  if(d.bonusQR){
-    var _marque=((d.appareil||{}).marque||'').toLowerCase();
-    var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
-    var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
-    if(_isEcologic&&typeof qrEnvoyerEcologicComplet==='function'){setTimeout(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});},800);}
-    else if(_isEcosystem&&typeof qrEnvoyerEcosystemComplet==='function'){setTimeout(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});},800);}
-  }
-
   // Rafraîchir la caisse du jour si on est dessus
   if(typeof renderCaisseJour === 'function') setTimeout(renderCaisseJour, 500);
 
-  // Certification NF525 Kiwiz en arrière-plan
+  // Certification NF525 Kiwiz PUIS envoi QualiRépar (Kiwiz d'abord pour avoir la ref NF525 sur la facture)
+  var _kiwizDone = Promise.resolve();
   if(kiwizConfigured()){
     var clientNomKiwiz = ((d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom).trim();
-    certifierFactureKiwiz(d.facture, clientNomKiwiz, null).then(function(ref){
+    _kiwizDone = certifierFactureKiwiz(d.facture, clientNomKiwiz, null).then(function(ref){
       if(ref){
         d.facture.kiwizRef = ref;
         repSauvegarderDossier();
         showNotif('🔒 NF525 certifiée — Réf: '+ref,'success');
         console.log('Kiwiz NF525:', ref);
       }
-    });
+    }).catch(function(e){console.warn('Kiwiz:',e);});
+  }
+
+  // Envoi auto QualiRepar — APRES Kiwiz pour que la facture ait la ref NF525
+  if(d.bonusQR){
+    var _marque=((d.appareil||{}).marque||'').toLowerCase();
+    var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
+    var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
+    if(_isEcologic&&typeof qrEnvoyerEcologicComplet==='function'){_kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});});}
+    else if(_isEcosystem&&typeof qrEnvoyerEcosystemComplet==='function'){_kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});});}
   }
 
   // Imprimer la facture automatiquement
@@ -16326,38 +16327,22 @@ async function qrEnvoyerEcologicComplet(d){
     if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
     var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/3...</div>";
-    // Générer facture PDF via jspdf (d.facture souvent absent → on génère directement)
+    // Facture PDF — utiliser la VRAIE facture NF525 (repFactureToPDFBase64) si d.facture existe
     try{
-      if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
-      var fpdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-      var _fc=c;var _fa=a;var _fht=ht;var _fttc=ttc;var _ftva=+(_fttc-_fht).toFixed(2);
-      var _fref=ref;var _fdate=today;
-      fpdf.setFontSize(18);fpdf.setFont('helvetica','bold');fpdf.text('FACTURE',105,25,{align:'center'});
-      fpdf.setFontSize(10);fpdf.setFont('helvetica','normal');
-      fpdf.text('Solution Phone - 21 Rue Gambetta, 71000 Macon',105,33,{align:'center'});
-      fpdf.text('SIRET: 91507770500012 - TVA: FR91915077705',105,38,{align:'center'});
-      fpdf.setFontSize(11);fpdf.setFont('helvetica','bold');
-      fpdf.text('Facture N. '+_fref,15,52);fpdf.text('Date : '+_fdate,140,52);
-      fpdf.setFont('helvetica','normal');fpdf.setFontSize(10);
-      fpdf.text('Client :',15,64);
-      fpdf.text((_fc.prenom||'')+' '+(_fc.nom||''),50,64);
-      fpdf.text((_fc.adresse||''),50,70);fpdf.text((_fc.cp||'')+' '+(_fc.ville||''),50,76);
-      fpdf.text('Tel: '+(_fc.tel||''),50,82);
-      var fty=98;fpdf.setFont('helvetica','bold');
-      fpdf.setFillColor(240,240,240);fpdf.rect(15,fty-5,180,8,'F');
-      fpdf.text('Designation',17,fty);fpdf.text('Prix HT',130,fty);fpdf.text('TVA',150,fty);fpdf.text('Prix TTC',170,fty);
-      fpdf.setFont('helvetica','normal');fty+=10;
-      var _fdesc='Reparation '+(d.panne||(_fa.marque||'')+' '+(_fa.modele||''));
-      fpdf.text(_fdesc.substring(0,60),17,fty);
-      fpdf.text(_fht.toFixed(2)+' E',130,fty);fpdf.text(_ftva.toFixed(2)+' E',150,fty);fpdf.text(_fttc.toFixed(2)+' E',170,fty);
-      fty+=15;fpdf.setFont('helvetica','bold');fpdf.setFontSize(12);
-      fpdf.text('Total TTC : '+_fttc.toFixed(2)+' E',170,fty,{align:'right'});
-      fpdf.setFontSize(9);fpdf.setFont('helvetica','normal');fty+=10;
-      fpdf.text('IMEI : '+(_fa.imei||'N/A'),15,fty);
-      fpdf.text('Bonus QualiRepar : 25.00 E',15,fty+6);
-      var fb=fpdf.output('datauristring').split(',')[1];
-      if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}
-    }catch(ef){console.warn("Facture jspdf:",ef);}
+      var fb=null;
+      if(d.facture && typeof repFactureToPDFBase64==='function'){
+        console.log('[Ecologic] Génération facture via repFactureToPDFBase64 (NF525)...');
+        fb=await repFactureToPDFBase64(d);
+        console.log('[Ecologic] repFactureToPDFBase64 résultat:',fb?'OK ('+fb.length+' chars)':'null');
+      }
+      if(fb){
+        await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});
+        errs=errs.filter(function(e){return e!=="Facture";});
+        console.log('[Ecologic] Facture NF525 attachée avec succès');
+      } else {
+        console.warn('[Ecologic] repFactureToPDFBase64 a retourné null, fallback jspdf...');
+      }
+    }catch(ef){console.warn("Facture NF525:",ef);}
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
@@ -22252,45 +22237,14 @@ async function qrSendEcologic() {
   }
 
   // ④b AttachFile — Facture PDF (INVOICE — obligatoire)
+  // Utiliser la vraie facture NF525 si disponible, sinon qrData n'a pas de facture dans ce flux
   try {
     qrSetAgoraBadge('\u23F3', 'Facture\u2026', 'Dossier #' + claimId, '#e67e22');
-    // Générer une facture PDF simple avec jspdf
-    if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
-    var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    var _cli=d.client||{};var _app=d.appareil||{};var _dev=d.devis||{};
-    var _ht=parseFloat(_dev.prixHT)||0;var _ttc=+(_ht*1.2).toFixed(2);var _tva=+(_ttc-_ht).toFixed(2);
-    var _ref=d.refRep||refFact;var _date=today;
-    // En-tête
-    pdf.setFontSize(18);pdf.setFont('helvetica','bold');pdf.text('FACTURE',105,25,{align:'center'});
-    pdf.setFontSize(10);pdf.setFont('helvetica','normal');
-    pdf.text('Solution Phone — 21 Rue Gambetta, 71000 Mâcon',105,33,{align:'center'});
-    pdf.text('SIRET: 91507770500012 — TVA: FR91915077705',105,38,{align:'center'});
-    // Infos facture
-    pdf.setFontSize(11);pdf.setFont('helvetica','bold');
-    pdf.text('Facture N° '+_ref,15,52);pdf.text('Date : '+_date,140,52);
-    // Client
-    pdf.setFont('helvetica','normal');pdf.setFontSize(10);
-    pdf.text('Client :',15,64);
-    pdf.text((_cli.prenom||'')+' '+(_cli.nom||''),50,64);
-    pdf.text((_cli.adresse||''),50,70);pdf.text((_cli.cp||'')+' '+(_cli.ville||''),50,76);
-    pdf.text('Tél: '+(_cli.tel||''),50,82);
-    // Tableau
-    var ty=98;pdf.setFont('helvetica','bold');
-    pdf.setFillColor(240,240,240);pdf.rect(15,ty-5,180,8,'F');
-    pdf.text('Désignation',17,ty);pdf.text('Prix HT',130,ty);pdf.text('TVA',150,ty);pdf.text('Prix TTC',170,ty);
-    pdf.setFont('helvetica','normal');ty+=10;
-    var _desc='Remplacement '+(_app.typeRep||_app.type||'pièce')+' — '+(_app.marque||'')+' '+(_app.modele||'');
-    pdf.text(_desc.substring(0,60),17,ty);
-    pdf.text(_ht.toFixed(2)+' €',130,ty);pdf.text(_tva.toFixed(2)+' €',150,ty);pdf.text(_ttc.toFixed(2)+' €',170,ty);
-    // Total
-    ty+=15;pdf.setFont('helvetica','bold');pdf.setFontSize(12);
-    pdf.text('Total TTC : '+_ttc.toFixed(2)+' €',170,ty,{align:'right'});
-    // IMEI
-    pdf.setFontSize(9);pdf.setFont('helvetica','normal');ty+=10;
-    pdf.text('IMEI : '+(_app.imei||'N/A'),15,ty);
-    pdf.text('Bonus QualiRépar : '+(parseFloat(_dev.bonusMontant)||25).toFixed(2)+' €',15,ty+6);
-    // Convertir en base64
-    var factB64=pdf.output('datauristring').split(',')[1];
+    var factB64=null;
+    if(d.facture && typeof repFactureToPDFBase64==='function'){
+      console.log('[QR Ecologic] Facture via repFactureToPDFBase64 (NF525)...');
+      factB64=await repFactureToPDFBase64(d);
+    }
     if(factB64){
       await fetch(QR_ECOLOGIC_PROXY+'/AttachFile'
         +'?ClaimId='+claimId
@@ -22299,6 +22253,9 @@ async function qrSendEcologic() {
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({FileContent:factB64})
       });
+      console.log('[QR Ecologic] Facture NF525 attachée');
+    } else {
+      console.warn('[QR Ecologic] Pas de facture NF525 disponible (d.facture absent ou repFactureToPDFBase64 null)');
     }
   } catch(ef){console.warn('[QR Ecologic] Facture PDF:',ef);}
 
