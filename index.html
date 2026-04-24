@@ -17613,16 +17613,24 @@ async function saveBonCommandeSupabase(cmd){
   };
   try {
     var ex = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id);
-    var result;
     if(ex && ex.length > 0){
-      result = await supaFetch('bons_commande','PATCH',data,'?id=eq.'+cmd.id);
+      await supaFetch('bons_commande','PATCH',data,'?id=eq.'+cmd.id);
     } else {
-      result = await supaFetch('bons_commande','POST',data);
+      await supaFetch('bons_commande','POST',data);
     }
-    console.log('[BonCommande] Sauvegarde Supabase OK:', cmd.id, 'traite='+cmd.traite, 'statut='+cmd.statut, result);
+    // VÉRIFICATION : relire depuis Supabase pour confirmer
+    var verif = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id+'&select=id,numero,traite,statut');
+    if(verif && verif[0]){
+      var ok = (verif[0].traite === true || verif[0].traite === 'true');
+      console.log('[BonCommande] Vérif après save:', cmd.numero, 'traite en Supabase =', verif[0].traite, 'statut =', verif[0].statut);
+      if(cmd.traite && !ok){
+        console.error('[BonCommande] ❌ PROBLÈME: traite=true envoyé mais Supabase a traite=', verif[0].traite);
+        showNotif('⚠️ ERREUR: Le champ "traite" ne se sauvegarde pas dans Supabase ! Colonne manquante ?','error');
+      }
+    }
   } catch(e){
     console.error('[BonCommande] ❌ Erreur sauvegarde Supabase:', e);
-    showNotif('⚠️ Erreur synchro bon de commande — vérifiez la connexion','error');
+    showNotif('⚠️ Erreur synchro bon de commande','error');
   }
   saveBonsCommande();
 }
