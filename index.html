@@ -4833,10 +4833,8 @@ function initRealtime() {
       }
       // Charger les téléphones neufs
       loadPhonesNeufs();
-      // Synchro bons de commande (multi-poste)
-      loadBonsCommande();
     } catch(e) { console.log('Sync error:', e); }
-  }, 30000);
+  }, 90000);
   console.log('🔄 Synchronisation temps réel activée (30s)');
 
   // Auto-impression désactivée — l'impression passe par le NAS directement
@@ -17559,6 +17557,8 @@ async function loadBonsCommande(){
         };
       });
       saveBonsCommande();
+      // Mettre à jour le hash pour éviter re-render inutile du polling
+      _lastBonsHash = JSON.stringify(res.map(function(x){ return x.id+'|'+x.statut+'|'+x.traite; }));
       console.log('[BonsCommande] Synchro Supabase OK:', bonsCommande.length, 'bons');
 
       // Pousser les bons locaux non synchronisés vers Supabase
@@ -17578,10 +17578,24 @@ async function loadBonsCommande(){
   renderBonsCommande();
 }
 
-// ── Polling rapide bons de commande (15s) pour synchro multi-poste ──
+// ── Polling bons de commande (20s) pour synchro multi-poste ──
+// Ne re-render que si les données ont changé (évite le clignotement)
+var _lastBonsHash = '';
 setInterval(function(){
-  if(supabaseReady) loadBonsCommande();
-}, 15000);
+  if(!supabaseReady) return;
+  // Polling silencieux : charger sans re-render, comparer, puis render si changé
+  (async function(){
+    try {
+      var res = await supaFetch('bons_commande','GET',null,'?order=id.desc');
+      if(!res) return;
+      var hash = JSON.stringify(res.map(function(x){ return x.id+'|'+x.statut+'|'+x.traite; }));
+      if(hash === _lastBonsHash) return; // rien n'a changé
+      _lastBonsHash = hash;
+      console.log('[BonsCommande] 🔄 Changement détecté, mise à jour...');
+      loadBonsCommande();
+    } catch(e){}
+  })();
+}, 20000);
 
 async function saveBonCommandeSupabase(cmd){
   var data = {
