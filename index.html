@@ -19807,12 +19807,24 @@ function cmdStatutBadge(c){
   return '<span class="cmd-badge cmd-badge-gray">'+s+'</span>';
 }
 
-function cmdChangerStatut(id, statut){
+async function cmdChangerStatut(id, statut){
   var c = bonsCommande.find(function(x){ return x.id===id; });
   if(!c) return;
   c.statut = statut;
   if(statut === 'arrive'){
     c.dateArrivee = new Date().toISOString().split('T')[0];
+  }
+  if(statut === 'remis'){
+    c.traite = true;
+    c.traiteDate = new Date().toISOString().split('T')[0];
+  }
+  // SAUVEGARDER D'ABORD dans Supabase AVANT d'envoyer le SMS (qui peut rediriger la page)
+  saveBonsCommande();
+  renderBonsCommande();
+  await saveBonCommandeSupabase(c);
+  console.log('[BonCommande] Statut mis à jour:', c.numero, '→', statut, 'traite='+c.traite);
+  // SMS après que Supabase ait confirmé
+  if(statut === 'arrive'){
     envoyerSMSArrivee(c);
     if(c.type === 'reparation'){
       setTimeout(function(){
@@ -19820,12 +19832,6 @@ function cmdChangerStatut(id, statut){
       }, 1500);
     }
   }
-  if(statut === 'remis'){
-    c.traite = true;
-    c.traiteDate = new Date().toISOString().split('T')[0];
-  }
-  saveBonCommandeSupabase(c);
-  renderBonsCommande();
 }
 
 function renderBonsCommande(){
@@ -20014,7 +20020,7 @@ function envoyerSMSRelance(id){
   }
 }
 
-function envoyerSMSCommande(id){
+async function envoyerSMSCommande(id){
   var c = bonsCommande.find(function(x){ return x.id === id; });
   if(!c) return;
   var reste  = Math.max(0,(Number(c.prix)||0)-(Number(c.acompte)||0));
@@ -20027,13 +20033,14 @@ function envoyerSMSCommande(id){
   }
   var tel = c.client.tel.replace(/[^0-9+]/g,'');
 
-  // Archiver en traité
+  // Archiver en traité — ATTENDRE la sauvegarde Supabase AVANT de rediriger
   c.traite = true;
   c.statut = 'remis';
   c.traiteDate = new Date().toISOString().split('T')[0];
-  saveBonCommandeSupabase(c);
-  saveBonsCommande();
+  saveBonsCommande(); // local immédiat
   renderBonsCommande();
+  showNotif('⏳ Archivage en cours...','info');
+  await saveBonCommandeSupabase(c); // ← ATTENDRE que Supabase confirme
   showNotif('✅ '+c.client.nom+' — SMS envoyé + archivé','success');
 
   // Brevo SMS si dispo
