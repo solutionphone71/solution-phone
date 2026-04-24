@@ -6763,11 +6763,13 @@ async function alimenterCaisse(opts){
   }
 
   // Ajouter les montants
+  // Le client paie ttc - quali par son mode de paiement, le reste vient de l'éco-organisme
+  var clientPaid = ttc - quali;
   entry.ttc += ttc;
-  if(mode === 'CB')        entry.cb       += ttc;
-  if(mode === 'ESPECES')   entry.especes  += ttc;
-  if(mode === 'CHEQUE')    entry.cheque   += ttc;
-  if(mode === 'VIREMENT')  entry.virement += ttc;
+  if(mode === 'CB')        entry.cb       += clientPaid;
+  if(mode === 'ESPECES')   entry.especes  += clientPaid;
+  if(mode === 'CHEQUE')    entry.cheque   += clientPaid;
+  if(mode === 'VIREMENT')  entry.virement += clientPaid;
   if(quali > 0)            entry.quali    += quali;
 
   // Arrondir
@@ -11036,12 +11038,27 @@ function renderDashboard(){
     }
   }
 
-  // ── Réparations récentes ──
+  // ── Réparations récentes (classiques + bons de dépôt QualiRépar) ──
   var dashRep = document.getElementById('dash-reparations');
   if(dashRep){
-    var repRecentes = Array.isArray(reparations) ? reparations.slice(-6).reverse() : [];
+    var allRep = [];
+    // Réparations classiques
+    if(Array.isArray(reparations)){
+      reparations.forEach(function(r){ allRep.push({clientNom:r.clientNom,appareil:r.appareil,prix:r.prix||0,date:r.date}); });
+    }
+    // Bons de dépôt (QualiRépar)
+    if(Array.isArray(bonsDepot)){
+      bonsDepot.forEach(function(d){
+        var nom = d.client ? ((d.client.prenom?d.client.prenom+' ':'')+(d.client.nom||'')) : '';
+        var app = d.appareil ? ((d.appareil.marque?d.appareil.marque+' ':'')+(d.appareil.modele||'')) : '';
+        var prix = d.facture ? (d.facture.prix||d.devis||0) : (d.devis||0);
+        allRep.push({clientNom:nom,appareil:app,prix:prix,date:d.date||''});
+      });
+    }
+    allRep.sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+    var repRecentes = allRep.slice(0,6);
     dashRep.innerHTML = repRecentes.length > 0
-      ? repRecentes.map(function(r){ return '<tr><td><b>'+r.clientNom+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+r.appareil+'</td><td>'+r.prix.toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>'; }).join('')
+      ? repRecentes.map(function(r){ return '<tr><td><b>'+(r.clientNom||'—')+'</b></td><td style="color:var(--text-muted);font-size:12px;">'+(r.appareil||'—')+'</td><td>'+(r.prix||0).toFixed(0)+' €</td><td style="font-size:12px;color:var(--text-muted);">'+fmtDate(r.date)+'</td></tr>'; }).join('')
       : '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px;">Aucune réparation</td></tr>';
   }
 
