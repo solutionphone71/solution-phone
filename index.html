@@ -16815,13 +16815,15 @@ async function uploaderPhotoIMEI(base64, dataUrl){
       return url;
     } else {
       var err = await res.text();
-      console.error('Upload Storage échoué ('+res.status+') — fallback base64');
-      // Fallback : retourner directement le dataUrl base64
+      console.error('Upload Storage échoué ('+res.status+')', err);
+      showNotif('Photo non sauvegardée en ligne (erreur '+res.status+') — réessayez','error');
+      // Fallback : retourner directement le dataUrl base64 (ne sync PAS entre appareils)
       return dataUrl || ('data:image/jpeg;base64,'+base64);
     }
   } catch(e){
     console.error('Upload exception:', e);
-    // Fallback : base64 direct
+    showNotif('Photo non sauvegardée en ligne — vérifiez votre connexion','error');
+    // Fallback : base64 direct (ne sync PAS entre appareils)
     return dataUrl || null;
   }
 }
