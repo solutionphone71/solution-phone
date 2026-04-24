@@ -47,50 +47,61 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── Test live : GET /proxy-ecologic/__testlive appelle Ecologic et renvoie le diagnostic ──
+    // ── Test live : GET /proxy-ecologic/__testlive ──
     if (path === '/__testlive') {
       const testResults = {};
-      const testEndpoint = 'https://apiecologic.e-reparateur.eco/api/v1/ecosupport/printbrandlist';
+      const baseUrl = 'https://apiecologic.e-reparateur.eco';
+      const endpoint = baseUrl + '/api/v1/ecosupport/printbrandlist';
+      const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
-      // Test 1: ApiKey dans query string uniquement
+      // Test 1: Query string + User-Agent navigateur
       try {
-        const r1 = await fetch(testEndpoint + '?ApiKey=' + ECOLOGIC_API_KEY, {
-          method: 'GET', headers: { 'Accept': 'application/json' }
+        const r1 = await fetch(endpoint + '?ApiKey=' + ECOLOGIC_API_KEY, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': ua }
         });
-        testResults.queryStringOnly = { status: r1.status, body: (await r1.text()).substring(0, 200) };
-      } catch(e) { testResults.queryStringOnly = { error: e.message }; }
+        const h1 = {}; r1.headers.forEach((v, k) => h1[k] = v);
+        testResults.queryWithUA = { status: r1.status, body: (await r1.text()).substring(0, 300), responseHeaders: h1 };
+      } catch(e) { testResults.queryWithUA = { error: e.message }; }
 
-      // Test 2: ApiKey dans header uniquement
+      // Test 2: ApiKey header uniquement
       try {
-        const r2 = await fetch(testEndpoint, {
-          method: 'GET', headers: { 'Accept': 'application/json', 'ApiKey': ECOLOGIC_API_KEY }
+        const r2 = await fetch(endpoint, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'ApiKey': ECOLOGIC_API_KEY, 'User-Agent': ua }
         });
-        testResults.headerOnly = { status: r2.status, body: (await r2.text()).substring(0, 200) };
+        testResults.headerOnly = { status: r2.status, body: (await r2.text()).substring(0, 300) };
       } catch(e) { testResults.headerOnly = { error: e.message }; }
 
-      // Test 3: Authorization Bearer
+      // Test 3: Tester la racine API (sans /printbrandlist)
       try {
-        const r3 = await fetch(testEndpoint, {
-          method: 'GET', headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + ECOLOGIC_API_KEY }
+        const r3 = await fetch(baseUrl + '/api/v1/ecosupport?ApiKey=' + ECOLOGIC_API_KEY, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': ua }
         });
-        testResults.bearerToken = { status: r3.status, body: (await r3.text()).substring(0, 200) };
-      } catch(e) { testResults.bearerToken = { error: e.message }; }
+        testResults.rootEndpoint = { status: r3.status, body: (await r3.text()).substring(0, 300) };
+      } catch(e) { testResults.rootEndpoint = { error: e.message }; }
 
-      // Test 4: X-API-Key header
+      // Test 4: Swagger / OpenAPI spec
       try {
-        const r4 = await fetch(testEndpoint, {
-          method: 'GET', headers: { 'Accept': 'application/json', 'X-API-Key': ECOLOGIC_API_KEY }
+        const r4 = await fetch(baseUrl + '/swagger/v1/swagger.json', {
+          method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': ua }
         });
-        testResults.xApiKey = { status: r4.status, body: (await r4.text()).substring(0, 200) };
-      } catch(e) { testResults.xApiKey = { error: e.message }; }
+        testResults.swagger = { status: r4.status, body: (await r4.text()).substring(0, 500) };
+      } catch(e) { testResults.swagger = { error: e.message }; }
 
-      // Test 5: Les deux (query + header)
+      // Test 5: PascalCase endpoint PrintBrandList
       try {
-        const r5 = await fetch(testEndpoint + '?ApiKey=' + ECOLOGIC_API_KEY, {
-          method: 'GET', headers: { 'Accept': 'application/json', 'ApiKey': ECOLOGIC_API_KEY }
+        const r5 = await fetch(baseUrl + '/api/v1/ecosupport/PrintBrandList?ApiKey=' + ECOLOGIC_API_KEY, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': ua }
         });
-        testResults.bothQueryAndHeader = { status: r5.status, body: (await r5.text()).substring(0, 200) };
-      } catch(e) { testResults.bothQueryAndHeader = { error: e.message }; }
+        testResults.pascalCase = { status: r5.status, body: (await r5.text()).substring(0, 300) };
+      } catch(e) { testResults.pascalCase = { error: e.message }; }
+
+      // Test 6: API v2
+      try {
+        const r6 = await fetch(baseUrl + '/api/v2/ecosupport/printbrandlist?ApiKey=' + ECOLOGIC_API_KEY, {
+          method: 'GET', headers: { 'Accept': 'application/json', 'User-Agent': ua }
+        });
+        testResults.apiV2 = { status: r6.status, body: (await r6.text()).substring(0, 300) };
+      } catch(e) { testResults.apiV2 = { error: e.message }; }
 
       return res.status(200).json({ keyFirst8: ECOLOGIC_API_KEY.substring(0, 8), tests: testResults });
     }
