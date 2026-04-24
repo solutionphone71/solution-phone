@@ -17576,12 +17576,17 @@ async function saveBonCommandeSupabase(cmd){
   };
   try {
     var ex = await supaFetch('bons_commande','GET',null,'?id=eq.'+cmd.id);
+    var result;
     if(ex && ex.length > 0){
-      await supaFetch('bons_commande','PATCH',data,'?id=eq.'+cmd.id);
+      result = await supaFetch('bons_commande','PATCH',data,'?id=eq.'+cmd.id);
     } else {
-      await supaFetch('bons_commande','POST',data);
+      result = await supaFetch('bons_commande','POST',data);
     }
-  } catch(e){ console.log('Erreur save bon commande',e); }
+    console.log('[BonCommande] Sauvegarde Supabase OK:', cmd.id, 'traite='+cmd.traite, 'statut='+cmd.statut, result);
+  } catch(e){
+    console.error('[BonCommande] ❌ Erreur sauvegarde Supabase:', e);
+    showNotif('⚠️ Erreur synchro bon de commande — vérifiez la connexion','error');
+  }
   saveBonsCommande();
 }
 

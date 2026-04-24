@@ -51,8 +51,8 @@ export default async function handler(req, res) {
     let response = await fetch(url, fetchOpts);
     let text = await response.text();
 
-    // Auto-fix PGRST204 : colonne inconnue → retirer et reessayer
-    if (!response.ok && method === 'POST' && text.includes('PGRST204')) {
+    // Auto-fix PGRST204 : colonne inconnue → retirer et reessayer (POST et PATCH)
+    if (!response.ok && (method === 'POST' || method === 'PATCH') && text.includes('PGRST204')) {
       try {
         const err = JSON.parse(text);
         const match = err.message && err.message.match(/the '(\w+)' column/);
