@@ -41,8 +41,8 @@ async function sb(path, { method = "GET", body, prefer } = {}) {
     method,
     headers: {
       "Content-Type": "application/json",
-      "apikey": process.env.SUPABASE_SERVICE_ROLE_KEY,
-      "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "apikey": process.env.SUPABASE_KEY,
+      "Authorization": `Bearer ${process.env.SUPABASE_KEY}`,
       ...(prefer ? { "Prefer": prefer } : {})
     },
     body: body ? JSON.stringify(body) : undefined
