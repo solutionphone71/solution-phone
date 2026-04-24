@@ -16264,6 +16264,16 @@ function repEnvoyerSMSFactureCloture(){
 async function qrEnvoyerEcologicComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
+  // ── Pré-validation : bloquer si éléments obligatoires manquants ──
+  var manquants=[];
+  if(!(c.nom||'').trim()) manquants.push('Nom du client');
+  if(!(a.imei||'').trim()) manquants.push('IMEI');
+  if(!(a.marque||'').trim()) manquants.push('Marque');
+  if(!(a.modele||'').trim()) manquants.push('Modele');
+  if(!(d.panne||'').trim()&&!(a.typeRep||a.type||'').trim()) manquants.push('Type de reparation');
+  var _ttcCheck=parseFloat(d.devis||0);var _moCheck=parseFloat(d.moHT||0);var _pCheck=parseFloat(d.piecesHT||0);
+  if(_ttcCheck<=0&&_moCheck<=0&&_pCheck<=0) manquants.push('Montant reparation');
+  if(manquants.length>0){var errMsg='Elements manquants :\n- '+manquants.join('\n- ');showNotif&&showNotif(errMsg,"error");var elV=document.getElementById("rep-qr-envoi-statut");if(elV)elV.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+errMsg.replace(/\n/g,'<br>')+"</div>";return;}
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   // Auth gérée côté proxy Vercel (env var ECOLOGIC_API_KEY)
   var ecoHeaders={"Content-Type":"application/json"};
@@ -16316,7 +16326,38 @@ async function qrEnvoyerEcologicComplet(d){
     if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
     var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/3...</div>";
-    if(d.facture&&typeof repFactureToPDFBase64==="function"){try{var fb=await repFactureToPDFBase64(d);if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}}catch(ef){console.warn("Facture:",ef);}}
+    // Générer facture PDF via jspdf (d.facture souvent absent → on génère directement)
+    try{
+      if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+      var fpdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      var _fc=c;var _fa=a;var _fht=ht;var _fttc=ttc;var _ftva=+(_fttc-_fht).toFixed(2);
+      var _fref=ref;var _fdate=today;
+      fpdf.setFontSize(18);fpdf.setFont('helvetica','bold');fpdf.text('FACTURE',105,25,{align:'center'});
+      fpdf.setFontSize(10);fpdf.setFont('helvetica','normal');
+      fpdf.text('Solution Phone - 21 Rue Gambetta, 71000 Macon',105,33,{align:'center'});
+      fpdf.text('SIRET: 91507770500012 - TVA: FR91915077705',105,38,{align:'center'});
+      fpdf.setFontSize(11);fpdf.setFont('helvetica','bold');
+      fpdf.text('Facture N. '+_fref,15,52);fpdf.text('Date : '+_fdate,140,52);
+      fpdf.setFont('helvetica','normal');fpdf.setFontSize(10);
+      fpdf.text('Client :',15,64);
+      fpdf.text((_fc.prenom||'')+' '+(_fc.nom||''),50,64);
+      fpdf.text((_fc.adresse||''),50,70);fpdf.text((_fc.cp||'')+' '+(_fc.ville||''),50,76);
+      fpdf.text('Tel: '+(_fc.tel||''),50,82);
+      var fty=98;fpdf.setFont('helvetica','bold');
+      fpdf.setFillColor(240,240,240);fpdf.rect(15,fty-5,180,8,'F');
+      fpdf.text('Designation',17,fty);fpdf.text('Prix HT',130,fty);fpdf.text('TVA',150,fty);fpdf.text('Prix TTC',170,fty);
+      fpdf.setFont('helvetica','normal');fty+=10;
+      var _fdesc='Reparation '+(d.panne||(_fa.marque||'')+' '+(_fa.modele||''));
+      fpdf.text(_fdesc.substring(0,60),17,fty);
+      fpdf.text(_fht.toFixed(2)+' E',130,fty);fpdf.text(_ftva.toFixed(2)+' E',150,fty);fpdf.text(_fttc.toFixed(2)+' E',170,fty);
+      fty+=15;fpdf.setFont('helvetica','bold');fpdf.setFontSize(12);
+      fpdf.text('Total TTC : '+_fttc.toFixed(2)+' E',170,fty,{align:'right'});
+      fpdf.setFontSize(9);fpdf.setFont('helvetica','normal');fty+=10;
+      fpdf.text('IMEI : '+(_fa.imei||'N/A'),15,fty);
+      fpdf.text('Bonus QualiRepar : 25.00 E',15,fty+6);
+      var fb=fpdf.output('datauristring').split(',')[1];
+      if(fb){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=Facture&FileExtension=pdf&DocumentType=Invoice"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:fb})});errs=errs.filter(function(e){return e!=="Facture";});}
+    }catch(ef){console.warn("Facture jspdf:",ef);}
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
