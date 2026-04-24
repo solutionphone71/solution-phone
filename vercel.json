@@ -2,7 +2,15 @@
   "rewrites": [
     { "source": "/proxy-kiwiz/:path*",    "destination": "/api/proxy-kiwiz"    },
     { "source": "/proxy-ecosystem/:path*","destination": "/api/proxy-ecosystem" },
-    { "source": "/proxy-ecologic/:path*", "destination": "/api/proxy-ecologic"  }
+    { "source": "/proxy-ecologic/:path*", "destination": "/api/proxy-ecologic"  },
+    { "source": "/api/google-oauth-init",     "destination": "/api/google-oauth-init.js"     },
+    { "source": "/api/google-oauth-callback", "destination": "/api/google-oauth-callback.js" },
+    { "source": "/api/google-reviews",        "destination": "/api/google-reviews.js"        },
+    { "source": "/api/cron-reviews",          "destination": "/api/cron-reviews.js"           },
+    { "source": "/api/google-reviews-config", "destination": "/api/google-reviews-config.js"  }
+  ],
+  "crons": [
+    { "path": "/api/cron-reviews", "schedule": "0 9 * * *" }
   ],
   "headers": [
     {
