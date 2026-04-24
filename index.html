@@ -17507,7 +17507,7 @@ try { var _bcLocal = localStorage.getItem('sp_bons_commande'); if(_bcLocal) bons
 function saveBonsCommande(){ localStorage.setItem('sp_bons_commande', JSON.stringify(bonsCommande)); }
 
 async function loadBonsCommande(){
-  // Charger depuis localStorage d'abord (backup fiable)
+  // Charger depuis localStorage d'abord (backup si pas de Supabase)
   var localBons = {};
   try {
     var local = localStorage.getItem('sp_bons_commande');
@@ -17518,15 +17518,18 @@ async function loadBonsCommande(){
     }
   } catch(e){}
 
-  // Puis enrichir avec Supabase
+  // Supabase = SOURCE DE VÉRITÉ pour traite/statut
   try {
     var res = await supaFetch('bons_commande','GET',null,'?order=id.desc');
     if(res && res.length > 0){
       bonsCommande = res.map(function(x){
-        // Récupérer les données locales pour les champs que Supabase ne stocke peut-être pas encore
         var lb = localBons[x.id] || {};
+        // Supabase est la source de vérité — booléen OU string "true"
+        var traiteDB = (x.traite === true || x.traite === 'true');
+        var traiteLocal = (lb.traite === true);
         var statut = x.statut || lb.statut || 'a_commander';
-        var traite = (x.traite === true) || (lb.traite === true) || (statut === 'remis');
+        var traite = traiteDB || traiteLocal || (statut === 'remis');
+        var payeDB = (x.paye === true || x.paye === 'true');
         return {
           id: x.id, numero: x.numero, date: x.date,
           type: x.type,
@@ -17537,19 +17540,25 @@ async function loadBonsCommande(){
           modeReglement: x.mode_reglement || lb.modeReglement || 'ESPECES',
           statut: statut,
           reste: Math.max(0,(Number(x.prix)||0)-(Number(x.acompte)||Number(lb.acompte)||0)),
-          paye: (x.paye === true) || (lb.paye === true) || false,
+          paye: payeDB || (lb.paye === true) || false,
           traite: traite,
           dateArrivee: x.date_arrivee || lb.dateArrivee || '',
           traiteDate: x.traite_date || lb.traiteDate || ''
         };
       });
       saveBonsCommande(); // sync local
+      console.log('[BonsCommande] Synchro Supabase OK:', bonsCommande.length, 'bons');
     }
   } catch(e){
     console.log('[loadBonsCommande] Erreur Supabase, fallback local', e);
   }
   renderBonsCommande();
 }
+
+// ── Polling rapide bons de commande (15s) pour synchro multi-poste ──
+setInterval(function(){
+  if(supabaseReady) loadBonsCommande();
+}, 15000);
 
 async function saveBonCommandeSupabase(cmd){
   var data = {
