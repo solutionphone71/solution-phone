@@ -458,7 +458,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('parcours','');closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
-  <div class="mob-menu-item" onclick="showPageMobile('mobilax','');closeMobileMenu()"><span class="mob-menu-icon">🏭</span>Sous-traitant Mobilax</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
@@ -544,7 +543,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-group-label">Réparations</div>
     <div class="nav-item" onclick="showPage('parcours',this)"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
-    <div class="nav-item" onclick="showPage('mobilax',this)"><span class="nav-icon">🏭</span><span>Sous-traitant Mobilax</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
 
@@ -553,7 +551,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-item" onclick="showPage('phones-neufs',this)"><span class="nav-icon">📱</span><span>Stock tél. neufs</span></div>
     <div class="nav-item" onclick="showPage('ventes-neufs',this);renderVentesNeufs();"><span class="nav-icon">📤</span><span>Vente tél. neufs</span></div>
     <div class="nav-item" onclick="showPage('neufs-access',this);naLoad();naRender();"><span class="nav-icon">📦</span><span>Accessoires</span></div>
-    <div class="nav-item" onclick="showPage('commande', this)"><span class="nav-icon">🛒</span><span>Bon de commande</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Smartphones Occasion</div>
@@ -2631,6 +2628,47 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <div style="font-size:42px;margin-bottom:10px;">📦</div>
                 <div style="font-size:17px;font-weight:800;color:#d97706;margin-bottom:6px;">Commande accessoires</div>
                 <div style="font-size:12px;color:#92400e;line-height:1.5;">Coques, verres trempés<br>chargeurs, câbles<br>→ Commande boutique</div>
+              </div>
+
+            </div>
+
+            <!-- ── TABLEAU DE BORD PARCOURS ── -->
+            <div style="margin-top:28px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+              <!-- Widget Mobilax en cours -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;" onclick="parcoursOuvrir('mobilax')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-size:14px;font-weight:700;">🏭 Mobilax en cours</span>
+                  <span id="pc-dash-mlx-count" style="background:#3b82f6;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
+                </div>
+                <div id="pc-dash-mlx-list" style="font-size:12px;color:var(--text-muted);"></div>
+              </div>
+
+              <!-- Widget Commandes pièces en attente -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;" onclick="parcoursOuvrir('pieces')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-size:14px;font-weight:700;">🔩 Commandes pièces</span>
+                  <span id="pc-dash-piece-count" style="background:#059669;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
+                </div>
+                <div id="pc-dash-piece-list" style="font-size:12px;color:var(--text-muted);"></div>
+              </div>
+
+              <!-- Widget Commandes accessoires en attente -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;" onclick="parcoursOuvrir('accessoires')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-size:14px;font-weight:700;">📦 Commandes accessoires</span>
+                  <span id="pc-dash-acc-count" style="background:#d97706;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
+                </div>
+                <div id="pc-dash-acc-list" style="font-size:12px;color:var(--text-muted);"></div>
+              </div>
+
+              <!-- Widget Alertes / retards -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <span style="font-size:14px;font-weight:700;">⚠️ Alertes</span>
+                  <span id="pc-dash-alerte-count" style="background:#ef4444;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
+                </div>
+                <div id="pc-dash-alerte-list" style="font-size:12px;color:var(--text-muted);"></div>
               </div>
 
             </div>
@@ -5488,6 +5526,7 @@ function showPage(id,el){
   if(id==='commande'){ loadBonsCommande(); }
   if(id==='factures-pdf')fpdfInit();
   if(id==='mobilax')mlxInit();
+  if(id==='parcours'){ if(typeof mlxInit==='function')mlxInit(); if(typeof loadBonsCommande==='function')loadBonsCommande(); setTimeout(parcoursDashRefresh,300); parcoursRetour(); }
   if(id==='phones')renderPhones();
   if(id==='ventes-smart')renderVentesSmartphones();
   if(id==='calendrier')loadCalItems();
@@ -24050,6 +24089,71 @@ function openLiensRapides(){
 // PARCOURS CLIENT — 4 tuiles
 // ══════════════════════════════════════════════════════
 
+// Rafraîchir le tableau de bord Parcours
+function parcoursDashRefresh(){
+  // Mobilax en cours
+  if(typeof _mlxDossiers!=='undefined'){
+    var mlxEnCours=_mlxDossiers.filter(function(d){return d.statut==='en_cours';});
+    var elC=document.getElementById('pc-dash-mlx-count');if(elC)elC.textContent=mlxEnCours.length;
+    var elL=document.getElementById('pc-dash-mlx-list');
+    if(elL){
+      if(!mlxEnCours.length) elL.innerHTML='Aucun dossier en cours';
+      else elL.innerHTML=mlxEnCours.slice(0,4).map(function(d){
+        var j=Math.floor((Date.now()-new Date(d.date).getTime())/86400000);
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
+          +'<strong>'+d.numero+'</strong> '+d.nom+' — '+d.modele
+          +' <span style="color:'+(j>10?'#ef4444':'#3b82f6')+';font-weight:700;">J+'+j+'</span></div>';
+      }).join('')+(mlxEnCours.length>4?'<div style="padding:3px 0;color:#3b82f6;">+'+(mlxEnCours.length-4)+' autres...</div>':'');
+    }
+  }
+  // Commandes pièces
+  if(typeof bonsCommande!=='undefined'){
+    var cmdPiece=bonsCommande.filter(function(c){return c.type==='reparation'&&c.statut==='a_commander';});
+    var elPC=document.getElementById('pc-dash-piece-count');if(elPC)elPC.textContent=cmdPiece.length;
+    var elPL=document.getElementById('pc-dash-piece-list');
+    if(elPL){
+      if(!cmdPiece.length) elPL.innerHTML='Aucune commande en attente';
+      else elPL.innerHTML=cmdPiece.slice(0,4).map(function(c){
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
+          +'<strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</div>';
+      }).join('')+(cmdPiece.length>4?'<div style="padding:3px 0;color:#059669;">+'+(cmdPiece.length-4)+' autres...</div>':'');
+    }
+    // Commandes accessoires
+    var cmdAcc=bonsCommande.filter(function(c){return c.type==='accessoire'&&c.statut==='a_commander';});
+    var elAC=document.getElementById('pc-dash-acc-count');if(elAC)elAC.textContent=cmdAcc.length;
+    var elAL=document.getElementById('pc-dash-acc-list');
+    if(elAL){
+      if(!cmdAcc.length) elAL.innerHTML='Aucune commande en attente';
+      else elAL.innerHTML=cmdAcc.slice(0,4).map(function(c){
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
+          +'<strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</div>';
+      }).join('')+(cmdAcc.length>4?'<div style="padding:3px 0;color:#d97706;">+'+(cmdAcc.length-4)+' autres...</div>':'');
+    }
+  }
+  // Alertes : Mobilax >10 jours + commandes >3 jours
+  var alertes=[];
+  if(typeof _mlxDossiers!=='undefined'){
+    _mlxDossiers.filter(function(d){return d.statut==='en_cours';}).forEach(function(d){
+      var j=Math.floor((Date.now()-new Date(d.date).getTime())/86400000);
+      if(j>10) alertes.push({text:d.numero+' '+d.nom+' — Mobilax depuis '+j+' jours',color:'#ef4444'});
+    });
+  }
+  if(typeof bonsCommande!=='undefined'){
+    bonsCommande.filter(function(c){return c.statut==='a_commander';}).forEach(function(c){
+      var j=Math.floor((Date.now()-new Date(c.date).getTime())/86400000);
+      if(j>3) alertes.push({text:c.numero+' '+(c.client&&c.client.nom||'')+' — Commande depuis '+j+' jours',color:'#f59e0b'});
+    });
+  }
+  var elALC=document.getElementById('pc-dash-alerte-count');if(elALC)elALC.textContent=alertes.length;
+  var elALL=document.getElementById('pc-dash-alerte-list');
+  if(elALL){
+    if(!alertes.length) elALL.innerHTML='<span style="color:#10b981;">Tout est à jour !</span>';
+    else elALL.innerHTML=alertes.slice(0,5).map(function(a){
+      return '<div style="padding:3px 0;border-bottom:1px solid var(--border);color:'+a.color+';">⚠️ '+a.text+'</div>';
+    }).join('');
+  }
+}
+
 function parcoursOuvrir(type){
   document.getElementById('parcours-tuiles').style.display='none';
   ['parcours-reparation','parcours-mobilax','parcours-pieces','parcours-accessoires'].forEach(function(id){
@@ -24174,6 +24278,7 @@ function parcoursCreerMobilax(){
   }
 
   mlxAjouter(); // crée + imprime ticket Mobilax
+  pcMlxRender();
 
   // 2. Si pièce à commander → créer aussi un bon de commande
   if(piece.trim()){
