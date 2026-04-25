@@ -22660,45 +22660,59 @@ async function qrSendEcosystem() {
   qrSetAgoraBadge('\u23f3', 'Authentification Ecosystem...', 'Ecosystem', '#f39c12');
 
   // ① Authentification → JWT token
-  // Essai avec plusieurs endpoints et formats possibles
+  // Essai avec plusieurs endpoints, formats JSON et form-urlencoded
   var jwtToken = null;
-  var authEndpoints = [
-    { url: '/api/authenticate', body: { username: ECO_USER, password: ECO_PASS } },
-    { url: '/api/authenticate', body: { login: ECO_USER, password: ECO_PASS } },
-    { url: '/authenticate',     body: { username: ECO_USER, password: ECO_PASS } },
-    { url: '/api/auth/login',   body: { username: ECO_USER, password: ECO_PASS } }
+  var authAttempts = [
+    // JSON body
+    { url: '/api/authenticate', ct: 'application/json', body: JSON.stringify({ username: ECO_USER, password: ECO_PASS }) },
+    { url: '/api/authenticate', ct: 'application/json', body: JSON.stringify({ login: ECO_USER, password: ECO_PASS }) },
+    // Form-urlencoded (OAuth2 style)
+    { url: '/api/authenticate', ct: 'application/x-www-form-urlencoded', body: 'username='+encodeURIComponent(ECO_USER)+'&password='+encodeURIComponent(ECO_PASS) },
+    { url: '/api/authenticate', ct: 'application/x-www-form-urlencoded', body: 'grant_type=password&username='+encodeURIComponent(ECO_USER)+'&password='+encodeURIComponent(ECO_PASS) },
+    // Autres endpoints
+    { url: '/authenticate', ct: 'application/json', body: JSON.stringify({ username: ECO_USER, password: ECO_PASS }) },
+    { url: '/oauth/token',  ct: 'application/x-www-form-urlencoded', body: 'grant_type=password&username='+encodeURIComponent(ECO_USER)+'&password='+encodeURIComponent(ECO_PASS) },
+    { url: '/api/login',    ct: 'application/json', body: JSON.stringify({ username: ECO_USER, password: ECO_PASS }) },
+    { url: '/api/auth',     ct: 'application/json', body: JSON.stringify({ username: ECO_USER, password: ECO_PASS }) }
   ];
 
   var lastAuthError = '';
-  for(var i=0; i<authEndpoints.length; i++){
-    var ep = authEndpoints[i];
-    console.log('[QR Ecosystem] Tentative auth #'+(i+1)+':', ep.url, JSON.stringify(ep.body).replace(ECO_PASS,'***'));
+  for(var i=0; i<authAttempts.length; i++){
+    var ep = authAttempts[i];
+    console.log('[Ecosystem] Auth #'+(i+1)+':', ep.url, ep.ct);
     try {
       var authResp = await fetch(ECO_BASE + ep.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(ep.body)
+        headers: { 'Content-Type': ep.ct, 'Accept': 'application/json' },
+        body: ep.body
       });
       var authText = await authResp.text();
-      console.log('[QR Ecosystem] Auth #'+(i+1)+' r\u00e9ponse:', authResp.status, authText.substring(0,300));
+      console.log('[Ecosystem] Auth #'+(i+1)+' =>', authResp.status, authText.substring(0,300));
 
       if(authResp.ok){
-        var authData = JSON.parse(authText);
-        jwtToken = authData.id_token || authData.token || authData.access_token || authData.jwt;
+        try {
+          var authData = JSON.parse(authText);
+          jwtToken = authData.id_token || authData.token || authData.access_token || authData.jwt || authData.bearer;
+        } catch(pe){ /* not JSON */ }
+        if(!jwtToken && authText.length > 10 && authText.length < 2000){
+          // Peut-être que la réponse EST le token directement
+          jwtToken = authText.trim();
+        }
         if(jwtToken){
-          console.log('[QR Ecosystem] Auth OK via', ep.url, '- token length:', jwtToken.length);
+          console.log('[Ecosystem] Auth OK via', ep.url, '- token length:', jwtToken.length);
           break;
         }
       }
+      // Si on reçoit 404, inutile de réessayer cet endpoint avec un autre format
       lastAuthError = authResp.status + ' ' + authText.substring(0,150);
     } catch(e){
-      console.warn('[QR Ecosystem] Auth #'+(i+1)+' erreur:', e.message);
+      console.warn('[Ecosystem] Auth #'+(i+1)+' erreur:', e.message);
       lastAuthError = e.message;
     }
   }
 
   if(!jwtToken){
-    throw new Error('Ecosystem auth \u00e9chou\u00e9e sur tous les endpoints. Dernier: ' + lastAuthError);
+    throw new Error('Auth Ecosystem \u00e9chou\u00e9e (8 tentatives). Dernier: ' + lastAuthError);
   }
 
   // ② Cr\u00e9ation dossier remboursement
