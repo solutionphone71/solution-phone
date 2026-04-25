@@ -11304,21 +11304,13 @@ function renderDashboard(){
   var smartVendusMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
   var caSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0);},0);
   var mgSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.achat||0);},0);
-  // Smartphones occasion : montant NET encaissé (ce qui est allé dans la caisse = vente - reprise)
-  var caSmartCaisse = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.repriseAmount||0);},0);
-  // Smartphones neufs : CA vente
-  var neufsVMois = (window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);});
-  var caNeufsM = neufsVMois.reduce(function(s,p){return s+(Number(p.vente)||0);},0);
-  // Caisse TTC totale (répa + accessoires + smartphones confondus)
-  var caCaisseMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
-  // CA Réparations/Accessoires/Neufs = Caisse TTC - part smartphones occasion
-  var caRepaAccMois = caCaisseMois - caSmartCaisse;
-  if(caRepaAccMois < 0) caRepaAccMois = 0; // sécurité arrondi
+  // Caisse TTC = CA réel (répa + accessoires + neufs) = doit coller avec Phonilab
+  var caRepaAccMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
   var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
-  // Total réel = Répa/Accessoires/Neufs + Smartphones occasion (prix vente)
+  // Total = Caisse + Smartphones occasion (en plus)
   var caTotal = caRepaAccMois + caSmartMois;
   // Compat ancien var
-  var caReparMois = caCaisseMois;
+  var caReparMois = caRepaAccMois;
 
   function dashCard(label, val, sub, page, extra){
     var d = document.createElement('div');
