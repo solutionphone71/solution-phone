@@ -22692,6 +22692,38 @@ async function qrSendEcosystem() {
   if (banner) banner.style.display = 'block';
 }
 
+// Diagnostic Ecosystem — lancer depuis la console : ecosystemDiag()
+async function ecosystemDiag(){
+  var proxy = 'https://solution-phone.fr/proxy-ecosystem';
+  var user = '501710';
+  var pass = localStorage.getItem('sp_eco_pass')||'Coincoin71?!';
+  var auth = 'Basic '+btoa(user+':'+pass);
+  var paths = [
+    '/', '/api', '/api/', '/swagger-ui.html', '/v3/api-docs', '/api-docs',
+    '/api/repairs', '/api/repair', '/api/reimbursements', '/api/reimbursement',
+    '/api/repair-reimbursements', '/api/repair-reimbursement',
+    '/api/demandes', '/api/demande-remboursement', '/api/demandes-remboursement',
+    '/api/reparations', '/api/reparation', '/api/interventions',
+    '/api/v1/repairs', '/api/v1/repair-reimbursements',
+    '/api/v2/repairs', '/api/v2/repair-reimbursements',
+    '/repairs', '/reimbursements', '/repair-reimbursements',
+    '/api/dossiers', '/api/dossier',
+    '/api/qualirepar', '/api/bonus-reparation'
+  ];
+  console.log('%c[Ecosystem Diagnostic] Test de '+paths.length+' endpoints...','color:blue;font-weight:bold');
+  for(var i=0;i<paths.length;i++){
+    try{
+      var r=await fetch(proxy+paths[i],{method:'GET',headers:{'Authorization':auth,'Accept':'application/json'}});
+      var t=await r.text();
+      var color = r.status===404?'color:gray':'color:green;font-weight:bold';
+      console.log('%c['+r.status+'] '+paths[i]+' → '+t.substring(0,150), color);
+    }catch(e){
+      console.log('%c[ERR] '+paths[i]+' → '+e.message,'color:red');
+    }
+  }
+  console.log('%c[Ecosystem Diagnostic] Termin\u00e9 !','color:blue;font-weight:bold');
+}
+
 // ============================================================
 //  FIN MODULE QUALIREPAR
 // ============================================================
