@@ -24102,21 +24102,34 @@ function openLiensRapides(){
 
 // Rafraîchir le tableau de bord Parcours
 function parcoursDashRefresh(){
-  // ── TUILES KPI (même style que le dashboard principal) ──
+  // ── TUILES KPI — CA du jour par mode de paiement ──
   var kpiEl=document.getElementById('pc-dash-kpi');
   if(kpiEl){
     kpiEl.innerHTML='';
     var todayStr=new Date().toISOString().split('T')[0];
     var moisCourant=typeof getMoisActuel==='function'?getMoisActuel():todayStr.slice(0,7);
-    // Données
-    var caJour=0,caSemaine=0,caRepMois=0,bonusQRMois=0;
+
+    // CA du jour — détail par mode de paiement
+    var caJourTTC=0,caJourCB=0,caJourEsp=0,caJourCheque=0,caJourVir=0,caJourQuali=0;
     if(typeof caisse!=='undefined'){
-      caJour=caisse.filter(function(c){return c.date===todayStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
-      var deb=new Date();deb.setDate(deb.getDate()-deb.getDay()+1);var semStr=deb.toISOString().split('T')[0];
-      caSemaine=caisse.filter(function(c){return c.date>=semStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
-      caRepMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
-      bonusQRMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
+      caisse.filter(function(c){return c.date===todayStr;}).forEach(function(c){
+        caJourTTC+=(c.ttc||0);caJourCB+=(c.cb||0);caJourEsp+=(c.especes||0);
+        caJourCheque+=(c.cheque||0);caJourVir+=(c.virement||0);caJourQuali+=(c.quali||0);
+      });
     }
+
+    // Bonus QR mois — calculé depuis les DOSSIERS réparation (plus fiable que caisse)
+    var bonusQRMois=0;
+    if(typeof repDossiers!=='undefined'){
+      repDossiers.forEach(function(d){
+        if(!d.facture||!d.facture.date) return;
+        if(!d.facture.date.startsWith(moisCourant)) return;
+        var isQR=!!(d.bonusQR||(d.facture&&d.facture.bonusQR));
+        if(isQR) bonusQRMois+=25;
+      });
+    }
+
+    // Compteurs secondaires
     var repEnCours=0;
     if(typeof repDossiers!=='undefined') repEnCours=repDossiers.filter(function(d){return d.statut&&d.statut!=='facture'&&d.statut!=='cloture'&&d.statut!=='qr';}).length;
     var mlxEnCours=0;
@@ -24124,10 +24137,11 @@ function parcoursDashRefresh(){
     var cmdEnAttente=0;
     if(typeof bonsCommande!=='undefined') cmdEnAttente=bonsCommande.filter(function(c){return !c.traite;}).length;
 
-    function kpiTile(label,val,sub,color,onclick){
+    function kpiTile(label,val,sub,color,icon,onclick){
       var d=document.createElement('div');
       d.style.cssText='background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 12px;cursor:'+(onclick?'pointer':'default')+';transition:transform .15s,box-shadow .15s;';
-      d.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">'+label+'</div>'
+      d.innerHTML=(icon?'<div style="font-size:18px;margin-bottom:4px;">'+icon+'</div>':'')
+        +'<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">'+label+'</div>'
         +'<div style="font-size:22px;font-weight:900;color:'+color+';">'+val+'</div>'
         +(sub?'<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">'+sub+'</div>':'');
       d.onmouseover=function(){d.style.transform='translateY(-2px)';d.style.boxShadow='0 4px 15px rgba(0,0,0,.08)';};
@@ -24136,17 +24150,17 @@ function parcoursDashRefresh(){
       return d;
     }
 
-    kpiEl.appendChild(kpiTile('CA du jour',caJour.toFixed(0)+' \u20ac','R\u00e9parations','#f59e0b',null));
-    kpiEl.appendChild(kpiTile('CA semaine',caSemaine.toFixed(0)+' \u20ac','','#3b82f6',null));
-    kpiEl.appendChild(kpiTile('CA r\u00e9parations',caRepMois.toFixed(0)+' \u20ac','dont QR : '+bonusQRMois.toFixed(0)+' \u20ac','#f59e0b',function(){showPage('reparations');}));
-    kpiEl.appendChild(kpiTile('R\u00e9pa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981',function(){showPage('reparations');}));
-    kpiEl.appendChild(kpiTile('Mobilax',mlxEnCours+' en cours','',mlxEnCours>0?'#3b82f6':'#10b981',function(){parcoursOuvrir('mobilax');}));
-    kpiEl.appendChild(kpiTile('Commandes',cmdEnAttente+' en attente','','#8b5cf6',function(){parcoursOuvrir('pieces');}));
-    kpiEl.appendChild(kpiTile('Bonus QR',bonusQRMois.toFixed(0)+' \u20ac','ce mois','#10b981',null));
-    // Stock smartphones
-    var stockDispo=0;
-    if(typeof phones!=='undefined') stockDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-    kpiEl.appendChild(kpiTile('Stock dispo',stockDispo+' t\u00e9l.','Smartphones','#6366f1',function(){showPage('phones');}));
+    // Ligne 1 : CA du jour + détail paiement
+    kpiEl.appendChild(kpiTile('CA du jour',caJourTTC.toFixed(2)+' \u20ac','Total TTC','#f59e0b','\uD83D\uDCB0',null));
+    kpiEl.appendChild(kpiTile('Carte bleue',caJourCB.toFixed(2)+' \u20ac','','#3b82f6','\uD83D\uDCB3',null));
+    kpiEl.appendChild(kpiTile('Esp\u00e8ces',caJourEsp.toFixed(2)+' \u20ac','','#10b981','\uD83D\uDCB5',null));
+    kpiEl.appendChild(kpiTile('Ch\u00e8que',caJourCheque.toFixed(2)+' \u20ac','','#8b5cf6','\uD83D\uDCDD',null));
+    kpiEl.appendChild(kpiTile('Virement',caJourVir.toFixed(2)+' \u20ac','','#6366f1','\uD83C\uDFE6',null));
+    kpiEl.appendChild(kpiTile('Bonus QR',bonusQRMois.toFixed(0)+' \u20ac','ce mois','#10b981','\uD83C\uDFF7\uFE0F',null));
+    // Ligne 2 : compteurs opérationnels
+    kpiEl.appendChild(kpiTile('R\u00e9pa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981','\uD83D\uDD27',function(){showPage('reparations');}));
+    kpiEl.appendChild(kpiTile('Mobilax',mlxEnCours+' en cours','',mlxEnCours>0?'#3b82f6':'#10b981','\uD83D\uDE9A',function(){parcoursOuvrir('mobilax');}));
+    kpiEl.appendChild(kpiTile('Commandes',cmdEnAttente+' en attente','','#8b5cf6','\uD83D\uDCE6',function(){parcoursOuvrir('pieces');}));
   }
   // Mobilax en cours
   if(typeof _mlxDossiers!=='undefined'){
