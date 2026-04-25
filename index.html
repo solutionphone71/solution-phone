@@ -2607,26 +2607,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <div id="pc-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.15);max-height:300px;overflow-y:auto;z-index:100;margin-top:4px;"></div>
             </div>
 
-            <!-- ── WIDGETS RAPIDES : Caisse + Réparations en cours ── -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
-
-              <!-- Caisse du jour -->
-              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;">
-                <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">💰 Caisse du jour</div>
-                <div id="pc-dash-caisse-total" style="font-size:26px;font-weight:900;color:#059669;">0.00 €</div>
-                <div id="pc-dash-caisse-detail" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div>
-              </div>
-
-              <!-- Réparations en cours -->
-              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;" onclick="showPage('reparations')">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                  <span style="font-size:13px;font-weight:700;color:var(--text-muted);">🔧 Réparations en cours</span>
-                  <span id="pc-dash-rep-count" style="background:#dc2626;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
-                </div>
-                <div id="pc-dash-rep-list" style="font-size:12px;color:var(--text-muted);"></div>
-              </div>
-
-            </div>
+            <!-- ── TUILES STATS (style dashboard) ── -->
+            <div id="pc-dash-kpi" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;"></div>
 
             <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;font-size:14px;">Nouveau parcours client</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -24120,43 +24102,51 @@ function openLiensRapides(){
 
 // Rafraîchir le tableau de bord Parcours
 function parcoursDashRefresh(){
-  // Caisse du jour
-  if(typeof caisse!=='undefined'){
-    var today=new Date().toISOString().split('T')[0];
-    var entry=caisse.find(function(c){return c.date===today;});
-    var elTotal=document.getElementById('pc-dash-caisse-total');
-    var elDetail=document.getElementById('pc-dash-caisse-detail');
-    if(entry){
-      var ttc=parseFloat(entry.ttc)||0;
-      if(elTotal) elTotal.textContent=ttc.toFixed(2)+' \u20ac';
-      if(elDetail){
-        var parts=[];
-        if(entry.cb) parts.push('CB: '+(+entry.cb).toFixed(2)+'\u20ac');
-        if(entry.especes) parts.push('Esp: '+(+entry.especes).toFixed(2)+'\u20ac');
-        if(entry.cheque) parts.push('Chq: '+(+entry.cheque).toFixed(2)+'\u20ac');
-        if(entry.virement) parts.push('Vir: '+(+entry.virement).toFixed(2)+'\u20ac');
-        if(entry.quali) parts.push('QR: '+(+entry.quali).toFixed(2)+'\u20ac');
-        elDetail.textContent=parts.join(' · ')||'Aucune vente';
-      }
-    } else {
-      if(elTotal) elTotal.textContent='0.00 \u20ac';
-      if(elDetail) elDetail.textContent='Aucune vente aujourd\'hui';
+  // ── TUILES KPI (même style que le dashboard principal) ──
+  var kpiEl=document.getElementById('pc-dash-kpi');
+  if(kpiEl){
+    kpiEl.innerHTML='';
+    var todayStr=new Date().toISOString().split('T')[0];
+    var moisCourant=typeof getMoisActuel==='function'?getMoisActuel():todayStr.slice(0,7);
+    // Données
+    var caJour=0,caSemaine=0,caRepMois=0,bonusQRMois=0;
+    if(typeof caisse!=='undefined'){
+      caJour=caisse.filter(function(c){return c.date===todayStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+      var deb=new Date();deb.setDate(deb.getDate()-deb.getDay()+1);var semStr=deb.toISOString().split('T')[0];
+      caSemaine=caisse.filter(function(c){return c.date>=semStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+      caRepMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
+      bonusQRMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
     }
-  }
-  // Réparations en cours (statut depot ou devis, pas encore facturé)
-  if(typeof repDossiers!=='undefined'){
-    var repEC=repDossiers.filter(function(d){return d.statut&&d.statut!=='facture'&&d.statut!=='cloture'&&d.statut!=='qr';});
-    var elRC=document.getElementById('pc-dash-rep-count');if(elRC)elRC.textContent=repEC.length;
-    var elRL=document.getElementById('pc-dash-rep-list');
-    if(elRL){
-      if(!repEC.length) elRL.innerHTML='Aucune réparation en cours';
-      else elRL.innerHTML=repEC.slice(0,4).map(function(d){
-        var c=d.client||{};var a=d.appareil||{};
-        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
-          +'<strong>'+d.numero+'</strong> '+(c.nom||'?')+' — '+(a.marque||'')+' '+(a.modele||'')
-          +' <span style="color:#f59e0b;font-size:10px;font-weight:700;">'+(d.statut||'').toUpperCase()+'</span></div>';
-      }).join('')+(repEC.length>4?'<div style="padding:3px 0;color:#dc2626;">+'+(repEC.length-4)+' autres...</div>':'');
+    var repEnCours=0;
+    if(typeof repDossiers!=='undefined') repEnCours=repDossiers.filter(function(d){return d.statut&&d.statut!=='facture'&&d.statut!=='cloture'&&d.statut!=='qr';}).length;
+    var mlxEnCours=0;
+    if(typeof _mlxDossiers!=='undefined') mlxEnCours=_mlxDossiers.filter(function(d){return d.statut==='en_cours';}).length;
+    var cmdEnAttente=0;
+    if(typeof bonsCommande!=='undefined') cmdEnAttente=bonsCommande.filter(function(c){return !c.traite;}).length;
+
+    function kpiTile(label,val,sub,color,onclick){
+      var d=document.createElement('div');
+      d.style.cssText='background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px 12px;cursor:'+(onclick?'pointer':'default')+';transition:transform .15s,box-shadow .15s;';
+      d.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">'+label+'</div>'
+        +'<div style="font-size:22px;font-weight:900;color:'+color+';">'+val+'</div>'
+        +(sub?'<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">'+sub+'</div>':'');
+      d.onmouseover=function(){d.style.transform='translateY(-2px)';d.style.boxShadow='0 4px 15px rgba(0,0,0,.08)';};
+      d.onmouseout=function(){d.style.transform='';d.style.boxShadow='';};
+      if(onclick) d.onclick=onclick;
+      return d;
     }
+
+    kpiEl.appendChild(kpiTile('CA du jour',caJour.toFixed(0)+' \u20ac','R\u00e9parations','#f59e0b',null));
+    kpiEl.appendChild(kpiTile('CA semaine',caSemaine.toFixed(0)+' \u20ac','','#3b82f6',null));
+    kpiEl.appendChild(kpiTile('CA r\u00e9parations',caRepMois.toFixed(0)+' \u20ac','dont QR : '+bonusQRMois.toFixed(0)+' \u20ac','#f59e0b',function(){showPage('reparations');}));
+    kpiEl.appendChild(kpiTile('R\u00e9pa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981',function(){showPage('reparations');}));
+    kpiEl.appendChild(kpiTile('Mobilax',mlxEnCours+' en cours','',mlxEnCours>0?'#3b82f6':'#10b981',function(){parcoursOuvrir('mobilax');}));
+    kpiEl.appendChild(kpiTile('Commandes',cmdEnAttente+' en attente','','#8b5cf6',function(){parcoursOuvrir('pieces');}));
+    kpiEl.appendChild(kpiTile('Bonus QR',bonusQRMois.toFixed(0)+' \u20ac','ce mois','#10b981',null));
+    // Stock smartphones
+    var stockDispo=0;
+    if(typeof phones!=='undefined') stockDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+    kpiEl.appendChild(kpiTile('Stock dispo',stockDispo+' t\u00e9l.','Smartphones','#6366f1',function(){showPage('phones');}));
   }
   // Mobilax en cours
   if(typeof _mlxDossiers!=='undefined'){
