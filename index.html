@@ -13839,7 +13839,7 @@ var PARAMS_KEYS = {
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
-  if(!localStorage.getItem('sp_eco_pass'))        localStorage.setItem('sp_eco_pass',localStorage.getItem(PARAMS_KEYS.ecoPass)||'');
+  if(!localStorage.getItem('sp_eco_pass'))        localStorage.setItem('sp_eco_pass',localStorage.getItem(PARAMS_KEYS.ecoPass)||'Coincoin71?!');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem(PARAMS_KEYS.ecologicToken)||'');
   if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
   if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
@@ -16683,15 +16683,35 @@ async function qrEnvoyerEcosystemComplet(d){
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOSYSTEM_PROXY;
   var el=document.getElementById("rep-qr-envoi-statut");
-  if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Auth Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
     var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
-    var basicAuth='Basic '+btoa(ecoUser+':'+ecoPass);
+    // ① Auth JWT
+    var authEndpoints=[
+      {url:'/api/authenticate',body:{username:ecoUser,password:ecoPass}},
+      {url:'/api/authenticate',body:{login:ecoUser,password:ecoPass}},
+      {url:'/authenticate',body:{username:ecoUser,password:ecoPass}}
+    ];
+    var jwt=null;var lastErr='';
+    for(var i=0;i<authEndpoints.length;i++){
+      var ep=authEndpoints[i];
+      console.log('[Ecosystem] Auth tentative #'+(i+1)+':',ep.url);
+      try{
+        var ar=await fetch(proxy+ep.url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(ep.body)});
+        var at=await ar.text();
+        console.log('[Ecosystem] Auth #'+(i+1)+':',ar.status,at.substring(0,200));
+        if(ar.ok){var ad=JSON.parse(at);jwt=ad.id_token||ad.token||ad.access_token||ad.jwt;if(jwt)break;}
+        lastErr=ar.status+' '+at.substring(0,100);
+      }catch(e){lastErr=e.message;}
+    }
+    if(!jwt)throw new Error('Auth Ecosystem \u00e9chou\u00e9e: '+lastErr);
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
+    // ② Envoi dossier
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':basicAuth},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
-    var j2=await r2.json();var repairId=j2.id||j2.repairId||j2.reimbursementId;
+    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var j2=await r2.json();console.log('[Ecosystem] repair-reimbursements:',r2.status,JSON.stringify(j2).substring(0,300));var repairId=j2.id||j2.repairId||j2.reimbursementId;
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
@@ -22605,7 +22625,7 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : Basic Auth → CreateRepairReimbursement ── */
+/* ── Flux Ecosystem : Authenticate → CreateRepairReimbursement ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
@@ -22614,7 +22634,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
+  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Coincoin71?!';
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
@@ -22634,9 +22654,53 @@ async function qrSendEcosystem() {
   var refFact   = d.refRep || ('QR-' + Date.now());
   var today     = d.date || new Date().toISOString().split('T')[0];
 
-  // Basic Auth — pas de token JWT chez Ecosystem
-  var basicAuth = 'Basic ' + btoa(ECO_USER + ':' + ECO_PASS);
+  if(!ECO_PASS) throw new Error('Mot de passe Ecosystem non configur\u00e9. Allez dans Param\u00e8tres.');
 
+  qrSetAgoraBadge('\u23f3', 'Authentification Ecosystem...', 'Ecosystem', '#f39c12');
+
+  // ① Authentification → JWT token
+  // Essai avec plusieurs endpoints et formats possibles
+  var jwtToken = null;
+  var authEndpoints = [
+    { url: '/api/authenticate', body: { username: ECO_USER, password: ECO_PASS } },
+    { url: '/api/authenticate', body: { login: ECO_USER, password: ECO_PASS } },
+    { url: '/authenticate',     body: { username: ECO_USER, password: ECO_PASS } },
+    { url: '/api/auth/login',   body: { username: ECO_USER, password: ECO_PASS } }
+  ];
+
+  var lastAuthError = '';
+  for(var i=0; i<authEndpoints.length; i++){
+    var ep = authEndpoints[i];
+    console.log('[QR Ecosystem] Tentative auth #'+(i+1)+':', ep.url, JSON.stringify(ep.body).replace(ECO_PASS,'***'));
+    try {
+      var authResp = await fetch(ECO_BASE + ep.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(ep.body)
+      });
+      var authText = await authResp.text();
+      console.log('[QR Ecosystem] Auth #'+(i+1)+' r\u00e9ponse:', authResp.status, authText.substring(0,300));
+
+      if(authResp.ok){
+        var authData = JSON.parse(authText);
+        jwtToken = authData.id_token || authData.token || authData.access_token || authData.jwt;
+        if(jwtToken){
+          console.log('[QR Ecosystem] Auth OK via', ep.url, '- token length:', jwtToken.length);
+          break;
+        }
+      }
+      lastAuthError = authResp.status + ' ' + authText.substring(0,150);
+    } catch(e){
+      console.warn('[QR Ecosystem] Auth #'+(i+1)+' erreur:', e.message);
+      lastAuthError = e.message;
+    }
+  }
+
+  if(!jwtToken){
+    throw new Error('Ecosystem auth \u00e9chou\u00e9e sur tous les endpoints. Dernier: ' + lastAuthError);
+  }
+
+  // ② Cr\u00e9ation dossier remboursement
   qrSetAgoraBadge('\u23f3', 'Envoi du dossier...', 'Ecosystem', '#f39c12');
 
   var payload = {
@@ -22660,22 +22724,25 @@ async function qrSendEcosystem() {
     spareParts:        []
   };
 
-  console.log('[QR Ecosystem] Envoi dossier avec Basic Auth, user:', ECO_USER);
+  console.log('[QR Ecosystem] Envoi dossier:', JSON.stringify(payload).substring(0,300));
 
   var repairResp = await fetch(ECO_BASE + '/api/repair-reimbursements', {
     method:  'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': basicAuth
+      'Authorization': 'Bearer ' + jwtToken
     },
     body: JSON.stringify(payload)
   });
 
-  var resp = await repairResp.json();
-  console.log('[QR Ecosystem] repair-reimbursements:', repairResp.status, JSON.stringify(resp).substring(0,300));
+  var respText = await repairResp.text();
+  console.log('[QR Ecosystem] repair-reimbursements:', repairResp.status, respText.substring(0,500));
+
+  var resp;
+  try { resp = JSON.parse(respText); } catch(e){ resp = { raw: respText }; }
 
   if (!repairResp.ok) {
-    throw new Error('Ecosystem HTTP ' + repairResp.status + ' \u2014 ' + (resp.message || resp.detail || JSON.stringify(resp).substring(0,120)));
+    throw new Error('Ecosystem HTTP ' + repairResp.status + ' \u2014 ' + (resp.message || resp.detail || respText.substring(0,120)));
   }
 
   var ref = resp.id || resp.reimbursementId || resp.reference || resp.numDossier || String(resp);
@@ -22913,13 +22980,19 @@ async function qrVerifierStatutEcosystem(dossier){
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   var proxy = QR_ECOSYSTEM_PROXY;
-  var basicAuth = 'Basic ' + btoa(user + ':' + password);
 
   try {
-    // GET statut du dossier (Basic Auth, pas de token)
+    // Auth JWT d'abord
+    var authR = await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
+    if(!authR.ok) return null;
+    var authD = await authR.json();
+    var jwt = authD.id_token||authD.token||authD.access_token;
+    if(!jwt) return null;
+
+    // GET statut du dossier
     var res = await fetch(proxy+'/api/repair-reimbursements/'+ecosystemId, {
       method:'GET',
-      headers:{'Authorization':basicAuth,'Content-Type':'application/json'}
+      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'}
     });
     if(!res.ok) return null;
     var data = await res.json();
