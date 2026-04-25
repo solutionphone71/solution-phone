@@ -456,6 +456,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 <div id="mobile-menu-panel">
   <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:0 14px 10px;">Tous les modules</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
+  <div class="mob-menu-item" onclick="showPageMobile('parcours','');closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('mobilax','');closeMobileMenu()"><span class="mob-menu-icon">🏭</span>Sous-traitant Mobilax</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
@@ -541,6 +542,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Réparations</div>
+    <div class="nav-item" onclick="showPage('parcours',this)"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('mobilax',this)"><span class="nav-icon">🏭</span><span>Sous-traitant Mobilax</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
@@ -2591,6 +2593,253 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
       </div>
       </div>
+
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <!-- PARCOURS CLIENT — 4 tuiles d'accueil                        -->
+        <!-- ══════════════════════════════════════════════════════════════ -->
+        <div class="page" id="page-parcours">
+
+          <!-- ── TUILES D'ACCUEIL ── -->
+          <div id="parcours-tuiles" style="max-width:900px;margin:0 auto;padding:20px;">
+            <h2 style="text-align:center;font-size:22px;font-weight:800;margin-bottom:8px;">Parcours Client</h2>
+            <p style="text-align:center;color:var(--text-muted);margin-bottom:28px;font-size:14px;">Choisissez le type de prise en charge</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+              <!-- Tuile 1 : Réparation interne -->
+              <div onclick="parcoursOuvrir('reparation')" style="background:linear-gradient(135deg,#fee2e2,#fecaca);border:2px solid #fca5a5;border-radius:16px;padding:28px 20px;cursor:pointer;transition:all .2s;text-align:center;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(239,68,68,.2)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:42px;margin-bottom:10px;">🔧</div>
+                <div style="font-size:17px;font-weight:800;color:#dc2626;margin-bottom:6px;">Réparation interne</div>
+                <div style="font-size:12px;color:#991b1b;line-height:1.5;">Prise en charge téléphone<br>→ Réparation en boutique<br>→ QualiRépar Ecologic / Ecosystem</div>
+              </div>
+
+              <!-- Tuile 2 : Sous-traitance Mobilax -->
+              <div onclick="parcoursOuvrir('mobilax')" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:2px solid #93c5fd;border-radius:16px;padding:28px 20px;cursor:pointer;transition:all .2s;text-align:center;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(59,130,246,.2)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:42px;margin-bottom:10px;">🏭</div>
+                <div style="font-size:17px;font-weight:800;color:#2563eb;margin-bottom:6px;">Sous-traitance Mobilax</div>
+                <div style="font-size:12px;color:#1e40af;line-height:1.5;">Envoi chez Mobilax<br>+ Bon de commande pièces<br>→ Suivi & retour client</div>
+              </div>
+
+              <!-- Tuile 3 : Commande pièces -->
+              <div onclick="parcoursOuvrir('pieces')" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:2px solid #6ee7b7;border-radius:16px;padding:28px 20px;cursor:pointer;transition:all .2s;text-align:center;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(16,185,129,.2)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:42px;margin-bottom:10px;">🔩</div>
+                <div style="font-size:17px;font-weight:800;color:#059669;margin-bottom:6px;">Commande pièces</div>
+                <div style="font-size:12px;color:#065f46;line-height:1.5;">Pièces détachées<br>pour réparation le lendemain<br>→ Bon de commande client</div>
+              </div>
+
+              <!-- Tuile 4 : Commande accessoires -->
+              <div onclick="parcoursOuvrir('accessoires')" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px solid #fbbf24;border-radius:16px;padding:28px 20px;cursor:pointer;transition:all .2s;text-align:center;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(245,158,11,.2)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+                <div style="font-size:42px;margin-bottom:10px;">📦</div>
+                <div style="font-size:17px;font-weight:800;color:#d97706;margin-bottom:6px;">Commande accessoires</div>
+                <div style="font-size:12px;color:#92400e;line-height:1.5;">Coques, verres trempés<br>chargeurs, câbles<br>→ Commande boutique</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── PARCOURS 1 : RÉPARATION INTERNE ── -->
+          <div id="parcours-reparation" style="display:none;max-width:700px;margin:0 auto;padding:20px;">
+            <button onclick="parcoursRetour()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px;">← Retour aux parcours</button>
+            <div style="background:linear-gradient(135deg,#fee2e2,#fff);border:2px solid #fca5a5;border-radius:16px;padding:24px;">
+              <h3 style="font-size:18px;font-weight:800;color:#dc2626;margin-bottom:16px;">🔧 Prise en charge — Réparation interne</h3>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nom client *</label>
+                  <input type="text" id="pc-rep-nom" placeholder="Nom" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Prénom</label>
+                  <input type="text" id="pc-rep-prenom" placeholder="Prénom" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Téléphone *</label>
+                  <input type="tel" id="pc-rep-tel" placeholder="06..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Email</label>
+                  <input type="email" id="pc-rep-email" placeholder="email@..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Marque *</label>
+                  <input type="text" id="pc-rep-marque" placeholder="Apple, Samsung..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Modèle *</label>
+                  <input type="text" id="pc-rep-modele" placeholder="iPhone 13 Pro..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">IMEI</label>
+                <input type="text" id="pc-rep-imei" placeholder="Numéro IMEI" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+              </div>
+              <div style="margin-bottom:16px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Panne / Description *</label>
+                <textarea id="pc-rep-panne" rows="2" placeholder="Écran cassé, batterie HS..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+              </div>
+              <button onclick="parcoursCreerReparation()" style="width:100%;padding:14px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">🔧 Créer le dossier & Ouvrir Réparations</button>
+            </div>
+          </div>
+
+          <!-- ── PARCOURS 2 : SOUS-TRAITANCE MOBILAX + BON DE COMMANDE ── -->
+          <div id="parcours-mobilax" style="display:none;max-width:700px;margin:0 auto;padding:20px;">
+            <button onclick="parcoursRetour()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px;">← Retour aux parcours</button>
+            <div style="background:linear-gradient(135deg,#dbeafe,#fff);border:2px solid #93c5fd;border-radius:16px;padding:24px;">
+              <h3 style="font-size:18px;font-weight:800;color:#2563eb;margin-bottom:16px;">🏭 Sous-traitance Mobilax + Commande pièces</h3>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Date d'envoi</label>
+                  <input type="date" id="pc-mlx-date" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nom client *</label>
+                  <input type="text" id="pc-mlx-nom" placeholder="Nom du client" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Téléphone</label>
+                  <input type="tel" id="pc-mlx-tel" placeholder="06..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Modèle appareil *</label>
+                  <input type="text" id="pc-mlx-modele" placeholder="iPhone 13, Galaxy S22..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Panne *</label>
+                <select id="pc-mlx-panne" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+                  <option value="">-- Sélectionner --</option>
+                  <option>Carte mère</option><option>LCD</option><option>Batterie</option>
+                  <option>Gmail</option><option>Court circuit</option><option>FRP</option>
+                  <option>Micro soudure</option><option>Récup données</option><option>Autre</option>
+                </select>
+              </div>
+              <div id="pc-mlx-panne-autre-div" style="display:none;margin-bottom:12px;">
+                <input type="text" id="pc-mlx-panne-autre" placeholder="Précisez la panne..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+              </div>
+
+              <!-- Section Commande pièces intégrée -->
+              <div style="background:rgba(37,99,235,0.05);border:1px dashed #93c5fd;border-radius:10px;padding:14px;margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:800;color:#2563eb;margin-bottom:10px;text-transform:uppercase;">📦 Bon de commande pièces (optionnel)</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div><label style="font-size:11px;font-weight:700;color:#666;">Pièce à commander</label>
+                    <input type="text" id="pc-mlx-piece" placeholder="Écran, nappe..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;"></div>
+                  <div><label style="font-size:11px;font-weight:700;color:#666;">Prix estimé</label>
+                    <input type="text" id="pc-mlx-prix" placeholder="120-170" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;"></div>
+                </div>
+                <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div><label style="font-size:11px;font-weight:700;color:#666;">Acompte versé</label>
+                    <input type="number" id="pc-mlx-acompte" placeholder="0" step="0.01" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;"></div>
+                  <div><label style="font-size:11px;font-weight:700;color:#666;">Règlement</label>
+                    <select id="pc-mlx-reglement" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                      <option>CB</option><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option>
+                    </select></div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Déverrouillage</label>
+                  <div style="display:flex;gap:6px;">
+                    <button type="button" id="pc-mlx-lock-code" onclick="pcMlxSetLock('code')" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;">🔢 Code</button>
+                    <button type="button" id="pc-mlx-lock-schema" onclick="pcMlxSetLock('schema')" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;">📐 Schéma</button>
+                    <button type="button" id="pc-mlx-lock-aucun" onclick="pcMlxSetLock('aucun')" style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;font-size:12px;background:#fff;">🔓 Aucun</button>
+                  </div></div>
+                <div id="pc-mlx-code-div"><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Code</label>
+                  <input type="text" id="pc-mlx-code" placeholder="Code déverrouillage" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Observations</label>
+                <textarea id="pc-mlx-obs" rows="2" placeholder="Notes..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;"></textarea>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                  <input type="checkbox" id="pc-mlx-devis20">
+                  <span style="font-size:13px;font-weight:600;">Devis 20€</span>
+                </label>
+              </div>
+              <button onclick="parcoursCreerMobilax()" style="width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">🏭 Enregistrer & Imprimer ticket</button>
+            </div>
+
+            <!-- Liste Mobilax sous le formulaire -->
+            <div style="margin-top:20px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4 style="font-weight:700;">Dossiers Mobilax</h4>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="pc-mlx-search" placeholder="Rechercher..." oninput="pcMlxRender()" style="padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;width:160px;">
+                  <select id="pc-mlx-filtre" onchange="pcMlxRender()" style="padding:8px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
+                    <option value="en_cours">En cours</option><option value="termine">Terminés</option><option value="tous">Tous</option>
+                  </select>
+                </div>
+              </div>
+              <div id="pc-mlx-liste"></div>
+            </div>
+          </div>
+
+          <!-- ── PARCOURS 3 : COMMANDE PIÈCES ── -->
+          <div id="parcours-pieces" style="display:none;max-width:700px;margin:0 auto;padding:20px;">
+            <button onclick="parcoursRetour()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px;">← Retour aux parcours</button>
+            <div style="background:linear-gradient(135deg,#d1fae5,#fff);border:2px solid #6ee7b7;border-radius:16px;padding:24px;">
+              <h3 style="font-size:18px;font-weight:800;color:#059669;margin-bottom:16px;">🔩 Commande pièces détachées</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nom client *</label>
+                  <input type="text" id="pc-piece-nom" placeholder="Nom" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Téléphone *</label>
+                  <input type="tel" id="pc-piece-tel" placeholder="06..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Modèle appareil</label>
+                <input type="text" id="pc-piece-modele" placeholder="iPhone 13 Pro..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Pièce à commander *</label>
+                <select id="pc-piece-piece" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+                  <option value="">-- Sélectionner --</option>
+                  <option>Écran</option><option>Batterie</option><option>Connecteur de charge</option>
+                  <option>Haut-parleur</option><option>Micro</option><option>Caméra arrière</option>
+                  <option>Caméra avant</option><option>Nappe</option><option>Vitre arrière</option>
+                  <option>Bouton Power</option><option>Bouton volume</option><option>Autre</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Prix TTC</label>
+                  <input type="number" id="pc-piece-prix" step="0.01" placeholder="0.00" oninput="pcPieceCalc()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Acompte</label>
+                  <input type="number" id="pc-piece-acompte" step="0.01" placeholder="0.00" oninput="pcPieceCalc()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Reste</label>
+                  <div id="pc-piece-reste" style="padding:10px;background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:8px;font-size:14px;font-weight:700;color:#059669;">0.00 €</div></div>
+              </div>
+              <div style="margin-bottom:16px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Règlement</label>
+                <select id="pc-piece-mode" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+                  <option>CB</option><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option>
+                </select>
+              </div>
+              <button onclick="parcoursCreerCmdPiece()" style="width:100%;padding:14px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">🔩 Créer le bon de commande</button>
+            </div>
+            <div style="margin-top:20px;"><div id="pc-piece-liste"></div></div>
+          </div>
+
+          <!-- ── PARCOURS 4 : COMMANDE ACCESSOIRES ── -->
+          <div id="parcours-accessoires" style="display:none;max-width:700px;margin:0 auto;padding:20px;">
+            <button onclick="parcoursRetour()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px;">← Retour aux parcours</button>
+            <div style="background:linear-gradient(135deg,#fef3c7,#fff);border:2px solid #fbbf24;border-radius:16px;padding:24px;">
+              <h3 style="font-size:18px;font-weight:800;color:#d97706;margin-bottom:16px;">📦 Commande accessoires</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Nom client *</label>
+                  <input type="text" id="pc-acc-nom" placeholder="Nom" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Téléphone *</label>
+                  <input type="tel" id="pc-acc-tel" placeholder="06..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Accessoire *</label>
+                <input type="text" id="pc-acc-designation" placeholder="Coque iPhone 15, verre trempé Samsung S24..." style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Prix TTC</label>
+                  <input type="number" id="pc-acc-prix" step="0.01" placeholder="0.00" oninput="pcAccCalc()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Acompte</label>
+                  <input type="number" id="pc-acc-acompte" step="0.01" placeholder="0.00" oninput="pcAccCalc()" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;"></div>
+                <div><label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Reste</label>
+                  <div id="pc-acc-reste" style="padding:10px;background:#fefce8;border:1.5px solid #fbbf24;border-radius:8px;font-size:14px;font-weight:700;color:#d97706;">0.00 €</div></div>
+              </div>
+              <div style="margin-bottom:16px;">
+                <label style="font-size:11px;font-weight:700;color:#666;text-transform:uppercase;">Règlement</label>
+                <select id="pc-acc-mode" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
+                  <option>CB</option><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option>
+                </select>
+              </div>
+              <button onclick="parcoursCreerCmdAcc()" style="width:100%;padding:14px;background:#d97706;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#b45309'" onmouseout="this.style.background='#d97706'">📦 Créer le bon de commande</button>
+            </div>
+            <div style="margin-top:20px;"><div id="pc-acc-liste"></div></div>
+          </div>
+
+        </div>
+        <!-- FIN PARCOURS CLIENT -->
 
         <div class="page" id="page-reparations">
 
@@ -23795,6 +24044,322 @@ function openLiensRapides(){
   html+='</div>';
   overlay.innerHTML=html;
   document.body.appendChild(overlay);
+}
+
+// ══════════════════════════════════════════════════════
+// PARCOURS CLIENT — 4 tuiles
+// ══════════════════════════════════════════════════════
+
+function parcoursOuvrir(type){
+  document.getElementById('parcours-tuiles').style.display='none';
+  ['parcours-reparation','parcours-mobilax','parcours-pieces','parcours-accessoires'].forEach(function(id){
+    document.getElementById(id).style.display='none';
+  });
+  var el=document.getElementById('parcours-'+type);
+  if(el) el.style.display='block';
+  // Init date Mobilax
+  if(type==='mobilax'){
+    var d=document.getElementById('pc-mlx-date');
+    if(d&&!d.value) d.value=new Date().toISOString().slice(0,10);
+    pcMlxRender();
+  }
+  if(type==='pieces') pcPieceRenderListe();
+  if(type==='accessoires') pcAccRenderListe();
+}
+
+function parcoursRetour(){
+  ['parcours-reparation','parcours-mobilax','parcours-pieces','parcours-accessoires'].forEach(function(id){
+    document.getElementById(id).style.display='none';
+  });
+  document.getElementById('parcours-tuiles').style.display='block';
+}
+
+// ── PARCOURS 1 : Réparation interne → bascule vers onglet Réparations ──
+function parcoursCreerReparation(){
+  var nom=    (document.getElementById('pc-rep-nom')||{}).value||'';
+  var prenom= (document.getElementById('pc-rep-prenom')||{}).value||'';
+  var tel=    (document.getElementById('pc-rep-tel')||{}).value||'';
+  var email=  (document.getElementById('pc-rep-email')||{}).value||'';
+  var marque= (document.getElementById('pc-rep-marque')||{}).value||'';
+  var modele= (document.getElementById('pc-rep-modele')||{}).value||'';
+  var imei=   (document.getElementById('pc-rep-imei')||{}).value||'';
+  var panne=  (document.getElementById('pc-rep-panne')||{}).value||'';
+
+  if(!nom.trim()){ showNotif('Nom du client obligatoire','error'); return; }
+  if(!marque.trim()){ showNotif('Marque obligatoire','error'); return; }
+  if(!modele.trim()){ showNotif('Modèle obligatoire','error'); return; }
+  if(!panne.trim()){ showNotif('Description panne obligatoire','error'); return; }
+
+  // Créer un nouveau dossier réparation
+  repNewDossier();
+
+  // Remplir les champs client (step 1)
+  var d=repDossierCourant;
+  d.client={civilite:'M.',nom:nom.trim(),prenom:prenom.trim(),tel:tel.trim(),email:email.trim(),adresse:'',cp:'',ville:''};
+  d.appareil={marque:marque.trim(),modele:modele.trim(),imei:imei.trim(),couleur:''};
+  d.panne=panne.trim();
+
+  // Remplir les champs du formulaire dans l'onglet Réparations
+  var fields={
+    'rep-nom':nom,'rep-prenom':prenom,'rep-tel':tel,'rep-email':email,
+    'dep-marque':marque,'dep-modele':modele,'dep-imei':imei,'dep-panne':panne
+  };
+  Object.keys(fields).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value=fields[id];
+  });
+
+  // Sauvegarder
+  if(typeof repAutoSave==='function') repAutoSave();
+
+  // Basculer vers l'onglet Réparations step 2 (prise en charge)
+  showPage('reparations');
+  setTimeout(function(){ repGoStep(2); },200);
+
+  // Reset le formulaire parcours
+  ['pc-rep-nom','pc-rep-prenom','pc-rep-tel','pc-rep-email','pc-rep-marque','pc-rep-modele','pc-rep-imei','pc-rep-panne'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  parcoursRetour();
+
+  showNotif('Dossier '+d.numero+' créé — complétez la prise en charge','success');
+}
+
+// ── PARCOURS 2 : Mobilax + bon de commande fusionné ──
+var _pcMlxLock='code';
+function pcMlxSetLock(type){
+  _pcMlxLock=type;
+  ['code','schema','aucun'].forEach(function(t){
+    var btn=document.getElementById('pc-mlx-lock-'+t);
+    if(btn){btn.style.background=(t===type)?'#2563eb':'#fff';btn.style.color=(t===type)?'#fff':'#333';}
+  });
+  var codeDiv=document.getElementById('pc-mlx-code-div');
+  if(codeDiv) codeDiv.style.display=(type==='code')?'block':'none';
+}
+
+function parcoursCreerMobilax(){
+  var nom=   (document.getElementById('pc-mlx-nom')||{}).value||'';
+  var tel=   (document.getElementById('pc-mlx-tel')||{}).value||'';
+  var modele=(document.getElementById('pc-mlx-modele')||{}).value||'';
+  var panneVal=(document.getElementById('pc-mlx-panne')||{}).value||'';
+  var panneAutre=(document.getElementById('pc-mlx-panne-autre')||{}).value||'';
+  var panne= panneVal==='Autre'?panneAutre.trim():panneVal;
+  var date=  (document.getElementById('pc-mlx-date')||{}).value||new Date().toISOString().slice(0,10);
+  var obs=   (document.getElementById('pc-mlx-obs')||{}).value||'';
+  var devis20=(document.getElementById('pc-mlx-devis20')||{}).checked||false;
+  var prix=  (document.getElementById('pc-mlx-prix')||{}).value||'';
+  var piece= (document.getElementById('pc-mlx-piece')||{}).value||'';
+  var acompte=parseFloat((document.getElementById('pc-mlx-acompte')||{}).value)||0;
+  var reglement=(document.getElementById('pc-mlx-reglement')||{}).value||'CB';
+
+  if(!nom.trim()){ showNotif('Nom du client obligatoire','error'); return; }
+  if(!modele.trim()){ showNotif('Modèle obligatoire','error'); return; }
+  if(!panne){ showNotif('Sélectionnez une panne','error'); return; }
+
+  // 1. Créer dossier Mobilax via la fonction existante (en remplissant les champs)
+  var elNom=document.getElementById('mlx-nom');if(elNom)elNom.value=nom;
+  var elTel=document.getElementById('mlx-tel');if(elTel)elTel.value=tel;
+  var elMod=document.getElementById('mlx-modele');if(elMod)elMod.value=modele;
+  var elPan=document.getElementById('mlx-panne');if(elPan)elPan.value=panneVal;
+  var elPanA=document.getElementById('mlx-panne-autre');if(elPanA)elPanA.value=panneAutre;
+  var elDate=document.getElementById('mlx-date');if(elDate)elDate.value=date;
+  var elObs=document.getElementById('mlx-obs');if(elObs)elObs.value=obs;
+  var elDev=document.getElementById('mlx-devis-check');if(elDev)elDev.checked=devis20;
+  var elPrix=document.getElementById('mlx-prix');if(elPrix)elPrix.value=prix;
+  // Lock type
+  if(typeof mlxSetLockMode==='function') mlxSetLockMode(_pcMlxLock);
+  else if(typeof _mlxLockType!=='undefined') _mlxLockType=_pcMlxLock;
+  if(_pcMlxLock==='code'){
+    var elCode=document.getElementById('mlx-code');if(elCode)elCode.value=(document.getElementById('pc-mlx-code')||{}).value||'';
+  }
+
+  mlxAjouter(); // crée + imprime ticket Mobilax
+
+  // 2. Si pièce à commander → créer aussi un bon de commande
+  if(piece.trim()){
+    var prixCmd=parseFloat(prix)||0;
+    var reste=Math.max(0,prixCmd-acompte);
+    var num='CMD-'+new Date().getFullYear()+'-'+String(bonsCommande.length+1).padStart(3,'0');
+    var cmd={
+      id:Date.now()+1,numero:num,
+      date:new Date().toISOString().split('T')[0],
+      type:'reparation',client:{nom:nom.trim(),tel:tel.trim()},
+      detail:modele.trim()+' — '+piece.trim(),
+      prix:prixCmd,acompte:acompte,modeReglement:reglement,
+      reste:reste,paye:reste===0,statut:'a_commander',traite:false
+    };
+    bonsCommande.push(cmd);
+    if(typeof saveBonCommandeSupabase==='function') saveBonCommandeSupabase(cmd);
+    if(typeof renderBonsCommande==='function') renderBonsCommande();
+    showNotif('Bon de commande '+num+' créé','success');
+  }
+
+  // Reset formulaire parcours
+  ['pc-mlx-nom','pc-mlx-tel','pc-mlx-modele','pc-mlx-panne-autre','pc-mlx-obs','pc-mlx-prix','pc-mlx-piece','pc-mlx-code'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+  var elDev2=document.getElementById('pc-mlx-devis20');if(elDev2)elDev2.checked=false;
+  var elAc2=document.getElementById('pc-mlx-acompte');if(elAc2)elAc2.value='';
+  var elPan2=document.getElementById('pc-mlx-panne');if(elPan2)elPan2.value='';
+  pcMlxRender();
+}
+
+// Afficher panne "Autre"
+document.addEventListener('DOMContentLoaded',function(){
+  var sel=document.getElementById('pc-mlx-panne');
+  if(sel) sel.addEventListener('change',function(){
+    var d=document.getElementById('pc-mlx-panne-autre-div');
+    if(d) d.style.display=(sel.value==='Autre')?'block':'none';
+  });
+});
+
+function pcMlxRender(){
+  var el=document.getElementById('pc-mlx-liste');
+  if(!el||typeof _mlxDossiers==='undefined') return;
+  var search=((document.getElementById('pc-mlx-search')||{}).value||'').toLowerCase();
+  var filtre=(document.getElementById('pc-mlx-filtre')||{}).value||'en_cours';
+  var list=_mlxDossiers.filter(function(d){
+    if(filtre!=='tous'&&d.statut!==filtre) return false;
+    if(search){var s=(d.nom+' '+d.modele+' '+d.numero+' '+d.panne).toLowerCase();return s.indexOf(search)>=0;}
+    return true;
+  }).sort(function(a,b){return (b.date||'').localeCompare(a.date||'');});
+
+  if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px;">Aucun dossier</div>';return;}
+  var h='';
+  list.forEach(function(d){
+    var jours=Math.floor((Date.now()-new Date(d.date).getTime())/86400000);
+    var color=d.statut==='termine'?'#10b981':(jours>10?'#ef4444':'#3b82f6');
+    h+='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left:4px solid '+color+';">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
+    h+='<div><strong>'+d.numero+'</strong> — '+d.nom+'<br><span style="font-size:12px;color:var(--text-muted);">'+d.modele+' · '+d.panne+'</span></div>';
+    h+='<div style="text-align:right;font-size:12px;"><span style="color:'+color+';font-weight:700;">'+(d.statut==='termine'?'Terminé':'J+'+jours)+'</span>';
+    if(d.statut==='en_cours') h+='<br><button onclick="mlxTerminer('+d.id+')" style="font-size:11px;padding:4px 8px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-top:4px;">Terminé</button>';
+    h+='</div></div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── PARCOURS 3 : Commande pièces ──
+function pcPieceCalc(){
+  var prix=parseFloat((document.getElementById('pc-piece-prix')||{}).value)||0;
+  var acompte=parseFloat((document.getElementById('pc-piece-acompte')||{}).value)||0;
+  var reste=Math.max(0,prix-acompte);
+  var el=document.getElementById('pc-piece-reste');
+  if(el) el.textContent=reste.toFixed(2)+' \u20ac';
+}
+
+function parcoursCreerCmdPiece(){
+  var nom=   (document.getElementById('pc-piece-nom')||{}).value||'';
+  var tel=   (document.getElementById('pc-piece-tel')||{}).value||'';
+  var modele=(document.getElementById('pc-piece-modele')||{}).value||'';
+  var piece= (document.getElementById('pc-piece-piece')||{}).value||'';
+  var prix=  parseFloat((document.getElementById('pc-piece-prix')||{}).value)||0;
+  var acompte=parseFloat((document.getElementById('pc-piece-acompte')||{}).value)||0;
+  var mode=  (document.getElementById('pc-piece-mode')||{}).value||'CB';
+
+  if(!nom.trim()||!tel.trim()){ showNotif('Nom et téléphone obligatoires','error'); return; }
+  if(!piece){ showNotif('Sélectionnez une pièce','error'); return; }
+
+  var reste=Math.max(0,prix-acompte);
+  var detail=modele.trim()?(modele.trim()+' — '+piece):piece;
+  var num='CMD-'+new Date().getFullYear()+'-'+String(bonsCommande.length+1).padStart(3,'0');
+  var cmd={
+    id:Date.now(),numero:num,
+    date:new Date().toISOString().split('T')[0],
+    type:'reparation',client:{nom:nom.trim(),tel:tel.trim()},
+    detail:detail,prix:prix,acompte:acompte,modeReglement:mode,
+    reste:reste,paye:reste===0,statut:'a_commander',traite:false
+  };
+  bonsCommande.push(cmd);
+  if(typeof saveBonCommandeSupabase==='function') saveBonCommandeSupabase(cmd);
+  if(typeof renderBonsCommande==='function') renderBonsCommande();
+  if(typeof printTicketCommande==='function') printTicketCommande(cmd);
+
+  // Reset
+  ['pc-piece-nom','pc-piece-tel','pc-piece-modele'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var elPi=document.getElementById('pc-piece-piece');if(elPi)elPi.value='';
+  var elPx=document.getElementById('pc-piece-prix');if(elPx)elPx.value='';
+  var elAc=document.getElementById('pc-piece-acompte');if(elAc)elAc.value='';
+  pcPieceCalc();
+  pcPieceRenderListe();
+  showNotif('Bon '+num+' créé !','success');
+}
+
+function pcPieceRenderListe(){
+  var el=document.getElementById('pc-piece-liste');
+  if(!el||typeof bonsCommande==='undefined') return;
+  var list=bonsCommande.filter(function(c){return c.type==='reparation'&&c.statut==='a_commander';})
+    .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,10);
+  if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:16px;">Aucune commande pièce en attente</div>';return;}
+  var h='<h4 style="font-weight:700;margin-bottom:10px;">Commandes pièces en attente</h4>';
+  list.forEach(function(c){
+    h+='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left:4px solid #059669;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
+    h+='<div><strong>'+c.numero+'</strong> — '+(c.client&&c.client.nom||'')+'<br><span style="font-size:12px;color:var(--text-muted);">'+c.detail+' · '+(c.prix||0).toFixed(2)+'\u20ac</span></div>';
+    h+='<div style="font-size:11px;color:var(--text-muted);">'+c.date+'</div>';
+    h+='</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ── PARCOURS 4 : Commande accessoires ──
+function pcAccCalc(){
+  var prix=parseFloat((document.getElementById('pc-acc-prix')||{}).value)||0;
+  var acompte=parseFloat((document.getElementById('pc-acc-acompte')||{}).value)||0;
+  var reste=Math.max(0,prix-acompte);
+  var el=document.getElementById('pc-acc-reste');
+  if(el) el.textContent=reste.toFixed(2)+' \u20ac';
+}
+
+function parcoursCreerCmdAcc(){
+  var nom=  (document.getElementById('pc-acc-nom')||{}).value||'';
+  var tel=  (document.getElementById('pc-acc-tel')||{}).value||'';
+  var desig=(document.getElementById('pc-acc-designation')||{}).value||'';
+  var prix= parseFloat((document.getElementById('pc-acc-prix')||{}).value)||0;
+  var acompte=parseFloat((document.getElementById('pc-acc-acompte')||{}).value)||0;
+  var mode= (document.getElementById('pc-acc-mode')||{}).value||'CB';
+
+  if(!nom.trim()||!tel.trim()){ showNotif('Nom et téléphone obligatoires','error'); return; }
+  if(!desig.trim()){ showNotif('Désignation accessoire obligatoire','error'); return; }
+
+  var reste=Math.max(0,prix-acompte);
+  var num='CMD-'+new Date().getFullYear()+'-'+String(bonsCommande.length+1).padStart(3,'0');
+  var cmd={
+    id:Date.now(),numero:num,
+    date:new Date().toISOString().split('T')[0],
+    type:'accessoire',client:{nom:nom.trim(),tel:tel.trim()},
+    detail:desig.trim(),prix:prix,acompte:acompte,modeReglement:mode,
+    reste:reste,paye:reste===0,statut:'a_commander',traite:false
+  };
+  bonsCommande.push(cmd);
+  if(typeof saveBonCommandeSupabase==='function') saveBonCommandeSupabase(cmd);
+  if(typeof renderBonsCommande==='function') renderBonsCommande();
+  if(typeof printTicketCommande==='function') printTicketCommande(cmd);
+
+  // Reset
+  ['pc-acc-nom','pc-acc-tel','pc-acc-designation'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var elPx=document.getElementById('pc-acc-prix');if(elPx)elPx.value='';
+  var elAc=document.getElementById('pc-acc-acompte');if(elAc)elAc.value='';
+  pcAccCalc();
+  pcAccRenderListe();
+  showNotif('Bon '+num+' créé !','success');
+}
+
+function pcAccRenderListe(){
+  var el=document.getElementById('pc-acc-liste');
+  if(!el||typeof bonsCommande==='undefined') return;
+  var list=bonsCommande.filter(function(c){return c.type==='accessoire'&&c.statut==='a_commander';})
+    .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,10);
+  if(!list.length){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:16px;">Aucune commande accessoire en attente</div>';return;}
+  var h='<h4 style="font-weight:700;margin-bottom:10px;">Commandes accessoires en attente</h4>';
+  list.forEach(function(c){
+    h+='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;border-left:4px solid #d97706;">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;">';
+    h+='<div><strong>'+c.numero+'</strong> — '+(c.client&&c.client.nom||'')+'<br><span style="font-size:12px;color:var(--text-muted);">'+c.detail+' · '+(c.prix||0).toFixed(2)+'\u20ac</span></div>';
+    h+='<div style="font-size:11px;color:var(--text-muted);">'+c.date+'</div>';
+    h+='</div></div>';
+  });
+  el.innerHTML=h;
 }
 
 // ══════════════════════════════════════════════════════
