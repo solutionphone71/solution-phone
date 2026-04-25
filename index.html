@@ -672,12 +672,26 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       <!-- BENTO GRID -->
       <div class="bento" id="dash-bento">
 
-        <!-- ① PERFORMANCE LIVE (2x wide) -->
+        <!-- ① PERFORMANCE LIVE (2x wide) — Dissocié Répa/Smart -->
         <div class="bw bw-2x" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,rgba(22,22,34,0.9),rgba(30,20,40,0.9));">
           <div class="bw-glow" style="top:-20px;right:-20px;background:#FF0033;"></div>
           <div class="bw-label"><span id="wg-perf-dot" class="pulse-dot" style="background:#34d399;box-shadow:0 0 12px #34d399;"></span> Performance Live</div>
           <div id="wg-perf-val" class="bw-val" style="color:#fff;">0 €</div>
           <div id="wg-perf-compare" class="bw-sub" style="font-size:13px;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px;">
+            <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;">
+              <div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">🔧 Répa / Access.</div>
+              <div id="wg-perf-repa" style="font-size:20px;font-weight:900;color:#f59e0b;margin-top:4px;">0 €</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;">
+              <div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">📱 Smart. Occasion</div>
+              <div id="wg-perf-smart" style="font-size:20px;font-weight:900;color:#3b82f6;margin-top:4px;">0 €</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 12px;">
+              <div style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:700;text-transform:uppercase;letter-spacing:.04em;">📱 Smart. Neufs</div>
+              <div id="wg-perf-neufs" style="font-size:20px;font-weight:900;color:#10b981;margin-top:4px;">0 €</div>
+            </div>
+          </div>
           <div id="wg-perf-detail" style="display:flex;gap:20px;margin-top:12px;">
             <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Ce mois</div><div id="wg-perf-mois" style="font-size:18px;font-weight:800;color:#FF0033;">0 €</div></div>
             <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Mois dernier</div><div id="wg-perf-last" style="font-size:18px;font-weight:800;color:rgba(255,255,255,0.4);">0 €</div></div>
@@ -11288,13 +11302,27 @@ function renderDashboard(){
       : '';
   }
 
-  // ── KPI ──
+  // ── KPI — Dissocié Répa/Accessoires vs Smartphones ──
   var dispo = phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var caSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+p.vente;},0);
-  var mgSmartMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  var caReparMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  // Smartphones occasion : CA vente + marge (depuis phones array)
+  var smartVendusMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
+  var caSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0);},0);
+  var mgSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.achat||0);},0);
+  // Smartphones occasion : montant NET encaissé (ce qui est allé dans la caisse = vente - reprise)
+  var caSmartCaisse = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.repriseAmount||0);},0);
+  // Smartphones neufs : CA vente
+  var neufsVMois = (window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);});
+  var caNeufsM = neufsVMois.reduce(function(s,p){return s+(Number(p.vente)||0);},0);
+  // Caisse TTC totale (répa + accessoires + smartphones confondus)
+  var caCaisseMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  // CA Réparations/Accessoires = Caisse TTC - part smartphones (occasion net + neufs)
+  var caRepaAccMois = caCaisseMois - caSmartCaisse - caNeufsM;
+  if(caRepaAccMois < 0) caRepaAccMois = 0; // sécurité arrondi
   var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
-  var caTotal = caSmartMois + caReparMois;
+  // Total réel = Répa/Accessoires + Smartphones occasion (prix vente) + Neufs
+  var caTotal = caRepaAccMois + caSmartMois + caNeufsM;
+  // Compat ancien var
+  var caReparMois = caCaisseMois;
 
   function dashCard(label, val, sub, page, extra){
     var d = document.createElement('div');
@@ -11328,18 +11356,13 @@ function renderDashboard(){
       cards.appendChild(dashCard('Stock dispo', dispo+' tél.', '', 'phones', ''));
       cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
     } else {
-      cards.appendChild(dashCard('CA du jour', caJour.toFixed(0)+' €', 'Réparations', null, ''));
-      cards.appendChild(dashCard('CA semaine', caSemaine.toFixed(0)+' €', '', null, 'color:var(--blue)'));
-      cards.appendChild(dashCard('CA réparations', caReparMois.toFixed(0)+' €', 'dont QR : '+bonusQRMois.toFixed(0)+' €', 'reparations', ''));
-      cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
+      cards.appendChild(dashCard('CA Répa / Access.', caRepaAccMois.toFixed(0)+' €', 'dont QR : '+bonusQRMois.toFixed(0)+' €', 'reparations', ''));
+      cards.appendChild(dashCard('CA Smart. Occasion', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
+      cards.appendChild(dashCard('CA Smart. Neufs', caNeufsM.toFixed(0)+' €', neufsVMois.length+' vendu(s)', 'ventes-neufs', 'color:var(--green)'));
       cards.appendChild(dashCard('CA total du mois', caTotal.toFixed(0)+' €', '', null, 'color:var(--red)'));
       cards.appendChild(dashCard('Répa en cours', repEnCours+'', '', 'reparations', 'color:var(--green)'));
       cards.appendChild(dashCard('Commandes', cmdEnAttente+' en attente', relances>0?'⏰ '+relances+' relance(s)':'', 'commandes', 'color:var(--blue)'));
       cards.appendChild(dashCard('Stock dispo', dispo+' tél.', 'Smartphones', 'phones', ''));
-      // Neufs du mois
-      var neufsVMois = (window.phonesNeufs||[]).filter(function(p){return p.etat==='VENDU'&&p.date_vente&&p.date_vente.startsWith(moisCourant);});
-      var caNeufsM = neufsVMois.reduce(function(s,p){return s+(Number(p.vente)||0);},0);
-      cards.appendChild(dashCard('CA tél. neufs', caNeufsM.toFixed(0)+' €', neufsVMois.length+' vendu(s)', 'ventes-neufs', 'color:var(--green)'));
       cards.appendChild(dashCard('Bonus QR encaissé', bonusQRMois.toFixed(0)+' €', 'ce mois', 'qualirepar', 'color:var(--green)'));
     }
   }
@@ -11486,6 +11509,10 @@ function renderDashboard(){
   var pm=document.getElementById('wg-perf-mois');if(pm)pm.textContent=caMoisActuel.toFixed(0)+' €';
   var pl=document.getElementById('wg-perf-last');if(pl)pl.textContent=caLastMois.toFixed(0)+' €';
   var pp=document.getElementById('wg-perf-pct');if(pp){pp.textContent=(perfUp?'+':'')+perfDiff.toFixed(1)+'%';pp.style.color=perfUp?'#34d399':'#f59e0b';}
+  // Sous-catégories dissociées
+  var wr=document.getElementById('wg-perf-repa');if(wr)wr.textContent=caRepaAccMois.toFixed(0)+' €';
+  var ws=document.getElementById('wg-perf-smart');if(ws)ws.textContent=caSmartMois.toFixed(0)+' €';
+  var wn=document.getElementById('wg-perf-neufs');if(wn)wn.textContent=caNeufsM.toFixed(0)+' €';
 
   // ② YESTERDAY'S FLASHBACK
   var hier=new Date(today);hier.setDate(today.getDate()-1);
