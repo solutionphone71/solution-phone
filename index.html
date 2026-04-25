@@ -6719,13 +6719,18 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
     if(!token) return null;
 
     // 2. Soumettre la facture pour certification
+    // facture.prix = prix CLIENT (après bonus QR). Le vrai TTC = prix + 25 si bonusQR
+    var _kiwizTTC = parseFloat(facture.prix)||0;
+    if(facture.bonusQR) _kiwizTTC += 25;
+    var _kiwizHT = Math.round(_kiwizTTC / 1.2 * 100) / 100;
+    console.log('[Kiwiz] Montants: TTC='+_kiwizTTC+' HT='+_kiwizHT+' (bonusQR='+!!facture.bonusQR+' prixSaisi='+facture.prix+')');
     var payload = {
       subscription_id: getKiwizSub(),
       type: 'invoice',
       number: facture.numero,
       date: facture.date,
-      total_ht: (facture.prix/1.2).toFixed(2),
-      total_ttc: facture.prix.toString(),
+      total_ht: _kiwizHT.toFixed(2),
+      total_ttc: _kiwizTTC.toFixed(2),
       client_name: client,
       pdf: pdfBase64 || ''
     };
