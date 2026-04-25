@@ -2598,8 +2598,37 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
           <!-- ── TUILES D'ACCUEIL ── -->
           <div id="parcours-tuiles" style="max-width:900px;margin:0 auto;padding:20px;">
-            <h2 style="text-align:center;font-size:22px;font-weight:800;margin-bottom:8px;">Parcours Client</h2>
-            <p style="text-align:center;color:var(--text-muted);margin-bottom:28px;font-size:14px;">Choisissez le type de prise en charge</p>
+            <h2 style="text-align:center;font-size:22px;font-weight:800;margin-bottom:6px;">Parcours Client</h2>
+
+            <!-- ── BARRE DE RECHERCHE ── -->
+            <div style="position:relative;max-width:500px;margin:0 auto 20px;">
+              <input type="text" id="pc-search-global" placeholder="🔍 Rechercher un client, dossier, commande..." oninput="pcSearchGlobal()" style="width:100%;padding:12px 16px 12px 40px;border:2px solid var(--border);border-radius:12px;font-size:15px;background:var(--card-bg);outline:none;transition:border .2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="setTimeout(function(){document.getElementById('pc-search-results').style.display='none';},200);this.style.borderColor='var(--border)'">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text-muted);pointer-events:none;">🔍</span>
+              <div id="pc-search-results" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.15);max-height:300px;overflow-y:auto;z-index:100;margin-top:4px;"></div>
+            </div>
+
+            <!-- ── WIDGETS RAPIDES : Caisse + Réparations en cours ── -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+
+              <!-- Caisse du jour -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;">
+                <div style="font-size:13px;font-weight:700;color:var(--text-muted);margin-bottom:8px;">💰 Caisse du jour</div>
+                <div id="pc-dash-caisse-total" style="font-size:26px;font-weight:900;color:#059669;">0.00 €</div>
+                <div id="pc-dash-caisse-detail" style="font-size:11px;color:var(--text-muted);margin-top:4px;"></div>
+              </div>
+
+              <!-- Réparations en cours -->
+              <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;" onclick="showPage('reparations')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:13px;font-weight:700;color:var(--text-muted);">🔧 Réparations en cours</span>
+                  <span id="pc-dash-rep-count" style="background:#dc2626;color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:20px;">0</span>
+                </div>
+                <div id="pc-dash-rep-list" style="font-size:12px;color:var(--text-muted);"></div>
+              </div>
+
+            </div>
+
+            <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;font-size:14px;">Nouveau parcours client</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
               <!-- Tuile 1 : Réparation interne -->
@@ -24091,6 +24120,44 @@ function openLiensRapides(){
 
 // Rafraîchir le tableau de bord Parcours
 function parcoursDashRefresh(){
+  // Caisse du jour
+  if(typeof caisse!=='undefined'){
+    var today=new Date().toISOString().split('T')[0];
+    var entry=caisse.find(function(c){return c.date===today;});
+    var elTotal=document.getElementById('pc-dash-caisse-total');
+    var elDetail=document.getElementById('pc-dash-caisse-detail');
+    if(entry){
+      var ttc=parseFloat(entry.ttc)||0;
+      if(elTotal) elTotal.textContent=ttc.toFixed(2)+' \u20ac';
+      if(elDetail){
+        var parts=[];
+        if(entry.cb) parts.push('CB: '+(+entry.cb).toFixed(2)+'\u20ac');
+        if(entry.especes) parts.push('Esp: '+(+entry.especes).toFixed(2)+'\u20ac');
+        if(entry.cheque) parts.push('Chq: '+(+entry.cheque).toFixed(2)+'\u20ac');
+        if(entry.virement) parts.push('Vir: '+(+entry.virement).toFixed(2)+'\u20ac');
+        if(entry.quali) parts.push('QR: '+(+entry.quali).toFixed(2)+'\u20ac');
+        elDetail.textContent=parts.join(' · ')||'Aucune vente';
+      }
+    } else {
+      if(elTotal) elTotal.textContent='0.00 \u20ac';
+      if(elDetail) elDetail.textContent='Aucune vente aujourd\'hui';
+    }
+  }
+  // Réparations en cours (statut depot ou devis, pas encore facturé)
+  if(typeof repDossiers!=='undefined'){
+    var repEC=repDossiers.filter(function(d){return d.statut&&d.statut!=='facture'&&d.statut!=='cloture'&&d.statut!=='qr';});
+    var elRC=document.getElementById('pc-dash-rep-count');if(elRC)elRC.textContent=repEC.length;
+    var elRL=document.getElementById('pc-dash-rep-list');
+    if(elRL){
+      if(!repEC.length) elRL.innerHTML='Aucune réparation en cours';
+      else elRL.innerHTML=repEC.slice(0,4).map(function(d){
+        var c=d.client||{};var a=d.appareil||{};
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
+          +'<strong>'+d.numero+'</strong> '+(c.nom||'?')+' — '+(a.marque||'')+' '+(a.modele||'')
+          +' <span style="color:#f59e0b;font-size:10px;font-weight:700;">'+(d.statut||'').toUpperCase()+'</span></div>';
+      }).join('')+(repEC.length>4?'<div style="padding:3px 0;color:#dc2626;">+'+(repEC.length-4)+' autres...</div>':'');
+    }
+  }
   // Mobilax en cours
   if(typeof _mlxDossiers!=='undefined'){
     var mlxEnCours=_mlxDossiers.filter(function(d){return d.statut==='en_cours';});
@@ -24151,6 +24218,68 @@ function parcoursDashRefresh(){
     else elALL.innerHTML=alertes.slice(0,5).map(function(a){
       return '<div style="padding:3px 0;border-bottom:1px solid var(--border);color:'+a.color+';">⚠️ '+a.text+'</div>';
     }).join('');
+  }
+}
+
+// ── Recherche globale dans le hub ──
+function pcSearchGlobal(){
+  var q=((document.getElementById('pc-search-global')||{}).value||'').toLowerCase().trim();
+  var el=document.getElementById('pc-search-results');
+  if(!el) return;
+  if(!q||q.length<2){el.style.display='none';return;}
+  var results=[];
+  // Chercher dans réparations
+  if(typeof repDossiers!=='undefined'){
+    repDossiers.forEach(function(d){
+      var c=d.client||{};var a=d.appareil||{};
+      var s=((c.nom||'')+' '+(c.prenom||'')+' '+(c.tel||'')+' '+(a.marque||'')+' '+(a.modele||'')+' '+(a.imei||'')+' '+(d.numero||'')+' '+(d.panne||'')).toLowerCase();
+      if(s.indexOf(q)>=0) results.push({type:'rep',icon:'🔧',label:d.numero+' — '+(c.nom||'')+(c.prenom?' '+c.prenom:''),sub:(a.marque||'')+' '+(a.modele||'')+' · '+(d.statut||''),id:d.id});
+    });
+  }
+  // Chercher dans Mobilax
+  if(typeof _mlxDossiers!=='undefined'){
+    _mlxDossiers.forEach(function(d){
+      var s=(d.nom+' '+d.modele+' '+d.numero+' '+(d.tel||'')+' '+d.panne).toLowerCase();
+      if(s.indexOf(q)>=0) results.push({type:'mlx',icon:'🏭',label:d.numero+' — '+d.nom,sub:d.modele+' · '+d.panne+' · '+(d.statut==='termine'?'Terminé':'En cours'),id:d.id});
+    });
+  }
+  // Chercher dans bons de commande
+  if(typeof bonsCommande!=='undefined'){
+    bonsCommande.forEach(function(c){
+      var s=(c.numero+' '+(c.client&&c.client.nom||'')+' '+(c.client&&c.client.tel||'')+' '+c.detail).toLowerCase();
+      if(s.indexOf(q)>=0) results.push({type:'cmd',icon:c.type==='accessoire'?'📦':'🔩',label:c.numero+' — '+(c.client&&c.client.nom||''),sub:c.detail+' · '+c.statut,id:c.id});
+    });
+  }
+  if(!results.length){el.innerHTML='<div style="padding:14px;color:var(--text-muted);text-align:center;">Aucun résultat</div>';el.style.display='block';return;}
+  var h='';
+  results.slice(0,8).forEach(function(r){
+    h+='<div onclick="pcSearchOpen(\''+r.type+'\','+r.id+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s;" onmouseover="this.style.background=\'rgba(59,130,246,0.06)\'" onmouseout="this.style.background=\'transparent\'">';
+    h+='<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">'+r.icon+'</span>';
+    h+='<div><div style="font-size:13px;font-weight:600;">'+r.label+'</div>';
+    h+='<div style="font-size:11px;color:var(--text-muted);">'+r.sub+'</div></div></div></div>';
+  });
+  if(results.length>8) h+='<div style="padding:8px;text-align:center;font-size:11px;color:var(--text-muted);">+'+(results.length-8)+' autres résultats</div>';
+  el.innerHTML=h;el.style.display='block';
+}
+
+function pcSearchOpen(type,id){
+  document.getElementById('pc-search-results').style.display='none';
+  document.getElementById('pc-search-global').value='';
+  if(type==='rep'){
+    // Ouvrir le dossier réparation
+    showPage('reparations');
+    setTimeout(function(){
+      if(typeof repDossiers!=='undefined'){
+        var d=repDossiers.find(function(x){return x.id===id;});
+        if(d){repDossierCourant=d;repLoadFormFromDossier();var lv=document.getElementById('rep-liste-view');var dv=document.getElementById('rep-dossier-view');if(lv)lv.style.display='none';if(dv)dv.style.display='block';}
+      }
+    },200);
+  } else if(type==='mlx'){
+    parcoursOuvrir('mobilax');
+  } else if(type==='cmd'){
+    var c=bonsCommande.find(function(x){return x.id===id;});
+    if(c&&c.type==='accessoire') parcoursOuvrir('accessoires');
+    else parcoursOuvrir('pieces');
   }
 }
 
