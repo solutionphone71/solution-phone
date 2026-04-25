@@ -7369,7 +7369,7 @@ function importPhonilabToCaisse(input) {
         caisse[idx].especes   = entry.especes;
         caisse[idx].cheque    = entry.cheque;
         caisse[idx].virement  = entry.virement;
-        caisse[idx].quali     = (caisse[idx].quali||0) + entry.quali;
+        caisse[idx].quali     = entry.quali;
         caisse[idx].achatSmart = entry.achatSmart; // ← achat smartphones du jour
         saveCaisseRow(caisse[idx]);
         updated++;
@@ -11307,17 +11307,18 @@ function renderDashboard(){
   // Compat ancien var
   var caReparMois = caRepaAccMois;
 
-  function dashCard(label, val, sub, page, extra){
-    var d = document.createElement('div');
-    var cc='sp-kpi--amber',vc='sp-kpi__value--amber';
-    if(extra&&extra.indexOf('var(--blue)')!==-1){cc='sp-kpi--blue';vc='sp-kpi__value--blue';}
-    else if(extra&&extra.indexOf('var(--green)')!==-1){cc='sp-kpi--green';vc='sp-kpi__value--green';}
-    else if(extra&&extra.indexOf('var(--red)')!==-1){cc='sp-kpi--red';vc='sp-kpi__value--red';}
-    d.className='sp-kpi '+cc;
-    d.style.cursor=page?'pointer':'default';
-    d.innerHTML='<div class="sp-kpi__label">'+label+'</div>'
-      +'<div class="sp-kpi__value '+vc+'">'+val+'</div>'
-      +(sub?'<div class="sp-kpi__delta sp-kpi__delta--up">'+sub+'</div>':'');
+  function dashTile(icon,label,val,sub,color,page){
+    var d=document.createElement('div');
+    d.style.cssText='background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px 14px;cursor:'+(page?'pointer':'default')+';transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden;';
+    d.innerHTML='<div style="position:absolute;top:-8px;right:-8px;width:50px;height:50px;background:'+color+';opacity:0.06;border-radius:50%;"></div>'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+      +'<span style="font-size:20px;">'+icon+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;">'+label+'</span>'
+      +'</div>'
+      +'<div style="font-size:24px;font-weight:900;color:'+color+';margin-bottom:2px;">'+val+'</div>'
+      +(sub?'<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">'+sub+'</div>':'');
+    d.onmouseover=function(){d.style.transform='translateY(-3px)';d.style.boxShadow='0 6px 20px rgba(0,0,0,.15)';};
+    d.onmouseout=function(){d.style.transform='';d.style.boxShadow='';};
     if(page) d.onclick=function(){showPage(page,null);if(page==='ventes-smart')renderVentesSmartphones();if(page==='qualirepar')qrInit();};
     return d;
   }
@@ -11325,7 +11326,6 @@ function renderDashboard(){
   var cards = document.getElementById('dash-cards');
   if(cards){
     cards.innerHTML = '';
-    // Stats supplémentaires
     var todayStr = today.toISOString().split('T')[0];
     var caJour = caisse.filter(function(c){return c.date===todayStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
     var debutSemaine = new Date(today); debutSemaine.setDate(today.getDate()-today.getDay()+1);
@@ -11336,16 +11336,16 @@ function renderDashboard(){
     var relances = bonsCommande.filter(function(c){return typeof needsRelance==='function'&&needsRelance(c);}).length;
 
     if(isEmploye){
-      cards.appendChild(dashCard('Stock dispo', dispo+' tél.', '', 'phones', ''));
-      cards.appendChild(dashCard('CA smartphones', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
+      cards.appendChild(dashTile('📱','Stock dispo',dispo+' tél.','Smartphones','#6366f1','phones'));
+      cards.appendChild(dashTile('💰','CA smartphones',caSmartMois.toFixed(0)+' €','Marge : '+mgSmartMois.toFixed(0)+' €','#3b82f6','ventes-smart'));
     } else {
-      cards.appendChild(dashCard('CA Répa / Access. / Neufs', caRepaAccMois.toFixed(0)+' €', 'dont QR : '+bonusQRMois.toFixed(0)+' €', 'reparations', ''));
-      cards.appendChild(dashCard('CA Smart. Occasion', caSmartMois.toFixed(0)+' €', 'Marge : '+mgSmartMois.toFixed(0)+' €', 'ventes-smart', 'color:var(--blue)'));
-      cards.appendChild(dashCard('CA total du mois', caTotal.toFixed(0)+' €', '', null, 'color:var(--red)'));
-      cards.appendChild(dashCard('Répa en cours', repEnCours+'', '', 'reparations', 'color:var(--green)'));
-      cards.appendChild(dashCard('Commandes', cmdEnAttente+' en attente', relances>0?'⏰ '+relances+' relance(s)':'', 'commandes', 'color:var(--blue)'));
-      cards.appendChild(dashCard('Stock dispo', dispo+' tél.', 'Smartphones', 'phones', ''));
-      cards.appendChild(dashCard('Bonus QR encaissé', bonusQRMois.toFixed(0)+' €', 'ce mois', 'qualirepar', 'color:var(--green)'));
+      cards.appendChild(dashTile('🔧','CA Répa / Access. / Neufs',caRepaAccMois.toFixed(0)+' €','dont QR : '+bonusQRMois.toFixed(0)+' €','#f59e0b','reparations'));
+      cards.appendChild(dashTile('📱','CA Smart. Occasion',caSmartMois.toFixed(0)+' €','Marge : '+mgSmartMois.toFixed(0)+' €','#3b82f6','ventes-smart'));
+      cards.appendChild(dashTile('💰','CA total du mois',caTotal.toFixed(0)+' €','','#ef4444',null));
+      cards.appendChild(dashTile('⚙️','Répa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981','reparations'));
+      cards.appendChild(dashTile('📦','Commandes',cmdEnAttente+' en attente',relances>0?'⏰ '+relances+' relance(s)':'','#8b5cf6','commandes'));
+      cards.appendChild(dashTile('📱','Stock dispo',dispo+' tél.','Smartphones','#6366f1','phones'));
+      cards.appendChild(dashTile('🏷️','Bonus QR',bonusQRMois.toFixed(0)+' €','ce mois','#10b981','qualirepar'));
     }
   }
 
