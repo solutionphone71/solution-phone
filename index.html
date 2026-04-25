@@ -16684,15 +16684,25 @@ async function qrEnvoyerEcosystemComplet(d){
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOSYSTEM_PROXY;
   var el=document.getElementById("rep-qr-envoi-statut");
-  if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
     var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Coincoin71?!';
-    var basicAuth='Basic '+btoa(ecoUser+':'+ecoPass);
+    // ① POST /Login
+    var lr=await fetch(proxy+'/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
+    var lt=await lr.text();console.log('[Ecosystem] /Login:',lr.status,lt.substring(0,200));
+    if(!lr.ok)throw new Error('Login Ecosystem: '+lt.substring(0,100));
+    var ld;try{ld=JSON.parse(lt);}catch(e){ld={};}
+    var token=ld.token||ld.id_token||ld.access_token||lt.trim();
+    if(!token)throw new Error('Login: pas de token');
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
+    // ② POST /reimbursement-claims/new-claim
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':basicAuth},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
-    var j2=await r2.json();console.log('[Ecosystem] repair-reimbursements:',r2.status,JSON.stringify(j2).substring(0,300));var repairId=j2.id||j2.repairId||j2.reimbursementId;
+    var r2=await fetch(proxy+'/reimbursement-claims/new-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var j2=await r2.json();console.log('[Ecosystem] new-claim:',r2.status,JSON.stringify(j2).substring(0,300));
+    if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+JSON.stringify(j2).substring(0,100));
+    var repairId=j2.id||j2.claimId||j2.reimbursementClaimId||j2.reference;
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
@@ -22606,7 +22616,7 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : Basic Auth (pas de token) → repair-reimbursements ── */
+/* ── Flux Ecosystem : POST /Login → /reimbursement-claims/new-claim → confirmclaim ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
@@ -22629,13 +22639,32 @@ async function qrSendEcosystem() {
   var marque   = (app.marque  || '').trim();
   var modele   = (app.modele  || '').trim();
   var imei     = (app.imei    || '').trim();
-  var typeRep  = (app.typeRep || app.type || 'R\u00e9paration').trim();
   var montantHT = parseFloat(dev.prixHT) || 0;
   var soutien   = parseFloat(dev.bonusMontant) || 25;
   var refFact   = d.refRep || ('QR-' + Date.now());
   var today     = d.date || new Date().toISOString().split('T')[0];
 
-  qrSetAgoraBadge('\u23f3', 'Envoi Ecosystem...', 'Ecosystem', '#f39c12');
+  // ① POST /Login → token
+  qrSetAgoraBadge('\u23f3', 'Connexion Ecosystem...', 'Ecosystem', '#f39c12');
+
+  var loginResp = await fetch(ECO_BASE + '/Login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
+  });
+  var loginText = await loginResp.text();
+  console.log('[Ecosystem] /Login =>', loginResp.status, loginText.substring(0,300));
+
+  if(!loginResp.ok) throw new Error('Ecosystem Login HTTP ' + loginResp.status + ' \u2014 ' + loginText.substring(0,150));
+
+  var loginData;
+  try { loginData = JSON.parse(loginText); } catch(e){ loginData = {}; }
+  var token = loginData.token || loginData.id_token || loginData.access_token || loginData.jwt || loginText.trim();
+  if(!token) throw new Error('Ecosystem Login : pas de token dans la r\u00e9ponse');
+  console.log('[Ecosystem] Login OK, token length:', token.length);
+
+  // ② POST /reimbursement-claims/new-claim → cr\u00e9er le dossier
+  qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');
 
   var payload = {
     repairerId:     ECO_REPAIRER,
@@ -22658,30 +22687,43 @@ async function qrSendEcosystem() {
     spareParts:        []
   };
 
-  // Ecosystem : Basic Auth direct (pas de token)
-  var basicAuth = 'Basic ' + btoa(ECO_USER + ':' + ECO_PASS);
-  console.log('[Ecosystem] Envoi dossier, user:', ECO_USER, 'pass length:', ECO_PASS.length);
+  console.log('[Ecosystem] Envoi new-claim:', JSON.stringify(payload).substring(0,400));
 
-  var repairResp = await fetch(ECO_BASE + '/api/repair-reimbursements', {
+  var claimResp = await fetch(ECO_BASE + '/reimbursement-claims/new-claim', {
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': basicAuth
+      'Authorization': 'Bearer ' + token
     },
     body: JSON.stringify(payload)
   });
 
-  var respText = await repairResp.text();
-  console.log('[Ecosystem] R\u00e9ponse:', repairResp.status, respText.substring(0,500));
+  var claimText = await claimResp.text();
+  console.log('[Ecosystem] new-claim =>', claimResp.status, claimText.substring(0,500));
 
-  var resp;
-  try { resp = JSON.parse(respText); } catch(e){ resp = { raw: respText }; }
-
-  if (!repairResp.ok) {
-    throw new Error('Ecosystem HTTP ' + repairResp.status + ' \u2014 ' + (resp.message || resp.detail || JSON.stringify(resp).substring(0,120)));
+  if(!claimResp.ok){
+    throw new Error('Ecosystem new-claim HTTP ' + claimResp.status + ' \u2014 ' + claimText.substring(0,150));
   }
 
-  var ref = resp.id || resp.reimbursementId || resp.reference || resp.numDossier || String(resp);
+  var claimData;
+  try { claimData = JSON.parse(claimText); } catch(e){ claimData = { raw: claimText }; }
+  var claimId = claimData.id || claimData.claimId || claimData.reimbursementClaimId || claimData.reference;
+
+  // ③ POST /reimbursement-claims/new-claim/confirmclaim → confirmer
+  if(claimId){
+    qrSetAgoraBadge('\u23f3', 'Confirmation...', 'Ecosystem', '#f39c12');
+    try {
+      var confirmResp = await fetch(ECO_BASE + '/reimbursement-claims/new-claim/confirmclaim', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
+        body: JSON.stringify({ claimId: claimId })
+      });
+      var confirmText = await confirmResp.text();
+      console.log('[Ecosystem] confirmclaim =>', confirmResp.status, confirmText.substring(0,200));
+    } catch(e){ console.warn('[Ecosystem] confirmclaim error:', e.message); }
+  }
+
+  var ref = claimId || claimData.numDossier || String(claimData);
   d.agoraOK  = true;
   d.agoraRef = ref;
 
@@ -22951,13 +22993,17 @@ async function qrVerifierStatutEcosystem(dossier){
 
   try {
     // Auth JWT d'abord
-    // Basic Auth (pas de token chez Ecosystem)
-    var basicAuth = 'Basic ' + btoa(user + ':' + password);
+    // POST /Login pour token
+    var lr=await fetch(proxy+'/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
+    if(!lr.ok) return null;
+    var ld=await lr.json();
+    var token=ld.token||ld.id_token||ld.access_token;
+    if(!token) return null;
 
-    // GET statut du dossier
-    var res = await fetch(proxy+'/api/repair-reimbursements/'+ecosystemId, {
+    // GET /reimbursement-claims pour statut
+    var res = await fetch(proxy+'/reimbursement-claims', {
       method:'GET',
-      headers:{'Authorization':basicAuth,'Content-Type':'application/json'}
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
     });
     if(!res.ok) return null;
     var data = await res.json();

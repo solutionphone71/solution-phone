@@ -13,6 +13,7 @@ export default async function handler(req, res) {
   try {
     const url = new URL(req.url, 'https://app.solution-phone.fr');
     const path = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '') || '/';
+    // ppr = pré-production (email avril 2026), sandbox = ancien nom
     const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${url.search}`;
 
     console.log('[proxy-ecosystem] →', req.method, targetUrl);
