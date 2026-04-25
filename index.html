@@ -16681,15 +16681,14 @@ async function qrEnvoyerEcosystemComplet(d){
   var c=d.client||{};var a=d.appareil||{};
   var proxy=QR_ECOSYSTEM_PROXY;
   var el=document.getElementById("rep-qr-envoi-statut");
-  if(el)el.innerHTML="<div style='color:blue'>&#9203; Auth Ecosystem...</div>";
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
   try{
-    var r1=await fetch(proxy+'/api/authenticate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710',password:localStorage.getItem(PARAMS_KEYS.ecoPass)||''})});
-    var j1=await r1.json();var token=j1.token||j1.accessToken||j1.access_token;
-    if(!token)throw new Error("Auth Ecosystem: "+JSON.stringify(j1));
-    if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi Ecosystem...</div>";
+    var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
+    var basicAuth='Basic '+btoa(ecoUser+':'+ecoPass);
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'501710',siteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var r2=await fetch(proxy+'/api/repair-reimbursements',{method:'POST',headers:{'Content-Type':'application/json','Authorization':basicAuth},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
     var j2=await r2.json();var repairId=j2.id||j2.repairId||j2.reimbursementId;
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
@@ -22604,7 +22603,7 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : Authenticate → CreateRepairReimbursement ── */
+/* ── Flux Ecosystem : Basic Auth → CreateRepairReimbursement ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
@@ -22633,22 +22632,10 @@ async function qrSendEcosystem() {
   var refFact   = d.refRep || ('QR-' + Date.now());
   var today     = d.date || new Date().toISOString().split('T')[0];
 
-  qrSetAgoraBadge('\u23f3', 'Authentification...', 'Ecosystem', '#f39c12');
+  // Basic Auth — pas de token JWT chez Ecosystem
+  var basicAuth = 'Basic ' + btoa(ECO_USER + ':' + ECO_PASS);
 
-  // ① Authentification → JWT
-  var authResp = await fetch(ECO_BASE + '/api/authenticate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
-  });
-  if (!authResp.ok) throw new Error('Ecosystem auth HTTP ' + authResp.status);
-  var authData = await authResp.json();
-  var jwtToken = authData.token || authData.id_token || authData.access_token;
-  if (!jwtToken) throw new Error('Ecosystem : pas de token JWT');
-  console.log('[QR Ecosystem] Auth OK, token length:', jwtToken.length);
-
-  // ② Cr\u00e9ation dossier remboursement
-  qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');
+  qrSetAgoraBadge('\u23f3', 'Envoi du dossier...', 'Ecosystem', '#f39c12');
 
   var payload = {
     repairerId:     ECO_REPAIRER,
@@ -22671,20 +22658,22 @@ async function qrSendEcosystem() {
     spareParts:        []
   };
 
+  console.log('[QR Ecosystem] Envoi dossier avec Basic Auth, user:', ECO_USER);
+
   var repairResp = await fetch(ECO_BASE + '/api/repair-reimbursements', {
     method:  'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': 'Bearer ' + jwtToken
+      'Authorization': basicAuth
     },
     body: JSON.stringify(payload)
   });
 
   var resp = await repairResp.json();
-  console.log('[QR Ecosystem] repair-reimbursements:', JSON.stringify(resp).substring(0,300));
+  console.log('[QR Ecosystem] repair-reimbursements:', repairResp.status, JSON.stringify(resp).substring(0,300));
 
   if (!repairResp.ok) {
-    throw new Error('Ecosystem HTTP ' + repairResp.status + ' — ' + (resp.message || resp.detail || JSON.stringify(resp).substring(0,80)));
+    throw new Error('Ecosystem HTTP ' + repairResp.status + ' \u2014 ' + (resp.message || resp.detail || JSON.stringify(resp).substring(0,120)));
   }
 
   var ref = resp.id || resp.reimbursementId || resp.reference || resp.numDossier || String(resp);
@@ -22922,21 +22911,13 @@ async function qrVerifierStatutEcosystem(dossier){
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   var proxy = QR_ECOSYSTEM_PROXY;
+  var basicAuth = 'Basic ' + btoa(user + ':' + password);
 
   try {
-    // Auth
-    var authRes = await fetch(proxy+'/api/authenticate', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:user, password:password})
-    });
-    var authData = await authRes.json();
-    var jwt = authData.id_token || authData.token || authData.access_token;
-    if(!jwt) return null;
-
-    // GET statut du dossier
+    // GET statut du dossier (Basic Auth, pas de token)
     var res = await fetch(proxy+'/api/repair-reimbursements/'+ecosystemId, {
       method:'GET',
-      headers:{'Authorization':'Bearer '+jwt,'Content-Type':'application/json'}
+      headers:{'Authorization':basicAuth,'Content-Type':'application/json'}
     });
     if(!res.ok) return null;
     var data = await res.json();
