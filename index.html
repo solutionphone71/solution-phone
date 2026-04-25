@@ -8595,13 +8595,8 @@ function finaliserVente(repriseData){
 
   savePhone(p);
 
-  // ── Alimentation caisse avec le NET encaissé ──
-  caisseFromVente({
-    prixTTC: netEncaisse,
-    mode: mode,
-    date: p.dateVente,
-    description: 'Vente '+p.modele+' IMEI '+(p.imei||'')+(repMontant>0?' (reprise '+repMontant+'€ '+repriseData.modele+')':'')
-  });
+  // Smartphones occasion : PAS dans la caisse principale (caisse = Phonilab uniquement)
+  // Le CA occasion est calculé séparément depuis phones[] dans le dashboard
 
   // ── Créer automatiquement le téléphone repris en stock ──
   if(repMontant > 0 && repriseData){
@@ -11304,13 +11299,13 @@ function renderDashboard(){
   var smartVendusMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
   var caSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0);},0);
   var mgSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.achat||0);},0);
-  // Caisse TTC = CA réel (répa + accessoires + neufs) = doit coller avec Phonilab
+  // Caisse TTC = Phonilab (répa + accessoires + neufs). Smartphones occasion PAS dedans.
   var caRepaAccMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
   var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
-  // Total = Caisse + Smartphones occasion (en plus)
+  // Total = Phonilab + Smartphones occasion (prix vente)
   var caTotal = caRepaAccMois + caSmartMois;
   // Compat ancien var
-  var caReparMois = caRepaAccMois;
+  var caReparMois = caCaisseMois;
 
   function dashCard(label, val, sub, page, extra){
     var d = document.createElement('div');
