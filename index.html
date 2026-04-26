@@ -2530,9 +2530,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div class="form-group">
             <label>Modèle par défaut</label>
             <select id="params-claude-model">
-              <option value="claude-sonnet-4-6">claude-sonnet-4-6 — Rapide &amp; efficace (recommandé)</option>
-              <option value="claude-opus-4-6">claude-opus-4-6 — Puissant &amp; précis</option>
-              <option value="claude-haiku-4-5">claude-haiku-4-5 — Ultra-rapide &amp; léger</option>
+              <option value="claude-haiku-4-5" selected>claude-haiku-4-5 — Ultra-rapide &amp; économique ✓</option>
             </select>
           </div>
           <button class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;width:100%;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
@@ -7546,7 +7544,7 @@ async function calculerRachatIA() {
         'anthropic-version':'2023-06-01'
       },
       body:JSON.stringify({
-        model:'claude-sonnet-4-5',
+        model:'claude-haiku-4-5',
         max_tokens:1000,
         tools:[{"type":"web_search_20250305","name":"web_search"}],
         messages:[{role:'user',content:prompt}]
@@ -11670,7 +11668,7 @@ async function callClaude(prompt){
       'anthropic-version':'2023-06-01'
     },
     body:JSON.stringify({
-      model:'claude-sonnet-4-5',
+      model:'claude-haiku-4-5',
       max_tokens:1000,
       messages:[{role:'user',content:prompt}]
     })
@@ -13657,7 +13655,7 @@ async function docsAnalysePDF(input){
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-haiku-4-5',
         max_tokens: 4000,
         messages: [{
           role: 'user',
@@ -13841,6 +13839,8 @@ var PARAMS_KEYS = {
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
   // Force mise à jour mdp Ecosystem (avril 2026)
   localStorage.setItem('sp_eco_pass','Coincoin71?!');
+  // Force modèle Claude Haiku (économique) — avril 2026
+  localStorage.setItem('sp_claude_model','claude-haiku-4-5');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem(PARAMS_KEYS.ecologicToken)||'');
   if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
   if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
@@ -13896,7 +13896,7 @@ function paramsLoad(){
 
   // Claude API
   el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
-  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-sonnet-4-6';
+  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-haiku-4-5';
   var stCl=document.getElementById('params-claude-status');
   if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
   if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
@@ -18511,7 +18511,7 @@ async function paramsTestNas() {
 
 function paramsSaveClaude() {
   var key = (document.getElementById('params-claude-key')||{value:''}).value.trim();
-  var mdl = (document.getElementById('params-claude-model')||{value:'claude-sonnet-4-6'}).value;
+  var mdl = (document.getElementById('params-claude-model')||{value:'claude-haiku-4-5'}).value;
   localStorage.setItem(PARAMS_KEYS.claudeKey, key);
   localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
   // Sync Supabase
@@ -18540,7 +18540,7 @@ function paramsSaveClaude() {
 
 async function paramsTestClaude() {
   var key = localStorage.getItem(PARAMS_KEYS.claudeKey) || '';
-  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-sonnet-4-6';
+  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-haiku-4-5';
   var st  = document.getElementById('params-claude-status');
   if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
   if(st){ st.textContent='🔄 Test en cours…'; st.style.color='var(--blue)'; }
@@ -22116,7 +22116,7 @@ async function qrExtractIMEI(base64Image) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-haiku-4-5',
       max_tokens: 300,
       messages: [{
         role: 'user',
@@ -25886,7 +25886,7 @@ var AvisGoogle = (function(){
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
+          model:'claude-haiku-4-5',
           max_tokens:400,
           system:cfg.prompt_system,
           messages:[{role:'user',content:'Note : '+review.star_rating+'/5\nClient : '+review.reviewer_name+'\nAvis : '+(review.comment||'(pas de texte)')+'\n\nRedige la reponse.'}]
