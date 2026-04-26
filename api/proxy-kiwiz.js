@@ -19,10 +19,17 @@ export default async function handler(req, res) {
     const kiwizPath = url.pathname.replace('/api/proxy-kiwiz', '').replace('/proxy-kiwiz', '') || '/';
     const kiwizUrl = `https://api.kiwiz.io${kiwizPath}${url.search}`;
 
+    console.log('[proxy-kiwiz] →', req.method, kiwizUrl);
+
     // Construire les headers à transmettre
     const headers = {
       'Accept': req.headers['accept'] || 'application/json',
     };
+
+    // Transmettre le token d'authentification
+    if (req.headers['authorization']) {
+      headers['Authorization'] = req.headers['authorization'];
+    }
 
     // Content-Type selon la requête
     if (req.headers['content-type']) {
