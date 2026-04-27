@@ -22663,7 +22663,7 @@ async function ecoLoadCatalog(token) {
   try { _ecoCatalog = JSON.parse(text); } catch(e) { _ecoCatalog = []; }
   // Si c'est un objet avec une clé items/products/data, extraire le tableau
   if (_ecoCatalog && !Array.isArray(_ecoCatalog)) {
-    _ecoCatalog = _ecoCatalog.items || _ecoCatalog.products || _ecoCatalog.data || _ecoCatalog.Items || [_ecoCatalog];
+    _ecoCatalog = _ecoCatalog.results || _ecoCatalog.items || _ecoCatalog.products || _ecoCatalog.data || _ecoCatalog.Items || [_ecoCatalog];
   }
   console.log('[Ecosystem] Catalogue:', _ecoCatalog.length, 'produits');
   return _ecoCatalog;
