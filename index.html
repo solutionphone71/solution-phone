@@ -16689,7 +16689,7 @@ async function qrEnvoyerEcosystemComplet(d){
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
     var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
     // ① POST /Login
-    var lr=await fetch(proxy+'/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
+    var lr=await ecoFetch('/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
     var lt=await lr.text();console.log('[Ecosystem] /Login:',lr.status,lt.substring(0,200));
     if(!lr.ok)throw new Error('Login Ecosystem: '+lt.substring(0,100));
     var ld;try{ld=JSON.parse(lt);}catch(e){ld={};}
@@ -16699,7 +16699,7 @@ async function qrEnvoyerEcosystemComplet(d){
     // ② POST /reimbursement-claims/new-claim
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await fetch(proxy+'/reimbursement-claims/new-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
+    var r2=await ecoFetch('/reimbursement-claims/new-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
     var j2=await r2.json();console.log('[Ecosystem] new-claim:',r2.status,JSON.stringify(j2).substring(0,300));
     if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+JSON.stringify(j2).substring(0,100));
     var repairId=j2.id||j2.claimId||j2.reimbursementClaimId||j2.reference;
@@ -22350,7 +22350,14 @@ async function qrSendPennylane() {
 // =============================================================================
 
 var QR_ECOLOGIC_PROXY   = '/proxy-ecologic';
-var QR_ECOSYSTEM_PROXY  = '/proxy-ecosystem';
+var QR_ECOSYSTEM_PROXY  = '/api/proxy-ecosystem';
+// Helper: appel Ecosystem via proxy avec X-Target-Path header
+function ecoFetch(targetPath, options) {
+  options = options || {};
+  options.headers = options.headers || {};
+  options.headers['X-Target-Path'] = targetPath;
+  return fetch(QR_ECOSYSTEM_PROXY, options);
+}
 // SiteId Solution Phone Mâcon — récupéré via getrepairsitesbyats
 var QR_ECOLOGIC_SITE_ID = 'f3f52871-5be0-4c26-9082-002479b9cf4e';
 // Cache référentiel marques Ecologic (BrandId)
@@ -22649,7 +22656,7 @@ async function qrSendEcosystem() {
 
   // Essai 1: JSON (format doc officielle)
   console.log('[Ecosystem] POST /Login user:', ECO_USER, 'pass length:', ECO_PASS.length);
-  var loginResp = await fetch(ECO_BASE + '/Login', {
+  var loginResp = await ecoFetch('/Login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
@@ -22660,7 +22667,7 @@ async function qrSendEcosystem() {
   // Essai 2: form-urlencoded si JSON échoue
   if(!loginResp.ok) {
     console.log('[Ecosystem] JSON failed, trying form-urlencoded...');
-    loginResp = await fetch(ECO_BASE + '/Login', {
+    loginResp = await ecoFetch('/Login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: 'username=' + encodeURIComponent(ECO_USER) + '&password=' + encodeURIComponent(ECO_PASS)
@@ -22672,7 +22679,7 @@ async function qrSendEcosystem() {
   // Essai 3: login/motDePasse (format Phonilab?)
   if(!loginResp.ok) {
     console.log('[Ecosystem] form failed, trying login/motDePasse...');
-    loginResp = await fetch(ECO_BASE + '/Login', {
+    loginResp = await ecoFetch('/Login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ login: ECO_USER, motDePasse: ECO_PASS })
@@ -22718,7 +22725,7 @@ async function qrSendEcosystem() {
 
   console.log('[Ecosystem] Envoi new-claim:', JSON.stringify(payload).substring(0,400));
 
-  var claimResp = await fetch(ECO_BASE + '/reimbursement-claims/new-claim', {
+  var claimResp = await ecoFetch('/reimbursement-claims/new-claim', {
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
@@ -22742,7 +22749,7 @@ async function qrSendEcosystem() {
   if(claimId){
     qrSetAgoraBadge('\u23f3', 'Confirmation...', 'Ecosystem', '#f39c12');
     try {
-      var confirmResp = await fetch(ECO_BASE + '/reimbursement-claims/new-claim/confirmclaim', {
+      var confirmResp = await ecoFetch('/reimbursement-claims/new-claim/confirmclaim', {
         method: 'POST',
         headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
         body: JSON.stringify({ claimId: claimId })
@@ -23023,14 +23030,14 @@ async function qrVerifierStatutEcosystem(dossier){
   try {
     // Auth JWT d'abord
     // POST /Login pour token
-    var lr=await fetch(proxy+'/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
+    var lr=await ecoFetch('/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
     if(!lr.ok) return null;
     var ld=await lr.json();
     var token=ld.token||ld.id_token||ld.access_token;
     if(!token) return null;
 
     // GET /reimbursement-claims pour statut
-    var res = await fetch(proxy+'/reimbursement-claims', {
+    var res = await ecoFetch('/reimbursement-claims', {
       method:'GET',
       headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
     });

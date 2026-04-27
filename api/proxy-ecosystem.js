@@ -3,7 +3,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, X-Target-Path');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -11,27 +11,22 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Lire le path depuis __path (passé par vercel.json rewrite)
-    const url = new URL(req.url, 'https://app.solution-phone.fr');
-    const params = new URLSearchParams(url.search);
-
+    // Lire le path cible — priorité au header X-Target-Path (fiable, pas affecté par rewrites)
     let path = '/';
-    // 1) __path query param (vercel.json rewrite: ?__path=:path*)
-    if (params.get('__path')) {
-      path = '/' + params.get('__path');
+    if (req.headers['x-target-path']) {
+      path = req.headers['x-target-path'];
+      if (!path.startsWith('/')) path = '/' + path;
     }
-    // 2) Fallback: req.query.path (Vercel dynamic route)
-    else if (req.query && req.query.__path) {
-      const segments = Array.isArray(req.query.__path) ? req.query.__path.join('/') : req.query.__path;
-      if (segments) path = '/' + segments;
-    }
-    // 3) Fallback: parser req.url
-    else {
+    // Fallback: parser req.url
+    if (path === '/') {
+      const url = new URL(req.url, 'https://app.solution-phone.fr');
       const parsed = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '');
       if (parsed && parsed !== '/') path = parsed;
     }
 
-    // Reconstruire les query params (sans __path interne)
+    // Query params
+    const url = new URL(req.url, 'https://app.solution-phone.fr');
+    const params = new URLSearchParams(url.search);
     params.delete('__path');
     params.delete('path');
     const qs = params.toString() ? '?' + params.toString() : '';
@@ -39,20 +34,18 @@ export default async function handler(req, res) {
     // PPR = environnement test Ecosystem (confirmé par email avril 2026)
     const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${qs}`;
 
-    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| req.url:', req.url, '| query.path:', req.query?.path);
+    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| X-Target-Path:', req.headers['x-target-path'], '| req.url:', req.url);
 
     const headers = {
       'Accept': 'application/json',
     };
 
-    // Transmettre Content-Type du client (important pour /Login)
     if (req.headers['content-type']) {
       headers['Content-Type'] = req.headers['content-type'];
     } else if (req.method === 'POST' || req.method === 'PUT') {
       headers['Content-Type'] = 'application/json';
     }
 
-    // Transmettre le token d'authentification
     if (req.headers['authorization']) {
       headers['Authorization'] = req.headers['authorization'];
     }
