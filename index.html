@@ -13988,6 +13988,9 @@ async function paramsLoadFromSupabase() {
     } catch(e) {}
     if(loaded > 0) {
       console.log('[Settings] ' + loaded + ' clés chargées depuis Supabase');
+      // Force les identifiants Ecosystem corrects (PPR avril 2026)
+      localStorage.setItem('sp_eco_pass','geDfJ@C@QG9a$LR5');
+      localStorage.setItem('sp_eco_user','501710');
       paramsLoad(); // Rafraîchir l'UI
     }
   } catch(e) { console.warn('[Settings] Load failed:', e.message); }
