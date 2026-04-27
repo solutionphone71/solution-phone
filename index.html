@@ -22351,12 +22351,10 @@ async function qrSendPennylane() {
 
 var QR_ECOLOGIC_PROXY   = '/proxy-ecologic';
 var QR_ECOSYSTEM_PROXY  = '/api/proxy-ecosystem';
-// Helper: appel Ecosystem via proxy avec X-Target-Path header
+// Helper: appel Ecosystem via proxy — path passé en query param ?p=
 function ecoFetch(targetPath, options) {
   options = options || {};
-  options.headers = options.headers || {};
-  options.headers['X-Target-Path'] = targetPath;
-  return fetch(QR_ECOSYSTEM_PROXY, options);
+  return fetch('/api/proxy-ecosystem?p=' + encodeURIComponent(targetPath), options);
 }
 // SiteId Solution Phone Mâcon — récupéré via getrepairsitesbyats
 var QR_ECOLOGIC_SITE_ID = 'f3f52871-5be0-4c26-9082-002479b9cf4e';

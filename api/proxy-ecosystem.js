@@ -3,7 +3,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, X-Target-Path');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -11,30 +11,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Lire le path cible — priorité au header X-Target-Path (fiable, pas affecté par rewrites)
-    let path = '/';
-    if (req.headers['x-target-path']) {
-      path = req.headers['x-target-path'];
-      if (!path.startsWith('/')) path = '/' + path;
-    }
-    // Fallback: parser req.url
-    if (path === '/') {
-      const url = new URL(req.url, 'https://app.solution-phone.fr');
-      const parsed = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '');
-      if (parsed && parsed !== '/') path = parsed;
-    }
+    // Path cible via query param ?p=/Login (méthode bulletproof)
+    const path = req.query.p || '/';
 
-    // Query params
-    const url = new URL(req.url, 'https://app.solution-phone.fr');
-    const params = new URLSearchParams(url.search);
-    params.delete('__path');
-    params.delete('path');
-    const qs = params.toString() ? '?' + params.toString() : '';
+    // PPR = environnement test Ecosystem
+    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}`;
 
-    // PPR = environnement test Ecosystem (confirmé par email avril 2026)
-    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${qs}`;
-
-    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| X-Target-Path:', req.headers['x-target-path'], '| req.url:', req.url);
+    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| query.p:', req.query.p);
 
     const headers = {
       'Accept': 'application/json',
