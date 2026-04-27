@@ -16698,6 +16698,14 @@ async function qrEnvoyerEcosystemComplet(d){
     var ld;try{ld=JSON.parse(lt);}catch(e){ld={};}
     var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
     if(!token)throw new Error('Login: pas de token');
+    if(el)el.innerHTML="<div style='color:blue'>&#9203; Chargement catalogue...</div>";
+    // ①bis GET /catalog → trouver ProductID et BrandID
+    var catalog=await ecoLoadCatalog(token);
+    var catMatch=ecoFindProduct(catalog, a.marque||'');
+    var _pid=(catMatch&&catMatch.productId)||'3012';
+    var _bid=(catMatch&&catMatch.brandId)||'7052';
+    var _rcode=(catMatch&&catMatch.repairCode)||'00025';
+    console.log('[Ecosystem] Catalogue résolu → ProductID:',_pid,'BrandID:',_bid,'RepairCode:',_rcode);
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
     // ② POST /reimbursement-claims/new_claim (PascalCase nested payload)
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
@@ -16711,7 +16719,7 @@ async function qrEnvoyerEcosystemComplet(d){
       RepairDate:repDate,
       RepairerId:'2002535',
       RepairPlaceID:'2002535',
-      Product:{ProductID:'3012',BrandID:'7052',ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:'00025'},
+      Product:{ProductID:_pid,BrandID:_bid,ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:_rcode},
       SpareParts:{NewSparePartsAmount:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:0},
       Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
