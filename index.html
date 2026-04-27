@@ -16702,9 +16702,9 @@ async function qrEnvoyerEcosystemComplet(d){
     // ①bis GET /catalog → trouver ProductID et BrandID
     var catalog=await ecoLoadCatalog(token);
     var catMatch=ecoFindProduct(catalog, a.marque||'');
-    var _pid=(catMatch&&catMatch.productId)||'3012';
-    var _bid=(catMatch&&catMatch.brandId)||'7052';
-    var _rcode=(catMatch&&catMatch.repairCode)||'00025';
+    var _pid=(catMatch&&catMatch.productId)||'3016';
+    var _bid=(catMatch&&catMatch.brandId)||'SAMSUNG';
+    var _rcode=(catMatch&&catMatch.repairCode)||'01';
     console.log('[Ecosystem] Catalogue résolu → ProductID:',_pid,'BrandID:',_bid,'RepairCode:',_rcode);
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
     // ② POST /reimbursement-claims/new_claim (PascalCase nested payload)
@@ -22673,7 +22673,7 @@ async function ecoLoadCatalog(token) {
 function ecoFindProduct(catalog, marque) {
   if (!catalog || !catalog.length) return null;
   // Chercher un produit "Smartphone" ou "Téléphone"
-  var smartphoneNames = ['smartphone', 'telephone', 'téléphone', 'mobile', 'phone'];
+  var smartphoneNames = ['telephone portable', 'téléphone portable', 'smartphone', 'telephone', 'téléphone', 'mobile', 'phone'];
   var product = null;
   for (var i = 0; i < catalog.length; i++) {
     var p = catalog[i];
@@ -22778,9 +22778,9 @@ async function qrSendEcosystem() {
   qrSetAgoraBadge('\u23f3', 'Chargement catalogue...', 'Ecosystem', '#f39c12');
   var catalog = await ecoLoadCatalog(token);
   var catMatch = ecoFindProduct(catalog, marque);
-  var productId   = (catMatch && catMatch.productId)   || '3012';
-  var brandId     = (catMatch && catMatch.brandId)      || '7052';
-  var repairCode  = (catMatch && catMatch.repairCode)   || '00025';
+  var productId   = (catMatch && catMatch.productId)   || '3016';
+  var brandId     = (catMatch && catMatch.brandId)      || 'SAMSUNG';
+  var repairCode  = (catMatch && catMatch.repairCode)   || '01';
   console.log('[Ecosystem] Catalogue résolu → ProductID:', productId, 'BrandID:', brandId, 'RepairCode:', repairCode);
 
 
