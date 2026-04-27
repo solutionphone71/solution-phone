@@ -37,7 +37,6 @@ export default async function handler(req, res) {
 
     const headers = {
       'Accept': 'application/json',
-      'User-Agent': 'SolutionPhone/1.0',
     };
 
     // Transmettre Content-Type du client (important pour /Login)

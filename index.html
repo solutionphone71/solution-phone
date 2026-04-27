@@ -22647,14 +22647,39 @@ async function qrSendEcosystem() {
   // ① POST /Login → token (doc Ecosystem : pas d'auth, juste username/password en JSON)
   qrSetAgoraBadge('⏳', 'Connexion Ecosystem...', 'Ecosystem', '#f39c12');
 
-  console.log('[Ecosystem] POST /Login user:', ECO_USER);
+  // Essai 1: JSON (format doc officielle)
+  console.log('[Ecosystem] POST /Login user:', ECO_USER, 'pass length:', ECO_PASS.length);
   var loginResp = await fetch(ECO_BASE + '/Login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
   });
   var loginText = await loginResp.text();
-  console.log('[Ecosystem] Login =>', loginResp.status, loginText.substring(0, 300));
+  console.log('[Ecosystem] Login JSON =>', loginResp.status, loginText.substring(0, 300));
+
+  // Essai 2: form-urlencoded si JSON échoue
+  if(!loginResp.ok) {
+    console.log('[Ecosystem] JSON failed, trying form-urlencoded...');
+    loginResp = await fetch(ECO_BASE + '/Login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body: 'username=' + encodeURIComponent(ECO_USER) + '&password=' + encodeURIComponent(ECO_PASS)
+    });
+    loginText = await loginResp.text();
+    console.log('[Ecosystem] Login form =>', loginResp.status, loginText.substring(0, 300));
+  }
+
+  // Essai 3: login/motDePasse (format Phonilab?)
+  if(!loginResp.ok) {
+    console.log('[Ecosystem] form failed, trying login/motDePasse...');
+    loginResp = await fetch(ECO_BASE + '/Login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ login: ECO_USER, motDePasse: ECO_PASS })
+    });
+    loginText = await loginResp.text();
+    console.log('[Ecosystem] Login fr =>', loginResp.status, loginText.substring(0, 300));
+  }
 
   if(!loginResp.ok) throw new Error('Login Ecosystem HTTP ' + loginResp.status + ' — ' + loginText.substring(0, 150));
 
