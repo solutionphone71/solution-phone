@@ -30,8 +30,8 @@ export default async function handler(req, res) {
     params.delete('path');
     const qs = params.toString() ? '?' + params.toString() : '';
 
-    // ppr = pré-production (email avril 2026)
-    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${qs}`;
+    // Production (ppr = pré-prod ne fonctionne pas, identifiants = prod via Phonilab)
+    const targetUrl = `https://api-reparateurs.ecosystem.eco${path}${qs}`;
 
     console.log('[proxy-ecosystem] →', req.method, targetUrl, '| req.url:', req.url, '| query.path:', req.query?.path);
 
