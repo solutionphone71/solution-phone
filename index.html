@@ -22672,16 +22672,14 @@ async function ecoLoadCatalog(token) {
 // Cherche ProductID et BrandID dans le catalogue pour une marque/catégorie donnée
 function ecoFindProduct(catalog, marque) {
   if (!catalog || !catalog.length) return null;
-  // Chercher un produit "Smartphone" ou "Téléphone"
-  var smartphoneNames = ['telephone portable', 'téléphone portable', 'smartphone', 'telephone', 'téléphone', 'mobile', 'phone'];
+  // Chercher un produit "Téléphone portable" — recherche par priorité de terme
+  var smartphoneNames = ['telephone portable', 'téléphone portable', 'smartphone'];
   var product = null;
-  for (var i = 0; i < catalog.length; i++) {
-    var p = catalog[i];
-    var name = (p.ProductName || '').toLowerCase();
-    for (var j = 0; j < smartphoneNames.length; j++) {
-      if (name.indexOf(smartphoneNames[j]) >= 0) { product = p; break; }
+  for (var j = 0; j < smartphoneNames.length && !product; j++) {
+    for (var i = 0; i < catalog.length; i++) {
+      var name = (catalog[i].ProductName || '').toLowerCase();
+      if (name.indexOf(smartphoneNames[j]) >= 0) { product = catalog[i]; break; }
     }
-    if (product) break;
   }
   if (!product) {
     console.warn('[Ecosystem] Produit smartphone non trouvé dans le catalogue, produits disponibles:',
