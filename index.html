@@ -16730,6 +16730,62 @@ async function qrEnvoyerEcosystemComplet(d){
     var j2;try{j2=JSON.parse(j2Text);}catch(e){j2={raw:j2Text};}
     if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+j2Text.substring(0,100));
     var repairId=j2.ReimbursementClaimID||j2.reimbursementClaimId||j2.id||j2.claimId;
+    // ③ Upload pièces jointes (facture + photo IMEI + devis signé)
+    if(repairId){
+      if(el)el.innerHTML="<div style='color:blue'>&#9203; Upload pièces jointes...</div>";
+      var uploadErrors=[];
+      // Facture PDF (NF525)
+      try{
+        var fb=null;
+        if(d.facture && typeof repFactureToPDFBase64==='function'){
+          console.log('[Ecosystem] Génération facture NF525...');
+          fb=await repFactureToPDFBase64(d);
+        }
+        if(fb){
+          var uf1=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'facture.pdf',FileSizeInMB:Math.ceil(fb.length*0.75/1024/1024)||1,FileType:'invoice'})});
+          var uf1j=await uf1.json();console.log('[Ecosystem] upload-file invoice:',uf1.status,JSON.stringify(uf1j).substring(0,200));
+          if(uf1j.url){
+            var pdfBytes=Uint8Array.from(atob(fb),function(c){return c.charCodeAt(0);});
+            var putR=await fetch(uf1j.url,{method:'PUT',body:pdfBytes,headers:{'Content-Type':'application/pdf'}});
+            console.log('[Ecosystem] S3 PUT facture:',putR.status);
+          }
+        } else { console.warn('[Ecosystem] Pas de facture PDF disponible'); }
+      }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);uploadErrors.push('facture');}
+      // Photo IMEI / plaque signalétique
+      if(d.photoImeiUrl){
+        try{
+          var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();
+          var uf2=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'imei.jpg',FileSizeInMB:Math.ceil(ib.size/1024/1024)||1,FileType:'serial_tag'})});
+          var uf2j=await uf2.json();console.log('[Ecosystem] upload-file serial_tag:',uf2.status,JSON.stringify(uf2j).substring(0,200));
+          if(uf2j.url){
+            var putR2=await fetch(uf2j.url,{method:'PUT',body:ib,headers:{'Content-Type':ib.type||'image/jpeg'}});
+            console.log('[Ecosystem] S3 PUT IMEI:',putR2.status);
+          }
+        }catch(ei){console.warn('[Ecosystem] Upload IMEI:',ei.message);uploadErrors.push('imei');}
+      }
+      // Devis signé (signature client)
+      if(d.signature && typeof repDevisSignePDFBase64==='function'){
+        try{
+          var dsb=await repDevisSignePDFBase64(d);
+          if(dsb){
+            var uf3=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'devis_signe.pdf',FileSizeInMB:Math.ceil(dsb.length*0.75/1024/1024)||1,FileType:'claim_request'})});
+            var uf3j=await uf3.json();console.log('[Ecosystem] upload-file claim_request:',uf3.status,JSON.stringify(uf3j).substring(0,200));
+            if(uf3j.url){
+              var pdfBytes3=Uint8Array.from(atob(dsb),function(c){return c.charCodeAt(0);});
+              var putR3=await fetch(uf3j.url,{method:'PUT',body:pdfBytes3,headers:{'Content-Type':'application/pdf'}});
+              console.log('[Ecosystem] S3 PUT devis signé:',putR3.status);
+            }
+          }
+        }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis');}
+      }
+      // ④ Confirm-claim
+      if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
+      try{
+        var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
+        var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,200));
+      }catch(ec){console.warn('[Ecosystem] confirm-claim:',ec.message);}
+      if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
+    }
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
@@ -22849,8 +22905,43 @@ async function qrSendEcosystem() {
   var sapOrder = claimData.SapServiceOrder || '';
   console.log('[Ecosystem] claimId:', claimId, 'SapServiceOrder:', sapOrder, 'full:', JSON.stringify(claimData).substring(0,500));
 
-  // \u2462 POST /reimbursement-claims/{claimId}/confirm-claim
+  // ②bis Upload pièces jointes (facture + photo IMEI + devis signé)
   if(claimId){
+    qrSetAgoraBadge('\u23f3', 'Upload pièces jointes...', 'Ecosystem', '#f39c12');
+    // Facture PDF (NF525)
+    try{
+      var fb=null;
+      if(d.facture && typeof repFactureToPDFBase64==='function'){
+        console.log('[Ecosystem] Génération facture NF525...');
+        fb=await repFactureToPDFBase64(d);
+      }
+      if(fb){
+        var uf1=await ecoFetch('/reimbursement-claims/'+claimId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'facture.pdf',FileSizeInMB:Math.ceil(fb.length*0.75/1024/1024)||1,FileType:'invoice'})});
+        var uf1j=await uf1.json();console.log('[Ecosystem] upload-file invoice:',uf1.status,JSON.stringify(uf1j).substring(0,200));
+        if(uf1j.url){var pdfB=Uint8Array.from(atob(fb),function(c){return c.charCodeAt(0);});var putR=await fetch(uf1j.url,{method:'PUT',body:pdfB,headers:{'Content-Type':'application/pdf'}});console.log('[Ecosystem] S3 PUT facture:',putR.status);}
+      }
+    }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);}
+    // Photo IMEI
+    if(d.photoImeiUrl){
+      try{
+        var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();
+        var uf2=await ecoFetch('/reimbursement-claims/'+claimId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'imei.jpg',FileSizeInMB:Math.ceil(ib.size/1024/1024)||1,FileType:'serial_tag'})});
+        var uf2j=await uf2.json();console.log('[Ecosystem] upload-file serial_tag:',uf2.status,JSON.stringify(uf2j).substring(0,200));
+        if(uf2j.url){var putR2=await fetch(uf2j.url,{method:'PUT',body:ib,headers:{'Content-Type':ib.type||'image/jpeg'}});console.log('[Ecosystem] S3 PUT IMEI:',putR2.status);}
+      }catch(ei){console.warn('[Ecosystem] Upload IMEI:',ei.message);}
+    }
+    // Devis signé
+    if(d.signature && typeof repDevisSignePDFBase64==='function'){
+      try{
+        var dsb=await repDevisSignePDFBase64(d);
+        if(dsb){
+          var uf3=await ecoFetch('/reimbursement-claims/'+claimId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'devis_signe.pdf',FileSizeInMB:Math.ceil(dsb.length*0.75/1024/1024)||1,FileType:'claim_request'})});
+          var uf3j=await uf3.json();console.log('[Ecosystem] upload-file claim_request:',uf3.status,JSON.stringify(uf3j).substring(0,200));
+          if(uf3j.url){var pdfB3=Uint8Array.from(atob(dsb),function(c){return c.charCodeAt(0);});var putR3=await fetch(uf3j.url,{method:'PUT',body:pdfB3,headers:{'Content-Type':'application/pdf'}});console.log('[Ecosystem] S3 PUT devis:',putR3.status);}
+        }
+      }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);}
+    }
+    // ③ Confirm-claim
     qrSetAgoraBadge('\u23f3', 'Confirmation...', 'Ecosystem', '#f39c12');
     try {
       var confirmResp = await ecoFetch('/reimbursement-claims/' + claimId + '/confirm-claim', {
