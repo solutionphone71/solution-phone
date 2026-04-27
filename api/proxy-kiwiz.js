@@ -14,22 +14,26 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Méthode fiable : Vercel expose les segments capturés par :path* dans req.query.path
-    let kiwizPath = '/';
-    if (req.query && req.query.path) {
-      const segments = Array.isArray(req.query.path) ? req.query.path.join('/') : req.query.path;
-      if (segments) kiwizPath = '/' + segments;
-    }
-    // Fallback : parser req.url
-    if (kiwizPath === '/') {
-      const urlFallback = new URL(req.url, 'https://app.solution-phone.fr');
-      const parsed = urlFallback.pathname.replace('/api/proxy-kiwiz', '').replace('/proxy-kiwiz', '');
-      if (parsed && parsed !== '/') kiwizPath = parsed;
-    }
-
-    // Reconstruire les query params (sans le "path" interne Vercel)
+    // Lire le path depuis __path (passé par vercel.json rewrite)
     const url = new URL(req.url, 'https://app.solution-phone.fr');
     const params = new URLSearchParams(url.search);
+
+    let kiwizPath = '/';
+    // 1) __path query param (vercel.json rewrite: ?__path=:path*)
+    if (params.get('__path')) {
+      kiwizPath = '/' + params.get('__path');
+    }
+    // 2) Fallback: req.query.__path
+    else if (req.query && req.query.__path) {
+      const segments = Array.isArray(req.query.__path) ? req.query.__path.join('/') : req.query.__path;
+      if (segments) kiwizPath = '/' + segments;
+    }
+    // 3) Fallback: parser req.url
+    else {
+      const parsed = url.pathname.replace('/api/proxy-kiwiz', '').replace('/proxy-kiwiz', '');
+      if (parsed && parsed !== '/') kiwizPath = parsed;
+    }
+    params.delete('__path');
     params.delete('path');
     const qs = params.toString() ? '?' + params.toString() : '';
 

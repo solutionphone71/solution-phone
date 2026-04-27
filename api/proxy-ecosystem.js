@@ -11,22 +11,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Méthode fiable : Vercel expose les segments capturés par :path* dans req.query.path
+    // Lire le path depuis __path (passé par vercel.json rewrite)
+    const url = new URL(req.url, 'https://app.solution-phone.fr');
+    const params = new URLSearchParams(url.search);
+
     let path = '/';
-    if (req.query && req.query.path) {
-      const segments = Array.isArray(req.query.path) ? req.query.path.join('/') : req.query.path;
+    // 1) __path query param (vercel.json rewrite: ?__path=:path*)
+    if (params.get('__path')) {
+      path = '/' + params.get('__path');
+    }
+    // 2) Fallback: req.query.path (Vercel dynamic route)
+    else if (req.query && req.query.__path) {
+      const segments = Array.isArray(req.query.__path) ? req.query.__path.join('/') : req.query.__path;
       if (segments) path = '/' + segments;
     }
-    // Fallback : parser req.url (au cas où query.path absent)
-    if (path === '/') {
-      const url = new URL(req.url, 'https://app.solution-phone.fr');
+    // 3) Fallback: parser req.url
+    else {
       const parsed = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '');
       if (parsed && parsed !== '/') path = parsed;
     }
 
-    // Reconstruire les query params (sans le "path" interne Vercel)
-    const url = new URL(req.url, 'https://app.solution-phone.fr');
-    const params = new URLSearchParams(url.search);
+    // Reconstruire les query params (sans __path interne)
+    params.delete('__path');
     params.delete('path');
     const qs = params.toString() ? '?' + params.toString() : '';
 
