@@ -11,19 +11,43 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = new URL(req.url, 'https://app.solution-phone.fr');
-    const path = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '') || '/';
-    // ppr = pré-production (email avril 2026), sandbox = ancien nom
-    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${url.search}`;
+    // Méthode fiable : Vercel expose les segments capturés par :path* dans req.query.path
+    let path = '/';
+    if (req.query && req.query.path) {
+      const segments = Array.isArray(req.query.path) ? req.query.path.join('/') : req.query.path;
+      if (segments) path = '/' + segments;
+    }
+    // Fallback : parser req.url (au cas où query.path absent)
+    if (path === '/') {
+      const url = new URL(req.url, 'https://app.solution-phone.fr');
+      const parsed = url.pathname.replace('/api/proxy-ecosystem', '').replace('/proxy-ecosystem', '');
+      if (parsed && parsed !== '/') path = parsed;
+    }
 
-    console.log('[proxy-ecosystem] →', req.method, targetUrl);
+    // Reconstruire les query params (sans le "path" interne Vercel)
+    const url = new URL(req.url, 'https://app.solution-phone.fr');
+    const params = new URLSearchParams(url.search);
+    params.delete('path');
+    const qs = params.toString() ? '?' + params.toString() : '';
+
+    // ppr = pré-production (email avril 2026)
+    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}${qs}`;
+
+    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| req.url:', req.url, '| query.path:', req.query?.path);
 
     const headers = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
       'User-Agent': 'SolutionPhone/1.0',
     };
 
+    // Transmettre Content-Type du client (important pour /Login)
+    if (req.headers['content-type']) {
+      headers['Content-Type'] = req.headers['content-type'];
+    } else if (req.method === 'POST' || req.method === 'PUT') {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    // Transmettre le token d'authentification
     if (req.headers['authorization']) {
       headers['Authorization'] = req.headers['authorization'];
     }
@@ -46,7 +70,7 @@ export default async function handler(req, res) {
     clearTimeout(timeout);
 
     const responseText = await response.text();
-    console.log('[proxy-ecosystem] ←', response.status, responseText.substring(0, 200));
+    console.log('[proxy-ecosystem] ←', response.status, responseText.substring(0, 300));
 
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);

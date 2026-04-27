@@ -22644,43 +22644,28 @@ async function qrSendEcosystem() {
   var refFact   = d.refRep || ('QR-' + Date.now());
   var today     = d.date || new Date().toISOString().split('T')[0];
 
-  // ① POST /Login → token (essai plusieurs formats)
-  qrSetAgoraBadge('\u23f3', 'Connexion Ecosystem...', 'Ecosystem', '#f39c12');
+  // ① POST /Login → token (doc Ecosystem : pas d'auth, juste username/password en JSON)
+  qrSetAgoraBadge('⏳', 'Connexion Ecosystem...', 'Ecosystem', '#f39c12');
 
-  var loginAttempts = [
-    { label:'JSON username/password', ct:'application/json', body:JSON.stringify({username:ECO_USER,password:ECO_PASS}), auth:null },
-    { label:'JSON + Basic Auth', ct:'application/json', body:JSON.stringify({username:ECO_USER,password:ECO_PASS}), auth:'Basic '+btoa(ECO_USER+':'+ECO_PASS) },
-    { label:'Form-urlencoded', ct:'application/x-www-form-urlencoded', body:'username='+encodeURIComponent(ECO_USER)+'&password='+encodeURIComponent(ECO_PASS), auth:null },
-    { label:'JSON login/password', ct:'application/json', body:JSON.stringify({login:ECO_USER,password:ECO_PASS}), auth:null },
-    { label:'JSON identifiant/motDePasse', ct:'application/json', body:JSON.stringify({identifiant:ECO_USER,motDePasse:ECO_PASS}), auth:null },
-    { label:'Basic Auth seul', ct:'application/json', body:'', auth:'Basic '+btoa(ECO_USER+':'+ECO_PASS) }
-  ];
+  console.log('[Ecosystem] POST /Login user:', ECO_USER);
+  var loginResp = await fetch(ECO_BASE + '/Login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
+  });
+  var loginText = await loginResp.text();
+  console.log('[Ecosystem] Login =>', loginResp.status, loginText.substring(0, 300));
 
-  var token = null;
-  var lastLoginErr = '';
-  for(var li=0; li<loginAttempts.length; li++){
-    var la = loginAttempts[li];
-    var hdrs = {'Content-Type':la.ct, 'Accept':'application/json'};
-    if(la.auth) hdrs['Authorization'] = la.auth;
-    console.log('[Ecosystem] Login #'+(li+1)+' ('+la.label+')');
-    try {
-      var loginResp = await fetch(ECO_BASE + '/Login', {
-        method: 'POST', headers: hdrs, body: la.body||undefined
-      });
-      var loginText = await loginResp.text();
-      console.log('[Ecosystem] Login #'+(li+1)+' =>', loginResp.status, loginText.substring(0,250));
-      if(loginResp.ok){
-        var loginData; try{loginData=JSON.parse(loginText);}catch(e){loginData={};}
-        token = loginData.token||loginData.id_token||loginData.access_token||loginData.jwt;
-        if(!token && loginText.length>20 && loginText.length<2000) token=loginText.trim();
-        if(token){ console.log('[Ecosystem] Login OK via '+la.label+', token:',token.substring(0,30)+'...'); break; }
-      }
-      lastLoginErr = loginResp.status+' '+loginText.substring(0,100);
-    }catch(e){ lastLoginErr=e.message; }
-  }
+  if(!loginResp.ok) throw new Error('Login Ecosystem HTTP ' + loginResp.status + ' — ' + loginText.substring(0, 150));
 
-  if(!token) throw new Error('Login Ecosystem \u00e9chou\u00e9 (6 tentatives). Dernier: '+lastLoginErr);
+  var loginData; try { loginData = JSON.parse(loginText); } catch(e) { loginData = {}; }
+  var token = loginData.token || loginData.id_token || loginData.access_token || loginData.jwt;
+  // Si la réponse entière est le token (string)
+  if(!token && loginText.length > 20 && loginText.length < 2000) token = loginText.replace(/^"|"$/g, '').trim();
+
+  if(!token) throw new Error('Login Ecosystem OK mais pas de token dans la réponse: ' + loginText.substring(0, 150));
   console.log('[Ecosystem] Token obtenu, length:', token.length);
+
 
   // ② POST /reimbursement-claims/new-claim → cr\u00e9er le dossier
   qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');

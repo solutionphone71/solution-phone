@@ -14,12 +14,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Reconstruire le chemin Kiwiz depuis l'URL
-    const url = new URL(req.url, 'https://app.solution-phone.fr');
-    const kiwizPath = url.pathname.replace('/api/proxy-kiwiz', '').replace('/proxy-kiwiz', '') || '/';
-    const kiwizUrl = `https://api.kiwiz.io${kiwizPath}${url.search}`;
+    // Méthode fiable : Vercel expose les segments capturés par :path* dans req.query.path
+    let kiwizPath = '/';
+    if (req.query && req.query.path) {
+      const segments = Array.isArray(req.query.path) ? req.query.path.join('/') : req.query.path;
+      if (segments) kiwizPath = '/' + segments;
+    }
+    // Fallback : parser req.url
+    if (kiwizPath === '/') {
+      const urlFallback = new URL(req.url, 'https://app.solution-phone.fr');
+      const parsed = urlFallback.pathname.replace('/api/proxy-kiwiz', '').replace('/proxy-kiwiz', '');
+      if (parsed && parsed !== '/') kiwizPath = parsed;
+    }
 
-    console.log('[proxy-kiwiz] →', req.method, kiwizUrl);
+    // Reconstruire les query params (sans le "path" interne Vercel)
+    const url = new URL(req.url, 'https://app.solution-phone.fr');
+    const params = new URLSearchParams(url.search);
+    params.delete('path');
+    const qs = params.toString() ? '?' + params.toString() : '';
+
+    const kiwizUrl = `https://api.kiwiz.io${kiwizPath}${qs}`;
+
+    console.log('[proxy-kiwiz] →', req.method, kiwizUrl, '| req.url:', req.url, '| query.path:', req.query?.path);
 
     // Construire les headers à transmettre
     const headers = {
@@ -61,6 +77,8 @@ export default async function handler(req, res) {
 
     const responseText = await response.text();
     const contentType = response.headers.get('content-type') || 'application/json';
+
+    console.log('[proxy-kiwiz] ←', response.status, responseText.substring(0, 200));
 
     res.setHeader('Content-Type', contentType);
     res.status(response.status).send(responseText);
