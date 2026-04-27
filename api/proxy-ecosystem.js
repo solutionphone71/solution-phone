@@ -10,18 +10,26 @@ export default async function handler(req, res) {
     return;
   }
 
-  try {
-    // Path cible via query param ?p=/Login (méthode bulletproof)
-    const path = req.query.p || '/';
+  // Mode debug: GET /api/proxy-ecosystem?debug=1
+  if (req.query.debug === '1') {
+    return res.status(200).json({
+      debug: true,
+      version: '2026-04-27-v3',
+      reqUrl: req.url,
+      query: req.query,
+      method: req.method,
+      headers: Object.keys(req.headers),
+    });
+  }
 
-    // PPR = environnement test Ecosystem
+  try {
+    // Path cible via query param ?p=/Login
+    const path = req.query.p || '/';
     const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}`;
 
-    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| query.p:', req.query.p);
+    console.log('[proxy-ecosystem] →', req.method, targetUrl, '| query:', JSON.stringify(req.query));
 
-    const headers = {
-      'Accept': 'application/json',
-    };
+    const headers = { 'Accept': 'application/json' };
 
     if (req.headers['content-type']) {
       headers['Content-Type'] = req.headers['content-type'];
@@ -53,6 +61,9 @@ export default async function handler(req, res) {
     const responseText = await response.text();
     console.log('[proxy-ecosystem] ←', response.status, responseText.substring(0, 300));
 
+    // Ajouter un header debug pour voir l'URL réelle
+    res.setHeader('X-Debug-Target', targetUrl);
+    res.setHeader('X-Debug-Version', '2026-04-27-v3');
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);
 
@@ -61,7 +72,8 @@ export default async function handler(req, res) {
     res.status(502).json({
       error: 'Proxy error',
       message: error.message,
-      detail: error.cause ? String(error.cause) : 'Impossible de joindre le serveur Ecosystem'
+      detail: error.cause ? String(error.cause) : 'Impossible de joindre le serveur Ecosystem',
+      targetUrl: `https://ppr-api-reparateurs.ecosystem.eco${req.query.p || '/'}`
     });
   }
 }
