@@ -16699,13 +16699,29 @@ async function qrEnvoyerEcosystemComplet(d){
     var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
     if(!token)throw new Error('Login: pas de token');
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
-    // ② POST /reimbursement-claims/new-claim
+    // ② POST /reimbursement-claims/new_claim (PascalCase nested payload)
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
+    var montantTTC=Math.round((moHT+pHT)*1.20*100)/100||ttc;
+    var bonus=25;
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
-    var r2=await ecoFetch('/reimbursement-claims/new-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({repairerId:'2002535',repairerSiteId:'2002535',invoiceNumber:ref,repairDate:(d.date||new Date().toISOString().split('T')[0]),consumer:{lastName:c.nom||'Client',firstName:c.prenom||'',email:c.email||'',phone:c.tel||'',address:c.adresse||'21 Rue Gambetta',zipCode:c.cp||'71000',city:c.ville||'Macon'},device:{brand:a.marque||'',model:a.modele||'',serialNumber:a.imei||'',imei:a.imei||''},repair:{description:d.panne||'Reparation',laborCost:moHT,partsCost:pHT,totalCost:ttc,bonusAmount:25}})});
-    var j2=await r2.json();console.log('[Ecosystem] new-claim:',r2.status,JSON.stringify(j2).substring(0,300));
-    if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+JSON.stringify(j2).substring(0,100));
-    var repairId=j2.id||j2.claimId||j2.reimbursementClaimId||j2.reference;
+    var repDate=d.date||new Date().toISOString().split('T')[0];
+    var tel2=(c.tel||'').replace(/[^0-9]/g,'').substring(0,10);
+    var claimPayload={
+      PurchaseOrderByCustomer:ref,
+      RepairDate:repDate,
+      RepairerId:'2002535',
+      RepairPlaceId:'2002535',
+      Product:{ProductID:'3012',BrandID:'7052',ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:'00025'},
+      SpareParts:{NewSparePartsAmount:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:0},
+      Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
+      Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
+    };
+    console.log('[Ecosystem] new_claim payload:', JSON.stringify(claimPayload).substring(0,500));
+    var r2=await ecoFetch('/reimbursement-claims/new_claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(claimPayload)});
+    var j2Text=await r2.text();console.log('[Ecosystem] new-claim:',r2.status,j2Text.substring(0,300));
+    var j2;try{j2=JSON.parse(j2Text);}catch(e){j2={raw:j2Text};}
+    if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+j2Text.substring(0,100));
+    var repairId=j2.ReimbursementClaimID||j2.reimbursementClaimId||j2.id||j2.claimId;
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
@@ -22624,7 +22640,7 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : POST /login → /reimbursement-claims/new-claim → confirmclaim ── */
+/* ── Flux Ecosystem : POST /login → /reimbursement-claims/new_claim → confirm-claim ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
@@ -22673,33 +22689,51 @@ async function qrSendEcosystem() {
   console.log('[Ecosystem] Token obtenu, length:', token.length);
 
 
-  // ② POST /reimbursement-claims/new-claim → cr\u00e9er le dossier
+  // ② POST /reimbursement-claims/new_claim → cr\u00e9er le dossier
   qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');
 
+  // Montant TTC = HT * 1.20, bonus QualiRépar déduit
+  var montantTTC = Math.round(montantHT * 1.20 * 100) / 100;
+  var piecesHT   = parseFloat(dev.piecesHT) || 0;
+
   var payload = {
-    repairerId:     ECO_REPAIRER,
-    repairerSiteId: ECO_SITE,
-    serialNumber:   imei,
-    brand:          marque,
-    model:          modele,
-    commercialRef:  modele,
-    repairDate:     today,
-    invoiceReference: refFact,
-    invoiceAmount:  montantHT,
-    bonusAmount:    soutien,
-    consumerLastName:  nom,
-    consumerFirstName: prenom,
-    consumerEmail:     email,
-    consumerPhone:     tel,
-    consumerAddress:   adresse,
-    consumerZipCode:   cp,
-    consumerCity:      ville,
-    spareParts:        []
+    PurchaseOrderByCustomer: refFact,
+    RepairDate:     today,
+    RepairerId:     ECO_REPAIRER,
+    RepairPlaceId:  ECO_SITE,
+    Product: {
+      ProductID:                    '3012',
+      BrandID:                      '7052',
+      ProductIdentificationNumber:  imei,
+      CommercialReference:          modele || 'Smartphone',
+      RepairTypeCode:               '00025'
+    },
+    SpareParts: {
+      NewSparePartsAmount:              1,
+      SecondHandSparePartsAmount:       0,
+      CircularEconomyPartsAmount:       0
+    },
+    Customer: {
+      Title:        (cli.civilite === 'Mme' || cli.civilite === 'Madame') ? 'Mme' : 'M.',
+      LastName:     nom   || 'Client',
+      FirstName:    prenom || '-',
+      Email:        email,
+      PhoneNumber:  tel.replace(/[^0-9]/g,'').substring(0,10),
+      StreetLine1:  adresse || '21 Rue Gambetta',
+      City:         ville,
+      PostalCode:   cp,
+      Country:      'FR'
+    },
+    Bill: {
+      SparePartsCost:    { amount: piecesHT,   currency: 'EUR' },
+      TotalAmountInclVAT:{ amount: montantTTC, currency: 'EUR' },
+      AmountCovered:     { amount: soutien,    currency: 'EUR' }
+    }
   };
 
   console.log('[Ecosystem] Envoi new-claim:', JSON.stringify(payload).substring(0,400));
 
-  var claimResp = await ecoFetch('/reimbursement-claims/new-claim', {
+  var claimResp = await ecoFetch('/reimbursement-claims/new_claim', {
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
@@ -22717,23 +22751,24 @@ async function qrSendEcosystem() {
 
   var claimData;
   try { claimData = JSON.parse(claimText); } catch(e){ claimData = { raw: claimText }; }
-  var claimId = claimData.id || claimData.claimId || claimData.reimbursementClaimId || claimData.reference;
+  var claimId = claimData.ReimbursementClaimID || claimData.reimbursementClaimId || claimData.id || claimData.claimId;
+  var sapOrder = claimData.SapServiceOrder || '';
+  console.log('[Ecosystem] claimId:', claimId, 'SapServiceOrder:', sapOrder, 'full:', JSON.stringify(claimData).substring(0,500));
 
-  // ③ POST /reimbursement-claims/new-claim/confirmclaim → confirmer
+  // \u2462 POST /reimbursement-claims/{claimId}/confirm-claim
   if(claimId){
     qrSetAgoraBadge('\u23f3', 'Confirmation...', 'Ecosystem', '#f39c12');
     try {
-      var confirmResp = await ecoFetch('/reimbursement-claims/new-claim/confirmclaim', {
+      var confirmResp = await ecoFetch('/reimbursement-claims/' + claimId + '/confirm-claim', {
         method: 'POST',
-        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token },
-        body: JSON.stringify({ claimId: claimId })
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token }
       });
       var confirmText = await confirmResp.text();
-      console.log('[Ecosystem] confirmclaim =>', confirmResp.status, confirmText.substring(0,200));
-    } catch(e){ console.warn('[Ecosystem] confirmclaim error:', e.message); }
+      console.log('[Ecosystem] confirm-claim =>', confirmResp.status, confirmText.substring(0,200));
+    } catch(e){ console.warn('[Ecosystem] confirm-claim error:', e.message); }
   }
 
-  var ref = claimId || claimData.numDossier || String(claimData);
+  var ref = claimId || sapOrder || claimData.numDossier || String(claimData);
   d.agoraOK  = true;
   d.agoraRef = ref;
 
