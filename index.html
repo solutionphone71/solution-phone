@@ -22640,6 +22640,84 @@ async function qrSendEcologic() {
   }
 }
 
+/* ── Cache catalogue Ecosystem (chargé 1 fois par session) ── */
+var _ecoCatalog = null;
+async function ecoLoadCatalog(token) {
+  if (_ecoCatalog) return _ecoCatalog;
+  console.log('[Ecosystem] Chargement catalogue...');
+  var resp = await ecoFetch('/catalog?brands=true&repair-codes=true&limit=200', {
+    method: 'GET',
+    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+  });
+  var text = await resp.text();
+  console.log('[Ecosystem] catalog =>', resp.status, text.substring(0, 500));
+  if (!resp.ok) { console.warn('[Ecosystem] catalog error'); return null; }
+  try { _ecoCatalog = JSON.parse(text); } catch(e) { _ecoCatalog = []; }
+  // Si c'est un objet avec une clé items/products/data, extraire le tableau
+  if (_ecoCatalog && !Array.isArray(_ecoCatalog)) {
+    _ecoCatalog = _ecoCatalog.items || _ecoCatalog.products || _ecoCatalog.data || _ecoCatalog.Items || [_ecoCatalog];
+  }
+  console.log('[Ecosystem] Catalogue:', _ecoCatalog.length, 'produits');
+  return _ecoCatalog;
+}
+
+// Cherche ProductID et BrandID dans le catalogue pour une marque/catégorie donnée
+function ecoFindProduct(catalog, marque) {
+  if (!catalog || !catalog.length) return null;
+  // Chercher un produit "Smartphone" ou "Téléphone"
+  var smartphoneNames = ['smartphone', 'telephone', 'téléphone', 'mobile', 'phone'];
+  var product = null;
+  for (var i = 0; i < catalog.length; i++) {
+    var p = catalog[i];
+    var name = (p.ProductName || '').toLowerCase();
+    for (var j = 0; j < smartphoneNames.length; j++) {
+      if (name.indexOf(smartphoneNames[j]) >= 0) { product = p; break; }
+    }
+    if (product) break;
+  }
+  if (!product) {
+    console.warn('[Ecosystem] Produit smartphone non trouvé dans le catalogue, produits disponibles:',
+      catalog.map(function(p){ return p.ProductID + ':' + p.ProductName; }).join(', '));
+    return null;
+  }
+  // Chercher la marque dans les Brands du produit
+  var brandId = '';
+  var brands = product.Brands || [];
+  var marqueLC = (marque || '').toLowerCase();
+  for (var k = 0; k < brands.length; k++) {
+    var bn = (brands[k].BrandName || '').toLowerCase();
+    if (bn.indexOf(marqueLC) >= 0 || marqueLC.indexOf(bn) >= 0) {
+      brandId = brands[k].BrandID;
+      break;
+    }
+  }
+  // Trouver le RepairCode
+  var repairCode = '';
+  var codes = product.RepairCode || product.RepairCodes || [];
+  if (codes.length > 0) repairCode = codes[0].Code || '';
+  console.log('[Ecosystem] Trouvé produit:', product.ProductID, product.ProductName,
+    '| marque:', brandId || '(non trouvée, brands: ' + brands.map(function(b){return b.BrandID+':'+b.BrandName;}).join(',') + ')',
+    '| repairCode:', repairCode);
+  return { productId: product.ProductID, brandId: brandId, repairCode: repairCode, product: product };
+}
+
+// Diagnostic catalogue — lancer : ecosystemCatalog()
+async function ecosystemCatalog() {
+  var user = '501710';
+  var pass = localStorage.getItem('sp_eco_pass') || 'geDfJ@C@QG9a$LR5';
+  var lr = await ecoFetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user,password:pass}) });
+  var lt = await lr.text(); var ld = JSON.parse(lt); var token = ld.IdToken;
+  _ecoCatalog = null; // force reload
+  var catalog = await ecoLoadCatalog(token);
+  console.log('%c[Ecosystem Catalogue Complet]', 'color:blue;font-weight:bold');
+  (catalog||[]).forEach(function(p){
+    console.log('  ProductID:', p.ProductID, '|', p.ProductName,
+      '| Brands:', (p.Brands||[]).map(function(b){return b.BrandID+':'+b.BrandName;}).join(', '),
+      '| RepairCodes:', (p.RepairCode||[]).map(function(c){return c.Code+':'+c.Description;}).join(', '));
+  });
+  return catalog;
+}
+
 /* ── Flux Ecosystem : POST /login → /reimbursement-claims/new_claim → confirm-claim ── */
 async function qrSendEcosystem() {
   var d   = qrData;
@@ -22688,6 +22766,16 @@ async function qrSendEcosystem() {
   if(!token) throw new Error('Login Ecosystem OK mais pas de token dans la réponse: ' + loginText.substring(0, 150));
   console.log('[Ecosystem] Token obtenu, length:', token.length);
 
+  // ①bis GET /catalog → trouver ProductID et BrandID
+  qrSetAgoraBadge('\u23f3', 'Chargement catalogue...', 'Ecosystem', '#f39c12');
+  var catalog = await ecoLoadCatalog(token);
+  var catMatch = ecoFindProduct(catalog, marque);
+  var productId   = (catMatch && catMatch.productId)   || '3012';
+  var brandId     = (catMatch && catMatch.brandId)      || '7052';
+  var repairCode  = (catMatch && catMatch.repairCode)   || '00025';
+  console.log('[Ecosystem] Catalogue résolu → ProductID:', productId, 'BrandID:', brandId, 'RepairCode:', repairCode);
+
+
 
   // ② POST /reimbursement-claims/new_claim → cr\u00e9er le dossier
   qrSetAgoraBadge('\u23f3', 'Cr\u00e9ation dossier...', 'Ecosystem', '#f39c12');
@@ -22702,11 +22790,11 @@ async function qrSendEcosystem() {
     RepairerId:     ECO_REPAIRER,
     RepairPlaceID:  ECO_SITE,
     Product: {
-      ProductID:                    '3012',
-      BrandID:                      '7052',
+      ProductID:                    productId,
+      BrandID:                      brandId,
       ProductIdentificationNumber:  imei,
       CommercialReference:          modele || 'Smartphone',
-      RepairTypeCode:               '00025'
+      RepairTypeCode:               repairCode
     },
     SpareParts: {
       NewSparePartsAmount:              1,
