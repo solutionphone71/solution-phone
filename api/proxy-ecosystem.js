@@ -1,5 +1,11 @@
 // api/proxy-ecosystem.js — Proxy Vercel pour Ecosystem QualiRépar
 
+const ENVS = {
+  sandbox: 'https://sandbox-api-reparateurs.ecosystem.eco',
+  ppr:     'https://ppr-api-reparateurs.ecosystem.eco',
+  prod:    'https://api-reparateurs.ecosystem.eco',
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -14,7 +20,8 @@ export default async function handler(req, res) {
   if (req.query.debug === '1') {
     return res.status(200).json({
       debug: true,
-      version: '2026-04-27-v3',
+      version: '2026-04-27-v4',
+      envs: ENVS,
       reqUrl: req.url,
       query: req.query,
       method: req.method,
@@ -22,10 +29,32 @@ export default async function handler(req, res) {
     });
   }
 
+  // Mode test: GET /api/proxy-ecosystem?test=1 — teste /Login sur tous les envs
+  if (req.query.test === '1') {
+    const id = req.query.id || 'SOLUTION.PHONE@HOTMAIL.FR';
+    const pw = req.query.pw || '';
+    const results = {};
+    for (const [envName, baseUrl] of Object.entries(ENVS)) {
+      try {
+        const r = await fetch(`${baseUrl}/Login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ identifiant: id, motDePasse: pw }),
+        });
+        results[envName] = { status: r.status, body: await r.text(), url: `${baseUrl}/Login` };
+      } catch (e) {
+        results[envName] = { error: e.message, url: `${baseUrl}/Login` };
+      }
+    }
+    return res.status(200).json({ test: true, version: '2026-04-27-v4', results });
+  }
+
   try {
     // Path cible via query param ?p=/Login
     const path = req.query.p || '/';
-    const targetUrl = `https://ppr-api-reparateurs.ecosystem.eco${path}`;
+    const env = req.query.env || 'ppr';
+    const baseUrl = ENVS[env] || ENVS.ppr;
+    const targetUrl = `${baseUrl}${path}`;
 
     console.log('[proxy-ecosystem] →', req.method, targetUrl, '| query:', JSON.stringify(req.query));
 
@@ -63,7 +92,8 @@ export default async function handler(req, res) {
 
     // Ajouter un header debug pour voir l'URL réelle
     res.setHeader('X-Debug-Target', targetUrl);
-    res.setHeader('X-Debug-Version', '2026-04-27-v3');
+    res.setHeader('X-Debug-Env', env);
+    res.setHeader('X-Debug-Version', '2026-04-27-v4');
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);
 
@@ -73,7 +103,7 @@ export default async function handler(req, res) {
       error: 'Proxy error',
       message: error.message,
       detail: error.cause ? String(error.cause) : 'Impossible de joindre le serveur Ecosystem',
-      targetUrl: `https://ppr-api-reparateurs.ecosystem.eco${req.query.p || '/'}`
+      targetUrl: `${ENVS[req.query.env] || ENVS.ppr}${req.query.p || '/'}`
     });
   }
 }
