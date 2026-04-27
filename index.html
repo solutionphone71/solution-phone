@@ -13838,7 +13838,7 @@ var PARAMS_KEYS = {
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
   // Force mise à jour mdp Ecosystem (avril 2026)
-  localStorage.setItem('sp_eco_pass','Coincoin71?!');
+  localStorage.setItem('sp_eco_pass','geDfJ@C@QG9a$LR5');
   // Force modèle Claude Haiku (économique) — avril 2026
   localStorage.setItem('sp_claude_model','claude-haiku-4-5');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem(PARAMS_KEYS.ecologicToken)||'');
@@ -16687,7 +16687,7 @@ async function qrEnvoyerEcosystemComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
-    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Coincoin71?!';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
     // ① POST /Login
     var lr=await fetch(proxy+'/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
     var lt=await lr.text();console.log('[Ecosystem] /Login:',lr.status,lt.substring(0,200));
@@ -22625,7 +22625,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Coincoin71?!';
+  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
@@ -22767,7 +22767,7 @@ async function qrSendEcosystem() {
 async function ecosystemDiag(){
   var proxy = 'https://solution-phone.fr/proxy-ecosystem';
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass')||'Coincoin71?!';
+  var pass = localStorage.getItem('sp_eco_pass')||'geDfJ@C@QG9a$LR5';
   var auth = 'Basic '+btoa(user+':'+pass);
   var paths = [
     '/', '/api', '/api/', '/swagger-ui.html', '/v3/api-docs', '/api-docs',
