@@ -16688,12 +16688,12 @@ async function qrEnvoyerEcosystemComplet(d){
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
     var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
-    // ① POST /Login
-    var lr=await ecoFetch('/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
-    var lt=await lr.text();console.log('[Ecosystem] /Login:',lr.status,lt.substring(0,200));
+    // ① POST /login (lowercase, username/password)
+    var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
+    var lt=await lr.text();console.log('[Ecosystem] /login:',lr.status,lt.substring(0,200));
     if(!lr.ok)throw new Error('Login Ecosystem: '+lt.substring(0,100));
     var ld;try{ld=JSON.parse(lt);}catch(e){ld={};}
-    var token=ld.token||ld.id_token||ld.access_token||lt.trim();
+    var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
     if(!token)throw new Error('Login: pas de token');
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Envoi dossier...</div>";
     // ② POST /reimbursement-claims/new-claim
@@ -22621,7 +22621,7 @@ async function qrSendEcologic() {
   }
 }
 
-/* ── Flux Ecosystem : POST /Login → /reimbursement-claims/new-claim → confirmclaim ── */
+/* ── Flux Ecosystem : POST /login → /reimbursement-claims/new-claim → confirmclaim ── */
 async function qrSendEcosystem() {
   var d   = qrData;
   var cli = d.client   || {};
@@ -22649,49 +22649,22 @@ async function qrSendEcosystem() {
   var refFact   = d.refRep || ('QR-' + Date.now());
   var today     = d.date || new Date().toISOString().split('T')[0];
 
-  // ① POST /Login → token (doc Ecosystem : pas d'auth, juste username/password en JSON)
+  // ① POST /login → token (username/password en JSON, endpoint lowercase)
   qrSetAgoraBadge('⏳', 'Connexion Ecosystem...', 'Ecosystem', '#f39c12');
 
-  // Essai 1: JSON (format doc officielle)
-  console.log('[Ecosystem] POST /Login user:', ECO_USER, 'pass length:', ECO_PASS.length);
-  var loginResp = await ecoFetch('/Login', {
+  console.log('[Ecosystem] POST /login user:', ECO_USER, 'pass length:', ECO_PASS.length);
+  var loginResp = await ecoFetch('/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({ username: ECO_USER, password: ECO_PASS })
   });
   var loginText = await loginResp.text();
-  console.log('[Ecosystem] Login JSON =>', loginResp.status, loginText.substring(0, 300));
-
-  // Essai 2: form-urlencoded si JSON échoue
-  if(!loginResp.ok) {
-    console.log('[Ecosystem] JSON failed, trying form-urlencoded...');
-    loginResp = await ecoFetch('/Login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-      body: 'username=' + encodeURIComponent(ECO_USER) + '&password=' + encodeURIComponent(ECO_PASS)
-    });
-    loginText = await loginResp.text();
-    console.log('[Ecosystem] Login form =>', loginResp.status, loginText.substring(0, 300));
-  }
-
-  // Essai 3: login/motDePasse (format Phonilab?)
-  if(!loginResp.ok) {
-    console.log('[Ecosystem] form failed, trying login/motDePasse...');
-    loginResp = await ecoFetch('/Login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ login: ECO_USER, motDePasse: ECO_PASS })
-    });
-    loginText = await loginResp.text();
-    console.log('[Ecosystem] Login fr =>', loginResp.status, loginText.substring(0, 300));
-  }
+  console.log('[Ecosystem] /login =>', loginResp.status, loginText.substring(0, 300));
 
   if(!loginResp.ok) throw new Error('Login Ecosystem HTTP ' + loginResp.status + ' — ' + loginText.substring(0, 150));
 
   var loginData; try { loginData = JSON.parse(loginText); } catch(e) { loginData = {}; }
-  var token = loginData.token || loginData.id_token || loginData.access_token || loginData.jwt;
-  // Si la réponse entière est le token (string)
-  if(!token && loginText.length > 20 && loginText.length < 2000) token = loginText.replace(/^"|"$/g, '').trim();
+  var token = loginData.IdToken || loginData.idToken || loginData.token || loginData.id_token || loginData.access_token;
 
   if(!token) throw new Error('Login Ecosystem OK mais pas de token dans la réponse: ' + loginText.substring(0, 150));
   console.log('[Ecosystem] Token obtenu, length:', token.length);
@@ -23027,11 +23000,11 @@ async function qrVerifierStatutEcosystem(dossier){
 
   try {
     // Auth JWT d'abord
-    // POST /Login pour token
-    var lr=await ecoFetch('/Login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
+    // POST /login pour token (lowercase, username/password)
+    var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
     if(!lr.ok) return null;
     var ld=await lr.json();
-    var token=ld.token||ld.id_token||ld.access_token;
+    var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
     if(!token) return null;
 
     // GET /reimbursement-claims pour statut
