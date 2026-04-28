@@ -14691,8 +14691,9 @@ function qrBadgeHTML(d){
   var qr=d.qrEnvoi||{};
   var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
   var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
-  var envoye=hasEcologic||hasEcosystem;
-  var org=hasEcologic?'Ecologic':'Ecosystem';
+  // Si dossier clôturé avec bonusQR mais qrEnvoi perdu → considérer comme envoyé
+  var envoye=hasEcologic||hasEcosystem||(d.statut==='cloture'&&d.bonusQR);
+  var org=hasEcologic?'Ecologic':(hasEcosystem?'Ecosystem':'?');
   var orgIcon=hasEcologic?'\ud83d\udfe2':'\ud83d\udfe3';
 
   // step: 0=non envoyé, 1=envoyé, 2=en vérif, 3=approuvé, 4=remboursé, -1=refusé
@@ -14822,11 +14823,13 @@ function renderRepBentoWidgets(){
   var el5=document.getElementById('rep-w-encours');if(el5)el5.textContent=enCours;
   var el5b=document.getElementById('rep-w-encours-sub');if(el5b)el5b.textContent=enCours>1?'dossiers ouverts':'dossier ouvert';
 
-  // QR en attente
-  var qrDossiers=repDossiers.filter(function(d){return d.qrEnvoi&&d.qrEnvoi.statut;});
-  var qrPending=qrDossiers.filter(function(d){var s=d.qrEnvoi.statut;return s==='Sent'||s==='Pending'||s==='Processing';}).length;
-  var qrApproved=qrDossiers.filter(function(d){return d.qrEnvoi.statut==='Approved'||d.qrEnvoi.statut==='Paid';}).length;
-  var qrRejected=qrDossiers.filter(function(d){return d.qrEnvoi.statut==='Rejected';}).length;
+  // QR — inclure dossiers avec qrEnvoi.statut OU dossiers clôturés avec bonusQR
+  var qrDossiers=repDossiers.filter(function(d){
+    return (d.qrEnvoi&&d.qrEnvoi.statut) || (d.bonusQR&&d.statut==='cloture');
+  });
+  var qrPending=qrDossiers.filter(function(d){var s=(d.qrEnvoi||{}).statut||'Sent';return s==='Sent'||s==='Pending'||s==='Processing';}).length;
+  var qrApproved=qrDossiers.filter(function(d){var s=(d.qrEnvoi||{}).statut;return s==='Approved'||s==='Paid';}).length;
+  var qrRejected=qrDossiers.filter(function(d){return (d.qrEnvoi||{}).statut==='Rejected';}).length;
   var el6=document.getElementById('rep-w-qr-pending');if(el6)el6.textContent=qrPending;
   var el6b=document.getElementById('rep-w-qr-status');if(el6b)el6b.textContent=qrPending>0?'en attente de remboursement':'aucun en attente';
 
@@ -14877,9 +14880,10 @@ function renderRepBentoWidgets(){
     var ecoRows='',agoraRows='';
     var statusLabels={Sent:'🟡 En vérif.',Approved:'✅ Approuvé',Paid:'💰 Remboursé',Rejected:'❌ Refusé',Pending:'⏳ Attente',Processing:'🔄 Traitement'};
     qrDossiers.forEach(function(d){
-      var qr=d.qrEnvoi;var cl=d.client||{};var ap=d.appareil||{};
-      var row='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:6px;">'+(d.numero||'—')+'</td><td style="padding:6px;">'+(cl.nom||'—')+'</td><td style="padding:6px;">'+(ap.marque||'')+' '+(ap.modele||'')+'</td><td style="padding:6px;font-size:11px;">'+(qr.date?fmtDate(qr.date):'—')+'</td><td style="padding:6px;text-align:center;font-size:11px;">'+(statusLabels[qr.statut]||qr.statut)+'</td><td style="padding:6px;text-align:center;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:10px;">🔄</button></td></tr>';
-      if(qr.ecosystemId)ecoRows+=row;else agoraRows+=row;
+      var qr=d.qrEnvoi||{};var cl=d.client||{};var ap=d.appareil||{};
+      var st=qr.statut||'Sent';
+      var row='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:6px;">'+(d.numero||'—')+'</td><td style="padding:6px;">'+(cl.nom||'—')+'</td><td style="padding:6px;">'+(ap.marque||'')+' '+(ap.modele||'')+'</td><td style="padding:6px;font-size:11px;">'+(qr.date?fmtDate(qr.date):(d.date?fmtDate(d.date):'—'))+'</td><td style="padding:6px;text-align:center;font-size:11px;">'+(statusLabels[st]||st)+'</td><td style="padding:6px;text-align:center;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:10px;">🔄</button></td></tr>';
+      if(qr.ecosystemId||qr.ecosystemRepairId)ecoRows+=row;else agoraRows+=row;
     });
     var ecoTb=document.getElementById('rep-qr-eco-tbody');if(ecoTb)ecoTb.innerHTML=ecoRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecosystem</td></tr>';
     var agTb=document.getElementById('rep-qr-agora-tbody');if(agTb)agTb.innerHTML=agoraRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecologic</td></tr>';
@@ -16783,7 +16787,7 @@ async function qrEnvoyerEcologicComplet(d){
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
     var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId+ecoAuth,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
+    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;d.qrEnvoi.statut='Sent';d.qrEnvoi.date=today;
     d.statut="cloture";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
@@ -16904,7 +16908,7 @@ async function qrEnvoyerEcosystemComplet(d){
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='cloture';
+    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut='Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
@@ -20955,8 +20959,8 @@ async function loadBonsDepot(){
         return {
           id: x.id, numero: x.numero, date: x.date,
           statut: x.statut || 'depot',
-          facture: (function(){try{var f=localStorage.getItem('sp_facture_'+x.id);return f?JSON.parse(f):null;}catch(e){return null;}})(),
-          qrEnvoi: (function(){try{var q=localStorage.getItem('sp_qrenvoi_'+x.id);return q?JSON.parse(q):null;}catch(e){return null;}})(),
+          facture: x.facture || (function(){try{var f=localStorage.getItem('sp_facture_'+x.id);return f?JSON.parse(f):null;}catch(e){return null;}})(),
+          qrEnvoi: x.qr_envoi || (function(){try{var q=localStorage.getItem('sp_qrenvoi_'+x.id);return q?JSON.parse(q):null;}catch(e){return null;}})(),
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
@@ -21017,7 +21021,9 @@ async function saveBonDepotSupabase(d){
     signature: (d.signature && d.signature.length < 500000) ? d.signature : null,
     bonus_qr: !!(d.bonusQR || (d.facture && d.facture.bonusQR)),
     mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null,
-    statut: d.statut||'depot'
+    statut: d.statut||'depot',
+    facture: d.facture||null,
+    qr_envoi: d.qrEnvoi||null
   };
   try {
     var ex = await supaFetch('bons_depot','GET',null,'?id=eq.'+d.id);
