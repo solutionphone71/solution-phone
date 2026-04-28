@@ -985,7 +985,18 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <option value="Virement">🏦 Virement</option>
               </select>
             </div>
-            <button class="btn btn-primary" onclick="genererFacture()">🧾 Générer la facture</button>
+            <div style="border:1px dashed rgba(34,197,94,0.3);border-radius:10px;padding:10px 12px;background:rgba(34,197,94,0.04);">
+              <div onclick="var s=document.getElementById('f-reprise-fields');s.style.display=s.style.display==='none'?'block':'none';this.querySelector('span.arr').textContent=s.style.display==='none'?'\u25b6':'\u25bc'" style="cursor:pointer;font-weight:700;font-size:13px;color:#16a34a;">
+                \u267b\ufe0f Reprise ancien t\u00e9l\u00e9phone <span class="arr" style="font-size:11px;">\u25b6</span>
+              </div>
+              <div id="f-reprise-fields" style="display:none;margin-top:8px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <div class="form-group"><label>Mod\u00e8le repris</label><input type="text" id="f-reprise-modele" placeholder="ex: iPhone 12"></div>
+                  <div class="form-group"><label>Montant reprise (\u20ac)</label><input type="number" id="f-reprise-montant" placeholder="0" min="0" step="1"></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="genererFacture()">\ud83e\udded G\u00e9n\u00e9rer la facture</button>
           </div>
         </div>
         <div class="card" id="facture-preview-card" style="display:none;">
@@ -9598,18 +9609,23 @@ function genererFacture(){
   var num='FAC-'+new Date().getFullYear()+'-'+String(factures.length+1).padStart(3,'0');
   var date=new Date().toISOString().split('T')[0];
   var modePaiement=(document.getElementById('f-mode-paiement')||{value:'Carte bancaire'}).value;
+  var repMontant=parseFloat((document.getElementById('f-reprise-montant')||{}).value)||0;
+  var repModele=(document.getElementById('f-reprise-modele')||{}).value||'';
+  var netAPayer=repMontant>0?p.vente-repMontant:p.vente;
   var marge=p.vente-p.achat;var ht=marge/1.2;var tva=ht*0.2;
   var fac={id:Date.now(),numero:num,date:date,phoneId:p.id,
     clientNom:client,clientAdresse:getAdresse('f-client'),
     clientEmail:document.getElementById('f-client-email').value.trim(),
     modePaiement:modePaiement,
-    ttc:p.vente,ht:parseFloat(ht.toFixed(2)),tva:parseFloat(tva.toFixed(2))};
+    repriseAmount:repMontant,repriseModele:repModele,
+    ttc:p.vente,netAPayer:netAPayer,ht:parseFloat(ht.toFixed(2)),tva:parseFloat(tva.toFixed(2))};
   factures.push(fac);p.etat='VENDU';p.dateVente=date;savePhone(p);
   if(supabaseReady)supaFetch('factures','POST',{numero:fac.numero,date:fac.date,phone_id:fac.phoneId,
     client_nom:fac.clientNom,client_adresse:fac.clientAdresse,montant_ttc:fac.ttc,montant_ht:fac.ht,tva:fac.tva});
   renderFactures();renderPhones();renderDashboard();
   imprimerFactureData(fac,p);
-  ['f-client-nom','f-client-adresse','f-client-cp','f-client-ville','f-client-email'].forEach(function(id){document.getElementById(id).value='';});
+  ['f-client-nom','f-client-adresse','f-client-cp','f-client-ville','f-client-email','f-reprise-modele','f-reprise-montant'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var repFields=document.getElementById('f-reprise-fields');if(repFields)repFields.style.display='none';
   document.getElementById('f-phone').value='';
   var srchInp=document.getElementById('f-phone-search'); if(srchInp) srchInp.value='';
   var selBadge=document.getElementById('f-phone-selected'); if(selBadge) selBadge.style.display='none';
@@ -9618,18 +9634,24 @@ function genererFacture(){
 }
 
 function imprimerFactureData(fac,p){
+  var lignes=[{
+      desc:'<b>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' \u2014 Grade '+(p.grade||'A')+'</b>'+
+           (p.imei?'<br><span style="font-size:11px;color:#888;">IMEI : '+p.imei+'</span>':'')+
+           (p.couleur?'<br><span style="font-size:11px;color:#888;">Couleur : '+p.couleur+'</span>':'')+
+           '<br><span style="font-size:11px;color:#888;">Smartphone reconditionn\u00e9 certifi\u00e9 \u00b7 Garantie 6 mois</span>',
+      qte:1,pu:p.vente
+    }];
+  var repMontant=fac.repriseAmount||0;
+  if(repMontant>0){
+    lignes.push({desc:'<b>\u267b\ufe0f Reprise ancien t\u00e9l\u00e9phone</b>'+(fac.repriseModele?'<br><span style="font-size:11px;color:#888;">'+fac.repriseModele+'</span>':''),qte:1,pu:-repMontant});
+  }
+  var totalFinal=repMontant>0?(p.vente-repMontant):p.vente;
   var html=buildA4HTML({
     type:'facture',numero:fac.numero,date:fac.date,
     clientNom:fac.clientNom,clientAdresse:fac.clientAdresse,clientEmail:fac.clientEmail||'',
     mode:fac.modePaiement||'',garantie:'6 mois',
-    lignes:[{
-      desc:'<b>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' — Grade '+(p.grade||'A')+'</b>'+
-           (p.imei?'<br><span style="font-size:11px;color:#888;">IMEI : '+p.imei+'</span>':'')+
-           (p.couleur?'<br><span style="font-size:11px;color:#888;">Couleur : '+p.couleur+'</span>':'')+
-           '<br><span style="font-size:11px;color:#888;">Smartphone reconditionné certifié · Garantie 6 mois</span>',
-      qte:1,pu:p.vente
-    }],
-    total:p.vente,isDevis:false
+    lignes:lignes,
+    total:totalFinal,isDevis:false
   });
   ouvrirA4(html);
 }
