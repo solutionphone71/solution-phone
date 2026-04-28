@@ -7092,12 +7092,14 @@ async function alimenterCaisse(opts){
 
 // Appelée quand une facture réparation est générée
 function caisseFromFactureRep(facture, client, mode, bonusQR){
-  var prixClient = facture.prix || 0;
-  var prixReel   = bonusQR ? prixClient + 25 : prixClient; // TTC réel encaissé (avant bonus)
+  // facture.prix = prix TTC saisi (total de la réparation)
+  // Si QualiRépar : le client paie (prix - 25€), l'éco-organisme paie 25€
+  // Le CA TTC = le prix saisi (c'est le total réel de la réparation)
+  var prixTTC    = facture.prix || 0;
   var qualiMont  = bonusQR ? 25 : 0;
   return alimenterCaisse({
     date:        facture.date || new Date().toISOString().split('T')[0],
-    ttc:         prixReel,      // montant réel reçu de l'éco-organisme inclus
+    ttc:         prixTTC,       // prix total de la réparation (le prix saisi)
     mode:        mode || 'CB',
     quali:       qualiMont,
     source:      'reparation',
@@ -15487,6 +15489,20 @@ function repLoadFormFromDossier(){
     var rg=document.getElementById('r-garantie'); if(rg) rg.value=f.garantie||'3 mois';
     var rqr=document.getElementById('rep-qr-actif'); if(rqr){ rqr.checked=!!f.bonusQR; repToggleQR(); }
   }
+  // Verrouiller les champs critiques si facture déjà générée (éviter modification post-facturation)
+  var _factureExiste = !!(d.facture && d.facture.numero);
+  ['dep-panne','dep-devis','dep-mo-ht','dep-pieces-ht','r-prix','r-description'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el){
+      el.readOnly = _factureExiste;
+      if(_factureExiste) el.style.opacity = '0.6';
+    }
+  });
+  // Désactiver le bouton Générer Facture si déjà fait
+  if(_factureExiste){
+    var btnF = document.getElementById('btn-generer-facture');
+    if(btnF){ btnF.disabled = true; btnF.style.cssText = 'background:#94a3b8;border-color:rgba(255,255,255,0.3);cursor:not-allowed;padding:18px;font-size:16px;font-weight:900;width:100%;'; btnF.textContent = '✅ Facture déjà générée'; }
+  }
 }
 
 
@@ -15531,9 +15547,14 @@ function repGetIrisLinesForFacture(){
 async function repGenererFacture(){
   if(repGenererFacture._running) return;
   repGenererFacture._running = true;
-  setTimeout(function(){ repGenererFacture._running=false; }, 3000);
   var d = repDossierCourant;
-  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+  if(!d){ showNotif('Aucun dossier ouvert','error'); repGenererFacture._running=false; return; }
+  // Bloquer si facture déjà générée (évite double alimentation caisse)
+  if(d.facture && d.facture.numero){
+    showNotif('⚠️ Facture déjà générée pour ce dossier','error');
+    repGenererFacture._running=false;
+    return;
+  }
 
   var prix     = parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
   var panneVal = (document.getElementById('dep-panne')||{value:''}).value;
@@ -15617,6 +15638,8 @@ async function repGenererFacture(){
   // Afficher popup envoi
   repShowEnvoiFacture(d);
   repUpdateDevisRecap();
+  // Libérer le lock après 15s max (sécurité)
+  setTimeout(function(){ repGenererFacture._running=false; }, 15000);
 }
 
 function repImprimerFactureById(id){
@@ -16195,6 +16218,21 @@ function repStep1Next(){
     var el=document.getElementById('rep-tel'); if(el){el.style.border='2px solid red'; el.focus();}
     return;
   }
+  if(!adresse){
+    showNotif('⚠️ Adresse obligatoire (QualiRépar)','error');
+    var el=document.getElementById('rep-adresse'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
+  if(!cp || cp.length < 5){
+    showNotif('⚠️ Code postal obligatoire (5 chiffres)','error');
+    var el=document.getElementById('rep-cp'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
+  if(!ville){
+    showNotif('⚠️ Ville obligatoire','error');
+    var el=document.getElementById('rep-ville'); if(el){el.style.border='2px solid red'; el.focus();}
+    return;
+  }
 
   // Sauvegarder IMMÉDIATEMENT dans repDossierCourant (synchrone)
   repDossierCourant.client = {
@@ -16277,9 +16315,11 @@ function repStep2Next(){
   var a=repDossierCourant.appareil;
   if(!a.marque||!a.modele){showNotif('⚠️ Marque et Modèle sont obligatoires','error');return;}
   if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
-  // Rappel photo IMEI si pas encore prise
-  if(!repDossierCourant.photoImeiUrl && a.imei){
-    showNotif('💡 Pensez à prendre la photo de la plaque signalétique (bouton 📷 OCR) pour Ecosystem !','success');
+  if(!a.couleur){showNotif('⚠️ Couleur de l\'appareil obligatoire','error');return;}
+  // Photo IMEI obligatoire (plaque signalétique)
+  if(!repDossierCourant.photoImeiUrl){
+    showNotif('⚠️ Photo IMEI / plaque signalétique obligatoire — utilisez le bouton 📷 OCR','error');
+    return;
   }
   repSauvegarderDossier(); // persiste l'appareil/panne/devis
   repGoStep(3);
@@ -16325,10 +16365,19 @@ function repAutoFillStep4(){
 
 function repStep3Next(){
   repAutoSave();
-  if(!repDossierCourant.panne){showNotif('Décrivez la panne','error');return;}
-  if(!repDossierCourant.devis||repDossierCourant.devis<=0){showNotif('Saisissez le prix TTC du devis','error');return;}
+  if(!repDossierCourant.panne){showNotif('⚠️ Décrivez la panne','error');return;}
+  if(!repDossierCourant.devis||repDossierCourant.devis<=0){showNotif('⚠️ Saisissez le prix TTC du devis','error');return;}
+  // MO HT et Pièces HT obligatoires pour les organismes
+  var moHT = parseFloat(repDossierCourant.moHT||0);
+  var piecesHT = parseFloat(repDossierCourant.piecesHT||0);
+  if(moHT <= 0 && piecesHT <= 0){
+    showNotif('⚠️ Renseignez la Main d\'oeuvre HT et/ou les Pièces HT (obligatoire pour QualiRépar)','error');
+    return;
+  }
+  // Signature client obligatoire
   if(!repDossierCourant.signature){
-    showNotif('💡 Pas de signature — continuez','success');
+    showNotif('⚠️ Signature du client obligatoire — faites signer le devis avant de continuer','error');
+    return;
   }
   repGenererDevisPDF();
   repSauvegarderDossier();
@@ -16783,6 +16832,44 @@ function repEnvoyerOrganisme(){
     return;
   }
 
+  // ── PRÉ-VALIDATION COMPLÈTE avant envoi ──
+  var manquants = [];
+  var c = d.client||{};
+  var a = d.appareil||{};
+  // Client
+  if(!c.nom) manquants.push('Nom du client (Étape 1)');
+  if(!c.prenom) manquants.push('Prénom du client (Étape 1)');
+  if(!c.tel) manquants.push('Téléphone du client (Étape 1)');
+  if(!c.adresse) manquants.push('Adresse du client (Étape 1)');
+  if(!c.cp || (c.cp||'').length < 5) manquants.push('Code postal du client (Étape 1)');
+  if(!c.ville) manquants.push('Ville du client (Étape 1)');
+  // Appareil
+  if(!a.marque) manquants.push('Marque de l\'appareil (Étape 2)');
+  if(!a.modele) manquants.push('Modèle de l\'appareil (Étape 2)');
+  if(!a.imei || (a.imei||'').replace(/\s/g,'').length !== 15) manquants.push('IMEI valide 15 chiffres (Étape 2)');
+  // Photo IMEI (pièce jointe obligatoire)
+  if(!d.photoImeiUrl) manquants.push('Photo IMEI / plaque signalétique (Étape 2)');
+  // Signature client (pièce jointe obligatoire)
+  if(!d.signature) manquants.push('Signature du client (Étape 3)');
+  // Devis / montants
+  if(!d.panne) manquants.push('Description de la panne (Étape 3)');
+  var moHT = parseFloat(d.moHT||0); var pHT = parseFloat(d.piecesHT||0);
+  if(moHT <= 0 && pHT <= 0) manquants.push('MO HT et/ou Pièces HT (Étape 3)');
+  // Facture
+  if(!d.facture) manquants.push('Facture non générée (Étape 4)');
+
+  if(manquants.length > 0){
+    var elStatut = document.getElementById('rep-qr-envoi-statut');
+    var msg = '<div style="background:rgba(255,59,48,0.08);padding:14px;border-radius:10px;border:1px solid rgba(255,59,48,0.3);">' +
+      '<div style="font-weight:900;color:#dc2626;margin-bottom:8px;">⛔ Dossier incomplet — envoi bloqué</div>' +
+      '<div style="font-size:12px;color:#dc2626;line-height:1.8;">' +
+      manquants.map(function(m){ return '• ' + m; }).join('<br>') +
+      '</div></div>';
+    if(elStatut) elStatut.innerHTML = msg;
+    showNotif('⛔ ' + manquants.length + ' élément(s) manquant(s) — envoi bloqué','error');
+    return;
+  }
+
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var marque    = (d.appareil||{}).marque||'';
   var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
@@ -16845,6 +16932,9 @@ async function qrEnvoyerEcologicComplet(d){
   if(!(d.panne||'').trim()&&!(a.typeRep||a.type||'').trim()) manquants.push('Type de reparation');
   var _ttcCheck=parseFloat(d.devis||0);var _moCheck=parseFloat(d.moHT||0);var _pCheck=parseFloat(d.piecesHT||0);
   if(_ttcCheck<=0&&_moCheck<=0&&_pCheck<=0) manquants.push('Montant reparation');
+  if(!d.photoImeiUrl) manquants.push('Photo IMEI / plaque signaletique');
+  if(!d.signature) manquants.push('Signature du client');
+  if(!d.facture) manquants.push('Facture non generee');
   if(manquants.length>0){var errMsg='Elements manquants :\n- '+manquants.join('\n- ');showNotif&&showNotif(errMsg,"error");var elV=document.getElementById("rep-qr-envoi-statut");if(elV)elV.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+errMsg.replace(/\n/g,'<br>')+"</div>";return;}
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   // Auth gérée côté proxy Vercel (env var ECOLOGIC_API_KEY)
@@ -16938,6 +17028,15 @@ async function qrEnvoyerEcologicComplet(d){
 async function qrEnvoyerEcosystemComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
+  // Pré-validation pièces jointes
+  var _manq=[];
+  if(!(c.nom||'').trim()) _manq.push('Nom du client');
+  if(!(a.imei||'').trim()) _manq.push('IMEI');
+  if(!(a.marque||'').trim()) _manq.push('Marque');
+  if(!d.photoImeiUrl) _manq.push('Photo IMEI / plaque signaletique');
+  if(!d.signature) _manq.push('Signature du client');
+  if(!d.facture) _manq.push('Facture non generee');
+  if(_manq.length>0){var _msg='Elements manquants :\n- '+_manq.join('\n- ');showNotif&&showNotif(_msg,"error");var _el=document.getElementById("rep-qr-envoi-statut");if(_el)_el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#9940; "+_msg.replace(/\n/g,'<br>')+"</div>";return;}
   var proxy=QR_ECOSYSTEM_PROXY;
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
@@ -17632,7 +17731,10 @@ function repAutoDecompose(prixTTC){
       var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
       var prixBase = bonusQR ? ttc + 25 : ttc;
       var ht     = prixBase / 1.2;
-      var mo     = 25;
+      // Lire MO HT depuis la saisie employé si déjà renseignée, sinon 25€ par défaut
+      var elMOExist = document.getElementById('dep-mo-ht');
+      var moSaisi = elMOExist ? parseFloat(elMOExist.value) : 0;
+      var mo     = moSaisi > 0 ? moSaisi : 25;
       var pieces = Math.max(0, ht - mo);
 
       if(repCurrentStep === 3){
@@ -21144,8 +21246,8 @@ async function saveBonDepotSupabase(d){
     accessoires: d.accessoires,
     panne: d.panne, devis: d.devis,
     date_retour: d.dateRetour||null, obs: d.obs,
-    photo_imei_url: (d.photoImeiUrl && d.photoImeiUrl.length < 500000) ? d.photoImeiUrl : null,
-    signature: (d.signature && d.signature.length < 500000) ? d.signature : null,
+    photo_imei_url: (d.photoImeiUrl && d.photoImeiUrl.length < 2000000) ? d.photoImeiUrl : null,
+    signature: (d.signature && d.signature.length < 2000000) ? d.signature : null,
     bonus_qr: !!(d.bonusQR || (d.facture && d.facture.bonusQR)),
     mo_ht: d.moHT||null, pieces_ht: d.piecesHT||null,
     statut: d.statut||'depot',
@@ -21157,6 +21259,11 @@ async function saveBonDepotSupabase(d){
     if(ex && ex.length > 0){ await supaFetch('bons_depot','PATCH',data,'?id=eq.'+d.id); }
     else { await supaFetch('bons_depot','POST',data); }
   } catch(e){ console.log('Erreur save bon depot',e); }
+  // Alerte si photo/signature trop grande pour Supabase
+  if(d.photoImeiUrl && d.photoImeiUrl.length >= 2000000){
+    console.warn('[ATTENTION] Photo IMEI trop grande ('+Math.round(d.photoImeiUrl.length/1024)+'KB) — non sauvegardée en Supabase !');
+    showNotif&&showNotif('⚠️ Photo IMEI trop grande — elle sera perdue au rechargement. Reprenez-la en plus basse résolution.','error');
+  }
   if(d.facture){try{localStorage.setItem('sp_facture_'+d.id,JSON.stringify(d.facture));}catch(e){}}
   if(d.qrEnvoi){try{localStorage.setItem('sp_qrenvoi_'+d.id,JSON.stringify(d.qrEnvoi));}catch(e){}}
   saveBonsDepot();
@@ -23612,15 +23719,18 @@ async function qrAutoCheckStatuts(){
     return s && s !== 'Paid' && s !== 'Rejected';
   });
   if(!dossiers.length) return;
-  console.log('[QR Auto-check] Vérification de', dossiers.length, 'dossiers...');
+  // Limiter à 20 dossiers max pour ne pas geler l'app
+  var maxCheck = 20;
+  var toCheck = dossiers.slice(0, maxCheck);
+  console.log('[QR Auto-check] Vérification de', toCheck.length, '/', dossiers.length, 'dossiers...');
   var updated = 0;
-  for(var i=0; i<dossiers.length; i++){
-    var d = dossiers[i];
+  for(var i=0; i<toCheck.length; i++){
+    var d = toCheck[i];
     try {
       var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
       var rawSt = isEcosystem
-        ? await qrVerifierStatutEcosystem(d)
-        : await qrVerifierStatutEcologic(d);
+        ? await Promise.race([qrVerifierStatutEcosystem(d), new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},8000);})])
+        : await Promise.race([qrVerifierStatutEcologic(d), new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},8000);})]);
       var newStatut = (rawSt && typeof rawSt === 'object') ? (rawSt.statut || 'Sent') : rawSt;
       if(newStatut && newStatut !== d.qrEnvoi.statut){
         d.qrEnvoi.statut = newStatut;
@@ -24765,12 +24875,12 @@ function parcoursDashRefresh(){
     }
 
     // Ligne 1 : CA du jour + détail paiement
-    kpiEl.appendChild(kpiTile('CA du jour',caJourTTC.toFixed(2)+' \u20ac','Total TTC','#f59e0b','\uD83D\uDCB0',null));
+    kpiEl.appendChild(kpiTile('CA du jour',caJourTTC.toFixed(2)+' \u20ac','Client + QR','#f59e0b','\uD83D\uDCB0',null));
     kpiEl.appendChild(kpiTile('Carte bleue',caJourCB.toFixed(2)+' \u20ac','','#3b82f6','\uD83D\uDCB3',null));
     kpiEl.appendChild(kpiTile('Esp\u00e8ces',caJourEsp.toFixed(2)+' \u20ac','','#10b981','\uD83D\uDCB5',null));
     kpiEl.appendChild(kpiTile('Ch\u00e8que',caJourCheque.toFixed(2)+' \u20ac','','#8b5cf6','\uD83D\uDCDD',null));
     kpiEl.appendChild(kpiTile('Virement',caJourVir.toFixed(2)+' \u20ac','','#6366f1','\uD83C\uDFE6',null));
-    kpiEl.appendChild(kpiTile('Bonus QR',bonusQRMois.toFixed(0)+' \u20ac','ce mois','#10b981','\uD83C\uDFF7\uFE0F',null));
+    kpiEl.appendChild(kpiTile('QualiR\u00e9par',caJourQuali.toFixed(2)+' \u20ac','bonus QR du jour','#10b981','\uD83C\uDFF7\uFE0F',null));
     // Ligne 2 : compteurs opérationnels
     kpiEl.appendChild(kpiTile('R\u00e9pa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981','\uD83D\uDD27',function(){showPage('reparations');}));
     kpiEl.appendChild(kpiTile('Mobilax',mlxEnCours+' en cours','',mlxEnCours>0?'#3b82f6':'#10b981','\uD83D\uDE9A',function(){parcoursOuvrir('mobilax');}));
