@@ -24849,7 +24849,18 @@ function pcPieceRenderListe(){
     if(reste>0) h+=' <span style="color:#ef4444;font-weight:700;font-size:12px;">reste '+reste.toFixed(2)+'\u20ac</span>';
     h+='<br><span style="font-size:11px;">'+badge+'</span></div>';
     h+='<div style="font-size:11px;color:var(--text-muted);">'+fmtDate(c.date)+'</div>';
-    h+='</div></div>';
+    h+='</div>';
+    // Boutons d'action
+    h+='<div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap;">';
+    h+='<select onchange="pcPieceChangeStatut('+c.id+',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);">';
+    h+='<option value="a_commander"'+(s==='a_commander'?' selected':'')+'>\u{1F534} \u00c0 commander</option>';
+    h+='<option value="en_transit"'+(s==='en_transit'?' selected':'')+'>\u{1F7E0} En transit</option>';
+    h+='<option value="arrive"'+(s==='arrive'?' selected':'')+'>\u{1F7E2} Arriv\u00e9</option>';
+    h+='</select>';
+    h+='<button onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:none;border-radius:6px;cursor:pointer;font-size:13px;" title="R\u00e9imprimer">\u{1F5A8}\uFE0F</button>';
+    h+='<button onclick="envoyerSMSCommande('+c.id+')" style="padding:4px 8px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;" title="SMS client">\u{1F4F1} SMS</button>';
+    h+='</div>';
+    h+='</div>';
   });
   // Archives par mois
   if(archives.length){
@@ -24874,6 +24885,18 @@ function pcPieceRenderListe(){
     h+='</div></div>';
   }
   el.innerHTML=h;
+}
+
+// Change statut from Parcours Client piece list
+async function pcPieceChangeStatut(id, newStatut){
+  await cmdChangerStatut(id, newStatut);
+  pcPieceRenderListe();
+}
+
+// Change statut from Parcours Client accessoire list
+async function pcAccChangeStatut(id, newStatut){
+  await cmdChangerStatut(id, newStatut);
+  pcAccRenderListe();
 }
 
 // ── PARCOURS 4 : Commande accessoires ──
@@ -24940,7 +24963,18 @@ function pcAccRenderListe(){
     if(reste>0) h+=' <span style="color:#ef4444;font-weight:700;font-size:12px;">reste '+reste.toFixed(2)+'\u20ac</span>';
     h+='<br><span style="font-size:11px;">'+badge+'</span></div>';
     h+='<div style="font-size:11px;color:var(--text-muted);">'+fmtDate(c.date)+'</div>';
-    h+='</div></div>';
+    h+='</div>';
+    // Boutons d'action
+    h+='<div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end;flex-wrap:wrap;">';
+    h+='<select onchange="pcAccChangeStatut('+c.id+',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);">';
+    h+='<option value="a_commander"'+(s==='a_commander'?' selected':'')+'>\u{1F534} \u00c0 commander</option>';
+    h+='<option value="en_transit"'+(s==='en_transit'?' selected':'')+'>\u{1F7E0} En transit</option>';
+    h+='<option value="arrive"'+(s==='arrive'?' selected':'')+'>\u{1F7E2} Arriv\u00e9</option>';
+    h+='</select>';
+    h+='<button onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:none;border-radius:6px;cursor:pointer;font-size:13px;" title="R\u00e9imprimer">\u{1F5A8}\uFE0F</button>';
+    h+='<button onclick="envoyerSMSCommande('+c.id+')" style="padding:4px 8px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;" title="SMS client">\u{1F4F1} SMS</button>';
+    h+='</div>';
+    h+='</div>';
   });
   // Archives par mois
   if(archives.length){
