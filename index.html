@@ -3575,7 +3575,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
             <button class="btn" onclick="repGoStep(3)">← Retour</button>
-            <button class="btn btn-primary" id="rep-step4-next" onclick="repStep4Next()" style="padding:12px 28px;font-size:15px;">Suivant → Organisme</button>
+            <button class="btn btn-primary" id="rep-step4-next" onclick="repStep4Next()" style="padding:12px 28px;font-size:15px;background:#dc2626;border-color:#dc2626;">✅ Valider paiement &amp; Générer la facture</button>
           </div>
         </div>
 
@@ -16409,7 +16409,7 @@ function repGenererDevisPDF(){
   showNotif('✅ Devis sauvegardé pour Ecosystem','success');
 }
 
-function repStep4Next(){
+async function repStep4Next(){
   // Valider les champs obligatoires pour l'envoi AgoraPlus
   var prix = parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
   if(!prix){ showNotif('Renseignez le prix TTC','error'); return; }
@@ -16423,6 +16423,13 @@ function repStep4Next(){
     var cp = repDossierCourant && repDossierCourant.client && repDossierCourant.client.cp;
     if(!cp){ showNotif('Code postal obligatoire pour le bonus QR — retournez à l\'étape 1','error'); return; }
   }
+
+  // Générer la facture si pas encore faite
+  var d = repDossierCourant;
+  if(d && !(d.facture && d.facture.numero)){
+    await repGenererFacture();
+  }
+
   repUpdateChecklist();
   repGoStep(5);
 }
@@ -16974,7 +16981,7 @@ async function qrEnvoyerEcologicComplet(d){
   var today=d.date || new Date().toISOString().split('T')[0];
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
   // API Ecologic v1.4 (Avril 2024) : CreateClaim directement, sans CreateSupportRequest
-  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSection:irisData.repair,RepairCode:irisData.repair,FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
+  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISCondition:irisData.condition||"",IRISSymptom:irisData.symptom||"",IRISSection:irisData.section||"",IRISDefault:irisData.def||"",IRISRepair:irisData.repair||"",RepairCode:irisData.repair||"",FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/3...</div>";
   console.log('[Ecologic] CreateClaim body:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
@@ -22926,17 +22933,29 @@ async function qrSendEcologic() {
   qrSetAgoraBadge('\u23F3', 'Recherche marque\u2026', marque, '#f39c12');
   var brandId   = await qrGetEcologicBrandId(marque);
   var productId = 'EEE.M2.044'; // Smartphone par défaut
-  var irisCode  = app.irisCode || 'XXX';  // Code panne IRIS générique
-
-  // Dériver le code Symptome depuis typeRep
+  // Mapping IRIS panne → codes Ecologic (même table que qrEnvoyerEcologicComplet)
+  var PANNE_ECO_MAP={
+    'ecran-casse':      {repair:'CAS', condition:'6', symptom:'E7',  section:'W10', def:'08'},
+    'ecran-hors-casse': {repair:'EHS', condition:'5', symptom:'E7',  section:'W10', def:'09'},
+    'batterie':         {repair:'BAI', condition:'5', symptom:'B4',  section:'W4',  def:'09'},
+    'haut-parleur':     {repair:'ELO', condition:'5', symptom:'C5',  section:'W15', def:'09'},
+    'micro':            {repair:'ELO', condition:'5', symptom:'C4',  section:'W15', def:'09'},
+    'connecteur':       {repair:'CON', condition:'5', symptom:'F4',  section:'W7',  def:'09'},
+    'camera':           {repair:'ELO', condition:'5', symptom:'D7',  section:'W17', def:'09'},
+    'bouton':           {repair:'MEC', condition:'5', symptom:'G4',  section:'W8',  def:'09'}
+  };
+  // Auto-détecter la clé panne depuis typeRep
   var _typeNorm = typeRep.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  var _symptome = 'ELO'; // défaut
+  var _panneKey = '';
   if(_typeNorm.includes('ecran')||_typeNorm.includes('vitre')||_typeNorm.includes('tactile')||_typeNorm.includes('affichage')){
-    _symptome=(_typeNorm.includes('cass')||_typeNorm.includes('fissu')||_typeNorm.includes('bris')||_typeNorm.includes('chut'))?'CAS':'EHS';
-  } else if(_typeNorm.includes('batterie')) _symptome='BAI';
-  else if(_typeNorm.includes('connect')||_typeNorm.includes('charge')) _symptome='CON';
-  else if(_typeNorm.includes('micro')) _symptome='ELO';
-  else if(_typeNorm.includes('bouton')) _symptome='MEC';
+    _panneKey=(_typeNorm.includes('cass')||_typeNorm.includes('fissu')||_typeNorm.includes('bris')||_typeNorm.includes('chut'))?'ecran-casse':'ecran-hors-casse';
+  } else if(_typeNorm.includes('batterie')) _panneKey='batterie';
+  else if(_typeNorm.includes('haut-parleur')||_typeNorm.includes('son')) _panneKey='haut-parleur';
+  else if(_typeNorm.includes('connect')||_typeNorm.includes('charge')) _panneKey='connecteur';
+  else if(_typeNorm.includes('micro')) _panneKey='micro';
+  else if(_typeNorm.includes('cam')) _panneKey='camera';
+  else if(_typeNorm.includes('bouton')) _panneKey='bouton';
+  var _irisEco = PANNE_ECO_MAP[_panneKey]||{repair:'ELO',condition:'5',symptom:'XX1',section:'XX',def:'09'};
 
   // ② CreateClaim — auth gérée côté proxy Vercel
   qrSetAgoraBadge('\u23F3', 'Création dossier\u2026', 'Ecologic GesCo', '#f39c12');
@@ -22958,8 +22977,8 @@ async function qrSendEcologic() {
       Product: {
         ProductId: productId, BrandId: brandId,
         CommercialRef: modele, SerialNumber: imei,
-        IRISCondition: '', IRISConditionEX: '', IRISSymptom: '',
-        IRISSection: irisCode, IRISDefault: '', IRISRepair: _symptome,
+        IRISCondition: _irisEco.condition||'', IRISConditionEX: '', IRISSymptom: _irisEco.symptom||'',
+        IRISSection: _irisEco.section||'', IRISDefault: _irisEco.def||'', IRISRepair: _irisEco.repair||'',
         FailureDescription: typeRep || (marque + ' - ' + modele), DefectCode: ''
       },
       Quote: {
