@@ -558,7 +558,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-group-label">Smartphones Occasion</div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📥</span><span>Achat smartphones</span></div>
     <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">📤</span><span>Vente smartphones</span></div>
-    <div class="nav-item" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
+    <div class="nav-item" id="nav-factures" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
     <div class="nav-item" onclick="showPage('factures-pdf',this)"><span class="nav-icon">📄</span><span>Factures PDF</span></div>
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de police</span></div>
     <div class="nav-item" onclick="showPage('rachat',this)"><span class="nav-icon">🧮</span><span>Calculateur rachat</span></div>
@@ -8413,11 +8413,37 @@ function renderPhones(){
         '<button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
         '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
         '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
-        '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Marquer vendu">✅ Vendu</button>'+
+        '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Vendre + Facture" style="padding:4px 10px;">\ud83e\uddee Vendre</button>'+
         (localStorage.getItem('sp_shopify_token')?'<button class="btn btn-sm" style="color:#96bf48;border-color:#96bf48;" onclick="shopifyPublishPhone('+p.id+')" title="Publier sur Shopify">🛒</button>':'')+
         '<button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button>'+
       '</td></tr>';
   }).join('')||'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text-dim)">📦 Aucun smartphone en stock</td></tr>';
+}
+
+function ouvrirFactureDepuisStock(id){
+  var p=phones.find(function(x){return x.id===id;});
+  if(!p){showNotif('T\u00e9l\u00e9phone introuvable','error');return;}
+  // Aller sur la page Factures TVA marge
+  showPage('factures',document.getElementById('nav-factures'));
+  // Pr\u00e9-remplir le champ smartphone
+  var searchInput=document.getElementById('f-phone-search');
+  var hiddenInput=document.getElementById('f-phone');
+  var selectedDiv=document.getElementById('f-phone-selected');
+  var selectedText=document.getElementById('f-phone-selected-text');
+  if(searchInput&&hiddenInput){
+    hiddenInput.value=p.id;
+    var label='N\u00b0'+p.id+' \u00b7 '+p.modele+(p.stockage?' '+p.stockage+'Go':'');
+    if(p.grade) label+=' \u2014 Grade '+p.grade;
+    if(p.couleur) label+=' \u2014 '+p.couleur;
+    label+=' \u2014 '+p.vente+'\u20ac';
+    searchInput.value=label;
+    if(selectedDiv&&selectedText){
+      selectedText.textContent='\ud83d\udce6 '+label;
+      selectedDiv.style.display='flex';
+    }
+    updateFacturePreview();
+  }
+  showNotif('\ud83e\uddee Facture pr\u00e9-remplie pour '+p.modele,'success');
 }
 
 function marquerReparation(id){
@@ -8528,10 +8554,11 @@ function marquerVendu(id){
   ['vente-client-nom','vente-client-adresse','vente-client-cp','vente-client-ville'].forEach(function(fid){
     var el=document.getElementById(fid); if(el) el.value='';
   });
+  // Ouvrir la section client par défaut (facture systématique)
   var clientFields = document.getElementById('client-fields');
-  if(clientFields) clientFields.style.display = 'none';
+  if(clientFields) clientFields.style.display = 'block';
   var clientIcon = document.getElementById('client-toggle-icon');
-  if(clientIcon) clientIcon.textContent = '▶';
+  if(clientIcon) clientIcon.textContent = '▼';
 
   // Sélectionner CB par défaut
   selectModeVente('CB');
