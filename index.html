@@ -5488,6 +5488,8 @@ function showPage(id,el){
     } else {
       repLoadDossiers();
     }
+    // Auto-vérification des statuts QR en arrière-plan
+    if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){renderSuiviQR();}
   if(id==='params'){paramsLoad();}
@@ -14681,7 +14683,7 @@ var REP_STATUTS = {
   depot:   { label: 'Bon de dépôt',  cls: 'rep-s-depot' },
   devis:   { label: 'Devis',          cls: 'rep-s-devis' },
   facture: { label: 'Facturé',        cls: 'rep-s-facture' },
-  qr:      { label: 'QR envoyé',      cls: 'rep-s-qr' },
+  qr:      { label: 'Clôturé (QR)',   cls: 'rep-s-cloture' },
   cloture: { label: 'Clôturé',        cls: 'rep-s-cloture' }
 };
 
@@ -14780,6 +14782,8 @@ function repLoadDossiers(){
     if(!Array.isArray(safe.accessoires)) safe.accessoires = [];
     if(!safe.client) safe.client = {};
     if(!safe.appareil) safe.appareil = {};
+    // Migration: ancien statut 'qr' → 'cloture'
+    if(safe.statut === 'qr') safe.statut = 'cloture';
     return safe;
   });
   renderRepListe();
@@ -14989,8 +14993,8 @@ function renderRepHistorique(){
   }
 
   var modeColors = {CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
-  var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#c0392b',cloture:'#16a34a'};
-  var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'🔴 QR',cloture:'✅ Clôturé'};
+  var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#16a34a',cloture:'#16a34a'};
+  var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'✅ Clôturé',cloture:'✅ Clôturé'};
 
   tbody.innerHTML = dossiers.map(function(d, i){
     var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
@@ -23459,7 +23463,50 @@ async function qrVerifierTousLesStatuts(){
 
   if(btnAll){ btnAll.disabled=false; btnAll.textContent='🔄 Tout vérifier'; }
   renderSuiviQR();
+  renderRepBentoWidgets();
+  renderRepHistorique();
   showNotif(updated > 0 ? updated+' statut(s) mis à jour ✅' : 'Tous les statuts sont à jour', 'success');
+}
+
+// Vérification automatique silencieuse au chargement de la page
+var _qrAutoCheckDone = false;
+async function qrAutoCheckStatuts(){
+  if(_qrAutoCheckDone) return;
+  _qrAutoCheckDone = true;
+  // Attendre que les données soient chargées
+  await new Promise(function(r){ setTimeout(r, 1500); });
+  var dossiers = (window.bonsDepot||[]).filter(function(d){
+    if(!d.qrEnvoi) return false;
+    var s = d.qrEnvoi.statut;
+    return s && s !== 'Paid' && s !== 'Rejected';
+  });
+  if(!dossiers.length) return;
+  console.log('[QR Auto-check] Vérification de', dossiers.length, 'dossiers...');
+  var updated = 0;
+  for(var i=0; i<dossiers.length; i++){
+    var d = dossiers[i];
+    try {
+      var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
+      var rawSt = isEcosystem
+        ? await qrVerifierStatutEcosystem(d)
+        : await qrVerifierStatutEcologic(d);
+      var newStatut = (rawSt && typeof rawSt === 'object') ? (rawSt.statut || 'Sent') : rawSt;
+      if(newStatut && newStatut !== d.qrEnvoi.statut){
+        d.qrEnvoi.statut = newStatut;
+        saveBonsDepot();
+        saveBonDepotSupabase(d);
+        updated++;
+      }
+    } catch(e){ console.warn('[QR Auto-check] erreur dossier', d.numero, e); }
+    await new Promise(function(r){ setTimeout(r, 500); });
+  }
+  if(updated > 0){
+    console.log('[QR Auto-check]', updated, 'statut(s) mis à jour');
+    renderSuiviQR();
+    renderRepBentoWidgets();
+    renderRepHistorique();
+    showNotif(updated+' statut(s) QR mis à jour automatiquement ✅', 'success');
+  }
 }
 // ══════════════════════════════════════════════════════════════════
 
