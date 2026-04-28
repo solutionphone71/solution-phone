@@ -14943,13 +14943,13 @@ function renderRepHistorique(){
   var totalTTC = 0, totalCB = 0, totalEsp = 0, totalCh = 0, totalVir = 0, totalQR = 0;
   dossiers.forEach(function(d){
     var f = d.facture;
-    if(!f) return;
-    var bonusQR = !!(d.bonusQR || f.bonusQR);
-    var prixClient = f.prix || d.devis || 0;
+    var bonusQR = !!(d.bonusQR || (f && f.bonusQR));
+    var prixClient = (f ? f.prix : 0) || d.devis || 0;
     var prixReel = bonusQR ? prixClient + 25 : prixClient;
+    if(prixReel === 0) return;
     totalTTC += prixReel;
     if(bonusQR) totalQR += 25;
-    var mode = (f.mode||'CB').toUpperCase();
+    var mode = f ? (f.mode||'CB').toUpperCase() : '—';
     if(mode==='CB') totalCB += prixReel;
     else if(mode==='ESPECES') totalEsp += prixReel;
     else if(mode==='CHEQUE') totalCh += prixReel;
@@ -14985,8 +14985,8 @@ function renderRepHistorique(){
   }
 
   var modeColors = {CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
-  var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#c0392b',cloture:'#64748b'};
-  var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'🔴 QR',cloture:'⚫ Clôturé'};
+  var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#c0392b',cloture:'#16a34a'};
+  var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'🔴 QR',cloture:'✅ Clôturé'};
 
   tbody.innerHTML = dossiers.map(function(d, i){
     var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
