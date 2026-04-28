@@ -3030,23 +3030,37 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div id="rep-qr-suivi-body">
           <!-- Stats QR -->
           <div id="rep-qr-suivi-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;"></div>
-          <!-- Tableau Ecosystem -->
-          <div style="padding:0 12px 6px;">
-            <div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ecosystem (Apple/Samsung)</div>
-            <div style="overflow-x:auto;">
-              <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:rgba(167,139,250,0.06);"><th style="padding:6px;">Réf</th><th style="padding:6px;">Client</th><th style="padding:6px;">Appareil</th><th style="padding:6px;">Date</th><th style="padding:6px;text-align:center;">Statut</th><th style="padding:6px;text-align:center;">Action</th></tr></thead>
-                <tbody id="rep-qr-eco-tbody"></tbody>
-              </table>
-            </div>
+          <!-- Filtres -->
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:4px 12px 10px;" onclick="event.stopPropagation()">
+            <select id="rep-qr-filtre-statut" onchange="renderRepBentoWidgets()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+              <option value="all">Tous les statuts</option>
+              <option value="pending" selected>🟡 En attente / Vérif.</option>
+              <option value="approved">✅ Approuvés</option>
+              <option value="paid">💰 Remboursés</option>
+              <option value="rejected">❌ Refusés</option>
+            </select>
+            <input type="month" id="rep-qr-filtre-mois" onchange="renderRepBentoWidgets()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+            <select id="rep-qr-filtre-org" onchange="renderRepBentoWidgets()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;">
+              <option value="all">Tous</option>
+              <option value="ecosystem">Ecosystem</option>
+              <option value="ecologic">Ecologic</option>
+            </select>
+            <span id="rep-qr-filtre-count" style="font-size:11px;color:var(--text-muted);margin-left:auto;"></span>
           </div>
-          <!-- Tableau Ecologic -->
+          <!-- Tableau unifié -->
           <div style="padding:0 12px 12px;">
-            <div style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Ecologic / Agora (Autres marques)</div>
             <div style="overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:rgba(52,211,153,0.06);"><th style="padding:6px;">Réf</th><th style="padding:6px;">Client</th><th style="padding:6px;">Appareil</th><th style="padding:6px;">Date</th><th style="padding:6px;text-align:center;">Statut</th><th style="padding:6px;text-align:center;">Action</th></tr></thead>
-                <tbody id="rep-qr-agora-tbody"></tbody>
+                <thead><tr style="background:rgba(167,139,250,0.06);">
+                  <th style="padding:6px;">Réf</th>
+                  <th style="padding:6px;">Client</th>
+                  <th style="padding:6px;">Appareil</th>
+                  <th style="padding:6px;">Organisme</th>
+                  <th style="padding:6px;">Date</th>
+                  <th style="padding:6px;text-align:center;">Statut</th>
+                  <th style="padding:6px;text-align:center;">Action</th>
+                </tr></thead>
+                <tbody id="rep-qr-table-tbody"></tbody>
               </table>
             </div>
           </div>
@@ -14863,35 +14877,92 @@ function renderRepBentoWidgets(){
   var tn=document.getElementById('rep-w-today-nb');if(tn)tn.textContent=repToday.length;
   var tc=document.getElementById('rep-w-today-ca');if(tc)tc.textContent=caToday.toFixed(0)+'€';
 
-  // Suivi QR section — rendre visible si des dossiers QR existent
+  // Suivi QR section
   var qrSection=document.getElementById('rep-qr-suivi-section');
   if(qrSection){
     var badge=document.getElementById('rep-qr-suivi-badge');if(badge)badge.textContent=qrDossiers.length+' dossier'+(qrDossiers.length>1?'s':'');
 
-    // Stats cards
+    // Initialiser le filtre mois au mois en cours si vide
+    var moisEl=document.getElementById('rep-qr-filtre-mois');
+    if(moisEl&&!moisEl.value){
+      var now=new Date();moisEl.value=now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1);
+    }
+
+    // Stats cards (toujours sur le total, pas filtré)
+    var qrPaid=qrDossiers.filter(function(d){return (d.qrEnvoi||{}).statut==='Paid';}).length;
     var statsEl=document.getElementById('rep-qr-suivi-stats');
     if(statsEl){
       var statsData=[
-        {l:'Total',v:qrDossiers.length,c:'#a78bfa'},
-        {l:'En attente',v:qrPending,c:'#fbbf24'},
-        {l:'Approuvés',v:qrApproved,c:'#34d399'},
-        {l:'Refusés',v:qrRejected,c:'#f87171'},
-        {l:'Bonus total',v:bonusQR.toFixed(0)+' €',c:'#60a5fa'}
+        {l:'Total',v:qrDossiers.length,c:'#a78bfa',f:'all'},
+        {l:'En attente',v:qrPending,c:'#fbbf24',f:'pending'},
+        {l:'Approuvés',v:qrApproved-qrPaid,c:'#34d399',f:'approved'},
+        {l:'Remboursés',v:qrPaid,c:'#60a5fa',f:'paid'},
+        {l:'Refusés',v:qrRejected,c:'#f87171',f:'rejected'}
       ];
-      statsEl.innerHTML=statsData.map(function(s){return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">'+s.l+'</div><div style="font-size:20px;font-weight:900;color:'+s.c+';margin-top:2px;">'+s.v+'</div></div>';}).join('');
+      statsEl.innerHTML=statsData.map(function(s){
+        return '<div onclick="document.getElementById(\'rep-qr-filtre-statut\').value=\''+s.f+'\';renderRepBentoWidgets();" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'scale(1.03)\'" onmouseout="this.style.transform=\'\'">'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">'+s.l+'</div>'+
+          '<div style="font-size:20px;font-weight:900;color:'+s.c+';margin-top:2px;">'+s.v+'</div>'+
+        '</div>';
+      }).join('');
     }
 
-    // Tables QR (Ecosystem + Ecologic)
-    var ecoRows='',agoraRows='';
+    // Filtrage des dossiers QR
+    var filtreStatut=(document.getElementById('rep-qr-filtre-statut')||{value:'pending'}).value;
+    var filtreMois=(document.getElementById('rep-qr-filtre-mois')||{value:''}).value;
+    var filtreOrg=(document.getElementById('rep-qr-filtre-org')||{value:'all'}).value;
+
+    var qrFiltered=qrDossiers.filter(function(d){
+      var qr=d.qrEnvoi||{};
+      var st=qr.statut||'Sent';
+      // Filtre statut
+      if(filtreStatut==='pending'&&st!=='Sent'&&st!=='Pending'&&st!=='Processing') return false;
+      if(filtreStatut==='approved'&&st!=='Approved') return false;
+      if(filtreStatut==='paid'&&st!=='Paid') return false;
+      if(filtreStatut==='rejected'&&st!=='Rejected') return false;
+      // Filtre mois
+      if(filtreMois){
+        var dDate=(qr.date||d.date||'').substring(0,7);
+        if(dDate!==filtreMois) return false;
+      }
+      // Filtre organisme
+      if(filtreOrg==='ecosystem'&&!(qr.ecosystemId||qr.ecosystemRepairId)) return false;
+      if(filtreOrg==='ecologic'&&!(qr.ecologicId||qr.ecologicClaimId)) return false;
+      return true;
+    });
+
+    // Tri : plus récent en premier
+    qrFiltered.sort(function(a,b){
+      var da=(a.qrEnvoi||{}).date||a.date||'';
+      var db=(b.qrEnvoi||{}).date||b.date||'';
+      return db.localeCompare(da);
+    });
+
+    var countEl=document.getElementById('rep-qr-filtre-count');
+    if(countEl) countEl.textContent=qrFiltered.length+' dossier'+(qrFiltered.length>1?'s':'');
+
+    // Table unifiée
     var statusLabels={Sent:'🟡 En vérif.',Approved:'✅ Approuvé',Paid:'💰 Remboursé',Rejected:'❌ Refusé',Pending:'⏳ Attente',Processing:'🔄 Traitement'};
-    qrDossiers.forEach(function(d){
+    var statusColors2={Sent:'#f59e0b',Approved:'#16a34a',Paid:'#2563eb',Rejected:'#dc2626',Pending:'#f59e0b',Processing:'#f59e0b'};
+    var rows='';
+    qrFiltered.forEach(function(d){
       var qr=d.qrEnvoi||{};var cl=d.client||{};var ap=d.appareil||{};
       var st=qr.statut||'Sent';
-      var row='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);"><td style="padding:6px;">'+(d.numero||'—')+'</td><td style="padding:6px;">'+(cl.nom||'—')+'</td><td style="padding:6px;">'+(ap.marque||'')+' '+(ap.modele||'')+'</td><td style="padding:6px;font-size:11px;">'+(qr.date?fmtDate(qr.date):(d.date?fmtDate(d.date):'—'))+'</td><td style="padding:6px;text-align:center;font-size:11px;">'+(statusLabels[st]||st)+'</td><td style="padding:6px;text-align:center;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:10px;">🔄</button></td></tr>';
-      if(qr.ecosystemId||qr.ecosystemRepairId)ecoRows+=row;else agoraRows+=row;
+      var isEco=!!(qr.ecosystemId||qr.ecosystemRepairId);
+      var orgLabel=isEco?'<span style="color:#a78bfa;font-weight:700;">Ecosystem</span>':'<span style="color:#34d399;font-weight:700;">Ecologic</span>';
+      var stColor=statusColors2[st]||'#888';
+      rows+='<tr style="border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;" onclick="repOuvrirDossier(\''+d.id+'\')">'+
+        '<td style="padding:6px;font-weight:700;font-family:monospace;font-size:11px;">'+(d.numero||'—')+'</td>'+
+        '<td style="padding:6px;">'+(cl.prenom?cl.prenom+' ':'')+cl.nom+'</td>'+
+        '<td style="padding:6px;font-size:11px;">'+(ap.marque||'')+' '+(ap.modele||'')+'</td>'+
+        '<td style="padding:6px;font-size:11px;">'+orgLabel+'</td>'+
+        '<td style="padding:6px;font-size:11px;">'+(qr.date?fmtDate(qr.date):(d.date?fmtDate(d.date):'—'))+'</td>'+
+        '<td style="padding:6px;text-align:center;"><span style="background:'+stColor+'18;color:'+stColor+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[st]||st)+'</span></td>'+
+        '<td style="padding:6px;text-align:center;" onclick="event.stopPropagation()"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:10px;">🔄</button></td>'+
+      '</tr>';
     });
-    var ecoTb=document.getElementById('rep-qr-eco-tbody');if(ecoTb)ecoTb.innerHTML=ecoRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecosystem</td></tr>';
-    var agTb=document.getElementById('rep-qr-agora-tbody');if(agTb)agTb.innerHTML=agoraRows||'<tr><td colspan="6" style="padding:10px;text-align:center;color:rgba(255,255,255,0.3);font-size:11px;">Aucun dossier Ecologic</td></tr>';
+    var tb=document.getElementById('rep-qr-table-tbody');
+    if(tb) tb.innerHTML=rows||'<tr><td colspan="7" style="padding:14px;text-align:center;color:rgba(255,255,255,0.3);font-size:12px;">Aucun dossier pour ces filtres</td></tr>';
   }
 }
 
