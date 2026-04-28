@@ -14724,6 +14724,8 @@ function qrBadgeHTML(d){
 
   // step: 0=non envoyé, 1=envoyé, 2=en vérif, 3=approuvé, 4=remboursé, -1=refusé
   var step=0;var rejected=false;
+  // Fix: si statut est un objet (bug ancien), extraire la string
+  if(qr.statut && typeof qr.statut==='object') qr.statut=qr.statut.statut||'Sent';
   if(envoye){
     step=2; // envoyé = en vérification par défaut
     var st=qr.statut||'Sent';
@@ -23371,13 +23373,18 @@ async function qrVerifierStatutEcologic(dossier) {
     );
     var _sText=await r.text();var data;try{data=JSON.parse(_sText);}catch(e){console.warn('Ecologic status non-JSON:',_sText.substring(0,200));return null;}
     var rd = data.ResponseData || {};
-    return {
-      claimId:  dossier.agoraClaimId,
-      statut:   rd.LastStatus || 'Inconnu',
-      valide:   !rd.ValidationErrors || rd.ValidationErrors.length === 0,
-      erreurs:  (rd.ValidationErrors || []).map(function(e){ return e.ErrorMessage; }),
-      comment:  rd.Comment || ''
+    var raw = (rd.LastStatus || '').toLowerCase();
+    // Mapper statuts Ecologic → statuts internes
+    var mapEco = {
+      'claimcreated':'Sent','claimsubmitted':'Sent','claimsent':'Sent',
+      'claimvalidated':'Approved','claimaccepted':'Approved','validated':'Approved','accepted':'Approved',
+      'claimpaid':'Paid','paid':'Paid','reimbursed':'Paid',
+      'claimrejected':'Rejected','rejected':'Rejected','refused':'Rejected',
+      'pending':'Pending','processing':'Processing','claimprocessing':'Processing'
     };
+    var statut = mapEco[raw] || 'Sent';
+    console.log('Ecologic statut brut:', rd.LastStatus, '→ mappé:', statut);
+    return statut;
   } catch (e) {
     console.warn('Ecologic status check error:', e);
     return null;
@@ -23392,9 +23399,11 @@ async function qrVerifierUnDossier(dossierId){
   if(btn){ btn.disabled=true; btn.textContent='⏳'; }
 
   var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
-  var newStatut = isEcosystem
+  var rawStatut = isEcosystem
     ? await qrVerifierStatutEcosystem(d)
     : await qrVerifierStatutEcologic(d);
+  // Ecologic renvoie un objet {statut:...}, Ecosystem renvoie une string
+  var newStatut = (rawStatut && typeof rawStatut === 'object') ? (rawStatut.statut || 'Sent') : rawStatut;
 
   if(btn){ btn.disabled=false; btn.textContent='🔄'; }
 
@@ -23422,9 +23431,10 @@ async function qrVerifierTousLesStatuts(){
   for(var i=0; i<dossiers.length; i++){
     var d = dossiers[i];
     var isEcosystem = typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
-    var newStatut = isEcosystem
+    var rawSt = isEcosystem
       ? await qrVerifierStatutEcosystem(d)
       : await qrVerifierStatutEcologic(d);
+    var newStatut = (rawSt && typeof rawSt === 'object') ? (rawSt.statut || 'Sent') : rawSt;
     if(newStatut && newStatut !== d.qrEnvoi.statut){
       d.qrEnvoi.statut = newStatut;
       saveBonsDepot();
