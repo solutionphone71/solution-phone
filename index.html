@@ -2968,7 +2968,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card">
           <div class="card-header">
             <div class="card-title">📂 Dossiers en cours</div>
-            <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="renderRepListe()">
+            <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="_debouncedRepListe()">
           </div>
           <div style="overflow-x:auto;">
             <table>
@@ -2984,9 +2984,9 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div class="card-header" style="cursor:pointer;" onclick="repToggleHistorique()">
           <div class="card-title">📋 Historique réparations</div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <input type="text" id="rep-hist-search" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:140px;">
-            <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
-            <button class="btn btn-sm" onclick="event.stopPropagation();document.getElementById('rep-hist-date').value='';renderRepHistorique();" style="font-size:11px;padding:6px 8px;" title="Voir tout">✕</button>
+            <input type="text" id="rep-hist-search" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="_debouncedRepHist()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:140px;">
+            <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="_repHistPage=1;renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            <button class="btn btn-sm" onclick="event.stopPropagation();document.getElementById('rep-hist-date').value='';_repHistPage=1;renderRepHistorique();" style="font-size:11px;padding:6px 8px;" title="Voir tout">✕</button>
             <span id="rep-hist-toggle" style="font-size:18px;color:var(--text-muted);">▲</span>
           </div>
         </div>
@@ -3087,16 +3087,16 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <span class="rep-step-num">1</span><span class="rep-step-label">Client</span>
           </button>
           <button class="rep-step-btn" id="rep-step-btn-2" onclick="repGoStep(2)">
-            <span class="rep-step-num">2</span><span class="rep-step-label">Prise en charge</span>
+            <span class="rep-step-num">2</span><span class="rep-step-label">Appareil</span>
           </button>
           <button class="rep-step-btn" id="rep-step-btn-3" onclick="repGoStep(3)">
             <span class="rep-step-num">3</span><span class="rep-step-label">Devis</span>
           </button>
           <button class="rep-step-btn" id="rep-step-btn-4" onclick="repGoStep(4)">
-            <span class="rep-step-num">4</span><span class="rep-step-label">Facture QR</span>
+            <span class="rep-step-num">4</span><span class="rep-step-label">Facturation</span>
           </button>
           <button class="rep-step-btn" id="rep-step-btn-5" onclick="repGoStep(5)">
-            <span class="rep-step-num">5</span><span class="rep-step-label">Organisme</span>
+            <span class="rep-step-num">5</span><span class="rep-step-label">Envoi QR</span>
           </button>
         </div>
 
@@ -3164,7 +3164,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="352099..." oninput="repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
+                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
@@ -5413,6 +5413,10 @@ function setAdresseFields(prefixe, adresseComplete) {
 }
 
 function fmtDate(d){if(!d)return'—';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function _debounce(fn,delay){var t;return function(){var a=arguments,c=this;clearTimeout(t);t=setTimeout(function(){fn.apply(c,a);},delay);};}
+function fetchWithTimeout(url,opts,ms){ms=ms||30000;var ctrl=new AbortController();var tid=setTimeout(function(){ctrl.abort();},ms);opts=opts||{};opts.signal=ctrl.signal;return fetch(url,opts).finally(function(){clearTimeout(tid);});}
+var _debouncedRepListe = _debounce(function(){ renderRepListe(); }, 250);
+var _debouncedRepHist  = _debounce(function(){ _repHistPage=1; renderRepHistorique(); }, 250);
 function showNotif(msg,type){var n=document.getElementById('notif');n.textContent=msg;n.className='notif show '+(type||'success');setTimeout(function(){n.classList.remove('show');},3000);}
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -5459,6 +5463,8 @@ function showPage(id,el){
     showNotif('⛔ Accès réservé au patron','error');
     return;
   }
+  // Reset auto-check QR quand on quitte la page réparations
+  if(id !== 'reparations'){ _qrAutoCheckDone = false; }
   // Reset Instagram/GMB quand on quitte la page
   if(id !== 'instagram'){
     var igContent = document.getElementById('ig-content');
@@ -14828,9 +14834,27 @@ function renderRepBentoWidgets(){
 
   // Widgets bento — Ecosystem / Ecologic / Non envoyés
   var qrBonusDossiers=repDossiers.filter(function(d){return d.bonusQR&&(d.statut==='facture'||d.statut==='qr'||d.statut==='cloture');});
-  var ecosystemSent=qrBonusDossiers.filter(function(d){return d.qrEnvoi&&(d.qrEnvoi.ecosystemId||d.qrEnvoi.ecosystemRepairId);}).length;
-  var ecologicSent=qrBonusDossiers.filter(function(d){return d.qrEnvoi&&(d.qrEnvoi.ecologicId||d.qrEnvoi.ecologicClaimId);}).length;
-  var nonEnvoye=qrBonusDossiers.filter(function(d){return !d.qrEnvoi||(!d.qrEnvoi.ecosystemId&&!d.qrEnvoi.ecosystemRepairId&&!d.qrEnvoi.ecologicId&&!d.qrEnvoi.ecologicClaimId);}).length;
+  var ecosystemSent=qrBonusDossiers.filter(function(d){
+    if(d.qrEnvoi&&(d.qrEnvoi.ecosystemId||d.qrEnvoi.ecosystemRepairId)) return true;
+    // Clôturé sans qrEnvoi → deviner par marque
+    if(d.statut==='cloture'&&(!d.qrEnvoi||!d.qrEnvoi.ecologicId)){
+      var m=((d.appareil||{}).marque||'').toLowerCase();
+      return typeof QR_BRAND_TYPE!=='undefined'&&QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecosystem';
+    }
+    return false;
+  }).length;
+  var ecologicSent=qrBonusDossiers.filter(function(d){
+    if(d.qrEnvoi&&(d.qrEnvoi.ecologicId||d.qrEnvoi.ecologicClaimId)) return true;
+    if(d.statut==='cloture'&&(!d.qrEnvoi||!d.qrEnvoi.ecosystemId)){
+      return typeof QR_BRAND_TYPE!=='undefined'&&QR_BRAND_TYPE[d.appareil&&d.appareil.marque]==='ecologic';
+    }
+    return false;
+  }).length;
+  var nonEnvoye=qrBonusDossiers.filter(function(d){
+    // Si clôturé → forcément envoyé (même si qrEnvoi perdu)
+    if(d.statut==='cloture') return false;
+    return !d.qrEnvoi||(!d.qrEnvoi.ecosystemId&&!d.qrEnvoi.ecosystemRepairId&&!d.qrEnvoi.ecologicId&&!d.qrEnvoi.ecologicClaimId);
+  }).length;
   var elEco=document.getElementById('rep-w-ecosystem');if(elEco)elEco.textContent=ecosystemSent;
   var elEcol=document.getElementById('rep-w-ecologic');if(elEcol)elEcol.textContent=ecologicSent;
   var elNon=document.getElementById('rep-w-nonenvoye');if(elNon)elNon.textContent=nonEnvoye;
@@ -14980,6 +15004,13 @@ function repToggleHistorique(){
   if(tog)  tog.textContent = _repHistOpen ? '▲' : '▼';
 }
 
+var _repHistPage = 1;
+var _repHistPageSize = 25;
+function repHistChangePage(delta){
+  _repHistPage += delta;
+  if(_repHistPage < 1) _repHistPage = 1;
+  renderRepHistorique();
+}
 function renderRepHistorique(){
   var dateEl = document.getElementById('rep-hist-date');
   var searchEl = document.getElementById('rep-hist-search');
@@ -15017,6 +15048,13 @@ function renderRepHistorique(){
 
   // Tri : plus récent en premier
   dossiers = dossiers.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+
+  // Pagination
+  var totalDossiers = dossiers.length;
+  var totalPages = Math.max(1, Math.ceil(totalDossiers / _repHistPageSize));
+  if(_repHistPage > totalPages) _repHistPage = totalPages;
+  var pageStart = (_repHistPage - 1) * _repHistPageSize;
+  var dossiersPaginated = dossiers.slice(pageStart, pageStart + _repHistPageSize);
 
   // Stats
   var nb = dossiers.length;
@@ -15068,7 +15106,7 @@ function renderRepHistorique(){
   var statusColors = {depot:'#d97706',devis:'#2563eb',facture:'#16a34a',qr:'#16a34a',cloture:'#16a34a'};
   var statusLabels = {depot:'🟡 Dépôt',devis:'🔵 Devis',facture:'🟢 Facturé',qr:'✅ Clôturé',cloture:'✅ Clôturé'};
 
-  tbody.innerHTML = dossiers.map(function(d, i){
+  tbody.innerHTML = dossiersPaginated.map(function(d, i){
     var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
     var bonusQR = !!(d.bonusQR || (f&&f.bonusQR));
     var montant = f ? (f.prix||0) + (bonusQR?25:0) : (d.devis||0);
@@ -15098,22 +15136,29 @@ function renderRepHistorique(){
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+'</td>'+
     '</tr>';
   }).join('');
+
+  // Barre de pagination
+  if(totalPages > 1){
+    var pagDiv = document.getElementById('rep-hist-pagination');
+    if(!pagDiv){
+      pagDiv = document.createElement('div');
+      pagDiv.id = 'rep-hist-pagination';
+      tbody.parentElement.parentElement.appendChild(pagDiv);
+    }
+    pagDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:12px;padding:12px 0;';
+    pagDiv.innerHTML = '<button onclick="repHistChangePage(-1)" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700;'+ (_repHistPage<=1?'opacity:0.4;pointer-events:none;':'') +'">&laquo; Préc.</button>'+
+      '<span style="font-size:13px;color:var(--text-muted);">Page '+_repHistPage+' / '+totalPages+' ('+totalDossiers+' dossiers)</span>'+
+      '<button onclick="repHistChangePage(1)" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700;'+ (_repHistPage>=totalPages?'opacity:0.4;pointer-events:none;':'') +'">Suiv. &raquo;</button>';
+  } else {
+    var pagDiv = document.getElementById('rep-hist-pagination');
+    if(pagDiv) pagDiv.innerHTML = '';
+  }
 }
 
 
 // ══════════════════════════════════════════════════════
-// DOSSIERS TERMINÉS
+// AVIS GOOGLE
 // ══════════════════════════════════════════════════════
-var _repTermineOpen = true;
-
-function repToggleTermines(){
-  _repTermineOpen = !_repTermineOpen;
-  var body = document.getElementById('rep-termine-body');
-  var tog  = document.getElementById('rep-termine-toggle');
-  if(body) body.style.display = _repTermineOpen ? 'block' : 'none';
-  if(tog)  tog.textContent = _repTermineOpen ? '▲' : '▼';
-}
-
 var LIEN_GOOGLE_AVIS = 'https://g.page/r/CbyQ_wiFpddjEBM/review'; // Lien Google Review Solution Phone
 
 async function demanderAvisGoogle(dossierId, telephone, prenom) {
@@ -15137,78 +15182,6 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
       alert('Erreur SMS : ' + (err.message || JSON.stringify(err)));
     }
   } catch(e) { alert('Erreur : ' + e.message); }
-}
-
-function renderRepTermines(){
-  var tbody = document.getElementById('rep-termine-table');
-  if(!tbody) return;
-  var search = (document.getElementById('rep-search-termine')||{value:''}).value.toLowerCase();
-  var statutsTermines = ['facture','qr','cloture'];
-
-  var list = repDossiers.filter(function(d){
-    if(!d) return false;
-    if(!statutsTermines.includes(d.statut||'depot')) return false;
-    if(!search) return true;
-    var c = d.client||{}; var a = d.appareil||{};
-    return ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
-           ((a.marque||'')+' '+(a.modele||'')).toLowerCase().includes(search) ||
-           (d.numero||'').toLowerCase().includes(search);
-  }).slice().reverse();
-
-  var statusColors = {facture:'#16a34a', qr:'#2563eb', cloture:'#16a34a'};
-  var statusLabels = {facture:'🟢 Facturé', qr:'🔵 QR envoyé', cloture:'⚫ Clôturé'};
-  var modeColors   = {CB:'#2563eb', ESPECES:'#16a34a', CHEQUE:'#d97706', VIREMENT:'#8b5cf6'};
-
-  if(list.length === 0){
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier terminé</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = list.map(function(d, i){
-    var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
-    var montant = f ? ((f.prix||0) + (d.bonusQR?25:0)) : (d.devis||0);
-    var mode    = f ? (f.mode||'CB').toUpperCase() : '';
-    var statut  = d.statut||'facture';
-    var sc      = statusColors[statut]||'#64748b';
-    var mc      = modeColors[mode]||'#888';
-    var bg      = i%2===0 ? '#fff' : '#f8fafc';
-
-    // Badge QR (helper centralisé)
-    var qrBadge = qrBadgeHTML(d);
-
-    var id = String(d.id);
-    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
-      '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
-      '<td style="padding:8px;font-size:12px;color:var(--text-muted);">'+fmtDate(d.date)+'</td>'+
-      '<td style="padding:8px;font-weight:600;">'+(c.prenom?c.prenom+' ':'')+c.nom+'</td>'+
-      '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
-      '<td style="padding:8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px;">'+(d.panne||'—')+'</td>'+
-      '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+'<br>'+(mode?'<span style="background:'+mc+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;">'+mode+'</span>':'')+'</td>'+
-      '<td style="padding:8px;text-align:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span>'+qrBadge+'</div></td>'+
-      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        (d.avis_demande
-          ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
-          : '<button style="background:#f59e0b;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+(d.client&&(d.client.tel||d.client.telephone)?(d.client.tel||d.client.telephone).replace(/'/g,''):'')+'\'  ,\''+(d.client&&d.client.prenom?d.client.prenom.replace(/'/g,''):'')+'\')" title="Demander un avis Google">⭐ Avis</button>')+'</td>'+
-      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" title="Ouvrir">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" title="Facture" style="margin-left:3px;">🧾</button>':'')+'</td>'+
-    '</tr>';
-  }).join('');
-}
-
-var _repListeTab = 'cours';
-
-function repShowListeTab(tab){
-  _repListeTab = tab;
-  ['cours','archive'].forEach(function(t){
-    var btn = document.getElementById('rep-tab-'+t);
-    if(!btn) return;
-    if(t===tab){ btn.style.background='var(--primary)'; btn.style.borderColor='var(--primary)'; btn.style.color='#fff'; }
-    else { btn.style.background='#f8fafc'; btn.style.borderColor='#ddd'; btn.style.color='var(--text-muted)'; }
-  });
-  var titre = document.getElementById('rep-liste-titre');
-  if(titre) titre.textContent = tab==='cours' ? '\u{1F4C2} Dossiers en cours' : '\u{1F4C1} Dossiers terminés';
-  renderRepListe();
 }
 
 function renderRepListe(){
@@ -17176,21 +17149,16 @@ async function repEnvoyerEcologic(){
 }
 
 function repCloturerDossier(){
+  if(!repDossierCourant) return;
   repDossierCourant.statut='cloture';
   repSauvegarderDossier();
+  // Rafraîchir tout
+  repLoadDossiers();
   showNotif('Dossier clôturé','success');
   repShowListe();
 }
 
-function repSupprimerDossier(id){
-  if(!confirm('Supprimer ce dossier ?')) return;
-  repDossiers=repDossiers.filter(function(d){return String(d.id)!==String(id);});
-  bonsDepot=bonsDepot.filter(function(d){return String(d.id)!==String(id);});
-  saveBonsDepot();
-  try{supaFetch('bons_depot','DELETE',null,'?id=eq.'+id);}catch(e){}
-  renderRepListe();
-  showNotif('Dossier supprimé','success');
-}
+// repSupprimerDossier — version unique async définie ligne ~15286
 
 
 function repSetDesc(val){
@@ -21194,6 +21162,14 @@ async function saveBonDepotSupabase(d){
   saveBonsDepot();
 }
 
+// Sauvegarder le dossier en cours avant de quitter la page
+window.addEventListener('beforeunload', function(){
+  if(typeof repDossierCourant !== 'undefined' && repDossierCourant && repDossierCourant.id){
+    try { saveBonDepotSupabase(repDossierCourant); } catch(e){}
+  }
+  try { saveBonsDepot(); } catch(e){}
+});
+
 function switchRepTab(tab){
   var tabs = ['depot','commande','facture'];
   tabs.forEach(function(t){
@@ -22719,7 +22695,7 @@ var QR_ECOSYSTEM_PROXY  = '/api/proxy-ecosystem';
 // Helper: appel Ecosystem via proxy — path passé en query param ?p=
 function ecoFetch(targetPath, options) {
   options = options || {};
-  return fetch('/api/proxy-ecosystem?p=' + encodeURIComponent(targetPath), options);
+  return fetchWithTimeout('/api/proxy-ecosystem?p=' + encodeURIComponent(targetPath), options, 30000);
 }
 // SiteId Solution Phone Mâcon — récupéré via getrepairsitesbyats
 var QR_ECOLOGIC_SITE_ID = 'f3f52871-5be0-4c26-9082-002479b9cf4e';
