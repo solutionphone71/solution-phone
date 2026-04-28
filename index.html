@@ -3058,6 +3058,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <th style="padding:8px;text-align:right;">Montant</th>
                   <th style="padding:8px;text-align:center;">Mode</th>
                   <th style="padding:8px;text-align:center;">Statut</th>
+                  <th style="padding:8px;text-align:center;">QualiRépar</th>
                   <th style="padding:8px;text-align:center;">Actions</th>
                 </tr>
               </thead>
@@ -14736,6 +14737,29 @@ var REP_STATUTS = {
   cloture: { label: 'Clôturé',        cls: 'rep-s-cloture' }
 };
 
+// Helper: badge QR détaillé pour chaque dossier
+function qrBadgeHTML(d){
+  if(!d.bonusQR) return '<span style="color:#64748b;font-size:11px;">—</span>';
+  var qr=d.qrEnvoi||{};
+  var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
+  var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
+  if(!hasEcologic&&!hasEcosystem){
+    return '<span style="background:rgba(239,68,68,0.12);color:#dc2626;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.3);">⚠️ Non envoyé</span>';
+  }
+  var org=hasEcologic?'Ecologic':'Ecosystem';
+  var id=hasEcologic?(qr.ecologicClaimId||qr.ecologicId):(qr.ecosystemRepairId||qr.ecosystemId);
+  var shortId=String(id).length>12?String(id).substring(0,12)+'…':String(id);
+  var manquants=(qr.manquants&&qr.manquants.length>0);
+  var bgColor=manquants?'rgba(245,158,11,0.12)':'rgba(34,197,94,0.12)';
+  var txtColor=manquants?'#d97706':'#16a34a';
+  var borderColor=manquants?'rgba(245,158,11,0.3)':'rgba(34,197,94,0.3)';
+  var icon=manquants?'⚠️':'✅';
+  return '<div style="display:inline-flex;flex-direction:column;gap:1px;align-items:center;">'+
+    '<span style="background:'+bgColor+';color:'+txtColor+';padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid '+borderColor+';white-space:nowrap;">'+icon+' '+org+'</span>'+
+    '<span style="font-size:10px;color:var(--text-muted);font-family:monospace;" title="'+String(id)+'">#'+shortId+'</span>'+
+  '</div>';
+}
+
 // Charger les dossiers = bonsDepot enrichis
 function repLoadDossiers(){
   if(!Array.isArray(bonsDepot)) { repDossiers = []; renderRepListe(); return; }
@@ -14912,7 +14936,7 @@ function renderRepHistorique(){
   if(!tbody) return;
 
   if(dossiers.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
     return;
   }
 
@@ -14937,7 +14961,8 @@ function renderRepHistorique(){
       '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -25€</span>':'')+'</td>'+
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
-      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
+      '<td style="padding:8px;text-align:center;">'+qrBadgeHTML(d)+'</td>'+
+      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">''+
         '<button class="btn btn-sm btn-primary" style="font-weight:bold;padding:2px 6px;margin-right:2px;" onclick="repOuvrirDossier('+String(d.id)+')">Ouvrir</button>'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+String(d.id)+')" style="font-size:11px;">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+String(d.id)+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
@@ -15000,7 +15025,7 @@ function renderRepTermines(){
            (d.numero||'').toLowerCase().includes(search);
   }).slice().reverse();
 
-  var statusColors = {facture:'#16a34a', qr:'#2563eb', cloture:'#64748b'};
+  var statusColors = {facture:'#16a34a', qr:'#2563eb', cloture:'#16a34a'};
   var statusLabels = {facture:'🟢 Facturé', qr:'🔵 QR envoyé', cloture:'⚫ Clôturé'};
   var modeColors   = {CB:'#2563eb', ESPECES:'#16a34a', CHEQUE:'#d97706', VIREMENT:'#8b5cf6'};
 
@@ -15018,14 +15043,8 @@ function renderRepTermines(){
     var mc      = modeColors[mode]||'#888';
     var bg      = i%2===0 ? '#fff' : '#f8fafc';
 
-    // Badge QR
-    var qrBadge = '';
-    if(d.bonusQR){
-      var envoye = d.qrEnvoi && (d.qrEnvoi.ecologicId||d.qrEnvoi.ecosystemId||d.qrEnvoi.claimId);
-      qrBadge = envoye
-        ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">&#9989; QR '+((d.qrEnvoi&&(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId))?'#'+(d.qrEnvoi.ecologicClaimId||d.qrEnvoi.ecosystemRepairId):'OK')+'</span>'
-        : '<span style="background:rgba(255,59,48,0.08);color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">⚠️ QR non envoyé</span>';
-    }
+    // Badge QR (helper centralisé)
+    var qrBadge = qrBadgeHTML(d);
 
     var id = String(d.id);
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
@@ -16716,7 +16735,7 @@ async function qrEnvoyerEcologicComplet(d){
     var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId+ecoAuth,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
-    d.statut="qr";
+    d.statut="cloture";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepTermines==="function")renderRepTermines();
     if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
@@ -16836,7 +16855,7 @@ async function qrEnvoyerEcosystemComplet(d){
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='qr';
+    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepTermines==="function")renderRepTermines();
     var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
