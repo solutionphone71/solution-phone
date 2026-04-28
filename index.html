@@ -3064,6 +3064,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div style="font-size:12px;color:var(--text-muted);" id="rep-dossier-num"></div>
           </div>
           <div id="rep-dossier-statut-badge" style="margin-left:auto;"></div>
+          <button class="btn" onclick="repSupprimerDossier()" style="font-size:12px;color:#dc2626;border-color:#dc262644;margin-left:8px;" title="Supprimer ce dossier">🗑️ Supprimer</button>
         </div>
 
         <!-- Stepper navigation -->
@@ -15190,12 +15191,38 @@ function repShowListe(){
   repDossierCourant = null;
   renderRepListe();
   renderRepHistorique();
-  // Initialiser la date d'aujourd'hui dans l'historique
-  var dateEl = document.getElementById('rep-hist-date');
-  if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
-  renderRepHistorique();
+  renderRepBentoWidgets();
 }
 
+async function repSupprimerDossier(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier ouvert','error'); return; }
+  var num = d.numero || ('ID '+d.id);
+  var client = (d.client||{}).nom ? ((d.client.prenom||'')+' '+(d.client.nom||'')).trim() : 'inconnu';
+  if(!confirm('Supprimer le dossier '+num+' ('+client+') ?\n\nCette action est irréversible.')) return;
+  // Double confirmation pour les dossiers facturés/envoyés
+  var qr = d.qrEnvoi||{};
+  var dejaEnvoye = !!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemId||qr.ecosystemRepairId);
+  if(d.facture || dejaEnvoye){
+    if(!confirm('⚠️ ATTENTION : Ce dossier a '+(d.facture?'une facture':'')+(d.facture&&dejaEnvoye?' et ':'')+(dejaEnvoye?'un envoi QR':'')+' !\n\nÊtes-vous VRAIMENT sûr de vouloir le supprimer ?')) return;
+  }
+  try {
+    // Supprimer de Supabase
+    await supaFetch('bons_depot','DELETE',null,'?id=eq.'+d.id);
+    // Supprimer du localStorage
+    try { localStorage.removeItem('sp_facture_'+d.id); } catch(e){}
+    try { localStorage.removeItem('sp_qrenvoi_'+d.id); } catch(e){}
+    // Supprimer du tableau local
+    bonsDepot = (bonsDepot||[]).filter(function(b){ return String(b.id) !== String(d.id); });
+    saveBonsDepot();
+    repLoadDossiers();
+    repShowListe();
+    showNotif('Dossier '+num+' supprimé','success');
+  } catch(e){
+    console.error('Erreur suppression dossier:', e);
+    showNotif('Erreur lors de la suppression : '+e.message,'error');
+  }
+}
 
 function repGenererNumero(){
   var annee = new Date().getFullYear();
@@ -15530,7 +15557,9 @@ async function repGenererFacture(){
   }
 
   // Envoi auto QualiRepar — APRES Kiwiz pour que la facture ait la ref NF525
-  if(d.bonusQR){
+  var _qrExist=d.qrEnvoi||{};
+  var _dejaEnvoye=!!(_qrExist.ecologicId||_qrExist.ecologicClaimId||_qrExist.ecosystemId||_qrExist.ecosystemRepairId);
+  if(d.bonusQR&&!_dejaEnvoye){
     var _marque=((d.appareil||{}).marque||'').toLowerCase();
     var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
     var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
@@ -16508,6 +16537,7 @@ function repUpdateDevisRecap(){
   var qrRecap=document.getElementById('rep-qr-recap');
   var qrNo=document.getElementById('rep-qr-no-bonus');
   var qrActions=document.getElementById('rep-qr-actions');
+  var qrStatutEl=document.getElementById('rep-qr-envoi-statut');
   if(f&&f.bonusQR){
     if(qrNo) qrNo.style.display='none';
     if(qrActions) qrActions.style.display='block';
@@ -16515,6 +16545,38 @@ function repUpdateDevisRecap(){
     var type=QR_BRAND_TYPE&&QR_BRAND_TYPE[marque];
     var org=type==='ecosystem'?'Ecosystem':type==='ecologic'?'Ecologic':'Eco-organisme';
     var btnLabel=document.getElementById('rep-qr-btn-label'); if(btnLabel) btnLabel.textContent=org;
+
+    // Vérifier si déjà envoyé
+    var qr=d.qrEnvoi||{};
+    var dejaEnvoye=!!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemId||qr.ecosystemRepairId)||(d.statut==='cloture'&&d.bonusQR);
+    var qrSt=qr.statut||'';
+    var envoyeBtn=document.querySelector('#rep-qr-actions > button.btn-primary');
+
+    if(dejaEnvoye){
+      // Masquer le bouton d'envoi, afficher le statut
+      if(envoyeBtn) envoyeBtn.style.display='none';
+      var stLabels={Sent:'🟡 En vérification',Pending:'⏳ En attente',Processing:'🔄 Traitement',Approved:'✅ Approuvé',Paid:'💰 Remboursé',Rejected:'❌ Refusé'};
+      var stColors={Sent:'#f59e0b',Pending:'#f59e0b',Processing:'#f59e0b',Approved:'#16a34a',Paid:'#2563eb',Rejected:'#dc2626'};
+      var stLabel=stLabels[qrSt]||'📤 Envoyé';
+      var stColor=stColors[qrSt]||'#16a34a';
+      var claimRef=qr.ecologicClaimId||qr.ecosystemRepairId||qr.ecosystemId||qr.ecologicId||'';
+      if(qrStatutEl) qrStatutEl.innerHTML=
+        '<div style="background:'+stColor+'11;border:1.5px solid '+stColor+'33;border-radius:10px;padding:14px;text-align:center;">'+
+          '<div style="font-size:16px;font-weight:800;color:'+stColor+';">'+stLabel+'</div>'+
+          (claimRef?'<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Réf: '+claimRef+'</div>':'')+
+          (qr.date?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Envoyé le '+fmtDate(qr.date)+'</div>':'')+
+          '<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">'+
+            '<button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')" style="font-size:12px;">🔄 Vérifier statut</button>'+
+            (qrSt==='Rejected'?'<button class="btn btn-sm" onclick="repForceRenvoyerQR()" style="font-size:12px;border-color:#dc2626;color:#dc2626;">🔁 Renvoyer</button>':'')+
+          '</div>'+
+          '<div style="margin-top:8px;"><button class="btn btn-sm" onclick="repForceRenvoyerQR()" style="font-size:11px;color:var(--text-muted);border-color:var(--border);">⚠️ Forcer le renvoi (erreur)</button></div>'+
+        '</div>';
+    } else {
+      // Pas encore envoyé → afficher le bouton
+      if(envoyeBtn) envoyeBtn.style.display='';
+      if(qrStatutEl) qrStatutEl.innerHTML='';
+    }
+
     if(qrRecap) qrRecap.innerHTML=
       '<b>Bonus QualiRépar :</b> −25 € appliqué<br>'+
       '<b>Éco-organisme :</b> '+org+'<br>'+
@@ -16651,9 +16713,31 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
 }
 // ─────────────────────────────────────────────────────────────────
 
+// Forcer le renvoi QR (réinitialise qrEnvoi pour permettre un nouvel envoi)
+function repForceRenvoyerQR(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier','error'); return; }
+  if(!confirm('Voulez-vous vraiment renvoyer ce dossier ?\nL\'ancien envoi sera écrasé.')) return;
+  d.qrEnvoi = {};
+  d.statut = 'facture';
+  saveBonsDepot();
+  saveBonDepotSupabase(d);
+  // Rafraîchir l'affichage du step QR
+  repGoStep(5);
+  showNotif('Envoi réinitialisé — vous pouvez renvoyer','success');
+}
+
 function repEnvoyerOrganisme(){
   var d = repDossierCourant;
   if(!d){ showNotif('Aucun dossier','error'); return; }
+
+  // Protection double envoi
+  var qr = d.qrEnvoi||{};
+  var dejaEnvoye = !!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemId||qr.ecosystemRepairId);
+  if(dejaEnvoye){
+    showNotif('Ce dossier a déjà été envoyé ! Utilisez "Forcer le renvoi" si nécessaire.','error');
+    return;
+  }
 
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var marque    = (d.appareil||{}).marque||'';
