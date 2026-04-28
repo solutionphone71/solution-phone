@@ -2959,7 +2959,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         <div style="display:flex;gap:8px;margin-bottom:14px;">
           <button class="btn btn-primary" onclick="repNewDossier()" style="flex:1;padding:12px;font-size:13px;font-weight:700;">🔧 Nouvelle réparation</button>
           <button class="btn" onclick="showPage('qualirepar',null);qrInit();" style="flex:1;padding:12px;font-size:13px;font-weight:700;border-color:#a78bfa;color:#a78bfa;">🏷️ Nouvelle répa QualiRépar</button>
-          <button class="btn btn-sm" onclick="repLoadDossiers();renderRepListe();renderRepTermines();" style="padding:12px;font-size:13px;">🔄</button>
+          <button class="btn btn-sm" onclick="repLoadDossiers();renderRepListe();renderRepHistorique();" style="padding:12px;font-size:13px;">🔄</button>
         </div>
       </div>
 
@@ -2979,44 +2979,15 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
       </div>
 
-      <!-- ── DOSSIERS TERMINÉS ── -->
-      <div class="card" style="margin-top:16px;">
-        <div class="card-header" style="cursor:pointer;" onclick="repToggleTermines()">
-          <div class="card-title">✅ Dossiers terminés</div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <input type="text" id="rep-search-termine" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="renderRepTermines()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:160px;">
-            <span id="rep-termine-toggle" style="font-size:18px;color:var(--text-muted);">▼</span>
-          </div>
-        </div>
-        <div id="rep-termine-body">
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;">
-              <thead>
-                <tr style="background:rgba(255,255,255,0.04);text-align:left;">
-                  <th style="padding:8px;">N°</th>
-                  <th style="padding:8px;">Date</th>
-                  <th style="padding:8px;">Client</th>
-                  <th style="padding:8px;">Appareil</th>
-                  <th style="padding:8px;">Panne</th>
-                  <th style="padding:8px;text-align:right;">Montant</th>
-                  <th style="padding:8px;text-align:center;">Statut / QualiRépar</th>
-                  <th style="padding:8px;text-align:center;">⭐ Avis</th>
-                  <th style="padding:8px;text-align:center;">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="rep-termine-table"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── RÉPARATIONS TERMINÉES PAR JOUR ── -->
+      <!-- ── HISTORIQUE RÉPARATIONS (tout-en-un) ── -->
       <div class="card" style="margin-top:16px;" id="rep-historique-jour">
         <div class="card-header" style="cursor:pointer;" onclick="repToggleHistorique()">
-          <div class="card-title">📅 Réparations du jour — Historique</div>
+          <div class="card-title">📋 Historique réparations</div>
           <div style="display:flex;align-items:center;gap:10px;">
+            <input type="text" id="rep-hist-search" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:140px;">
             <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
-            <span id="rep-hist-toggle" style="font-size:18px;color:var(--text-muted);">▼</span>
+            <button class="btn btn-sm" onclick="event.stopPropagation();document.getElementById('rep-hist-date').value='';renderRepHistorique();" style="font-size:11px;padding:6px 8px;" title="Voir tout">✕</button>
+            <span id="rep-hist-toggle" style="font-size:18px;color:var(--text-muted);">▲</span>
           </div>
         </div>
         <div id="rep-hist-body">
@@ -3028,12 +2999,14 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
               <thead>
                 <tr style="background:rgba(255,255,255,0.04);text-align:left;">
                   <th style="padding:8px;">N°</th>
+                  <th style="padding:8px;">Date</th>
                   <th style="padding:8px;">Client</th>
                   <th style="padding:8px;">Appareil</th>
                   <th style="padding:8px;">Panne</th>
                   <th style="padding:8px;text-align:right;">Montant</th>
                   <th style="padding:8px;text-align:center;">Mode</th>
                   <th style="padding:8px;text-align:center;">Statut / QualiRépar</th>
+                  <th style="padding:8px;text-align:center;">⭐ Avis</th>
                   <th style="padding:8px;text-align:center;">Actions</th>
                 </tr>
               </thead>
@@ -14809,7 +14782,7 @@ function repLoadDossiers(){
     return safe;
   });
   renderRepListe();
-  renderRepTermines();
+  renderRepHistorique();
   renderRepBentoWidgets();
   // Auto-charger historique du jour
   var histDate=document.getElementById('rep-hist-date');
@@ -14929,16 +14902,41 @@ function repToggleHistorique(){
 
 function renderRepHistorique(){
   var dateEl = document.getElementById('rep-hist-date');
+  var searchEl = document.getElementById('rep-hist-search');
   var today  = new Date().toISOString().split('T')[0];
-  var date   = dateEl ? (dateEl.value || today) : today;
-  if(dateEl && !dateEl.value) dateEl.value = today;
+  var date   = dateEl ? dateEl.value : '';
+  var search = searchEl ? searchEl.value.toLowerCase() : '';
 
-  // Filtrer les dossiers de cette date (toutes statuts)
-  var dossiers = repDossiers.filter(function(d){
-    var dateD = (d.date||'').substring(0,10);
-    var dateF = d.facture ? (d.facture.date||'').substring(0,10) : '';
-    return dateD === date || dateF === date;
-  });
+  // Si pas de date sélectionnée → tous les dossiers terminés (facture/qr/cloture)
+  // Si date sélectionnée → tous les dossiers de cette date
+  var statutsTermines = ['facture','qr','cloture'];
+  var dossiers;
+  var modeAll = !date;
+  if(modeAll){
+    dossiers = repDossiers.filter(function(d){
+      return statutsTermines.includes(d.statut||'depot');
+    });
+  } else {
+    dossiers = repDossiers.filter(function(d){
+      var dateD = (d.date||'').substring(0,10);
+      var dateF = d.facture ? (d.facture.date||'').substring(0,10) : '';
+      return dateD === date || dateF === date;
+    });
+  }
+
+  // Filtre recherche texte
+  if(search){
+    dossiers = dossiers.filter(function(d){
+      var c = d.client||{}, a = d.appareil||{};
+      return ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
+             ((a.marque||'')+' '+(a.modele||'')).toLowerCase().includes(search) ||
+             (d.numero||'').toLowerCase().includes(search) ||
+             (d.panne||'').toLowerCase().includes(search);
+    });
+  }
+
+  // Tri : plus récent en premier
+  dossiers = dossiers.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
 
   // Stats
   var nb = dossiers.length;
@@ -14951,7 +14949,7 @@ function renderRepHistorique(){
     if(prixReel === 0) return;
     totalTTC += prixReel;
     if(bonusQR) totalQR += 25;
-    var mode = f ? (f.mode||'CB').toUpperCase() : '—';
+    var mode = f ? (f.mode||'CB').toUpperCase() : '';
     if(mode==='CB') totalCB += prixReel;
     else if(mode==='ESPECES') totalEsp += prixReel;
     else if(mode==='CHEQUE') totalCh += prixReel;
@@ -14960,15 +14958,15 @@ function renderRepHistorique(){
 
   var statsDiv = document.getElementById('rep-hist-stats');
   if(statsDiv){
-    var fmtDate2 = new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    var dateLabel = modeAll ? 'Tous les dossiers' : new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     statsDiv.innerHTML = [
-      {l:'📅 Date',      v: fmtDate2,               c:'var(--text)'},
+      {l: modeAll ? '📋 Vue' : '📅 Date', v: dateLabel, c:'var(--text)'},
       {l:'📦 Dossiers',  v: nb,                     c:'var(--text)'},
       {l:'💰 CA TTC',    v: totalTTC.toFixed(2)+' €', c:'var(--primary)'},
       {l:'💳 CB',        v: totalCB.toFixed(2)+' €',  c:'#2563eb'},
-      {l:'💵 Espèces',   v: totalEsp.toFixed(2)+' €', c:'#16a34a'},
-      {l:'📄 Chèque',    v: totalCh.toFixed(2)+' €',  c:'#d97706'},
-      {l:'🏷️ Bonus QR',  v: totalQR.toFixed(2)+' €',  c:'#16a34a'},
+      {l:'💵 Espèces',v: totalEsp.toFixed(2)+' €', c:'#16a34a'},
+      {l:'📄 Chèque',v: totalCh.toFixed(2)+' €',  c:'#d97706'},
+      {l:'🏷️ Bonus QR',v: totalQR.toFixed(2)+' €',  c:'#16a34a'},
     ].map(function(s){
       return '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">'+
         '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">'+s.l+'</div>'+
@@ -14982,7 +14980,7 @@ function renderRepHistorique(){
   if(!tbody) return;
 
   if(dossiers.length === 0){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">'+(modeAll?'Aucun dossier terminé':'Aucune réparation ce jour')+'</td></tr>';
     return;
   }
 
@@ -14999,17 +14997,25 @@ function renderRepHistorique(){
     var statut = d.statut||'depot';
     var sc = statusColors[statut]||'#666';
     var bg = i%2===0?'#fff':'#f8fafc';
-    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+String(d.id)+')" >'+
+    var id = String(d.id);
+    var tel = (c.tel||c.telephone||'').replace(/'/g,'');
+    var prenom = (c.prenom||'').replace(/'/g,'');
+    return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);cursor:pointer;" onclick="repOuvrirDossier('+id+')">'+
       '<td style="padding:8px;font-weight:700;font-family:monospace;font-size:12px;">'+(d.numero||'')+'</td>'+
+      '<td style="padding:8px;font-size:12px;color:var(--text-muted);">'+fmtDate(d.date)+'</td>'+
       '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
-      '<td style="padding:8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(d.panne||'—')+'</td>'+
+      '<td style="padding:8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px;">'+(d.panne||'—')+'</td>'+
       '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -25€</span>':'')+'</td>'+
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span>'+qrBadgeHTML(d)+'</div></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
-        '<button class="btn btn-sm" onclick="repOuvrirDossier('+String(d.id)+')" style="font-size:11px;">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+String(d.id)+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
+        (d.avis_demande
+          ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅</span>'
+          : (statutsTermines.includes(statut) ? '<button style="background:#f59e0b;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+tel+'\',\''+prenom+'\')" title="Demander un avis Google">⭐</button>' : ''))+'</td>'+
+      '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
+        '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" style="font-size:11px;">📂</button>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+'</td>'+
     '</tr>';
   }).join('');
 }
@@ -15044,7 +15050,7 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
       await supaFetch('bons_depot','PATCH',{ avis_demande: true },'?id=eq.'+dossierId);
       var d = repDossiers.find(function(x){ return String(x.id)===String(dossierId); });
       if(d) d.avis_demande = true;
-      renderRepTermines();
+      renderRepHistorique();
       alert('\u2705 SMS envoy\u00e9 \u00e0 ' + (prenom||telephone) + ' !');
     } else {
       var err = await res.json();
@@ -15175,7 +15181,7 @@ function repShowListe(){
   document.getElementById('rep-dossier-view').style.display='none';
   repDossierCourant = null;
   renderRepListe();
-  renderRepTermines();
+  renderRepHistorique();
   // Initialiser la date d'aujourd'hui dans l'historique
   var dateEl = document.getElementById('rep-hist-date');
   if(dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
@@ -16780,7 +16786,7 @@ async function qrEnvoyerEcologicComplet(d){
     d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
     d.statut="cloture";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
-    if(typeof renderRepTermines==="function")renderRepTermines();
+    if(typeof renderRepHistorique==="function")renderRepHistorique();
     if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
     var msg="&#9989; Ecologic OK! ClaimId: "+claimId;
     if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer: "+errs.join(", ")+"</small>";
@@ -16900,7 +16906,7 @@ async function qrEnvoyerEcosystemComplet(d){
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
-    if(typeof renderRepTermines==="function")renderRepTermines();
+    if(typeof renderRepHistorique==="function")renderRepHistorique();
     var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
     msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
     if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
@@ -24251,8 +24257,8 @@ function spExec(intent){
       setTimeout(function(){
         var rs=document.getElementById('rep-search');
         if(rs){rs.value=d.bon;if(typeof renderRepListe==='function')renderRepListe();}
-        var rs2=document.getElementById('rep-search-termine');
-        if(rs2){rs2.value=d.bon;if(typeof renderRepTermines==='function')renderRepTermines();}
+        var rs2=document.getElementById('rep-hist-search');
+        if(rs2){rs2.value=d.bon;if(typeof renderRepHistorique==='function')renderRepHistorique();}
       },200);
       break;
     case 'search_global':
