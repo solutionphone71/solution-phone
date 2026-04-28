@@ -2915,65 +2915,42 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
 
       <!-- ══ BENTO WIDGETS RÉPARATIONS ══ -->
       <div id="rep-bento-widgets" style="margin-bottom:16px;">
-        <div class="bento" style="grid-auto-rows:minmax(100px,auto);">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;">
 
-          <!-- CA Réparations Live -->
-          <div class="bw bw-2x" onclick="showPage('comptable',null)" style="background:linear-gradient(135deg,rgba(22,22,34,0.9),rgba(40,15,20,0.9));">
-            <div class="bw-glow" style="top:-20px;right:-20px;background:#FF0033;"></div>
-            <div class="bw-label"><span class="pulse-dot" style="background:#FF0033;box-shadow:0 0 12px #FF0033;"></span> CA Réparations ce mois</div>
-            <div id="rep-w-ca" class="bw-val" style="color:#FF0033;">0 €</div>
-            <div style="display:flex;gap:20px;margin-top:8px;">
-              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Bonus QR</div><div id="rep-w-qr-bonus" style="font-size:16px;font-weight:800;color:#34d399;">0 €</div></div>
-              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Nb réparations</div><div id="rep-w-nb-rep" style="font-size:16px;font-weight:800;color:#60a5fa;">0</div></div>
-              <div><div style="font-size:10px;color:rgba(255,255,255,0.3);">Ticket moyen</div><div id="rep-w-ticket" style="font-size:16px;font-weight:800;color:#fbbf24;">0 €</div></div>
-            </div>
+          <!-- Aujourd'hui -->
+          <div style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,50,70,0.9));border:1px solid rgba(96,165,250,0.2);border-radius:12px;padding:14px;text-align:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">⚡ Aujourd'hui</div>
+            <div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#60a5fa;margin:4px 0;">0</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);">réparations</div>
+            <div id="rep-w-today-ca" style="font-size:14px;font-weight:800;color:#fbbf24;margin-top:4px;">0€</div>
           </div>
 
-          <!-- Réparations en cours -->
-          <div class="bw" style="background:linear-gradient(135deg,rgba(15,25,15,0.9),rgba(20,40,25,0.9));">
-            <div class="bw-label">🔧 En cours</div>
-            <div id="rep-w-encours" class="bw-val" style="color:#34d399;font-size:36px;">0</div>
-            <div id="rep-w-encours-sub" class="bw-sub">dossiers ouverts</div>
+          <!-- En cours -->
+          <div style="background:linear-gradient(135deg,rgba(15,25,15,0.9),rgba(20,40,25,0.9));border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:14px;text-align:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">🔧 En cours</div>
+            <div id="rep-w-encours" style="font-size:28px;font-weight:900;color:#34d399;margin:4px 0;">0</div>
+            <div id="rep-w-encours-sub" style="font-size:10px;color:rgba(255,255,255,0.3);">dossier ouvert</div>
           </div>
 
-          <!-- QR en attente -->
-          <div class="bw" onclick="document.getElementById('rep-qr-suivi-section').style.display='block';document.getElementById('rep-qr-suivi-section').scrollIntoView({behavior:'smooth'});" style="background:linear-gradient(135deg,rgba(20,15,35,0.9),rgba(35,20,50,0.9));">
-            <div class="bw-glow" style="bottom:-20px;right:-20px;background:#a78bfa;"></div>
-            <div class="bw-label">🏷️ QualiRépar</div>
-            <div id="rep-w-qr-pending" class="bw-val" style="color:#a78bfa;font-size:28px;">0</div>
-            <div id="rep-w-qr-status" class="bw-sub">en attente de remboursement</div>
+          <!-- Ecosystem envoyés -->
+          <div style="background:linear-gradient(135deg,rgba(20,15,35,0.9),rgba(35,20,50,0.9));border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;text-align:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">🟣 Ecosystem</div>
+            <div id="rep-w-ecosystem" style="font-size:28px;font-weight:900;color:#a78bfa;margin:4px 0;">0</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);">dossiers envoyés</div>
           </div>
 
-          <!-- Top pannes du mois -->
-          <div class="bw" style="background:rgba(22,22,34,0.85);">
-            <div class="bw-label">🔥 Top pannes</div>
-            <div id="rep-w-top-pannes" style="font-size:12px;"></div>
+          <!-- Ecologic envoyés -->
+          <div style="background:linear-gradient(135deg,rgba(15,25,20,0.9),rgba(20,40,30,0.9));border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:14px;text-align:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">🟢 Ecologic</div>
+            <div id="rep-w-ecologic" style="font-size:28px;font-weight:900;color:#34d399;margin:4px 0;">0</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.3);">dossiers envoyés</div>
           </div>
 
-          <!-- Réparations du jour -->
-          <div class="bw" style="background:linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,50,70,0.9));">
-            <div class="bw-label">⚡ Aujourd'hui</div>
-            <div style="display:flex;align-items:center;gap:16px;">
-              <div><div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#60a5fa;">0</div><div style="font-size:10px;color:rgba(255,255,255,0.3);">réparations</div></div>
-              <div style="width:1px;height:30px;background:rgba(255,255,255,0.06);"></div>
-              <div><div id="rep-w-today-ca" style="font-size:28px;font-weight:900;color:#fbbf24;">0€</div><div style="font-size:10px;color:rgba(255,255,255,0.3);">CA du jour</div></div>
-            </div>
-          </div>
-
-          <!-- Taux succès QR -->
-          <div class="bw" style="background:rgba(22,22,34,0.85);">
-            <div class="bw-label">✅ Taux QR</div>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <svg width="60" height="60" viewBox="0 0 60 60">
-                <circle class="ring-track" cx="30" cy="30" r="24" stroke-width="8"/>
-                <circle class="ring-fill" id="rep-w-qr-ring" cx="30" cy="30" r="24" stroke-width="8" stroke="#34d399" stroke-dasharray="151" stroke-dashoffset="151" transform="rotate(-90 30 30)"/>
-                <text x="30" y="34" text-anchor="middle" fill="#34d399" font-size="14" font-weight="900" id="rep-w-qr-pct">0%</text>
-              </svg>
-              <div>
-                <div id="rep-w-qr-approved" style="font-size:12px;font-weight:700;color:#34d399;">0 approuvés</div>
-                <div id="rep-w-qr-rejected" style="font-size:11px;color:rgba(255,255,255,0.3);">0 refusés</div>
-              </div>
-            </div>
+          <!-- Non envoyés (attention!) -->
+          <div id="rep-w-nonenvoye-card" style="background:linear-gradient(135deg,rgba(40,15,15,0.9),rgba(50,20,20,0.9));border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;text-align:center;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;">⚠️ Non envoyés</div>
+            <div id="rep-w-nonenvoye" style="font-size:28px;font-weight:900;color:#ef4444;margin:4px 0;">0</div>
+            <div style="font-size:10px;color:rgba(239,68,68,0.5);">à envoyer QR</div>
           </div>
 
         </div>
@@ -3022,8 +2999,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <th style="padding:8px;">Appareil</th>
                   <th style="padding:8px;">Panne</th>
                   <th style="padding:8px;text-align:right;">Montant</th>
-                  <th style="padding:8px;text-align:center;">Statut</th>
-                  <th style="padding:8px;text-align:center;">QR</th>
+                  <th style="padding:8px;text-align:center;">Statut / QualiRépar</th>
                   <th style="padding:8px;text-align:center;">⭐ Avis</th>
                   <th style="padding:8px;text-align:center;">Actions</th>
                 </tr>
@@ -3057,8 +3033,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                   <th style="padding:8px;">Panne</th>
                   <th style="padding:8px;text-align:right;">Montant</th>
                   <th style="padding:8px;text-align:center;">Mode</th>
-                  <th style="padding:8px;text-align:center;">Statut</th>
-                  <th style="padding:8px;text-align:center;">QualiRépar</th>
+                  <th style="padding:8px;text-align:center;">Statut / QualiRépar</th>
                   <th style="padding:8px;text-align:center;">Actions</th>
                 </tr>
               </thead>
@@ -3069,7 +3044,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
 
       <!-- ── SUIVI QUALIREPAR INTÉGRÉ ── -->
-      <div class="card" style="margin-top:16px;border:1.5px solid #a78bfa;display:none;" id="rep-qr-suivi-section">
+      <div class="card" style="margin-top:16px;border:1.5px solid #a78bfa;" id="rep-qr-suivi-section">
         <div class="card-header" style="background:rgba(167,139,250,0.06);cursor:pointer;" onclick="var b=document.getElementById('rep-qr-suivi-body');b.style.display=b.style.display==='none'?'block':'none';">
           <div class="card-title" style="color:#a78bfa;">
             🏷️ Suivi QualiRépar
@@ -14737,26 +14712,66 @@ var REP_STATUTS = {
   cloture: { label: 'Clôturé',        cls: 'rep-s-cloture' }
 };
 
-// Helper: badge QR détaillé pour chaque dossier
+// Helper: barre de progression QR pour chaque dossier
 function qrBadgeHTML(d){
   if(!d.bonusQR) return '<span style="color:#64748b;font-size:11px;">—</span>';
   var qr=d.qrEnvoi||{};
   var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
   var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
-  if(!hasEcologic&&!hasEcosystem){
-    return '<span style="background:rgba(239,68,68,0.12);color:#dc2626;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.3);">⚠️ Non envoyé</span>';
-  }
+  var envoye=hasEcologic||hasEcosystem;
   var org=hasEcologic?'Ecologic':'Ecosystem';
-  var id=hasEcologic?(qr.ecologicClaimId||qr.ecologicId):(qr.ecosystemRepairId||qr.ecosystemId);
-  var shortId=String(id).length>12?String(id).substring(0,12)+'…':String(id);
-  var manquants=(qr.manquants&&qr.manquants.length>0);
-  var bgColor=manquants?'rgba(245,158,11,0.12)':'rgba(34,197,94,0.12)';
-  var txtColor=manquants?'#d97706':'#16a34a';
-  var borderColor=manquants?'rgba(245,158,11,0.3)':'rgba(34,197,94,0.3)';
-  var icon=manquants?'⚠️':'✅';
-  return '<div style="display:inline-flex;flex-direction:column;gap:1px;align-items:center;">'+
-    '<span style="background:'+bgColor+';color:'+txtColor+';padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid '+borderColor+';white-space:nowrap;">'+icon+' '+org+'</span>'+
-    '<span style="font-size:10px;color:var(--text-muted);font-family:monospace;" title="'+String(id)+'">#'+shortId+'</span>'+
+  var orgColor=hasEcologic?'#34d399':'#a78bfa';
+
+  // Déterminer l'étape : 0=non envoyé, 1=envoyé, 2=en vérif, 3=approuvé, 4=remboursé, -1=refusé
+  var step=0;
+  var rejected=false;
+  if(envoye){
+    step=1; // envoyé
+    var st=qr.statut||'Sent';
+    if(st==='Sent'||st==='Pending'||st==='Processing') step=2;
+    else if(st==='Approved') step=3;
+    else if(st==='Paid') step=4;
+    else if(st==='Rejected'){ step=1; rejected=true; }
+  }
+
+  var steps=[
+    {label:'Envoyé',     short:'ENV'},
+    {label:'Vérification',short:'VÉR'},
+    {label:'Approuvé',   short:'APP'},
+    {label:'Remboursé',  short:'PAY'}
+  ];
+
+  if(!envoye){
+    return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;min-width:140px;">'+
+      '<span style="background:rgba(239,68,68,0.12);color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.3);">⚠️ Non envoyé</span>'+
+      '<div style="display:flex;gap:2px;">'+steps.map(function(){return '<div style="width:28px;height:4px;border-radius:2px;background:rgba(255,255,255,0.08);"></div>';}).join('')+'</div>'+
+    '</div>';
+  }
+
+  if(rejected){
+    return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:3px;min-width:140px;">'+
+      '<span style="background:rgba(239,68,68,0.12);color:#dc2626;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.3);">❌ Refusé</span>'+
+      '<span style="font-size:9px;color:'+orgColor+';">'+org+'</span>'+
+    '</div>';
+  }
+
+  var barHTML='<div style="display:flex;gap:2px;">';
+  for(var i=0;i<steps.length;i++){
+    var active=i<step;
+    var current=i===step-1;
+    var color=active?'#16a34a':'rgba(255,255,255,0.08)';
+    if(step===4&&i===3) color='#2563eb'; // remboursé = bleu
+    barHTML+='<div style="width:28px;height:4px;border-radius:2px;background:'+color+';'+(current?'box-shadow:0 0 6px '+color+';':'')+'"></div>';
+  }
+  barHTML+='</div>';
+
+  var stepLabel=steps[Math.min(step-1,3)];
+  var labelColor=step===4?'#2563eb':step===3?'#16a34a':'#fbbf24';
+
+  return '<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-width:140px;">'+
+    '<span style="font-size:10px;font-weight:800;color:'+labelColor+';">'+stepLabel.label+'</span>'+
+    barHTML+
+    '<span style="font-size:9px;color:'+orgColor+';">'+org+'</span>'+
   '</div>';
 }
 
@@ -14774,6 +14789,10 @@ function repLoadDossiers(){
   renderRepListe();
   renderRepTermines();
   renderRepBentoWidgets();
+  // Auto-charger historique du jour
+  var histDate=document.getElementById('rep-hist-date');
+  if(histDate&&!histDate.value)histDate.value=new Date().toISOString().split('T')[0];
+  renderRepHistorique();
 }
 
 // ══════════════════════════════════════════════
@@ -14792,10 +14811,16 @@ function renderRepBentoWidgets(){
   var nbRepMois=repFactMois.length;
   var ticketMoyen=nbRepMois>0?(caRepMois/nbRepMois):0;
 
-  var el1=document.getElementById('rep-w-ca');if(el1)el1.textContent=caRepMois.toFixed(0)+' €';
-  var el2=document.getElementById('rep-w-qr-bonus');if(el2)el2.textContent=bonusQR.toFixed(0)+' €';
-  var el3=document.getElementById('rep-w-nb-rep');if(el3)el3.textContent=nbRepMois;
-  var el4=document.getElementById('rep-w-ticket');if(el4)el4.textContent=ticketMoyen.toFixed(0)+' €';
+  // Widgets bento — Ecosystem / Ecologic / Non envoyés
+  var qrBonusDossiers=repDossiers.filter(function(d){return d.bonusQR&&(d.statut==='facture'||d.statut==='qr'||d.statut==='cloture');});
+  var ecosystemSent=qrBonusDossiers.filter(function(d){return d.qrEnvoi&&(d.qrEnvoi.ecosystemId||d.qrEnvoi.ecosystemRepairId);}).length;
+  var ecologicSent=qrBonusDossiers.filter(function(d){return d.qrEnvoi&&(d.qrEnvoi.ecologicId||d.qrEnvoi.ecologicClaimId);}).length;
+  var nonEnvoye=qrBonusDossiers.filter(function(d){return !d.qrEnvoi||(!d.qrEnvoi.ecosystemId&&!d.qrEnvoi.ecosystemRepairId&&!d.qrEnvoi.ecologicId&&!d.qrEnvoi.ecologicClaimId);}).length;
+  var elEco=document.getElementById('rep-w-ecosystem');if(elEco)elEco.textContent=ecosystemSent;
+  var elEcol=document.getElementById('rep-w-ecologic');if(elEcol)elEcol.textContent=ecologicSent;
+  var elNon=document.getElementById('rep-w-nonenvoye');if(elNon)elNon.textContent=nonEnvoye;
+  var elNonCard=document.getElementById('rep-w-nonenvoye-card');
+  if(elNonCard)elNonCard.style.borderColor=nonEnvoye>0?'rgba(239,68,68,0.5)':'rgba(52,211,153,0.2)';
 
   // En cours
   var enCours=repDossiers.filter(function(d){return d.statut==='depot'||d.statut==='devis';}).length;
@@ -14837,8 +14862,7 @@ function renderRepBentoWidgets(){
 
   // Suivi QR section — rendre visible si des dossiers QR existent
   var qrSection=document.getElementById('rep-qr-suivi-section');
-  if(qrSection&&qrDossiers.length>0){
-    qrSection.style.display='block';
+  if(qrSection){
     var badge=document.getElementById('rep-qr-suivi-badge');if(badge)badge.textContent=qrDossiers.length+' dossier'+(qrDossiers.length>1?'s':'');
 
     // Stats cards
@@ -14936,7 +14960,7 @@ function renderRepHistorique(){
   if(!tbody) return;
 
   if(dossiers.length === 0){
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Aucune réparation ce jour</td></tr>';
     return;
   }
 
@@ -14960,8 +14984,7 @@ function renderRepHistorique(){
       '<td style="padding:8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(d.panne||'—')+'</td>'+
       '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -25€</span>':'')+'</td>'+
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
-      '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
-      '<td style="padding:8px;text-align:center;">'+qrBadgeHTML(d)+'</td>'+
+      '<td style="padding:8px;text-align:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span>'+qrBadgeHTML(d)+'</div></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+String(d.id)+')" style="font-size:11px;">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+String(d.id)+')" style="font-size:11px;margin-left:4px;">🧾</button>':'')+'</td>'+
@@ -15029,7 +15052,7 @@ function renderRepTermines(){
   var modeColors   = {CB:'#2563eb', ESPECES:'#16a34a', CHEQUE:'#d97706', VIREMENT:'#8b5cf6'};
 
   if(list.length === 0){
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier terminé</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier terminé</td></tr>';
     return;
   }
 
@@ -15053,8 +15076,7 @@ function renderRepTermines(){
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
       '<td style="padding:8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px;">'+(d.panne||'—')+'</td>'+
       '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+'<br>'+(mode?'<span style="background:'+mc+';color:#fff;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:700;">'+mode+'</span>':'')+'</td>'+
-      '<td style="padding:8px;text-align:center;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span></td>'+
-      '<td style="padding:8px;text-align:center;">'+qrBadge+'</td>'+
+      '<td style="padding:8px;text-align:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span>'+qrBadge+'</div></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         (d.avis_demande
           ? '<span style="background:rgba(52,211,153,0.1);color:#16a34a;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">✅ Envoyé</span>'
