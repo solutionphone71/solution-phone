@@ -3303,6 +3303,17 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                       <option>Haut-parleur</option><option>Micro</option><option>Autre</option>
                     </select></div>
 
+                  <!-- PIEC — Pièce Issue de l'Économie Circulaire -->
+                  <div id="dep-piec-wrap" style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.04));border:1.5px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;margin:0;">
+                      <input type="checkbox" id="dep-piec" onchange="repAutoSaveDebounced()" style="width:18px;height:18px;accent-color:#059669;">
+                      <span>♻️ <b>Pièce PIEC</b> <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— Pièce Issue de l'Économie Circulaire (reconditionné / occasion)</span></span>
+                    </label>
+                    <div style="font-size:11px;color:#059669;margin-top:6px;margin-left:28px;">
+                      💡 Si coché : bonus QualiRépar majoré de 20% (30 € au lieu de 25 €) · Le client doit donner son accord écrit
+                    </div>
+                  </div>
+
                   <!-- Décomposition HT obligatoire pour QR -->
                   <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;">
                     <div style="font-size:11px;font-weight:700;color:#60a5fa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
@@ -4747,7 +4758,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <div id="qr-bonus-toggle" style="margin-top:12px;display:none;">
               <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
                 <input type="checkbox" id="qr-bonus-check" checked onchange="qrCalcTotal()" style="width:18px;height:18px;accent-color:var(--green);">
-                <span>✅ Appliquer le bonus QualiRépar <b>-25,00 €</b> <span id="qr-bonus-type-label"></span></span>
+                <span>✅ Appliquer le bonus QualiRépar <b id="qr-bonus-amount-label">-25,00 €</b> <span id="qr-bonus-type-label"></span></span>
               </label>
             </div>
             <div id="qr-total-band" style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:14px 18px;background:#f8fafc;border-radius:10px;">
@@ -6374,8 +6385,10 @@ function renderCaisseJour(){
     if(!matchDate(dateFacture)) return;
     idsVus[d.id] = true;
     var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
+    var _qrPiec = !!(d.piec||(d.facture&&d.facture.piec));
+    var _qrBonus = _qrPiec ? 30 : 25;
     var prixClient = d.facture.prix || d.devis || 0;
-    var prixReel = bonusQR ? prixClient + 25 : prixClient;
+    var prixReel = bonusQR ? prixClient + _qrBonus : prixClient;
     txJour.push({
       heure:   d.facture.date ? new Date(d.facture.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
       date:    dateFacture,
@@ -6384,7 +6397,7 @@ function renderCaisseJour(){
       desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(dateFacture)+'</span> ')+'Réparation ' + (d.facture.numero||d.numero||'') + ' — ' + (d.client ? (d.client.prenom||'')+' '+(d.client.nom||'') : ''),
       montant: prixReel,
       mode:    d.facture.mode || 'CB',
-      quali:   bonusQR ? 25 : 0
+      quali:   bonusQR ? _qrBonus : 0
     });
   });
 
@@ -6842,8 +6855,10 @@ async function envoyerFactureEmail(){
   var f = d.facture;
   var a = d.appareil||{};
   var bonusQR = !!(d.bonusQR||f.bonusQR);
+  var _emailPiec = !!(d.piec||(f&&f.piec));
+  var _emailBonus = _emailPiec ? 30 : 25;
   var prixClient = f.prix||0;
-  var prixAffiche = bonusQR ? Math.max(0, prixClient - 25) : prixClient;
+  var prixAffiche = bonusQR ? Math.max(0, prixClient - _emailBonus) : prixClient;
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -7014,9 +7029,10 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
     if(!token) return null;
 
     // 2. Soumettre la facture pour certification
-    // facture.prix = prix CLIENT (après bonus QR). Le vrai TTC = prix + 25 si bonusQR
+    // facture.prix = prix CLIENT (après bonus QR). Le vrai TTC = prix + bonus si bonusQR
+    var _kiwizBonus = facture.piec ? 30 : 25;
     var _kiwizTTC = parseFloat(facture.prix)||0;
-    if(facture.bonusQR) _kiwizTTC += 25;
+    if(facture.bonusQR) _kiwizTTC += _kiwizBonus;
     var _kiwizHT = Math.round(_kiwizTTC / 1.2 * 100) / 100;
     console.log('[Kiwiz] Montants: TTC='+_kiwizTTC+' HT='+_kiwizHT+' (bonusQR='+!!facture.bonusQR+' prixSaisi='+facture.prix+')');
     var payload = {
@@ -7096,10 +7112,11 @@ async function alimenterCaisse(opts){
 // Appelée quand une facture réparation est générée
 function caisseFromFactureRep(facture, client, mode, bonusQR){
   // facture.prix = prix TTC saisi (total de la réparation)
-  // Si QualiRépar : le client paie (prix - 25€), l'éco-organisme paie 25€
+  // Si QualiRépar : le client paie (prix - bonus), l'éco-organisme paie le bonus
   // Le CA TTC = le prix saisi (c'est le total réel de la réparation)
   var prixTTC    = facture.prix || 0;
-  var qualiMont  = bonusQR ? 25 : 0;
+  var _caisseBonus = facture.piec ? 30 : 25;
+  var qualiMont  = bonusQR ? _caisseBonus : 0;
   return alimenterCaisse({
     date:        facture.date || new Date().toISOString().split('T')[0],
     ttc:         prixTTC,       // prix total de la réparation (le prix saisi)
@@ -15067,11 +15084,13 @@ function renderRepHistorique(){
   dossiers.forEach(function(d){
     var f = d.facture;
     var bonusQR = !!(d.bonusQR || (f && f.bonusQR));
+    var _hPiec = !!(d.piec||(f&&f.piec));
+    var _hBonus = _hPiec ? 30 : 25;
     var prixClient = (f ? f.prix : 0) || d.devis || 0;
-    var prixReel = bonusQR ? prixClient + 25 : prixClient;
+    var prixReel = bonusQR ? prixClient + _hBonus : prixClient;
     if(prixReel === 0) return;
     totalTTC += prixReel;
-    if(bonusQR) totalQR += 25;
+    if(bonusQR) totalQR += _hBonus;
     var mode = f ? (f.mode||'CB').toUpperCase() : '';
     if(mode==='CB') totalCB += prixReel;
     else if(mode==='ESPECES') totalEsp += prixReel;
@@ -15114,7 +15133,9 @@ function renderRepHistorique(){
   tbody.innerHTML = dossiersPaginated.map(function(d, i){
     var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
     var bonusQR = !!(d.bonusQR || (f&&f.bonusQR));
-    var montant = f ? (f.prix||0) + (bonusQR?25:0) : (d.devis||0);
+    var _lPiec = !!(d.piec||(f&&f.piec));
+    var _lBonus = _lPiec ? 30 : 25;
+    var montant = f ? (f.prix||0) + (bonusQR?_lBonus:0) : (d.devis||0);
     var mode = f ? (f.mode||'CB').toUpperCase() : '—';
     var mc = modeColors[mode]||'#666';
     var statut = d.statut||'depot';
@@ -15129,7 +15150,7 @@ function renderRepHistorique(){
       '<td style="padding:8px;"><b>'+(c.prenom?c.prenom+' ':'')+c.nom+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
       '<td style="padding:8px;">'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
       '<td style="padding:8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-muted);font-size:12px;">'+(d.panne||'—')+'</td>'+
-      '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -25€</span>':'')+'</td>'+
+      '<td style="padding:8px;text-align:right;font-weight:700;color:var(--primary);">'+(montant>0?montant.toFixed(2)+' €':'—')+(bonusQR?'<br><span style="font-size:10px;color:#16a34a;">QR -'+_lBonus+'€'+(_lPiec?' PIEC':'')+'</span>':'')+'</td>'+
       '<td style="padding:8px;text-align:center;">'+(f?'<span style="background:'+mc+';color:#fff;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+mode+'</span>':'—')+'</td>'+
       '<td style="padding:8px;text-align:center;"><div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="background:'+sc+'22;color:'+sc+';padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;">'+(statusLabels[statut]||statut)+'</span>'+qrBadgeHTML(d)+'</div></td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
@@ -15296,7 +15317,7 @@ function repNewDossier(){
       numero: repGenererNumero(),
       date: new Date().toISOString().split('T')[0],
       statut: 'depot',
-      client: {civilite:'M.'}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, obs:'',
+      client: {civilite:'M.'}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, piec:false, obs:'',
       etat:[], accessoires:[], etatAutre:'',
       facture: null, qrEnvoi: null, signature: null, photoImeiUrl: null
     };
@@ -15355,7 +15376,7 @@ function repImprimerTicket(){
     '<p class="line"></p>'+
     '<p class="bold">DEVIS ESTIMATIF</p>'+
     '<p class="center big">'+devis+'</p>'+
-    (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -25.00 \u20ac inclus</p>':'')+
+    (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -'+(d.piec?'30':'25')+'.00 \u20ac inclus'+(d.piec?' (PIEC)':'')+'</p>':'')+
     '<p class="line"></p>'+
     '<p class="center" style="font-size:10px;">Hors garantie fabricant.</p>'+
     '<p class="center" style="font-size:10px;">Garantie reparation 3 mois.</p>'+
@@ -15480,6 +15501,7 @@ function repLoadFormFromDossier(){
   var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
   var dmo=document.getElementById('dep-mo-ht'); if(dmo) dmo.value=d.moHT||'';
   var dpi=document.getElementById('dep-pieces-ht'); if(dpi) dpi.value=d.piecesHT||'';
+  var dpiec=document.getElementById('dep-piec'); if(dpiec) dpiec.checked=!!d.piec;
   // Ne pas appeler repCalcDevis ici — dépend du prix saisi par l'utilisateur
   var dr=document.getElementById('dep-date-retour'); if(dr) dr.value=d.dateRetour||'';
   var do2=document.getElementById('dep-obs'); if(do2) do2.value=d.obs||'';
@@ -15569,6 +15591,8 @@ async function repGenererFacture(){
 
   // Description officielle pour la facture
   var descBase = repPanneToDescriptionFacture(panneVal);
+  var isPIEC = !!(document.getElementById('dep-piec') && document.getElementById('dep-piec').checked);
+  if(isPIEC) descBase += ' (PIEC)';
   var descFull = descBase + ' ' + modele.trim();
   if(imei) descFull += ' (IMEI: '+imei+')';
 
@@ -15586,8 +15610,9 @@ async function repGenererFacture(){
     prix: prix,
     mode: mode,
     bonusQR: bonusQR,
+    piec: isPIEC,
     irisLines: irisLines,
-    prixFinal: bonusQR ? prix - 25 : prix
+    prixFinal: bonusQR ? prix - (isPIEC ? 30 : 25) : prix
   };
   d.statut = 'facture';
   repSauvegarderDossier();
@@ -15683,13 +15708,14 @@ function repImprimerFacture(d){
   var mo   = d.moHT||25;
   var pie  = d.piecesHT||0;
   // Si bonus QR : le prix saisi = prix client final APRÈS déduction
-  // Recalculer le vrai prix HT depuis le prix réel (prix client + 25€)
+  // Recalculer le vrai prix HT depuis le prix réel (prix client + bonus)
+  var _fBonus = f.piec ? 30 : 25;
   var prixClient = f.prix||0;
-  var prixReel   = f.bonusQR ? prixClient + 25 : prixClient;
+  var prixReel   = f.bonusQR ? prixClient + _fBonus : prixClient;
   var ht   = Math.round(prixReel / 1.2 * 100) / 100;
   var tva  = Math.round(ht * 0.2 * 100) / 100;
   var ttc  = Math.round(ht * 1.2 * 100) / 100;
-  var prixFinal = f.bonusQR ? ttc - 25 : ttc;
+  var prixFinal = f.bonusQR ? ttc - _fBonus : ttc;
   // Recalculer MO/pièces depuis le prix réel
   mo  = 25;
   pie = Math.max(0, Math.round((ht - mo) * 100) / 100);
@@ -15776,7 +15802,7 @@ function repImprimerFacture(d){
           '<td style="text-align:center;">1</td>'+
           '<td style="text-align:right;">0,00 €</td>'+
           '<td style="text-align:right;">—</td>'+
-          '<td style="text-align:right;font-weight:700;color:#c0392b;">-25,00 €</td>'+
+          '<td style="text-align:right;font-weight:700;color:#c0392b;">-'+_fBonus.toFixed(2)+' €</td>'+
         '</tr>':'')+
         irisHtml+
       '</tbody>'+
@@ -15790,7 +15816,7 @@ function repImprimerFacture(d){
     // MENTIONS
     '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
       '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale).<br>'+
-      (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -25€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.':'')+'</div>'+
+      (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -'+_fBonus+'€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.'+(f.piec?' Pièce PIEC (économie circulaire) utilisée avec accord du consommateur.':''):'')+'</div>'+
     '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'+
       '<div style="text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px 16px;min-width:160px;">'+
         '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet Solution Phone</div>'+
@@ -16029,6 +16055,7 @@ function repAutoSave(){
   repDossierCourant.panne      = (document.getElementById('dep-panne')||{value:''}).value.trim();
   repDossierCourant.devis      = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
   repDossierCourant.bonusQR    = !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
+  repDossierCourant.piec       = !!(document.getElementById('dep-piec') && document.getElementById('dep-piec').checked);
   repDossierCourant.dateRetour = (document.getElementById('dep-date-retour')||{value:''}).value;
   repDossierCourant.obs        = (document.getElementById('dep-obs')||{value:''}).value.trim();
   repDossierCourant.etat       = getDepotEtat();
@@ -17072,7 +17099,8 @@ async function qrEnvoyerEcosystemComplet(d){
     // ② POST /reimbursement-claims/new_claim (PascalCase nested payload)
     var moHT=parseFloat(d.moHT||0);var pHT=parseFloat(d.piecesHT||0);var ttc=parseFloat(d.devis||0);
     var montantTTC=Math.round((moHT+pHT)*1.20*100)/100||ttc;
-    var bonus=25;
+    var isPIEC=!!(d.piec||(d.facture&&d.facture.piec));
+    var bonus=isPIEC?30:25;
     var ref=(d.facture&&d.facture.numero)||d.numero||("ECO-"+Date.now());
     var repDate=d.date||new Date().toISOString().split('T')[0];
     var tel2=(c.tel||'').replace(/[^0-9]/g,'').substring(0,10);
@@ -17082,7 +17110,7 @@ async function qrEnvoyerEcosystemComplet(d){
       RepairerId:'2002535',
       RepairPlaceID:'2002535',
       Product:{ProductID:_pid,BrandID:_bid,ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:_rcode},
-      SpareParts:{NewSparePartsAmount:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:0},
+      SpareParts:{NewSparePartsAmount:isPIEC?0:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:isPIEC?1:0},
       Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
@@ -17140,19 +17168,31 @@ async function qrEnvoyerEcosystemComplet(d){
           }
         }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis');}
       }
-      // ④ Confirm-claim
+      // ④ Confirm-claim → récupère le N° Ordre de Service
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
+      var serviceOrder='';
       try{
         var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
         var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,200));
+        try{
+          var cfJ=JSON.parse(cfT);
+          serviceOrder=cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||'';
+          console.log('[Ecosystem] N° Ordre de Service:',serviceOrder);
+        }catch(pe){}
       }catch(ec){console.warn('[Ecosystem] confirm-claim:',ec.message);}
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecosystemRepairId=repairId;d.qrEnvoi.ecosystemId=repairId;d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut='Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
+    d.qrEnvoi.ecosystemClaimId=repairId;
+    d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
+    d.qrEnvoi.ecosystemRepairId=serviceOrder||repairId;
+    d.qrEnvoi.ecosystemId=serviceOrder||repairId;
+    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut='Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
-    var msg="&#9989; Ecosystem OK!"+(repairId?" ID: "+repairId:"");
+    var displayId=serviceOrder||repairId;
+    var msg="&#9989; Ecosystem OK!"+(displayId?" N°: "+displayId:"");
+    if(serviceOrder) msg+="<br><small>Claim ID: "+repairId+" · Ordre de service: "+serviceOrder+"</small>";
     msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
     if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
     showNotif&&showNotif("&#9989; Ecosystem OK!","success");
@@ -17185,21 +17225,24 @@ async function repDevisSignePDFBase64(d){
   pdf.text('ATTESTATION DE DEMANDE DE SOUTIEN QUALIREPAR',W/2,y,{align:'center'});
   y+=6;pdf.setFont('helvetica','normal');pdf.setFontSize(10);
   pdf.setTextColor(80,80,80);
-  pdf.text('Document requis pour le remboursement du bonus QualiRépar (25 €)',W/2,y,{align:'center'});
+  var _piec=!!(d.piec||(d.facture&&d.facture.piec));
+  var _bonusMontant=_piec?30:25;
+  pdf.text('Document requis pour le remboursement du bonus QualiRépar ('+_bonusMontant+' €)'+(_piec?' — PIEC':''),W/2,y,{align:'center'});
   y+=10;pdf.setDrawColor(0,120,215);pdf.setLineWidth(0.5);pdf.line(lm,y,rm,y);y+=8;
   // ── Infos réparation ──
   pdf.setTextColor(0,0,0);pdf.setFont('helvetica','bold');pdf.setFontSize(11);
   pdf.text('1. INFORMATIONS RÉPARATION',lm,y);y+=7;
   pdf.setFont('helvetica','normal');pdf.setFontSize(10);
+  var _panneDesc=(d.panne||'—')+(_piec?' (PIEC — pièce issue de l\'économie circulaire)':'');
   var rows=[
     ['Date de réparation',dateRep],
     ['N° dossier / facture',ref],
     ['Appareil',(a.marque||'')+' '+(a.modele||'')],
     ['IMEI / N° série',a.imei||'—'],
-    ['Type de panne',d.panne||'—'],
+    ['Type de panne',_panneDesc],
     ['Montant TTC réparation',montantTTC+' €'],
-    ['Bonus QualiRépar déduit','25,00 €'],
-    ['Montant réglé par le client',(Math.max(0,parseFloat(montantTTC)-25)).toFixed(2)+' €']
+    ['Bonus QualiRépar déduit',_bonusMontant.toFixed(2)+' €'+(_piec?' (dont +20% PIEC)':'')],
+    ['Montant réglé par le client',(Math.max(0,parseFloat(montantTTC)-_bonusMontant)).toFixed(2)+' €']
   ];
   rows.forEach(function(r){
     pdf.setFont('helvetica','bold');pdf.text(r[0]+' :',lm,y);
@@ -17227,7 +17270,7 @@ async function repDevisSignePDFBase64(d){
   pdf.setFont('helvetica','bold');pdf.setFontSize(11);
   pdf.text('3. VALIDATION DU CONSOMMATEUR',lm,y);y+=7;
   pdf.setFont('helvetica','normal');pdf.setFontSize(9);pdf.setTextColor(40,40,40);
-  var decl='Je soussigné(e) '+((c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')).trim()+', certifie avoir fait réparer l\'appareil référencé ci-dessus par Solution Phone, avoir bénéficié du bonus QualiRépar de 25 € déduit du montant total de la réparation, et avoir pris connaissance des conditions du dispositif QualiRépar.';
+  var decl='Je soussigné(e) '+((c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')).trim()+', certifie avoir fait réparer l\'appareil référencé ci-dessus par Solution Phone, avoir bénéficié du bonus QualiRépar de '+_bonusMontant+' € déduit du montant total de la réparation, et avoir pris connaissance des conditions du dispositif QualiRépar.'+(_piec?' J\'accepte l\'utilisation d\'une pièce issue de l\'économie circulaire (PIEC) pour cette réparation.':'');
   var lines=pdf.splitTextToSize(decl,W-lm-20);
   pdf.text(lines,lm,y);y+=lines.length*5+6;
   pdf.setFontSize(9);pdf.setTextColor(80,80,80);
@@ -17716,12 +17759,16 @@ function repToggleQR(){
   var devisEl = document.getElementById('dep-devis');
   if(lbl){
     if(checked){
-      lbl.innerHTML = 'Prix TTC <b>payé par le client</b> (€) <span style="color:var(--red);font-weight:700;">*</span> <span style="color:var(--green);font-size:12px;">= prix réel - 25€ bonus</span>';
+      var _tqrPiec = !!(document.getElementById('dep-piec')&&document.getElementById('dep-piec').checked);
+      var _tqrB = _tqrPiec ? 30 : 25;
+      lbl.innerHTML = 'Prix TTC <b>payé par le client</b> (€) <span style="color:var(--red);font-weight:700;">*</span> <span style="color:var(--green);font-size:12px;">= prix réel - '+_tqrB+'€ bonus'+(_tqrPiec?' PIEC':'')+'</span>';
     } else {
       lbl.innerHTML = 'Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span>';
     }
   }
-  if(devisEl) devisEl.placeholder = checked ? 'ex: 90 (= 115€ réel - 25€ bonus)' : 'ex: 45.00';
+  var _plcPiec = !!(document.getElementById('dep-piec')&&document.getElementById('dep-piec').checked);
+  var _plcB = _plcPiec ? 30 : 25;
+  if(devisEl) devisEl.placeholder = checked ? 'ex: '+(90-(_plcPiec?5:0))+' (= '+(115+(_plcPiec?5:0))+'€ réel - '+_plcB+'€ bonus)' : 'ex: 45.00';
   // Recalculer la décomposition HT avec le nouveau statut bonus
   if(devisEl && parseFloat(devisEl.value) > 0){
     repAutoDecompose(devisEl.value);
@@ -17739,7 +17786,9 @@ function repAutoDecompose(prixTTC){
       if(ttc <= 0){ return; }
 
       var bonusQR = (document.getElementById('rep-qr-actif')||{checked:false}).checked;
-      var prixBase = bonusQR ? ttc + 25 : ttc;
+      var _adPiec = !!(document.getElementById('dep-piec')&&document.getElementById('dep-piec').checked);
+      var _adBonus = _adPiec ? 30 : 25;
+      var prixBase = bonusQR ? ttc + _adBonus : ttc;
       var ht     = prixBase / 1.2;
       // Lire MO HT depuis la saisie employé si déjà renseignée, sinon 25€ par défaut
       var elMOExist = document.getElementById('dep-mo-ht');
@@ -23258,9 +23307,9 @@ async function qrSendEcosystem() {
       RepairTypeCode:               repairCode
     },
     SpareParts: {
-      NewSparePartsAmount:              1,
+      NewSparePartsAmount:              (d.piec?0:1),
       SecondHandSparePartsAmount:       0,
-      CircularEconomyPartsAmount:       0
+      CircularEconomyPartsAmount:       (d.piec?1:0)
     },
     Customer: {
       Title:        (cli.civilite === 'Mme' || cli.civilite === 'Madame') ? 'Mme' : 'M.',
@@ -23613,8 +23662,9 @@ function qrChangerStatut(dossierId){
 
 async function qrVerifierStatutEcosystem(dossier){
   var q = dossier.qrEnvoi || {};
-  var ecosystemId = q.ecosystemId;
-  if(!ecosystemId) return null;
+  // Utiliser le N° Ordre de Service en priorité (clé définitive), sinon le ClaimID
+  var serviceOrder = q.ecosystemServiceOrder || q.ecosystemId || q.ecosystemRepairId;
+  if(!serviceOrder) return null;
 
   var user      = localStorage.getItem('sp_eco_user') || '501710';
   var password  = localStorage.getItem('sp_eco_pass') || localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
@@ -23622,31 +23672,49 @@ async function qrVerifierStatutEcosystem(dossier){
 
   try {
     // Auth JWT d'abord
-    // POST /login pour token (lowercase, username/password)
     var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,password:password})});
     if(!lr.ok) return null;
     var ld=await lr.json();
     var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
     if(!token) return null;
 
-    // GET /reimbursement-claims pour statut
-    var res = await ecoFetch('/reimbursement-claims', {
+    // GET /reimbursement-claims/:serviceOrder pour statut (via N° Ordre de Service)
+    var res = await ecoFetch('/reimbursement-claims/'+encodeURIComponent(serviceOrder), {
       method:'GET',
       headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
     });
-    if(!res.ok) return null;
+    if(!res.ok){
+      console.warn('[Ecosystem] Status check '+serviceOrder+': HTTP',res.status);
+      return null;
+    }
     var data = await res.json();
-    console.log('Ecosystem status:', data);
+    console.log('[Ecosystem] Status pour',serviceOrder,':',JSON.stringify(data).substring(0,300));
 
     // Mapper le statut API → statut interne
-    var apiStatut = data.status || data.state || data.reimbursementStatus || '';
+    // Statuts Ecosystem: "En cours de création", "Envoyé, en cours de confirmation",
+    // "Envoyé, en cours vérification", "Approuvé, en cours rembourst",
+    // "Remboursement effectué", "Rejeté (code: raison)"
+    var apiStatut = data.Status || data.status || data.state || data.reimbursementStatus || '';
     var map = {
       'SUBMITTED':'Sent', 'PENDING':'Pending', 'PROCESSING':'Processing',
       'VALIDATED':'Approved', 'APPROVED':'Approved',
       'PAID':'Paid', 'REIMBURSED':'Paid',
       'REJECTED':'Rejected', 'REFUSED':'Rejected'
     };
-    return map[apiStatut.toUpperCase()] || apiStatut || 'Sent';
+    // Statuts en français renvoyés par Ecosystem
+    var mapFR = {
+      'en cours de création':'Pending',
+      'envoyé, en cours de confirmation':'Sent',
+      'envoyé, en cours vérification':'Processing',
+      'approuvé, en cours rembourst':'Approved',
+      'remboursement effectué':'Paid',
+      'rejeté':'Rejected'
+    };
+    var upper = apiStatut.toUpperCase();
+    var lower = apiStatut.toLowerCase();
+    // Rejets avec code entre parenthèses: "Rejeté (08 : le bonus est absent)"
+    if(lower.indexOf('rejet') === 0) return 'Rejected';
+    return map[upper] || mapFR[lower] || apiStatut || 'Sent';
   } catch(e){
     console.warn('Ecosystem status check error:', e);
     return null;
