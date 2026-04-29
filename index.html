@@ -2868,6 +2868,20 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <select id="pc-piece-mode" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
                   <option>CB</option><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option>
                 </select>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:#666;margin-top:6px;">
+                  <input type="checkbox" id="pc-piece-split-toggle" onchange="document.getElementById('pc-piece-split-wrap').style.display=this.checked?'block':'none'" style="width:14px;height:14px;accent-color:#8b5cf6;">
+                  <span>✂️ Paiement séparé</span>
+                </label>
+                <div id="pc-piece-split-wrap" style="display:none;margin-top:6px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:8px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    <div><label style="font-size:10px;font-weight:700;">1er paiement</label>
+                      <select id="pc-piece-split-mode1" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;margin-bottom:4px;"><option>CB</option><option>ESPECES</option><option>CHEQUE</option><option>VIREMENT</option></select>
+                      <input type="number" id="pc-piece-split-a1" step="0.01" placeholder="Montant €" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:700;"></div>
+                    <div><label style="font-size:10px;font-weight:700;">2ème paiement</label>
+                      <select id="pc-piece-split-mode2" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;margin-bottom:4px;"><option>ESPECES</option><option>CB</option><option>CHEQUE</option><option>VIREMENT</option></select>
+                      <input type="number" id="pc-piece-split-a2" step="0.01" placeholder="Reste €" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:700;background:#f5f5f5;" readonly></div>
+                  </div>
+                </div>
               </div>
               <button onclick="parcoursCreerCmdPiece()" style="width:100%;padding:14px;background:#059669;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">🔩 Créer le bon de commande</button>
             </div>
@@ -2902,6 +2916,20 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                 <select id="pc-acc-mode" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;">
                   <option>CB</option><option>ESPECES</option><option>VIREMENT</option><option>CHEQUE</option>
                 </select>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:#666;margin-top:6px;">
+                  <input type="checkbox" id="pc-acc-split-toggle" onchange="document.getElementById('pc-acc-split-wrap').style.display=this.checked?'block':'none'" style="width:14px;height:14px;accent-color:#8b5cf6;">
+                  <span>✂️ Paiement séparé</span>
+                </label>
+                <div id="pc-acc-split-wrap" style="display:none;margin-top:6px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:8px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    <div><label style="font-size:10px;font-weight:700;">1er paiement</label>
+                      <select id="pc-acc-split-mode1" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;margin-bottom:4px;"><option>CB</option><option>ESPECES</option><option>CHEQUE</option><option>VIREMENT</option></select>
+                      <input type="number" id="pc-acc-split-a1" step="0.01" placeholder="Montant €" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:700;"></div>
+                    <div><label style="font-size:10px;font-weight:700;">2ème paiement</label>
+                      <select id="pc-acc-split-mode2" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:12px;margin-bottom:4px;"><option>ESPECES</option><option>CB</option><option>CHEQUE</option><option>VIREMENT</option></select>
+                      <input type="number" id="pc-acc-split-a2" step="0.01" placeholder="Reste €" style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-weight:700;background:#f5f5f5;" readonly></div>
+                  </div>
+                </div>
               </div>
               <button onclick="parcoursCreerCmdAcc()" style="width:100%;padding:14px;background:#d97706;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='#b45309'" onmouseout="this.style.background='#d97706'">📦 Créer le bon de commande</button>
             </div>
@@ -3451,6 +3479,33 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                           🏦 Virement</button>
                       </div>
                       <input type="hidden" id="r-mode" value="CB">
+                      <!-- Paiement séparé -->
+                      <div style="margin-top:8px;">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted);">
+                          <input type="checkbox" id="r-split-toggle" onchange="repToggleSplit()" style="width:16px;height:16px;accent-color:#8b5cf6;">
+                          <span>✂️ <b>Paiement séparé</b> (2 moyens de paiement)</span>
+                        </label>
+                      </div>
+                      <div id="r-split-wrap" style="display:none;margin-top:8px;background:rgba(139,92,246,0.06);border:1.5px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;">
+                        <div style="font-size:12px;font-weight:700;color:#8b5cf6;margin-bottom:8px;">✂️ Répartition du paiement</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                          <div>
+                            <label style="font-size:11px;font-weight:700;">1er paiement</label>
+                            <select id="r-split-mode1" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+                              <option value="CB">💳 CB</option><option value="ESPECES">💵 Espèces</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+                            </select>
+                            <input type="number" id="r-split-amount1" step="0.01" placeholder="Montant €" oninput="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;">
+                          </div>
+                          <div>
+                            <label style="font-size:11px;font-weight:700;">2ème paiement</label>
+                            <select id="r-split-mode2" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+                              <option value="ESPECES">💵 Espèces</option><option value="CB">💳 CB</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+                            </select>
+                            <input type="number" id="r-split-amount2" step="0.01" placeholder="Reste €" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:rgba(255,255,255,0.04);" readonly>
+                          </div>
+                        </div>
+                        <div id="r-split-info" style="margin-top:6px;font-size:11px;color:var(--text-muted);"></div>
+                      </div>
                     </div>
                   </div>
                   <div class="form-group"><label>Garantie</label>
@@ -5021,6 +5076,33 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
           <div style="font-size:20px;">📄</div>
           <div style="font-size:12px;font-weight:700;color:var(--text);margin-top:4px;">Chèque</div>
         </button>
+      </div>
+      <!-- Paiement séparé vente -->
+      <div style="margin-top:8px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted);">
+          <input type="checkbox" id="v-split-toggle" onchange="venteToggleSplit()" style="width:16px;height:16px;accent-color:#8b5cf6;">
+          <span>✂️ <b>Paiement séparé</b> (2 moyens de paiement)</span>
+        </label>
+      </div>
+      <div id="v-split-wrap" style="display:none;margin-top:8px;background:rgba(139,92,246,0.06);border:1.5px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;">
+        <div style="font-size:12px;font-weight:700;color:#8b5cf6;margin-bottom:8px;">✂️ Répartition du paiement</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:11px;font-weight:700;">1er paiement</label>
+            <select id="v-split-mode1" onchange="venteUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+              <option value="CB">💳 CB</option><option value="ESPECES">💵 Espèces</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+            </select>
+            <input type="number" id="v-split-amount1" step="0.01" placeholder="Montant €" oninput="venteUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;">2ème paiement</label>
+            <select id="v-split-mode2" onchange="venteUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+              <option value="ESPECES">💵 Espèces</option><option value="CB">💳 CB</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+            </select>
+            <input type="number" id="v-split-amount2" step="0.01" placeholder="Reste €" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:rgba(255,255,255,0.04);" readonly>
+          </div>
+        </div>
+        <div id="v-split-info" style="margin-top:6px;font-size:11px;color:var(--text-muted);"></div>
       </div>
     </div>
 
@@ -7063,8 +7145,9 @@ async function certifierFactureKiwiz(facture, client, pdfBase64){
 // ═══════════════════════════════════════════════════════════
 
 async function alimenterCaisse(opts){
-  // opts = { date, ttc, mode, quali, source, description }
+  // opts = { date, ttc, mode, quali, source, description, split }
   // mode = 'CB' | 'ESPECES' | 'CHEQUE' | 'VIREMENT'
+  // split = { mode1, amount1, mode2, amount2 } (optionnel — paiement séparé)
   var today = opts.date || new Date().toISOString().split('T')[0];
   var ttc   = parseFloat(opts.ttc) || 0;
   var mode  = (opts.mode || 'CB').toUpperCase();
@@ -7081,14 +7164,30 @@ async function alimenterCaisse(opts){
   }
 
   // Ajouter les montants
-  // Le client paie ttc - quali par son mode de paiement, le reste vient de l'éco-organisme
-  var clientPaid = ttc - quali;
   entry.ttc += ttc;
-  if(mode === 'CB')        entry.cb       += clientPaid;
-  if(mode === 'ESPECES')   entry.especes  += clientPaid;
-  if(mode === 'CHEQUE')    entry.cheque   += clientPaid;
-  if(mode === 'VIREMENT')  entry.virement += clientPaid;
-  if(quali > 0)            entry.quali    += quali;
+  if(quali > 0) entry.quali += quali;
+
+  if(opts.split && opts.split.amount1 > 0 && opts.split.amount2 > 0){
+    // Paiement séparé : répartir sur 2 modes
+    var s = opts.split;
+    var m1 = (s.mode1||'CB').toUpperCase();
+    var m2 = (s.mode2||'ESPECES').toUpperCase();
+    if(m1 === 'CB')        entry.cb       += s.amount1;
+    if(m1 === 'ESPECES')   entry.especes  += s.amount1;
+    if(m1 === 'CHEQUE')    entry.cheque   += s.amount1;
+    if(m1 === 'VIREMENT')  entry.virement += s.amount1;
+    if(m2 === 'CB')        entry.cb       += s.amount2;
+    if(m2 === 'ESPECES')   entry.especes  += s.amount2;
+    if(m2 === 'CHEQUE')    entry.cheque   += s.amount2;
+    if(m2 === 'VIREMENT')  entry.virement += s.amount2;
+  } else {
+    // Paiement simple : tout sur un seul mode
+    var clientPaid = ttc - quali;
+    if(mode === 'CB')        entry.cb       += clientPaid;
+    if(mode === 'ESPECES')   entry.especes  += clientPaid;
+    if(mode === 'CHEQUE')    entry.cheque   += clientPaid;
+    if(mode === 'VIREMENT')  entry.virement += clientPaid;
+  }
 
   // Arrondir
   ['ttc','cb','especes','cheque','virement','quali'].forEach(function(k){
@@ -7110,7 +7209,7 @@ async function alimenterCaisse(opts){
 }
 
 // Appelée quand une facture réparation est générée
-function caisseFromFactureRep(facture, client, mode, bonusQR){
+function caisseFromFactureRep(facture, client, mode, bonusQR, splitData){
   // facture.prix = prix TTC saisi (total de la réparation)
   // Si QualiRépar : le client paie (prix - bonus), l'éco-organisme paie le bonus
   // Le CA TTC = le prix saisi (c'est le total réel de la réparation)
@@ -7122,6 +7221,7 @@ function caisseFromFactureRep(facture, client, mode, bonusQR){
     ttc:         prixTTC,       // prix total de la réparation (le prix saisi)
     mode:        mode || 'CB',
     quali:       qualiMont,
+    split:       splitData || null,
     source:      'reparation',
     description: 'Réparation ' + (facture.numero||'') + ' — ' + (client||'')
   });
@@ -7129,12 +7229,13 @@ function caisseFromFactureRep(facture, client, mode, bonusQR){
 
 // Appelée quand une vente téléphone/accessoire est enregistrée
 function caisseFromVente(opts){
-  // opts = { prixTTC, mode, description, date }
+  // opts = { prixTTC, mode, description, date, split }
   return alimenterCaisse({
     date:        opts.date || new Date().toISOString().split('T')[0],
     ttc:         opts.prixTTC || 0,
     mode:        opts.mode || 'CB',
     quali:       0,
+    split:       opts.split || null,
     source:      'vente',
     description: opts.description || 'Vente'
   });
@@ -8607,6 +8708,8 @@ function finaliserVente(repriseData){
   p.etat='VENDU';
   p.dateVente=new Date().toISOString().split('T')[0];
   p.modeVente = mode;
+  var venteSplit = venteGetSplitPayments();
+  if(venteSplit) p.splitPayment = venteSplit;
 
   // ── Stocker les infos client (depuis le modal) ──
   var cNom = (document.getElementById('vente-client-nom')||{}).value||'';
@@ -15621,7 +15724,9 @@ async function repGenererFacture(){
 
   // ── Alimenter automatiquement la caisse ──
   var modeReg = (document.getElementById('r-mode')||{value:'CB'}).value || 'CB';
-  caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR);
+  var splitData = repGetSplitPayments();
+  d.facture.split = splitData || null;
+  caisseFromFactureRep(d.facture, (d.client.prenom||'')+' '+(d.client.nom||''), modeReg, bonusQR, splitData);
 
   showNotif('✅ Facture '+d.facture.numero+' créée — enregistrée en caisse !','success');
 
@@ -15771,7 +15876,7 @@ function repImprimerFacture(d){
           '<b>'+a.marque+' '+a.modele+'</b><br>'+
           'IMEI : <b style="font-family:monospace;">'+(a.imei||'—')+'</b><br>'+
           'N° dossier : '+f.numero+'<br>'+
-          'Mode règlement : '+f.mode+
+          'Mode règlement : '+(f.split ? f.split.amount1.toFixed(2)+'€ '+f.split.mode1+' + '+f.split.amount2.toFixed(2)+'€ '+f.split.mode2 : f.mode)+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -17746,6 +17851,91 @@ function repSetMode(mode){
     }
   });
   repUpdateFacturePreview();
+}
+
+// ── PAIEMENT SÉPARÉ (SPLIT) — Réparations ──
+function repToggleSplit(){
+  var checked = document.getElementById('r-split-toggle').checked;
+  var wrap = document.getElementById('r-split-wrap');
+  if(wrap) wrap.style.display = checked ? 'block' : 'none';
+  if(checked) repUpdateSplitCalc();
+}
+function repUpdateSplitCalc(){
+  var prix = parseFloat((document.getElementById('r-prix')||{value:0}).value)||0;
+  var a1 = parseFloat((document.getElementById('r-split-amount1')||{value:0}).value)||0;
+  var a2El = document.getElementById('r-split-amount2');
+  var infoEl = document.getElementById('r-split-info');
+  var reste = Math.max(0, Math.round((prix - a1)*100)/100);
+  if(a2El) a2El.value = reste > 0 ? reste.toFixed(2) : '';
+  if(infoEl){
+    if(a1 > 0 && reste > 0){
+      var m1 = (document.getElementById('r-split-mode1')||{value:'CB'}).value;
+      var m2 = (document.getElementById('r-split-mode2')||{value:'ESPECES'}).value;
+      infoEl.innerHTML = '✅ '+a1.toFixed(2)+'€ en <b>'+m1+'</b> + '+reste.toFixed(2)+'€ en <b>'+m2+'</b>';
+      infoEl.style.color = '#16a34a';
+    } else if(a1 > prix){
+      infoEl.innerHTML = '⚠️ Le montant dépasse le prix total';
+      infoEl.style.color = '#ef4444';
+    } else {
+      infoEl.innerHTML = 'Saisissez le montant du 1er paiement';
+      infoEl.style.color = 'var(--text-muted)';
+    }
+  }
+}
+function repGetSplitPayments(){
+  var isSplit = !!(document.getElementById('r-split-toggle')&&document.getElementById('r-split-toggle').checked);
+  if(!isSplit) return null;
+  var a1 = parseFloat((document.getElementById('r-split-amount1')||{value:0}).value)||0;
+  var a2 = parseFloat((document.getElementById('r-split-amount2')||{value:0}).value)||0;
+  if(a1 <= 0 || a2 <= 0) return null;
+  return {
+    mode1: (document.getElementById('r-split-mode1')||{value:'CB'}).value,
+    amount1: a1,
+    mode2: (document.getElementById('r-split-mode2')||{value:'ESPECES'}).value,
+    amount2: a2
+  };
+}
+
+// ── PAIEMENT SÉPARÉ (SPLIT) — Vente smartphones ──
+function venteToggleSplit(){
+  var checked = document.getElementById('v-split-toggle').checked;
+  var wrap = document.getElementById('v-split-wrap');
+  if(wrap) wrap.style.display = checked ? 'block' : 'none';
+  if(checked) venteUpdateSplitCalc();
+}
+function venteUpdateSplitCalc(){
+  var prixEl = document.getElementById('reprise-prix-final') || document.getElementById('reprise-total');
+  var prix = 0;
+  if(prixEl){ var t = prixEl.textContent||prixEl.innerText||''; prix = parseFloat(t.replace(/[^0-9.,\-]/g,'').replace(',','.'))||0; }
+  var a1 = parseFloat((document.getElementById('v-split-amount1')||{value:0}).value)||0;
+  var a2El = document.getElementById('v-split-amount2');
+  var infoEl = document.getElementById('v-split-info');
+  var reste = Math.max(0, Math.round((prix - a1)*100)/100);
+  if(a2El) a2El.value = reste > 0 ? reste.toFixed(2) : '';
+  if(infoEl){
+    if(a1 > 0 && reste > 0){
+      var m1 = (document.getElementById('v-split-mode1')||{value:'CB'}).value;
+      var m2 = (document.getElementById('v-split-mode2')||{value:'ESPECES'}).value;
+      infoEl.innerHTML = '✅ '+a1.toFixed(2)+'€ en <b>'+m1+'</b> + '+reste.toFixed(2)+'€ en <b>'+m2+'</b>';
+      infoEl.style.color = '#16a34a';
+    } else {
+      infoEl.innerHTML = 'Saisissez le montant du 1er paiement';
+      infoEl.style.color = 'var(--text-muted)';
+    }
+  }
+}
+function venteGetSplitPayments(){
+  var isSplit = !!(document.getElementById('v-split-toggle')&&document.getElementById('v-split-toggle').checked);
+  if(!isSplit) return null;
+  var a1 = parseFloat((document.getElementById('v-split-amount1')||{value:0}).value)||0;
+  var a2 = parseFloat((document.getElementById('v-split-amount2')||{value:0}).value)||0;
+  if(a1 <= 0 || a2 <= 0) return null;
+  return {
+    mode1: (document.getElementById('v-split-mode1')||{value:'CB'}).value,
+    amount1: a1,
+    mode2: (document.getElementById('v-split-mode2')||{value:'ESPECES'}).value,
+    amount2: a2
+  };
 }
 
 function repToggleQR(){
