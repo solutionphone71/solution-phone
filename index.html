@@ -3464,26 +3464,29 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
                     <div class="form-group"><label>Marque appareil *</label>
                       <select id="rep-qr-marque" onchange="repQRUpdateOrganisme();repQRAutoPanne();">
                         <option value="">— Choisir —</option>
-                        <optgroup label="🔵 Ecologic (Apple)">
-                          <option value="Apple">Apple</option>
-                        </optgroup>
                         <optgroup label="🔵 Ecologic">
-                          <option value="Samsung">Samsung</option>
-                          <option value="Huawei">Huawei</option>
+                          <option value="Apple">Apple</option>
                           <option value="Xiaomi">Xiaomi</option>
-                          <option value="Oppo">Oppo</option>
                           <option value="OnePlus">OnePlus</option>
                           <option value="Google">Google</option>
                           <option value="Sony">Sony</option>
                           <option value="Nokia">Nokia</option>
                           <option value="Motorola">Motorola</option>
                           <option value="Wiko">Wiko</option>
-                          <option value="Honor">Honor</option>
                           <option value="Realme">Realme</option>
+                          <option value="Crosscall">Crosscall</option>
+                          <option value="LG">LG</option>
+                        </optgroup>
+                        <optgroup label="🟢 Ecosystem">
+                          <option value="Samsung">Samsung</option>
+                          <option value="Huawei">Huawei</option>
+                          <option value="Oppo">Oppo</option>
+                          <option value="Honor">Honor</option>
                           <option value="Blackview">Blackview</option>
                           <option value="Vivo">Vivo</option>
                           <option value="TCL">TCL</option>
-                          <option value="Crosscall">Crosscall</option>
+                        </optgroup>
+                        <optgroup label="⚪ Autre">
                           <option value="Autre">Autre</option>
                         </optgroup>
                       </select></div>
@@ -16093,7 +16096,7 @@ function repUpdateStep5(){
 
   // Organisme selon la marque
   var marque = (d.appareil||{}).marque||'';
-  var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque] === 'ecosystem') ? 'Ecosystem' : 'Ecologic';
+  var organisme = qrGetOrganisme(marque) === 'ecosystem' ? 'Ecosystem' : 'Ecologic';
   var btnLabel = document.getElementById('rep-qr-btn-label');
   if(btnLabel) btnLabel.textContent = organisme;
 
@@ -16879,7 +16882,7 @@ function repEnvoyerOrganisme(){
 
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var marque    = (d.appareil||{}).marque||'';
-  var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
+  var organisme = qrGetOrganisme(marque);
 
   if(organisme === 'ecologic'){
     repEnvoyerEcologic();
@@ -18139,7 +18142,7 @@ function repQRUpdateOrganisme(){
   var sel = document.getElementById('rep-qr-marque');
   if(!sel) return;
   var marque = sel.value;
-  var type = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
+  var type = qrGetOrganisme(marque);
   var label = type === 'ecosystem' ? 'Ecosystem' : 'Ecologic';
   var orgLabel = document.getElementById('rep-qr-btn-label');
   if(orgLabel) orgLabel.textContent = label;
@@ -22302,6 +22305,18 @@ var QR_BRAND_TYPE = {
   Wiko:      'ecologic',  Realme:    'ecologic',  Crosscall: 'ecologic',
   LG:        'ecologic'
 };
+// Helper insensible à la casse pour le routage organisme
+function qrGetOrganisme(marque){
+  if(!marque) return 'ecologic';
+  // Cherche correspondance exacte d'abord
+  if(QR_BRAND_TYPE[marque]) return QR_BRAND_TYPE[marque];
+  // Sinon cherche insensible à la casse
+  var m = marque.trim();
+  for(var k in QR_BRAND_TYPE){
+    if(k.toLowerCase() === m.toLowerCase()) return QR_BRAND_TYPE[k];
+  }
+  return 'ecologic';
+}
 var QR_BRANDS = Object.keys(QR_BRAND_TYPE);
 
 var qrData = {
@@ -22364,7 +22379,7 @@ function qrRenderMarques() {
 
 function qrSelectMarque(marque) {
   qrData.appareil.marque = marque;
-  qrData.appareil.bonusType = QR_BRAND_TYPE[marque] || null;
+  qrData.appareil.bonusType = qrGetOrganisme(marque);
   document.querySelectorAll('.qr-marque-btn').forEach(function(b){
     b.classList.remove('active','apple');
     if(b.textContent === marque){
@@ -22872,7 +22887,7 @@ async function qrSendAgora() {
   if (btn) btn.disabled = true;
 
   var marque    = (qrData.appareil && qrData.appareil.marque) || '';
-  var organisme = (QR_BRAND_TYPE && QR_BRAND_TYPE[marque]) || 'ecologic';
+  var organisme = qrGetOrganisme(marque);
 
   qrSetAgoraBadge('\u23F3', 'Connexion\u2026',
     organisme === 'ecosystem' ? 'Ecosystem' : 'Ecologic GesCo', '#f39c12');
