@@ -14878,7 +14878,7 @@ function repImprimerTicket(){
     '<p class="line"></p>'+
     '<p class="bold">DEVIS ESTIMATIF</p>'+
     '<p class="center big">'+devis+'</p>'+
-    (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -'+(d.piec?'30':'25')+'.00 \u20ac inclus'+(d.piec?' (PIEC)':'')+'</p>':'')+
+    (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -'+(d.piec?'30':'25')+'.00 \u20ac inclus'+(d.piec?' — '+(d.pieceNom||'Pièce')+' (PIEC)':'')+'</p>':'')+
     '<p class="line"></p>'+
     '<p class="center" style="font-size:10px;">Hors garantie fabricant.</p>'+
     '<p class="center" style="font-size:10px;">Garantie reparation 3 mois.</p>'+
@@ -15003,6 +15003,7 @@ function repLoadFormFromDossier(){
   var dd=document.getElementById('dep-devis'); if(dd) dd.value=d.devis||'';
   var dmo=document.getElementById('dep-mo-ht'); if(dmo) dmo.value=d.moHT||'';
   var dpi=document.getElementById('dep-pieces-ht'); if(dpi) dpi.value=d.piecesHT||'';
+  var dpn=document.getElementById('dep-piece'); if(dpn && d.pieceNom) dpn.value=d.pieceNom;
   var dpiec=document.getElementById('dep-piec'); if(dpiec) dpiec.checked=!!d.piec;
   // Ne pas appeler repCalcDevis ici — dépend du prix saisi par l'utilisateur
   var dr=document.getElementById('dep-date-retour'); if(dr) dr.value=d.dateRetour||'';
@@ -15397,6 +15398,7 @@ function repClearForm(){
   ['dep-acc-coque','dep-acc-chargeur','dep-acc-cable','dep-acc-boite','dep-acc-verre','dep-acc-autre','dep-etat-ecran','dep-etat-ray-ecran','dep-etat-ray-dos','dep-etat-vitre-dos','dep-etat-bouton','dep-etat-hp','dep-etat-micro','dep-etat-camera','dep-etat-charge','dep-etat-batterie'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.checked=false;
   });
+  var dpnC=document.getElementById('dep-piece'); if(dpnC) dpnC.value='';
   var qr=document.getElementById('rep-qr-actif'); if(qr){ qr.checked=true; if(typeof repToggleQR==='function') repToggleQR(); }
 }
 
@@ -15560,6 +15562,7 @@ function repAutoSave(){
   repDossierCourant.devis      = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
   repDossierCourant.bonusQR    = !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
   repDossierCourant.piec       = !!(document.getElementById('dep-piec') && document.getElementById('dep-piec').checked);
+  repDossierCourant.pieceNom   = (document.getElementById('dep-piece')||{value:''}).value;
   repDossierCourant.dateRetour = (document.getElementById('dep-date-retour')||{value:''}).value;
   repDossierCourant.obs        = (document.getElementById('dep-obs')||{value:''}).value.trim();
   repDossierCourant.etat       = getDepotEtat();
@@ -15984,7 +15987,7 @@ function repSauvegarderDossierImmediatement(){
     client: repDossierCourant.client, appareil: repDossierCourant.appareil,
     etat: repDossierCourant.etat, etatAutre: repDossierCourant.etatAutre,
     accessoires: repDossierCourant.accessoires, accAutre: repDossierCourant.accAutre,
-    panne: repDossierCourant.panne, devis: repDossierCourant.devis,
+    panne: repDossierCourant.panne, pieceNom: repDossierCourant.pieceNom||null, devis: repDossierCourant.devis,
     bonusQR: !!repDossierCourant.bonusQR,
     dateRetour: repDossierCourant.dateRetour, obs: repDossierCourant.obs,
     facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi,
@@ -16614,7 +16617,7 @@ async function qrEnvoyerEcosystemComplet(d){
       RepairerId:'2002535',
       RepairPlaceID:'2002535',
       Product:{ProductID:_pid,BrandID:_bid,ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:_rcode},
-      SpareParts:{NewSparePartsAmount:isPIEC?0:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:isPIEC?1:0},
+      SpareParts:{NewSparePartsAmount:isPIEC?0:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:isPIEC?1:0,SparePartsDescription:isPIEC?((d.pieceNom||'Pièce')+' (PIEC)'):(d.pieceNom||'')},
       Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
@@ -16674,7 +16677,7 @@ async function qrEnvoyerEcosystemComplet(d){
       }
       // ④ Confirm-claim → récupère le N° Ordre de Service
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
-      var serviceOrder='';
+      var serviceOrder='';var confirmFailed=false;
       try{
         var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
         var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,200));
@@ -16683,7 +16686,17 @@ async function qrEnvoyerEcosystemComplet(d){
           serviceOrder=cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||'';
           console.log('[Ecosystem] N° Ordre de Service:',serviceOrder);
         }catch(pe){}
-      }catch(ec){console.warn('[Ecosystem] confirm-claim:',ec.message);}
+      }catch(ec){
+        console.error('[Ecosystem] confirm-claim:',ec.message);
+        confirmFailed=true;
+      }
+      if(!confirmFailed && !serviceOrder){
+        console.warn('[Ecosystem] confirm OK mais pas de N° Ordre de Service dans la réponse');
+      }
+      if(confirmFailed){
+        if(el)el.innerHTML="<div style='background:rgba(255,165,0,0.1);padding:12px;border-radius:8px;color:#e67e22;'>⚠️ Dossier créé ("+repairId+") mais NON confirmé. Relancez l'envoi.</div>";
+        showNotif&&showNotif('⚠️ Claim créé mais non confirmé','error');
+      }
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
@@ -16691,7 +16704,7 @@ async function qrEnvoyerEcosystemComplet(d){
     d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
     d.qrEnvoi.ecosystemRepairId=serviceOrder||repairId;
     d.qrEnvoi.ecosystemId=serviceOrder||repairId;
-    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut='Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
+    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut=confirmFailed?'Pending':'Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     var displayId=serviceOrder||repairId;
@@ -16737,7 +16750,8 @@ async function repDevisSignePDFBase64(d){
   pdf.setTextColor(0,0,0);pdf.setFont('helvetica','bold');pdf.setFontSize(11);
   pdf.text('1. INFORMATIONS RÉPARATION',lm,y);y+=7;
   pdf.setFont('helvetica','normal');pdf.setFontSize(10);
-  var _panneDesc=(d.panne||'—')+(_piec?' (PIEC — pièce issue de l\'économie circulaire)':'');
+  var _pieceLabel=d.pieceNom||'Pièce';
+  var _panneDesc=(d.panne||'—')+(_piec?' — '+_pieceLabel+' (PIEC)':'');
   var rows=[
     ['Date de réparation',dateRep],
     ['N° dossier / facture',ref],
@@ -16774,7 +16788,7 @@ async function repDevisSignePDFBase64(d){
   pdf.setFont('helvetica','bold');pdf.setFontSize(11);
   pdf.text('3. VALIDATION DU CONSOMMATEUR',lm,y);y+=7;
   pdf.setFont('helvetica','normal');pdf.setFontSize(9);pdf.setTextColor(40,40,40);
-  var decl='Je soussigné(e) '+((c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')).trim()+', certifie avoir fait réparer l\'appareil référencé ci-dessus par Solution Phone, avoir bénéficié du bonus QualiRépar de '+_bonusMontant+' € déduit du montant total de la réparation, et avoir pris connaissance des conditions du dispositif QualiRépar.'+(_piec?' J\'accepte l\'utilisation d\'une pièce issue de l\'économie circulaire (PIEC) pour cette réparation.':'');
+  var decl='Je soussigné(e) '+((c.civilite||'')+' '+(c.nom||'')+' '+(c.prenom||'')).trim()+', certifie avoir fait réparer l\'appareil référencé ci-dessus par Solution Phone, avoir bénéficié du bonus QualiRépar de '+_bonusMontant+' € déduit du montant total de la réparation, et avoir pris connaissance des conditions du dispositif QualiRépar.'+(_piec?' J\'accepte l\'utilisation d\'une pièce issue de l\'économie circulaire (PIEC) pour cette réparation : '+_pieceLabel+' (PIEC).':'');
   var lines=pdf.splitTextToSize(decl,W-lm-20);
   pdf.text(lines,lm,y);y+=lines.length*5+6;
   pdf.setFontSize(9);pdf.setTextColor(80,80,80);
@@ -22329,7 +22343,8 @@ async function qrSendEcosystem() {
     SpareParts: {
       NewSparePartsAmount:              (d.piec?0:1),
       SecondHandSparePartsAmount:       0,
-      CircularEconomyPartsAmount:       (d.piec?1:0)
+      CircularEconomyPartsAmount:       (d.piec?1:0),
+      SparePartsDescription:            d.piec?((d.pieceNom||'Pièce')+' (PIEC)'):(d.pieceNom||'')
     },
     Customer: {
       Title:        (cli.civilite === 'Mme' || cli.civilite === 'Madame') ? 'Mme' : 'M.',
@@ -22409,8 +22424,10 @@ async function qrSendEcosystem() {
         }
       }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);}
     }
-    // ③ Confirm-claim
+    // ③ Confirm-claim → récupère le N° Ordre de Service (clé définitive)
     qrSetAgoraBadge('\u23f3', 'Confirmation...', 'Ecosystem', '#f39c12');
+    var ecoServiceOrder = '';
+    var confirmOk = false;
     try {
       var confirmResp = await ecoFetch('/reimbursement-claims/' + claimId + '/confirm-claim', {
         method: 'POST',
@@ -22418,12 +22435,37 @@ async function qrSendEcosystem() {
       });
       var confirmText = await confirmResp.text();
       console.log('[Ecosystem] confirm-claim =>', confirmResp.status, confirmText.substring(0,200));
-    } catch(e){ console.warn('[Ecosystem] confirm-claim error:', e.message); }
+      if(confirmResp.ok){
+        confirmOk = true;
+        try{
+          var cData = JSON.parse(confirmText);
+          ecoServiceOrder = cData.ServiceOrderNumber || cData.serviceOrderNumber || cData.ServiceOrder || cData.serviceOrder || cData.orderNumber || '';
+          console.log('[Ecosystem] N° Ordre de Service:', ecoServiceOrder);
+        }catch(pe){ console.warn('[Ecosystem] confirm parse error:', pe); }
+      } else {
+        console.error('[Ecosystem] confirm-claim HTTP', confirmResp.status, confirmText.substring(0,200));
+      }
+    } catch(e){
+      console.error('[Ecosystem] confirm-claim error:', e.message);
+    }
+    if(!confirmOk){
+      qrSetAgoraBadge('⚠️', 'Confirmation échouée', 'Claim '+claimId+' non confirmé', '#e74c3c');
+      showNotif&&showNotif('⚠️ Dossier créé ('+claimId+') mais NON confirmé. Relancez l\'envoi.','error');
+    }
   }
 
-  var ref = claimId || sapOrder || claimData.numDossier || String(claimData);
+  var ref = ecoServiceOrder || claimId || sapOrder || claimData.numDossier || String(claimData);
   d.agoraOK  = true;
   d.agoraRef = ref;
+  // Sauvegarder le N° Ordre de Service pour le suivi
+  if(!d.qrEnvoi) d.qrEnvoi = {};
+  d.qrEnvoi.ecosystemClaimId = claimId;
+  d.qrEnvoi.ecosystemServiceOrder = ecoServiceOrder;
+  d.qrEnvoi.ecosystemRepairId = ecoServiceOrder || claimId;
+  d.qrEnvoi.ecosystemId = ecoServiceOrder || claimId;
+  d.qrEnvoi.ecosystemDate = new Date().toISOString();
+  d.qrEnvoi.statut = confirmOk ? 'Sent' : 'Pending';
+  d.qrEnvoi.date = new Date().toISOString();
 
   qrSetAgoraBadge('\u2705', 'Dossier envoy\u00e9 !', 'Ecosystem #' + ref, '#27ae60');
   var refEl  = document.getElementById('qr-ref-display');
@@ -22656,6 +22698,7 @@ function renderSuiviQR(){
 
 function qrChangerStatut(dossierId){
   var statuts = ['Sent','Approved','Paid','Rejected','Pending','Processing'];
+  var statutLabels = {'Sent':'Envoyé','Approved':'Approuvé','Paid':'Remboursé','Rejected':'Rejeté','Pending':'En attente confirmation','Processing':'En cours de vérification'};
   var labels  = ['📤 En cours vérification','✅ Approuvé','💶 Remboursé','❌ Refusé','⏳ En attente','🔄 En traitement'];
   var d = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(dossierId); });
   if(!d||!d.qrEnvoi) return;
