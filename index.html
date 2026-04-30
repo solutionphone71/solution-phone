@@ -111,6 +111,11 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   #ig-tab-gmb .ag-header{flex-direction:column;align-items:flex-start;gap:16px;}
 }
 
+/* ── Tables — distribution uniforme des colonnes ── */
+.page table{table-layout:fixed;width:100%;}
+.page table th,.page table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px;}
+.page table td[style*="white-space:normal"]{white-space:normal;}
+
 /* ── Mobile responsive tables ── */
 @media(max-width:768px){
   table{font-size:12px !important;}
@@ -2802,7 +2807,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div style="overflow-x:auto;">
             <table>
-              <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Appareil</th><th>Panne</th><th>Statut</th><th>QR</th><th>Actions</th></tr></thead>
+              <thead><tr><th style="width:10%;">N°</th><th style="width:9%;">Date</th><th style="width:18%;">Client</th><th style="width:16%;">Appareil</th><th style="width:20%;">Panne</th><th style="width:10%;">Statut</th><th style="width:7%;">QR</th><th style="width:10%;">Actions</th></tr></thead>
               <tbody id="rep-liste-table"></tbody>
             </table>
           </div>
@@ -2828,16 +2833,16 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <table style="width:100%;border-collapse:collapse;font-size:13px;">
               <thead>
                 <tr style="background:rgba(255,255,255,0.04);text-align:left;">
-                  <th style="padding:8px;">N°</th>
-                  <th style="padding:8px;">Date</th>
-                  <th style="padding:8px;">Client</th>
-                  <th style="padding:8px;">Appareil</th>
-                  <th style="padding:8px;">Panne</th>
-                  <th style="padding:8px;text-align:right;">Montant</th>
-                  <th style="padding:8px;text-align:center;">Mode</th>
-                  <th style="padding:8px;text-align:center;">Statut / QualiRépar</th>
-                  <th style="padding:8px;text-align:center;">⭐ Avis</th>
-                  <th style="padding:8px;text-align:center;">Actions</th>
+                  <th style="padding:8px;width:8%;">N°</th>
+                  <th style="padding:8px;width:7%;">Date</th>
+                  <th style="padding:8px;width:14%;">Client</th>
+                  <th style="padding:8px;width:12%;">Appareil</th>
+                  <th style="padding:8px;width:16%;">Panne</th>
+                  <th style="padding:8px;text-align:right;width:9%;">Montant</th>
+                  <th style="padding:8px;text-align:center;width:7%;">Mode</th>
+                  <th style="padding:8px;text-align:center;width:14%;">Statut / QualiRépar</th>
+                  <th style="padding:8px;text-align:center;width:5%;">⭐ Avis</th>
+                  <th style="padding:8px;text-align:center;width:8%;">Actions</th>
                 </tr>
               </thead>
               <tbody id="rep-hist-table"></tbody>
