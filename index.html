@@ -111,11 +111,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   #ig-tab-gmb .ag-header{flex-direction:column;align-items:flex-start;gap:16px;}
 }
 
-/* ── Tables — distribution uniforme des colonnes ── */
-.page table{table-layout:fixed;width:100%;}
-.page table th,.page table td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px;}
-.page table td[style*="white-space:normal"]{white-space:normal;}
-
 /* ── Mobile responsive tables ── */
 @media(max-width:768px){
   table{font-size:12px !important;}
@@ -156,8 +151,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
 /* ── WRAPPER ── */
 #aria-omnibar-wrap {
-  margin: -24px -24px 0 -24px;
-  width: calc(100% + 48px);
+  margin: 0;
+  width: 100%;
   position: sticky;
   top: 0;
   z-index: 9000;
@@ -376,7 +371,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 #sp-fab,
 #claude-agent-glow-border { display: none !important; }
 @media(max-width:768px) {
-  #aria-omnibar-wrap { margin: -12px -12px 0 -12px; width: calc(100% + 24px); padding: 8px 12px 0; }
+  #aria-omnibar-wrap { margin: 0; width: 100%; padding: 8px 12px 0; }
 }
 </style>
 </head>
@@ -545,6 +540,34 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
 <div id="app">
 <div class="layout">
+
+  <!-- ═══ ARIA COMMAND CENTER ═══ -->
+  <div id="aria-omnibar-wrap">
+    <div id="aria-bar">
+      <button id="aria-wave-btn" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
+        <svg viewBox="0 0 22 14" width="16" height="11" fill="none">
+          <rect class="aria-bar-rect" x="0"    y="3" width="3" height="8"  rx="1.5" fill="white"/>
+          <rect class="aria-bar-rect" x="4.75" y="1" width="3" height="12" rx="1.5" fill="white"/>
+          <rect class="aria-bar-rect" x="9.5"  y="4" width="3" height="6"  rx="1.5" fill="white"/>
+          <rect class="aria-bar-rect" x="14.25" y="0" width="3" height="14" rx="1.5" fill="white"/>
+          <rect class="aria-bar-rect" x="19"   y="2" width="3" height="10" rx="1.5" fill="white"/>
+        </svg>
+      </button>
+      <input id="aria-input-cmd" type="text" placeholder="Chercher, créer, piloter l'app…" autocomplete="off" spellcheck="false"/>
+      <span id="aria-kbd-badge">⌘K</span>
+      <button id="aria-mic-round" title="Parler à ARIA">🎤</button>
+      <div id="aria-spotlight"></div>
+    </div>
+    <div id="aria-qas">
+      <button class="aqa" onclick="ariaCmd('Nouvelle réparation')">🔧 Répa</button>
+      <button class="aqa" onclick="ariaCmd('CA aujourd\'hui')">💰 CA</button>
+      <button class="aqa" onclick="ariaCmd('Stock')">📱 Stock</button>
+      <button class="aqa" onclick="ariaCmd('QualiRépar')">🏷️ QR</button>
+      <button class="aqa" onclick="ariaCmd('Facture')">🧾 Facture</button>
+      <button class="aqa" onclick="ariaCmd('Caisse')">🏧 Caisse</button>
+    </div>
+  </div>
+
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-t">📱 Solution Phone</div>
@@ -610,33 +633,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     </div>
   </div>
   <div class="main">
-
-  <!-- ═══ ARIA COMMAND CENTER ═══ -->
-  <div id="aria-omnibar-wrap">
-    <div id="aria-bar">
-      <button id="aria-wave-btn" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
-        <svg viewBox="0 0 22 14" width="16" height="11" fill="none">
-          <rect class="aria-bar-rect" x="0"    y="3" width="3" height="8"  rx="1.5" fill="white"/>
-          <rect class="aria-bar-rect" x="4.75" y="1" width="3" height="12" rx="1.5" fill="white"/>
-          <rect class="aria-bar-rect" x="9.5"  y="4" width="3" height="6"  rx="1.5" fill="white"/>
-          <rect class="aria-bar-rect" x="14.25" y="0" width="3" height="14" rx="1.5" fill="white"/>
-          <rect class="aria-bar-rect" x="19"   y="2" width="3" height="10" rx="1.5" fill="white"/>
-        </svg>
-      </button>
-      <input id="aria-input-cmd" type="text" placeholder="Chercher, créer, piloter l'app…" autocomplete="off" spellcheck="false"/>
-      <span id="aria-kbd-badge">⌘K</span>
-      <button id="aria-mic-round" title="Parler à ARIA">🎤</button>
-      <div id="aria-spotlight"></div>
-    </div>
-    <div id="aria-qas">
-      <button class="aqa" onclick="ariaCmd('Nouvelle réparation')">🔧 Répa</button>
-      <button class="aqa" onclick="ariaCmd('CA aujourd\'hui')">💰 CA</button>
-      <button class="aqa" onclick="ariaCmd('Stock')">📱 Stock</button>
-      <button class="aqa" onclick="ariaCmd('QualiRépar')">🏷️ QR</button>
-      <button class="aqa" onclick="ariaCmd('Facture')">🧾 Facture</button>
-      <button class="aqa" onclick="ariaCmd('Caisse')">🏧 Caisse</button>
-    </div>
-  </div>
 
     <div class="page active" id="page-dashboard">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
