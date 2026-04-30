@@ -8174,6 +8174,7 @@ function savePhoneEdit() {
   // Upload des nouvelles photos si ajoutées
   if(_editPendingPhotoFace || _editPendingPhotoDos){
     showNotif('⏳ Upload des photos sur le serveur...','info');
+      var handle = (p.modele||'phone').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
       var photoPromises = [];
     if(_editPendingPhotoFace){
       console.log('[SavePhoto] Upload FACE — taille:', _editPendingPhotoFace.size, 'bytes');
