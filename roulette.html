@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f5f5f7">
+<title>🎡 Tentez votre chance — Solution Phone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red:    #ff3b30;
+  --red2:   #c9251b;
+  --gold:   #f59e0b;
+  --gold2:  #d97706;
+  --bg:     #f5f5f7;
+  --white:  #ffffff;
+  --card:   rgba(255,255,255,0.75);
+  --border: rgba(0,0,0,0.06);
+  --text:   #1d1d1f;
+  --muted:  #6e6e73;
+  --green:  #34c759;
+  --shadow: 0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  --glass:  rgba(255,255,255,0.6);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height:100%; overflow:hidden;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── BACKGROUND ── */
+.bg-fx {
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 30% -10%, rgba(255,59,48,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(245,158,11,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(255,255,255,0.5) 0%, transparent 80%);
+}
+.bg-dots {
+  position:fixed; inset:0; pointer-events:none; z-index:0; opacity:0.4;
+  background-image:radial-gradient(circle, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size:24px 24px;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px 20px;
+  text-align:center;
+  opacity:0; pointer-events:none;
+  transform:translateY(12px) scale(0.98);
+  transition:opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.screen.active { opacity:1; pointer-events:all; transform:translateY(0) scale(1); }
+
+/* ── LOGO ── */
+.logo-sp {
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:32px;
+}
+.logo-icon {
+  width:36px; height:36px; border-radius:10px;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  box-shadow:0 4px 12px rgba(255,59,48,0.3);
+}
+.logo-text {
+  font-size:13px; font-weight:700; color:var(--muted);
+  letter-spacing:0.02em;
+}
+
+/* ── SCREEN 0: PHONE ── */
+.phone-icon {
+  width:72px; height:72px; border-radius:20px;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  display:flex; align-items:center; justify-content:center;
+  font-size:36px; margin-bottom:20px;
+  box-shadow:0 8px 24px rgba(255,59,48,0.25);
+  animation:icon-float 3s ease-in-out infinite;
+}
+@keyframes icon-float {
+  0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);}
+}
+.phone-title {
+  font-size:26px; font-weight:900; letter-spacing:-0.03em;
+  margin-bottom:8px; line-height:1.15;
+}
+.phone-sub {
+  font-size:14px; color:var(--muted); margin-bottom:28px;
+  line-height:1.7; max-width:300px;
+}
+.phone-input-wrap { width:100%; max-width:320px; margin-bottom:14px; }
+.phone-input {
+  width:100%; padding:18px 20px; font-size:26px; font-weight:700;
+  background:var(--white); border:2px solid var(--border); border-radius:16px;
+  color:var(--text); text-align:center; letter-spacing:4px;
+  font-family:'Inter', sans-serif;
+  transition:border-color .2s, box-shadow .2s;
+  box-shadow:var(--shadow);
+}
+.phone-input:focus {
+  outline:none; border-color:var(--red);
+  box-shadow:0 0 0 4px rgba(255,59,48,0.1), var(--shadow);
+}
+.phone-input::placeholder { color:#c7c7cc; letter-spacing:1px; font-size:16px; font-weight:400; }
+
+.phone-already {
+  background:rgba(255,59,48,0.06); border:1.5px solid rgba(255,59,48,0.2);
+  border-radius:16px; padding:20px 22px; text-align:center;
+  display:none; margin-bottom:14px; max-width:320px;
+  animation:shake 0.4s ease;
+}
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)}
+}
+.phone-already-emoji { font-size:32px; margin-bottom:8px; }
+.phone-already-title { font-size:15px; font-weight:700; margin-bottom:5px; }
+.phone-already-sub   { font-size:13px; color:var(--muted); line-height:1.6; }
+.phone-loading       { display:none; margin-top:12px; font-size:13px; color:var(--muted); }
+
+/* ── SCREEN 1: INTRO ── */
+.intro-emoji {
+  font-size:72px;
+  animation:bounce-in 0.6s cubic-bezier(0.34,1.56,0.64,1) both, float 3s ease-in-out 0.6s infinite;
+  margin-bottom:20px;
+  filter:drop-shadow(0 8px 24px rgba(255,59,48,0.2));
+}
+@keyframes float {
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-12px) rotate(2deg);}
+}
+@keyframes bounce-in {
+  from{transform:scale(0) rotate(-15deg);opacity:0}
+  to{transform:scale(1) rotate(0);opacity:1}
+}
+h1 {
+  font-size:clamp(28px, 7vw, 42px);
+  font-weight:900; line-height:1.08;
+  letter-spacing:-0.04em;
+  margin-bottom:12px;
+}
+h1 .acc {
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.subtitle {
+  font-size:15px; color:var(--muted); line-height:1.7;
+  max-width:300px; margin-bottom:32px;
+}
+
+.prizes-preview { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:36px; max-width:360px; }
+.prize-chip {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:30px; padding:8px 14px;
+  font-size:13px; color:var(--muted); font-weight:500;
+  display:flex; align-items:center; gap:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  transition:transform 0.2s, box-shadow 0.2s;
+}
+.prize-chip:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+
+/* ── BUTTONS ── */
+.btn-main {
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff; border:none;
+  padding:18px 48px; border-radius:50px;
+  font-size:17px; font-weight:700;
+  cursor:pointer;
+  font-family:'Inter', sans-serif;
+  box-shadow:0 8px 32px rgba(255,59,48,0.35), 0 2px 0 rgba(255,255,255,0.15) inset;
+  transition:transform 0.15s, box-shadow 0.15s;
+  animation:btn-pulse 2.5s ease-in-out infinite;
+  letter-spacing:-0.01em;
+  position:relative; overflow:hidden;
+}
+.btn-main::before {
+  content:''; position:absolute; top:0; left:-100%; width:100%; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition:left 0.6s;
+}
+.btn-main:hover::before { left:100%; }
+@keyframes btn-pulse {
+  0%,100%{box-shadow:0 8px 28px rgba(255,59,48,0.3);}
+  50%{box-shadow:0 8px 48px rgba(255,59,48,0.5), 0 0 0 6px rgba(255,59,48,0.06);}
+}
+.btn-main:active { transform:scale(0.97); animation:none; }
+.btn-main:disabled { opacity:0.45; cursor:not-allowed; animation:none; box-shadow:none; }
+
+.btn-secondary {
+  background:var(--white); color:var(--muted);
+  border:1px solid var(--border);
+  padding:13px 22px; border-radius:12px;
+  font-size:14px; font-weight:600;
+  cursor:pointer; width:100%; margin-top:10px;
+  transition:all 0.2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+.btn-secondary:hover { border-color:var(--red); color:var(--red); }
+
+/* ── SCREEN 2: REVIEW ── */
+.review-card {
+  background:var(--white);
+  border-radius:28px;
+  padding:44px 28px 28px;
+  max-width:400px; width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.05);
+  position:relative;
+  border:1px solid rgba(0,0,0,0.04);
+}
+.review-g-logo {
+  position:absolute; top:-34px; left:50%;
+  transform:translateX(-50%);
+  width:68px; height:68px;
+  background:#fff; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+}
+.review-card h2 {
+  font-size:22px; font-weight:900;
+  color:var(--text); text-align:center;
+  letter-spacing:-0.03em;
+  margin-bottom:22px;
+}
+.steps-list { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
+.step-item {
+  display:flex; align-items:center; gap:14px;
+  background:var(--bg); border-radius:14px;
+  padding:14px 16px;
+  transition:transform 0.2s;
+}
+.step-item:hover { transform:translateX(4px); }
+.step-item.highlight { background:rgba(255,59,48,0.06); }
+.step-num {
+  width:36px; height:36px; flex-shrink:0;
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:17px;
+  box-shadow:0 4px 12px rgba(255,59,48,0.3);
+}
+.step-text { font-size:15px; font-weight:700; color:var(--text); }
+
+.stars-row { display:flex; justify-content:center; gap:5px; margin-bottom:18px; }
+.star { font-size:28px; animation:star-pop 0.4s ease both; }
+.star:nth-child(1){animation-delay:.05s} .star:nth-child(2){animation-delay:.12s}
+.star:nth-child(3){animation-delay:.19s} .star:nth-child(4){animation-delay:.26s}
+.star:nth-child(5){animation-delay:.33s}
+@keyframes star-pop {
+  from{transform:scale(0) rotate(-20deg);opacity:0}
+  to{transform:scale(1) rotate(0);opacity:1}
+}
+.btn-google {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:100%; background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff;
+  border:none; padding:17px 24px;
+  border-radius:50px; font-size:17px; font-weight:800;
+  cursor:pointer; text-decoration:none;
+  font-family:'Inter', sans-serif;
+  transition:transform 0.15s, box-shadow 0.2s;
+  box-shadow:0 8px 28px rgba(255,59,48,0.35);
+  letter-spacing:-0.01em;
+  margin-bottom:0;
+}
+.btn-google:hover { transform:translateY(-2px); box-shadow:0 12px 40px rgba(255,59,48,0.45); }
+.btn-google:active { transform:scale(0.97); }
+
+.countdown-zone { display:none; margin-top:14px; }
+.lock-info { font-size:13px; color:var(--muted); text-align:center; margin-bottom:10px; }
+.countdown-bar-wrap {
+  height:5px; background:#e8e8ed; border-radius:4px;
+  margin:0 0 14px; overflow:hidden;
+}
+.countdown-bar {
+  height:100%; background:linear-gradient(90deg,var(--red),var(--gold));
+  border-radius:4px; transition:width 1s linear;
+}
+.btn-play-now {
+  width:100%; font-size:16px; padding:16px;
+  animation:btn-pulse 1.5s ease-in-out infinite;
+  opacity:0; pointer-events:none; transition:opacity 0.4s;
+}
+.btn-play-now.ready { opacity:1; pointer-events:all; }
+
+/* ── SCREEN 3: SPIN ── */
+.spin-title {
+  font-size:28px; font-weight:900; margin-bottom:6px;
+  letter-spacing:-0.03em;
+}
+.spin-sub { font-size:14px; color:var(--muted); margin-bottom:24px; }
+
+.wheel-wrap {
+  position:relative;
+  width:min(310px, 82vw);
+  height:min(310px, 82vw);
+  margin:0 auto 28px;
+  margin-right:calc(auto + 20px);
+}
+.wheel-pointer {
+  position:absolute;
+  right:-26px; top:50%;
+  transform:translateY(-50%);
+  z-index:20;
+  filter:drop-shadow(0 2px 8px rgba(255,59,48,0.5));
+}
+#wheel-canvas {
+  width:100%; height:100%;
+  border-radius:50%; display:block;
+  box-shadow:
+    0 0 0 4px rgba(255,59,48,0.1),
+    0 16px 48px rgba(0,0,0,0.12),
+    0 4px 16px rgba(0,0,0,0.06);
+}
+.wheel-center {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:56px; height:56px;
+  background:var(--white);
+  border:3px solid var(--red);
+  border-radius:50%; z-index:15;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px;
+  box-shadow:0 4px 16px rgba(255,59,48,0.25), 0 0 0 6px rgba(255,59,48,0.06);
+}
+
+.btn-spin {
+  background:linear-gradient(135deg, var(--red), var(--red2));
+  color:#fff; border:none;
+  padding:18px 64px; border-radius:50px;
+  font-size:19px; font-weight:800;
+  cursor:pointer; font-family:'Inter', sans-serif;
+  box-shadow:0 8px 36px rgba(255,59,48,0.4);
+  transition:transform 0.15s;
+  animation:btn-pulse 2s ease-in-out infinite;
+  letter-spacing:-0.01em;
+  position:relative; overflow:hidden;
+}
+.btn-spin::after {
+  content:''; position:absolute;
+  top:-50%; left:-60%; width:40%; height:200%;
+  background:rgba(255,255,255,0.2);
+  transform:skewX(-20deg);
+  animation:shimmer 3s infinite;
+}
+@keyframes shimmer { 0%{left:-60%} 100%{left:160%} }
+.btn-spin:active { transform:scale(0.96); animation:none; }
+.btn-spin:disabled { opacity:0.5; cursor:not-allowed; animation:none; box-shadow:none; }
+.btn-spin:disabled::after { display:none; }
+
+/* ── SCREEN 4: WIN ── */
+.win-emoji-big {
+  font-size:80px;
+  animation:pop-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+  filter:drop-shadow(0 8px 24px rgba(245,158,11,0.3));
+  margin-bottom:14px;
+}
+@keyframes pop-in {
+  from{transform:scale(0) rotate(-15deg);opacity:0}
+  to{transform:scale(1) rotate(0);opacity:1}
+}
+.win-h {
+  font-size:34px; font-weight:900; margin-bottom:20px;
+  letter-spacing:-0.04em;
+}
+
+.prize-reveal {
+  background:var(--white);
+  border:1.5px solid rgba(245,158,11,0.25);
+  border-radius:22px; padding:26px 36px;
+  margin-bottom:20px; max-width:340px; width:100%;
+  position:relative; overflow:hidden;
+  box-shadow:0 8px 32px rgba(245,158,11,0.1);
+}
+.prize-reveal::before {
+  content:''; position:absolute; inset:-1px;
+  background:linear-gradient(135deg, rgba(245,158,11,0.15), transparent, rgba(245,158,11,0.1));
+  border-radius:22px; pointer-events:none;
+}
+.prize-reveal-label {
+  font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:2px;
+  color:var(--gold2); margin-bottom:8px;
+}
+.prize-reveal-name {
+  font-size:22px; font-weight:900;
+  color:var(--text); line-height:1.3;
+  letter-spacing:-0.02em;
+}
+
+.win-instruction {
+  font-size:14px; color:var(--muted);
+  line-height:1.8; max-width:280px; margin-bottom:28px;
+}
+.win-instruction strong { color:var(--text); }
+
+/* Email box */
+.email-box {
+  background:var(--white); border:1px solid var(--border);
+  border-radius:20px; padding:20px;
+  width:100%; max-width:340px; margin-bottom:10px;
+  box-shadow:var(--shadow);
+}
+.email-label { font-size:14px; color:var(--text); margin-bottom:10px; font-weight:600; }
+.email-input {
+  width:100%; padding:13px 16px;
+  background:var(--bg); border:1.5px solid var(--border);
+  border-radius:12px; color:var(--text); font-size:15px;
+  outline:none; transition:border-color 0.2s;
+  font-family:'Inter', sans-serif;
+}
+.email-input:focus { border-color:var(--red); }
+.email-sent-msg { display:none; margin-top:10px; font-size:13px; color:var(--green); text-align:center; }
+
+/* ── CONFETTI ── */
+#confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:500; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:28px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--white); border:1px solid var(--border);
+  border-radius:14px; padding:14px 24px;
+  font-size:13px; color:var(--text); z-index:600; white-space:nowrap;
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 8px 32px rgba(0,0,0,0.12);
+  font-weight:500;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── ANTI-TRICHE LOCK BADGE ── */
+.lock-badge {
+  display:inline-flex; align-items:center; gap:6px;
+  background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.2);
+  border-radius:30px; padding:6px 14px;
+  font-size:12px; color:var(--gold2);
+  margin-bottom:14px; font-weight:600;
+}
+
+/* ── SPINNER LOADER ── */
+.spinner {
+  width:18px; height:18px;
+  border:2px solid var(--border);
+  border-top-color:var(--red);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  display:inline-block; vertical-align:middle; margin-right:8px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1); border-radius:4px; }
+</style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div class="bg-dots"></div>
+<canvas id="confetti-canvas"></canvas>
+
+<!-- ╔═══════════════ SCREEN 0 : TÉLÉPHONE ╗ -->
+<div class="screen active" id="s-phone">
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
+  <div class="phone-icon">📱</div>
+  <div class="phone-title">Entrez votre<br>numéro de téléphone</div>
+  <div class="phone-sub">1 participation par personne.<br>Votre numéro reste strictement confidentiel.</div>
+
+  <div class="phone-input-wrap">
+    <input type="tel" id="phone-input" class="phone-input"
+      placeholder="06 XX XX XX XX" maxlength="14"
+      inputmode="numeric" autocomplete="tel"
+      oninput="formatPhoneInput(this)" onkeypress="if(event.key==='Enter') checkPhone()">
+  </div>
+
+  <div class="phone-already" id="phone-already-msg">
+    <div class="phone-already-emoji">🎡</div>
+    <div class="phone-already-title">Vous avez déjà participé !</div>
+    <div class="phone-already-sub">Une seule participation par personne.<br>Merci d'avoir joué à la roue Solution Phone !</div>
+  </div>
+
+  <button class="btn-main" id="btn-check-phone" onclick="checkPhone()" style="width:100%;max-width:320px;font-size:16px;padding:16px;" disabled>
+    Continuer →
+  </button>
+  <div class="phone-loading" id="phone-loading"><span class="spinner"></span>Vérification…</div>
+</div>
+
+<!-- ╔═══════════════ SCREEN 1 : INTRO ╗ -->
+<div class="screen" id="s-intro">
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
+  <div class="intro-emoji">🎡</div>
+  <h1>Tentez votre<br><span class="acc">chance !</span></h1>
+  <p class="subtitle">Votre réparation est terminée 🎉<br>Laissez-nous un avis et tournez la roue pour gagner un cadeau.</p>
+  <div class="prizes-preview" id="prizes-preview"></div>
+  <button class="btn-main" onclick="goTo('s-review')">Jouer maintenant →</button>
+</div>
+
+<!-- ╔═══════════════ SCREEN 2 : AVIS GOOGLE ╗ -->
+<div class="screen" id="s-review">
+  <div class="review-card">
+    <!-- Logo Google flottant -->
+    <div class="review-g-logo">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+    </div>
+
+    <h2>Suivez les étapes :</h2>
+
+    <div class="steps-list">
+      <div class="step-item highlight">
+        <div class="step-num">1</div>
+        <div class="step-text">Laissez-nous un avis Google</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-text">Revenez sur cette page</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-text">Faites tourner la roue !</div>
+      </div>
+    </div>
+
+    <div class="stars-row">
+      <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+      <span class="star">⭐</span><span class="star">⭐</span>
+    </div>
+
+    <a class="btn-google" id="btn-google" href="#" target="_blank" rel="noopener" onclick="onReviewClick()">
+      Notez sur Google
+    </a>
+
+    <!-- Zone countdown — apparaît après clic -->
+    <div class="countdown-zone" id="countdown-zone">
+      <div class="lock-info">⏳ Roue disponible dans <strong id="countdown-num">20</strong>s</div>
+      <div class="countdown-bar-wrap">
+        <div class="countdown-bar" id="countdown-bar" style="width:100%;"></div>
+      </div>
+      <button class="btn-main btn-play-now" id="btn-play-now" onclick="goTo('s-spin')" style="width:100%;font-size:16px;padding:16px;">
+        ✅ J'ai laissé mon avis → JOUER !
+      </button>
+    </div>
+
+    <!-- Bypass uniquement après countdown -->
+    <button id="btn-already-bypass" onclick="goTo('s-spin')" style="display:none;background:transparent;border:none;color:#aaa;font-size:13px;cursor:pointer;margin-top:12px;width:100%;text-align:center;padding:8px;">
+      J'ai déjà un avis Google → Jouer directement
+    </button>
+  </div>
+</div>
+
+<!-- ╔═══════════════ SCREEN 3 : SPIN ╗ -->
+<div class="screen" id="s-spin">
+  <div class="spin-title">À vous de jouer !</div>
+  <div class="spin-sub">Tournez la roue et découvrez votre cadeau</div>
+
+  <div class="wheel-wrap">
+    <!-- Pointeur DROITE -->
+    <svg class="wheel-pointer" width="30" height="24" viewBox="0 0 30 24">
+      <defs>
+        <linearGradient id="ptr-grad" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0%" stop-color="#ff5555"/>
+          <stop offset="100%" stop-color="#c9251b"/>
+        </linearGradient>
+        <filter id="ptr-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#ff3b30" flood-opacity="0.4"/>
+        </filter>
+      </defs>
+      <polygon points="0,12 28,2 28,22" fill="url(#ptr-grad)" filter="url(#ptr-shadow)"/>
+      <circle cx="24" cy="12" r="4" fill="#fff" opacity="0.9"/>
+    </svg>
+    <canvas id="wheel-canvas" width="640" height="640"></canvas>
+    <div class="wheel-center">⭐</div>
+  </div>
+
+  <button class="btn-spin" id="btn-spin" onclick="spinWheel()">TOURNER 🎡</button>
+</div>
+
+<!-- ╔═══════════════ SCREEN 4 : GAIN ╗ -->
+<div class="screen" id="s-win">
+  <div class="logo-sp">
+    <div class="logo-icon">📱</div>
+    <div class="logo-text">Solution Phone — Mâcon</div>
+  </div>
+  <div class="win-emoji-big" id="win-emoji">🎁</div>
+  <div class="win-h">Félicitations !</div>
+  <div class="prize-reveal">
+    <div class="prize-reveal-label">🎉 Votre cadeau</div>
+    <div class="prize-reveal-name" id="win-name">—</div>
+  </div>
+
+  <div class="email-box">
+    <p class="email-label">📧 Recevez votre cadeau par email</p>
+    <input type="email" id="win-email" class="email-input" placeholder="votre@email.fr" autocomplete="email">
+    <button class="btn-main" id="btn-send-email" onclick="sendPrizeEmail()" style="width:100%;margin-top:10px;font-size:15px;padding:14px;">
+      📩 Recevoir mon cadeau
+    </button>
+    <div class="email-sent-msg" id="email-sent-msg">✅ Email envoyé ! Solution Phone vous contactera bientôt.</div>
+  </div>
+
+  <p class="win-instruction" style="margin-top:12px;">
+    <strong>Ou montrez cet écran à notre équipe</strong><br>pour récupérer votre cadeau en boutique.
+  </p>
+  <button class="btn-secondary" onclick="goTo('s-intro')" style="margin-top:8px;">✨ Merci Solution Phone !</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
+const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
+const BREVO_KEY = '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';
+const SHOP_EMAIL = 'solution.phone71@gmail.com';
+
+const DEFAULT_CONFIG = {
+  googleUrl: 'https://g.page/r/CbyQ_wiFpddjEBM/review',
+  prizes: [
+    { label: "Protection d'écran offerte",  emoji:'🛡️', color:'#e53e3e', color2:'#c0392b', weight:20 },
+    { label: 'Nettoyant écran offert',       emoji:'🧴', color:'#d97706', color2:'#b45309', weight:15 },
+    { label: '-10% prochaine réparation',    emoji:'⚡', color:'#2563eb', color2:'#1d4ed8', weight:15 },
+    { label: 'Housse de protection offerte', emoji:'🎁', color:'#16a34a', color2:'#15803d', weight:20 },
+    { label: 'Câble de charge offert',       emoji:'🔌', color:'#7c3aed', color2:'#6d28d9', weight:20 },
+    { label: '-5€ prochaine réparation',     emoji:'💶', color:'#e53e3e', color2:'#c0392b', weight:10 },
+  ]
+};
+
+let CFG    = DEFAULT_CONFIG;
+let PRIZES = CFG.prizes;
+let TOTAL  = PRIZES.reduce((s,p) => s + p.weight, 0);
+
+async function loadConfig() {
+  try {
+    const res  = await fetch(SUPA_URL + '/rest/v1/roulette_config?id=eq.1', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
+    const data = await res.json();
+    if (data && data[0]) {
+      const prizes = (data[0].prizes || DEFAULT_CONFIG.prizes).map((p,i) => ({
+        ...DEFAULT_CONFIG.prizes[i] || {}, ...p
+      }));
+      return { googleUrl: data[0].google_url || DEFAULT_CONFIG.googleUrl, prizes };
+    }
+  } catch(e) {}
+  return DEFAULT_CONFIG;
+}
+
+async function initRoulette() {
+  CFG    = await loadConfig();
+  PRIZES = CFG.prizes;
+  TOTAL  = PRIZES.reduce((s,p) => s + p.weight, 0);
+
+  const btnGoogle = document.getElementById('btn-google');
+  btnGoogle.href = CFG.googleUrl;
+
+  const wrap = document.getElementById('prizes-preview');
+  wrap.innerHTML = '';
+  PRIZES.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'prize-chip';
+    chip.innerHTML = `${p.emoji} ${p.label}`;
+    wrap.appendChild(chip);
+  });
+
+  drawWheel(rotation);
+}
+
+initRoulette();
+
+// ─────────────────────────────────────────────────────────────
+// WHEEL DRAWING — Version premium light
+// ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('wheel-canvas');
+const ctx    = canvas.getContext('2d');
+const CX = 320, CY = 320, R = 295;
+let rotation = 0;
+
+function lighten(hex, pct) {
+  const n = parseInt(hex.replace('#',''), 16);
+  const r = Math.min(255, (n>>16) + pct);
+  const g = Math.min(255, ((n>>8)&0xff) + pct);
+  const b = Math.min(255, (n&0xff) + pct);
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawWheel(rot) {
+  ctx.clearRect(0, 0, 640, 640);
+
+  // === OMBRE SOUS LA ROUE ===
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY+4, R+2, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.filter = 'blur(8px)';
+  ctx.fill();
+  ctx.filter = 'none';
+  ctx.restore();
+
+  // === FOND BLANC SOUS SEGMENTS ===
+  ctx.beginPath();
+  ctx.arc(CX, CY, R-2, 0, Math.PI*2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
+  // === SEGMENTS ===
+  let a = rot;
+
+  PRIZES.forEach((p) => {
+    const slice = (p.weight / TOTAL) * Math.PI * 2;
+    const end   = a + slice;
+    const mid   = a + slice / 2;
+
+    // — Gradient radial par segment
+    const gx = CX + R * 0.3 * Math.cos(mid);
+    const gy = CY + R * 0.3 * Math.sin(mid);
+    const grad = ctx.createRadialGradient(gx, gy, 0, CX, CY, R);
+    grad.addColorStop(0,   lighten(p.color, 45));
+    grad.addColorStop(0.5, p.color);
+    grad.addColorStop(1,   p.color2 || lighten(p.color, -20));
+
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, R - 18, a, end);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // — Séparateur blanc
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // — Emoji
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(mid);
+    ctx.font = '40px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.emoji, (R - 18) * 0.72, 0);
+    ctx.restore();
+
+    // — Label (2 lignes max)
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(mid);
+    const words = p.label.split(' ');
+    const half  = Math.ceil(words.length / 2);
+    const l1 = words.slice(0, half).join(' ');
+    const l2 = words.slice(half).join(' ');
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = 'bold 17px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur  = 3;
+    ctx.fillText(l1, (R - 18) * 0.36, l2 ? -10 : 0);
+    if (l2) ctx.fillText(l2, (R - 18) * 0.36, 12);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    a = end;
+  });
+
+  // === ANNEAU DÉCORATIF EXTÉRIEUR (perles) ===
+  const numLed = 36;
+  const led_r  = R - 6;
+  for (let i = 0; i < numLed; i++) {
+    const angle = (i / numLed) * Math.PI * 2 + rot;
+    const lx = CX + led_r * Math.cos(angle);
+    const ly = CY + led_r * Math.sin(angle);
+    ctx.beginPath();
+    ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.5)';
+    ctx.fill();
+  }
+
+  // === RING EXTÉRIEUR ===
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,59,48,0.2)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Ring intérieur subtil
+  ctx.beginPath();
+  ctx.arc(CX, CY, R - 18, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // === CENTRE HUB ===
+  const hubGrad = ctx.createRadialGradient(CX, CY-4, 0, CX, CY, 28);
+  hubGrad.addColorStop(0,   '#ffffff');
+  hubGrad.addColorStop(0.6, '#f8f8fa');
+  hubGrad.addColorStop(1,   '#e8e8ed');
+  ctx.beginPath();
+  ctx.arc(CX, CY, 28, 0, Math.PI * 2);
+  ctx.fillStyle = hubGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,59,48,0.35)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+}
+
+drawWheel(rotation);
+
+// ─────────────────────────────────────────────────────────────
+// SPIN
+// ─────────────────────────────────────────────────────────────
+let spinning = false;
+
+function spinWheel() {
+  if (spinning) return;
+
+  if (sessionStorage.getItem('sp_played')) {
+    showToast('Vous avez déjà joué lors de cette visite 😊');
+    return;
+  }
+
+  spinning = true;
+  document.getElementById('btn-spin').disabled = true;
+
+  const rand = Math.random() * TOTAL;
+  let cum = 0, winIdx = 0;
+  for (let i = 0; i < PRIZES.length; i++) {
+    cum += PRIZES[i].weight;
+    if (rand < cum) { winIdx = i; break; }
+  }
+
+  const segAngles = PRIZES.map(p => (p.weight / TOTAL) * Math.PI * 2);
+  let cumAngle = 0;
+  for (let i = 0; i < winIdx; i++) cumAngle += segAngles[i];
+  const half = segAngles[winIdx] / 2;
+  const targetPhase = -cumAngle - half;
+  let delta = ((targetPhase - rotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+  if (delta < 0.2) delta += Math.PI * 2;
+
+  const extraSpins = (7 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+  const finalRot   = rotation + delta + extraSpins;
+  const duration   = 5800;
+  const startRot   = rotation;
+  const startTime  = performance.now();
+
+  function ease(t) { return 1 - Math.pow(1 - t, 5); }
+
+  function animate(now) {
+    const t     = Math.min((now - startTime) / duration, 1);
+    rotation    = startRot + (finalRot - startRot) * ease(t);
+    drawWheel(rotation);
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rotation = finalRot;
+      drawWheel(rotation);
+      sessionStorage.setItem('sp_played', '1');
+      setTimeout(() => {
+        showWin(PRIZES[winIdx]);
+        spinning = false;
+        document.getElementById('btn-spin').disabled = false;
+      }, 400);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ─────────────────────────────────────────────────────────────
+// WIN SCREEN
+// ─────────────────────────────────────────────────────────────
+let winPrizeName = '';
+
+function showWin(prize) {
+  saveParticipation(prize.label);
+  document.getElementById('win-emoji').textContent = prize.emoji;
+  document.getElementById('win-name').textContent  = prize.label;
+  winPrizeName = prize.label;
+  document.getElementById('win-email').value = '';
+  document.getElementById('email-sent-msg').style.display = 'none';
+  const btn = document.getElementById('btn-send-email');
+  btn.textContent = '📩 Recevoir mon cadeau';
+  btn.disabled = false;
+  goTo('s-win');
+  launchConfetti();
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONFETTI amélioré
+// ─────────────────────────────────────────────────────────────
+function launchConfetti() {
+  const cc = document.getElementById('confetti-canvas');
+  cc.width  = window.innerWidth;
+  cc.height = window.innerHeight;
+  const c = cc.getContext('2d');
+  const cols = ['#ff3b30','#f59e0b','#34c759','#007aff','#ff9500','#af52de','#ff2d55','#5ac8fa'];
+  const bits = [];
+  const shapes = ['rect','circle','star'];
+
+  for (let i = 0; i < 180; i++) {
+    bits.push({
+      x:   Math.random() * cc.width,
+      y:   -20 - Math.random() * 280,
+      w:   6 + Math.random() * 8,
+      h:   5 + Math.random() * 6,
+      col: cols[Math.floor(Math.random() * cols.length)],
+      vx:  (Math.random() - 0.5) * 8,
+      vy:  2.5 + Math.random() * 5,
+      rot: Math.random() * Math.PI * 2,
+      rv:  (Math.random() - 0.5) * 0.28,
+      op:  1,
+      shape: shapes[Math.floor(Math.random() * 3)]
+    });
+  }
+
+  function render() {
+    c.clearRect(0, 0, cc.width, cc.height);
+    let alive = false;
+    bits.forEach(b => {
+      b.x += b.vx; b.y += b.vy;
+      b.rot += b.rv; b.vy += 0.11;
+      if (b.y > cc.height * 0.75) b.op = Math.max(0, b.op - 0.025);
+      if (b.y < cc.height + 20 && b.op > 0) alive = true;
+
+      c.save();
+      c.globalAlpha = b.op;
+      c.translate(b.x, b.y);
+      c.rotate(b.rot);
+      c.fillStyle = b.col;
+      if (b.shape === 'circle') {
+        c.beginPath(); c.arc(0, 0, b.w/2, 0, Math.PI*2); c.fill();
+      } else if (b.shape === 'star') {
+        c.beginPath();
+        for(let s=0;s<5;s++){
+          const a1=(s*4*Math.PI/5)-Math.PI/2, a2=((s*4+2)*Math.PI/5)-Math.PI/2;
+          if(s===0) c.moveTo(Math.cos(a1)*b.w,Math.sin(a1)*b.w);
+          else c.lineTo(Math.cos(a1)*b.w,Math.sin(a1)*b.w);
+          c.lineTo(Math.cos(a2)*b.w*0.4,Math.sin(a2)*b.w*0.4);
+        }
+        c.closePath(); c.fill();
+      } else {
+        c.fillRect(-b.w/2, -b.h/2, b.w, b.h);
+      }
+      c.restore();
+    });
+    if (alive) requestAnimationFrame(render);
+    else c.clearRect(0, 0, cc.width, cc.height);
+  }
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────
+// NAVIGATION
+// ─────────────────────────────────────────────────────────────
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────────
+// REVIEW CLICK — Anti-triche countdown 20s
+// ─────────────────────────────────────────────────────────────
+let countdownActive = false;
+
+function onReviewClick() {
+  if (countdownActive) return;
+  countdownActive = true;
+
+  setTimeout(() => {
+    const zone = document.getElementById('countdown-zone');
+    if (zone) zone.style.display = 'block';
+
+    const total   = 20;
+    const bar     = document.getElementById('countdown-bar');
+    const numEl   = document.getElementById('countdown-num');
+    const btnPlay = document.getElementById('btn-play-now');
+    let count = total;
+
+    if (bar) bar.style.width = '100%';
+
+    const interval = setInterval(() => {
+      count--;
+      if (numEl) numEl.textContent = count;
+      if (bar)   bar.style.width = ((count / total) * 100) + '%';
+
+      if (count <= 0) {
+        clearInterval(interval);
+        if (btnPlay) btnPlay.classList.add('ready');
+        const bypass = document.getElementById('btn-already-bypass');
+        if (bypass) bypass.style.display = 'block';
+        const lock = document.querySelector('.lock-badge');
+        if (lock) lock.innerHTML = '🟢 Roue débloquée ! Cliquez ci-dessous';
+      }
+    }, 1000);
+  }, 600);
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMAIL via Brevo API
+// ─────────────────────────────────────────────────────────────
+async function sendPrizeEmail() {
+  const email = document.getElementById('win-email').value.trim();
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    showToast('Veuillez entrer une adresse email valide 😊');
+    return;
+  }
+
+  const btn = document.getElementById('btn-send-email');
+  btn.innerHTML = '<span class="spinner"></span>Envoi en cours…';
+  btn.disabled = true;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<body style="background:#f5f5f7;color:#1d1d1f;font-family:-apple-system,sans-serif;margin:0;padding:20px;">
+<div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+  <div style="background:linear-gradient(135deg,#ff3b30,#c9251b);padding:36px 28px;text-align:center;">
+    <div style="font-size:56px;margin-bottom:10px;">🎡</div>
+    <h1 style="font-size:26px;font-weight:900;color:#fff;margin:0;">Félicitations !</h1>
+    <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;">Vous avez gagné à la Roue Solution Phone</p>
+  </div>
+  <div style="padding:32px 28px;text-align:center;">
+    <div style="background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.2);border-radius:16px;padding:24px;margin-bottom:24px;">
+      <p style="font-size:11px;color:#d97706;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">🎉 Votre cadeau</p>
+      <p style="font-size:22px;font-weight:900;color:#1d1d1f;margin:0;">${winPrizeName}</p>
+    </div>
+    <p style="color:#6e6e73;font-size:14px;line-height:1.8;">
+      Pour récupérer votre cadeau, <strong style="color:#1d1d1f;">venez en boutique</strong><br>
+      avec cet email ou montrez l'écran de gain.
+    </p>
+    <div style="margin-top:24px;padding:18px;background:#f5f5f7;border-radius:12px;">
+      <p style="font-size:13px;color:#6e6e73;margin:0;">📍 Solution Phone — 21 Rue Gambetta, 71000 Mâcon<br>📞 03 85 33 06 89</p>
+    </div>
+  </div>
+  <div style="padding:16px 28px;text-align:center;border-top:1px solid rgba(0,0,0,0.06);">
+    <p style="font-size:12px;color:#aeaeb2;margin:0;">Solution Phone · Certifié QualiRépar · Mâcon</p>
+  </div>
+</div>
+</body>
+</html>`;
+
+  try {
+    const r1 = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender:  { name: 'Solution Phone Roue', email: SHOP_EMAIL },
+        to:      [{ email: email }],
+        subject: '🎡 Votre cadeau Solution Phone — ' + winPrizeName,
+        htmlContent
+      })
+    });
+
+    await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender:  { name: 'Roue Cadeaux', email: SHOP_EMAIL },
+        to:      [{ email: SHOP_EMAIL, name: 'Solution Phone' }],
+        subject: '🎁 Nouveau gain roue — ' + winPrizeName,
+        htmlContent: `<p>Nouveau gagnant à la roue !</p>
+          <p><strong>Lot :</strong> ${winPrizeName}</p>
+          <p><strong>Email client :</strong> ${email}</p>
+          <p><strong>Téléphone :</strong> ${_phoneVerifie || 'non renseigné'}</p>
+          <p><strong>Date :</strong> ${new Date().toLocaleString('fr-FR')}</p>`
+      })
+    });
+
+    document.getElementById('email-sent-msg').style.display = 'block';
+    btn.textContent = '✅ Email envoyé !';
+  } catch(e) {
+    console.warn('Brevo failed, fallback mailto', e);
+    const subject = encodeURIComponent('🎡 Cadeau Roue — ' + winPrizeName);
+    const body    = encodeURIComponent(`Client : ${email}\nLot : ${winPrizeName}\nTél : ${_phoneVerifie || '-'}`);
+    window.open('mailto:' + SHOP_EMAIL + '?subject=' + subject + '&body=' + body, '_blank');
+    document.getElementById('email-sent-msg').style.display = 'block';
+    btn.textContent = '✅ Email préparé !';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// TÉLÉPHONE + SUPABASE
+// ─────────────────────────────────────────────────────────────
+var _phoneVerifie = '';
+
+function formatPhoneInput(input) {
+  var digits = input.value.replace(/\D/g, '').substring(0, 10);
+  var formatted = '';
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && i % 2 === 0) formatted += ' ';
+    formatted += digits[i];
+  }
+  input.value = formatted;
+  var btn = document.getElementById('btn-check-phone');
+  if (btn) btn.disabled = digits.length < 10;
+  var msg = document.getElementById('phone-already-msg');
+  if (msg) msg.style.display = 'none';
+}
+
+async function checkPhone() {
+  var input  = document.getElementById('phone-input');
+  var digits = input.value.replace(/\D/g, '');
+  if (digits.length < 10) { showToast('Numéro de téléphone incomplet 😊'); return; }
+
+  var btn     = document.getElementById('btn-check-phone');
+  var loading = document.getElementById('phone-loading');
+  btn.disabled = true;
+  if (loading) loading.style.display = 'flex';
+
+  try {
+    var res  = await fetch(SUPA_URL + '/rest/v1/roulette_participations?telephone=eq.' + digits + '&select=id,lot_gagne', {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
+    });
+    var data = await res.json();
+
+    if (loading) loading.style.display = 'none';
+
+    if (data && data.length > 0) {
+      var msg = document.getElementById('phone-already-msg');
+      if (msg) {
+        msg.style.display = 'block';
+        var lotGagne = data[0].lot_gagne || '';
+        if (lotGagne) {
+          msg.querySelector('.phone-already-sub').innerHTML =
+            'Une seule participation par personne.<br>Vous aviez gagné : <strong>' + lotGagne + '</strong>';
+        }
+      }
+      input.style.borderColor = 'var(--red)';
+      btn.disabled = false;
+    } else {
+      _phoneVerifie = digits;
+      goTo('s-intro');
+    }
+  } catch(e) {
+    if (loading) loading.style.display = 'none';
+    _phoneVerifie = digits;
+    goTo('s-intro');
+    console.warn('Supabase check failed, allowing play:', e);
+  }
+}
+
+async function saveParticipation(prizeName) {
+  if (!_phoneVerifie) return;
+  try {
+    await fetch(SUPA_URL + '/rest/v1/roulette_participations', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        telephone: _phoneVerifie,
+        lot_gagne: prizeName,
+        date_participation: new Date().toISOString()
+      })
+    });
+  } catch(e) { console.warn('Erreur sauvegarde:', e); }
+}
+
+// ─────────────────────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

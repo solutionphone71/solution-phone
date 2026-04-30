@@ -1,0 +1,54 @@
+{
+  "rewrites": [
+    { "source": "/proxy-kiwiz/:path*",    "destination": "/api/proxy-kiwiz"    },
+    { "source": "/proxy-ecosystem/:path*","destination": "/api/proxy-ecosystem" },
+    { "source": "/proxy-ecologic/:path*", "destination": "/api/proxy-ecologic"  },
+    { "source": "/api/google-oauth-init",     "destination": "/api/google-reviews.js"  },
+    { "source": "/api/google-oauth-callback", "destination": "/api/google-reviews.js"  },
+    { "source": "/api/google-reviews",        "destination": "/api/google-reviews.js"  },
+    { "source": "/api/cron-reviews",          "destination": "/api/google-reviews.js"  },
+    { "source": "/api/google-reviews-config", "destination": "/api/google-reviews.js"  }
+  ],
+  "crons": [
+    { "path": "/api/cron-reviews", "schedule": "0 9 * * *" }
+  ],
+  "headers": [
+    {
+      "source": "/css/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/client.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" },
+        { "key": "Expires",       "value": "0" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" },
+        { "key": "Expires",       "value": "0" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",        "value": "no-cache" },
+        { "key": "Expires",       "value": "0" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
+}
