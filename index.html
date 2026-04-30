@@ -8495,7 +8495,7 @@ function renderPhones(){
       else if(days>15)joursStock='<br><span style="font-size:11px;color:var(--blue)">'+days+'j</span>';
     }
     return '<tr>'+
-      '<td>'+photoHtml+'<b>'+p.modele+'</b>'+sourceHtml+joursStock+'</td>'+
+      '<td>'+photoHtml+'<span style="background:#c0392b;color:#fff;font-size:10px;font-weight:900;padding:1px 5px;border-radius:4px;margin-right:5px;">#'+p.id+'</span><b>'+p.modele+'</b>'+sourceHtml+joursStock+'</td>'+
       '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
       '<td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td>'+
       '<td>'+(p.batterie?p.batterie+'%':'—')+'</td>'+
@@ -9275,8 +9275,8 @@ function buildEtiquetteHTML(p, opts){
   // ── COLONNE GAUCHE ──
   html += '<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;min-width:0;">';
 
-  // Modèle
-  html += '<div style="font-size:11pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;">'+modeleShort+'</div>';
+  // Numéro + Modèle
+  html += '<div style="font-size:11pt;font-weight:900;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15;"><span style="background:#c0392b;color:#fff;font-size:7pt;font-weight:900;padding:0.3mm 1.2mm;border-radius:0.8mm;margin-right:1mm;">#'+p.id+'</span>'+modeleShort+'</div>';
 
   // Badges : Stockage + Grade + Batterie
   html += '<div style="display:flex;flex-wrap:nowrap;gap:1mm;align-items:center;">';
