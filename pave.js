@@ -127,8 +127,8 @@ async function _pinInitDefaults() {
 var _userRole = 'patron'; // 'patron', 'employe' ou 'comptable'
 
 // Modules par rôle
-var _modulesPatronOnly = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries','docs-comptable'];
-var _modulesComptable  = ['caisse','comptable','bilan','depenses','comparaison','stats','salaries','docs-comptable'];
+var _modulesPatronOnly = ['caisse','comptable','analytics','salaries'];
+var _modulesComptable  = ['caisse','comptable','analytics','salaries'];
 var _modulesEmploye    = []; // employés voient tout SAUF _modulesPatronOnly
 
 function appliquerRole(){

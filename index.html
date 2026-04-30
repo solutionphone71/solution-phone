@@ -472,12 +472,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <div class="mob-menu-item" onclick="showPageMobile('rachat','');closeMobileMenu()"><span class="mob-menu-icon">🧮</span>Calculateur rachat</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Comptabilité</div>
   <div class="mob-menu-item" onclick="showPageMobile('caisse','');closeMobileMenu()"><span class="mob-menu-icon">💰</span>Z de caisse</div>
-  <div class="mob-menu-item" onclick="showPageMobile('depenses','');closeMobileMenu()"><span class="mob-menu-icon">💸</span>Dépenses</div>
   <div class="mob-menu-item" onclick="showPageMobile('comptable','');closeMobileMenu()"><span class="mob-menu-icon">📋</span>Récap comptable</div>
-  <div class="mob-menu-item" onclick="showPageMobile('stats','');closeMobileMenu()"><span class="mob-menu-icon">📊</span>Statistiques</div>
-  <div class="mob-menu-item" onclick="showPageMobile('comparaison','');closeMobileMenu()"><span class="mob-menu-icon">📈</span>Comparaison</div>
-  <div class="mob-menu-item" onclick="showPageMobile('bilan','');closeMobileMenu()"><span class="mob-menu-icon">📅</span>Bilan annuel</div>
-  <div class="mob-menu-item" onclick="showPageMobile('docs-comptable','');docsComptableInit();closeMobileMenu()"><span class="mob-menu-icon">📂</span>Documents comptable</div>
+  <div class="mob-menu-item" onclick="showPageMobile('analytics','');closeMobileMenu()"><span class="mob-menu-icon">📊</span>Analytics</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Catalogue &amp; prix</div>
   <div class="mob-menu-item" onclick="showPageMobile('ecrans','');closeMobileMenu()"><span class="mob-menu-icon">🖥️</span>Prix écrans iPhone</div>
   <div class="mob-menu-item" onclick="showPageMobile('batteries','');closeMobileMenu()"><span class="mob-menu-icon">🔋</span>Prix batteries</div>
@@ -567,12 +563,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     <div class="nav-group-label">Comptabilité</div>
     <div class="nav-item" id="nav-caisse" onclick="showPage('caisse',this);setTimeout(function(){window.scrollTo({top:0,behavior:'smooth'});},300)"><span class="nav-icon">💰</span><span>Z caisse Principal</span></div>
     <div class="nav-item" id="nav-caisse-occ" onclick="showPage('caisse',this);setTimeout(function(){var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.scrollIntoView({behavior:'smooth',block:'start'});},500)"><span class="nav-icon">📱</span><span>Z caisse Occasion</span></div>
-    <div class="nav-item" id="nav-depenses" onclick="showPage('depenses',this)"><span class="nav-icon">💸</span><span>Dépenses</span></div>
     <div class="nav-item" id="nav-comptable" onclick="showPage('comptable',this)"><span class="nav-icon">📋</span><span>Récap comptable</span></div>
-    <div class="nav-item" id="nav-stats" onclick="showPage('stats',this)"><span class="nav-icon">📊</span><span>Statistiques</span></div>
-    <div class="nav-item" id="nav-comparaison" onclick="showPage('comparaison',this)"><span class="nav-icon">📈</span><span>Comparaison</span></div>
-    <div class="nav-item" id="nav-bilan" onclick="showPage('bilan',this)"><span class="nav-icon">📅</span><span>Bilan annuel</span></div>
-    <div class="nav-item" onclick="showPage('docs-comptable',this);docsComptableInit();"><span class="nav-icon">📂</span><span>Documents comptable</span></div>
+    <div class="nav-item" id="nav-analytics" onclick="showPage('analytics',this)"><span class="nav-icon">📊</span><span>Analytics</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Catalogue &amp; prix</div>
@@ -719,7 +711,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
 
         <!-- ④ SANTÉ DU MAGASIN — Anneaux Apple Watch (2x wide + tall) -->
-        <div class="bw bw-2x bw-tall" onclick="showPage('stats',null)" style="background:linear-gradient(160deg,rgba(10,10,18,0.95),rgba(20,15,30,0.95));">
+        <div class="bw bw-2x bw-tall" onclick="showPage('analytics',null)" style="background:linear-gradient(160deg,rgba(10,10,18,0.95),rgba(20,15,30,0.95));">
           <div class="bw-glow" style="top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;background:#FF0033;opacity:.08;"></div>
           <div class="bw-label">❤️ Santé du magasin</div>
           <div style="display:flex;align-items:center;justify-content:center;gap:40px;margin-top:6px;">
@@ -751,7 +743,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
         </div>
 
         <!-- ⑥ CA 7 JOURS -->
-        <div class="bw" onclick="showPage('stats',null)">
+        <div class="bw" onclick="showPage('analytics',null)">
           <div class="bw-label">📊 7 derniers jours</div>
           <div id="wg-week-total" class="bw-val" style="color:#60a5fa;font-size:24px;">0 €</div>
           <div class="bento-chart" id="wg-week-chart"></div>
@@ -1538,17 +1530,65 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
     </div>
 
       </div><!-- fin page-neufs-access -->
-<div class="page" id="page-stats">
-      <div class="page-title">Statistiques</div>
-      <div class="page-sub">CA, marges et performances</div>
-      <div id="stats-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-        <div class="card"><div class="card-header"><div class="card-title">📈 CA par jour</div></div><canvas id="chart-ca" height="200"></canvas></div>
-        <div class="card"><div class="card-header"><div class="card-title">💳 Répartition paiements</div></div><canvas id="chart-paiements" height="200"></canvas></div>
+<div class="page" id="page-analytics">
+      <div class="page-title">📊 Analytics</div>
+      <div class="page-sub">Dashboard complet — CA, marges, comparaison, évolution</div>
+
+      <!-- Toolbar -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="form-group" style="flex:0;margin-bottom:0;">
+          <label style="font-size:11px;">Année</label>
+          <select id="analytics-annee" onchange="renderAnalytics()" style="width:120px;">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="printBilan()">🖨️ Imprimer bilan</button>
+        <button class="btn btn-sm" style="border-color:var(--green);color:var(--green);font-weight:700;" onclick="backupComplet()">💾 Backup complet</button>
+        <label class="btn btn-sm" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
+          📥 Importer Phonilab CSV
+          <input type="file" id="phonilab-csv" accept=".csv" style="display:none;" onchange="importPhonilabCSV(this)">
+        </label>
+        <div id="phonilab-status" style="font-size:12px;color:var(--text-muted);"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-        <div class="card"><div class="card-header"><div class="card-title">🔧 QualiRépar par jour</div></div><canvas id="chart-quali" height="200"></canvas></div>
-        <div class="card"><div class="card-header"><div class="card-title">📱 Stock smartphones</div></div><canvas id="chart-phones" height="200"></canvas></div>
+
+      <!-- ══ SECTION 1 : KPI CARDS ══ -->
+      <div id="analytics-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;"></div>
+
+      <!-- ══ SECTION 2 : ÉVOLUTION COMPARÉE (mensuel) ══ -->
+      <div style="margin-bottom:8px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,0.4);">Évolution mensuelle</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="card"><div class="card-header"><div class="card-title">💰 CA TTC mensuel</div></div><canvas id="chart-analytics-ca" height="220"></canvas></div>
+        <div class="card"><div class="card-header"><div class="card-title">📈 CA TTC cumulé</div></div><canvas id="chart-analytics-cumul" height="220"></canvas></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="card"><div class="card-header"><div class="card-title">🌱 QualiRépar mensuel</div></div><canvas id="chart-analytics-quali" height="200"></canvas></div>
+        <div class="card"><div class="card-header"><div class="card-title">💳 Paiements empilés</div></div><canvas id="chart-analytics-pay" height="200"></canvas></div>
+      </div>
+
+      <!-- ══ SECTION 3 : STATS JOUR (mois en cours) ══ -->
+      <div style="margin-bottom:8px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,0.4);">Détail mois en cours</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
+        <div class="card"><div class="card-header"><div class="card-title">📈 CA par jour</div></div><canvas id="chart-analytics-cajour" height="200"></canvas></div>
+        <div class="card"><div class="card-header"><div class="card-title">📱 Stock smartphones</div></div><canvas id="chart-analytics-phones" height="200"></canvas></div>
+      </div>
+
+      <!-- ══ SECTION 4 : TABLEAU DÉTAILLÉ ══ -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header"><div class="card-title">📊 Détail mensuel de l'année</div></div>
+        <div style="overflow-x:auto;">
+          <table id="analytics-bilan-table"></table>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 5 : COMPARAISON CARDS ══ -->
+      <div class="dash-grid" id="analytics-comp-cards" style="margin-bottom:18px;"></div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 Tableau comparatif mensuel (tous mois)</div></div>
+        <div style="overflow-x:auto;">
+          <table id="analytics-comp-table" style="width:100%;border-collapse:collapse;font-size:13px;"></table>
+        </div>
       </div>
     </div>
 
@@ -2113,49 +2153,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
       </div>
     </div>
 
-  <div class="page" id="page-bilan">
-      <div class="page-title">Bilan Annuel</div>
-      <div class="page-sub">Vue d'ensemble de l'année</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <div class="form-group" style="flex:0;">
-          <label>Année</label>
-          <select id="bilan-annee" onchange="renderBilan()" style="width:120px;">
-            <option value="2026">2026</option>
-            <option value="2025">2025</option>
-          </select>
-        </div>
-        <button class="btn btn-primary btn-sm" style="margin-top:18px;" onclick="printBilan()">🖨️ Imprimer</button>
-        <button class="btn btn-sm" style="margin-top:18px;border-color:var(--green);color:var(--green);font-weight:700;" onclick="backupComplet()">💾 Backup complet</button>
-        <!-- Import Phonilab -->
-        <div style="margin-top:18px;display:flex;align-items:center;gap:8px;">
-          <label class="btn btn-sm" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:6px;">
-            📥 Importer Phonilab CSV
-            <input type="file" id="phonilab-csv" accept=".csv" style="display:none;" onchange="importPhonilabCSV(this)">
-          </label>
-          <div id="phonilab-status" style="font-size:12px;color:var(--text-muted);"></div>
-        </div>
-      </div>
-
-      <div class="dash-grid" id="bilan-cards"></div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-        <div class="card">
-          <div class="card-header"><div class="card-title">📈 CA mensuel</div></div>
-          <canvas id="chart-bilan-ca" height="220"></canvas>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📈 CA TTC cumulé</div></div>
-          <canvas id="chart-bilan-cumul" height="220"></canvas>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header"><div class="card-title">📊 Détail mensuel</div></div>
-        <div style="overflow-x:auto;">
-          <table id="bilan-table"></table>
-        </div>
-      </div>
-    </div>
 
 
   <!-- ═══ PAGE SALARIÉS ═══ -->
@@ -2312,98 +2309,8 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   </div>
 
   <!-- ═══ PAGE DÉPENSES ═══ -->
-  <div class="page" id="page-depenses">
-    <div class="page-title">💸 Dépenses</div>
-    <div class="page-sub">Suivi des charges et dépenses professionnelles</div>
-
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-      <div class="form-group" style="flex:0;margin:0;">
-        <label>Filtrer par mois</label>
-        <input type="month" id="d-filtre-mois" onchange="renderDepenses()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:#f8fafc;font-family:inherit;font-size:14px;color:var(--text);">
-      </div>
-    </div>
-
-    <div class="dash-grid" id="depenses-totaux" style="margin-bottom:18px;"></div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-      <div class="card">
-        <div class="card-header"><div class="card-title">➕ Ajouter une dépense</div></div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div class="form-group"><label>Date</label><input type="date" id="d-date"></div>
-          <div class="form-group"><label>Catégorie</label>
-            <select id="d-categorie">
-              <option>Loyer</option><option>Fournitures</option><option>Salaires</option>
-              <option>Electricite</option><option>Telephone</option><option>Assurance</option>
-              <option>Transport</option><option>Publicite</option><option>Logiciels</option><option>Autre</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Description</label><input type="text" id="d-description" placeholder="Détail de la dépense"></div>
-          <div class="form-group"><label>Montant (€ TTC)</label><input type="number" id="d-montant" placeholder="0.00" step="0.01"></div>
-          <div class="form-group"><label>Mode de paiement</label>
-            <select id="d-mode">
-              <option>CB</option><option>Virement</option><option>Espèces</option><option>Chèque</option><option>Prélèvement</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="addDepense()" style="width:100%;">➕ Ajouter</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📊 Répartition par catégorie</div></div>
-        <canvas id="chart-depenses" height="220"></canvas>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><div class="card-title">📋 Historique des dépenses</div></div>
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead><tr style="border-bottom:2px solid var(--border);">
-            <th style="padding:8px 6px;text-align:left;color:var(--text-muted);">Date</th>
-            <th style="padding:8px 6px;text-align:left;color:var(--text-muted);">Catégorie</th>
-            <th style="padding:8px 6px;text-align:left;color:var(--text-muted);">Description</th>
-            <th style="padding:8px 6px;text-align:right;color:var(--text-muted);">Montant</th>
-            <th style="padding:8px 6px;text-align:left;color:var(--text-muted);">Mode</th>
-            <th></th>
-          </tr></thead>
-          <tbody id="depenses-table"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 
   <!-- ═══ PAGE COMPARAISON ═══ -->
-  <div class="page" id="page-comparaison">
-    <div class="page-title">📈 Comparaison</div>
-    <div class="page-sub">Évolution du chiffre d'affaires mois par mois</div>
-
-    <div class="dash-grid" id="comp-cards" style="margin-bottom:18px;"></div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;">
-      <div class="card">
-        <div class="card-header"><div class="card-title">💰 CA TTC mensuel</div></div>
-        <canvas id="chart-comp-ca" height="200"></canvas>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">🌱 QualiRépar mensuel</div></div>
-        <canvas id="chart-comp-quali" height="200"></canvas>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">💳 Répartition modes paiement</div></div>
-        <canvas id="chart-comp-pay" height="200"></canvas>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📅 Jours travaillés</div></div>
-        <canvas id="chart-comp-jours" height="200"></canvas>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><div class="card-title">📊 Tableau comparatif mensuel</div></div>
-      <div style="overflow-x:auto;">
-        <table id="comp-table" style="width:100%;border-collapse:collapse;font-size:13px;"></table>
-      </div>
-    </div>
-  </div>
 
   <div class="page" id="page-params">
     <div class="page-title">⚙️ Paramètres API</div>
@@ -4431,72 +4338,6 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   <!-- ========== FIN PAGE PRIX ANDROID ========== -->
 
   <!-- ========== PAGE DOCUMENTS COMPTABLE ========== -->
-  <div class="page" id="page-docs-comptable">
-    <div class="page-title">📂 Documents Comptable</div>
-    <div class="page-sub">Checklist mensuelle + analyse relevé bancaire</div>
-
-    <!-- Sélecteur mois -->
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
-      <select id="docs-mois-select" onchange="docsComptableInit()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:14px;font-family:inherit;">
-        <option value="2026-01">Janvier 2026</option>
-        <option value="2026-02" selected>Février 2026</option>
-        <option value="2026-03">Mars 2026</option>
-        <option value="2026-04">Avril 2026</option>
-        <option value="2026-05">Mai 2026</option>
-        <option value="2026-06">Juin 2026</option>
-        <option value="2026-07">Juillet 2026</option>
-        <option value="2026-08">Août 2026</option>
-        <option value="2026-09">Septembre 2026</option>
-        <option value="2026-10">Octobre 2026</option>
-        <option value="2026-11">Novembre 2026</option>
-        <option value="2026-12">Décembre 2026</option>
-      </select>
-      <div id="docs-progress-badge" style="background:var(--red);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;"></div>
-      <a id="docs-drive-btn" href="#" target="_blank" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px;">
-        📁 Ouvrir Google Drive
-      </a>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="docs-grid">
-
-      <!-- CHECKLIST -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">✅ Checklist factures</div>
-          <button class="btn btn-sm" onclick="docsResetChecklist()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
-        </div>
-        <div id="docs-checklist" style="padding:8px 0;"></div>
-      </div>
-
-      <!-- IMPORT RELEVÉ -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🏦 Analyse relevé bancaire</div>
-        </div>
-        <div style="padding:0 0 16px;">
-          <div style="background:#f8fafc;border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;margin-bottom:14px;cursor:pointer;" onclick="document.getElementById('docs-pdf-input').click()">
-            <div style="font-size:28px;margin-bottom:8px;">📄</div>
-            <div style="font-size:14px;color:var(--text);">Cliquez pour importer votre relevé PDF</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Banque Populaire Bourgogne Franche-Comté</div>
-            <input type="file" id="docs-pdf-input" accept=".pdf" style="display:none;" onchange="docsAnalysePDF(this)">
-          </div>
-          <div id="docs-analyse-result"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RÉSUMÉ CATÉGORISÉ -->
-    <div class="card" style="margin-top:20px;" id="docs-resume-card" style="display:none;">
-      <div class="card-header">
-        <div class="card-title">📊 Résumé des dépenses</div>
-        <button class="btn btn-sm btn-primary" onclick="docsExportResume()">📥 Exporter Excel</button>
-      </div>
-      <div id="docs-resume-content"></div>
-    </div>
-
-  </div>
-  <!-- ========== FIN PAGE DOCUMENTS COMPTABLE ========== -->
 
     <!-- ══════════════ PAGE ROUE CADEAUX ══════════════ -->
     <div class="page" id="page-roulette">
@@ -5474,7 +5315,7 @@ function showPage(id,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   if(el)el.classList.add('active');
   if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
-  if(id==='stats')renderStats();
+  if(id==='analytics')renderAnalytics();
   if(id==='police')renderPolice();
   if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
   if(id==='reparations'){
@@ -5491,9 +5332,6 @@ function showPage(id,el){
   if(id==='params'){paramsLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
-  if(id==='depenses'){ initDepensesMoisSel(); renderDepenses(); }
-  if(id==='comparaison')renderComparaison();
-  if(id==='bilan')renderBilan();
   if(id==='devis')renderDevis();    if(id==='clients'){
     loadAllClients().then(function(){ renderClients(); });
   }
@@ -9819,7 +9657,14 @@ async function envoyerEmail(id){
 }
 
 var cCA=null,cPay=null,cQ=null,cPh=null;
+function renderAnalytics(){
+  renderBilan();
+  renderStats();
+  renderComparaison();
+}
+
 function renderStats(){
+  // Stats du mois en cours — graphiques jour par jour
   var tc=caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
   var tq=caisse.reduce(function(s,c){return s+(c.quali||0);},0);
   var tCB=caisse.reduce(function(s,c){return s+(c.cb||0);},0);
@@ -9827,21 +9672,16 @@ function renderStats(){
   var tCh=caisse.reduce(function(s,c){return s+(c.cheque||0);},0);
   var tVir=caisse.reduce(function(s,c){return s+(c.virement||0);},0);
   var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
-  document.getElementById('stats-cards').innerHTML= +
-    '<div class="stat-card"><div class="stat-label">CA TTC</div><div class="stat-value">'+tc.toFixed(2)+' €</div></div>'+
-    '<div class="stat-card"><div class="stat-label">CA HT</div><div class="stat-value">'+(tc/1.2).toFixed(2)+' €</div></div>'+
-    '<div class="stat-card"><div class="stat-label">TVA collectée</div><div class="stat-value">'+(tc-tc/1.2).toFixed(2)+' €</div></div>'+
-    '<div class="stat-card"><div class="stat-label">QualiRépar</div><div class="stat-value" style="color:var(--green)">'+tq.toFixed(2)+' €</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Moy/jour</div><div class="stat-value">'+(caisse.length?(tc/caisse.length).toFixed(2):0)+' €</div></div>'+
-    '<div class="stat-card"><div class="stat-label">Marge smartphones</div><div class="stat-value" style="color:var(--green)">'+mg.toFixed(2)+' €</div></div>';
+
   var labels=caisse.map(function(c){return fmtDate(c.date).substring(0,5);});
   var gc='rgba(0,0,0,0.06)',tx='#64748b';
   var opts={responsive:true,plugins:{legend:{labels:{color:tx}}},scales:{x:{ticks:{color:tx},grid:{color:gc}},y:{ticks:{color:tx},grid:{color:gc}}}};
-  if(cCA)cCA.destroy();cCA=new Chart(document.getElementById('chart-ca'),{type:'bar',data:{labels:labels,datasets:[{label:'CA TTC (€)',data:caisse.map(function(c){return c.ttc;}),backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1}]},options:opts});
-  if(cPay)cPay.destroy();cPay=new Chart(document.getElementById('chart-paiements'),{type:'doughnut',data:{labels:['CB','Espèces','Chèque','Virement'],datasets:[{data:[tCB,tEsp,tCh,tVir],backgroundColor:['#e53e3e','#48bb78','#4299e1','#ed8936'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:tx}}}}});
-  if(cQ)cQ.destroy();cQ=new Chart(document.getElementById('chart-quali'),{type:'line',data:{labels:labels,datasets:[{label:'QualiRépar (€)',data:caisse.map(function(c){return c.quali||0;}),borderColor:'#48bb78',backgroundColor:'rgba(72,187,120,0.1)',fill:true,tension:0.4}]},options:opts});
+  var el;
+  el=document.getElementById('chart-analytics-cajour');
+  if(el){if(cCA)cCA.destroy();cCA=new Chart(el,{type:'bar',data:{labels:labels,datasets:[{label:'CA TTC (€)',data:caisse.map(function(c){return c.ttc;}),backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1}]},options:opts});}
   var dispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;var vendu=phones.filter(function(p){return p.etat==='VENDU';}).length;
-  if(cPh)cPh.destroy();cPh=new Chart(document.getElementById('chart-phones'),{type:'doughnut',data:{labels:['Disponible','Vendu'],datasets:[{data:[dispo,vendu],backgroundColor:['#48bb78','#e53e3e'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:tx}}}}});
+  el=document.getElementById('chart-analytics-phones');
+  if(el){if(cPh)cPh.destroy();cPh=new Chart(el,{type:'doughnut',data:{labels:['Disponible','Vendu'],datasets:[{data:[dispo,vendu],backgroundColor:['#48bb78','#e53e3e'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{labels:{color:tx}}}}});}
 }
 
 function renderPolice(){
@@ -9858,16 +9698,16 @@ function exportPoliceCSV(){
 }
 
 var reparations = [];
-var depenses = [];
 var chartBilanCA = null, chartBilanCumul = null;
 var devisList = [];
 
 // ===== BILAN ANNUEL =====
 function renderBilan() {
-  var annee = document.getElementById('bilan-annee').value;
+  var anneeEl = document.getElementById('analytics-annee');
+  var annee = anneeEl ? anneeEl.value : new Date().getFullYear().toString();
   var moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
   var moisAll = ['01','02','03','04','05','06','07','08','09','10','11','12'];
-  
+
   var totCA=0, totQuali=0, totJours=0;
   var dataCA=[], dataQuali=[], dataCumul=[];
   var cumul = 0;
@@ -9875,12 +9715,10 @@ function renderBilan() {
 
   moisAll.forEach(function(m) {
     var key = annee+'-'+m;
-    // Données Z de caisse (app)
     var rows = caisse.filter(function(c){return c.date && c.date.startsWith(key);});
     var caApp  = rows.reduce(function(s,c){return s+(c.ttc||0);},0);
     var quApp  = rows.reduce(function(s,c){return s+(c.quali||0);},0);
     var jours  = rows.length;
-    // Données Phonilab (import CSV) — uniquement si pas de données app ce mois
     var phData = phonilabData[key];
     var caPhoni = (phData && caApp === 0) ? (phData.ttc||0) : 0;
     var quPhoni = (phData && caApp === 0) ? (phData.quali||0) : 0;
@@ -9897,38 +9735,51 @@ function renderBilan() {
     }
   });
 
-  document.getElementById('bilan-cards').innerHTML = +
-    '<div class="dash-card"><div class="dash-label">CA TTC '+annee+'</div><div class="dash-value">'+totCA.toFixed(0)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">CA HT</div><div class="dash-value">'+(totCA/1.2).toFixed(0)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">TVA collectée</div><div class="dash-value">'+(totCA-totCA/1.2).toFixed(0)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">QualiRépar total</div><div class="dash-value" style="color:var(--green)">'+totQuali.toFixed(0)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">Jours travaillés</div><div class="dash-value">'+totJours+'</div></div>';
+  // KPI cards
+  var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
+  var cardsEl = document.getElementById('analytics-cards');
+  if(cardsEl) cardsEl.innerHTML =
+    '<div class="stat-card"><div class="stat-label">CA TTC '+annee+'</div><div class="stat-value">'+totCA.toFixed(0)+' €</div></div>' +
+    '<div class="stat-card"><div class="stat-label">CA HT</div><div class="stat-value">'+(totCA/1.2).toFixed(0)+' €</div></div>' +
+    '<div class="stat-card"><div class="stat-label">TVA collectée</div><div class="stat-value">'+(totCA-totCA/1.2).toFixed(0)+' €</div></div>' +
+    '<div class="stat-card"><div class="stat-label">QualiRépar total</div><div class="stat-value" style="color:var(--green)">'+totQuali.toFixed(0)+' €</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Jours travaillés</div><div class="stat-value">'+totJours+'</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Marge smartphones</div><div class="stat-value" style="color:var(--green)">'+mg.toFixed(0)+' €</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Moy/jour</div><div class="stat-value">'+(totJours>0?(totCA/totJours).toFixed(0):0)+' €</div></div>';
 
   var labels = moisAll.map(function(m){return moisNoms[m].substring(0,3);});
   var gc='rgba(0,0,0,0.06)',tx='#64748b';
   var opts={responsive:true,plugins:{legend:{labels:{color:tx}}},scales:{x:{ticks:{color:tx},grid:{color:gc}},y:{ticks:{color:tx},grid:{color:gc}}}};
 
-  if(chartBilanCA) chartBilanCA.destroy();
-  chartBilanCA = new Chart(document.getElementById('chart-bilan-ca'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'CA TTC',data:dataCA,backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1},
-      {label:'QualiRépar',data:dataQuali,backgroundColor:'rgba(72,187,120,0.7)',borderColor:'#48bb78',borderWidth:1}
-    ]},
-    options:opts
-  });
+  var el;
+  el=document.getElementById('chart-analytics-ca');
+  if(el){
+    if(chartBilanCA) chartBilanCA.destroy();
+    chartBilanCA = new Chart(el,{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'CA TTC',data:dataCA,backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1},
+        {label:'QualiRépar',data:dataQuali,backgroundColor:'rgba(72,187,120,0.7)',borderColor:'#48bb78',borderWidth:1}
+      ]},
+      options:opts
+    });
+  }
 
-  if(chartBilanCumul) chartBilanCumul.destroy();
-  chartBilanCumul = new Chart(document.getElementById('chart-bilan-cumul'),{
-    type:'line',
-    data:{labels:labels,datasets:[{
-      label:'CA TTC cumulé (€)',data:dataCumul,
-      borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,0.1)',fill:true,tension:0.4
-    }]},
-    options:opts
-  });
+  el=document.getElementById('chart-analytics-cumul');
+  if(el){
+    if(chartBilanCumul) chartBilanCumul.destroy();
+    chartBilanCumul = new Chart(el,{
+      type:'line',
+      data:{labels:labels,datasets:[{
+        label:'CA TTC cumulé (€)',data:dataCumul,
+        borderColor:'#e53e3e',backgroundColor:'rgba(229,62,62,0.1)',fill:true,tension:0.4
+      }]},
+      options:opts
+    });
+  }
 
-  document.getElementById('bilan-table').innerHTML = +
+  el=document.getElementById('analytics-bilan-table');
+  if(el) el.innerHTML =
     '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>QualiRépar</th><th>Jours</th><th>Moy/jour</th></tr></thead>' +
     '<tbody>' + tableRows + '</tbody>';
 }
@@ -10017,14 +9868,6 @@ function initSalMoisSel() {
   el.innerHTML = opts;
 }
 
-function initDepensesMoisSel() {
-  var el = document.getElementById('d-filtre-mois');
-  if (!el || el.value) return;
-  var now = new Date();
-  el.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  var dateEl = document.getElementById('d-date');
-  if (dateEl && !dateEl.value) dateEl.value = now.toISOString().split('T')[0];
-}
 
 function renderSalaries() {
   renderSalBentoWidgets();
@@ -10673,12 +10516,12 @@ async function backupComplet() {
 }
 
 function printBilan() {
-  var zone = document.getElementById('page-bilan');
+  var zone = document.getElementById('page-analytics');
   var w = window.open('','_blank','width=900,height=1000');
   w.document.write('<!DOCTYPE html><html><head><title>Bilan Annuel</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#1a1a1a;font-size:13px;}table{width:100%;border-collapse:collapse;}th{background:#f5f5f5;padding:8px;text-align:left;border-bottom:2px solid #ddd;font-size:11px;text-transform:uppercase;}td{padding:8px;border-bottom:1px solid #eee;}@media print{body{padding:15px;}}</style></head><body>' +
-    '<h1 style="color:#e53e3e;font-size:24px;">SOLUTION PHONE — Bilan ' + document.getElementById('bilan-annee').value + '</h1>' +
+    '<h1 style="color:#e53e3e;font-size:24px;">SOLUTION PHONE — Bilan ' + (document.getElementById('analytics-annee')?document.getElementById('analytics-annee').value:new Date().getFullYear()) + '</h1>' +
     '<p style="color:#666;margin-bottom:20px;">21 Rue Gambetta · 71000 Mâcon · SIRET : 801044785 00021</p>' +
-    document.getElementById('bilan-table').outerHTML +
+    document.getElementById('analytics-bilan-table').outerHTML +
     '<script>window.onload=function(){window.print();}<\/script></body></html>');
   w.document.close();
 }
@@ -10791,9 +10634,10 @@ function getMoisLabel(mois) {
 function renderComparaison() {
   var moisData = getDataParMois();
   var moisKeys = Object.keys(moisData).sort();
-  
+
   if (moisKeys.length === 0) {
-    document.getElementById('comp-cards').innerHTML = '<div style="color:var(--text-muted);padding:20px;">Pas assez de données pour comparer.</div>';
+    var cc = document.getElementById('analytics-comp-cards');
+    if(cc) cc.innerHTML = '<div style="color:var(--text-muted);padding:20px;">Pas assez de données pour comparer.</div>';
     return;
   }
 
@@ -10801,10 +10645,9 @@ function renderComparaison() {
   var gc = 'rgba(0,0,0,0.06)', tx = '#64748b';
   var opts = {responsive:true, plugins:{legend:{labels:{color:tx}}}, scales:{x:{ticks:{color:tx},grid:{color:gc}},y:{ticks:{color:tx},grid:{color:gc}}}};
 
-  // Cartes résumé (dernier mois vs mois précédent)
   var dernierMois = moisData[moisKeys[moisKeys.length-1]];
   var moisPrec = moisKeys.length > 1 ? moisData[moisKeys[moisKeys.length-2]] : null;
-  
+
   function evolution(val, prev) {
     if (!prev || prev === 0) return '';
     var pct = ((val - prev) / prev * 100).toFixed(1);
@@ -10813,59 +10656,44 @@ function renderComparaison() {
     return '<br><span style="font-size:13px;color:'+color+'">'+arrow+' '+Math.abs(pct)+'%</span>';
   }
 
-  document.getElementById('comp-cards').innerHTML = +
+  var cc = document.getElementById('analytics-comp-cards');
+  if(cc) cc.innerHTML =
     '<div class="dash-card"><div class="dash-label">CA '+getMoisLabel(moisKeys[moisKeys.length-1])+'</div><div class="dash-value">'+dernierMois.ttc.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.ttc,moisPrec.ttc):'')+'</div></div>' +
     '<div class="dash-card"><div class="dash-label">QualiRépar</div><div class="dash-value" style="color:var(--green)">'+dernierMois.quali.toFixed(0)+' €'+(moisPrec?evolution(dernierMois.quali,moisPrec.quali):'')+'</div></div>' +
     '<div class="dash-card"><div class="dash-label">Moy/jour</div><div class="dash-value">'+(dernierMois.jours>0?(dernierMois.ttc/dernierMois.jours).toFixed(0):0)+' €'+(moisPrec&&moisPrec.jours>0?evolution(dernierMois.ttc/dernierMois.jours,moisPrec.ttc/moisPrec.jours):'')+'</div></div>' +
     '<div class="dash-card"><div class="dash-label">Jours travaillés</div><div class="dash-value">'+dernierMois.jours+(moisPrec?evolution(dernierMois.jours,moisPrec.jours):'')+'</div></div>';
 
-  // Graphique CA
-  if(chartCompCA) chartCompCA.destroy();
-  chartCompCA = new Chart(document.getElementById('chart-comp-ca'), {
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'CA TTC (€)',data:moisKeys.map(function(m){return moisData[m].ttc.toFixed(2);}),backgroundColor:'rgba(229,62,62,0.7)',borderColor:'#e53e3e',borderWidth:1},
-      {label:'CA HT (€)',data:moisKeys.map(function(m){return (moisData[m].ttc/1.2).toFixed(2);}),backgroundColor:'rgba(229,62,62,0.3)',borderColor:'#e53e3e',borderWidth:1}
-    ]},
-    options:opts
-  });
-
   // Graphique QualiRépar
-  if(chartCompQuali) chartCompQuali.destroy();
-  chartCompQuali = new Chart(document.getElementById('chart-comp-quali'), {
-    type:'line',
-    data:{labels:labels,datasets:[{
-      label:'Bonus QualiRépar (€)',
-      data:moisKeys.map(function(m){return moisData[m].quali.toFixed(2);}),
-      borderColor:'#48bb78',backgroundColor:'rgba(72,187,120,0.1)',fill:true,tension:0.4
-    }]},
-    options:opts
-  });
+  var el;
+  el=document.getElementById('chart-analytics-quali');
+  if(el){
+    if(chartCompQuali) chartCompQuali.destroy();
+    chartCompQuali = new Chart(el, {
+      type:'line',
+      data:{labels:labels,datasets:[{
+        label:'Bonus QualiRépar (€)',
+        data:moisKeys.map(function(m){return moisData[m].quali.toFixed(2);}),
+        borderColor:'#48bb78',backgroundColor:'rgba(72,187,120,0.1)',fill:true,tension:0.4
+      }]},
+      options:opts
+    });
+  }
 
   // Graphique paiements empilés
-  if(chartCompPay) chartCompPay.destroy();
-  chartCompPay = new Chart(document.getElementById('chart-comp-pay'), {
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'CB',data:moisKeys.map(function(m){return moisData[m].cb.toFixed(2);}),backgroundColor:'rgba(229,62,62,0.8)'},
-      {label:'Espèces',data:moisKeys.map(function(m){return moisData[m].esp.toFixed(2);}),backgroundColor:'rgba(72,187,120,0.8)'},
-      {label:'Chèque',data:moisKeys.map(function(m){return moisData[m].cheque.toFixed(2);}),backgroundColor:'rgba(66,153,225,0.8)'},
-      {label:'Virement',data:moisKeys.map(function(m){return moisData[m].vir.toFixed(2);}),backgroundColor:'rgba(237,137,54,0.8)'}
-    ]},
-    options:{...opts, scales:{...opts.scales, x:{...opts.scales.x,stacked:true}, y:{...opts.scales.y,stacked:true}}}
-  });
-
-  // Graphique jours travaillés
-  if(chartCompJours) chartCompJours.destroy();
-  chartCompJours = new Chart(document.getElementById('chart-comp-jours'), {
-    type:'bar',
-    data:{labels:labels,datasets:[{
-      label:'Jours travaillés',
-      data:moisKeys.map(function(m){return moisData[m].jours;}),
-      backgroundColor:'rgba(159,122,234,0.7)',borderColor:'#9f7aea',borderWidth:1
-    }]},
-    options:opts
-  });
+  el=document.getElementById('chart-analytics-pay');
+  if(el){
+    if(chartCompPay) chartCompPay.destroy();
+    chartCompPay = new Chart(el, {
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'CB',data:moisKeys.map(function(m){return moisData[m].cb.toFixed(2);}),backgroundColor:'rgba(229,62,62,0.8)'},
+        {label:'Espèces',data:moisKeys.map(function(m){return moisData[m].esp.toFixed(2);}),backgroundColor:'rgba(72,187,120,0.8)'},
+        {label:'Chèque',data:moisKeys.map(function(m){return moisData[m].cheque.toFixed(2);}),backgroundColor:'rgba(66,153,225,0.8)'},
+        {label:'Virement',data:moisKeys.map(function(m){return moisData[m].vir.toFixed(2);}),backgroundColor:'rgba(237,137,54,0.8)'}
+      ]},
+      options:{...opts, scales:{...opts.scales, x:{...opts.scales.x,stacked:true}, y:{...opts.scales.y,stacked:true}}}
+    });
+  }
 
   // Tableau comparatif
   var thead = '<thead><tr><th>Mois</th><th>CA TTC</th><th>CA HT</th><th>TVA</th><th>QualiRépar</th><th>CB</th><th>Espèces</th><th>Jours</th><th>Moy/jour</th></tr></thead>';
@@ -10876,86 +10704,8 @@ function renderComparaison() {
     var moy = d.jours > 0 ? d.ttc/d.jours : 0;
     return '<tr><td><b>'+getMoisLabel(m)+'</b></td><td><b>'+d.ttc.toFixed(2)+' €</b></td><td>'+ht.toFixed(2)+' €</td><td>'+tva.toFixed(2)+' €</td><td style="color:var(--green)">'+d.quali.toFixed(2)+' €</td><td>'+d.cb.toFixed(2)+' €</td><td>'+d.esp.toFixed(2)+' €</td><td>'+d.jours+'</td><td>'+moy.toFixed(2)+' €</td></tr>';
   }).join('') + '</tbody>';
-  document.getElementById('comp-table').innerHTML = thead + tbody;
-}
-var chartDep = null;
-
-function addDepense() {
-  var date = document.getElementById('d-date').value;
-  var montant = parseFloat(document.getElementById('d-montant').value);
-  if (!date || !montant) { showNotif('Date et montant requis', 'error'); return; }
-  var dep = {
-    id: Date.now(),
-    date: date,
-    categorie: document.getElementById('d-categorie').value,
-    description: document.getElementById('d-description').value.trim(),
-    montant: montant,
-    mode: document.getElementById('d-mode').value
-  };
-  depenses.push(dep);
-  depenses.sort(function(a,b){return b.date.localeCompare(a.date);});
-  // Sauvegarder dans Supabase si dispo
-  if (supabaseReady) {
-    supaFetch('depenses','POST',{date:dep.date,categorie:dep.categorie,description:dep.description,montant:dep.montant,mode:dep.mode});
-  }
-  ['d-description','d-montant'].forEach(function(id){document.getElementById(id).value='';});
-  renderDepenses();
-  showNotif('Dépense enregistrée !','success');
-}
-
-function deleteDepense(id) {
-  if(!confirm('Supprimer cette dépense ?')) return;
-  depenses = depenses.filter(function(d){return d.id!==id;});
-  renderDepenses();
-  showNotif('Supprimé','success');
-}
-
-function renderDepenses() {
-  var filtre = document.getElementById('d-filtre-mois') ? document.getElementById('d-filtre-mois').value : '';
-  var filtered = filtre ? depenses.filter(function(d){return d.date.startsWith(filtre);}) : depenses;
-  
-  var total = filtered.reduce(function(s,d){return s+d.montant;},0);
-  var parCat = {};
-  filtered.forEach(function(d){parCat[d.categorie]=(parCat[d.categorie]||0)+d.montant;});
-  
-  // Totaux
-  var ca = caisse.reduce(function(s,c){return s+(c.ttc||0);},0);
-  var benefice = ca - total;
-  document.getElementById('depenses-totaux').innerHTML = +
-    '<div class="dash-card"><div class="dash-label">Total dépenses</div><div class="dash-value" style="color:var(--red);">'+total.toFixed(2)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">CA du mois</div><div class="dash-value">'+ca.toFixed(2)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">Bénéfice brut</div><div class="dash-value" style="color:'+(benefice>=0?'var(--green)':'var(--red)')+'">'+benefice.toFixed(2)+' €</div></div>' +
-    '<div class="dash-card"><div class="dash-label">Nb dépenses</div><div class="dash-value">'+filtered.length+'</div></div>';
-
-  // Tableau
-  var cats = {'Loyer':'🏠','Fournitures':'🔧','Salaires':'👥','Electricite':'💡','Telephone':'📞','Assurance':'🛡️','Transport':'🚗','Publicite':'📢','Logiciels':'💻','Autre':'📦'};
-  document.getElementById('depenses-table').innerHTML = filtered.map(function(d){
-    return '<tr><td>'+fmtDate(d.date)+'</td><td>'+(cats[d.categorie]||'📦')+' '+d.categorie+'</td><td>'+(d.description||'—')+'</td><td style="color:var(--red);font-weight:700;">'+d.montant.toFixed(2)+' €</td><td>'+d.mode+'</td><td><button class="btn btn-sm" onclick="deleteDepense('+d.id+')">🗑️</button></td></tr>';
-  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune dépense</td></tr>';
-
-  // Graphique camembert
-  var labels = Object.keys(parCat);
-  var values = Object.values(parCat);
-  var colors = ['#e53e3e','#48bb78','#4299e1','#ed8936','#9f7aea','#f687b3','#68d391','#fc8181','#63b3ed','#fbd38d'];
-  if (chartDep) chartDep.destroy();
-  if (labels.length > 0) {
-    chartDep = new Chart(document.getElementById('chart-depenses'), {
-      type: 'doughnut',
-      data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.slice(0,labels.length), borderWidth: 0 }] },
-      options: { responsive: true, plugins: { legend: { labels: { color: '#64748b' } } } }
-    });
-  }
-}
-
-function exportDepensesCSV() {
-  var headers = ['Date','Categorie','Description','Montant','Mode'];
-  var rows = depenses.map(function(d){return[fmtDate(d.date),d.categorie,d.description||'',d.montant,d.mode].join(';');});
-  var csv = [headers.join(';')].concat(rows).join('\n');
-  var blob = new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href=url; a.download='Depenses.csv'; a.click();
-  showNotif('Export téléchargé !','success');
+  var ct = document.getElementById('analytics-comp-table');
+  if(ct) ct.innerHTML = thead + tbody;
 }
 
 function updateRepPreview() {
@@ -13675,196 +13425,6 @@ function docsGetKey(){
   var sel = document.getElementById('docs-mois-select');
   return 'docs_checklist_' + (sel ? sel.value : '2026-02');
 }
-
-function docsComptableInit(){
-  docsRenderChecklist();
-  // Mettre à jour le bouton Drive
-  var sel = document.getElementById('docs-mois-select');
-  var mois = sel ? sel.value : '2026-02';
-  var btn = document.getElementById('docs-drive-btn');
-  if(btn){
-    var link = DOCS_DRIVE_LINKS[mois];
-    var nomMois = sel ? sel.options[sel.selectedIndex].text : 'Février 2026';
-    if(link){
-      btn.href = link;
-      btn.style.opacity = '1';
-      btn.style.pointerEvents = 'all';
-      btn.innerHTML = '📁 Drive — ' + nomMois;
-    } else {
-      btn.href = '#';
-      btn.style.opacity = '0.4';
-      btn.style.pointerEvents = 'none';
-      btn.innerHTML = '📁 Drive — ' + nomMois + ' (non disponible)';
-    }
-  }
-}
-
-function docsRenderChecklist(){
-  var key = docsGetKey();
-  var saved = {};
-  try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e){}
-  var container = document.getElementById('docs-checklist');
-  if(!container) return;
-  var sel = document.getElementById('docs-mois-select');
-  var mois = sel ? sel.value : '2026-02';
-  var driveLink = DOCS_DRIVE_LINKS[mois] || '#';
-
-  var html = '';
-  var lastCat = '';
-  var total = DOCS_CHECKLIST.length;
-  var done = 0;
-
-  DOCS_CHECKLIST.forEach(function(item){
-    var checked = saved[item.id] || false;
-    if(checked) done++;
-    if(item.cat !== lastCat){
-      html += '<div style="padding:6px 16px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:8px;">'
-            + (DOCS_CATS[item.cat]||'') + ' ' + item.cat + '</div>';
-      lastCat = item.cat;
-    }
-    html += '<label style="display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;border-radius:6px;transition:.1s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'+
-      '<input type="checkbox" ' + (checked?'checked':'') + ' onchange="docsToggle(\''+item.id+'\')" style="width:16px;height:16px;accent-color:var(--red);">'+
-      '<span style="flex:1;font-size:13px;'+(checked?'text-decoration:line-through;color:var(--text-muted);':'')+'">'+item.label+'</span>'+
-      '<span style="font-size:11px;color:'+(item.auto?'var(--green)':'var(--warning)')+';">'+(item.auto?'📧 Auto':'📥 Manuel')+'</span>'+
-      '<a href="'+driveLink+'" target="_blank" onclick="event.stopPropagation()" style="background:rgba(255,255,255,0.06);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-size:11px;text-decoration:none;flex-shrink:0;">📁</a>'+
-    '</label>';
-  });
-
-  container.innerHTML = html;
-  var badge = document.getElementById('docs-progress-badge');
-  if(badge){
-    var pct = Math.round(done/total*100);
-    badge.textContent = done + '/' + total + ' factures (' + pct + '%)';
-    badge.style.background = pct===100 ? 'var(--green)' : pct>50 ? 'var(--warning)' : 'var(--red)';
-  }
-}
-
-function docsToggle(id){
-  var key = docsGetKey();
-  var saved = {};
-  try { saved = JSON.parse(localStorage.getItem(key) || '{}'); } catch(e){}
-  saved[id] = !saved[id];
-  localStorage.setItem(key, JSON.stringify(saved));
-  docsRenderChecklist();
-}
-
-function docsResetChecklist(){
-  if(!confirm('Réinitialiser la checklist du mois ?')) return;
-  localStorage.removeItem(docsGetKey());
-  docsRenderChecklist();
-}
-
-async function docsAnalysePDF(input){
-  var file = input.files[0];
-  if(!file) return;
-  var result = document.getElementById('docs-analyse-result');
-  result.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">⏳ Analyse en cours...</div>';
-
-  try {
-    // Lire le PDF avec l'IA Claude
-    var key = localStorage.getItem('sp_claude_key');
-    if(!key){ result.innerHTML = '<div style="color:var(--red);padding:10px;">❌ Clé API requise</div>'; return; }
-
-    var base64 = await new Promise(function(res, rej){
-      var r = new FileReader();
-      r.onload = function(){ res(r.result.split(',')[1]); };
-      r.onerror = function(){ rej(new Error('Erreur lecture')); };
-      r.readAsDataURL(file);
-    });
-
-    var resp = await fetch('/api/claude', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 4000,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-            { type: 'text', text: `Extrait toutes les DÉPENSES (montants négatifs/débits) de ce relevé bancaire.
-Pour chaque dépense retourne un JSON array avec : date, libelle, montant (positif), categorie.
-Catégories possibles : Énergie, Assurances, Télécom, Comptabilité, Social, Loyer/Charges, Fournisseurs, Achats, Paiements, Banque, Taxes, Divers.
-Retourne UNIQUEMENT le JSON, sans texte avant ou après, sans backticks.` }
-          ]
-        }]
-      })
-    });
-
-    var data = await resp.json();
-    var text = data.content[0].text.replace(/```json|```/g,'').trim();
-    var depenses = JSON.parse(text);
-    docsAfficheResume(depenses);
-
-  } catch(e) {
-    result.innerHTML = '<div style="color:var(--red);padding:10px;">❌ Erreur : ' + e.message + '</div>';
-  }
-}
-
-function docsAfficheResume(depenses){
-  var result = document.getElementById('docs-analyse-result');
-  result.innerHTML = '<div style="color:var(--green);padding:10px;font-size:13px;">✅ ' + depenses.length + ' dépenses extraites</div>';
-
-  // Grouper par catégorie
-  var cats = {};
-  depenses.forEach(function(d){
-    var cat = d.categorie || 'Divers';
-    if(!cats[cat]) cats[cat] = [];
-    cats[cat].push(d);
-  });
-
-  var resumeCard = document.getElementById('docs-resume-card');
-  var resumeContent = document.getElementById('docs-resume-content');
-  if(resumeCard) resumeCard.style.display = 'block';
-
-  var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">';
-  html += '<thead><tr style="background:var(--red);"><th style="padding:10px;text-align:left;color:#fff;font-size:13px;">Catégorie</th><th style="padding:10px;text-align:left;color:#fff;font-size:13px;">Libellé</th><th style="padding:10px;text-align:center;color:#fff;font-size:13px;">Date</th><th style="padding:10px;text-align:right;color:#fff;font-size:13px;">Montant</th></tr></thead><tbody>';
-
-  var totalGeneral = 0;
-  Object.keys(cats).sort().forEach(function(cat, ci){
-    var total = 0;
-    cats[cat].forEach(function(d, i){
-      var bg = ci%2===0 ? '' : 'background:#f8fafc;';
-      html += '<tr style="'+bg+'border-bottom:1px solid var(--border);">';
-      html += '<td style="padding:8px 10px;font-size:12px;color:var(--text-muted);">'+(i===0?cat:'')+'</td>';
-      html += '<td style="padding:8px 10px;font-size:13px;">'+d.libelle+'</td>';
-      html += '<td style="padding:8px 10px;font-size:12px;text-align:center;color:var(--text-muted);">'+d.date+'</td>';
-      html += '<td style="padding:8px 10px;font-size:13px;text-align:right;color:var(--red);font-weight:600;">'+parseFloat(d.montant).toFixed(2)+' €</td>';
-      html += '</tr>';
-      total += parseFloat(d.montant)||0;
-    });
-    totalGeneral += total;
-    html += '<tr style="background:rgba(192,57,43,0.08);"><td colspan="3" style="padding:6px 10px;font-size:12px;font-weight:700;">Total '+cat+'</td><td style="padding:6px 10px;text-align:right;font-weight:700;color:var(--red);">'+total.toFixed(2)+' €</td></tr>';
-  });
-
-  html += '<tr style="background:var(--red);"><td colspan="3" style="padding:10px;color:#fff;font-weight:700;font-size:14px;">TOTAL DÉPENSES</td><td style="padding:10px;text-align:right;color:#fff;font-weight:700;font-size:14px;">'+totalGeneral.toFixed(2)+' €</td></tr>';
-  html += '</tbody></table></div>';
-
-  // Stocker pour export
-  window._docsDepenses = depenses;
-  if(resumeContent) resumeContent.innerHTML = html;
-}
-
-function docsExportResume(){
-  if(!window._docsDepenses || !window._docsDepenses.length){ showToast('Aucune donnée à exporter'); return; }
-  var csv = 'Date;Libellé;Catégorie;Montant\n';
-  window._docsDepenses.forEach(function(d){
-    csv += d.date+';'+d.libelle+';'+(d.categorie||'Divers')+';'+parseFloat(d.montant).toFixed(2)+'\n';
-  });
-  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = 'depenses-'+docsGetKey()+'.csv';
-  a.click(); URL.revokeObjectURL(url);
-  showToast('✅ Export CSV téléchargé !');
-}
-
-// ============================================================
-//  FIN MODULE DOCUMENTS COMPTABLE
-// ============================================================
 
 function isMobile(){ return window.innerWidth <= 768; }
 
