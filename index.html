@@ -902,6 +902,7 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
             <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
             <button class="btn" style="color:#f39c12;border-color:#f39c12;" onclick="document.getElementById('wegacell-occ-pdf-input').click()">📄 Import Wegacell</button>
             <input type="file" id="wegacell-occ-pdf-input" accept=".pdf" style="display:none" onchange="importWegacellOccasionPDF(this)">
+            <button class="btn" style="color:#8b5cf6;border-color:#8b5cf6;" onclick="exportInventaire()">📊 Inventaire</button>
             <button class="btn" id="btn-shopify-bulk" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyBulkPublish()">🛒 Tout publier Shopify</button>
             <button class="btn" id="btn-shopify-stock" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyFixAllStock()">📦 Corriger stocks Shopify</button>
             <button class="btn" id="btn-shopify-activate" style="display:none;color:#96bf48;border-color:#96bf48;" onclick="shopifyActivateAll()">✅ Activer brouillons Shopify</button>
@@ -9084,6 +9085,68 @@ function annulerVente(id){
   showNotif('↩️ '+p.modele+' remis en stock','success');
 }
 function deletePhone(id){if(!confirm('Supprimer ?'))return;var p=phones.find(function(x){return x.id===id;});if(p&&p.shopify_id)shopifyDeleteProduct(p.shopify_id);phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
+
+function exportInventaire(){
+  var today=new Date();
+  var todayStr=today.toISOString().slice(0,10);
+  var nbDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var nbVendu=phones.filter(function(p){return p.etat==='VENDU';}).length;
+  var nbRepa=phones.filter(function(p){return p.etat==='EN_REPARATION';}).length;
+  var totalAchat=phones.reduce(function(s,p){return s+p.achat;},0);
+  var totalVente=phones.reduce(function(s,p){return s+p.vente;},0);
+  var totalMarge=totalVente-totalAchat;
+
+  function genComment(p){
+    var parts=[];
+    var marge=p.vente-p.achat;
+    var pct=p.achat>0?Math.round(marge/p.achat*100):0;
+    if(p.etat==='VENDU'){
+      var jours='';
+      if(p.dateAchat&&p.dateVente){
+        var j=Math.floor((new Date(p.dateVente)-new Date(p.dateAchat))/86400000);
+        jours=' en '+j+'j';
+      }
+      parts.push('Vendu'+jours+' — marge '+marge+'€ ('+pct+'%)');
+    } else {
+      if(p.dateAchat){
+        var age=Math.floor((today-new Date(p.dateAchat))/86400000);
+        if(age>30) parts.push('⚠️ En stock depuis '+age+'j — rotation lente');
+        else if(age>14) parts.push('En stock '+age+'j — à surveiller');
+        else parts.push('En stock '+age+'j');
+      }
+      parts.push('Marge potentielle: '+marge+'€ ('+pct+'%)');
+    }
+    if(p.achat===0&&p.vente===0) parts=['⚠️ Prix à 0 — vérifier'];
+    if(p.batterie&&p.batterie<80) parts.push('Batterie faible ('+p.batterie+'%)');
+    if(p.grade==='C') parts.push('Grade C — cosmétique dégradé');
+    var src=p.fournisseur||'Particulier';
+    parts.push('Source: '+src+' ('+p.mode+')');
+    return parts.join(' | ');
+  }
+
+  var csv='﻿';
+  csv+='INVENTAIRE SOLUTION PHONE — '+todayStr+'\n';
+  csv+='Total: '+phones.length+' tél. | Dispo: '+nbDispo+' | Vendus: '+nbVendu+(nbRepa?' | En répa: '+nbRepa:'')+'\n';
+  csv+='Valeur achat stock: '+totalAchat+'€ | Valeur vente: '+totalVente+'€ | Marge totale: '+totalMarge+'€\n\n';
+  csv+='ID;Modèle;Stockage;Grade;Batterie;IMEI;Achat €;Vente €;Marge €;Marge %;État;Couleur;Date Achat;Date Vente;Source;Paiement;Commentaire\n';
+
+  phones.forEach(function(p){
+    var marge=p.vente-p.achat;
+    var pct=p.achat>0?Math.round(marge/p.achat*100):0;
+    var src=p.fournisseur||'Particulier';
+    var comment=genComment(p);
+    csv+=[p.id,'"'+p.modele+'"',p.stockage?p.stockage+'Go':'',p.grade||'',p.batterie||'',p.imei||'',p.achat,p.vente,marge,pct+'%',p.etat,p.couleur||'',p.dateAchat||'',p.dateVente||'',src,p.mode||'','"'+comment+'"'].join(';')+'\n';
+  });
+
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='inventaire-solution-phone-'+todayStr+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showNotif('📊 Inventaire exporté ('+phones.length+' tél.)','success');
+}
 
 var curPhone=null;
 var _etiquettePhone = null;
