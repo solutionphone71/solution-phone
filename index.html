@@ -9086,70 +9086,166 @@ function annulerVente(id){
 }
 function deletePhone(id){if(!confirm('Supprimer ?'))return;var p=phones.find(function(x){return x.id===id;});if(p&&p.shopify_id)shopifyDeleteProduct(p.shopify_id);phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
 
-function exportInventaire(){
+async function exportInventaire(){
+  if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
   var today=new Date();
   var todayStr=today.toISOString().slice(0,10);
-  var nbDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  var nbVendu=phones.filter(function(p){return p.etat==='VENDU';}).length;
-  var nbRepa=phones.filter(function(p){return p.etat==='EN_REPARATION';}).length;
-  var totalAchat=phones.reduce(function(s,p){return s+p.achat;},0);
-  var totalVente=phones.reduce(function(s,p){return s+p.vente;},0);
-  var totalMarge=totalVente-totalAchat;
+  var stockPhones=phones.filter(function(p){return p.etat!=='VENDU';});
+  var nbDispo=stockPhones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
+  var nbRepa=stockPhones.filter(function(p){return p.etat==='EN_REPARATION';}).length;
+  var stockAchat=stockPhones.reduce(function(s,p){return s+p.achat;},0);
+  var stockVente=stockPhones.reduce(function(s,p){return s+p.vente;},0);
+  var stockMarge=stockVente-stockAchat;
 
   function genComment(p){
     var parts=[];
     var marge=p.vente-p.achat;
     var pct=p.achat>0?Math.round(marge/p.achat*100):0;
-    if(p.etat==='VENDU'){
-      var jours='';
-      if(p.dateAchat&&p.dateVente){
-        var j=Math.floor((new Date(p.dateVente)-new Date(p.dateAchat))/86400000);
-        jours=' en '+j+'j';
-      }
-      parts.push('Vendu'+jours+' — marge '+marge+'€ ('+pct+'%)');
-    } else {
-      if(p.dateAchat){
-        var age=Math.floor((today-new Date(p.dateAchat))/86400000);
-        if(age>30) parts.push('⚠️ En stock depuis '+age+'j — rotation lente');
-        else if(age>14) parts.push('En stock '+age+'j — à surveiller');
-        else parts.push('En stock '+age+'j');
-      }
-      parts.push('Marge potentielle: '+marge+'€ ('+pct+'%)');
+    if(p.dateAchat){
+      var age=Math.floor((today-new Date(p.dateAchat))/86400000);
+      if(age>30) parts.push('Stock '+age+'j - rotation lente');
+      else if(age>14) parts.push('Stock '+age+'j - a surveiller');
+      else parts.push('Stock '+age+'j');
     }
-    if(p.achat===0&&p.vente===0) parts=['⚠️ Prix à 0 — vérifier'];
-    if(p.batterie&&p.batterie<80) parts.push('Batterie faible ('+p.batterie+'%)');
-    if(p.grade==='C') parts.push('Grade C — cosmétique dégradé');
+    parts.push('Marge: '+marge+'E ('+pct+'%)');
+    if(p.achat===0&&p.vente===0) parts=['Prix a 0 - verifier'];
+    if(p.batterie&&p.batterie<80) parts.push('Bat. faible ('+p.batterie+'%)');
+    if(p.grade==='C') parts.push('Grade C');
     var src=p.fournisseur||'Particulier';
-    parts.push('Source: '+src+' ('+p.mode+')');
+    parts.push(src);
     return parts.join(' | ');
   }
 
-  var csv='﻿';
-  var stockPhones=phones.filter(function(p){return p.etat!=='VENDU';});
-  var stockAchat=stockPhones.reduce(function(s,p){return s+p.achat;},0);
-  var stockVente=stockPhones.reduce(function(s,p){return s+p.vente;},0);
-  var stockMarge=stockVente-stockAchat;
-  csv+='INVENTAIRE STOCK SOLUTION PHONE — '+todayStr+'\n';
-  csv+='En stock: '+nbDispo+' dispo'+(nbRepa?' + '+nbRepa+' en répa':'')+' ('+stockPhones.length+' total)\n';
-  csv+='Valeur achat: '+stockAchat+'€ | Valeur vente: '+stockVente+'€ | Marge potentielle: '+stockMarge+'€\n\n';
-  csv+='ID;Modèle;Stockage;Grade;Batterie;IMEI;Achat €;Vente €;Marge €;Marge %;Couleur;Date Achat;Source;Paiement;Commentaire\n';
+  var pdf=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  var pw=297,ph=210;
+  // Header rouge
+  pdf.setFillColor(227,6,19);
+  pdf.rect(0,0,pw,18,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(14);
+  pdf.setFont('helvetica','bold');
+  pdf.text('INVENTAIRE STOCK — SOLUTION PHONE',pw/2,11,{align:'center'});
+  pdf.setFontSize(9);
+  pdf.text(todayStr,pw-10,11,{align:'right'});
 
-  phones.filter(function(p){return p.etat!=='VENDU';}).forEach(function(p){
-    var marge=p.vente-p.achat;
-    var pct=p.achat>0?Math.round(marge/p.achat*100):0;
-    var src=p.fournisseur||'Particulier';
-    var comment=genComment(p);
-    csv+=[p.id,'"'+p.modele+'"',p.stockage?p.stockage+'Go':'',p.grade||'',p.batterie||'',p.imei||'',p.achat,p.vente,marge,pct+'%',p.couleur||'',p.dateAchat||'',src,p.mode||'','"'+comment+'"'].join(';')+'\n';
+  // Résumé
+  pdf.setTextColor(40,40,40);
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica','bold');
+  var resumeY=25;
+  pdf.text('En stock : '+nbDispo+' dispo'+(nbRepa?' + '+nbRepa+' en repa':'')+' ('+stockPhones.length+' total)',10,resumeY);
+  pdf.text('Valeur achat : '+stockAchat.toFixed(0)+' E   |   Valeur vente : '+stockVente.toFixed(0)+' E   |   Marge potentielle : '+stockMarge.toFixed(0)+' E',10,resumeY+5);
+
+  // Table
+  var cols=[
+    {label:'#',w:8},
+    {label:'Modele',w:38},
+    {label:'Stock.',w:14},
+    {label:'Gr.',w:10},
+    {label:'Bat.',w:12},
+    {label:'IMEI',w:32},
+    {label:'Achat',w:16},
+    {label:'Vente',w:16},
+    {label:'Marge',w:16},
+    {label:'%',w:12},
+    {label:'Couleur',w:18},
+    {label:'Date Achat',w:22},
+    {label:'Commentaire',w:73}
+  ];
+  var startX=5,startY=35,rowH=6.5;
+  // Header tableau
+  pdf.setFillColor(50,50,60);
+  pdf.rect(startX,startY,pw-10,rowH,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(7);
+  pdf.setFont('helvetica','bold');
+  var cx=startX;
+  cols.forEach(function(c){
+    pdf.text(c.label,cx+1,startY+4.5);
+    cx+=c.w;
   });
 
-  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url;
-  a.download='stock-solution-phone-'+todayStr+'.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  showNotif('📊 Stock exporté ('+stockPhones.length+' tél. en stock)','success');
+  // Rows
+  var y=startY+rowH;
+  pdf.setFont('helvetica','normal');
+  pdf.setFontSize(7);
+  stockPhones.forEach(function(p,idx){
+    if(y>ph-15){
+      pdf.addPage();
+      y=10;
+      // Re-draw header on new page
+      pdf.setFillColor(50,50,60);
+      pdf.rect(startX,y,pw-10,rowH,'F');
+      pdf.setTextColor(255,255,255);
+      pdf.setFont('helvetica','bold');
+      var hx=startX;
+      cols.forEach(function(c){pdf.text(c.label,hx+1,y+4.5);hx+=c.w;});
+      pdf.setFont('helvetica','normal');
+      y+=rowH;
+    }
+    // Alternating row bg
+    if(idx%2===0){pdf.setFillColor(245,245,248);pdf.rect(startX,y,pw-10,rowH,'F');}
+    // Warning bg for slow stock
+    var age=p.dateAchat?Math.floor((today-new Date(p.dateAchat))/86400000):0;
+    if(age>30){pdf.setFillColor(255,243,224);pdf.rect(startX,y,pw-10,rowH,'F');}
+
+    pdf.setTextColor(40,40,40);
+    var marge=p.vente-p.achat;
+    var pct=p.achat>0?Math.round(marge/p.achat*100):0;
+    var etatIcon=p.etat==='EN_REPARATION'?'[R] ':'';
+    var comment=genComment(p);
+    var row=[
+      ''+p.id,
+      etatIcon+p.modele,
+      p.stockage?p.stockage+'Go':'',
+      p.grade||'',
+      p.batterie?p.batterie+'%':'',
+      p.imei||'',
+      p.achat.toFixed(0)+' E',
+      p.vente.toFixed(0)+' E',
+      marge.toFixed(0)+' E',
+      pct+'%',
+      p.couleur||'',
+      p.dateAchat||'',
+      comment
+    ];
+    var rx=startX;
+    row.forEach(function(val,ci){
+      var maxW=cols[ci].w-2;
+      var txt=pdf.splitTextToSize(val,maxW);
+      pdf.text(txt[0]||'',rx+1,y+4.5);
+      rx+=cols[ci].w;
+    });
+    // Marge color
+    rx=startX;for(var i=0;i<8;i++)rx+=cols[i].w;
+    if(marge>0){pdf.setTextColor(0,128,0);}else{pdf.setTextColor(200,0,0);}
+    pdf.text(marge.toFixed(0)+' E',rx+1,y+4.5);
+    pdf.setTextColor(40,40,40);
+
+    y+=rowH;
+  });
+
+  // Footer totals
+  y+=2;
+  pdf.setFillColor(227,6,19);
+  pdf.rect(startX,y,pw-10,8,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica','bold');
+  pdf.text('TOTAL : '+stockPhones.length+' telephones en stock   |   Achat: '+stockAchat.toFixed(0)+' E   |   Vente: '+stockVente.toFixed(0)+' E   |   Marge: '+stockMarge.toFixed(0)+' E',startX+5,y+5.5);
+
+  // Footer page
+  var totalPages=pdf.internal.getNumberOfPages();
+  for(var i=1;i<=totalPages;i++){
+    pdf.setPage(i);
+    pdf.setFontSize(7);
+    pdf.setTextColor(150,150,150);
+    pdf.setFont('helvetica','normal');
+    pdf.text('Solution Phone — 21 rue Gambetta, Macon — '+todayStr+' — Page '+i+'/'+totalPages,pw/2,ph-5,{align:'center'});
+  }
+
+  pdf.save('stock-solution-phone-'+todayStr+'.pdf');
+  showNotif('📊 PDF inventaire exporté ('+stockPhones.length+' tél.)','success');
 }
 
 var curPhone=null;
