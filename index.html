@@ -110,6 +110,20 @@ var SP_LOGO="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0A
   #ig-tab-gmb .ag-config-grid{grid-template-columns:1fr;padding:16px;}
   #ig-tab-gmb .ag-header{flex-direction:column;align-items:flex-start;gap:16px;}
 }
+
+/* ── Mobile responsive tables ── */
+@media(max-width:768px){
+  table{font-size:12px !important;}
+  .page{padding:8px !important;}
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr !important;
+  }
+}
+div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+}
 </style>
 <style id="aria-cmd-css">
 /* ══ ARIA COMMAND CENTER — FUTURISTIC ══ */
@@ -5013,6 +5027,16 @@ async function supaFetch(table, method, body, query) {
   } catch(e) { console.error(e); return null; }
 }
 
+// ── Anti-XSS : échappe les caractères HTML dans les données utilisateur ──
+var SP_DEBUG = (location.search.indexOf('debug')!==-1);
+
+function escHtml(s){
+  if(s===null||s===undefined) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+var _syncDirty = false; // Flag pour bloquer la sync auto pendant les éditions
+
 var phones = [], factures = [], caisse = [], reportsMois = {'2026-02':907.60,'2026-03':624.00};
 var supabaseReady = false;
 var realtimeChannel = null;
@@ -5020,8 +5044,9 @@ var realtimeChannel = null;
 
 function initRealtime() {
   // Polling toutes les 90 secondes pour synchro multiposte
-  setInterval(async function() {
-    if (!supabaseReady) return;
+  if(window._syncInterval) clearInterval(window._syncInterval);
+  window._syncInterval = setInterval(async function() {
+    if (!supabaseReady || _syncDirty) return;
     try {
       var c = await supaFetch('caisse','GET',null,'?order=date.asc');
       if (c) {
@@ -5035,19 +5060,19 @@ function initRealtime() {
       }
       // Charger les téléphones neufs
       loadPhonesNeufs();
-    } catch(e) { console.log('Sync error:', e); }
+    } catch(e) { if(SP_DEBUG) console.log('Sync error:', e); }
   }, 90000);
-  console.log('🔄 Synchronisation temps réel activée (30s)');
+  console.log('🔄 Synchronisation multiposte activée (90s)');
 
   // Auto-impression désactivée — l'impression passe par le NAS directement
   // L'ancien système de polling Supabase toutes les 15s causait des doublons
-  console.log('Auto-print: désactivé (impression via NAS)');
+  if(SP_DEBUG) console.log('Auto-print: désactivé (impression via NAS)');
 }
 
 async function loadFromSupabase() {
   try {
     // Chargement avec log
-    console.log('[Supabase] Début chargement données...');
+    if(SP_DEBUG) console.log('[Supabase] Début chargement données...');
     var results = await Promise.all([
       supaFetch('phones','GET',null,'?order=id.asc'),
       supaFetch('factures','GET',null,'?order=id.desc&limit=200'),
@@ -5099,7 +5124,7 @@ async function loadFromSupabase() {
     // Charger les bons de commande depuis Supabase
     loadBonsCommande();
     // Charger les bons de dépôt (réparations) — nécessaire pour dashboard
-    loadBonsDepot().then(function(){ renderDashboard(); }).catch(function(){});
+    loadBonsDepot().then(function(){ renderDashboard(); }).catch(function(e){ console.error('Erreur chargement bons dépôt:', e); });
     // Charger les téléphones neufs
     loadPhonesNeufs();
     // Charger les clés API depuis Supabase
@@ -5506,7 +5531,7 @@ function renderFacturesSearch(){
       numero:  'VTE-'+p.id,
       date:    (p.dateVente||'').substring(0,10),
       client:  p.vendeurNom||'Client',
-      desc:    p.modele+(p.stockage?' '+p.stockage+'Go':'')+' Grade '+(p.grade||'A')+(p.imei?' — IMEI '+p.imei:''),
+      desc:    escHtml(p.modele)+(p.stockage?' '+p.stockage+'Go':'')+' Grade '+(p.grade||'A')+(p.imei?' — IMEI '+p.imei:''),
       type:    'vente',
       mode:    p.modeVente||'CB',
       montant: p.vente||0,
@@ -6941,7 +6966,21 @@ function saveCaisseEdit() {
   showNotif('✅ Saisie du ' + fmtDate(date) + ' mise à jour !', 'success');
 }
 
-function deleteCaisse(date){if(!confirm('Supprimer ?'))return;caisse=caisse.filter(function(c){return c.date!==date;});if(supabaseReady)supaFetch('caisse','DELETE',null,'?date=eq.'+date);renderCaisse();showNotif('Supprimé','success');}
+async function deleteCaisse(date){
+  if(!confirm('Supprimer cette entrée de caisse ?'))return;
+  if(supabaseReady){
+    try{
+      await supaFetch('caisse','DELETE',null,'?date=eq.'+date);
+    }catch(e){
+      showNotif('Erreur suppression: '+e.message,'error');
+      console.error('deleteCaisse error:',e);
+      return;
+    }
+  }
+  caisse=caisse.filter(function(c){return c.date!==date;});
+  renderCaisse();
+  showNotif('Supprimé','success');
+}
 
 function initCaisseMoisSelect(){
   var sel = document.getElementById('caisse-mois-select');
@@ -7383,10 +7422,18 @@ async function addClient() {
   showNotif('Client '+nomComplet+' ajouté !','success');
 }
 
-function deleteClient(id) {
+async function deleteClient(id) {
   if(!confirm('Supprimer ce client ?')) return;
+  if(supabaseReady){
+    try{
+      await supaFetch('clients','DELETE',null,'?id=eq.'+id);
+    }catch(e){
+      showNotif('Erreur suppression client: '+e.message,'error');
+      console.error('deleteClient error:',e);
+      return;
+    }
+  }
   clients = clients.filter(function(c){return c.id!==id;});
-  if(supabaseReady) supaFetch('clients','DELETE',null,'?id=eq.'+id);
   document.getElementById('client-detail-card').style.display='none';
   renderClients();
   showNotif('Client supprimé','success');
@@ -7866,6 +7913,7 @@ function savePhoneEdit() {
 function updateMarge(){var a=parseFloat((document.getElementById('p-achat').value||'0').toString().replace(',','.'))||0;var v=parseFloat((document.getElementById('p-vente').value||'0').toString().replace(',','.'))||0;document.getElementById('marge-preview').textContent='Marge : '+(v-a).toFixed(2)+' € ('+(a>0?(((v-a)/a)*100).toFixed(1):0)+'%)';}
 
 function addPhone(){
+  _syncDirty=true;
   var modele=document.getElementById('p-modele').value.trim();
   var achatRaw=document.getElementById('p-achat').value.toString().replace(',','.');
   var venteRaw=document.getElementById('p-vente').value.toString().replace(',','.');
@@ -7874,11 +7922,20 @@ function addPhone(){
   if(!modele){showNotif('Modèle requis','error');return;}
   if(!achat||achat<=0){showNotif('Prix achat invalide','error');return;}
   if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
+  // Vérification doublon IMEI
+  var imeiVal=document.getElementById('p-imei').value.trim();
+  if(imeiVal){
+    var doublon=phones.find(function(p){return p.imei===imeiVal;});
+    if(doublon){
+      if(!confirm('⚠️ IMEI déjà en stock !\n'+doublon.modele+' ('+doublon.etat+')\nAjouter quand même ?')) return;
+    }
+  }
   var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);
   // Sauvegarder en local en backup (évite la perte si Supabase échoue)
   try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+  _syncDirty=false;
   savePhone(phone);
 
   // ── Réutilisation photo depuis la bibliothèque (pas de re-upload) ──
@@ -8019,7 +8076,7 @@ function ouvrirFactureDepuisStock(id){
   var selectedText=document.getElementById('f-phone-selected-text');
   if(searchInput&&hiddenInput){
     hiddenInput.value=p.id;
-    var label='N\u00b0'+p.id+' \u00b7 '+p.modele+(p.stockage?' '+p.stockage+'Go':'');
+    var label='N\u00b0'+p.id+' \u00b7 '+escHtml(p.modele)+(p.stockage?' '+p.stockage+'Go':'');
     if(p.grade) label+=' \u2014 Grade '+p.grade;
     if(p.couleur) label+=' \u2014 '+p.couleur;
     label+=' \u2014 '+p.vente+'\u20ac';
@@ -8566,7 +8623,21 @@ function annulerVente(id){
   renderDashboard();
   showNotif('↩️ '+p.modele+' remis en stock','success');
 }
-function deletePhone(id){if(!confirm('Supprimer ?'))return;var p=phones.find(function(x){return x.id===id;});phones=phones.filter(function(x){return x.id!==id;});if(supabaseReady)supaFetch('phones','DELETE',null,'?id=eq.'+id);renderPhones();renderDashboard();showNotif('Supprimé','success');}
+async function deletePhone(id){
+  if(!confirm('Supprimer ce smartphone ?'))return;
+  if(supabaseReady){
+    try{
+      await supaFetch('phones','DELETE',null,'?id=eq.'+id);
+    }catch(e){
+      showNotif('Erreur suppression: '+e.message,'error');
+      console.error('deletePhone error:',e);
+      return;
+    }
+  }
+  phones=phones.filter(function(x){return x.id!==id;});
+  renderPhones();renderDashboard();
+  showNotif('Supprimé','success');
+}
 
 async function exportInventaire(){
   if(!window.jspdf){await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
@@ -8885,7 +8956,7 @@ function buildFactPhoneCache(){
 }
 
 function phoneFactureLabel(p){
-  return (p.numPolice?'N°'+p.numPolice+' · ':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€';
+  return (p.numPolice?'N°'+p.numPolice+' · ':'')+escHtml(p.modele)+(p.stockage?' '+p.stockage+'Go':'')+(p.grade?' — Grade '+p.grade:'')+(p.couleur?' — '+p.couleur:'')+' — '+p.vente+'€';
 }
 
 function filterPhoneFacture(q){
@@ -8911,7 +8982,7 @@ function filterPhoneFacture(q){
     var clientStr=item.group==='vendu'&&p.clientNom?' · '+p.clientNom:'';
 
     html+='<div onclick="selectPhoneFacture('+p.id+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid rgba(0,0,0,0.04);transition:background .12s;font-size:13px;" onmouseover="this.style.background=\'rgba(255,59,48,0.04)\'" onmouseout="this.style.background=\'transparent\'">';
-    html+='<div style="font-weight:700;">'+(p.numPolice?'<span style="background:#ff3b30;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:800;margin-right:6px;">N°'+p.numPolice+'</span>':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'<span style="float:right;color:#ff3b30;font-weight:800;">'+p.vente+' €</span></div>';
+    html+='<div style="font-weight:700;">'+(p.numPolice?'<span style="background:#ff3b30;color:#fff;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:800;margin-right:6px;">N°'+p.numPolice+'</span>':'')+escHtml(p.modele)+(p.stockage?' '+p.stockage+'Go':'')+'<span style="float:right;color:#ff3b30;font-weight:800;">'+p.vente+' €</span></div>';
     html+='<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">';
     html+=(p.grade?'Grade '+p.grade:'')+(p.couleur?' · '+p.couleur:'')+(p.imei?' · IMEI '+p.imei:'')+dateStr+clientStr;
     html+='</div></div>';
@@ -8933,7 +9004,7 @@ function selectPhoneFacture(id){
   var badge=document.getElementById('f-phone-selected');
   var badgeTxt=document.getElementById('f-phone-selected-text');
   if(badge&&badgeTxt){
-    badgeTxt.textContent=(p.etat==='VENDU'?'✅ ':'📱 ')+(p.numPolice?'N°'+p.numPolice+' · ':'')+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' — '+p.vente+'€'+(p.etat==='VENDU'?' (vendu le '+fmtDate(p.dateVente)+')':'');
+    badgeTxt.textContent=(p.etat==='VENDU'?'✅ ':'📱 ')+(p.numPolice?'N°'+p.numPolice+' · ':'')+escHtml(p.modele)+(p.stockage?' '+p.stockage+'Go':'')+' — '+p.vente+'€'+(p.etat==='VENDU'?' (vendu le '+fmtDate(p.dateVente)+')':'');
     badge.style.display='flex';
   }
 
@@ -9484,7 +9555,7 @@ function renderStats(){
 }
 
 function renderPolice(){
-  document.getElementById('police-table').innerHTML=phones.filter(function(p){return p.typeAchat!=='FOURNISSEUR';}).map(function(p){return'<tr><td><b>#'+(p.numPolice||'—')+'</b></td><td>'+fmtDate(p.dateAchat)+'</td><td>'+(p.vendeurNom||'—')+'</td><td>'+(p.vendeurCI||'—')+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px">'+(p.imei||'—')+'</td><td>'+(p.couleur||'—')+'</td><td><b>'+p.achat+' €</b></td><td><button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄 Certificat</button></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun achat particulier enregistré</td></tr>';
+  document.getElementById('police-table').innerHTML=phones.filter(function(p){return p.typeAchat!=='FOURNISSEUR';}).map(function(p){return'<tr><td><b>#'+(p.numPolice||'—')+'</b></td><td>'+fmtDate(p.dateAchat)+'</td><td>'+escHtml(p.vendeurNom||'—')+'</td><td>'+(p.vendeurCI||'—')+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px">'+(p.imei||'—')+'</td><td>'+(p.couleur||'—')+'</td><td><b>'+p.achat+' €</b></td><td><button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄 Certificat</button></td></tr>';}).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun achat particulier enregistré</td></tr>';
 }
 
 function exportPoliceCSV(){
@@ -10794,7 +10865,7 @@ function renderComptable() {
       if(!achatsEsp.length) return '';
       var totalEspSmarts = achatsEsp.reduce(function(s,p){return s+p.achat;},0);
       var rows = achatsEsp.map(function(p){
-        var vendeur=p.typeAchat==='FOURNISSEUR'?'🏢 '+(p.fournisseur||'Fournisseur'):'👤 '+(p.vendeurNom||'—');
+        var vendeur=p.typeAchat==='FOURNISSEUR'?'🏢 '+escHtml(p.fournisseur||'Fournisseur'):'👤 '+escHtml(p.vendeurNom||'—');
         return '<tr><td>'+fmtDate(p.dateAchat)+'</td><td>'+vendeur+'</td><td>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="font-size:11px;color:var(--text-muted);">'+(p.imei||'—')+'</td><td style="text-align:right;font-weight:700;color:#ed8936;">'+p.achat.toFixed(2)+' €</td></tr>';
       }).join('');
       return '<div style="margin-bottom:20px;">'+
@@ -11167,7 +11238,7 @@ function renderDashboard(){
         var ie=document.getElementById('wg-meteo-icon');if(ie)ie.textContent=icons[wc]||'🌡️';
         var te=document.getElementById('wg-meteo-temp');if(te)te.textContent=Math.round(t)+'°';
         var de2=document.getElementById('wg-meteo-desc');if(de2)de2.textContent=descs[wc]||'';
-      }).catch(function(){});
+      }).catch(function(e){ console.error('Météo fetch error:', e); });
   }
 
   // ① PERFORMANCE LIVE — Comparaison mois dernier
@@ -13141,6 +13212,8 @@ function androidSupprimerModele(marque, modele){
   localStorage.setItem('sp_android_prix', JSON.stringify(androidData));
   androidRender();
 }
+
+var SP_DEBUG = (location.search.indexOf('debug')!==-1);
 
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -23809,7 +23882,7 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
 
 // Service Worker — mode hors-ligne
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js').then(function(){console.log('[SW] OK');}).catch(function(){});
+  navigator.serviceWorker.register('/sw.js').then(function(){console.log('[SW] OK');}).catch(function(e){ console.error('[SW] Erreur enregistrement:', e); });
 }
 
 // ══════════════════════════════════════════════════
@@ -24495,7 +24568,7 @@ function mlxInit(){
         mlxRender();
         mlxCheckAlertes();
       }
-    }).catch(function(){});
+    }).catch(function(e){ console.error('MLX sync error:', e); });
   }
 }
 
