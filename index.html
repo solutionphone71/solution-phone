@@ -9125,27 +9125,31 @@ function exportInventaire(){
   }
 
   var csv='﻿';
-  csv+='INVENTAIRE SOLUTION PHONE — '+todayStr+'\n';
-  csv+='Total: '+phones.length+' tél. | Dispo: '+nbDispo+' | Vendus: '+nbVendu+(nbRepa?' | En répa: '+nbRepa:'')+'\n';
-  csv+='Valeur achat stock: '+totalAchat+'€ | Valeur vente: '+totalVente+'€ | Marge totale: '+totalMarge+'€\n\n';
-  csv+='ID;Modèle;Stockage;Grade;Batterie;IMEI;Achat €;Vente €;Marge €;Marge %;État;Couleur;Date Achat;Date Vente;Source;Paiement;Commentaire\n';
+  var stockPhones=phones.filter(function(p){return p.etat!=='VENDU';});
+  var stockAchat=stockPhones.reduce(function(s,p){return s+p.achat;},0);
+  var stockVente=stockPhones.reduce(function(s,p){return s+p.vente;},0);
+  var stockMarge=stockVente-stockAchat;
+  csv+='INVENTAIRE STOCK SOLUTION PHONE — '+todayStr+'\n';
+  csv+='En stock: '+nbDispo+' dispo'+(nbRepa?' + '+nbRepa+' en répa':'')+' ('+stockPhones.length+' total)\n';
+  csv+='Valeur achat: '+stockAchat+'€ | Valeur vente: '+stockVente+'€ | Marge potentielle: '+stockMarge+'€\n\n';
+  csv+='ID;Modèle;Stockage;Grade;Batterie;IMEI;Achat €;Vente €;Marge €;Marge %;Couleur;Date Achat;Source;Paiement;Commentaire\n';
 
-  phones.forEach(function(p){
+  phones.filter(function(p){return p.etat!=='VENDU';}).forEach(function(p){
     var marge=p.vente-p.achat;
     var pct=p.achat>0?Math.round(marge/p.achat*100):0;
     var src=p.fournisseur||'Particulier';
     var comment=genComment(p);
-    csv+=[p.id,'"'+p.modele+'"',p.stockage?p.stockage+'Go':'',p.grade||'',p.batterie||'',p.imei||'',p.achat,p.vente,marge,pct+'%',p.etat,p.couleur||'',p.dateAchat||'',p.dateVente||'',src,p.mode||'','"'+comment+'"'].join(';')+'\n';
+    csv+=[p.id,'"'+p.modele+'"',p.stockage?p.stockage+'Go':'',p.grade||'',p.batterie||'',p.imei||'',p.achat,p.vente,marge,pct+'%',p.couleur||'',p.dateAchat||'',src,p.mode||'','"'+comment+'"'].join(';')+'\n';
   });
 
   var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
   a.href=url;
-  a.download='inventaire-solution-phone-'+todayStr+'.csv';
+  a.download='stock-solution-phone-'+todayStr+'.csv';
   a.click();
   URL.revokeObjectURL(url);
-  showNotif('📊 Inventaire exporté ('+phones.length+' tél.)','success');
+  showNotif('📊 Stock exporté ('+stockPhones.length+' tél. en stock)','success');
 }
 
 var curPhone=null;
