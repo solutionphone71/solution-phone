@@ -39,6 +39,20 @@ body{background:linear-gradient(135deg, #0a0a1a 0%, #111127 40%, #0d1b2a 100%);c
 .main{margin-left:210px;padding:24px;flex:1;min-width:0;box-sizing:border-box;overflow-x:hidden;background:linear-gradient(135deg, #0a0a1a 0%, #111127 40%, #0d1b2a 100%);}
 .page{display:none;width:100%;max-width:100%;min-width:0;}
 .page.active{display:block;width:100%;max-width:100%;min-width:0;}
+/* ── FALLBACK : pages échappées de .main (HTML cassé) ──
+   Si une page se retrouve directement sous #app au lieu d'être
+   dans .main, on lui applique manuellement les mêmes règles
+   visuelles que .main pour qu'elle s'affiche correctement. */
+#app > .page{
+  margin-left:210px;
+  padding:24px;
+  box-sizing:border-box;
+  max-width:calc(100% - 210px);
+  overflow-x:hidden;
+}
+@media(max-width:768px){
+  #app > .page{ margin-left:0; padding:12px; padding-bottom:80px; max-width:100%; }
+}
 .page-title{font-size:26px;font-weight:800;margin-bottom:4px;color:var(--text);}
 .page-sub{color:var(--text-muted);font-size:13px;margin-bottom:20px;}
 .card{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
