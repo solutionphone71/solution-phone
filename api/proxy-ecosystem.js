@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   if (req.query.debug === '1') {
     return res.status(200).json({
       debug: true,
-      version: '2026-05-05-v5-prod',
+      version: '2026-05-05-v6-prod',
       envs: ENVS,
       reqUrl: req.url,
       query: req.query,
@@ -29,24 +29,25 @@ export default async function handler(req, res) {
     });
   }
 
-  // Mode test: GET /api/proxy-ecosystem?test=1 — teste /Login sur tous les envs
+  // Mode test: GET /api/proxy-ecosystem?test=1 — teste /login sur tous les envs
+  // (payload aligné avec l'app: {username, password} et path /login en minuscules)
   if (req.query.test === '1') {
-    const id = req.query.id || 'SOLUTION.PHONE@HOTMAIL.FR';
+    const id = req.query.id || '501710';
     const pw = req.query.pw || '';
     const results = {};
     for (const [envName, baseUrl] of Object.entries(ENVS)) {
       try {
-        const r = await fetch(`${baseUrl}/Login`, {
+        const r = await fetch(`${baseUrl}/login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ identifiant: id, motDePasse: pw }),
+          body: JSON.stringify({ username: id, password: pw }),
         });
-        results[envName] = { status: r.status, body: await r.text(), url: `${baseUrl}/Login` };
+        results[envName] = { status: r.status, body: await r.text(), url: `${baseUrl}/login` };
       } catch (e) {
-        results[envName] = { error: e.message, url: `${baseUrl}/Login` };
+        results[envName] = { error: e.message, url: `${baseUrl}/login` };
       }
     }
-    return res.status(200).json({ test: true, version: '2026-05-05-v5-prod', results });
+    return res.status(200).json({ test: true, version: '2026-05-05-v6-prod', results });
   }
 
   try {
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
     // Ajouter un header debug pour voir l'URL réelle
     res.setHeader('X-Debug-Target', targetUrl);
     res.setHeader('X-Debug-Env', env);
-    res.setHeader('X-Debug-Version', '2026-05-05-v5-prod');
+    res.setHeader('X-Debug-Version', '2026-05-05-v6-prod');
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);
 
