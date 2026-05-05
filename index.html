@@ -24465,6 +24465,7 @@ function pcPieceRenderListe(){
     h+='</select>';
     h+='<button onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:none;border-radius:6px;cursor:pointer;font-size:13px;" title="R\u00e9imprimer">\u{1F5A8}\uFE0F</button>';
     h+='<button onclick="envoyerSMSCommande('+c.id+')" style="padding:4px 8px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;" title="SMS client">\u{1F4F1} SMS</button>';
+    h+='<button onclick="pcSupprimerCommande('+c.id+')" style="padding:4px 8px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:13px;" title="Supprimer ce bon">\u{1F5D1}️</button>';
     h+='</div>';
     h+='</div>';
   });
@@ -24503,6 +24504,22 @@ async function pcPieceChangeStatut(id, newStatut){
 async function pcAccChangeStatut(id, newStatut){
   await cmdChangerStatut(id, newStatut);
   pcAccRenderListe();
+}
+
+// Suppression d'un bon depuis les listes Parcours Client (pièces & accessoires)
+function pcSupprimerCommande(id){
+  var c = (typeof bonsCommande!=='undefined') ? bonsCommande.find(function(x){return x.id===id;}) : null;
+  var label = c ? (c.numero+' — '+(c.client&&c.client.nom||'')) : 'ce bon';
+  if(!confirm('Supprimer '+label+' ?\n\n'+(c?(c.detail||''):'')+(c&&c.prix?'\nMontant : '+(c.prix).toFixed(2)+' €':''))) return;
+  bonsCommande = bonsCommande.filter(function(x){ return x.id !== id; });
+  if(typeof saveBonsCommande==='function') saveBonsCommande();
+  try { supaFetch('bons_commande','DELETE',null,'?id=eq.'+id); } catch(e){}
+  // Rafraîchir toutes les vues qui peuvent afficher ce bon
+  if(typeof pcPieceRenderListe==='function') pcPieceRenderListe();
+  if(typeof pcAccRenderListe==='function')   pcAccRenderListe();
+  if(typeof renderBonsCommande==='function') renderBonsCommande();
+  if(typeof parcoursDashRefresh==='function') parcoursDashRefresh();
+  if(typeof showNotif==='function') showNotif('Bon supprimé','success');
 }
 
 // ── PARCOURS 4 : Commande accessoires ──
@@ -24579,6 +24596,7 @@ function pcAccRenderListe(){
     h+='</select>';
     h+='<button onclick="printTicketCommande(bonsCommande.find(function(x){return x.id==='+c.id+'}))" style="padding:4px 8px;background:rgba(255,255,255,0.08);border:none;border-radius:6px;cursor:pointer;font-size:13px;" title="R\u00e9imprimer">\u{1F5A8}\uFE0F</button>';
     h+='<button onclick="envoyerSMSCommande('+c.id+')" style="padding:4px 8px;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;" title="SMS client">\u{1F4F1} SMS</button>';
+    h+='<button onclick="pcSupprimerCommande('+c.id+')" style="padding:4px 8px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:13px;" title="Supprimer ce bon">\u{1F5D1}️</button>';
     h+='</div>';
     h+='</div>';
   });
