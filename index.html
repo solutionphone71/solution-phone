@@ -899,7 +899,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="page" id="page-phones">
       <div class="page-title">Smartphones</div>
       <div class="page-sub">Gestion du stock</div>
-      <div class="card">
+
+      <!-- ── ONGLETS Stock / Réservés ── -->
+      <div id="phones-tabs" style="display:flex;gap:8px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:0;">
+        <button id="phones-tab-stock" class="phones-tab phones-tab-active" onclick="phonesShowTab('stock')" style="padding:10px 18px;background:transparent;border:none;border-bottom:3px solid #ff3b30;cursor:pointer;font-size:14px;font-weight:700;color:#ff3b30;">📦 Stock</button>
+        <button id="phones-tab-reserve" class="phones-tab" onclick="phonesShowTab('reserve')" style="padding:10px 18px;background:transparent;border:none;border-bottom:3px solid transparent;cursor:pointer;font-size:14px;font-weight:600;color:var(--text-muted);">📌 Réservés <span id="phones-reserve-count" style="background:#f59e0b;color:#fff;font-size:11px;font-weight:800;padding:2px 8px;border-radius:10px;margin-left:6px;display:none;">0</span></button>
+      </div>
+
+      <!-- ── VUE STOCK ── -->
+      <div id="phones-view-stock" class="card">
         <div class="card-header">
           <div class="card-title">Stock</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -913,6 +921,21 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div style="overflow-x:auto;">
           <table><thead><tr><th>Modèle</th><th>Stock.</th><th>Grade</th><th>Bat.</th><th>IMEI</th><th>Achat</th><th>Vente</th><th>Marge</th><th>État</th><th>Actions</th></tr></thead>
           <tbody id="phones-table"></tbody></table>
+        </div>
+      </div>
+
+      <!-- ── VUE RÉSERVÉS ── -->
+      <div id="phones-view-reserve" class="card" style="display:none;border-left:4px solid #f59e0b;">
+        <div class="card-header">
+          <div class="card-title" style="color:#f59e0b;">📌 Téléphones réservés</div>
+          <input type="text" id="search-phones-reserve" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhonesReserves()">
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;padding:10px 12px;">
+          ℹ️ Les téléphones réservés sont sortis du stock visible. Confirme la vente ou annule la réservation depuis cette page.
+        </div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>Modèle</th><th>Stock.</th><th>Grade</th><th>IMEI</th><th>Vente</th><th>Réservé par</th><th>Depuis</th><th>Actions</th></tr></thead>
+          <tbody id="phones-reserve-table"></tbody></table>
         </div>
       </div>
     </div>
@@ -2020,7 +2043,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div class="page-sub">Tous vos clients — réparations, smartphones, tablette accueil</div>
 
       <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-        <input type="text" id="client-search" placeholder="🔍 Nom, téléphone, email..." oninput="renderClients()"
+        <input type="text" id="client-search" placeholder="🔍 Nom, téléphone, email..." oninput="renderClientsDebounced()"
           style="padding:9px 14px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:280px;">
         <span id="clients-count" style="font-size:13px;color:var(--text-muted);padding:8px;"></span>
         <label class="btn btn-sm" style="cursor:pointer;border-color:var(--blue);color:var(--blue);">
@@ -7521,40 +7544,112 @@ async function envoyerEmailClient(id) {
   showNotif('Email envoyé à '+c.email,'success');
 }
 
+// Pagination + recherche débouncée pour la liste clients (perf : grosse base)
+var _clientsPage = 1;
+var _clientsPerPage = 200;
+var _clientsRenderTimer = null;
+function _escClient(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function renderClientsDebounced(){
+  if(_clientsRenderTimer) clearTimeout(_clientsRenderTimer);
+  _clientsRenderTimer = setTimeout(function(){ _clientsPage = 1; renderClients(); }, 180);
+}
+function clientsLoadMore(){ _clientsPage++; renderClients(); }
+
 function renderClients(){
-  var search = ((document.getElementById('client-search')||{value:''}).value).toLowerCase();
+  var search = ((document.getElementById('client-search')||{value:''}).value).toLowerCase().trim();
   var liste = clients.slice();
-  if(search) liste = liste.filter(function(c){
-    return (c.nom||'').toLowerCase().includes(search) ||
-           (c.prenom||'').toLowerCase().includes(search) ||
-           (c.tel||'').includes(search) ||
-           (c.email||'').toLowerCase().includes(search);
-  });
+  if(search){
+    liste = liste.filter(function(c){
+      return (c.nom||'').toLowerCase().indexOf(search)>=0 ||
+             (c.prenom||'').toLowerCase().indexOf(search)>=0 ||
+             (c.tel||'').indexOf(search)>=0 ||
+             (c.email||'').toLowerCase().indexOf(search)>=0;
+    });
+  }
   liste.sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'');});
 
+  var total = liste.length;
+  var visible = Math.min(total, _clientsPage * _clientsPerPage);
+
   var countEl = document.getElementById('clients-count');
-  if(countEl) countEl.textContent = liste.length + ' client(s)';
+  if(countEl) countEl.textContent = (visible<total) ? (visible+' / '+total+' client(s)') : (total+' client(s)');
 
   var tbody = document.getElementById('clients-liste');
   if(!tbody) return;
 
-  if(!liste.length){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text-muted);">Aucun client — les clients de la tablette apparaissent ici automatiquement</td></tr>';
+  if(!total){
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:28px;color:var(--text-muted);">Aucun client — les clients de la tablette apparaissent ici automatiquement</td></tr>';
     return;
   }
 
-  tbody.innerHTML = '';
-  liste.forEach(function(c){
-    var tr = document.createElement('tr');
+  // Construction en une seule passe via innerHTML — 5-10x plus rapide qu'appendChild en boucle
+  // Boutons d'action via délégation d'événement (data-cid + data-act sur tbody) — pas d'onclick par ligne
+  var rows = liste.slice(0, visible);
+  var html = new Array(rows.length);
+  for(var i=0; i<rows.length; i++){
+    var c = rows[i];
+    var nom     = _escClient(c.nom||'—');
+    var prenom  = _escClient(c.prenom||'—');
+    var email   = _escClient(c.email||'—');
+    var adresse = _escClient(c.adresse||'—');
+    var cp      = _escClient(c.cp||'—');
+    var ville   = _escClient(c.ville||'—');
+    var notes   = _escClient(c.notes||'—');
+    var telCell = '—';
+    if(c.tel){
+      var telTo = String(c.tel).replace(/\s/g,'');
+      telCell = '<a href="tel:'+_escClient(telTo)+'" style="color:var(--blue);text-decoration:none;">'+_escClient(c.tel)+'</a>';
+    }
+    var cid = _escClient(c.id);
+    html[i] =
+      '<tr>'+
+        '<td><b>'+nom+'</b></td>'+
+        '<td>'+prenom+'</td>'+
+        '<td>'+telCell+'</td>'+
+        '<td style="font-size:12px;">'+email+'</td>'+
+        '<td style="font-size:12px;color:var(--text-muted);max-width:160px;">'+adresse+'</td>'+
+        '<td style="font-size:12px;color:var(--text-muted);">'+cp+'</td>'+
+        '<td style="font-size:12px;color:var(--text-muted);">'+ville+'</td>'+
+        '<td style="font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+notes+'</td>'+
+        '<td style="display:flex;gap:4px;">'+
+          '<button class="btn btn-primary btn-sm" data-cid="'+cid+'" data-act="rep" title="Nouvelle réparation">🔧</button>'+
+          '<button class="btn btn-sm" data-cid="'+cid+'" data-act="voir" title="Détail">👁️</button>'+
+          '<button class="btn btn-sm" data-cid="'+cid+'" data-act="del" title="Supprimer" style="color:var(--text-dim);">🗑️</button>'+
+        '</td>'+
+      '</tr>';
+  }
+  if(visible < total){
+    html.push('<tr><td colspan="9" style="text-align:center;padding:14px;"><button class="btn btn-sm" onclick="clientsLoadMore()" style="border-color:var(--blue);color:var(--blue);">⏬ Voir '+Math.min(_clientsPerPage, total-visible)+' clients de plus</button></td></tr>');
+  }
+  tbody.innerHTML = html.join('');
 
+  // Délégation : un seul handler attaché une fois sur tbody
+  if(!tbody._delegated){
+    tbody.addEventListener('click', function(ev){
+      var btn = ev.target.closest && ev.target.closest('button[data-cid]');
+      if(!btn) return;
+      var id = btn.getAttribute('data-cid');
+      var act = btn.getAttribute('data-act');
+      if(act==='rep') clientVersReparation(id);
+      else if(act==='voir') voirClientDetail(id);
+      else if(act==='del') supprimerClient(id);
+    });
+    tbody._delegated = true;
+  }
+  return;
+
+  // ── Code legacy ci-dessous, conservé inerte (var inutilisée) pour faciliter une rétro-compatibilité éventuelle ──
+  var _legacy = function(c){
+    var tr = document.createElement('tr');
     var tdNom = document.createElement('td');
     var b = document.createElement('b');
     b.textContent = c.nom||'—';
     tdNom.appendChild(b);
-
     var tdPrenom = document.createElement('td');
     tdPrenom.textContent = c.prenom||'—';
-
     var tdTel = document.createElement('td');
     if(c.tel){
       var a = document.createElement('a');
@@ -7563,23 +7658,18 @@ function renderClients(){
       a.textContent = c.tel;
       tdTel.appendChild(a);
     } else { tdTel.textContent='—'; }
-
     var tdEmail = document.createElement('td');
     tdEmail.style.fontSize='12px';
     tdEmail.textContent = c.email||'—';
-
     var tdAdr = document.createElement('td');
     tdAdr.style.cssText='font-size:12px;color:var(--text-muted);max-width:160px;';
     tdAdr.textContent = c.adresse||'—';
-
     var tdCP = document.createElement('td');
     tdCP.style.cssText='font-size:12px;color:var(--text-muted);';
     tdCP.textContent = c.cp||'—';
-
     var tdVille = document.createElement('td');
     tdVille.style.cssText='font-size:12px;color:var(--text-muted);';
     tdVille.textContent = c.ville||'—';
-
     var tdNotes = document.createElement('td');
     tdNotes.style.cssText='font-size:12px;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
     tdNotes.textContent = c.notes||'—';
@@ -7593,7 +7683,7 @@ function renderClients(){
 
     [tdNom,tdPrenom,tdTel,tdEmail,tdAdr,tdCP,tdVille,tdNotes,tdAct].forEach(function(td){tr.appendChild(td);});
     tbody.appendChild(tr);
-  });
+  };
 }
 
 function clientVersReparation(id){
@@ -7998,9 +8088,9 @@ function caisseSortieAchat(date, montant, modele) {
 
 function renderPhones(){
   var s=(document.getElementById('search-phones')?document.getElementById('search-phones').value:'').toLowerCase();
-  // Afficher UNIQUEMENT les téléphones non vendus dans le stock
+  // Afficher UNIQUEMENT les téléphones non vendus ET non réservés dans le stock
   var f=phones.filter(function(p){
-    if(p.etat==='VENDU') return false;
+    if(p.etat==='VENDU'||p.etat==='RESERVE') return false;
     return !s||p.modele.toLowerCase().indexOf(s)>=0||(p.imei||'').indexOf(s)>=0;
   });
 
@@ -8008,6 +8098,12 @@ function renderPhones(){
   var nbVendus=phones.filter(function(p){return p.etat==='VENDU';}).length;
   var nbDispo=phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
   var nbRepa=phones.filter(function(p){return p.etat==='EN_REPARATION';}).length;
+  var nbReserve=phones.filter(function(p){return p.etat==='RESERVE';}).length;
+  // Mettre à jour le badge de l'onglet Réservés
+  var rcEl=document.getElementById('phones-reserve-count');
+  if(rcEl){ rcEl.textContent=nbReserve; rcEl.style.display = nbReserve>0 ? 'inline-block' : 'none'; }
+  // Re-rendre la vue réservés en parallèle (pour rester en sync)
+  if(typeof renderPhonesReserves==='function') renderPhonesReserves();
   var existing=document.getElementById('phones-recap-bar');
   if(existing)existing.remove();
   var card=document.querySelector('#page-phones .card');
@@ -8059,6 +8155,7 @@ function renderPhones(){
         '<button class="btn btn-sm" onclick="showEtiquette('+p.id+')">🏷️</button>'+
         '<button class="btn btn-sm" onclick="printCertificat('+p.id+')">📄</button>'+
         '<button class="btn btn-sm" onclick="marquerReparation('+p.id+')" title="En réparation">🔧</button>'+
+        '<button class="btn btn-sm" onclick="phonesReserver('+p.id+')" title="Réserver (sortir du stock, en attente)" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-color:#d97706;font-weight:700;padding:4px 10px;">📌 Réserver</button>'+
         '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Vendre + Facture" style="padding:4px 10px;">\ud83e\uddee Vendre</button>'+
                 '<button class="btn btn-sm" onclick="deletePhone('+p.id+')">🗑️</button>'+
       '</td></tr>';
@@ -8096,6 +8193,111 @@ function marquerReparation(id){
   if(p.etat==='EN_REPARATION'){p.etat='DISPONIBLE';}else{p.etat='EN_REPARATION';}
   savePhone(p);renderPhones();renderDashboard();
   showNotif(p.modele+(p.etat==='EN_REPARATION'?' mis en réparation':' remis disponible'),'success');
+}
+
+// ════════════════════════════════════════════════════════
+// RÉSERVATIONS — Sortir un téléphone du stock pour un client
+// ════════════════════════════════════════════════════════
+
+function phonesShowTab(tab){
+  var stockView   = document.getElementById('phones-view-stock');
+  var reserveView = document.getElementById('phones-view-reserve');
+  var stockTab    = document.getElementById('phones-tab-stock');
+  var reserveTab  = document.getElementById('phones-tab-reserve');
+  if(!stockView||!reserveView) return;
+  if(tab==='reserve'){
+    stockView.style.display='none';
+    reserveView.style.display='block';
+    if(stockTab){ stockTab.style.color='var(--text-muted)'; stockTab.style.borderBottomColor='transparent'; stockTab.style.fontWeight='600'; }
+    if(reserveTab){ reserveTab.style.color='#f59e0b'; reserveTab.style.borderBottomColor='#f59e0b'; reserveTab.style.fontWeight='700'; }
+    renderPhonesReserves();
+  } else {
+    stockView.style.display='block';
+    reserveView.style.display='none';
+    if(stockTab){ stockTab.style.color='#ff3b30'; stockTab.style.borderBottomColor='#ff3b30'; stockTab.style.fontWeight='700'; }
+    if(reserveTab){ reserveTab.style.color='var(--text-muted)'; reserveTab.style.borderBottomColor='transparent'; reserveTab.style.fontWeight='600'; }
+  }
+}
+
+function phonesReserver(id){
+  var p = phones.find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(p.etat==='RESERVE'){ showNotif('Déjà réservé','info'); return; }
+  if(p.etat==='VENDU'){ showNotif('Déjà vendu — impossible de réserver','error'); return; }
+  // Demander les infos client (nom + tel) — peut être laissé vide
+  var nom = prompt('Réservation pour quel client ?\n(Nom du client — laisser vide si inconnu)','');
+  if(nom===null) return; // annulé
+  var tel = prompt('Téléphone du client ?\n(facultatif)','');
+  if(tel===null) tel='';
+  // Mémoriser
+  p.etat = 'RESERVE';
+  p.clientNom = (nom||'').trim();
+  p.clientAdresse = (tel||'').trim(); // on réutilise ce champ pour le tel
+  p.dateReservation = new Date().toISOString();
+  savePhone(p);
+  renderPhones();
+  renderPhonesReserves();
+  if(typeof renderDashboard==='function') renderDashboard();
+  showNotif('📌 '+p.modele+' réservé'+(nom?' pour '+nom:''),'success');
+}
+
+function phonesAnnulerReservation(id){
+  var p = phones.find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(p.etat!=='RESERVE'){ showNotif('Ce téléphone n\'est pas réservé','error'); return; }
+  var who = p.clientNom ? ' (réservé pour '+p.clientNom+')' : '';
+  if(!confirm('Annuler la réservation de '+p.modele+who+' ?\n\nLe téléphone sera remis dans le stock disponible.')) return;
+  p.etat = 'DISPONIBLE';
+  // On garde clientNom/clientAdresse en mémoire pour l'historique mais on pourrait les vider
+  p.dateReservation = null;
+  savePhone(p);
+  renderPhones();
+  renderPhonesReserves();
+  if(typeof renderDashboard==='function') renderDashboard();
+  showNotif(p.modele+' remis en stock','success');
+}
+
+function renderPhonesReserves(){
+  var tbody = document.getElementById('phones-reserve-table');
+  if(!tbody) return;
+  var s = (document.getElementById('search-phones-reserve')||{value:''}).value.toLowerCase().trim();
+  var liste = phones.filter(function(p){
+    if(p.etat!=='RESERVE') return false;
+    if(!s) return true;
+    return (p.modele||'').toLowerCase().indexOf(s)>=0
+        || (p.imei||'').indexOf(s)>=0
+        || (p.clientNom||'').toLowerCase().indexOf(s)>=0;
+  });
+  // Tri par date de réservation décroissante (les plus récentes en haut)
+  liste.sort(function(a,b){ return (b.dateReservation||'').localeCompare(a.dateReservation||''); });
+
+  if(!liste.length){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-dim);">📌 Aucun téléphone réservé</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = liste.map(function(p){
+    var depuis = '';
+    if(p.dateReservation){
+      var j = Math.floor((Date.now() - new Date(p.dateReservation).getTime()) / 86400000);
+      var color = j>7 ? '#ef4444' : j>3 ? '#f59e0b' : 'var(--text-muted)';
+      depuis = '<span style="color:'+color+';font-weight:'+(j>3?'700':'500')+';">'+(j===0?'aujourd\'hui':j+'j')+'</span>';
+    } else { depuis = '—'; }
+    var clientHtml = p.clientNom ? '<b>'+p.clientNom+'</b>' : '<span style="color:var(--text-muted);">—</span>';
+    if(p.clientAdresse){ clientHtml += '<br><span style="font-size:11px;color:var(--blue);">'+p.clientAdresse+'</span>'; }
+    return '<tr style="background:rgba(245,158,11,0.04);">'+
+      '<td><span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:1px 5px;border-radius:4px;margin-right:5px;">📌#'+p.id+'</span><b>'+(p.modele||'')+'</b></td>'+
+      '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
+      '<td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td>'+
+      '<td style="font-size:11px;">'+(p.imei||'—')+'</td>'+
+      '<td><b>'+(p.vente||0)+' €</b></td>'+
+      '<td>'+clientHtml+'</td>'+
+      '<td>'+depuis+'</td>'+
+      '<td style="display:flex;gap:4px;flex-wrap:wrap;">'+
+        '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Confirmer la vente" style="padding:4px 10px;background:linear-gradient(135deg,#10b981,#059669);border-color:#059669;">✅ Confirmer vente</button>'+
+        '<button class="btn btn-sm" onclick="phonesAnnulerReservation('+p.id+')" title="Remettre en stock" style="color:#ef4444;border-color:#ef4444;">↩️ Annuler</button>'+
+      '</td></tr>';
+  }).join('');
 }
 
 async function verifierIMEI(imei) {
@@ -8199,6 +8401,12 @@ function marquerVendu(id){
   ['vente-client-nom','vente-client-adresse','vente-client-cp','vente-client-ville'].forEach(function(fid){
     var el=document.getElementById(fid); if(el) el.value='';
   });
+  // Pré-remplir avec les infos de réservation si le tél était réservé (clientNom = nom, clientAdresse = tel)
+  if(p.etat==='RESERVE'){
+    var nomEl = document.getElementById('vente-client-nom');
+    if(nomEl && p.clientNom) nomEl.value = p.clientNom;
+    // Le champ "clientAdresse" sert ici de fallback pour le téléphone — on l'affichera mais on n'a pas de champ tel dédié dans le modal vente
+  }
   // Ouvrir la section client par défaut (facture systématique)
   var clientFields = document.getElementById('client-fields');
   if(clientFields) clientFields.style.display = 'block';
