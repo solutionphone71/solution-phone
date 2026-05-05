@@ -2411,7 +2411,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="form-group">
             <label>Modèle par défaut</label>
             <select id="params-claude-model">
-              <option value="claude-haiku-4-5" selected>claude-haiku-4-5 — Ultra-rapide &amp; économique ✓</option>
+              <option value="claude-haiku-4-5-20251001" selected>Claude Haiku 4.5 — Ultra-rapide &amp; économique ✓</option>
             </select>
           </div>
           <button class="btn btn-primary" style="background:#7c3aed;border-color:#7c3aed;width:100%;" onclick="paramsSaveClaude()">💾 Enregistrer</button>
@@ -11816,7 +11816,7 @@ async function callClaude(prompt){
       'anthropic-version':'2023-06-01'
     },
     body:JSON.stringify({
-      model:'claude-haiku-4-5',
+      model:'claude-haiku-4-5-20251001',
       max_tokens:1000,
       messages:[{role:'user',content:prompt}]
     })
@@ -13759,9 +13759,9 @@ var PARAMS_KEYS = {
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
   // Force mise à jour mdp Ecosystem (avril 2026)
-  localStorage.setItem('sp_eco_pass','geDfJ@C@QG9a$LR5');
+  localStorage.setItem('sp_eco_pass','Solution71!');
   // Force modèle Claude Haiku (économique) — avril 2026
-  localStorage.setItem('sp_claude_model','claude-haiku-4-5');
+  localStorage.setItem('sp_claude_model','claude-haiku-4-5-20251001');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem(PARAMS_KEYS.ecologicToken)||'');
   if(!localStorage.getItem('sp_ecologic_siteid')) localStorage.setItem('sp_ecologic_siteid','f3f52871-5be0-4c26-9082-002479b9cf4e');
   if(!localStorage.getItem('sp_vf_token'))        localStorage.setItem('sp_vf_token','ZhAMQUnE4OPlLRIBOOoj');
@@ -13817,7 +13817,7 @@ function paramsLoad(){
 
   // Claude API
   el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
-  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-haiku-4-5';
+  el=document.getElementById('params-claude-model'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeModel)||'claude-haiku-4-5-20251001';
   var stCl=document.getElementById('params-claude-status');
   if(stCl) stCl.textContent=localStorage.getItem(PARAMS_KEYS.claudeKey) ? '✅ Clé configurée' : '⚠️ Non configurée';
   if(stCl) stCl.style.color=localStorage.getItem(PARAMS_KEYS.claudeKey) ? 'var(--green)' : 'var(--warning)';
@@ -13902,7 +13902,7 @@ async function paramsLoadFromSupabase() {
     if(loaded > 0) {
       console.log('[Settings] ' + loaded + ' clés chargées depuis Supabase');
       // Force les identifiants Ecosystem corrects (PPR avril 2026)
-      localStorage.setItem('sp_eco_pass','geDfJ@C@QG9a$LR5');
+      localStorage.setItem('sp_eco_pass','Solution71!');
       localStorage.setItem('sp_eco_user','501710');
       paramsLoad(); // Rafraîchir l'UI
     }
@@ -16954,7 +16954,7 @@ async function qrEnvoyerEcosystemComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
-    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Solution71!';
     // ① POST /login (lowercase, username/password)
     var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
     var lt=await lr.text();console.log('[Ecosystem] /login:',lr.status,lt.substring(0,200));
@@ -17474,10 +17474,12 @@ async function repOCRImei(){
       // OCR IMEI avec Claude Vision — détecte IMEI1 et IMEI2
       status.textContent='🤖 Lecture IMEI par IA...';
       var imeiResult = null;
+      var ocrError = null;
       try {
         imeiResult = await qrExtractIMEI(base64Full);
       } catch(e){
-        console.log('OCR error:', e);
+        ocrError = e && e.message ? e.message : String(e);
+        console.error('[repOCRImei] OCR error:', e);
       }
 
       // Afficher résultat
@@ -17493,8 +17495,11 @@ async function repOCRImei(){
         var txt = '✅ IMEI 1 lu : ' + imeiResult.imei1;
         if(imeiResult.imei2) txt += '<br>📱 IMEI 2 détecté : ' + imeiResult.imei2;
         status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">' + txt + '</span>';
+      } else if(ocrError){
+        // Erreur IA visible : aide à diagnostiquer (clé API manquante, modèle invalide, etc.)
+        status.innerHTML = '<span style="color:#ef4444;font-size:13px;">❌ OCR : '+ocrError+'</span><br><span style="color:#fbbf24;font-size:12px;">Saisissez l\'IMEI manuellement.</span>';
       } else {
-        status.innerHTML = '<span style="color:#fbbf24;">⚠️ IMEI non détecté — saisissez-le manuellement</span>';
+        status.innerHTML = '<span style="color:#fbbf24;">⚠️ IMEI non lu sur la photo — saisissez-le manuellement</span>';
       }
 
       // Bouton fermer disponible immédiatement
@@ -18974,7 +18979,7 @@ async function paramsTestNas() {
 
 function paramsSaveClaude() {
   var key = (document.getElementById('params-claude-key')||{value:''}).value.trim();
-  var mdl = (document.getElementById('params-claude-model')||{value:'claude-haiku-4-5'}).value;
+  var mdl = (document.getElementById('params-claude-model')||{value:'claude-haiku-4-5-20251001'}).value;
   localStorage.setItem(PARAMS_KEYS.claudeKey, key);
   localStorage.setItem(PARAMS_KEYS.claudeModel, mdl);
   // Sync Supabase
@@ -19003,7 +19008,7 @@ function paramsSaveClaude() {
 
 async function paramsTestClaude() {
   var key = localStorage.getItem(PARAMS_KEYS.claudeKey) || '';
-  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-haiku-4-5';
+  var mdl = localStorage.getItem(PARAMS_KEYS.claudeModel) || 'claude-haiku-4-5-20251001';
   var st  = document.getElementById('params-claude-status');
   if(!key){ showNotif('⚠️ Aucune clé Claude configurée','warning'); return; }
   if(st){ st.textContent='🔄 Test en cours…'; st.style.color='var(--blue)'; }
@@ -22055,7 +22060,8 @@ async function qrExtractIMEI(base64Image) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5',
+      // Identifiant officiel complet (l'alias 'claude-haiku-4-5-20251001' n'est pas toujours résolu)
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
       messages: [{
         role: 'user',
@@ -22066,8 +22072,17 @@ async function qrExtractIMEI(base64Image) {
       }]
     })
   });
-  var data = await resp.json();
+  var raw = await resp.text();
+  var data; try { data = JSON.parse(raw); } catch(e){ data = {error:{message:'JSON invalide: '+raw.substring(0,200)}}; }
+  // Logs détaillés pour debug
+  console.log('[qrExtractIMEI] HTTP', resp.status, 'response:', data);
+  if(!resp.ok || data.error){
+    var errMsg = (data.error && (data.error.message || data.error)) || ('HTTP '+resp.status);
+    console.error('[qrExtractIMEI] Erreur API Claude :', errMsg);
+    throw new Error('OCR Claude : '+errMsg);
+  }
   var text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text.trim() : 'NON_TROUVE';
+  console.log('[qrExtractIMEI] Réponse Claude :', text);
   var matches = text.match(/\d{15}/g);
   if(!matches || matches.length === 0) return null;
   // Retourner un objet avec imei1 et imei2 (ou juste imei1)
@@ -22635,7 +22650,7 @@ function ecoFindProduct(catalog, marque) {
 // Diagnostic catalogue — lancer : ecosystemCatalog()
 async function ecosystemCatalog() {
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass') || 'geDfJ@C@QG9a$LR5';
+  var pass = localStorage.getItem('sp_eco_pass') || 'Solution71!';
   var lr = await ecoFetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user,password:pass}) });
   var lt = await lr.text(); var ld = JSON.parse(lt); var token = ld.IdToken;
   _ecoCatalog = null; // force reload
@@ -22658,7 +22673,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'geDfJ@C@QG9a$LR5';
+  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Solution71!';
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
@@ -22865,7 +22880,7 @@ async function qrSendEcosystem() {
 async function ecosystemDiag(){
   var proxy = 'https://solution-phone.fr/proxy-ecosystem';
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass')||'geDfJ@C@QG9a$LR5';
+  var pass = localStorage.getItem('sp_eco_pass')||'Solution71!';
   var auth = 'Basic '+btoa(user+':'+pass);
   var paths = [
     '/', '/api', '/api/', '/swagger-ui.html', '/v3/api-docs', '/api-docs',
@@ -26127,7 +26142,7 @@ var AvisGoogle = (function(){
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
-          model:'claude-haiku-4-5',
+          model:'claude-haiku-4-5-20251001',
           max_tokens:400,
           system:cfg.prompt_system,
           messages:[{role:'user',content:'Note : '+review.star_rating+'/5\nClient : '+review.reviewer_name+'\nAvis : '+(review.comment||'(pas de texte)')+'\n\nRedige la reponse.'}]
