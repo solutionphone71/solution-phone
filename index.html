@@ -3818,8 +3818,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
         </div>
       </div>
-    </div>
-  </div>
+      <!-- FIN TAB RESPONSES -->
 
       <!-- TAB : GOOGLE MY BUSINESS -->
       <div id="ig-tab-gmb" style="display:none;">
@@ -4059,6 +4058,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
       <!-- FIN TAB GMB -->
+    </div><!-- /ig-content -->
+  </div><!-- /page-instagram -->
 
   <!-- ========== FIN PAGE INSTAGRAM ========== -->
 
@@ -4188,11 +4189,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div class="card-header">
         <div class="card-title">📱 Prix Écrans iPhone</div>
       </div>
-      <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;max-width:100%;">
         <table id="ecrans-table-1" style="width:100%;border-collapse:collapse;">
           <thead>
             <tr style="background:var(--red);">
-              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:140px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:140px;position:sticky;left:0;background:var(--red);z-index:2;box-shadow:2px 0 4px rgba(0,0,0,0.15);">Modèle</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐<br>HD ECO+</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>LPTS</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>LPTS PRIME</th>
@@ -4236,11 +4237,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <span><span style="color:var(--green);">⭐⭐⭐⭐⭐</span> Original</span>
         </div>
       </div>
-      <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;max-width:100%;">
         <table style="width:100%;border-collapse:collapse;">
           <thead>
             <tr style="background:var(--red);">
-              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;">Modèle</th>
+              <th style="padding:10px 14px;text-align:left;color:#fff;font-size:13px;min-width:160px;position:sticky;left:0;background:var(--red);z-index:2;box-shadow:2px 0 4px rgba(0,0,0,0.15);">Modèle</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐<br>Compatible</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐<br>TI Reconnue Apple</th>
               <th style="padding:10px 14px;text-align:center;color:#fff;font-size:12px;">⭐⭐⭐⭐⭐<br>Original</th>
@@ -12863,8 +12864,9 @@ function renderEcransTable(tbodyId, data, tableKey){
       }
     }).join('');
 
-    // Colonne modèle éditable
-    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'#f8fafc')+';">'+
+    // Colonne modèle éditable — sticky à gauche pour rester visible quand on scroll horizontalement
+    var modeleBg = (isOdd?'#fcecec':'#f8fafc');
+    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+modeleBg+';position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,0.05);min-width:140px;">'+
       '<input type="text" value="'+row.modele+'" '+
       'onchange="updateEcranModele(\''+tableKey+'\','+ri+',this.value)" '+
       'style="width:100%;padding:5px 6px;background:transparent;border:1px solid transparent;border-radius:6px;color:'+(isOdd?'var(--red)':'var(--text)')+';font-size:13px;font-weight:700;" '+
@@ -13095,7 +13097,9 @@ function renderBatteriesTable(tbodyId, data, tableKey){
         '</div></td>';
     }).join('');
 
-    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+(isOdd?'rgba(229,62,62,0.08)':'#f8fafc')+';">'+
+    // Colonne modèle éditable — sticky à gauche pour rester visible quand on scroll horizontalement
+    var modeleBgB = (isOdd?'#fcecec':'#f8fafc');
+    var modeleCell = '<td style="padding:6px 10px;border-bottom:1px solid var(--border);background:'+modeleBgB+';position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,0.05);min-width:160px;">'+
       '<input type="text" value="'+row.modele+'" '+
       'onchange="updateBatterieModele(\''+tableKey+'\','+ri+',this.value)" '+
       'style="width:100%;padding:5px 6px;background:transparent;border:1px solid transparent;border-radius:6px;color:'+(isOdd?'var(--red)':'var(--text)')+';font-size:13px;font-weight:700;" '+
