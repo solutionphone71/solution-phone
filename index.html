@@ -13768,9 +13768,10 @@ var PARAMS_KEYS = {
   if(!localStorage.getItem('sp_vf_domain'))       localStorage.setItem('sp_vf_domain','solution-phone71');
 })();
 
-function paramsLoad(){
+function paramsLoad(skipSupabaseReload){
   // Charger depuis Supabase en arrière-plan (au cas où localStorage est vide)
-  if(typeof supaFetch === 'function') {
+  // skipSupabaseReload=true quand l'appel vient de paramsLoadFromSupabase (évite la récursion)
+  if(typeof supaFetch === 'function' && !skipSupabaseReload) {
     setTimeout(function(){ paramsLoadFromSupabase(); }, 500);
   }
   // Pré-configurer Kiwiz si pas encore fait
@@ -13904,7 +13905,8 @@ async function paramsLoadFromSupabase() {
       // Force les identifiants Ecosystem corrects (PPR avril 2026)
       localStorage.setItem('sp_eco_pass','Solution71!');
       localStorage.setItem('sp_eco_user','501710');
-      paramsLoad(); // Rafraîchir l'UI
+      // Rafraîchir l'UI SANS relancer le load Supabase (évite la récursion infinie)
+      paramsLoad(true);
     }
   } catch(e) { console.warn('[Settings] Load failed:', e.message); }
 }
