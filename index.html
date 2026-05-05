@@ -934,7 +934,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           ℹ️ Les téléphones réservés sont sortis du stock visible. Confirme la vente ou annule la réservation depuis cette page.
         </div>
         <div style="overflow-x:auto;">
-          <table><thead><tr><th>Modèle</th><th>Stock.</th><th>Grade</th><th>IMEI</th><th>Vente</th><th>Réservé par</th><th>Depuis</th><th>Actions</th></tr></thead>
+          <table><thead><tr><th>Modèle</th><th>Stock.</th><th>Grade</th><th>IMEI</th><th>Vente</th><th>Réservé par</th><th>Depuis</th><th style="min-width:200px;">💬 Commentaire</th><th>Actions</th></tr></thead>
           <tbody id="phones-reserve-table"></tbody></table>
         </div>
       </div>
@@ -8229,21 +8229,32 @@ function phonesReserver(id){
   if(!p) return;
   if(p.etat==='RESERVE'){ showNotif('Déjà réservé','info'); return; }
   if(p.etat==='VENDU'){ showNotif('Déjà vendu — impossible de réserver','error'); return; }
-  // Demander les infos client (nom + tel) — peut être laissé vide
+  // Demander les infos client (nom + tel + commentaire) — peuvent être laissés vides
   var nom = prompt('Réservation pour quel client ?\n(Nom du client — laisser vide si inconnu)','');
   if(nom===null) return; // annulé
   var tel = prompt('Téléphone du client ?\n(facultatif)','');
   if(tel===null) tel='';
+  var commentaire = prompt('Commentaire / note sur la réservation ?\n(facultatif — ex : "acompte 50€", "passe vendredi", "à appeler avant")','');
+  if(commentaire===null) commentaire='';
   // Mémoriser
   p.etat = 'RESERVE';
   p.clientNom = (nom||'').trim();
   p.clientAdresse = (tel||'').trim(); // on réutilise ce champ pour le tel
+  p.clientCP = (commentaire||'').trim(); // on réutilise ce champ pour le commentaire (persisté en Supabase via savePhone)
   p.dateReservation = new Date().toISOString();
   savePhone(p);
   renderPhones();
   renderPhonesReserves();
   if(typeof renderDashboard==='function') renderDashboard();
   showNotif('📌 '+p.modele+' réservé'+(nom?' pour '+nom:''),'success');
+}
+
+// Mise à jour du commentaire d'une réservation depuis le tableau (édition inline)
+function phonesUpdateCommentaire(id, value){
+  var p = phones.find(function(x){ return x.id===id; });
+  if(!p) return;
+  p.clientCP = (value||'').trim();
+  savePhone(p);
 }
 
 function phonesAnnulerReservation(id){
@@ -8277,7 +8288,7 @@ function renderPhonesReserves(){
   liste.sort(function(a,b){ return (b.dateReservation||'').localeCompare(a.dateReservation||''); });
 
   if(!liste.length){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-dim);">📌 Aucun téléphone réservé</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-dim);">📌 Aucun téléphone réservé</td></tr>';
     return;
   }
 
@@ -8290,6 +8301,8 @@ function renderPhonesReserves(){
     } else { depuis = '—'; }
     var clientHtml = p.clientNom ? '<b>'+p.clientNom+'</b>' : '<span style="color:var(--text-muted);">—</span>';
     if(p.clientAdresse){ clientHtml += '<br><span style="font-size:11px;color:var(--blue);">'+p.clientAdresse+'</span>'; }
+    // Échapper les guillemets pour l'attribut value
+    var commentVal = (p.clientCP||'').replace(/"/g,'&quot;');
     return '<tr style="background:rgba(245,158,11,0.04);">'+
       '<td><span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:900;padding:1px 5px;border-radius:4px;margin-right:5px;">📌#'+p.id+'</span><b>'+(p.modele||'')+'</b></td>'+
       '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
@@ -8298,6 +8311,11 @@ function renderPhonesReserves(){
       '<td><b>'+(p.vente||0)+' €</b></td>'+
       '<td>'+clientHtml+'</td>'+
       '<td>'+depuis+'</td>'+
+      '<td><textarea onchange="phonesUpdateCommentaire('+p.id+',this.value)" onblur="phonesUpdateCommentaire('+p.id+',this.value)" '+
+        'placeholder="📝 Note (acompte, passage prévu, etc.)" '+
+        'style="width:100%;min-width:180px;min-height:50px;padding:6px 8px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;resize:vertical;line-height:1.4;">'+
+        commentVal+
+        '</textarea></td>'+
       '<td style="display:flex;gap:4px;flex-wrap:wrap;">'+
         '<button class="btn btn-sm btn-primary" onclick="marquerVendu('+p.id+')" title="Confirmer la vente" style="padding:4px 10px;background:linear-gradient(135deg,#10b981,#059669);border-color:#059669;">✅ Confirmer vente</button>'+
         '<button class="btn btn-sm" onclick="phonesAnnulerReservation('+p.id+')" title="Remettre en stock" style="color:#ef4444;border-color:#ef4444;">↩️ Annuler</button>'+
