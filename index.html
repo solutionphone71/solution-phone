@@ -20264,6 +20264,20 @@ function supprimerCommande(id){
   renderBonsCommande();
 }
 
+// Suppression depuis les widgets du tableau de bord (Parcours)
+// Stoppe la propagation pour éviter d'ouvrir la page parente, puis rafraîchit le widget
+function supprimerCommandeWidget(id, ev){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  var c = bonsCommande.find(function(x){ return x.id === id; });
+  var label = c ? (c.numero+' — '+(c.client&&c.client.nom||'')) : 'ce bon';
+  if(!confirm('Supprimer '+label+' ?')) return;
+  bonsCommande = bonsCommande.filter(function(x){ return x.id !== id; });
+  saveBonsCommande();
+  try { supaFetch('bons_commande','DELETE',null,'?id=eq.'+id); } catch(e){}
+  if(typeof parcoursDashRefresh==='function') parcoursDashRefresh();
+  if(typeof renderBonsCommande==='function') renderBonsCommande();
+}
+
 // ============================================================
 //  FIN MODULE BON DE COMMANDE
 // ============================================================
@@ -24076,8 +24090,11 @@ function parcoursDashRefresh(){
     if(elPL){
       if(!cmdPiece.length) elPL.innerHTML='Aucune commande en attente';
       else elPL.innerHTML=cmdPiece.slice(0,4).map(function(c){
-        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
-          +'<strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</div>';
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:6px;">'
+          +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</span>'
+          +'<button onclick="supprimerCommandeWidget('+c.id+',event)" title="Supprimer" '
+          +'style="flex-shrink:0;padding:2px 6px;background:transparent;border:none;cursor:pointer;font-size:14px;color:#ef4444;border-radius:6px;">🗑️</button>'
+          +'</div>';
       }).join('')+(cmdPiece.length>4?'<div style="padding:3px 0;color:#059669;">+'+(cmdPiece.length-4)+' autres...</div>':'');
     }
     // Commandes accessoires
@@ -24087,8 +24104,11 @@ function parcoursDashRefresh(){
     if(elAL){
       if(!cmdAcc.length) elAL.innerHTML='Aucune commande en attente';
       else elAL.innerHTML=cmdAcc.slice(0,4).map(function(c){
-        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);">'
-          +'<strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</div>';
+        return '<div style="padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:6px;">'
+          +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>'+c.numero+'</strong> '+(c.client&&c.client.nom||'')+' — '+c.detail+'</span>'
+          +'<button onclick="supprimerCommandeWidget('+c.id+',event)" title="Supprimer" '
+          +'style="flex-shrink:0;padding:2px 6px;background:transparent;border:none;cursor:pointer;font-size:14px;color:#ef4444;border-radius:6px;">🗑️</button>'
+          +'</div>';
       }).join('')+(cmdAcc.length>4?'<div style="padding:3px 0;color:#d97706;">+'+(cmdAcc.length-4)+' autres...</div>':'');
     }
   }
