@@ -10688,19 +10688,127 @@ function genererDevis() {
   showNotif('Devis '+num+' créé !','success');
 }
 
+// Devis — même design que la facture réparation (repImprimerFacture)
+// Différences : titre "DEVIS" + validité + signature client ; pas de NF525 ; pas de bonus QR.
 function imprimerDevisData(dv){
-  var desc='<b>'+dv.prestation+'</b>'+
-    (dv.appareil?'<br><span style="font-size:11px;color:#888;">Appareil : '+dv.appareil+'</span>':'')+
-    '<br><span style="font-size:11px;color:#888;">Devis valable '+dv.validite+'</span>';
-  var html=buildA4HTML({
-    type:'devis',numero:dv.numero,date:dv.date,
-    clientNom:dv.clientNom,clientAdresse:dv.clientAdresse,clientEmail:dv.clientEmail||'',
-    validite:dv.validite,
-    lignes:[{desc:desc,qte:1,pu:dv.prix}],
-    total:dv.prix,isDevis:true,
-    notes:'Ce devis est valable '+dv.validite+'. Pour toute question : contact@solution-phone.fr'
-  });
-  ouvrirA4(html);
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var dateStr = dv.date ? new Date(dv.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+  var prixTTC = Number(dv.prix)||0;
+  var ht  = Math.round(prixTTC / 1.2 * 100) / 100;
+  var tva = Math.round(ht * 0.2 * 100) / 100;
+  var ttc = Math.round(ht * 1.2 * 100) / 100;
+
+  // Découper l'adresse client en (rue, cp, ville) si possible
+  var adresseRaw = dv.clientAdresse || '';
+  var cp = '', ville = '', rue = adresseRaw;
+  if(adresseRaw){
+    var m = adresseRaw.match(/^(.*?),?\s*(\d{4,5})\s+([^,]+?)\s*$/);
+    if(m){ rue = (m[1]||'').replace(/,$/,'').trim(); cp = m[2]; ville = m[3].trim(); }
+  }
+
+  var w = window.open('','_blank');
+  if(!w){ showNotif('Autorisez les popups','error'); return; }
+  var _tampStr = (typeof SP_TAMPON !== 'undefined' ? SP_TAMPON : '') || '';
+
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Devis '+dv.numero+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:8mm 10mm;}'+
+    '@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}table{border-collapse:collapse;width:100%;}'+
+    'th,td{padding:6px 10px;}</style></head><body>'+
+    // Barre d'actions (cachée à l'impression)
+    '<div class="no-print" style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:#f8f8f8;border-bottom:1px solid #eee;">'+
+      '<button onclick="window.close()" style="background:#6b7280;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">✕ Fermer</button>'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer</button>'+
+    '</div>'+
+    '<div class="page">'+
+    // EN-TÊTE — identique à la facture répa
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:8px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        (logo?'<img src="'+logo+'" style="height:45px;">':'')+
+        '<div><div style="font-size:16px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+        '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · contact@solution-phone.fr<br>SIREN : 801 044 785 · TVA : FR10801044785</div></div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="font-size:22px;font-weight:900;">DEVIS</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c0392b;">'+dv.numero+'</div>'+
+        '<div style="font-size:11px;color:#888;">Date : '+dateStr+'</div>'+
+        '<div style="font-size:11px;color:#888;">Valable : '+(dv.validite||'15 jours')+'</div>'+
+      '</div>'+
+    '</div>'+
+    // CLIENT + APPAREIL
+    '<div style="display:flex;gap:10px;margin-bottom:10px;">'+
+      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
+          '<b>'+(dv.clientNom||'')+'</b><br>'+
+          (dv.clientEmail?dv.clientEmail+'<br>':'')+
+          (rue||'')+(cp?'<br>'+cp+' '+ville:(ville?'<br>'+ville:''))+
+        '</div>'+
+      '</div>'+
+      '<div style="flex:1;border:1.5px solid #333;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil concerné</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
+          '<b>'+(dv.appareil||'—')+'</b><br>'+
+          'N° devis : '+dv.numero+'<br>'+
+          'Validité : '+(dv.validite||'15 jours')+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    // TABLEAU PRESTATION
+    '<table style="border:1.5px solid #2b6cb0;border-radius:6px;overflow:hidden;margin-bottom:10px;">'+
+      '<thead><tr style="background:#2b6cb0;color:#fff;">'+
+        '<th style="text-align:left;">Description</th>'+
+        '<th style="text-align:right;">P.U. HT</th>'+
+        '<th style="text-align:center;">Qté</th>'+
+        '<th style="text-align:right;">HT</th>'+
+        '<th style="text-align:right;">TVA</th>'+
+        '<th style="text-align:right;">TTC</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td><b>'+(dv.prestation||'')+'</b>'+
+            (dv.appareil?'<br><span style="font-size:10px;color:#666;">'+dv.appareil+'</span>':'')+'</td>'+
+          '<td style="text-align:right;">'+ht.toFixed(2)+' €</td>'+
+          '<td style="text-align:center;">1</td>'+
+          '<td style="text-align:right;">'+ht.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;">'+tva.toFixed(2)+' €</td>'+
+          '<td style="text-align:right;font-weight:700;">'+ttc.toFixed(2)+' €</td>'+
+        '</tr>'+
+      '</tbody>'+
+      '<tfoot>'+
+        '<tr style="background:#f8f8f8;">'+
+          '<td colspan="3"><b>Total HT : '+ht.toFixed(2)+' € · TVA 20% : '+tva.toFixed(2)+' €</b></td>'+
+          '<td colspan="3" style="text-align:right;font-size:16px;font-weight:900;color:#c0392b;">TOTAL TTC : '+ttc.toFixed(2)+' €</td>'+
+        '</tr>'+
+      '</tfoot>'+
+    '</table>'+
+    // MENTIONS DEVIS
+    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
+      '<b>Validité du devis :</b> '+(dv.validite||'15 jours')+' à compter de la date d\'émission. Au-delà, les prix peuvent être revus.<br>'+
+      '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale). Pour accepter ce devis, retournez-le daté et signé avec la mention « Bon pour accord ».'+
+    '</div>'+
+    // SIGNATURES — Cachet boutique + Acceptation client
+    '<div style="display:flex;gap:10px;margin-top:14px;">'+
+      '<div style="flex:1;text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet Solution Phone</div>'+
+        (_tampStr?'<img src="'+_tampStr+'" style="max-height:65px;max-width:200px;object-fit:contain;">':'<div style="height:55px;"></div>')+
+      '</div>'+
+      '<div style="flex:1;text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Bon pour accord — Client</div>'+
+        '<div style="font-size:10px;color:#888;margin-bottom:4px;">Date :</div>'+
+        '<div style="height:50px;border-bottom:1px solid #ccc;"></div>'+
+        '<div style="font-size:9px;color:#aaa;margin-top:4px;">Signature précédée de la mention « Bon pour accord »</div>'+
+      '</div>'+
+    '</div>'+
+    // FOOTER
+    '<div style="border-top:1px solid #eee;margin-top:12px;padding-top:8px;">'+
+      '<div style="text-align:center;font-size:9px;color:#bbb;">'+
+        'SOLUTION PHONE · RCS Mâcon B 801 044 785 · contact@solution-phone.fr · www.solution-phone.fr'+
+      '</div>'+
+    '</div>'+
+    '</div></body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); }, 500);
 }
 
 function imprimerDevis(){ var dv=devisList[devisList.length-1]; if(dv)imprimerDevisData(dv); }
