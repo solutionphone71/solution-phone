@@ -12895,6 +12895,22 @@ function updateEcranModele(tableKey, ri, val){
   ecransPrix.t1[ri].modele = val.trim()||'Modèle';
   saveEcransPrix();
 }
+// Bascule entre "non disponible" (null = ✗) et "disponible" (valeur numérique éditable)
+// Cliquer sur ✗ → active la cellule avec un input (valeur 0 par défaut)
+// Cliquer sur ✗ à côté d'un input → repasse la cellule en ✗ (non disponible)
+function toggleEcran(tableKey, ri, ci){
+  if(!ecransPrix.t1 || !ecransPrix.t1[ri] || !ecransPrix.t1[ri].prix) return;
+  var current = ecransPrix.t1[ri].prix[ci];
+  if(current === null || current === undefined){
+    // Activer la cellule — mettre 0 par défaut, le user pourra éditer
+    ecransPrix.t1[ri].prix[ci] = 0;
+  } else {
+    // Désactiver — repasser en ✗
+    ecransPrix.t1[ri].prix[ci] = null;
+  }
+  saveEcransPrix();
+  renderEcrans();
+}
 function ajouterLigneEcran(){
   if(!ecransPrix.t1) ecransPrix.t1=[];
   ecransPrix.t1.push({modele:'Nouveau modèle', prix:[null,null,null,null,null]});
