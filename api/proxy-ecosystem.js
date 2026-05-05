@@ -3,7 +3,7 @@
 const ENVS = {
   sandbox: 'https://sandbox-api-reparateurs.ecosystem.eco',
   ppr:     'https://ppr-api-reparateurs.ecosystem.eco',
-  prod:    'https://api-reparateurs.ecosystem.eco',
+  prod:    'https://prod-api-reparateurs.ecosystem.eco',
 };
 
 export default async function handler(req, res) {
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   if (req.query.debug === '1') {
     return res.status(200).json({
       debug: true,
-      version: '2026-04-27-v4',
+      version: '2026-05-05-v5-prod',
       envs: ENVS,
       reqUrl: req.url,
       query: req.query,
@@ -46,14 +46,14 @@ export default async function handler(req, res) {
         results[envName] = { error: e.message, url: `${baseUrl}/Login` };
       }
     }
-    return res.status(200).json({ test: true, version: '2026-04-27-v4', results });
+    return res.status(200).json({ test: true, version: '2026-05-05-v5-prod', results });
   }
 
   try {
     // Path cible via query param ?p=/Login
     const path = req.query.p || '/';
-    const env = req.query.env || 'ppr';
-    const baseUrl = ENVS[env] || ENVS.ppr;
+    const env = req.query.env || 'prod';
+    const baseUrl = ENVS[env] || ENVS.prod;
     const targetUrl = `${baseUrl}${path}`;
 
     console.log('[proxy-ecosystem] →', req.method, targetUrl, '| query:', JSON.stringify(req.query));
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
     // Ajouter un header debug pour voir l'URL réelle
     res.setHeader('X-Debug-Target', targetUrl);
     res.setHeader('X-Debug-Env', env);
-    res.setHeader('X-Debug-Version', '2026-04-27-v4');
+    res.setHeader('X-Debug-Version', '2026-05-05-v5-prod');
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/json');
     res.status(response.status).send(responseText);
 
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
       error: 'Proxy error',
       message: error.message,
       detail: error.cause ? String(error.cause) : 'Impossible de joindre le serveur Ecosystem',
-      targetUrl: `${ENVS[req.query.env] || ENVS.ppr}${req.query.p || '/'}`
+      targetUrl: `${ENVS[req.query.env] || ENVS.prod}${req.query.p || '/'}`
     });
   }
 }

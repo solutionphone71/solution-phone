@@ -21906,9 +21906,10 @@ async function qrSendPennylane() {
 var QR_ECOLOGIC_PROXY   = '/proxy-ecologic';
 var QR_ECOSYSTEM_PROXY  = '/api/proxy-ecosystem';
 // Helper: appel Ecosystem via proxy — path passé en query param ?p=
+// env=prod : production validée le 2026-05-05 (User API 501710, ID réparateur 2002535)
 function ecoFetch(targetPath, options) {
   options = options || {};
-  return fetchWithTimeout('/api/proxy-ecosystem?p=' + encodeURIComponent(targetPath), options, 30000);
+  return fetchWithTimeout('/api/proxy-ecosystem?env=prod&p=' + encodeURIComponent(targetPath), options, 30000);
 }
 // SiteId Solution Phone Mâcon — récupéré via getrepairsitesbyats
 var QR_ECOLOGIC_SITE_ID = 'f3f52871-5be0-4c26-9082-002479b9cf4e';
