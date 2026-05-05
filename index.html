@@ -6991,6 +6991,7 @@ function saveCaisseEdit() {
 }
 
 async function deleteCaisse(date){
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer une entrée de caisse')) return;
   if(!confirm('Supprimer cette entrée de caisse ?'))return;
   if(supabaseReady){
     try{
@@ -7447,6 +7448,7 @@ async function addClient() {
 }
 
 async function deleteClient(id) {
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un client')) return;
   if(!confirm('Supprimer ce client ?')) return;
   if(supabaseReady){
     try{
@@ -7458,10 +7460,12 @@ async function deleteClient(id) {
     }
   }
   clients = clients.filter(function(c){return c.id!==id;});
-  document.getElementById('client-detail-card').style.display='none';
+  var dc = document.getElementById('client-detail-card'); if(dc) dc.style.display='none';
   renderClients();
   showNotif('Client supprimé','success');
 }
+// Alias — la liste clients utilise supprimerClient(...) historiquement
+var supprimerClient = deleteClient;
 
 function showClientDetail(id) {
   selectedClientId = id;
@@ -8832,7 +8836,53 @@ function annulerVente(id){
   renderDashboard();
   showNotif('↩️ '+p.modele+' remis en stock','success');
 }
+// ════════════════════════════════════════════════════════
+// 🔒 SÉCURITÉ — Code patron pour suppressions sensibles
+// Code par défaut : 1184 (modifiable via localStorage 'sp_admin_code')
+// Cache : 5 min après saisie correcte. Verrou : 30s après 3 essais ratés.
+// ════════════════════════════════════════════════════════
+var ADMIN_CODE_KEY = 'sp_admin_code';
+var ADMIN_DEFAULT_CODE = '1184';
+var _adminUnlockUntil = 0;
+var _adminFailedAttempts = 0;
+var _adminLockedUntil = 0;
+
+function requireAdminCode(action){
+  // Verrou temporaire après 3 essais ratés
+  if(_adminLockedUntil > Date.now()){
+    var s = Math.ceil((_adminLockedUntil - Date.now())/1000);
+    if(typeof showNotif==='function') showNotif('🔒 Trop d\'essais — réessayez dans '+s+'s','error');
+    else alert('🔒 Trop d\'essais — réessayez dans '+s+'s');
+    return false;
+  }
+  // Déjà déverrouillé dans la fenêtre de 5 min
+  if(_adminUnlockUntil > Date.now()) return true;
+  var expected = (localStorage.getItem(ADMIN_CODE_KEY) || ADMIN_DEFAULT_CODE).trim();
+  var msg = '🔒 Code patron requis pour :\n' + (action || 'cette action sensible');
+  var entered = prompt(msg);
+  if(entered === null) return false; // annulé
+  if(String(entered).trim() === expected){
+    _adminUnlockUntil = Date.now() + 5*60*1000; // déverrouillé 5 min
+    _adminFailedAttempts = 0;
+    if(typeof showNotif==='function') showNotif('🔓 Mode patron activé (5 min)','success');
+    return true;
+  }
+  _adminFailedAttempts++;
+  if(_adminFailedAttempts >= 3){
+    _adminLockedUntil = Date.now() + 30*1000;
+    _adminFailedAttempts = 0;
+    if(typeof showNotif==='function') showNotif('❌ Code incorrect — bloqué 30 secondes','error');
+    else alert('❌ Code incorrect — bloqué 30 secondes');
+  } else {
+    var rest = 3 - _adminFailedAttempts;
+    if(typeof showNotif==='function') showNotif('❌ Code incorrect ('+rest+' essai'+(rest>1?'s':'')+' restant'+(rest>1?'s':'')+')','error');
+    else alert('❌ Code incorrect ('+rest+' essai(s) restant(s))');
+  }
+  return false;
+}
+
 async function deletePhone(id){
+  if(!requireAdminCode('Supprimer un smartphone d\'occasion')) return;
   if(!confirm('Supprimer ce smartphone ?'))return;
   if(supabaseReady){
     try{
@@ -10255,6 +10305,7 @@ async function sauvegarderSalarie() {
 }
 
 async function supprimerSalarie(idx) {
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un salarié')) return;
   if (!confirm('Supprimer ' + salaries[idx].prenom + ' ' + salaries[idx].nom + ' ?')) return;
   salaries.splice(idx, 1);
   await saveSalariesToSupabase();
@@ -19410,6 +19461,7 @@ function updatePhoneNeuf(){
 async function deletePhoneNeuf(id){
   var p = phonesNeufs.find(function(x){ return x.id===id; });
   if(!p) return;
+  if(!requireAdminCode('Supprimer un smartphone neuf')) return;
   if(!confirm('Supprimer '+p.modele+' du stock neufs ?')) return;
   // Supprimer de Supabase
   try{ await supaFetch('phones_neufs','DELETE',null,'?id=eq.'+id); }catch(e){}
@@ -20465,6 +20517,7 @@ async function transformerEnReparation(id){
 }
 
 function supprimerCommande(id){
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un bon de commande')) return;
   if(!confirm('Supprimer ce bon ?')) return;
   bonsCommande = bonsCommande.filter(function(c){ return c.id !== id; });
   saveBonsCommande();
@@ -20476,6 +20529,7 @@ function supprimerCommande(id){
 // Stoppe la propagation pour éviter d'ouvrir la page parente, puis rafraîchit le widget
 function supprimerCommandeWidget(id, ev){
   if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un bon de commande')) return;
   var c = bonsCommande.find(function(x){ return x.id === id; });
   var label = c ? (c.numero+' — '+(c.client&&c.client.nom||'')) : 'ce bon';
   if(!confirm('Supprimer '+label+' ?')) return;
@@ -20707,6 +20761,7 @@ function renderBonsDepot(){
 }
 
 function supprimerDepot(id){
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un bon de dépôt')) return;
   if(!confirm('Supprimer ce bon de dépôt ?')) return;
   bonsDepot = bonsDepot.filter(function(d){ return d.id !== id; });
   saveBonsDepot();
@@ -24716,6 +24771,7 @@ async function pcAccChangeStatut(id, newStatut){
 
 // Suppression d'un bon depuis les listes Parcours Client (pièces & accessoires)
 function pcSupprimerCommande(id){
+  if(typeof requireAdminCode==='function' && !requireAdminCode('Supprimer un bon de commande')) return;
   var c = (typeof bonsCommande!=='undefined') ? bonsCommande.find(function(x){return x.id===id;}) : null;
   var label = c ? (c.numero+' — '+(c.client&&c.client.nom||'')) : 'ce bon';
   if(!confirm('Supprimer '+label+' ?\n\n'+(c?(c.detail||''):'')+(c&&c.prix?'\nMontant : '+(c.prix).toFixed(2)+' €':''))) return;
