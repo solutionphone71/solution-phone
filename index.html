@@ -373,6 +373,26 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 @media(max-width:768px) {
   #aria-omnibar-wrap { margin: 0; width: 100%; padding: 8px 12px 0; }
 }
+
+/* Bouton œil pour afficher/masquer mots de passe & clés API */
+.pwd-eye-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text-muted);
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.pwd-eye-btn:hover {
+  background: rgba(0,0,0,0.06);
+}
 </style>
 </head>
 <body class="sp-theme">
@@ -2293,7 +2313,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="form-group"><label>Identifiant Kiwiz</label>
             <input type="text" id="params-kiwiz-user" placeholder="votre@email.com"></div>
           <div class="form-group"><label>Mot de passe Kiwiz</label>
-            <input type="password" id="params-kiwiz-pass" placeholder="••••••••"></div>
+            <div style="position:relative;">
+              <input type="password" id="params-kiwiz-pass" placeholder="••••••••" style="padding-right:42px;">
+              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-kiwiz-pass', this)" title="Afficher/masquer">👁️</button>
+            </div></div>
           <div class="form-group"><label>N° d'abonnement Kiwiz</label>
             <input type="text" id="params-kiwiz-sub" placeholder="ex: 12345"></div>
           <button class="btn btn-primary" style="background:#1e40af;border-color:#60a5fa;width:100%;" onclick="paramsSaveKiwiz()">💾 Enregistrer</button>
@@ -2314,7 +2337,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div class="card-body">
           <div class="form-group">
             <label>Clé API Brevo</label>
-            <input type="password" id="params-brevo-key" placeholder="xkeysib-...">
+            <div style="position:relative;">
+              <input type="password" id="params-brevo-key" placeholder="xkeysib-..." style="padding-right:42px;">
+              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-brevo-key', this)" title="Afficher/masquer">👁️</button>
+            </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Paramètres → SMTP & API → Clés API</div>
           </div>
           <div class="form-group">
@@ -2353,7 +2379,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div class="form-group">
             <label>Mot de passe Ecosystem</label>
-            <input type="password" id="params-eco-pass" placeholder="••••••••">
+            <div style="position:relative;">
+              <input type="password" id="params-eco-pass" placeholder="••••••••" style="padding-right:42px;">
+              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-eco-pass', this)" title="Afficher/masquer">👁️</button>
+            </div>
           </div>
           <button class="btn btn-primary" style="background:var(--green);border-color:var(--green);width:100%;" onclick="paramsSaveEcosystem()">💾 Enregistrer</button>
         </div>
@@ -2405,7 +2434,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="form-group">
             <label>Clé API Anthropic</label>
-            <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…">
+            <div style="position:relative;">
+              <input type="password" id="params-claude-key" placeholder="sk-ant-api03-…" style="padding-right:42px;">
+              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-claude-key', this)" title="Afficher/masquer">👁️</button>
+            </div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Active sur toute l'app (ARIA, Instagram/IA, Documents). <a href="https://console.anthropic.com/" target="_blank" style="color:var(--blue);">Créer une clé →</a></div>
           </div>
           <div class="form-group">
@@ -2425,11 +2457,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Clé API utilisée pour détourer automatiquement les photos avant de générer le composite 1080×1080. <a href="https://www.remove.bg/dashboard#api-key" target="_blank" style="color:#96bf48;">Obtenir une clé →</a></div>
           <div class="form-group">
             <label>Clé API remove.bg</label>
-            <input type="password" id="params-removebg-key" placeholder="Ex: Xxx...xxxXxx" autocomplete="off">
+            <div style="position:relative;">
+              <input type="password" id="params-removebg-key" placeholder="Ex: Xxx...xxxXxx" autocomplete="off" style="padding-right:42px;">
+              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-removebg-key', this)" title="Afficher/masquer">👁️</button>
+            </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="paramsSaveRemoveBg()">💾 Enregistrer</button>
-            <button class="btn" onclick="paramsToggleRemoveBgKey()">👁️ Afficher</button>
           </div>
           <div id="params-removebg-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
         </div>
@@ -19048,6 +19082,19 @@ function paramsToggleRemoveBgKey(){
   var el = document.getElementById('params-removebg-key');
   if(!el) return;
   el.type = (el.type === 'password') ? 'text' : 'password';
+}
+
+// Toggle générique afficher/masquer pour tous les champs sensibles (mots de passe & clés API)
+function togglePwd(id, btn){
+  var el = document.getElementById(id);
+  if(!el) return;
+  var show = (el.type === 'password');
+  el.type = show ? 'text' : 'password';
+  if(btn){
+    btn.textContent = show ? '🙈' : '👁️';
+    btn.title = show ? 'Masquer' : 'Afficher';
+    btn.setAttribute('aria-label', btn.title);
+  }
 }
 
 function paramsSaveNas() {
