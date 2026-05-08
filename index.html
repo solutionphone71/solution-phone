@@ -13791,19 +13791,30 @@ var PARAMS_KEYS = {
   claudeModel: 'sp_claude_model',
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MOT DE PASSE API ECOSYSTEM — Rotation tous les 6 mois (durée de validité)
+// ═══════════════════════════════════════════════════════════════════════════
+// À CHAQUE CHANGEMENT DE MDP CÔTÉ ECOSYSTEM :
+//   1. Mets à jour ECO_PASS_DEFAULT avec le nouveau mdp
+//   2. Mets ECO_PASS_VERSION à la date du jour (YYYY-MM-DD)
+//   3. Push GitHub → tous les appareils se mettent à jour au prochain chargement
+// ═══════════════════════════════════════════════════════════════════════════
+var ECO_PASS_DEFAULT = 'Cannard71$';
+var ECO_PASS_VERSION = '2026-05-08';
+
 
 // Pré-remplir les identifiants connus
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
-  // Mise à jour mdp Ecosystem (mai 2026) — ne s'écrase pas si déjà à jour
-  if(localStorage.getItem('sp_eco_pass_v') !== '2026-05-08'){
-    localStorage.setItem('sp_eco_pass','Cannard71$');
-    localStorage.setItem('sp_eco_pass_v','2026-05-08');
+  // Mise à jour mdp Ecosystem — ne s'écrase pas si déjà à jour (basé sur ECO_PASS_VERSION)
+  if(localStorage.getItem('sp_eco_pass_v') !== ECO_PASS_VERSION){
+    localStorage.setItem('sp_eco_pass', ECO_PASS_DEFAULT);
+    localStorage.setItem('sp_eco_pass_v', ECO_PASS_VERSION);
     // Pousser aussi vers Supabase pour éviter qu'un sync ne ramène l'ancien mdp
     setTimeout(function(){
       if(typeof supaSettingSave === 'function'){
-        supaSettingSave('eco_pass','Cannard71$');
+        supaSettingSave('eco_pass', ECO_PASS_DEFAULT);
       }
     }, 1500);
   }
@@ -17002,7 +17013,7 @@ async function qrEnvoyerEcosystemComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
-    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Cannard71$';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||ECO_PASS_DEFAULT;
     // ① POST /login (lowercase, username/password)
     var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
     var lt=await lr.text();console.log('[Ecosystem] /login:',lr.status,lt.substring(0,200));
@@ -22698,7 +22709,7 @@ function ecoFindProduct(catalog, marque) {
 // Diagnostic catalogue — lancer : ecosystemCatalog()
 async function ecosystemCatalog() {
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass') || 'Cannard71$';
+  var pass = localStorage.getItem('sp_eco_pass') || ECO_PASS_DEFAULT;
   var lr = await ecoFetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user,password:pass}) });
   var lt = await lr.text(); var ld = JSON.parse(lt); var token = ld.IdToken;
   _ecoCatalog = null; // force reload
@@ -22721,7 +22732,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Cannard71$';
+  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||ECO_PASS_DEFAULT;
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
@@ -22928,7 +22939,7 @@ async function qrSendEcosystem() {
 async function ecosystemDiag(){
   var proxy = 'https://solution-phone.fr/proxy-ecosystem';
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass')||'Cannard71$';
+  var pass = localStorage.getItem('sp_eco_pass')||ECO_PASS_DEFAULT;
   var auth = 'Basic '+btoa(user+':'+pass);
   var paths = [
     '/', '/api', '/api/', '/swagger-ui.html', '/v3/api-docs', '/api-docs',
