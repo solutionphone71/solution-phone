@@ -13796,8 +13796,17 @@ var PARAMS_KEYS = {
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
-  // Force mise à jour mdp Ecosystem (avril 2026)
-  localStorage.setItem('sp_eco_pass','Solution71!');
+  // Mise à jour mdp Ecosystem (mai 2026) — ne s'écrase pas si déjà à jour
+  if(localStorage.getItem('sp_eco_pass_v') !== '2026-05-08'){
+    localStorage.setItem('sp_eco_pass','Cannard71$');
+    localStorage.setItem('sp_eco_pass_v','2026-05-08');
+    // Pousser aussi vers Supabase pour éviter qu'un sync ne ramène l'ancien mdp
+    setTimeout(function(){
+      if(typeof supaSettingSave === 'function'){
+        supaSettingSave('eco_pass','Cannard71$');
+      }
+    }, 1500);
+  }
   // Force modèle Claude Haiku (économique) — avril 2026
   localStorage.setItem('sp_claude_model','claude-haiku-4-5-20251001');
   if(!localStorage.getItem('sp_ecologic_token'))  localStorage.setItem('sp_ecologic_token',localStorage.getItem(PARAMS_KEYS.ecologicToken)||'');
@@ -22690,7 +22699,7 @@ function ecoFindProduct(catalog, marque) {
 // Diagnostic catalogue — lancer : ecosystemCatalog()
 async function ecosystemCatalog() {
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass') || 'Solution71!';
+  var pass = localStorage.getItem('sp_eco_pass') || 'Cannard71$';
   var lr = await ecoFetch('/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:user,password:pass}) });
   var lt = await lr.text(); var ld = JSON.parse(lt); var token = ld.IdToken;
   _ecoCatalog = null; // force reload
@@ -22713,7 +22722,7 @@ async function qrSendEcosystem() {
 
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
-  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Solution71!';
+  var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||'Cannard71$';
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
