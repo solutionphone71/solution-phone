@@ -13949,8 +13949,7 @@ async function paramsLoadFromSupabase() {
     } catch(e) {}
     if(loaded > 0) {
       console.log('[Settings] ' + loaded + ' clés chargées depuis Supabase');
-      // Force les identifiants Ecosystem corrects (PPR avril 2026)
-      localStorage.setItem('sp_eco_pass','Solution71!');
+      // Force seulement l'user (le mdp est géré par l'IIFE en haut + Paramètres)
       localStorage.setItem('sp_eco_user','501710');
       // Rafraîchir l'UI SANS relancer le load Supabase (évite la récursion infinie)
       paramsLoad(true);
@@ -17003,7 +17002,7 @@ async function qrEnvoyerEcosystemComplet(d){
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
   try{
     var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
-    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Solution71!';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||'Cannard71$';
     // ① POST /login (lowercase, username/password)
     var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
     var lt=await lr.text();console.log('[Ecosystem] /login:',lr.status,lt.substring(0,200));
@@ -22929,7 +22928,7 @@ async function qrSendEcosystem() {
 async function ecosystemDiag(){
   var proxy = 'https://solution-phone.fr/proxy-ecosystem';
   var user = '501710';
-  var pass = localStorage.getItem('sp_eco_pass')||'Solution71!';
+  var pass = localStorage.getItem('sp_eco_pass')||'Cannard71$';
   var auth = 'Basic '+btoa(user+':'+pass);
   var paths = [
     '/', '/api', '/api/', '/swagger-ui.html', '/v3/api-docs', '/api-docs',
