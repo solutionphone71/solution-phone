@@ -1,1 +1,389 @@
+<!--
+================================================================
+AUTOPILOT v2 + BRAIN · Solution Phone · v26 (mai 2026)
+================================================================
+Fichier à déployer dans : public/autopilot/autopilot.html
+Chargé en lazy-loading depuis index.html quand l'utilisateur
+clique sur l'onglet Autopilot.
 
+Le HTML est injecté dans <div id="page-autopilot"></div>
+qui doit exister dans index.html (placeholder).
+================================================================
+-->
+
+<!-- Sub-navigation -->
+<div class="ap-subnav">
+  <button class="ap-sub-btn active" data-sub="dashboard">◢ Dashboard</button>
+  <button class="ap-sub-btn" data-sub="briefing">📊 Briefing</button>
+  <button class="ap-sub-btn" data-sub="queue">⚡ Validation</button>
+  <button class="ap-sub-btn" data-sub="memory">📓 Mémoire</button>
+  <button class="ap-sub-btn" data-sub="media">📸 Médias</button>
+  <button class="ap-sub-btn" data-sub="config">⚙ Config</button>
+</div>
+
+
+<!-- ──────────── VIEW : DASHBOARD ──────────── -->
+<div id="ap-view-dashboard" class="ap-view ap-active">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span><span class="ap-live-dot"></span><span id="ap-system-status">SYSTEM ACTIVE</span></span>
+      <span>BRAIN v1 · MÂCON</span>
+    </div>
+    <h1 class="ap-h1">Solution<span class="ap-accent">·</span>Phone <span class="ap-accent">◢</span></h1>
+    <p class="ap-tagline">Agent IA autonome · 12 ans · 4.7★ · 550+ avis</p>
+  </header>
+
+  <!-- Hero stats -->
+  <div class="ap-hero">
+    <div class="ap-hero-corner">// 7 JOURS</div>
+    <div class="ap-hero-label">// ACTIONS EXÉCUTÉES PAR L'AGENT</div>
+    <div class="ap-hero-number" id="ap-stat-actions">—</div>
+    <div class="ap-hero-sub">sans toi.</div>
+  </div>
+
+  <!-- Briefing du jour CTA -->
+  <div class="ap-action-card" id="ap-cta-briefing" onclick="SP_AUTOPILOT.showView('briefing')"
+       style="background:linear-gradient(135deg,rgba(96,165,250,0.08),rgba(96,165,250,0.02));border-color:rgba(96,165,250,0.25);">
+    <div class="ap-action-icon">📊</div>
+    <div class="ap-action-content">
+      <div class="ap-action-label" style="color:#60a5fa;">// BRIEFING DU JOUR</div>
+      <div class="ap-action-title" id="ap-briefing-title">Pas encore disponible</div>
+      <div class="ap-action-sub" id="ap-briefing-sub">Le briefing matinal arrive à 8h.</div>
+    </div>
+    <div class="ap-action-arrow" style="color:#60a5fa;">→</div>
+  </div>
+
+  <!-- Validation CTA -->
+  <div class="ap-action-card" id="ap-cta-validation" onclick="SP_AUTOPILOT.showView('queue')">
+    <div class="ap-action-icon">⚡</div>
+    <div class="ap-action-content">
+      <div class="ap-action-label">// VALIDATION REQUISE</div>
+      <div class="ap-action-title" id="ap-cta-title">Aucune décision en attente</div>
+      <div class="ap-action-sub" id="ap-cta-sub">L'agent n'a rien à te faire valider pour l'instant.</div>
+    </div>
+    <div class="ap-action-arrow">→</div>
+  </div>
+
+  <!-- App Improver suggestion CTA (si suggestion active) -->
+  <div class="ap-action-card" id="ap-cta-suggestion" style="display:none;background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(168,85,247,0.02));border-color:rgba(168,85,247,0.25);" onclick="SP_AUTOPILOT.showView('briefing'); document.querySelector('[data-bftab=\'suggestions\']')?.click();">
+    <div class="ap-action-icon">💡</div>
+    <div class="ap-action-content">
+      <div class="ap-action-label" style="color:#a855f7;">// APP IMPROVER</div>
+      <div class="ap-action-title" id="ap-cta-suggestion-title">1 suggestion à voir</div>
+      <div class="ap-action-sub" id="ap-cta-suggestion-sub">L'agent te propose une amélioration.</div>
+    </div>
+    <div class="ap-action-arrow" style="color:#a855f7;">→</div>
+  </div>
+
+  <!-- Last run -->
+  <div class="ap-card" id="ap-last-run-card">
+    <span class="ap-card-label">// DERNIER RUN AGENT</span>
+    <div id="ap-last-run-content" style="font-size:14px;line-height:1.7;color:var(--text-muted);">
+      Aucun run encore exécuté.
+    </div>
+    <button class="ap-btn ap-btn-primary" style="margin-top:14px;" onclick="SP_AUTOPILOT.runManual()">
+      ▶ Lancer un run manuel
+    </button>
+  </div>
+
+  <!-- Status modules -->
+  <div class="ap-section-header">
+    <h2>Statut des modules</h2>
+    <span class="ap-tag">// LIVE</span>
+  </div>
+  <div class="ap-status-grid" id="ap-status-grid"></div>
+
+  <!-- Activité système -->
+  <div class="ap-section-header">
+    <h2>Activité système</h2>
+    <span class="ap-tag">// FEED</span>
+  </div>
+  <div class="ap-feed" id="ap-feed"></div>
+
+</div>
+
+
+<!-- ──────────── VIEW : BRIEFING (NEW) ──────────── -->
+<div id="ap-view-briefing" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span><span class="ap-live-dot"></span>BRAIN ACTIVE</span>
+      <span id="ap-briefing-date">—</span>
+    </div>
+    <h1 class="ap-h1">Briefing <span class="ap-accent">📊</span></h1>
+    <p class="ap-tagline">Ton récap stratégique du jour · par l'agent IA</p>
+  </header>
+
+  <!-- Tabs internes -->
+  <div class="ap-tabs">
+    <button class="ap-tab active" data-bftab="today">Aujourd'hui</button>
+    <button class="ap-tab" data-bftab="archive">Archives</button>
+    <button class="ap-tab" data-bftab="suggestions">💡 Suggestions</button>
+  </div>
+
+  <!-- Tab : Briefing du jour -->
+  <div id="ap-bftab-today" class="ap-bftab" style="display:block;">
+    <div id="ap-briefing-content" class="ap-briefing-content">
+      <div class="ap-feed-empty">Briefing du jour pas encore généré.<br>
+        <span style="font-size:12px;">Il arrive automatiquement chaque matin à 8h.</span>
+      </div>
+    </div>
+    <div style="margin-top:18px;">
+      <button class="ap-btn ap-btn-primary" onclick="SP_AUTOPILOT.regenerateBriefing()">
+        ↻ Régénérer le briefing
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab : Archives 30j -->
+  <div id="ap-bftab-archive" class="ap-bftab" style="display:none;">
+    <div id="ap-briefing-archive"></div>
+  </div>
+
+  <!-- Tab : Suggestions App Improver -->
+  <div id="ap-bftab-suggestions" class="ap-bftab" style="display:none;">
+    <div style="margin-bottom:16px;font-size:13px;color:var(--text-muted);line-height:1.6;">
+      L'agent observe comment tu utilises l'app et propose des améliorations ciblées.
+      Chaque suggestion est testable sur preview Vercel avant d'être déployée.
+    </div>
+    <div id="ap-suggestions-list"></div>
+  </div>
+
+</div>
+
+
+<!-- ──────────── VIEW : VALIDATION QUEUE ──────────── -->
+<div id="ap-view-queue" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span><span class="ap-live-dot"></span>QUEUE LIVE</span>
+      <span id="ap-queue-count">0 décisions</span>
+    </div>
+    <h1 class="ap-h1">Validation <span class="ap-accent">⚡</span></h1>
+    <p class="ap-tagline">Décisions de l'agent en attente de ton 1-clic</p>
+  </header>
+
+  <div id="ap-queue-content"></div>
+
+</div>
+
+
+<!-- ──────────── VIEW : MÉMOIRE ──────────── -->
+<div id="ap-view-memory" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span>// JOURNAL</span>
+      <span>UNIT_01</span>
+    </div>
+    <h1 class="ap-h1">Mémoire <span class="ap-accent">📓</span></h1>
+    <p class="ap-tagline">Journal des runs · ce que l'agent a appris</p>
+  </header>
+
+  <div class="ap-tabs">
+    <button class="ap-tab active" data-mtab="runs">Runs</button>
+    <button class="ap-tab" data-mtab="memory">Mémoire</button>
+    <button class="ap-tab" data-mtab="stats">Stats</button>
+  </div>
+
+  <div id="ap-memtab-runs" class="ap-memtab" style="display:block;">
+    <div id="ap-runs-list"></div>
+  </div>
+
+  <div id="ap-memtab-memory" class="ap-memtab" style="display:none;">
+    <div id="ap-memory-list"></div>
+  </div>
+
+  <div id="ap-memtab-stats" class="ap-memtab" style="display:none;">
+    <div class="ap-card">
+      <span class="ap-card-label">// COÛT CLAUDE API CE MOIS</span>
+      <div style="font-family:'Fraunces',serif;font-size:42px;font-weight:600;color:var(--text);margin:8px 0;" id="ap-cost-month">— €</div>
+      <div style="font-size:13px;color:var(--text-muted);">Méta-agent + sub-agents</div>
+    </div>
+    <div class="ap-card">
+      <span class="ap-card-label">// ACTIONS / JOUR (30 DERNIERS JOURS)</span>
+      <div id="ap-stats-chart" style="margin-top:12px;font-size:13px;color:var(--text-muted);">Chart à venir...</div>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- ──────────── VIEW : MÉDIAS ──────────── -->
+<div id="ap-view-media" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span>// BIBLIOTHÈQUE</span>
+      <span id="ap-media-count">0 médias</span>
+    </div>
+    <h1 class="ap-h1">Médias <span class="ap-accent">📸</span></h1>
+    <p class="ap-tagline">Photos & vidéos · ton stock pour l'agent</p>
+  </header>
+
+  <div class="ap-upload-zone" id="ap-upload-zone" onclick="document.getElementById('ap-upload-input').click()">
+    <div class="ap-upload-icon">📤</div>
+    <div class="ap-upload-title">Drag & drop ou clique pour uploader</div>
+    <div class="ap-upload-sub">
+      Photos · Vidéos · jusqu'à 200 Mo<br>
+      Formats : .jpg .png .mp4 .mov .webm
+    </div>
+    <input type="file" id="ap-upload-input" multiple
+           accept="image/*,video/*" style="display:none;"
+           onchange="SP_AUTOPILOT.uploadFiles(this.files)">
+  </div>
+
+  <div class="ap-media-filters" id="ap-media-filters">
+    <button class="ap-filter-btn active" data-cat="all">Tout</button>
+    <button class="ap-filter-btn" data-cat="boutique">Boutique</button>
+    <button class="ap-filter-btn" data-cat="equipe">Équipe</button>
+    <button class="ap-filter-btn" data-cat="phones">Phones</button>
+    <button class="ap-filter-btn" data-cat="reparation">Réparation</button>
+    <button class="ap-filter-btn" data-cat="avant_apres">Avant/Après</button>
+    <button class="ap-filter-btn" data-cat="reel_brut">Reels bruts</button>
+    <button class="ap-filter-btn" data-cat="generated">Auto-générés</button>
+  </div>
+
+  <div class="ap-media-grid" id="ap-media-grid"></div>
+
+</div>
+
+
+<!-- ──────────── VIEW : CONFIG ──────────── -->
+<div id="ap-view-config" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span>// CONTROL PANEL</span>
+      <span>BRAIN_CONFIG</span>
+    </div>
+    <h1 class="ap-h1">Config <span class="ap-accent">⚙</span></h1>
+    <p class="ap-tagline">Pilotage du Brain · prompts · seuils · kill switch</p>
+  </header>
+
+  <!-- Kill switch -->
+  <div class="ap-config-section" style="border-color:rgba(239,68,68,0.3);">
+    <h3 style="color:#ef4444;">⚠ Kill switch</h3>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;">
+      En cas de problème, suspends l'agent immédiatement. Aucune décision ne sera prise tant que tu ne le réactives pas.
+    </div>
+    <div id="ap-pause-area">
+      <button class="ap-btn ap-btn-pause" onclick="SP_AUTOPILOT.toggleAgent()">⏸ PAUSE AGENT</button>
+    </div>
+  </div>
+
+  <!-- Voix de marque -->
+  <div class="ap-config-section">
+    <h3>Voix de marque</h3>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+      Ton, expressions à utiliser/éviter, hashtags signature. JSON éditable.
+    </div>
+    <textarea class="ap-config-textarea" id="ap-cfg-brand-voice"></textarea>
+    <button class="ap-btn ap-btn-primary" style="margin-top:10px;" onclick="SP_AUTOPILOT.saveMemory('brand_voice','ap-cfg-brand-voice')">
+      💾 Enregistrer
+    </button>
+  </div>
+
+  <!-- Do not post -->
+  <div class="ap-config-section">
+    <h3>Ne pas poster</h3>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+      Sujets, claims interdits, personnes à éviter de mentionner.
+    </div>
+    <textarea class="ap-config-textarea" id="ap-cfg-do-not-post"></textarea>
+    <button class="ap-btn ap-btn-primary" style="margin-top:10px;" onclick="SP_AUTOPILOT.saveMemory('do_not_post','ap-cfg-do-not-post')">
+      💾 Enregistrer
+    </button>
+  </div>
+
+  <!-- Seuils auto-exec -->
+  <div class="ap-config-section">
+    <h3>Seuils auto-exécution</h3>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+      Confidence minimum pour qu'une décision s'exécute sans validation. 0.99 = jamais auto.
+    </div>
+    <textarea class="ap-config-textarea" id="ap-cfg-thresholds"></textarea>
+    <button class="ap-btn ap-btn-primary" style="margin-top:10px;" onclick="SP_AUTOPILOT.saveMemory('auto_exec_thresholds','ap-cfg-thresholds')">
+      💾 Enregistrer
+    </button>
+  </div>
+
+  <!-- App Improver whitelist -->
+  <div class="ap-config-section">
+    <h3>App Improver — zones autorisées</h3>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+      Fichiers que l'IA peut modifier. Tout le reste est protégé.
+    </div>
+    <textarea class="ap-config-textarea" id="ap-cfg-app-improver-whitelist"></textarea>
+    <button class="ap-btn ap-btn-primary" style="margin-top:10px;" onclick="SP_AUTOPILOT.saveMemory('brain_app_improver_whitelist','ap-cfg-app-improver-whitelist')">
+      💾 Enregistrer
+    </button>
+  </div>
+
+  <!-- Notifs briefing -->
+  <div class="ap-config-section">
+    <h3>Notifications briefing matinal</h3>
+    <textarea class="ap-config-textarea" id="ap-cfg-notif-prefs"></textarea>
+    <button class="ap-btn ap-btn-primary" style="margin-top:10px;" onclick="SP_AUTOPILOT.saveMemory('brain_notification_prefs','ap-cfg-notif-prefs')">
+      💾 Enregistrer
+    </button>
+  </div>
+
+  <!-- Templates SMS -->
+  <div class="ap-config-section">
+    <h3>Templates SMS Brevo</h3>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Demande avis Google</div>
+      <input class="ap-config-input" id="ap-cfg-sms-avis"
+             placeholder="Bonjour {prenom}, comment ça s'est passé...">
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Relance batterie 18 mois</div>
+      <input class="ap-config-input" id="ap-cfg-sms-batt"
+             placeholder="Bonjour {prenom}, batterie en baisse ?">
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Reconquête inactif</div>
+      <input class="ap-config-input" id="ap-cfg-sms-inactif"
+             placeholder="Bonjour {prenom}, ça fait longtemps...">
+    </div>
+    <button class="ap-btn ap-btn-primary" style="margin-top:14px;" onclick="SP_AUTOPILOT.saveSmsTemplates()">
+      💾 Enregistrer templates SMS
+    </button>
+  </div>
+
+  <!-- Comptes connectés -->
+  <div class="ap-config-section">
+    <h3>Comptes connectés</h3>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Meta (Instagram + Facebook)</div>
+      <span class="ap-status-meta" id="ap-cnx-meta">Non testé</span>
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Google My Business</div>
+      <span class="ap-status-meta" id="ap-cnx-google">Non testé</span>
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Brevo SMS</div>
+      <span class="ap-status-meta" id="ap-cnx-brevo">Non testé</span>
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Placid (visuels auto)</div>
+      <span class="ap-status-meta" id="ap-cnx-placid">Non configuré</span>
+    </div>
+    <div class="ap-config-row">
+      <div class="ap-config-label">Pennylane (compta)</div>
+      <span class="ap-status-meta" id="ap-cnx-pennylane">Non testé</span>
+    </div>
+    <button class="ap-btn" style="margin-top:14px;" onclick="SP_AUTOPILOT.testConnections()">
+      🔄 Tester les connexions
+    </button>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="ap-toast" id="ap-toast"></div>
