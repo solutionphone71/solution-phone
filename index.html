@@ -374,6 +374,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   #aria-omnibar-wrap { margin: 0; width: 100%; padding: 8px 12px 0; }
 }
 
+/* Animation pulse pour les alertes (téléphones non synchros) */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
 /* Bouton œil pour afficher/masquer mots de passe & clés API */
 .pwd-eye-btn {
   position: absolute;
@@ -4211,6 +4217,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <button class="btn btn-primary" onclick="printEcransA4()">🖨️ Imprimer A4</button>
       <button class="btn" onclick="ajouterLigneEcran()" style="border-color:var(--blue);color:var(--blue);">➕ Ajouter un modèle</button>
       <button class="btn" onclick="resetEcransPrix()" style="border-color:var(--warning);color:var(--warning);">↩️ Réinitialiser</button>
+      <button class="btn" onclick="forceEcransSyncSupabase()" style="border-color:var(--green);color:var(--green);font-weight:700;">🔄 Forcer synchro site</button>
+      <div id="ecrans-sync-status" style="font-size:12px;color:var(--text-muted);padding:8px;font-weight:600;"></div>
       <div style="font-size:12px;color:var(--text-muted);padding:8px;">💡 Cliquez sur un prix pour le modifier · ✗ = non disponible</div>
     </div>
 
@@ -5114,7 +5122,21 @@ function initRealtime() {
       }
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
-        phones = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
+        var fromSupa = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
+        // ── MERGE: préserver les téléphones locaux non encore synchronisés (id Date.now() >= 100000) ──
+        var supaIds = {}; fromSupa.forEach(function(ph){ supaIds[ph.id] = true; });
+        var supaImeis = {}; fromSupa.forEach(function(ph){ if(ph.imei) supaImeis[ph.imei] = true; });
+        var pendingLocal = phones.filter(function(p){
+          // Garder les phones non synchros : ID temporaire (Date.now) ou flag _pendingSync, ET pas déjà présents en Supabase via IMEI
+          if(p._pendingSync) return !(p.imei && supaImeis[p.imei]);
+          if(p.id >= 100000) return !(p.imei && supaImeis[p.imei]);
+          return false;
+        });
+        phones = fromSupa.concat(pendingLocal);
+        if(pendingLocal.length){
+          console.warn('[Sync 90s] '+pendingLocal.length+' téléphone(s) en attente de synchro préservés:', pendingLocal.map(function(p){return p.modele;}).join(', '));
+        }
+        try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
         renderPhones(); renderDashboard();
       }
       // Charger les téléphones neufs
@@ -5144,25 +5166,35 @@ async function loadFromSupabase() {
       var prevCount = phones.length;
       phones=p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
       console.log('[Supabase] Phones chargés:', phones.length, '(avant:', prevCount, ')');
-      // Si Supabase retourne moins de phones, vérifier le backup local
-      if(phones.length < prevCount && prevCount > 0){
-        console.warn('[Supabase] ⚠️ Moins de phones qu\'avant ! Vérification backup...');
-        try {
-          var backup = JSON.parse(localStorage.getItem('sp_phones_backup')||'[]');
-          var supaIds = {};
-          phones.forEach(function(ph){ supaIds[ph.imei||ph.id] = true; });
-          var missing = backup.filter(function(bp){ return !supaIds[bp.imei||bp.id]; });
-          if(missing.length > 0){
-            console.warn('[Supabase] '+missing.length+' phone(s) manquant(s) — restauration depuis backup');
-            missing.forEach(function(mp){
-              phones.push(mp);
-              showNotif('⚠️ '+mp.modele+' restauré depuis backup local','warning');
-              // Re-sauver dans Supabase
-              savePhone(mp);
-            });
-          }
-        } catch(e){ console.error('[Backup] Erreur:', e); }
-      }
+      // Vérifier le backup local pour récupérer les téléphones non synchros
+      // Toujours scanner — pas seulement quand phones.length < prevCount, car le rachat peut avoir été fait sur un autre poste
+      try {
+        var backup = JSON.parse(localStorage.getItem('sp_phones_backup')||'[]');
+        var supaImeis = {};
+        var supaIdSet = {};
+        phones.forEach(function(ph){
+          if(ph.imei) supaImeis[ph.imei] = true;
+          supaIdSet[ph.id] = true;
+        });
+        // Téléphones du backup qui :
+        // - ne sont pas en Supabase (par IMEI ou ID)
+        // - étaient marqués _pendingSync OU ont un ID temporaire (Date.now >= 100000)
+        var missing = backup.filter(function(bp){
+          if(bp.imei && supaImeis[bp.imei]) return false;
+          if(supaIdSet[bp.id]) return false;
+          return bp._pendingSync || bp.id >= 100000;
+        });
+        if(missing.length > 0){
+          console.warn('[Supabase] '+missing.length+' phone(s) non synchro(s) — restauration depuis backup local');
+          missing.forEach(function(mp){
+            mp._pendingSync = true; // s'assurer du flag
+            phones.push(mp);
+            showNotif('⚠️ '+mp.modele+' restauré depuis backup local — re-tentative Supabase...','warning');
+            // Re-sauver dans Supabase (async, ne bloque pas)
+            savePhone(mp);
+          });
+        }
+      } catch(e){ console.error('[Backup] Erreur:', e); }
       try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
     }
     if(f) factures=f.map(function(x){return{id:x.id,numero:x.numero,date:x.date,phoneId:x.phone_id,clientNom:x.client_nom,clientAdresse:x.client_adresse,clientEmail:x.client_email||'',ttc:Number(x.montant_ttc),ht:Number(x.montant_ht),tva:Number(x.tva)};});
@@ -5192,24 +5224,60 @@ async function loadFromSupabase() {
 }
 
 async function savePhone(phone) {
-  if(!supabaseReady){ console.warn('[savePhone] Supabase pas prêt — téléphone NON sauvé !', phone.modele); return; }
+  if(!supabaseReady){
+    console.warn('[savePhone] Supabase pas prêt — téléphone NON sauvé !', phone.modele);
+    phone._pendingSync = true;
+    showNotif('⚠️ '+phone.modele+' enregistré localement seulement (Supabase non prêt). Cliquez sur 🔄 pour réessayer.','error');
+    return false;
+  }
   var data={modele:phone.modele,stockage:phone.stockage,grade:phone.grade,batterie:phone.batterie,imei:phone.imei,achat:phone.achat,vente:phone.vente,mode:phone.mode,date_achat:phone.dateAchat,couleur:phone.couleur,etat:phone.etat,date_vente:phone.dateVente||null,num_police:phone.numPolice,vendeur_nom:phone.vendeurNom,vendeur_adresse:phone.vendeurAdresse,vendeur_ci:phone.vendeurCI,vendeur_ci_date:phone.vendeurCIDate||null,type_achat:phone.typeAchat||'PARTICULIER',fournisseur:phone.fournisseur||'',mode_vente:phone.modeVente||null,is_reprise:phone.isReprise||false,reprise_amount:phone.repriseAmount||null,reprise_modele:phone.repriseModele||null,reprise_phone_id:phone.reprisePhoneId||null,reprise_from_vente:phone.repriseFromVente||null,reprise_from_modele:phone.repriseFromModele||null,client_nom:phone.clientNom||null,client_adresse:phone.clientAdresse||null,client_cp:phone.clientCP||null,client_ville:phone.clientVille||null};
   console.log('[savePhone] Mode:', phone.supaId ? 'PATCH(supaId)' : phone.id < 100000 ? 'PATCH(id)' : 'POST', 'phone=', phone.modele, 'id=', phone.id);
-  if(phone.supaId || (phone.id && phone.id<100000)){
-    await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));
-    console.log('[savePhone] PATCH OK pour', phone.modele);
-  } else {
-    var res=await supaFetch('phones','POST',data);
-    console.log('[savePhone] POST résultat:', res);
-    if(res&&res[0]){
-      phone.supaId=res[0].id;
-      phone.id=res[0].id;
-      console.log('[savePhone] Nouveau ID Supabase:', res[0].id, 'pour', phone.modele);
+  try {
+    if(phone.supaId || (phone.id && phone.id<100000)){
+      await supaFetch('phones','PATCH',data,'?id=eq.'+(phone.supaId||phone.id));
+      console.log('[savePhone] PATCH OK pour', phone.modele);
+      phone._pendingSync = false;
+      try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+      return true;
     } else {
-      console.error('[savePhone] POST ÉCHOUÉ pour', phone.modele, '— le téléphone va disparaître à la prochaine synchro !');
-      showNotif('⚠️ Erreur sauvegarde '+phone.modele+' sur Supabase — vérifiez la connexion','error');
+      var res=await supaFetch('phones','POST',data);
+      console.log('[savePhone] POST résultat:', res);
+      if(res&&res[0]){
+        phone.supaId=res[0].id;
+        phone.id=res[0].id;
+        phone._pendingSync = false;
+        console.log('[savePhone] Nouveau ID Supabase:', res[0].id, 'pour', phone.modele);
+        try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+        return true;
+      } else {
+        console.error('[savePhone] POST ÉCHOUÉ pour', phone.modele, '— conservé en backup local, ne sera pas écrasé par la synchro');
+        phone._pendingSync = true;
+        try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+        showNotif('⚠️ '+phone.modele+' non enregistré sur Supabase — vérifiez la connexion. Conservé en local.','error');
+        return false;
+      }
     }
+  } catch(err) {
+    console.error('[savePhone] EXCEPTION pour', phone.modele, err);
+    phone._pendingSync = true;
+    try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+    showNotif('⚠️ Erreur réseau — '+phone.modele+' conservé en local. Réessayez.','error');
+    return false;
   }
+}
+
+// Ré-essai des téléphones marqués _pendingSync (échec Supabase précédent)
+async function retryPendingPhones(){
+  var pending = phones.filter(function(p){ return p._pendingSync; });
+  if(!pending.length){ showNotif('✅ Aucun téléphone en attente de synchro','success'); return; }
+  showNotif('🔄 Re-tentative pour '+pending.length+' téléphone(s)...','info');
+  var ok = 0, ko = 0;
+  for(var i=0;i<pending.length;i++){
+    var success = await savePhone(pending[i]);
+    if(success) ok++; else ko++;
+  }
+  showNotif(ok+' resynchronisé(s), '+ko+' encore en attente', ok>0?'success':'error');
+  renderPhones();
 }
 
 async function saveCaisseRow(row) {
@@ -8042,31 +8110,36 @@ function savePhoneEdit() {
 
 function updateMarge(){var a=parseFloat((document.getElementById('p-achat').value||'0').toString().replace(',','.'))||0;var v=parseFloat((document.getElementById('p-vente').value||'0').toString().replace(',','.'))||0;document.getElementById('marge-preview').textContent='Marge : '+(v-a).toFixed(2)+' € ('+(a>0?(((v-a)/a)*100).toFixed(1):0)+'%)';}
 
-function addPhone(){
+async function addPhone(){
   _syncDirty=true;
   var modele=document.getElementById('p-modele').value.trim();
   var achatRaw=document.getElementById('p-achat').value.toString().replace(',','.');
   var venteRaw=document.getElementById('p-vente').value.toString().replace(',','.');
   var achat=parseFloat(achatRaw);
   var vente=parseFloat(venteRaw);
-  if(!modele){showNotif('Modèle requis','error');return;}
-  if(!achat||achat<=0){showNotif('Prix achat invalide','error');return;}
-  if(!vente||vente<=0){showNotif('Prix vente invalide','error');return;}
+  if(!modele){showNotif('Modèle requis','error');_syncDirty=false;return;}
+  if(!achat||achat<=0){showNotif('Prix achat invalide','error');_syncDirty=false;return;}
+  if(!vente||vente<=0){showNotif('Prix vente invalide','error');_syncDirty=false;return;}
   // Vérification doublon IMEI
   var imeiVal=document.getElementById('p-imei').value.trim();
   if(imeiVal){
     var doublon=phones.find(function(p){return p.imei===imeiVal;});
     if(doublon){
-      if(!confirm('⚠️ IMEI déjà en stock !\n'+doublon.modele+' ('+doublon.etat+')\nAjouter quand même ?')) return;
+      if(!confirm('⚠️ IMEI déjà en stock !\n'+doublon.modele+' ('+doublon.etat+')\nAjouter quand même ?')){_syncDirty=false;return;}
     }
   }
-  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true};
+  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true,_pendingSync:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);
   // Sauvegarder en local en backup (évite la perte si Supabase échoue)
   try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+  // Sauvegarde Supabase EN ATTENTE — protège contre l'écrasement par la synchro 90s
+  var saved = await savePhone(phone);
   _syncDirty=false;
-  savePhone(phone);
+  if(!saved){
+    // Confirmer visuellement à l'utilisateur que le téléphone est protégé localement
+    console.warn('[addPhone] '+phone.modele+' non sauvé sur Supabase — conservé en local avec _pendingSync=true');
+  }
 
   // ── Réutilisation photo depuis la bibliothèque (pas de re-upload) ──
   if((_suggestedPhotoFaceUrl || _suggestedPhotoDosUrl) && !_pendingPhotoFace && !_pendingPhotoDos){
@@ -8164,6 +8237,15 @@ function renderPhones(){
     d3.style.cssText='background:rgba(229,62,62,0.08);border:1px solid rgba(229,62,62,0.3);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--text-muted);';
     d3.innerHTML='💹 Vendus : <b>'+nbVendus+'</b> — <span style="cursor:pointer;text-decoration:underline;color:var(--red);" onclick="goToVentesSmartphones()">Voir le rapport →</span>';
     bar.appendChild(d3);
+    // ⚠️ Téléphones en attente de synchro Supabase (rachat non sauvé) — alerte critique
+    var nbPending = phones.filter(function(p){return p._pendingSync;}).length;
+    if(nbPending){
+      var dPending=document.createElement('div');
+      dPending.style.cssText='background:rgba(245,158,11,0.18);border:2px solid #f59e0b;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;color:#b45309;cursor:pointer;animation:pulse 2s infinite;';
+      dPending.innerHTML='⏳ '+nbPending+' téléphone(s) NON synchro Supabase — <span style="text-decoration:underline;">🔄 Cliquer pour réessayer</span>';
+      dPending.onclick=function(){retryPendingPhones();};
+      bar.appendChild(dPending);
+    }
     card.insertBefore(bar,card.firstChild);
   }
 
@@ -8179,8 +8261,9 @@ function renderPhones(){
       if(days>30)joursStock='<br><span style="font-size:11px;color:var(--warning)">⚠️ '+days+'j en stock</span>';
       else if(days>15)joursStock='<br><span style="font-size:11px;color:var(--blue)">'+days+'j</span>';
     }
-    return '<tr>'+
-      '<td>'+photoHtml+'<span style="background:#c0392b;color:#fff;font-size:10px;font-weight:900;padding:1px 5px;border-radius:4px;margin-right:5px;">#'+p.id+'</span><b>'+p.modele+'</b>'+sourceHtml+joursStock+'</td>'+
+    var pendingBadge = p._pendingSync ? '<span title="Non sauvé sur Supabase — risque de perte au rechargement" style="background:#f59e0b;color:#fff;font-size:10px;font-weight:800;padding:1px 6px;border-radius:4px;margin-right:4px;">⏳ NON SYNC</span>' : '';
+    return '<tr'+(p._pendingSync?' style="background:rgba(245,158,11,0.08);"':'')+'>'+
+      '<td>'+photoHtml+pendingBadge+'<span style="background:#c0392b;color:#fff;font-size:10px;font-weight:900;padding:1px 5px;border-radius:4px;margin-right:5px;">#'+p.id+'</span><b>'+p.modele+'</b>'+sourceHtml+joursStock+'</td>'+
       '<td>'+(p.stockage?p.stockage+'Go':'—')+'</td>'+
       '<td><span class="badge badge-blue">'+(p.grade||'—')+'</span></td>'+
       '<td>'+(p.batterie?p.batterie+'%':'—')+'</td>'+
@@ -12791,21 +12874,88 @@ var ecransPrix = (function(){
   return saved;
 })();
 
-function saveEcransPrix(){
+// Indicateur de statut de la dernière synchro Supabase pour les prix écrans
+var _ecransPrixLastSync = null;
+var _ecransPrixSyncPending = false;
+
+async function saveEcransPrix(){
+  // Sauvegarde locale immédiate (toujours)
   localStorage.setItem('sp_ecrans_prix', JSON.stringify(ecransPrix));
-  if(!supabaseReady) return;
-  // Même méthode que batteries : JSON dans la table settings
+  updateEcransSyncStatus('local');
+
+  if(!supabaseReady){
+    // Au lieu d'échouer silencieusement : retenter dans 2s, jusqu'à 5 fois
+    if(!_ecransPrixSyncPending){
+      _ecransPrixSyncPending = true;
+      var attempts = 0;
+      var retryInterval = setInterval(function(){
+        attempts++;
+        if(supabaseReady){
+          clearInterval(retryInterval);
+          _ecransPrixSyncPending = false;
+          saveEcransPrix(); // re-tenter une fois Supabase prêt
+        } else if(attempts >= 5){
+          clearInterval(retryInterval);
+          _ecransPrixSyncPending = false;
+          updateEcransSyncStatus('error');
+          showNotif('⚠️ Supabase non prêt — prix gardés en local. Cliquez sur 🔄 Forcer synchro.','error');
+        }
+      }, 2000);
+    }
+    return false;
+  }
+
   var jsonData = JSON.stringify(ecransPrix);
-  supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json').then(function(rows){
+  try {
+    var rows = await supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json');
     var exists = rows && rows.length > 0;
     var method = exists ? 'PATCH' : 'POST';
     var query  = exists ? '?key=eq.ecrans_prix_json' : '';
-    return supaFetch('settings', method, {key:'ecrans_prix_json', value: jsonData}, query);
-  }).then(function(){
-    console.log('Écrans sauvegardés dans settings');
-  }).catch(function(e){
-    console.error('Écrans save error:', e);
-  });
+    var res = await supaFetch('settings', method, {key:'ecrans_prix_json', value: jsonData}, query);
+    if(res === null || res === undefined){
+      // PATCH/POST a peut-être renvoyé vide — vérifier en relisant
+      var verify = await supaFetch('settings','GET',null,'?key=eq.ecrans_prix_json&select=value');
+      if(!verify || !verify.length || verify[0].value !== jsonData){
+        throw new Error('Vérification post-sauvegarde échouée');
+      }
+    }
+    _ecransPrixLastSync = new Date();
+    updateEcransSyncStatus('ok');
+    console.log('[saveEcransPrix] ✅ Sauvé dans Supabase à', _ecransPrixLastSync.toLocaleTimeString());
+    return true;
+  } catch(e) {
+    console.error('[saveEcransPrix] ❌ Erreur sync Supabase:', e);
+    updateEcransSyncStatus('error');
+    showNotif('⚠️ Sync Supabase échouée — cliquez sur 🔄 Forcer synchro pour réessayer','error');
+    return false;
+  }
+}
+
+// Force une re-synchro complète (bouton manuel)
+async function forceEcransSyncSupabase(){
+  showNotif('🔄 Re-synchro vers Supabase...','info');
+  var ok = await saveEcransPrix();
+  if(ok){
+    showNotif('✅ Prix poussés vers Supabase — le site se mettra à jour au prochain rechargement','success');
+  } else {
+    showNotif('❌ Échec — vérifiez la connexion Supabase','error');
+  }
+}
+
+// Met à jour l'indicateur visuel en haut de la page
+function updateEcransSyncStatus(state){
+  var el = document.getElementById('ecrans-sync-status');
+  if(!el) return;
+  if(state === 'ok'){
+    el.innerHTML = '✅ Synchronisé Supabase à '+_ecransPrixLastSync.toLocaleTimeString();
+    el.style.color = 'var(--green)';
+  } else if(state === 'error'){
+    el.innerHTML = '⚠️ NON synchronisé — cliquez sur 🔄 Forcer synchro';
+    el.style.color = 'var(--warning)';
+  } else if(state === 'local'){
+    el.innerHTML = '⏳ Sauvegarde en cours...';
+    el.style.color = 'var(--text-muted)';
+  }
 }
 
 async function loadEcransFromSupabase(){
