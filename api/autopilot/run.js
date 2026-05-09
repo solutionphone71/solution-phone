@@ -179,6 +179,24 @@ RÈGLES POUR TES DÉCISIONS
 - Pour SMS : type 'sms' avec payload.client_phone, payload.client_name, payload.message.
 - Si vraiment rien à faire, retourne decisions: [] avec thoughts qui explique pourquoi.
 
+VISUELS PLACID (auto-générés)
+Pour les posts qui ont besoin d'un visuel structuré (carte prix, bonus QualiRépar, trust signal, repost avis 5★),
+ajoute dans le payload un champ "visual_request" :
+
+  visual_request: {
+    template: "price_card" | "qualirepar" | "trust" | "review_quote",
+    layers: {
+      // Selon le template, voir mémoire placid_templates_layers :
+      // price_card    : { model, price, grade, details }
+      // qualirepar    : { bonus_amount, repair_type, device_model, claim_id }
+      // trust         : { years, rating, reviews_count, tagline }
+      // review_quote  : { quote_text, author_name, stars, date }
+    }
+  }
+
+Le visuel sera généré automatiquement par Placid au moment de la publication.
+Si tu utilises une photo perso (média uploadé par Sébastien), mets son ID dans media_hint à la place.
+
 NE FAIS PAS DE TEXTE LIBRE. Appelle directement l'outil 'propose_decisions'.
 `;
 }

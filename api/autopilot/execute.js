@@ -194,6 +194,31 @@ export default async function handler(req, res) {
     let anySuccess = false;
     let igPostId = null, fbPostId = null;
 
+    // ─── STEP 0 : Génération visuel Placid si demandé ───
+    // Si payload.visual_request présent → on génère l'image via Placid
+    // et on l'ajoute dans payload.media_url
+    if (payload.visual_request && payload.visual_request.template) {
+      try {
+        const placidRes = await fetch(`https://${host}/api/render/placid`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            template: payload.visual_request.template,
+            layers: payload.visual_request.layers || {}
+          })
+        });
+        const placidData = await placidRes.json();
+        if (placidData.success && placidData.url) {
+          payload.media_url = placidData.url;
+          results.placid_visual = { success: true, url: placidData.url };
+        } else {
+          results.placid_visual = { success: false, error: placidData.error || 'Placid failed' };
+        }
+      } catch (e) {
+        results.placid_visual = { success: false, error: 'Placid exception: ' + e.message };
+      }
+    }
+
     // 2. Exécuter selon type
     if (decision.type === 'post' || decision.type === 'reel') {
       if (platforms.instagram) {
