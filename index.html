@@ -520,7 +520,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Administration</div>
   <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés & Paie TESE</div>
   <div class="mob-menu-item" onclick="showPageMobile('autopilot','');closeMobileMenu()"><span class="mob-menu-icon">◢</span>Autopilot</div>
-  <div class="mob-menu-item" onclick="showPageMobile('calendrier','');loadCalItems();closeMobileMenu()"><span class="mob-menu-icon">📅</span>Calendrier Éditorial</div>
   <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
   <div class="mob-menu-item" onclick="toggleTheme();closeMobileMenu()" id="mob-theme-btn"><span class="mob-menu-icon" id="mob-theme-icon">🌙</span><span id="mob-theme-label">Mode sombre</span></div>
 </div>
@@ -643,7 +642,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-group-label">Administration</div>
     <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés & Paie</span></div>
     <div class="nav-item" onclick="showPage('autopilot',this)"><span class="nav-icon">◢</span><span>Autopilot</span></div>
-    <div class="nav-item" onclick="showPage('calendrier',this);loadCalItems()"><span class="nav-icon">📅</span><span>Calendrier Éditorial</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
 
     <div class="nav-sep"></div>
@@ -23543,137 +23541,7 @@ function showCalToast(title,body){
   </div>
 </div>
 
-<!-- PAGE CALENDRIER ÉDITORIAL -->
-<div class="page" id="page-calendrier">
-  <!-- TOAST -->
-  <div class="cal-toast" id="calToast">
-    <div class="cal-toast-title" id="calToastTitle"></div>
-    <div class="cal-toast-body" id="calToastBody"></div>
-  </div>
-
-  <!-- MODAL FORMULAIRE -->
-  <div class="cal-modal-wrap" id="calModalWrap">
-    <div class="cal-modal-box">
-      <div class="cal-modal-hdr">
-        <div class="cal-modal-hdr-title" id="calModalTitle">➕ Nouveau contenu</div>
-        <button class="cal-modal-close" onclick="closeCalModal()">✕</button>
-      </div>
-      <div class="cal-modal-body">
-        <div class="cal-fg">
-          <div><div class="cal-flabel">Date *</div><input type="date" id="cf-date" class="cal-finput"></div>
-          <div><div class="cal-flabel">Heure</div><input type="time" id="cf-heure" class="cal-finput" value="09:00"></div>
-          <div><div class="cal-flabel">Type *</div>
-            <select id="cf-type" class="cal-fselect">
-              <option value="reel">🎬 Reel / Vidéo Kling AI</option>
-              <option value="post">🖼️ Post Image Canva</option>
-              <option value="story">📱 Story</option>
-              <option value="ads">💰 Meta Ads Boost</option>
-              <option value="google">⭐ Google Business</option>
-              <option value="autre">📌 Autre</option>
-            </select>
-          </div>
-          <div><div class="cal-flabel">Outil</div>
-            <select id="cf-outil" class="cal-fselect">
-              <option value="Kling AI Pro">🎬 Kling AI Pro</option>
-              <option value="Canva Pro">🎨 Canva Pro</option>
-              <option value="ChatGPT Plus">🤖 ChatGPT Plus</option>
-              <option value="Meta Ads Manager">💰 Meta Ads Manager</option>
-              <option value="CapCut">✂️ CapCut</option>
-              <option value="Photo manuelle">📸 Photo manuelle</option>
-            </select>
-          </div>
-          <div class="cal-fg-full"><div class="cal-flabel">Titre *</div><input type="text" id="cf-titre" class="cal-finput" placeholder="Ex: Reel — Votre téléphone est NU ?"></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Prompt Kling AI (si vidéo)</div><textarea id="cf-prompt" class="cal-ftextarea" placeholder="Prompt à copier dans Kling AI..."></textarea></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Légende Instagram</div><textarea id="cf-legende" class="cal-ftextarea" placeholder="Texte de la publication..."></textarea></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Hashtags</div><input type="text" id="cf-hashtags" class="cal-finput" placeholder="#SolutionPhone #Mâcon ..."></div>
-          <div class="cal-fg-full"><div class="cal-flabel">Notes internes</div><textarea id="cf-notes" class="cal-ftextarea" style="min-height:52px;" placeholder="Notes..."></textarea></div>
-          <div><div class="cal-flabel">Statut</div>
-            <select id="cf-statut" class="cal-fselect">
-              <option value="planifie">📅 Planifié</option>
-              <option value="en_cours">⚙️ En cours</option>
-              <option value="publie">✅ Publié</option>
-              <option value="annule">❌ Annulé</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;padding-top:22px;">
-            <input type="checkbox" id="cf-rappel" checked style="accent-color:var(--red);width:15px;height:15px;">
-            <label for="cf-rappel" style="font-size:13px;color:var(--text);cursor:pointer;">🔔 Rappel notification</label>
-          </div>
-        </div>
-      </div>
-      <div class="cal-modal-ftr">
-        <button class="btn" onclick="closeCalModal()">Annuler</button>
-        <button class="btn btn-primary" onclick="saveCalItem()">💾 Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DÉTAIL -->
-  <div class="cal-modal-wrap" id="calDetailWrap">
-    <div class="cal-modal-box" style="max-width:700px;">
-      <div class="cal-modal-hdr">
-        <div>
-          <div class="cal-modal-hdr-title" id="calDetailTitle"></div>
-          <div id="calDetailMeta" style="font-size:11px;color:var(--text-muted);margin-top:3px;"></div>
-        </div>
-        <button class="cal-modal-close" onclick="closeCalDetail()">✕</button>
-      </div>
-      <div class="cal-modal-body" id="calDetailBody"></div>
-      <div class="cal-modal-ftr">
-        <button class="btn" onclick="closeCalDetail()">Fermer</button>
-        <button class="btn btn-primary" id="calDetailDoneBtn">✅ Marquer Publié</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN -->
-  <div class="cal-header-bar">
-    <div>
-      <div class="page-title">📅 Calendrier Éditorial</div>
-      <div class="page-sub">Plan de communication mensuel · Instagram · Meta Ads · Google</div>
-    </div>
-    <div class="cal-month-nav">
-      <button class="btn-cal-nav" onclick="calPrevMonth()">←</button>
-      <div class="cal-month-lbl" id="calMonthLbl">Avril 2026</div>
-      <button class="btn-cal-nav" onclick="calNextMonth()">→</button>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div class="cal-stats-row">
-    <div class="cal-stat-box stat-v-reel"><div class="cal-stat-val" id="cst-reel">0</div><div class="cal-stat-lbl">🎬 Reels</div></div>
-    <div class="cal-stat-box stat-v-post"><div class="cal-stat-val" id="cst-post">0</div><div class="cal-stat-lbl">🖼️ Posts</div></div>
-    <div class="cal-stat-box stat-v-story"><div class="cal-stat-val" id="cst-story">0</div><div class="cal-stat-lbl">📱 Stories</div></div>
-    <div class="cal-stat-box stat-v-ads"><div class="cal-stat-val" id="cst-ads">0</div><div class="cal-stat-lbl">💰 Ads</div></div>
-    <div class="cal-stat-box stat-v-done"><div class="cal-stat-val" id="cst-done">0</div><div class="cal-stat-lbl">✅ Publiés</div></div>
-  </div>
-
-  <!-- ACTIONS -->
-  <div class="cal-action-bar">
-    <button class="btn-cal-add" onclick="openAddCal()">➕ Ajouter un contenu</button>
-    <button class="btn-cal-notif" id="btnCalNotif" onclick="toggleCalNotif()">🔔 Activer alertes</button>
-    <button class="btn-cal-gen" onclick="genCalNextMonth()">⚡ Générer mois suivant</button>
-  </div>
-
-  <!-- VIEW TABS -->
-  <div class="cal-view-bar">
-    <button class="cal-vtab active" onclick="switchCalView('grid',this)">📅 Grille</button>
-    <button class="cal-vtab" onclick="switchCalView('list',this)">📋 Liste</button>
-  </div>
-
-  <!-- GRID VIEW -->
-  <div id="calGridWrap">
-    <div class="cal-grid-hdr">
-      <div class="cal-grid-dname">Lun</div><div class="cal-grid-dname">Mar</div><div class="cal-grid-dname">Mer</div>
-      <div class="cal-grid-dname">Jeu</div><div class="cal-grid-dname">Ven</div><div class="cal-grid-dname">Sam</div><div class="cal-grid-dname">Dim</div>
-    </div>
-    <div class="cal-grid-body" id="calGridBody"></div>
-  </div>
-
-  <!-- LIST VIEW -->
-  <div id="calListWrap" style="display:none;"><div id="calListBody"></div></div>
-</div>
-<!-- FIN PAGE CALENDRIER -->
+  <!-- ========== PAGE CALENDRIER SUPPRIMEE (migree dans Autopilot Planning) ========== -->
 
 
 <link rel="stylesheet" href="style.css">
