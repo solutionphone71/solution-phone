@@ -519,7 +519,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div class="mob-menu-item" onclick="showPageMobile('roulette','');initRouletteAdmin();closeMobileMenu()"><span class="mob-menu-icon">🎡</span>Roue cadeaux</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Administration</div>
   <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés & Paie TESE</div>
-  <div class="mob-menu-item" onclick="showPageMobile('instagram','');closeMobileMenu()"><span class="mob-menu-icon">📸</span>Instagram / IA</div>
+  <div class="mob-menu-item" onclick="showPageMobile('autopilot','');closeMobileMenu()"><span class="mob-menu-icon">◢</span>Autopilot</div>
   <div class="mob-menu-item" onclick="showPageMobile('calendrier','');loadCalItems();closeMobileMenu()"><span class="mob-menu-icon">📅</span>Calendrier Éditorial</div>
   <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
   <div class="mob-menu-item" onclick="toggleTheme();closeMobileMenu()" id="mob-theme-btn"><span class="mob-menu-icon" id="mob-theme-icon">🌙</span><span id="mob-theme-label">Mode sombre</span></div>
@@ -642,7 +642,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-sep"></div>
     <div class="nav-group-label">Administration</div>
     <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés & Paie</span></div>
-    <div class="nav-item" onclick="showPage('instagram',this)"><span class="nav-icon">📸</span><span>Instagram / IA</span></div>
+    <div class="nav-item" onclick="showPage('autopilot',this)"><span class="nav-icon">◢</span><span>Autopilot</span></div>
     <div class="nav-item" onclick="showPage('calendrier',this);loadCalItems()"><span class="nav-icon">📅</span><span>Calendrier Éditorial</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
 
@@ -3579,529 +3579,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div id="comptable-content"></div>
     </div>
 
-  <!-- ========== PAGE INSTAGRAM / IA ========== -->
-  <div class="page" id="page-instagram">
-    <div class="page-title">📸 Instagram &amp; Réseaux Sociaux</div>
-    <div class="page-sub">Créez du contenu optimisé avec l'IA Claude</div>
-
-    <!-- Config clé API -->
-    <div id="ig-api-setup" class="card" style="border-color:var(--warning);margin-bottom:18px;">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <div style="font-size:32px;">🔑</div>
-        <div style="flex:1;min-width:200px;">
-          <div style="font-size:14px;font-weight:700;color:var(--warning);margin-bottom:4px;">Clé API Anthropic (Claude)</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Nécessaire pour générer du contenu avec l'IA. Stockée localement sur votre appareil.</div>
-          <div style="display:flex;gap:8px;">
-            <input type="password" id="ig-api-key" placeholder="sk-ant-api03-..." style="flex:1;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;">
-            <button class="btn btn-primary" onclick="saveApiKey()">✅ Enregistrer</button>
-          </div>
-        </div>
-        <a href="https://console.anthropic.com/" target="_blank" style="font-size:12px;color:var(--blue);text-decoration:none;white-space:nowrap;">Créer une clé →</a>
-      </div>
-    </div>
-
-    <!-- Contenu principal (affiché après config clé) -->
-    <div id="ig-content" style="display:none;">
-      <!-- Onglets -->
-      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border);padding-bottom:14px;">
-        <button class="btn btn-primary" id="ig-btn-captions" onclick="showIgTab('captions')">✍️ Captions</button>
-        <button class="btn" id="ig-btn-calendar" onclick="showIgTab('calendar')">📅 Calendrier</button>
-        <button class="btn" id="ig-btn-ideas" onclick="showIgTab('ideas')">💡 Idées Stock</button>
-        <button class="btn" id="ig-btn-responses" onclick="showIgTab('responses')">💬 Réponses</button>
-        <button class="btn" id="ig-btn-stories" onclick="showIgTab('stories')">🎨 Stories</button>
-        <button class="btn" id="ig-btn-gmb" onclick="showIgTab('gmb')">📍 Google My Business</button>
-        <div style="margin-left:auto;">
-          <button class="btn btn-sm" style="border-color:var(--text-dim);color:var(--text-muted);" onclick="document.getElementById('ig-api-setup').style.display='block';document.getElementById('ig-content').style.display='none';">⚙️ Changer la clé</button>
-        </div>
-      </div>
-
-      <!-- TAB : CAPTIONS -->
-      <div id="ig-tab-captions">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-          <div class="card">
-            <div class="card-header"><div class="card-title">✨ Générateur de caption</div></div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div class="form-group"><label>Type de post</label>
-                <select id="ig-post-type">
-                  <option value="Promo smartphone reconditionné">📱 Promo smartphone reconditionné</option>
-                  <option value="Réparation téléphone">🔧 Réparation téléphone</option>
-                  <option value="Nouveau stock arrivé en boutique">🆕 Nouveau stock arrivé</option>
-                  <option value="Offre spéciale bonne affaire">🔥 Offre spéciale / Bonne affaire</option>
-                  <option value="Label QualiRépar garantie qualité">🏆 Label QualiRépar</option>
-                  <option value="Présentation de la boutique Solution Phone">🏪 Présentation boutique</option>
-                  <option value="Conseil téléphonie astuce pratique">💡 Conseil / Astuce</option>
-                  <option value="Rachat de smartphone reprise">💰 Rachat de smartphone</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Ton du message</label>
-                <select id="ig-tone">
-                  <option value="Professionnel et chaleureux">Professionnel et chaleureux</option>
-                  <option value="Dynamique et enthousiaste">Dynamique et enthousiaste</option>
-                  <option value="Informatif et rassurant">Informatif et rassurant</option>
-                  <option value="Humoristique et décontracté">Humoristique et décontracté</option>
-                </select>
-              </div>
-              <div class="form-group"><label>Détails supplémentaires (optionnel)</label>
-                <textarea id="ig-post-details" placeholder="ex: iPhone 15 256Go Grade A à 699€, batterie 94%..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;"></textarea>
-              </div>
-              <button class="btn btn-primary" id="ig-gen-btn" onclick="generateCaption()" style="padding:12px;">✨ Générer avec l'IA Claude</button>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">📝 Résultat généré</div></div>
-            <div id="ig-caption-result" style="color:var(--text-muted);text-align:center;padding:40px 16px;line-height:1.8;">
-              ✨ Remplissez le formulaire<br>et cliquez sur <b style="color:var(--text);">Générer</b><br><span style="font-size:12px;">L'IA créera un post optimisé pour Instagram</span>
-            </div>
-            <textarea id="ig-last-result" style="display:none;"></textarea>
-          </div>
-        </div>
-        <div class="card" style="margin-top:18px;">
-          <div class="card-header">
-            <div class="card-title">💾 Brouillons sauvegardés</div>
-            <button class="btn btn-sm" onclick="renderIgDrafts()">🔄 Actualiser</button>
-          </div>
-          <div id="ig-drafts-list"><div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">Aucun brouillon enregistré</div></div>
-        </div>
-      </div>
-
-      <!-- TAB : CALENDRIER -->
-      <div id="ig-tab-calendar" style="display:none;">
-        <div class="card" style="margin-bottom:18px;">
-          <div class="card-header">
-            <div class="card-title">📅 Calendrier des publications</div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button class="btn btn-sm" onclick="prevCalMonth()">◀</button>
-              <span id="ig-cal-title" style="font-weight:700;min-width:150px;text-align:center;font-size:15px;"></span>
-              <button class="btn btn-sm" onclick="nextCalMonth()">▶</button>
-            </div>
-          </div>
-          <div id="ig-calendar"></div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">📋 Tous les posts planifiés</div></div>
-          <div id="ig-posts-list"><div style="color:var(--text-muted);text-align:center;padding:20px;font-size:13px;">Cliquez sur un jour du calendrier pour planifier un post</div></div>
-        </div>
-      </div>
-
-      <!-- TAB : IDEES STOCK -->
-      <div id="ig-tab-ideas" style="display:none;">
-        <div class="card" style="margin-bottom:18px;">
-          <div class="card-header">
-            <div class="card-title">💡 Posts suggérés selon votre stock</div>
-            <button class="btn btn-sm btn-primary" onclick="renderIgIdeas()">🔄 Mettre à jour</button>
-          </div>
-          <div id="ig-ideas-list"><div style="color:var(--text-muted);text-align:center;padding:20px;">Chargement du stock...</div></div>
-        </div>
-        <div id="ig-ideas-result"></div>
-      </div>
-
-      <!-- TAB : STORIES -->
-      <div id="ig-tab-stories" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-
-          <!-- Panneau gauche : formulaire -->
-          <div style="display:flex;flex-direction:column;gap:14px;">
-            <div class="card">
-              <div class="card-header"><div class="card-title">🎨 Paramètres de la Story</div></div>
-              <div style="display:flex;flex-direction:column;gap:12px;">
-
-                  <div id="story-qr-status" style="font-size:11px;color:var(--text-muted);margin-top:6px;"></div>
-                </div>
-
-                <div class="form-group"><label>Type de Story</label>
-                  <select id="story-type" onchange="updateStoryType()">
-                    <option value="promo">📱 Promo Smartphone</option>
-                    <option value="reparation">🔧 Offre Réparation</option>
-                    <option value="texte">✏️ Story Texte / Annonce</option>
-                    <option value="brouillon">🤖 Depuis brouillon IA</option>
-                  </select>
-                </div>
-
-                <!-- FORM PROMO -->
-                <div id="story-form-promo" style="display:flex;flex-direction:column;gap:10px;">
-                  <div class="form-group"><label>Smartphone du stock</label>
-                    <select id="story-phone-select" onchange="renderStoryPreview()">
-                      <option value="">-- Saisie manuelle --</option>
-                    </select>
-                  </div>
-                  <div class="form-group"><label>Modèle (si manuel)</label>
-                    <input type="text" id="story-promo-modele" placeholder="ex: iPhone 13 Pro" oninput="renderStoryPreview()">
-                  </div>
-                  <div class="form-group"><label>Prix (€)</label>
-                    <input type="number" id="story-promo-prix" placeholder="ex: 499" oninput="renderStoryPreview()">
-                  </div>
-                  <div class="form-group"><label>Grade</label>
-                    <select id="story-promo-grade" onchange="renderStoryPreview()">
-                      <option value="A+">A+</option><option value="A" selected>A</option><option value="B">B</option><option value="C">C</option>
-                    </select>
-                  </div>
-                  <div class="form-group"><label>Détail (optionnel)</label>
-                    <input type="text" id="story-promo-desc" placeholder="ex: 256Go · Batterie 91%" oninput="renderStoryPreview()">
-                  </div>
-                  <div class="form-group">
-                    <label>📸 Photo du téléphone (optionnel)</label>
-                    <div id="story-photo-zone" onclick="document.getElementById('story-photo-input').click()"
-                      style="border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#f8fafc;transition:.2s;"
-                      onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
-                      <div id="story-photo-preview" style="display:none;"><img id="story-photo-thumb" style="max-height:80px;border-radius:8px;"></div>
-                      <div id="story-photo-placeholder" style="color:var(--text-muted);font-size:13px;">
-                        🖼️ Cliquez pour ajouter une photo<br><span style="font-size:11px;">JPG, PNG — depuis votre téléphone ou ordi</span>
-                      </div>
-                    </div>
-                    <input type="file" id="story-photo-input" accept="image/*" style="display:none;" onchange="loadStoryPhoto(this)">
-                    <button id="story-photo-clear" class="btn btn-sm" style="display:none;margin-top:6px;border-color:var(--red);color:var(--red);" onclick="clearStoryPhoto()">🗑️ Supprimer la photo</button>
-                  </div>
-                </div>
-
-                <!-- FORM REPARATION -->
-                <div id="story-form-rep" style="display:none;flex-direction:column;gap:10px;">
-                  <div class="form-group"><label>Type de réparation</label>
-                    <select id="story-rep-type" onchange="renderStoryPreview()">
-                      <option>Remplacement écran</option>
-                      <option>Remplacement batterie</option>
-                      <option>Réparation connecteur</option>
-                      <option>Réparation caméra</option>
-                      <option>Déblocage / Flash</option>
-                      <option>Diagnostic offert</option>
-                    </select>
-                  </div>
-                  <div class="form-group"><label>Appareil</label>
-                    <input type="text" id="story-rep-appareil" placeholder="ex: iPhone 12, Samsung S21..." oninput="renderStoryPreview()">
-                  </div>
-                  <div class="form-group"><label>À partir de (€)</label>
-                    <input type="number" id="story-rep-prix" placeholder="ex: 59" oninput="renderStoryPreview()">
-                  </div>
-                  <div class="form-group" style="flex-direction:row;align-items:center;gap:10px;">
-                    <input type="checkbox" id="story-rep-quali" onchange="renderStoryPreview()" style="width:18px;height:18px;accent-color:var(--green);">
-                    <label style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--text);">Mentionner le label QualiRépar 🏆</label>
-                  </div>
-                </div>
-
-                <!-- FORM TEXTE -->
-                <div id="story-form-texte" style="display:none;flex-direction:column;gap:10px;">
-                  <div class="form-group"><label>Titre principal</label>
-                    <input type="text" id="story-texte-titre" placeholder="ex: FERMETURE EXCEPTIONNELLE" oninput="renderStoryPreview()" value="Nouveau !">
-                  </div>
-                  <div class="form-group"><label>Message</label>
-                    <textarea id="story-texte-msg" placeholder="ex: Nous serons fermés le lundi 25 mars..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:80px;resize:vertical;" oninput="renderStoryPreview()">Votre message ici</textarea>
-                  </div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <div class="form-group"><label>Couleur haut</label>
-                      <input type="color" id="story-texte-bg1" value="#e53e3e" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
-                    </div>
-                    <div class="form-group"><label>Couleur bas</label>
-                      <input type="color" id="story-texte-bg2" value="#7b0d0d" onchange="renderStoryPreview()" style="height:40px;width:100%;padding:2px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
-                    </div>
-                  </div>
-                </div>
-
-                <!-- FORM BROUILLON -->
-                <div id="story-form-brouillon" style="display:none;flex-direction:column;gap:10px;">
-                  <div class="form-group"><label>Choisir un brouillon IA</label>
-                    <select id="story-draft-select" onchange="renderStoryPreview()">
-                      <option value="">-- Aucun brouillon --</option>
-                    </select>
-                  </div>
-                  <div style="font-size:12px;color:var(--text-muted);padding:8px;background:#f8fafc;border-radius:8px;">
-                    💡 Les brouillons sont ceux sauvegardés dans l'onglet <b>Captions</b> ou <b>Idées Stock</b>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-            <button class="btn btn-primary" onclick="downloadStory()" style="padding:14px;font-size:15px;">
-              📥 Télécharger la Story (1080×1920)
-            </button>
-            <div style="font-size:11px;color:var(--text-muted);text-align:center;line-height:1.6;">
-              Format Instagram Story · PNG haute qualité<br>Postez-la directement depuis votre téléphone
-            </div>
-          </div>
-
-          <!-- Panneau droit : aperçu canvas -->
-          <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
-            <div class="card-header" style="width:100%;"><div class="card-title">👁️ Aperçu</div></div>
-            <div style="position:relative;border:2px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-              <canvas id="story-preview-canvas" style="display:block;width:270px;height:480px;"></canvas>
-            </div>
-            <div style="font-size:11px;color:var(--text-muted);">Aperçu · Taille réelle : 1080×1920 px</div>
-          </div>
-
-        </div>
-      </div>
-      <!-- FIN TAB STORIES -->
-      <div id="ig-tab-responses" style="display:none;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-          <div class="card">
-            <div class="card-header"><div class="card-title">💬 Répondre à un commentaire</div></div>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div class="form-group"><label>Commentaire reçu *</label>
-                <textarea id="ig-comment" placeholder="ex: C'est quoi le tarif pour une réparation écran iPhone 12 ?" style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:110px;resize:vertical;"></textarea>
-              </div>
-              <div class="form-group"><label>Type de commentaire</label>
-                <select id="ig-response-context">
-                  <option value="Commentaire positif ou compliment client">😊 Commentaire positif</option>
-                  <option value="Demande de prix ou d informations sur un produit ou service">💬 Demande d'information / prix</option>
-                  <option value="Reclamation ou avis negatif insatisfaction">😠 Réclamation / avis négatif</option>
-                  <option value="Question technique sur une reparation smartphone">🔧 Question technique réparation</option>
-                  <option value="Interet pour un smartphone reconditionne en vente">📱 Intérêt pour un produit</option>
-                  <option value="Demande de disponibilite ou d horaires">🕐 Disponibilité / horaires</option>
-                </select>
-              </div>
-              <button class="btn btn-primary" id="ig-resp-btn" onclick="generateResponse()" style="padding:12px;">💬 Générer les réponses avec IA</button>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header"><div class="card-title">✉️ Réponses suggérées</div></div>
-            <div id="ig-response-result" style="color:var(--text-muted);text-align:center;padding:40px 16px;line-height:1.8;">
-              Entrez un commentaire<br>et cliquez sur <b style="color:var(--text);">Générer</b>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- FIN TAB RESPONSES -->
-
-      <!-- TAB : GOOGLE MY BUSINESS -->
-      <div id="ig-tab-gmb" style="display:none;">
-
-        <!-- Lien rapide GMB -->
-        <div style="background:linear-gradient(135deg,rgba(66,133,244,0.12),rgba(52,168,83,0.08));border:1px solid rgba(66,133,244,0.3);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <div style="font-size:32px;">📍</div>
-            <div>
-              <div style="font-weight:700;font-size:15px;color:var(--text);">Solution Phone — Mâcon</div>
-              <div style="font-size:12px;color:var(--text-muted);">Gérez votre fiche Google directement</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="https://business.google.com/" target="_blank" class="btn btn-sm" style="border-color:#4285f4;color:#4285f4;text-decoration:none;">🖥️ Tableau de bord GMB</a>
-            <a href="https://www.google.com/maps/search/Solution+Phone+Macon" target="_blank" class="btn btn-sm" style="border-color:#34a853;color:#34a853;text-decoration:none;">⭐ Voir les avis</a>
-          </div>
-        </div>
-
-        <!-- STATS LIENS DIRECTS -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:18px;">
-          <a href="https://business.google.com/dashboard" target="_blank" style="text-decoration:none;">
-            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(66,133,244,0.3);transition:.2s;" onmouseover="this.style.borderColor='#4285f4'" onmouseout="this.style.borderColor='rgba(66,133,244,0.3)'">
-              <div style="font-size:28px;margin-bottom:6px;">👁️</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);">Vues & Impressions</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Combien voient votre fiche</div>
-              <div style="font-size:10px;color:#4285f4;margin-top:6px;">Ouvrir dans Google →</div>
-            </div>
-          </a>
-          <a href="https://business.google.com/dashboard" target="_blank" style="text-decoration:none;">
-            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(52,168,83,0.3);transition:.2s;" onmouseover="this.style.borderColor='#34a853'" onmouseout="this.style.borderColor='rgba(52,168,83,0.3)'">
-              <div style="font-size:28px;margin-bottom:6px;">📞</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);">Appels & Clics</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Appels depuis Google</div>
-              <div style="font-size:10px;color:#34a853;margin-top:6px;">Ouvrir dans Google →</div>
-            </div>
-          </a>
-          <a href="https://business.google.com/reviews" target="_blank" style="text-decoration:none;">
-            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(251,188,4,0.3);transition:.2s;" onmouseover="this.style.borderColor='#fbbc04'" onmouseout="this.style.borderColor='rgba(251,188,4,0.3)'">
-              <div style="font-size:28px;margin-bottom:6px;">⭐</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);">Gérer les avis</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Répondre aux avis</div>
-              <div style="font-size:10px;color:#fbbc04;margin-top:6px;">Ouvrir dans Google →</div>
-            </div>
-          </a>
-          <a href="https://business.google.com/posts" target="_blank" style="text-decoration:none;">
-            <div class="card" style="text-align:center;padding:16px;cursor:pointer;border-color:rgba(234,67,53,0.3);transition:.2s;" onmouseover="this.style.borderColor='#ea4335'" onmouseout="this.style.borderColor='rgba(234,67,53,0.3)'">
-              <div style="font-size:28px;margin-bottom:6px;">📝</div>
-              <div style="font-size:13px;font-weight:700;color:var(--text);">Mes posts Google</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Voir & publier des posts</div>
-              <div style="font-size:10px;color:#ea4335;margin-top:6px;">Ouvrir dans Google →</div>
-            </div>
-          </a>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-        <!-- MODULE AVIS GOOGLE — Gestion automatisée IA                    -->
-        <!-- ═══════════════════════════════════════════════════════════════ -->
-
-        <!-- ═══ HEADER ═══ -->
-        <header class="ag-header">
-          <div>
-            <div class="ag-eyebrow">// AVIS GOOGLE v27</div>
-            <h1 class="ag-title" style="font-size:32px;">Avis Google.</h1>
-            <p class="ag-subtitle">Surveilles. Brouillons par l'IA. Publies en 1 clic.</p>
-          </div>
-          <div class="ag-header-actions">
-            <button class="ag-btn ag-btn-ghost" onclick="AvisGoogle.refresh()">
-              <span class="ag-dot"></span> Actualiser
-            </button>
-            <button class="ag-btn ag-btn-ghost" onclick="AvisGoogle.openConfig()">&#9881;</button>
-          </div>
-        </header>
-
-        <!-- ═══ SELECTEUR MAGASIN ═══ -->
-        <div id="ag-location-bar" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
-          <button class="ag-filter active" data-loc="all" onclick="AvisGoogle.setLocation('all')">Tous les magasins</button>
-        </div>
-
-        <!-- ═══ STATS ═══ -->
-        <div class="ag-stats" id="ag-stats">
-          <div class="ag-stat">
-            <div class="ag-stat-label">Note moyenne</div>
-            <div class="ag-stat-value"><span id="ag-avg">&mdash;</span><span class="ag-stat-unit">/5</span></div>
-          </div>
-          <div class="ag-stat">
-            <div class="ag-stat-label">Total avis</div>
-            <div class="ag-stat-value" id="ag-count">&mdash;</div>
-          </div>
-          <div class="ag-stat">
-            <div class="ag-stat-label">Taux de reponse</div>
-            <div class="ag-stat-value"><span id="ag-reply-rate">&mdash;</span><span class="ag-stat-unit">%</span></div>
-          </div>
-          <div class="ag-stat ag-stat-alert">
-            <div class="ag-stat-label">En attente</div>
-            <div class="ag-stat-value" id="ag-pending">&mdash;</div>
-          </div>
-        </div>
-
-        <!-- ═══ FILTRES ═══ -->
-        <nav class="ag-filters">
-          <button class="ag-filter active" data-filter="all">Tous</button>
-          <button class="ag-filter" data-filter="pending">A repondre</button>
-          <button class="ag-filter" data-filter="draft">Brouillons IA</button>
-          <button class="ag-filter" data-filter="published">Publies</button>
-          <button class="ag-filter" data-filter="negative">Negatifs</button>
-        </nav>
-
-        <!-- ═══ LISTE DES AVIS ═══ -->
-        <div id="ag-list" class="ag-list">
-          <div class="ag-empty">Chargement...</div>
-        </div>
-
-        <!-- ═══ MODALE CONFIG ═══ -->
-        <div id="ag-config-modal" class="ag-modal" style="display:none;">
-          <div class="ag-modal-body">
-            <header class="ag-modal-header">
-              <div>
-                <div class="ag-eyebrow">// CONFIGURATION</div>
-                <h2>Parametres module.</h2>
-              </div>
-              <button class="ag-btn-close" onclick="AvisGoogle.closeConfig()">&times;</button>
-            </header>
-            <div class="ag-config-grid">
-              <label>
-                Seuil publication auto
-                <select id="ag-cfg-autopublish">
-                  <option value="5">5 etoiles uniquement</option>
-                  <option value="4" selected>4 etoiles et +</option>
-                  <option value="99">Jamais (validation manuelle)</option>
-                </select>
-              </label>
-              <label>
-                Seuil alerte SMS
-                <select id="ag-cfg-smsalert">
-                  <option value="0">Desactive</option>
-                  <option value="1">1 etoile uniquement</option>
-                  <option value="2">2 etoiles et -</option>
-                  <option value="3" selected>3 etoiles et -</option>
-                </select>
-              </label>
-              <label>
-                Numero SMS (gerant)
-                <input type="tel" id="ag-cfg-smsphone" placeholder="07 83 92 18 84">
-              </label>
-              <label class="ag-label-full">
-                Prompt Claude (voix Solution Phone)
-                <textarea id="ag-cfg-prompt" rows="12"></textarea>
-              </label>
-            </div>
-            <footer class="ag-modal-footer">
-              <button class="ag-btn ag-btn-ghost" onclick="AvisGoogle.closeConfig()">Annuler</button>
-              <button class="ag-btn ag-btn-primary" onclick="AvisGoogle.saveConfig()">Enregistrer</button>
-            </footer>
-          </div>
-        </div>
-
-        <hr style="border:none;border-top:1px solid var(--border);margin:32px 0;">
-
-        <!-- ═══ OUTILS MANUELS (existants) ═══ -->
-        <div style="margin-bottom:12px;font-size:13px;color:var(--text-muted);letter-spacing:0.05em;text-transform:uppercase;">Outils manuels</div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
-
-          <!-- COLONNE GAUCHE : Reponses aux avis -->
-          <div style="display:flex;flex-direction:column;gap:14px;">
-            <div class="card">
-              <div class="card-header"><div class="card-title">Repondre a un avis Google</div></div>
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="form-group">
-                  <label>Note de l'avis</label>
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                    <button class="btn btn-sm" id="gmb-star-5" onclick="setGmbStars(5)" style="border-color:#f39c12;color:#f39c12;">5</button>
-                    <button class="btn btn-sm" id="gmb-star-4" onclick="setGmbStars(4)">4</button>
-                    <button class="btn btn-sm" id="gmb-star-3" onclick="setGmbStars(3)">3</button>
-                    <button class="btn btn-sm" id="gmb-star-bad" onclick="setGmbStars(1)">2 ou moins</button>
-                  </div>
-                  <input type="hidden" id="gmb-stars" value="5">
-                </div>
-                <div class="form-group">
-                  <label>Contenu de l'avis *</label>
-                  <textarea id="gmb-avis-text" placeholder="ex: Super boutique, reparation rapide et efficace, je recommande !" style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:100px;resize:vertical;"></textarea>
-                </div>
-                <div class="form-group">
-                  <label>Prenom du client (si visible)</label>
-                  <input type="text" id="gmb-avis-prenom" placeholder="ex: Marie, Thomas...">
-                </div>
-                <button class="btn btn-primary" id="gmb-rep-btn" onclick="generateGmbResponse()" style="padding:12px;">
-                  Generer la reponse avec l'IA
-                </button>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-header">
-                <div class="card-title">Reponses sauvegardees</div>
-                <button class="btn btn-sm" onclick="renderGmbSaved()">Rafraichir</button>
-              </div>
-              <div id="gmb-saved-list">
-                <div style="color:var(--text-muted);text-align:center;padding:16px;font-size:13px;">Aucune reponse sauvegardee</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- COLONNE DROITE : Resultat + Posts GMB -->
-          <div style="display:flex;flex-direction:column;gap:14px;">
-            <div class="card">
-              <div class="card-header"><div class="card-title">Reponse generee</div></div>
-              <div id="gmb-response-result" style="color:var(--text-muted);text-align:center;padding:30px;line-height:1.8;font-size:13px;">
-                Entrez un avis et cliquez<br>sur <b style="color:var(--text);">Generer</b>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-header"><div class="card-title">Creer un post Google</div></div>
-              <div style="display:flex;flex-direction:column;gap:10px;">
-                <div class="form-group">
-                  <label>Type de post</label>
-                  <select id="gmb-post-type">
-                    <option value="Nouveaute">Nouveaute / Arrivage</option>
-                    <option value="Offre speciale">Offre speciale</option>
-                    <option value="Reparation">Prestation reparation</option>
-                    <option value="Evenement">Evenement / Info boutique</option>
-                    <option value="QualiRepar">Label QualiRepar</option>
-                    <option value="Conseil">Conseil / Astuce</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Details (optionnel)</label>
-                  <textarea id="gmb-post-details" placeholder="ex: iPhone 15 128Go Grade A a 549 EUR arrive ce matin..." style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;width:100%;height:70px;resize:vertical;"></textarea>
-                </div>
-                <button class="btn btn-primary" id="gmb-post-btn" onclick="generateGmbPost()" style="padding:11px;">
-                  Generer le post Google
-                </button>
-              </div>
-              <div id="gmb-post-result" style="display:none;margin-top:14px;"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- FIN TAB GMB -->
-    </div><!-- /ig-content -->
-  </div><!-- /page-instagram -->
-
-  <!-- ========== FIN PAGE INSTAGRAM ========== -->
+  <!-- ========== PAGE INSTAGRAM SUPPRIMEE (migree vers Autopilot v2) ========== -->
 
   <!-- ══════════════════════════════════════════════ -->
   <!-- PAGE : SOUS-TRAITANT MOBILAX                -->
@@ -26567,5 +26045,76 @@ var AvisGoogle = (function(){
 })();
 
 </script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     AUTOPILOT v2 + BRAIN · Lazy-load placeholder
+     ════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-autopilot" style="display:none;"></div>
+
+<script>
+(function(){
+  var __apLoaded = false;
+  var __apLoading = null;
+
+  async function loadAutopilotIfNeeded() {
+    if (__apLoaded) return;
+    if (__apLoading) return __apLoading;
+
+    __apLoading = (async function(){
+      try {
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = '/autopilot/autopilot.css?v=' + Date.now();
+        document.head.appendChild(css);
+
+        var htmlRes = await fetch('/autopilot/autopilot.html?v=' + Date.now());
+        if (!htmlRes.ok) throw new Error('autopilot.html ' + htmlRes.status);
+        var html = await htmlRes.text();
+        document.getElementById('page-autopilot').innerHTML = html;
+
+        await new Promise(function(resolve, reject){
+          var s = document.createElement('script');
+          s.src = '/autopilot/autopilot.js?v=' + Date.now();
+          s.onload = resolve;
+          s.onerror = function(){ reject(new Error('autopilot.js failed')); };
+          document.body.appendChild(s);
+        });
+
+        __apLoaded = true;
+        console.log('[Autopilot] module chargé');
+      } catch (e) {
+        console.error('[Autopilot] load error:', e);
+        document.getElementById('page-autopilot').innerHTML =
+          '<div style="padding:40px;text-align:center;color:#ef4444;">' +
+          '<h2>Erreur chargement Autopilot</h2>' +
+          '<p>' + e.message + '</p>' +
+          '<p style="font-size:13px;color:#888;">Recharge la page (Ctrl+Shift+R) ou contacte le support.</p>' +
+          '</div>';
+      }
+    })();
+
+    return __apLoading;
+  }
+
+  var _origShowPage = window.showPage;
+  if (typeof _origShowPage === 'function') {
+    window.showPage = function(id, el) {
+      var r = _origShowPage.apply(this, arguments);
+      if (id === 'autopilot') loadAutopilotIfNeeded();
+      return r;
+    };
+  }
+
+  var _origShowPageMobile = window.showPageMobile;
+  if (typeof _origShowPageMobile === 'function') {
+    window.showPageMobile = function(id, btn) {
+      var r = _origShowPageMobile.apply(this, arguments);
+      if (id === 'autopilot') loadAutopilotIfNeeded();
+      return r;
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
