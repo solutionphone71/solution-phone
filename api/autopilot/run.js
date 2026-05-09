@@ -159,32 +159,17 @@ TON RÔLE
 Chaque run, tu observes le contexte business (caisses récentes, stock, avis, etc.) et tu DÉCIDES quelles actions prendre.
 Tu ne fais que PROPOSER des décisions. Sébastien valide ensuite par 1-clic.
 
-FORMAT DE RÉPONSE — STRICT
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant/après, sans markdown :
+RÈGLES POUR TES DÉCISIONS
+- Tu dois APPELER l'outil 'propose_decisions' avec tes décisions structurées.
+- Maximum 5 décisions par run, mais propose au moins 1 si tu vois quelque chose à faire.
+- Confidence entre 0.5 et 0.95 (jamais 1.0).
+- Évite les doublons avec posts_7d et pending_decisions.
+- Pour les posts : payload doit contenir caption, platforms, media_hint.
+- Pour les réponses aux avis : type 'reply_review' avec payload.review_id + payload.reply_text.
+- Pour SMS : type 'sms' avec payload.client_phone, payload.client_name, payload.message.
+- Si vraiment rien à faire, retourne decisions: [] avec thoughts qui explique pourquoi.
 
-{
-  "thoughts": "Ton raisonnement en 2-3 phrases. Direct et concret.",
-  "decisions": [
-    {
-      "type": "post" | "reel" | "sms" | "reply_review" | "noop",
-      "reasoning": "Pourquoi cette action en 1 phrase",
-      "confidence": 0.85,
-      "payload": {
-        "caption": "Le texte du post (max 2200 caractères, voix de marque)",
-        "platforms": {"instagram": true, "facebook": true, "gbp": false},
-        "media_hint": "Description du visuel à utiliser, ou ID média existant"
-      }
-    }
-  ]
-}
-
-RÈGLES
-- Maximum 5 décisions par run
-- Si rien à proposer, retourne {"thoughts": "...", "decisions": []}
-- Confidence entre 0.5 et 0.95 (jamais 1.0)
-- Évite les doublons avec posts_7d et pending_decisions
-- Pour les réponses aux avis : type "reply_review" avec payload.review_id et payload.reply_text
-- Pour SMS : type "sms" avec payload.client_phone, payload.client_name, payload.message
+NE FAIS PAS DE TEXTE LIBRE. Appelle directement l'outil 'propose_decisions'.
 `;
 }
 
@@ -222,17 +207,27 @@ Réponds UNIQUEMENT en JSON strict (pas de markdown, pas de texte autour).`;
 // ──────────────────────────────────────────────────────────
 
 function parseClaudeResponse(claudeData) {
-  if (!claudeData.content || !claudeData.content[0]) {
+  if (!claudeData.content || !claudeData.content.length) {
     return { thoughts: '(réponse vide)', decisions: [] };
   }
-  let text = claudeData.content[0].text || '';
 
-  // Nettoyage : enlever ```json ... ``` si présent
-  text = text.trim();
+  // Avec tool_use, Claude renvoie un bloc type='tool_use' avec input structuré
+  const toolUse = claudeData.content.find(c => c.type === 'tool_use');
+  if (toolUse && toolUse.input) {
+    return {
+      thoughts: toolUse.input.thoughts || '',
+      decisions: Array.isArray(toolUse.input.decisions) ? toolUse.input.decisions : []
+    };
+  }
+
+  // Fallback : essayer de parser le texte (au cas où Claude ne fait pas tool_use)
+  const textBlock = claudeData.content.find(c => c.type === 'text');
+  if (!textBlock) return { thoughts: '(pas de réponse exploitable)', decisions: [] };
+
+  let text = (textBlock.text || '').trim();
   if (text.startsWith('```')) {
     text = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
   }
-
   try {
     const parsed = JSON.parse(text);
     return {
@@ -240,9 +235,8 @@ function parseClaudeResponse(claudeData) {
       decisions: Array.isArray(parsed.decisions) ? parsed.decisions : []
     };
   } catch (e) {
-    console.error('Parse JSON failed:', e.message, 'Raw:', text.substring(0, 500));
     return {
-      thoughts: '(parse error: ' + e.message + ') Raw: ' + text.substring(0, 200),
+      thoughts: '(parse error fallback) Raw: ' + text.substring(0, 200),
       decisions: []
     };
   }
@@ -314,7 +308,65 @@ export default async function handler(req, res) {
     const systemPrompt = buildSystemPrompt(ctx.memory || {});
     const userMessage = buildUserMessage(ctx);
 
-    // ─── 5. Appel Claude ───
+    // ─── 5. Appel Claude avec TOOL USE (force la structure JSON) ───
+    const tool = {
+      name: 'propose_decisions',
+      description: 'Propose 0 à 5 décisions d\'actions concrètes pour le business Solution Phone aujourd\'hui',
+      input_schema: {
+        type: 'object',
+        properties: {
+          thoughts: {
+            type: 'string',
+            description: 'Ton raisonnement business en 2-4 phrases concrètes'
+          },
+          decisions: {
+            type: 'array',
+            maxItems: 5,
+            items: {
+              type: 'object',
+              properties: {
+                type: {
+                  type: 'string',
+                  enum: ['post', 'reel', 'sms', 'reply_review', 'noop']
+                },
+                reasoning: {
+                  type: 'string',
+                  description: 'Pourquoi cette action en 1 phrase'
+                },
+                confidence: {
+                  type: 'number',
+                  minimum: 0.5,
+                  maximum: 0.95
+                },
+                payload: {
+                  type: 'object',
+                  properties: {
+                    caption: { type: 'string' },
+                    platforms: {
+                      type: 'object',
+                      properties: {
+                        instagram: { type: 'boolean' },
+                        facebook: { type: 'boolean' },
+                        gbp: { type: 'boolean' }
+                      }
+                    },
+                    media_hint: { type: 'string' },
+                    client_phone: { type: 'string' },
+                    client_name: { type: 'string' },
+                    message: { type: 'string' },
+                    review_id: { type: 'string' },
+                    reply_text: { type: 'string' }
+                  }
+                }
+              },
+              required: ['type', 'reasoning', 'confidence']
+            }
+          }
+        },
+        required: ['thoughts', 'decisions']
+      }
+    };
+
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -326,6 +378,8 @@ export default async function handler(req, res) {
         model: CLAUDE_MODEL,
         max_tokens: MAX_TOKENS,
         system: systemPrompt,
+        tools: [tool],
+        tool_choice: { type: 'tool', name: 'propose_decisions' },
         messages: [{ role: 'user', content: userMessage }]
       })
     });
