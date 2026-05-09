@@ -5123,18 +5123,31 @@ function initRealtime() {
       var p = await supaFetch('phones','GET',null,'?order=id.asc');
       if (p) {
         var fromSupa = p.map(function(x){return{id:x.id,modele:x.modele,stockage:x.stockage,grade:x.grade,batterie:x.batterie,imei:x.imei,achat:Number(x.achat),vente:Number(x.vente),mode:x.mode,dateAchat:x.date_achat,couleur:x.couleur||'',etat:x.etat,dateVente:x.date_vente,numPolice:x.num_police,vendeurNom:x.vendeur_nom||'',vendeurAdresse:x.vendeur_adresse||'',vendeurCI:x.vendeur_ci||'',vendeurCIDate:x.vendeur_ci_date||'',typeAchat:x.type_achat||'PARTICULIER',fournisseur:x.fournisseur||'',photo_face:x.photo_face||'',photo_dos:x.photo_dos||'',modeVente:x.mode_vente||null,isReprise:x.is_reprise||false,repriseAmount:Number(x.reprise_amount)||0,repriseModele:x.reprise_modele||'',reprisePhoneId:x.reprise_phone_id||null,repriseFromVente:x.reprise_from_vente||null,repriseFromModele:x.reprise_from_modele||'',clientNom:x.client_nom||'',clientAdresse:x.client_adresse||'',clientCP:x.client_cp||'',clientVille:x.client_ville||''};});
-        // ── MERGE: préserver les téléphones locaux non encore synchronisés (id Date.now() >= 100000) ──
-        var supaIds = {}; fromSupa.forEach(function(ph){ supaIds[ph.id] = true; });
-        var supaImeis = {}; fromSupa.forEach(function(ph){ if(ph.imei) supaImeis[ph.imei] = true; });
-        var pendingLocal = phones.filter(function(p){
-          // Garder les phones non synchros : ID temporaire (Date.now) ou flag _pendingSync, ET pas déjà présents en Supabase via IMEI
-          if(p._pendingSync) return !(p.imei && supaImeis[p.imei]);
-          if(p.id >= 100000) return !(p.imei && supaImeis[p.imei]);
+        // ── MERGE: préserver les téléphones locaux non encore synchronisés ──
+        // 2 cas: (a) nouveau phone pas encore dans Supabase (POST échoué/pendant)
+        //        (b) phone existant dont le PATCH a échoué (ex: marquerVendu, marquerReparation)
+        //            → dans ce cas il faut REMPLACER la version Supabase par la version locale, pas juste l'ajouter.
+        var pendingLocalAll = phones.filter(function(p){
+          if(p._pendingSync) return true;          // changement non synchro à préserver
+          if(p.id >= 100000) return true;          // nouveau téléphone pas encore en Supabase
           return false;
         });
-        phones = fromSupa.concat(pendingLocal);
-        if(pendingLocal.length){
-          console.warn('[Sync 90s] '+pendingLocal.length+' téléphone(s) en attente de synchro préservés:', pendingLocal.map(function(p){return p.modele;}).join(', '));
+        // Pour les pending dont l'imei OU l'id existe déjà en Supabase, on retire la version Supabase
+        // pour éviter le doublon (le local gagne — c'est lui qui contient le dernier état VENDU/RESERVE/etc.)
+        var pendingByImei = {}; var pendingById = {};
+        pendingLocalAll.forEach(function(p){
+          if(p.imei) pendingByImei[p.imei] = true;
+          pendingById[p.id] = true;
+        });
+        var fromSupaFiltered = fromSupa.filter(function(s){
+          if(s.imei && pendingByImei[s.imei]) return false;
+          if(pendingById[s.id]) return false;
+          return true;
+        });
+        phones = fromSupaFiltered.concat(pendingLocalAll);
+        if(pendingLocalAll.length){
+          console.warn('[Sync 90s] '+pendingLocalAll.length+' téléphone(s) avec changement local préservés:',
+            pendingLocalAll.map(function(p){return p.modele+'('+p.etat+')';}).join(', '));
         }
         try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
         renderPhones(); renderDashboard();
@@ -8586,7 +8599,7 @@ function updateRepriseRecap(){
   }
 }
 
-function finaliserVente(repriseData){
+async function finaliserVente(repriseData){
   if(!_venteEnCours) return;
   var p = phones.find(function(x){return x.id===_venteEnCours.phoneId;});
   if(!p) return;
@@ -8602,10 +8615,13 @@ function finaliserVente(repriseData){
   confMsg += '\nNet encaissé : '+netEncaisse+'€ ('+mode+')';
   if(!confirm(confMsg)) return;
 
+  _syncDirty = true; // bloque la synchro 90s pendant l'opération
+
   // ── Marquer comme vendu ──
   p.etat='VENDU';
   p.dateVente=new Date().toISOString().split('T')[0];
   p.modeVente = mode;
+  p._pendingSync = true; // protège contre l'écrasement par la synchro 90s tant que pas confirmé Supabase
   var venteSplit = venteGetSplitPayments();
   if(venteSplit) p.splitPayment = venteSplit;
 
@@ -8626,7 +8642,14 @@ function finaliserVente(repriseData){
     p.reprisePhoneId = repriseData.newPhoneId || null;
   }
 
-  savePhone(p);
+  // Backup local IMMÉDIAT avant tout appel réseau
+  try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+
+  // Sauvegarde Supabase EN ATTENTE (fiable maintenant)
+  var saved = await savePhone(p);
+  if(!saved){
+    console.warn('[finaliserVente] Vente non synchronisée Supabase — '+p.modele+' marqué _pendingSync=true');
+  }
 
   // Smartphones occasion : PAS dans la caisse principale (caisse = Phonilab uniquement)
   // Le CA occasion est calculé séparément depuis phones[] dans le dashboard
