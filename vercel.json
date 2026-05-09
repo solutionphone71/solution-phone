@@ -10,7 +10,10 @@
     { "source": "/api/google-reviews-config", "destination": "/api/google-reviews.js"  }
   ],
   "crons": [
-    { "path": "/api/cron-reviews", "schedule": "0 9 * * *" }
+    { "path": "/api/cron-reviews", "schedule": "0 9 * * *" },
+    { "path": "/api/autopilot/run?type=morning", "schedule": "0 8 * * *" },
+    { "path": "/api/autopilot/run?type=evening", "schedule": "0 19 * * *" },
+    { "path": "/api/autopilot/run?type=weekly",  "schedule": "0 18 * * 0" }
   ],
   "headers": [
     {
