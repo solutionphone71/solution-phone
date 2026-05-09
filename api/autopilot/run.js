@@ -116,6 +116,16 @@ async function collectContext() {
     );
   } catch (e) { ctx.fresh_media = []; }
 
+  // Calendrier éditorial : 30 prochains jours (planning long-terme)
+  try {
+    const todayStr = today.toISOString().split('T')[0];
+    const in30 = new Date(today.getTime() + 30*24*3600*1000).toISOString().split('T')[0];
+    ctx.upcoming_planning = await supaQuery(
+      'calendrier_editorial', 'GET', null,
+      `?date=gte.${todayStr}&date=lte.${in30}&order=date.asc&limit=20`
+    );
+  } catch (e) { ctx.upcoming_planning = []; }
+
   // Date / contexte temporel
   const fr = new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -196,6 +206,11 @@ ${JSON.stringify((ctx.pending_decisions || []).map(d => ({type: d.type, reasonin
 ═══ MÉDIAS FRAIS ═══
 ${(ctx.fresh_media || []).length} non utilisés récemment :
 ${JSON.stringify((ctx.fresh_media || []).map(m => ({id: m.id, category: m.category, type: m.media_type})), null, 2)}
+
+═══ CALENDRIER ÉDITORIAL · 30 JOURS À VENIR ═══
+${(ctx.upcoming_planning || []).length} contenu(s) planifié(s) par Sébastien :
+${JSON.stringify((ctx.upcoming_planning || []).map(p => ({date: p.date, type: p.type, titre: p.titre, statut: p.statut})), null, 2)}
+(Tu peux les compléter mais ne les contredis PAS — c'est la stratégie long-terme.)
 
 INSTRUCTION
 Analyse ce contexte et propose 0 à 5 décisions concrètes pour aujourd'hui.
@@ -417,72 +432,4 @@ export default async function handler(req, res) {
     const cost = calcCost(usage);
     const durationMs = Date.now() - startedAt;
 
-    await supaQuery('agent_runs', 'PATCH', {
-      status: insertedCount > 0 ? 'success' : (decisions.length === 0 ? 'success' : 'partial'),
-      thoughts: thoughts,
-      context_observed: {
-        caisses_24h_count: ctx.caisses_24h?.length || 0,
-        stock_phones_count: ctx.stock_phones?.length || 0,
-        posts_7d_count: ctx.posts_7d?.length || 0,
-        pending_decisions_count: ctx.pending_decisions?.length || 0
-      },
-      decisions_count: decisions.length,
-      decisions_pending: insertedCount,
-      decisions_executed: 0,
-      decisions_failed: decisions.length - insertedCount,
-      cost_eur: cost,
-      tokens_input: usage.input_tokens || 0,
-      tokens_output: usage.output_tokens || 0,
-      tokens_cached: usage.cache_read_input_tokens || 0,
-      duration_ms: durationMs,
-      completed_at: nowIso()
-    }, `?id=eq.${runId}`);
-
-    // ─── 9. Log ───
-    await supaQuery('social_logs', 'POST', {
-      level: 'auto',
-      source: 'agent',
-      message: `Run ${runType} OK · ${insertedCount} décision(s) · ${cost}€ · ${(durationMs/1000).toFixed(1)}s`,
-      metadata: { run_id: runId, type: runType }
-    }).catch(() => {});
-
-    return res.status(200).json({
-      success: true,
-      run_id: runId,
-      type: runType,
-      decisions_count: decisions.length,
-      decisions_pending: insertedCount,
-      cost_eur: cost,
-      duration_ms: durationMs,
-      thoughts: thoughts.substring(0, 500)
-    });
-
-  } catch (err) {
-    console.error('Autopilot run error:', err);
-
-    // Marquer le run comme failed
-    if (runId) {
-      try {
-        await supaQuery('agent_runs', 'PATCH', {
-          status: 'failed',
-          error_log: err.message,
-          duration_ms: Date.now() - startedAt,
-          completed_at: nowIso()
-        }, `?id=eq.${runId}`);
-
-        await supaQuery('social_logs', 'POST', {
-          level: 'err',
-          source: 'agent',
-          message: `Run ${runType} FAILED: ${err.message.substring(0, 200)}`,
-          metadata: { run_id: runId }
-        }).catch(() => {});
-      } catch (e) { /* ignore */ }
-    }
-
-    return res.status(500).json({
-      success: false,
-      error: err.message,
-      run_id: runId
-    });
-  }
-}
+    await supaQuery

@@ -17,6 +17,7 @@ qui doit exister dans index.html (placeholder).
   <button class="ap-sub-btn" data-sub="briefing">📊 Briefing</button>
   <button class="ap-sub-btn" data-sub="queue">⚡ Validation</button>
   <button class="ap-sub-btn" data-sub="memory">📓 Mémoire</button>
+  <button class="ap-sub-btn" data-sub="planning">📅 Planning</button>
   <button class="ap-sub-btn" data-sub="media">📸 Médias</button>
   <button class="ap-sub-btn" data-sub="config">⚙ Config</button>
 </div>
@@ -211,6 +212,95 @@ qui doit exister dans index.html (placeholder).
 
 </div>
 
+
+
+<!-- ──────────── VIEW : PLANNING ──────────── -->
+<div id="ap-view-planning" class="ap-view">
+
+  <header class="ap-header">
+    <div class="ap-meta-line">
+      <span><span class="ap-live-dot"></span>CALENDRIER LIVE</span>
+      <span id="ap-planning-month-label">—</span>
+    </div>
+    <h1 class="ap-h1">Planning <span class="ap-accent">📅</span></h1>
+    <p class="ap-tagline">Tes contenus planifiés · l'agent en tient compte</p>
+  </header>
+
+  <!-- Stats du mois -->
+  <div class="ap-planning-stats" id="ap-planning-stats"></div>
+
+  <!-- Actions -->
+  <div class="ap-planning-actions">
+    <button class="ap-btn ap-btn-primary" onclick="SP_AUTOPILOT.openPlanningAdd()">
+      + Ajouter un contenu
+    </button>
+    <button class="ap-btn" onclick="SP_AUTOPILOT.prevPlanningMonth()">← Mois précédent</button>
+    <button class="ap-btn" onclick="SP_AUTOPILOT.nextPlanningMonth()">Mois suivant →</button>
+  </div>
+
+  <!-- Grille calendrier -->
+  <div class="ap-planning-grid-wrap">
+    <div class="ap-planning-grid-header">
+      <div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+    </div>
+    <div class="ap-planning-grid" id="ap-planning-grid"></div>
+  </div>
+
+  <!-- Liste à venir -->
+  <div class="ap-section-header">
+    <h2>À venir</h2>
+    <span class="ap-tag">// QUEUE</span>
+  </div>
+  <div id="ap-planning-list"></div>
+
+  <!-- Modal ajout -->
+  <div class="ap-planning-modal" id="ap-planning-modal" style="display:none;">
+    <div class="ap-planning-modal-box">
+      <div class="ap-planning-modal-head">
+        <h3 id="ap-planning-modal-title">Ajouter un contenu</h3>
+        <button class="ap-planning-modal-close" onclick="SP_AUTOPILOT.closePlanningModal()">✕</button>
+      </div>
+      <div class="ap-planning-modal-body">
+        <div class="ap-config-row">
+          <div class="ap-config-label">Date</div>
+          <input type="date" class="ap-config-input" id="ap-pl-date">
+        </div>
+        <div class="ap-config-row">
+          <div class="ap-config-label">Heure</div>
+          <input type="time" class="ap-config-input" id="ap-pl-heure" value="09:00">
+        </div>
+        <div class="ap-config-row">
+          <div class="ap-config-label">Type</div>
+          <select class="ap-config-input" id="ap-pl-type">
+            <option value="reel">🎬 Reel / Vidéo</option>
+            <option value="post">🖼️ Post Image</option>
+            <option value="story">📱 Story</option>
+            <option value="ads">💰 Meta Ads</option>
+            <option value="google">⭐ Google Business</option>
+            <option value="autre">📌 Autre</option>
+          </select>
+        </div>
+        <div class="ap-config-row">
+          <div class="ap-config-label">Titre</div>
+          <input type="text" class="ap-config-input" id="ap-pl-titre" placeholder="Ex: Reel iPhone 14 Pro">
+        </div>
+        <div class="ap-config-row" style="flex-direction:column;align-items:stretch;">
+          <div class="ap-config-label">Légende</div>
+          <textarea class="ap-config-textarea" id="ap-pl-legende" placeholder="Texte du post..."></textarea>
+        </div>
+        <div class="ap-config-row" style="flex-direction:column;align-items:stretch;">
+          <div class="ap-config-label">Notes internes</div>
+          <textarea class="ap-config-textarea" id="ap-pl-notes" style="min-height:80px;" placeholder="Notes..."></textarea>
+        </div>
+      </div>
+      <div class="ap-planning-modal-foot">
+        <button class="ap-btn" onclick="SP_AUTOPILOT.closePlanningModal()">Annuler</button>
+        <button class="ap-btn ap-btn-primary" onclick="SP_AUTOPILOT.savePlanItem()">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <!-- ──────────── VIEW : MÉDIAS ──────────── -->
 <div id="ap-view-media" class="ap-view">

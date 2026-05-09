@@ -29,7 +29,9 @@ var SP_AUTOPILOT = {
     briefingToday: null,
     briefingArchive: [],
     suggestions: [],
-    agentActive: true
+    agentActive: true,
+    planningItems: [],
+    planningCursor: new Date()
   },
   config: {
     refreshIntervalMs: 30000
@@ -217,6 +219,7 @@ SP_AUTOPILOT.showView = function(view) {
   if(view === 'briefing') this.loadBriefing();
   else if(view === 'queue') this.loadQueue();
   else if(view === 'memory') { this.loadRuns(); this.loadMemory(); }
+  else if(view === 'planning') this.loadPlanning();
   else if(view === 'media') this.loadMedia();
   else if(view === 'config') this.loadConfig();
   else if(view === 'dashboard') this.refreshDashboard();
@@ -933,5 +936,170 @@ SP_AUTOPILOT.trackUsage = function(eventType, page, element, metadata) {
 SP_AUTOPILOT.init().catch(function(e){
   console.error('[SP_AUTOPILOT] init failed:', e);
 });
+
+
+
+// ──────────────────────────────────────────────────────────
+// PLANNING (Calendrier éditorial fusionné)
+// ──────────────────────────────────────────────────────────
+SP_AUTOPILOT.loadPlanning = async function() {
+  var cur = this.state.planningCursor;
+  var year = cur.getFullYear();
+  var month = cur.getMonth();
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month + 1, 0);
+  var startStr = firstDay.toISOString().split('T')[0];
+  var endStr = lastDay.toISOString().split('T')[0];
+
+  var items = await this.db('calendrier_editorial', 'GET', null,
+    '?date=gte.' + startStr + '&date=lte.' + endStr + '&order=date.asc,heure.asc');
+  if(!items) items = [];
+  this.state.planningItems = items;
+
+  // Label du mois
+  var monthLabel = cur.toLocaleDateString('fr-FR', {month:'long', year:'numeric'});
+  $('#ap-planning-month-label').textContent = monthLabel.toUpperCase();
+
+  this.renderPlanningStats(items);
+  this.renderPlanningGrid(year, month, items);
+  this.renderPlanningList(items);
+};
+
+SP_AUTOPILOT.renderPlanningStats = function(items) {
+  var counts = {reel:0, post:0, story:0, ads:0, google:0, publie:0};
+  items.forEach(function(it){
+    if(counts[it.type] !== undefined) counts[it.type]++;
+    if(it.statut === 'publie') counts.publie++;
+  });
+  var statsEl = $('#ap-planning-stats');
+  if(!statsEl) return;
+  statsEl.innerHTML =
+    '<div class="ap-planning-stat"><div class="ap-planning-stat-num" style="color:#A855F7;">'+counts.reel+'</div><div class="ap-planning-stat-label">🎬 Reels</div></div>'+
+    '<div class="ap-planning-stat"><div class="ap-planning-stat-num" style="color:var(--ap-cyan);">'+counts.post+'</div><div class="ap-planning-stat-label">🖼️ Posts</div></div>'+
+    '<div class="ap-planning-stat"><div class="ap-planning-stat-num" style="color:var(--ap-amber);">'+counts.story+'</div><div class="ap-planning-stat-label">📱 Stories</div></div>'+
+    '<div class="ap-planning-stat"><div class="ap-planning-stat-num" style="color:var(--ap-red);">'+counts.ads+'</div><div class="ap-planning-stat-label">💰 Ads</div></div>'+
+    '<div class="ap-planning-stat"><div class="ap-planning-stat-num" style="color:var(--ap-green);">'+counts.publie+'</div><div class="ap-planning-stat-label">✅ Publiés</div></div>';
+};
+
+SP_AUTOPILOT.renderPlanningGrid = function(year, month, items) {
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month + 1, 0);
+  // Jour de la semaine (lundi = 0, dimanche = 6)
+  var startWeekday = (firstDay.getDay() + 6) % 7;
+
+  // Group items by date
+  var byDate = {};
+  items.forEach(function(it){
+    if(!byDate[it.date]) byDate[it.date] = [];
+    byDate[it.date].push(it);
+  });
+
+  var todayStr = new Date().toISOString().split('T')[0];
+
+  var html = '';
+  // Cases vides avant le 1er
+  for(var i=0; i<startWeekday; i++){
+    html += '<div class="ap-planning-day empty"></div>';
+  }
+  // Jours du mois
+  for(var d=1; d<=lastDay.getDate(); d++){
+    var dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var dayItems = byDate[dateStr] || [];
+    var isToday = dateStr === todayStr;
+    var miniHtml = dayItems.slice(0,3).map(function(it){
+      var label = it.titre || it.legende || '?';
+      return '<div class="ap-planning-item-mini ' + escHtml(it.type||'autre') + '" title="' + escHtml(label) + '">'+escHtml(label.substring(0,18))+'</div>';
+    }).join('');
+    if(dayItems.length > 3) miniHtml += '<div class="ap-planning-item-mini autre">+'+(dayItems.length-3)+'</div>';
+    html += '<div class="ap-planning-day '+(isToday?'today':'')+'" onclick="SP_AUTOPILOT.openPlanningAdd(\''+dateStr+'\')">'+
+      '<div class="ap-planning-day-num">'+d+'</div>'+
+      '<div class="ap-planning-day-items">'+miniHtml+'</div>'+
+    '</div>';
+  }
+
+  $('#ap-planning-grid').innerHTML = html;
+};
+
+SP_AUTOPILOT.renderPlanningList = function(items) {
+  var todayStr = new Date().toISOString().split('T')[0];
+  var upcoming = items.filter(function(it){ return it.date >= todayStr; });
+
+  if(!upcoming.length) {
+    $('#ap-planning-list').innerHTML = '<div class="ap-feed-empty">Aucun contenu planifié à venir.<br>Clique "+ Ajouter" pour commencer.</div>';
+    return;
+  }
+
+  var emojis = {reel:'🎬', post:'🖼️', story:'📱', ads:'💰', google:'⭐', autre:'📌'};
+  $('#ap-planning-list').innerHTML = upcoming.map(function(it){
+    var dt = new Date(it.date);
+    var dateStr = dt.toLocaleDateString('fr-FR', {weekday:'short', day:'numeric', month:'short'});
+    return '<div class="ap-planning-list-item">'+
+      '<div class="ap-planning-list-date">'+dateStr.toUpperCase()+'<br>'+(it.heure||'')+'</div>'+
+      '<div class="ap-planning-list-type">'+(emojis[it.type]||'📌')+'</div>'+
+      '<div class="ap-planning-list-content">'+
+        '<div class="ap-planning-list-title">'+escHtml(it.titre||'(sans titre)')+'</div>'+
+        '<div class="ap-planning-list-meta">'+escHtml(it.statut||'planifie')+' · '+escHtml((it.legende||'').substring(0,80))+'</div>'+
+      '</div>'+
+      '<button class="ap-btn ap-btn-danger" onclick="SP_AUTOPILOT.deletePlanItem(\''+it.id+'\')">🗑</button>'+
+    '</div>';
+  }).join('');
+};
+
+SP_AUTOPILOT.prevPlanningMonth = function() {
+  this.state.planningCursor.setMonth(this.state.planningCursor.getMonth() - 1);
+  this.loadPlanning();
+};
+SP_AUTOPILOT.nextPlanningMonth = function() {
+  this.state.planningCursor.setMonth(this.state.planningCursor.getMonth() + 1);
+  this.loadPlanning();
+};
+
+SP_AUTOPILOT.openPlanningAdd = function(dateStr) {
+  $('#ap-planning-modal').style.display = 'flex';
+  $('#ap-pl-date').value = dateStr || new Date().toISOString().split('T')[0];
+  $('#ap-pl-heure').value = '09:00';
+  $('#ap-pl-type').value = 'post';
+  $('#ap-pl-titre').value = '';
+  $('#ap-pl-legende').value = '';
+  $('#ap-pl-notes').value = '';
+};
+SP_AUTOPILOT.closePlanningModal = function() {
+  $('#ap-planning-modal').style.display = 'none';
+};
+
+SP_AUTOPILOT.savePlanItem = async function() {
+  var data = {
+    date: $('#ap-pl-date').value,
+    heure: $('#ap-pl-heure').value || '09:00',
+    type: $('#ap-pl-type').value,
+    titre: $('#ap-pl-titre').value.trim() || '(sans titre)',
+    legende: $('#ap-pl-legende').value.trim() || null,
+    notes: $('#ap-pl-notes').value.trim() || null,
+    statut: 'planifie',
+    rappel: true
+  };
+  if(!data.date) { this.toast('Date requise', 'err'); return; }
+
+  try {
+    await this.db('calendrier_editorial', 'POST', data);
+    this.toast('💾 Contenu planifié');
+    this.closePlanningModal();
+    await this.loadPlanning();
+  } catch(e) {
+    this.toast('Erreur : ' + e.message, 'err');
+  }
+};
+
+SP_AUTOPILOT.deletePlanItem = async function(id) {
+  if(!confirm('Supprimer ce contenu planifié ?')) return;
+  try {
+    await this.db('calendrier_editorial', 'DELETE', null, '?id=eq.' + id);
+    this.toast('🗑 Supprimé');
+    await this.loadPlanning();
+  } catch(e) {
+    this.toast('Erreur : ' + e.message, 'err');
+  }
+};
+
 
 })();
