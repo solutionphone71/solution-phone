@@ -17,13 +17,24 @@ export default async function handler(req, res) {
 
   // Tables autorisees (securite: empecher l'acces a des tables sensibles)
   const ALLOWED_TABLES = [
+    // App existante
     'phones', 'clients', 'clients_en_attente', 'factures', 'caisse', 'depenses',
     'reports_mois', 'ecrans_prix', 'batteries_prix', 'prix_reparation_android',
     'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
     'salaries', 'phonilab_import', 'police', 'phones_neufs',
     'bons_depot', 'bons_commande', 'historique_reparations', 'ventes_neufs_access',
     'calendrier_editorial', 'roulette_config', 'roulette_participations',
-    'mobilax'
+    'mobilax',
+    // ── AUTOPILOT v2 + BRAIN (mai 2026) ──
+    'social_posts', 'social_media', 'social_logs', 'avis_requests',
+    'dm_responses', 'social_weekly_stats', 'social_automations',
+    'agent_runs', 'agent_decisions', 'agent_memory',
+    'brain_briefings', 'brain_suggestions', 'brain_kpi_snapshots',
+    'brain_usage_events', 'pennylane_sync',
+    // Vues
+    'v_validation_queue', 'v_agent_today', 'v_agent_7days',
+    'v_brain_today', 'v_brain_active_suggestions', 'v_brain_kpis_7d',
+    'v_brain_friction', 'v_posts_to_publish'
   ];
   if (!ALLOWED_TABLES.includes(table)) {
     return res.status(403).json({ error: 'Table non autorisee: ' + table });
