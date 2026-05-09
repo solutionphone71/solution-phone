@@ -22,7 +22,7 @@ const SUPA_URL = process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_KEY;
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY;
 
-const CLAUDE_MODEL = 'claude-sonnet-4-5';
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
 const MAX_TOKENS = 4000;
 
 // Tarifs Claude Sonnet 4.5 (mai 2025) — pour calcul coût

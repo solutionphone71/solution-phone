@@ -632,15 +632,21 @@ SP_AUTOPILOT.regenerateDecision = async function(id) {
 // ──────────────────────────────────────────────────────────────
 SP_AUTOPILOT.runManual = async function() {
   if(!confirm('Lancer un run manuel de l\'agent maintenant ?')) return;
-  this.toast('⚡ Run en cours...');
+  this.toast('⚡ Run en cours... (peut prendre 10-20 sec)');
   try {
     var res = await fetch('/api/autopilot/run?type=manual', {method:'POST'});
-    if(res.ok) {
-      this.toast('✅ Run lancé');
+    var data = await res.json().catch(function(){ return {error: 'Réponse non-JSON'}; });
+    if(res.ok && data.success) {
+      this.toast('✅ Run OK · ' + (data.decisions_pending||0) + ' décisions · ' + (data.cost_eur||0) + '€');
       setTimeout(function(){ SP_AUTOPILOT.refreshDashboard(); }, 2000);
-    } else { throw new Error('run failed'); }
+    } else {
+      console.error('[SP_AUTOPILOT] Run error:', data);
+      var msg = data.error || 'Erreur inconnue';
+      this.toast('❌ ' + msg.substring(0, 100), 'err');
+    }
   } catch(e) {
-    this.toast('Endpoint non disponible (Phase 2)', 'warn');
+    console.error('[SP_AUTOPILOT] Network error:', e);
+    this.toast('❌ Réseau : ' + e.message, 'err');
   }
 };
 
