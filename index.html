@@ -951,14 +951,112 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       #page-zahira-home .zh-grid {
         position: relative; z-index: 1;
         display: grid;
-        grid-template-columns: 1fr 360px;
-        gap: 24px;
-        padding: 24px;
+        grid-template-columns: 1fr 420px;
+        gap: 20px;
+        padding: 20px;
         min-height: calc(100vh - 80px);
       }
       @media (max-width: 1100px) {
         #page-zahira-home .zh-grid { grid-template-columns: 1fr; }
         #page-zahira-home .zh-right { display: none; }
+      }
+
+      /* ─── CENTER : KPIs + 4 BIG widgets + équipe IA ─── */
+      #page-zahira-home .zh-center { display: flex; flex-direction: column; gap: 20px; }
+      #page-zahira-home .zh-kpis-row {
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+      }
+      #page-zahira-home .zh-kpi-chip {
+        background: rgba(20,20,28,0.7);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex; flex-direction: column; gap: 3px;
+      }
+      #page-zahira-home .zh-kpi-chip .lbl { font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 0.12em; text-transform: uppercase; }
+      #page-zahira-home .zh-kpi-chip .val { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.02em; }
+      #page-zahira-home .zh-kpi-chip .sub { font-size: 10px; color: rgba(255,255,255,0.5); }
+
+      /* 4 BIG OP CARDS (couleurs FLASHY) */
+      #page-zahira-home .zh-ops-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      }
+      #page-zahira-home .zh-op {
+        position: relative;
+        border-radius: 24px;
+        padding: 26px 24px;
+        cursor: pointer;
+        min-height: 180px;
+        display: flex; flex-direction: column; gap: 14px;
+        border: 1.5px solid var(--op-border);
+        overflow: hidden;
+        transition: transform 0.18s, box-shadow 0.18s;
+      }
+      #page-zahira-home .zh-op::before {
+        content: ''; position: absolute; inset: 0;
+        background: var(--op-gradient);
+        z-index: 0;
+      }
+      #page-zahira-home .zh-op::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 60%;
+        background: radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,255,255,0.18), transparent 70%);
+        z-index: 0; pointer-events: none;
+      }
+      #page-zahira-home .zh-op > * { position: relative; z-index: 1; }
+      #page-zahira-home .zh-op:hover {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow: 0 24px 48px -12px var(--op-shadow);
+      }
+      #page-zahira-home .zh-op-icon {
+        width: 52px; height: 52px;
+        display: flex; align-items: center; justify-content: center;
+        color: white;
+        filter: drop-shadow(0 0 12px var(--op-glow)) drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+      }
+      #page-zahira-home .zh-op-icon svg { width: 32px; height: 32px; }
+      #page-zahira-home .zh-op-title {
+        font-family: 'Fraunces', serif;
+        font-size: 22px; font-weight: 800; color: #fff;
+        letter-spacing: -0.02em; line-height: 1.1;
+        margin-top: auto;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      }
+      #page-zahira-home .zh-op-sub {
+        font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85);
+        letter-spacing: 0.06em;
+      }
+      #page-zahira-home .zh-op.repa {
+        --op-gradient: radial-gradient(ellipse 120% 80% at 30% 20%, #5C1F1F 0%, #3A0F0F 60%, #1A0606 100%);
+        --op-border: rgba(255,107,107,0.35); --op-shadow: rgba(255,107,107,0.5); --op-glow: rgba(255,107,107,0.65);
+      }
+      #page-zahira-home .zh-op.mobilax {
+        --op-gradient: radial-gradient(ellipse 120% 80% at 30% 20%, #1A4080 0%, #0C2655 60%, #061330 100%);
+        --op-border: rgba(79,169,255,0.35); --op-shadow: rgba(79,169,255,0.5); --op-glow: rgba(79,169,255,0.65);
+      }
+      #page-zahira-home .zh-op.pieces {
+        --op-gradient: radial-gradient(ellipse 120% 80% at 30% 20%, #1F5C3E 0%, #0E3623 60%, #061A11 100%);
+        --op-border: rgba(111,224,143,0.35); --op-shadow: rgba(111,224,143,0.5); --op-glow: rgba(111,224,143,0.65);
+      }
+      #page-zahira-home .zh-op.accessoires {
+        --op-gradient: radial-gradient(ellipse 120% 80% at 30% 20%, #6B3F0E 0%, #422708 60%, #221305 100%);
+        --op-border: rgba(255,185,77,0.35); --op-shadow: rgba(255,185,77,0.5); --op-glow: rgba(255,185,77,0.65);
+      }
+      #page-zahira-home .zh-op.repa .zh-op-icon { color: #FF6B6B; }
+      #page-zahira-home .zh-op.mobilax .zh-op-icon { color: #4FA9FF; }
+      #page-zahira-home .zh-op.pieces .zh-op-icon { color: #6FE08F; }
+      #page-zahira-home .zh-op.accessoires .zh-op-icon { color: #FFB94D; }
+
+      /* ─── ZAHIRA CHAT ASIDE (à droite, full height) ─── */
+      #page-zahira-home .zh-chat-aside {
+        background: rgba(20,20,28,0.7);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 24px;
+        display: flex; flex-direction: column;
+        overflow: hidden;
+        position: sticky; top: 20px;
+        height: calc(100vh - 120px);
+        max-height: calc(100vh - 120px);
       }
 
       /* CHAT */
@@ -1219,8 +1317,82 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="page active" id="page-zahira-home">
       <div class="zh-grid">
 
-        <!-- CHAT -->
-        <main class="zh-chat">
+        <!-- ═══ CENTER : KPIs + 4 BIG widgets + Équipe IA ═══ -->
+        <main class="zh-center">
+
+          <!-- KPIs strip horizontal -->
+          <div class="zh-kpis-row">
+            <div class="zh-kpi-chip">
+              <div class="lbl">CA Jour</div>
+              <div class="val" id="zh-kpi-ca">—</div>
+              <div class="sub" id="zh-kpi-ca-trend">…</div>
+            </div>
+            <div class="zh-kpi-chip">
+              <div class="lbl">Avis</div>
+              <div class="val" id="zh-kpi-avis">—</div>
+              <div class="sub" id="zh-kpi-avis-trend">…</div>
+            </div>
+            <div class="zh-kpi-chip">
+              <div class="lbl">Stock</div>
+              <div class="val" id="zh-kpi-stock">—</div>
+              <div class="sub">en stock</div>
+            </div>
+            <div class="zh-kpi-chip">
+              <div class="lbl">Queue IA</div>
+              <div class="val" id="zh-kpi-queue" style="color:#FF3B45;">—</div>
+              <div class="sub">à valider</div>
+            </div>
+            <div class="zh-kpi-chip">
+              <div class="lbl">QualiRépar</div>
+              <div class="val" id="zh-kpi-qr">—</div>
+              <div class="sub">ce mois</div>
+            </div>
+          </div>
+
+          <!-- 4 BIG WIDGETS COLORÉS (parcours) -->
+          <div class="zh-ops-grid">
+            <div class="zh-op repa" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('reparation'))">
+              <div class="zh-op-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <div class="zh-op-sub">~ 2 min · QualiRépar inclus</div>
+              <div class="zh-op-title">Réparation<br>interne</div>
+            </div>
+            <div class="zh-op mobilax" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('mobilax'))">
+              <div class="zh-op-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 21V8a2 2 0 0 1 2-2h2V3h10v3h2a2 2 0 0 1 2 2v13"/><line x1="3" y1="21" x2="21" y2="21"/><line x1="9" y1="11" x2="9" y2="17"/><line x1="15" y1="11" x2="15" y2="17"/></svg>
+              </div>
+              <div class="zh-op-sub">Envoi + suivi client</div>
+              <div class="zh-op-title">Sous-traitance<br>Mobilax</div>
+            </div>
+            <div class="zh-op pieces" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('pieces'))">
+              <div class="zh-op-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+              <div class="zh-op-sub">Réparation lendemain</div>
+              <div class="zh-op-title">Commande<br>pièces</div>
+            </div>
+            <div class="zh-op accessoires" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('accessoires'))">
+              <div class="zh-op-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              </div>
+              <div class="zh-op-sub">Coques · verres · câbles</div>
+              <div class="zh-op-title">Commande<br>accessoires</div>
+            </div>
+          </div>
+
+          <!-- Équipe IA -->
+          <div>
+            <div class="zh-section-title" style="margin-bottom:10px;">Équipe IA <span style="color:var(--zh-accent);text-shadow:0 0 8px rgba(255,59,69,0.5);">✦</span></div>
+            <div class="zh-agents" id="zh-agents-list">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
+        </main>
+
+        <!-- ═══ CHAT ZAHIRA À DROITE (full height) ═══ -->
+        <aside class="zh-chat-aside">
           <header class="zh-chat-head">
             <div class="zh-head-avatar">
               <img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
@@ -1242,7 +1414,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
           <div class="zh-composer-wrap">
             <div class="zh-quick">
-              <div class="zh-quick-pill" onclick="zhSend('CA cette semaine')">CA cette semaine</div>
+              <div class="zh-quick-pill" onclick="zhSend('CA cette semaine')">CA semaine</div>
               <div class="zh-quick-pill" onclick="zhSend('Bilan équipe IA')">Bilan équipe</div>
               <div class="zh-quick-pill" onclick="zhSend('3 idées de posts batterie')">3 posts batterie</div>
               <div class="zh-quick-pill" onclick="zhSend('Dossiers QualiRépar à monter')">QualiRépar</div>
@@ -1256,49 +1428,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <button id="zh-send" class="zh-send" aria-label="Envoyer">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
               </button>
-            </div>
-          </div>
-        </main>
-
-        <!-- RIGHT PANEL -->
-        <aside class="zh-right">
-          <div>
-            <div class="zh-section-title" style="margin-bottom:10px;">// KPIs Live</div>
-            <div class="zh-kpi-grid">
-              <div class="zh-kpi full"><div class="zh-kpi-lbl">CA Jour</div><div class="zh-kpi-val" id="zh-kpi-ca">—</div><div class="zh-kpi-trend" id="zh-kpi-ca-trend">…</div></div>
-              <div class="zh-kpi"><div class="zh-kpi-lbl">Avis</div><div class="zh-kpi-val" id="zh-kpi-avis">—</div><div class="zh-kpi-trend" id="zh-kpi-avis-trend">…</div></div>
-              <div class="zh-kpi"><div class="zh-kpi-lbl">Stock</div><div class="zh-kpi-val" id="zh-kpi-stock">—</div><div class="zh-kpi-trend">en stock</div></div>
-              <div class="zh-kpi"><div class="zh-kpi-lbl">Queue IA</div><div class="zh-kpi-val" id="zh-kpi-queue">—</div><div class="zh-kpi-trend">à valider</div></div>
-              <div class="zh-kpi"><div class="zh-kpi-lbl">QualiRépar</div><div class="zh-kpi-val" id="zh-kpi-qr">—</div><div class="zh-kpi-trend">ce mois</div></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="zh-section-title" style="margin-bottom:10px;">Mes opérations</div>
-            <div class="zh-shortcuts">
-              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('reparation'))" style="cursor:pointer;">
-                <div class="zh-short-dot" style="background:#FF6B6B;color:#FF6B6B;"></div>
-                <div class="zh-short-name"><strong>Réparation interne</strong><span>QualiRépar Ecologic / Ecosystem</span></div>
-              </a>
-              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('mobilax'))" style="cursor:pointer;">
-                <div class="zh-short-dot" style="background:#4FA9FF;color:#4FA9FF;"></div>
-                <div class="zh-short-name"><strong>Sous-traitance Mobilax</strong><span>Envoi + suivi client</span></div>
-              </a>
-              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('pieces'))" style="cursor:pointer;">
-                <div class="zh-short-dot" style="background:#6FE08F;color:#6FE08F;"></div>
-                <div class="zh-short-name"><strong>Commande pièces</strong><span>Réparation lendemain</span></div>
-              </a>
-              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('accessoires'))" style="cursor:pointer;">
-                <div class="zh-short-dot" style="background:#FFB94D;color:#FFB94D;"></div>
-                <div class="zh-short-name"><strong>Commande accessoires</strong><span>Coques · verres · câbles</span></div>
-              </a>
-            </div>
-          </div>
-
-          <div>
-            <div class="zh-section-title" style="margin-bottom:10px;">Équipe IA <span style="color:var(--zh-accent);text-shadow:0 0 8px rgba(255,59,69,0.5);">✦</span></div>
-            <div class="zh-agents" id="zh-agents-list">
-              <!-- Filled by JS -->
             </div>
           </div>
         </aside>
