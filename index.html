@@ -9069,22 +9069,27 @@ function voirClientDetail(id){
   var searchKey = (c.prenom?c.prenom+' ':'')+c.nom;
   var hist = getHistoriqueClient(searchKey);
   if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
+  // Si nom seul aussi (sans prénom) pour matcher différentes orthographes
+  if(!hist.length && c.nom) hist = getHistoriqueClient(c.nom);
 
-  // OPTIM J11 : lazy fetch — si peu de résultats en cache et grosse base Phonilab,
-  // on déclenche un fetch Supabase ciblé pour ce client en arrière-plan
-  if(hist.length < 3 && typeof fetchHRepForClient === 'function'){
+  // OPTIM J11 : fetch Supabase ciblé pour rapatrier toutes les réparations Phonilab
+  // de ce client (en plus du cache local des 500 récentes). Évite les doubles fetches.
+  if(typeof fetchHRepForClient === 'function' && !window._fetchedHRep){
+    window._fetchedHRep = window._fetchedHRep || {};
+  }
+  if(typeof fetchHRepForClient === 'function' && !window._fetchedHRep[id]){
+    window._fetchedHRep[id] = true;
     setTimeout(function(){
       fetchHRepForClient(c.nom, c.tel).then(function(extra){
-        if(extra && extra.length > hist.length){
-          // Re-render la fiche client avec les nouvelles données fetchées
-          if(document.getElementById('client-detail-card') &&
-             document.getElementById('client-detail-card').style.display !== 'none' &&
-             selectedClientId === id){
+        if(extra && extra.length > 0 && selectedClientId === id){
+          var card = document.getElementById('client-detail-card');
+          if(card && card.style.display !== 'none'){
+            // Re-render — le cache mémoire contient maintenant les réparations fetched
             voirClientDetail(id);
           }
         }
       });
-    }, 50);
+    }, 80);
   }
 
   // Bons de commande du client
@@ -15822,35 +15827,49 @@ async function syncHRepFromSupabase(){
   } catch(e){ console.log('syncHRep:', e); }
 }
 
-// Fetch ciblé d'un client : appelé à l'ouverture de la fiche client si peu/pas de matches dans le cache local
+// Fetch ciblé d'un client : appelé à l'ouverture de la fiche client
+// Fait une recherche fuzzy Supabase et merge dans le cache mémoire.
 async function fetchHRepForClient(clientNom, clientTel){
   if(!clientNom && !clientTel) return [];
   try {
-    var filters = [];
-    if(clientNom){
-      // ilike pour matche partiel insensible casse — supporte espaces, prénom+nom mélangés
-      filters.push('client_nom=ilike.*'+encodeURIComponent(clientNom.replace(/\s+/g,'*'))+'*');
-    }
-    if(clientTel){
-      var telClean = clientTel.replace(/\s/g,'');
-      filters.push('client_tel=ilike.*'+encodeURIComponent(telClean)+'*');
-    }
-    // OR entre nom et tel (or=(...))
-    var query = '?or=('+filters.join(',')+')&order=date_rep.desc&limit=200';
-    var res = await supaFetch('historique_reparations','GET',null, query);
-    if(Array.isArray(res) && res.length > 0){
-      // Merger dans le cache mémoire en évitant doublons (clé : numero)
-      var seen = {};
-      historiqueReparations.forEach(function(r){ seen[r.numero]=1; });
-      var nouveaux = res.filter(function(r){ return !seen[r.numero]; });
-      if(nouveaux.length > 0){
-        historiqueReparations = historiqueReparations.concat(nouveaux);
-        console.log('[fetchHRepForClient] +'+nouveaux.length+' réparations ajoutées au cache pour '+clientNom);
+    // Cas 1 : on a un téléphone propre — recherche directe par téléphone (priorité)
+    var telClean = (clientTel||'').replace(/\D/g,''); // que les chiffres
+    if(telClean.length >= 8){
+      var qTel = '?client_tel=ilike.*'+telClean+'*&order=date_rep.desc&limit=200';
+      var resTel = await supaFetch('historique_reparations','GET',null, qTel);
+      if(Array.isArray(resTel) && resTel.length > 0){
+        mergeHRepIntoCache(resTel);
+        console.log('[fetchHRepForClient] +'+resTel.length+' réparations par TEL pour '+clientNom);
+        return resTel;
       }
-      return res;
+    }
+    // Cas 2 : recherche par nom (dernier mot = nom de famille — plus large)
+    if(clientNom){
+      var nomNet = clientNom.trim();
+      var lastName = nomNet.split(/\s+/).pop(); // "Jean phillipe Dousson" → "Dousson"
+      // Échapper les caractères spéciaux Postgrest
+      var lastNameEnc = encodeURIComponent(lastName.replace(/[%_*]/g, ''));
+      var qNom = '?client_nom=ilike.*'+lastNameEnc+'*&order=date_rep.desc&limit=200';
+      var resNom = await supaFetch('historique_reparations','GET',null, qNom);
+      if(Array.isArray(resNom) && resNom.length > 0){
+        mergeHRepIntoCache(resNom);
+        console.log('[fetchHRepForClient] +'+resNom.length+' réparations par NOM "'+lastName+'" pour '+clientNom);
+        return resNom;
+      }
     }
   } catch(e){ console.warn('[fetchHRepForClient]', e); }
   return [];
+}
+
+function mergeHRepIntoCache(rows){
+  if(!Array.isArray(rows)) return 0;
+  var seen = {};
+  historiqueReparations.forEach(function(r){ seen[r.numero]=1; });
+  var nouveaux = rows.filter(function(r){ return r.numero && !seen[r.numero]; });
+  if(nouveaux.length > 0){
+    historiqueReparations = historiqueReparations.concat(nouveaux);
+  }
+  return nouveaux.length;
 }
 
 // ── Invalider le cache quand un nouveau client est ajouté ────
@@ -16336,10 +16355,19 @@ function _importOneCsvPhonilab(file, statusEl, fileIdx, fileTotal){
 function getHistoriqueClient(nomOuTel){
   if(!nomOuTel) return [];
   var q = nomOuTel.toLowerCase().trim();
-  // Chercher dans historique Phonilab
+  // Extraire tokens : on cherche si TOUS les mots de la requête sont dans le nom complet
+  // Ex: "Jean Dupont" matche "Jean phillipe Dupont" (les 2 tokens "jean" et "dupont" présents)
+  var tokens = q.replace(/[^a-z0-9àâäéèêëïîôöùûüç\s]/g,' ').split(/\s+/).filter(function(t){return t.length>=2;});
+  var qDigits = q.replace(/\D/g,'');
+
   var hist = historiqueReparations.filter(function(r){
-    return (r.client_nom||'').toLowerCase().includes(q) ||
-           (r.client_tel||'').replace(/\s/g,'').includes(q.replace(/\s/g,''));
+    var nomLow = (r.client_nom||'').toLowerCase();
+    var telDigits = (r.client_tel||'').replace(/\D/g,'');
+    // Match tel : si la requête a >=4 chiffres consécutifs, on cherche dans le tel
+    if(qDigits.length >= 4 && telDigits.indexOf(qDigits) >= 0) return true;
+    // Match nom : si TOUS les tokens >=2 lettres sont présents dans le nom (ordre libre)
+    if(tokens.length > 0 && tokens.every(function(t){ return nomLow.indexOf(t) >= 0; })) return true;
+    return false;
   });
   // Chercher aussi dans les réparations app
   var appReps = reparations.filter(function(r){
