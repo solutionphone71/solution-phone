@@ -5166,8 +5166,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <input type="text" id="mlx-search" placeholder="🔍 Rechercher client, modèle, n°..." oninput="mlxRender()" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;min-width:200px;">
           <select id="mlx-filtre" onchange="mlxRender()" style="padding:6px 10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;">
             <option value="en_cours">En cours</option>
-            <option value="termine">Terminés</option>
-            <option value="tous">Tous</option>
+            <option value="termine">Terminés (à archiver)</option>
+            <option value="archive">Archivés</option>
+            <option value="tous">Tous (sauf archives)</option>
           </select>
         </div>
       </div>
@@ -26645,8 +26646,11 @@ function mlxRender(){
   var searchVal = (document.getElementById('mlx-search')||{value:''}).value.trim().toLowerCase();
   var now = new Date();
   var filtered = _mlxDossiers.filter(function(d){
-    if(filtre==='en_cours' && d.statut!=='en_cours') return false;
-    if(filtre==='termine' && d.statut!=='termine') return false;
+    var isArchived = d.archived === true || d.statut === 'archive';
+    if(filtre==='en_cours'  && (d.statut!=='en_cours' || isArchived)) return false;
+    if(filtre==='termine'   && (d.statut!=='termine' || isArchived)) return false;
+    if(filtre==='archive'   && !isArchived) return false;
+    if(filtre==='tous'      && isArchived) return false;
     if(searchVal){
       var haystack = ((d.nom||'')+(d.tel||'')+(d.modele||'')+(d.panne||'')+(d.numero||'')).toLowerCase();
       if(haystack.indexOf(searchVal)===-1) return false;
@@ -26681,6 +26685,8 @@ function mlxRender(){
       '<td style="display:flex;gap:4px;">'+
         '<button class="btn btn-sm" onclick="mlxImprimerTicket('+JSON.stringify(d).replace(/"/g,'&quot;')+')" title="Réimprimer ticket">🖨️</button>'+
         '<button class="btn btn-sm" style="color:#8b5cf6;" onclick="mlxPrintEtiquette('+d.id+')" title="Étiquette Brother">🏷️</button>'+
+        (d.statut==='termine' && d.archived!==true ? '<button class="btn btn-sm" style="color:#10b981;border-color:#10b981;" onclick="mlxArchiver('+d.id+')" title="Archiver le dossier">📦</button>' : '')+
+        (d.archived===true || d.statut==='archive' ? '<button class="btn btn-sm" style="color:#f59e0b;" onclick="mlxDesarchiver('+d.id+')" title="Désarchiver">↩️</button>' : '')+
         '<button class="btn btn-sm" style="color:#e74c3c;" onclick="mlxSupprimer('+d.id+')" title="Supprimer">🗑️</button>'+
       '</td>'+
     '</tr>';
@@ -26741,6 +26747,36 @@ function mlxSupprimer(id){
   mlxRender();
   mlxCheckAlertes();
   showNotif('🗑️ Dossier supprimé','success');
+}
+
+// Archiver un dossier terminé : il sort de la liste "Terminés" et atterrit dans "Archivés"
+function mlxArchiver(id){
+  var d = _mlxDossiers.find(function(x){ return x.id===id; });
+  if(!d) return;
+  if(d.statut !== 'termine'){ showNotif('Le dossier doit être terminé avant archivage','error'); return; }
+  d.archived = true;
+  d.dateArchive = new Date().toISOString().slice(0,10);
+  localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('mobilax','PATCH',{archived:true,dateArchive:d.dateArchive},'?id=eq.'+id); } catch(e){}
+  }
+  mlxRender();
+  mlxCheckAlertes();
+  showNotif('📦 Dossier '+d.modele+' archivé','success');
+}
+
+// Sortir un dossier des archives (le remet dans "Terminés")
+function mlxDesarchiver(id){
+  var d = _mlxDossiers.find(function(x){ return x.id===id; });
+  if(!d) return;
+  d.archived = false;
+  if(d.statut === 'archive') d.statut = 'termine';
+  localStorage.setItem(MLX_STORAGE_KEY, JSON.stringify(_mlxDossiers));
+  if(typeof supabaseReady !== 'undefined' && supabaseReady){
+    try { supaFetch('mobilax','PATCH',{archived:false,statut:d.statut},'?id=eq.'+id); } catch(e){}
+  }
+  mlxRender();
+  showNotif('↩️ Dossier remis en "Terminés"','success');
 }
 
 // Vérifier alertes au chargement global (pas seulement quand on ouvre l'onglet)
