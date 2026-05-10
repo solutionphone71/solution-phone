@@ -76,6 +76,20 @@ function fmtDate(iso){
   return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
 }
 
+// ──────────────────────────────────────────────────────────────
+// TEAM ZAHIRA · Identité visuelle des 5 agents
+// ──────────────────────────────────────────────────────────────
+var TEAM = {
+  assya:  { label: '◢ ASSYA',  role: 'Community Manager',  tagline: "L'éclair des réseaux",        color: '#ff6b35', order: 1 },
+  yago:   { label: '◢ YAGO',   role: 'QualiRépar',         tagline: 'Le forgeron',                 color: '#16a34a', order: 2 },
+  anissa: { label: '◢ ANISSA', role: 'Compta',             tagline: 'La sentinelle des chiffres',  color: '#2563eb', order: 3 },
+  obiwan: { label: '◢ OBIWAN', role: 'Coach Boutique',     tagline: 'Le sage maître Jedi',         color: '#7c3aed', order: 4 },
+  chanel: { label: '◢ CHANEL', role: 'App Improver',       tagline: "L'œil affûté du luxe",        color: '#0891b2', order: 5 }
+};
+function getAgent(name) {
+  return TEAM[name] || { label: '◢ AGENT', role: '—', tagline: '', color: '#666', order: 99 };
+}
+
 // Markdown → HTML minimaliste (pour briefing)
 function mdToHtml(md){
   if(!md) return '';
@@ -527,7 +541,9 @@ SP_AUTOPILOT.rollbackSuggestion = async function(id) {
 // VALIDATION QUEUE
 // ──────────────────────────────────────────────────────────────
 SP_AUTOPILOT.loadQueue = async function() {
-  var queue = await this.db('v_validation_queue', 'GET', null, '');
+  // On lit directement agent_decisions (la vue v_validation_queue n'expose pas forcément agent_name)
+  var queue = await this.db('agent_decisions', 'GET', null,
+    '?status=eq.pending_validation&order=created_at.desc');
   if(!queue) queue = [];
   this.state.queue = queue;
   $('#ap-queue-count').textContent = queue.length + ' décision' + (queue.length>1?'s':'');
@@ -537,14 +553,43 @@ SP_AUTOPILOT.loadQueue = async function() {
       '<div class="ap-queue-empty">'+
       '<div class="ap-queue-empty-icon">✓</div>'+
       '<div>Tout est traité.</div>'+
-      '<div style="margin-top:8px;font-size:12px;">L\'agent reviendra vers toi dès qu\'il aura quelque chose à proposer.</div>'+
+      '<div style="margin-top:8px;font-size:12px;">L\'équipe reviendra vers toi dès qu\'elle aura quelque chose à proposer.</div>'+
       '</div>';
     return;
   }
 
-  $('#ap-queue-content').innerHTML = queue.map(function(d){
-    return SP_AUTOPILOT.renderDecision(d);
+  // Grouper par agent_name
+  var groups = {};
+  queue.forEach(function(d){
+    var k = d.agent_name || 'autre';
+    if(!groups[k]) groups[k] = [];
+    groups[k].push(d);
+  });
+
+  // Trier les agents selon TEAM.order
+  var agentNames = Object.keys(groups).sort(function(a,b){
+    return getAgent(a).order - getAgent(b).order;
+  });
+
+  var html = agentNames.map(function(name){
+    var info = getAgent(name);
+    var decisions = groups[name];
+    return '<div class="ap-team-group" style="--agent-color:'+info.color+';">'+
+      '<div class="ap-team-header">'+
+        '<div class="ap-team-label" style="color:'+info.color+';">'+info.label+'</div>'+
+        '<div class="ap-team-meta">'+
+          '<span class="ap-team-role">'+info.role+'</span>'+
+          '<span class="ap-team-tagline">· '+info.tagline+'</span>'+
+        '</div>'+
+        '<div class="ap-team-count">'+decisions.length+' proposition'+(decisions.length>1?'s':'')+'</div>'+
+      '</div>'+
+      '<div class="ap-team-decisions">'+
+        decisions.map(function(d){ return SP_AUTOPILOT.renderDecision(d); }).join('')+
+      '</div>'+
+    '</div>';
   }).join('');
+
+  $('#ap-queue-content').innerHTML = html;
 };
 
 SP_AUTOPILOT.renderDecision = function(d) {
@@ -573,8 +618,13 @@ SP_AUTOPILOT.renderDecision = function(d) {
 
   var caption = p.caption || p.message || p.text || '';
 
-  return '<div class="ap-decision-card" data-id="'+d.id+'">'+
+  var agentInfo = getAgent(d.agent_name || '');
+  var agentBadge = d.agent_name ?
+    '<span class="ap-decision-agent" style="color:'+agentInfo.color+';border-color:'+agentInfo.color+';">'+escHtml(d.agent_name)+'</span>' : '';
+
+  return '<div class="ap-decision-card" data-id="'+d.id+'" style="border-left:3px solid '+agentInfo.color+';">'+
     '<div class="ap-decision-head">'+
+      agentBadge +
       '<span class="ap-decision-type">'+escHtml(d.type)+'</span>'+
       '<span class="ap-decision-confidence">confiance <b>'+conf+'</b></span>'+
     '</div>'+
@@ -634,14 +684,23 @@ SP_AUTOPILOT.regenerateDecision = async function(id) {
 // RUN MANUEL
 // ──────────────────────────────────────────────────────────────
 SP_AUTOPILOT.runManual = async function() {
-  if(!confirm('Lancer un run manuel de l\'agent maintenant ?')) return;
-  this.toast('⚡ Run en cours... (peut prendre 10-20 sec)');
+  if(!confirm('Lancer un run manuel de l\'équipe Zahira maintenant ? (5 agents en parallèle, ~25 secondes)')) return;
+  this.toast('⚡ Zahira orchestre l\'équipe... (~25 sec)');
   try {
-    var res = await fetch('/api/autopilot/run?type=manual', {method:'POST'});
+    var res = await fetch('/api/agents/zahira?type=manual', {method:'POST'});
     var data = await res.json().catch(function(){ return {error: 'Réponse non-JSON'}; });
     if(res.ok && data.success) {
-      this.toast('✅ Run OK · ' + (data.decisions_pending||0) + ' décisions · ' + (data.cost_eur||0) + '€');
-      setTimeout(function(){ SP_AUTOPILOT.refreshDashboard(); }, 2000);
+      var nDec = (data.decisions || []).length;
+      var cost = data.cost_eur || 0;
+      this.toast('✅ Run OK · ' + nDec + ' décisions · ' + cost.toFixed(4) + '€');
+      // Si erreurs SQL silencieuses, on les remonte
+      if(data.debug_errors && data.debug_errors.length) {
+        console.warn('[Zahira] debug_errors:', data.debug_errors);
+      }
+      setTimeout(function(){
+        SP_AUTOPILOT.refreshDashboard();
+        SP_AUTOPILOT.loadQueue();
+      }, 1500);
     } else {
       console.error('[SP_AUTOPILOT] Run error:', data);
       var msg = data.error || 'Erreur inconnue';

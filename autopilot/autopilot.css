@@ -340,6 +340,70 @@
 #page-autopilot .ap-queue-empty-icon {
   font-size: 64px; margin-bottom: 20px; opacity: 0.4;
 }
+
+/* TEAM GROUPS · décisions groupées par agent */
+#page-autopilot .ap-team-group {
+  margin-bottom: 32px;
+  border-left: 5px solid var(--agent-color, #999);
+  padding-left: 24px;
+  position: relative;
+}
+#page-autopilot .ap-team-group::before {
+  content: ''; position: absolute;
+  left: -5px; top: 0; bottom: 0; width: 5px;
+  background: var(--agent-color, #999);
+  border-radius: 5px;
+  box-shadow: 0 0 16px var(--agent-color, transparent);
+  opacity: 0.85;
+}
+#page-autopilot .ap-team-header {
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  gap: 14px; margin-bottom: 16px; padding-bottom: 12px;
+  border-bottom: 1px dashed var(--ap-border);
+}
+#page-autopilot .ap-team-label {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 28px; font-weight: 900;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+#page-autopilot .ap-team-meta {
+  display: flex; align-items: baseline; gap: 6px; flex: 1;
+  font-size: 13px; color: var(--ap-text-m);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em;
+}
+#page-autopilot .ap-team-role {
+  font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.12em; font-size: 11px;
+}
+#page-autopilot .ap-team-tagline {
+  font-style: italic; opacity: 0.75; font-weight: 600;
+}
+#page-autopilot .ap-team-count {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  font-weight: 900; padding: 5px 14px;
+  background: var(--agent-color, #999); color: #FFFFFF;
+  border-radius: 999px; letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+#page-autopilot .ap-team-decisions {
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+/* AGENT BADGE inside decision cards */
+#page-autopilot .ap-decision-agent {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 900;
+  padding: 4px 10px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.6);
+  margin-right: auto;
+}
+
 #page-autopilot .ap-decision-card {
   background: var(--ap-card-bg); border: 1px solid var(--ap-border);
   border-radius: 22px; padding: 28px; margin-bottom: 18px;
