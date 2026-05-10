@@ -959,6 +959,145 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       @media (max-width: 1100px) {
         #page-zahira-home .zh-grid { grid-template-columns: 1fr; }
         #page-zahira-home .zh-right { display: none; }
+        /* Sur tablette : chat passe sous le centre */
+        #page-zahira-home .zh-chat-aside {
+          position: relative !important;
+          height: auto !important;
+          max-height: 75vh !important;
+          margin-top: 8px;
+        }
+      }
+
+      /* ════ MOBILE (≤ 768px) ════ */
+      @media (max-width: 768px) {
+        #page-zahira-home .zh-grid {
+          padding: 10px 10px 90px 10px;
+          gap: 12px;
+          min-height: calc(100vh - 60px);
+        }
+        /* KPIs : 2 cols (au lieu de 5) — plus lisibles */
+        #page-zahira-home .zh-kpis-row {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+        #page-zahira-home .zh-kpi-chip {
+          padding: 11px 12px;
+          border-radius: 14px;
+        }
+        #page-zahira-home .zh-kpi-chip .val { font-size: 18px; }
+        #page-zahira-home .zh-kpi-chip .lbl { font-size: 9px; }
+        #page-zahira-home .zh-kpi-chip .sub { font-size: 9px; }
+
+        /* 4 widgets ops : 1 colonne (full-width, plus tactiles) */
+        #page-zahira-home .zh-ops-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        #page-zahira-home .zh-op {
+          min-height: 130px;
+          padding: 18px 18px;
+          border-radius: 20px;
+          gap: 10px;
+        }
+        #page-zahira-home .zh-op-icon {
+          width: 44px; height: 44px;
+        }
+        #page-zahira-home .zh-op-icon svg { width: 26px; height: 26px; }
+        #page-zahira-home .zh-op-title {
+          font-size: 18px;
+        }
+        #page-zahira-home .zh-op-sub { font-size: 11px; }
+
+        /* Équipe IA : 2 cards par ligne (au lieu de 4-5) */
+        #page-zahira-home .zh-agents-showcase {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        #page-zahira-home .zh-agent-card {
+          padding: 18px 12px 14px;
+          border-radius: 18px;
+          gap: 8px;
+        }
+        #page-zahira-home .zh-agent-card-avatar { width: 64px; height: 64px; }
+        #page-zahira-home .zh-agent-card-avatar-wrap::before { border-width: 2px; }
+        #page-zahira-home .zh-agent-card-badge {
+          top: 10px; right: 10px;
+          font-size: 11px; height: 22px; min-width: 22px; padding: 0 6px;
+        }
+        #page-zahira-home .zh-agent-card-name { font-size: 17px; }
+        #page-zahira-home .zh-agent-card-role { font-size: 9px; letter-spacing: 0.12em; }
+        #page-zahira-home .zh-agent-card-task {
+          font-size: 12px;
+          min-height: 48px;
+          line-height: 1.35;
+        }
+        #page-zahira-home .zh-agent-card-cta {
+          font-size: 11px;
+          padding: 8px 14px;
+        }
+
+        /* Chat : on le réaffiche EN BAS de la page (au lieu de caché) */
+        #page-zahira-home .zh-right {
+          display: flex !important;
+          flex-direction: column;
+          gap: 12px;
+        }
+        #page-zahira-home .zh-chat-aside {
+          position: relative !important;
+          height: 70vh !important;
+          max-height: 600px !important;
+          border-radius: 20px;
+        }
+        #page-zahira-home .zh-thread {
+          max-height: none;
+          padding: 12px;
+        }
+        #page-zahira-home .zh-chat-head { padding: 12px 14px; }
+        #page-zahira-home .zh-head-avatar { width: 38px; height: 38px; }
+        #page-zahira-home .zh-head-name { font-size: 15px; }
+        #page-zahira-home .zh-composer-wrap { padding: 10px 12px 12px; }
+        #page-zahira-home .zh-input-wrap input { font-size: 14px; }
+        #page-zahira-home .zh-bubble { font-size: 14px; padding: 10px 14px; }
+        #page-zahira-home .zh-msg-avatar { width: 32px; height: 32px; }
+        #page-zahira-home .zh-msg-content { max-width: calc(100% - 44px); }
+
+        /* Section title plus discret sur mobile */
+        #page-zahira-home .zh-section-title { font-size: 10px; }
+      }
+
+      /* FAB : bouton flottant Zahira pour scroll au chat */
+      #page-zahira-home .zh-fab {
+        display: none;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        width: 58px; height: 58px;
+        border-radius: 50%;
+        border: 2.5px solid #FF3B45;
+        background: rgba(20,20,28,0.92);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 28px -6px rgba(255,59,69,0.55), 0 0 0 4px rgba(255,59,69,0.12);
+        cursor: pointer;
+        z-index: 999;
+        overflow: hidden;
+        padding: 0;
+        animation: zhFabPulse 2.4s ease-in-out infinite;
+      }
+      #page-zahira-home .zh-fab img {
+        width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+      }
+      #page-zahira-home .zh-fab::after {
+        content: ''; position: absolute; bottom: 4px; right: 4px;
+        width: 12px; height: 12px; border-radius: 50%;
+        background: #29D17C;
+        border: 2px solid #14141C;
+      }
+      @keyframes zhFabPulse {
+        0%, 100% { box-shadow: 0 10px 28px -6px rgba(255,59,69,0.55), 0 0 0 4px rgba(255,59,69,0.12); }
+        50%      { box-shadow: 0 12px 36px -4px rgba(255,59,69,0.7), 0 0 0 10px rgba(255,59,69,0.05); }
+      }
+      @media (max-width: 768px) {
+        #page-zahira-home .zh-fab { display: block; }
       }
 
       /* ─── CENTER : KPIs + 4 BIG widgets + équipe IA ─── */
@@ -1533,7 +1672,22 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </aside>
 
       </div>
+
+      <!-- FAB Zahira mobile : tap pour aller direct au chat -->
+      <button class="zh-fab" id="zh-fab-mobile" type="button" aria-label="Parler à Zahira" onclick="zhScrollToChat()">
+        <img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\'color:#FF3B45;font-family:Fraunces,serif;font-size:24px;font-weight:900;line-height:54px;\'>Z</span>';">
+      </button>
     </div>
+
+    <script>
+    // FAB scroll-to-chat (mobile)
+    function zhScrollToChat(){
+      var aside = document.querySelector('#page-zahira-home .zh-chat-aside');
+      var input = document.querySelector('#page-zahira-home .zh-input-wrap input');
+      if(aside) aside.scrollIntoView({behavior:'smooth', block:'start'});
+      setTimeout(function(){ if(input) input.focus(); }, 450);
+    }
+    </script>
 
     <script>
     // ════════════════════════════════════════════════════════════
@@ -10364,14 +10518,16 @@ function genererFactureOccasion(phoneId){
         '<div style="font-size:11px;color:#777;margin-top:6px;line-height:1.7;">'+
           '21 Rue Gambetta · 71000 Mâcon<br>'+
           'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
-          'SIRET : 801 044 785 00021'+
+          'SIREN 801 044 785 · RCS Mâcon B 801 044 785<br>'+
+          'TVA intra : FR10801044785'+
         '</div>'+
       '</div></div>'+
 
       '<div style="text-align:right;">'+
         '<div style="background:'+couleur+';color:#fff;padding:8px 20px;border-radius:6px;font-size:22px;font-weight:900;letter-spacing:1px;display:inline-block;margin-bottom:8px;">FACTURE</div>'+
         '<div style="font-size:15px;font-weight:700;color:#333;">N° '+numFact+'</div>'+
-        '<div style="font-size:12px;color:#777;margin-top:4px;">Date : '+dateVente+'</div>'+
+        '<div style="font-size:12px;color:#777;margin-top:4px;">Date facture : '+dateVente+'</div>'+
+        '<div style="font-size:12px;color:#777;margin-top:2px;">Date livraison : '+dateVente+'</div>'+
         '<div style="font-size:12px;color:#777;margin-top:2px;">Règlement : '+modePaiement+'</div>'+
       '</div>'+
     '</div>'+
@@ -10424,9 +10580,15 @@ function genererFactureOccasion(phoneId){
     '</div>'+
 
     // MENTION TVA MARGE
-    '<div style="background:rgba(139,92,246,0.06);border-left:4px solid rgba(139,92,246,0.5);padding:10px 14px;border-radius:4px;margin-bottom:6mm;font-size:12px;color:#666;line-height:1.7;">'+
+    '<div style="background:rgba(139,92,246,0.06);border-left:4px solid rgba(139,92,246,0.5);padding:10px 14px;border-radius:4px;margin-bottom:4mm;font-size:12px;color:#666;line-height:1.7;">'+
       '<b>TVA non applicable</b> — Article 297 A du Code Général des Impôts<br>'+
-      'Régime de la TVA sur la marge · Bien d\'occasion'+
+      'Régime de la TVA sur la marge · Bien d\'occasion · TVA non récupérable par l\'acheteur'+
+    '</div>'+
+
+    // MENTIONS LÉGALES B2C (garantie légale conformité - obligatoire depuis 01/01/2022)
+    '<div style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:4px;padding:9px 12px;font-size:10px;color:#2f855a;line-height:1.6;margin-bottom:6mm;">'+
+      '<b>Garanties légales (Code de la consommation) :</b> garantie légale de conformité (art. L.217-3 et suivants) 2 ans · garantie des vices cachés (art. 1641 et s. C. civ.) · '+
+      'Pour les téléphones d\'occasion : présomption de défaut antérieur 12 mois (art. L.217-7 C. conso.). Le vendeur est tenu de livrer un bien conforme au contrat.'+
     '</div>'+
 
     // ZONE SIGNATURE
@@ -10447,7 +10609,8 @@ function genererFactureOccasion(phoneId){
         '<div style="font-size:10px;color:#aaa;line-height:1.8;">'+
           '<b style="color:'+couleur+';">Solution Phone</b> · 21 Rue Gambetta · 71000 Mâcon<br>'+
           'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
-          'SIRET : 801 044 785 00021 · TVA non applicable — Art. 297 A du CGI (régime de la marge)'+
+          'SIRET 801 044 785 00021 · RCS Mâcon B 801 044 785 · TVA intra FR10801044785<br>'+
+          'TVA non applicable — Art. 297 A du CGI (régime de la marge sur bien d\'occasion)'+
         '</div>'+
         '<div style="text-align:right;font-size:10px;color:#ccc;">FACTURE '+numFact+'</div>'+
       '</div>'+
@@ -10639,7 +10802,8 @@ function buildA4HTML(opts){
         '<div style="font-size:10px;color:#aaa;line-height:1.8;">'+
           '<b style="color:'+couleur+';">Solution Phone</b> · 21 Rue Gambetta · 71000 Mâcon<br>'+
           'Tél : 03 85 33 06 89 · contact@solution-phone.fr<br>'+
-          'SIRET : 801 044 785 00021 · TVA non applicable — Art. 297 A du CGI (régime de la marge)'+
+          'SIRET 801 044 785 00021 · RCS Mâcon B 801 044 785 · TVA intra FR10801044785<br>'+
+          'TVA non applicable — Art. 297 A du CGI (régime de la marge sur bien d\'occasion)'+
         '</div>'+
         '<div style="text-align:right;">'+
           '<div style="font-size:10px;color:#ccc;">'+typeBadge+' '+opts.numero+'</div>'+
@@ -16809,9 +16973,15 @@ function repImprimerFacture(d){
       '</tfoot>'+
     '</table>'+
     // MENTIONS
-    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
+    '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:6px;">'+
       '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale).<br>'+
       (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -'+_fBonus+'€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.'+(f.piec?' Pièce PIEC (économie circulaire) utilisée avec accord du consommateur.':''):'')+'</div>'+
+    // MENTIONS LÉGALES B2C (Code de la consommation - obligatoire)
+    '<div style="background:#fafafa;border:1px solid #ddd;border-radius:6px;padding:7px 12px;font-size:9px;color:#555;line-height:1.6;margin-bottom:10px;">'+
+      '<b>Garanties légales :</b> garantie légale de conformité 2 ans (art. L.217-3 et s. C. conso.) · garantie des vices cachés (art. 1641 et s. C. civ.). '+
+      'En cas de panne dans les 30 jours après réparation pour la même cause : prise en charge gratuite (art. L.217-13 C. conso.). '+
+      'Réclamation : contact@solution-phone.fr.'+
+    '</div>'+
     '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'+
       '<div style="text-align:center;border:1px solid #ddd;border-radius:6px;padding:8px 16px;min-width:160px;">'+
         '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet Solution Phone</div>'+
