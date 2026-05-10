@@ -9070,6 +9070,23 @@ function voirClientDetail(id){
   var hist = getHistoriqueClient(searchKey);
   if(!hist.length && c.tel) hist = getHistoriqueClient(c.tel);
 
+  // OPTIM J11 : lazy fetch — si peu de résultats en cache et grosse base Phonilab,
+  // on déclenche un fetch Supabase ciblé pour ce client en arrière-plan
+  if(hist.length < 3 && typeof fetchHRepForClient === 'function'){
+    setTimeout(function(){
+      fetchHRepForClient(c.nom, c.tel).then(function(extra){
+        if(extra && extra.length > hist.length){
+          // Re-render la fiche client avec les nouvelles données fetchées
+          if(document.getElementById('client-detail-card') &&
+             document.getElementById('client-detail-card').style.display !== 'none' &&
+             selectedClientId === id){
+            voirClientDetail(id);
+          }
+        }
+      });
+    }, 50);
+  }
+
   // Bons de commande du client
   var clientBons = bonsCommande.filter(function(b){
     return b.client && ((b.client.nom||'').toLowerCase().includes((c.nom||'').toLowerCase()) ||
@@ -15793,25 +15810,47 @@ async function loadHistoriqueReparations(){
 
 async function syncHRepFromSupabase(){
   try {
-    var allReps = [];
-    var batchSize = 1000;
-    var offset = 0;
-    var keepGoing = true;
-    while(keepGoing){
-      var res = await supaFetch('historique_reparations','GET',null,
-        '?order=date_rep.desc&limit='+batchSize+'&offset='+offset);
-      if(res && res.length > 0){
-        allReps = allReps.concat(res);
-        offset += batchSize;
-        if(res.length < batchSize) keepGoing = false;
-      } else { keepGoing = false; }
-    }
-    if(allReps.length > 0){
-      historiqueReparations = allReps;
+    // OPTIM J11 : on charge seulement les 500 plus récents au boot.
+    // Pour les clients anciens, fetchHRepForClient() ira chercher à la demande.
+    var res = await supaFetch('historique_reparations','GET',null,
+      '?order=date_rep.desc&limit=500');
+    if(res && res.length > 0){
+      historiqueReparations = res;
       cacheHRep(historiqueReparations);
-      console.log('Historique depuis Supabase : '+historiqueReparations.length);
+      console.log('Historique récent (500 dernières réparations) : '+historiqueReparations.length);
     }
   } catch(e){ console.log('syncHRep:', e); }
+}
+
+// Fetch ciblé d'un client : appelé à l'ouverture de la fiche client si peu/pas de matches dans le cache local
+async function fetchHRepForClient(clientNom, clientTel){
+  if(!clientNom && !clientTel) return [];
+  try {
+    var filters = [];
+    if(clientNom){
+      // ilike pour matche partiel insensible casse — supporte espaces, prénom+nom mélangés
+      filters.push('client_nom=ilike.*'+encodeURIComponent(clientNom.replace(/\s+/g,'*'))+'*');
+    }
+    if(clientTel){
+      var telClean = clientTel.replace(/\s/g,'');
+      filters.push('client_tel=ilike.*'+encodeURIComponent(telClean)+'*');
+    }
+    // OR entre nom et tel (or=(...))
+    var query = '?or=('+filters.join(',')+')&order=date_rep.desc&limit=200';
+    var res = await supaFetch('historique_reparations','GET',null, query);
+    if(Array.isArray(res) && res.length > 0){
+      // Merger dans le cache mémoire en évitant doublons (clé : numero)
+      var seen = {};
+      historiqueReparations.forEach(function(r){ seen[r.numero]=1; });
+      var nouveaux = res.filter(function(r){ return !seen[r.numero]; });
+      if(nouveaux.length > 0){
+        historiqueReparations = historiqueReparations.concat(nouveaux);
+        console.log('[fetchHRepForClient] +'+nouveaux.length+' réparations ajoutées au cache pour '+clientNom);
+      }
+      return res;
+    }
+  } catch(e){ console.warn('[fetchHRepForClient]', e); }
+  return [];
 }
 
 // ── Invalider le cache quand un nouveau client est ajouté ────
@@ -16208,7 +16247,62 @@ function _importOneCsvPhonilab(file, statusEl, fileIdx, fileTotal){
           });
         }
 
-        if(newReps.length === 0){ resolve({imported:0, skipped:skipped, errors:0}); return; }
+        if(newReps.length === 0){ resolve({imported:0, skipped:skipped, errors:0, newClients:0}); return; }
+
+        // ─── Auto-création des clients manquants ───────────────────
+        // Pour chaque (nom, tel) unique du CSV, vérifie si le client existe déjà
+        // dans la table `clients` (par tel ou par nom). Sinon, on le crée.
+        var uniqueClients = {};
+        newReps.forEach(function(r){
+          var key = (r.client_tel||'').replace(/\s/g,'') + '|' + (r.client_nom||'').toLowerCase().trim();
+          if(!uniqueClients[key]){
+            uniqueClients[key] = {
+              nom: r.client_nom || '',
+              tel: r.client_tel || '',
+              email: r.client_email || '',
+              notes: 'Importé Phonilab '+(r.date_rep||'').substring(0,10),
+              source: 'phonilab_repair_import'
+            };
+          }
+        });
+        var clientsToCreate = [];
+        var existingClients = (typeof clients !== 'undefined' && Array.isArray(clients)) ? clients : [];
+        Object.values(uniqueClients).forEach(function(c){
+          if(!c.nom) return;
+          var nomLow = c.nom.toLowerCase().trim();
+          var telClean = (c.tel||'').replace(/\s/g,'');
+          var existe = existingClients.find(function(ex){
+            var exTel = (ex.tel||'').replace(/\s/g,'');
+            if(telClean && exTel === telClean) return true;
+            if(nomLow && (ex.nom||'').toLowerCase().trim() === nomLow) return true;
+            return false;
+          });
+          if(!existe) clientsToCreate.push(c);
+        });
+
+        var newClientsCount = 0;
+        if(clientsToCreate.length > 0){
+          if(statusEl){
+            var prefix0 = fileTotal>1 ? '📁 '+fileIdx+'/'+fileTotal+' · ' : '';
+            statusEl.textContent = prefix0+'👥 Création '+clientsToCreate.length+' nouveau(x) client(s)...';
+          }
+          for(var bc=0; bc<clientsToCreate.length; bc+=50){
+            var batchC = clientsToCreate.slice(bc, bc+50);
+            try {
+              var resC = await supaFetch('clients','POST', batchC);
+              if(resC && !resC.error){
+                newClientsCount += batchC.length;
+                if(Array.isArray(resC)) existingClients = existingClients.concat(resC);
+                else existingClients = existingClients.concat(batchC);
+              }
+            } catch(e){ console.warn('Auto-create client batch:', e); }
+          }
+          // Refresh la variable globale clients
+          if(typeof clients !== 'undefined' && Array.isArray(clients)){
+            clients.length = 0;
+            existingClients.forEach(function(c){ clients.push(c); });
+          }
+        }
 
         var batchSize = 50;
         var imported = 0;
@@ -16230,7 +16324,7 @@ function _importOneCsvPhonilab(file, statusEl, fileIdx, fileTotal){
         }
         // Refresh cache local après chaque fichier
         if(typeof cacheHRep === 'function') try { cacheHRep(historiqueReparations); } catch(e){}
-        resolve({imported:imported, skipped:skipped, errors:errors});
+        resolve({imported:imported, skipped:skipped, errors:errors, newClients:newClientsCount});
       } catch(err){ reject(err); }
     };
     reader.readAsText(file, 'ISO-8859-1');
@@ -16270,23 +16364,27 @@ async function importReparationsPhonilab(input){
 
   // Multi-fichiers : traite séquentiellement et cumule les stats
   if(files.length > 1){
-    var totalImp = 0, totalSkip = 0, totalErr = 0;
+    var totalImp = 0, totalSkip = 0, totalErr = 0, totalNewClients = 0;
     for(var f=0; f<files.length; f++){
       if(statusEl) statusEl.textContent = '📁 Fichier '+(f+1)+'/'+files.length+' · '+files[f].name+' ...';
       try {
         var r = await _importOneCsvPhonilab(files[f], statusEl, f+1, files.length);
         totalImp += r.imported; totalSkip += r.skipped; totalErr += r.errors;
+        totalNewClients += (r.newClients||0);
       } catch(e){
         console.error('Erreur fichier '+files[f].name+':', e);
         totalErr++;
       }
     }
-    var msgFinal = '✅ '+totalImp+' réparations importées au total'+
+    var msgFinal = '✅ '+totalImp+' réparations importées'+
+      (totalNewClients?' · 👥 '+totalNewClients+' nouveaux clients créés':'')+
       (totalSkip?' · '+totalSkip+' déjà présentes':'')+
       (totalErr?' · ⚠️ '+totalErr+' erreurs':'')+
       ' ('+files.length+' fichiers)';
     showNotif(msgFinal, totalErr>0?'error':'success');
     if(statusEl) statusEl.textContent = msgFinal;
+    // Re-render la liste clients pour afficher les nouveaux
+    if(typeof renderClients==='function') try { renderClients(); } catch(e){}
     input.value = '';
     return;
   }
