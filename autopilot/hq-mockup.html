@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>◢ Solution Phone HQ · Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700;900&family=JetBrains+Mono:wght@500;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-1: #FAF7F2;
+  --bg-2: #F1ECE3;
+  --bg-card: #FFFFFF;
+  --ink-1: #0A0A0B;
+  --ink-2: #4A4A4F;
+  --ink-3: #9A9A9F;
+  --line: rgba(0,0,0,0.08);
+  --red: #E63946;
+
+  --c-zahira: #E63946;
+  --c-assya:  #FF6B35;
+  --c-yago:   #16A34A;
+  --c-anissa: #2563EB;
+  --c-obiwan: #7C3AED;
+  --c-chanel: #0891B2;
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  color: var(--ink-1);
+  min-height: 100vh;
+  padding: 32px 40px 60px;
+  overflow-x: hidden;
+}
+
+/* ─── HEADER ─── */
+.hq-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink-1);
+  margin-bottom: 48px;
+}
+.hq-title {
+  font-family: 'Fraunces', serif;
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.hq-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hq-meta .live-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+/* ─── ZAHIRA · COMMAND DESK ─── */
+.zahira-desk {
+  max-width: 480px;
+  margin: 0 auto 64px;
+  padding: 28px 36px;
+  background: var(--bg-card);
+  border: 2px solid var(--ink-1);
+  border-radius: 24px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 12px 40px -12px rgba(0,0,0,0.18);
+}
+.zahira-desk::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px; right: -1px; bottom: -1px;
+  border-radius: 24px;
+  border: 1px solid var(--c-zahira);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.zahira-label {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--c-zahira);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.zahira-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-2);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.zahira-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-1);
+  background: var(--bg-2);
+  padding: 8px 16px;
+  border-radius: 999px;
+}
+.zahira-state .dot {
+  width: 8px; height: 8px;
+  background: var(--c-zahira);
+  border-radius: 50%;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.zahira-stats {
+  margin-top: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+}
+
+/* ─── CONNECTORS ─── */
+.connectors {
+  position: relative;
+  height: 60px;
+  margin: -32px 0 24px;
+}
+.connectors svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+}
+
+/* ─── TEAM GRID ─── */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
+  margin-bottom: 56px;
+}
+
+.agent-desk {
+  position: relative;
+  background: var(--bg-card);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  padding: 24px 22px 20px;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.agent-desk:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -12px rgba(0,0,0,0.16);
+  border-color: var(--accent);
+}
+
+.agent-desk[data-state="proposing"]::before {
+  content: '';
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 var(--accent);
+  animation: ringPulse 1.8s ease-out infinite;
+}
+.agent-desk[data-state="thinking"]::before {
+  content: '';
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: thinkPulse 1.2s ease-in-out infinite;
+}
+
+.agent-bracket {
+  font-family: 'Fraunces', serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.agent-name {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+.agent-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.agent-tagline {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+  font-style: italic;
+  margin-bottom: 18px;
+  line-height: 1.4;
+  min-height: 32px;
+}
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-2);
+}
+.agent-desk[data-state="proposing"] .agent-status {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.status-count {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+}
+.status-label {
+  flex: 1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+.status-idle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.agent-last {
+  margin-top: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+}
+
+/* ─── HUD KPIs ─── */
+.hud {
+  border-top: 2px solid var(--ink-1);
+  padding-top: 24px;
+}
+.hud-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-3);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+.kpi {
+  border-left: 3px solid var(--ink-1);
+  padding: 4px 0 4px 18px;
+}
+.kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ink-2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--ink-1);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.kpi-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-3);
+  margin-left: 4px;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.9); }
+}
+@keyframes ringPulse {
+  0%   { box-shadow: 0 0 0 0 var(--accent); opacity: 1; }
+  70%  { box-shadow: 0 0 0 14px transparent; opacity: 0.5; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+@keyframes thinkPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.7); }
+}
+</style>
+</head>
+<body>
+
+<header class="hq-header">
+  <div class="hq-title">◢ Solution Phone · HQ</div>
+  <div class="hq-meta">
+    <span class="live-dot"></span>
+    Sunday · 17:42 · 12° · Mâcon
+  </div>
+</header>
+
+<div class="zahira-desk">
+  <div class="zahira-label">◢ Zahira</div>
+  <div class="zahira-role">La cheffe · Orchestratrice</div>
+  <div class="zahira-state">
+    <span class="dot"></span>
+    Synthèse en cours · 6 décisions consolidées
+  </div>
+  <div class="zahira-stats">Last run · il y a 2h · 0,053€ · 25,3s</div>
+</div>
+
+<div class="connectors">
+  <svg viewBox="0 0 1000 60" preserveAspectRatio="none">
+    <path d="M 500 0 Q 500 30 100 60"  fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.4" />
+    <path d="M 500 0 Q 500 30 300 60"  fill="none" stroke="#16A34A" stroke-width="1.5" opacity="0.4" />
+    <path d="M 500 0 Q 500 30 500 60"  fill="none" stroke="#2563EB" stroke-width="1.5" opacity="0.4" />
+    <path d="M 500 0 Q 500 30 700 60"  fill="none" stroke="#7C3AED" stroke-width="1.5" opacity="0.4" />
+    <path d="M 500 0 Q 500 30 900 60"  fill="none" stroke="#0891B2" stroke-width="1.5" opacity="0.4" />
+  </svg>
+</div>
+
+<div class="team-grid">
+
+  <div class="agent-desk" data-state="proposing" style="--accent: var(--c-assya);">
+    <div class="agent-bracket">◢</div>
+    <div class="agent-name">Assya</div>
+    <div class="agent-role">Community Manager</div>
+    <div class="agent-tagline">L'éclair des réseaux. Pose les posts qui font briller la marque.</div>
+    <div class="agent-status">
+      <div class="status-count">3</div>
+      <div class="status-label">Propositions<br>en attente</div>
+    </div>
+    <div class="agent-last">Last · post · reel · story</div>
+  </div>
+
+  <div class="agent-desk" data-state="proposing" style="--accent: var(--c-yago);">
+    <div class="agent-bracket">◢</div>
+    <div class="agent-name">Yago</div>
+    <div class="agent-role">QualiRépar</div>
+    <div class="agent-tagline">Le forgeron. Détecte les bonus ANRE et monte les dossiers.</div>
+    <div class="agent-status">
+      <div class="status-count">1</div>
+      <div class="status-label">Bonus à<br>déclencher</div>
+    </div>
+    <div class="agent-last">Last · post bonus 25€</div>
+  </div>
+
+  <div class="agent-desk" data-state="proposing" style="--accent: var(--c-anissa);">
+    <div class="agent-bracket">◢</div>
+    <div class="agent-name">Anissa</div>
+    <div class="agent-role">Compta</div>
+    <div class="agent-tagline">La sentinelle des chiffres. Veille caisse, TVA, marges.</div>
+    <div class="agent-status">
+      <div class="status-count">1</div>
+      <div class="status-label">Alerte<br>active</div>
+    </div>
+    <div class="agent-last">Last · alert caisse</div>
+  </div>
+
+  <div class="agent-desk" data-state="thinking" style="--accent: var(--c-obiwan);">
+    <div class="agent-bracket">◢</div>
+    <div class="agent-name">Obiwan</div>
+    <div class="agent-role">Coach Boutique</div>
+    <div class="agent-tagline">Le sage maître Jedi. Donne le tempo aux 3 boutiques.</div>
+    <div class="agent-status" style="background: transparent; padding: 0;">
+      <span class="status-idle">— silencieux —</span>
+    </div>
+    <div class="agent-last">Stock OK · rien à signaler</div>
+  </div>
+
+  <div class="agent-desk" data-state="proposing" style="--accent: var(--c-chanel);">
+    <div class="agent-bracket">◢</div>
+    <div class="agent-name">Chanel</div>
+    <div class="agent-role">App Improver</div>
+    <div class="agent-tagline">L'œil affûté du luxe. Traque la friction UI.</div>
+    <div class="agent-status">
+      <div class="status-count">1</div>
+      <div class="status-label">Suggestion<br>UX</div>
+    </div>
+    <div class="agent-last">Last · feature idea</div>
+  </div>
+
+</div>
+
+<div class="hud">
+  <div class="hud-label">// Live KPIs · dimanche 17h42</div>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">CA Jour</div>
+      <div class="kpi-value">1 546<span class="kpi-unit">€</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avis Google</div>
+      <div class="kpi-value">4,7<span class="kpi-unit">★ · 552</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Stock</div>
+      <div class="kpi-value">65<span class="kpi-unit">unités</span></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Queue</div>
+      <div class="kpi-value">6<span class="kpi-unit">décisions</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
