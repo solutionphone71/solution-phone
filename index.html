@@ -5064,6 +5064,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <button class="btn btn-sm" style="border-color:var(--green);color:var(--green);" onclick="exportComptableEmail()">📧 Envoyer au comptable</button>
             <button class="btn btn-sm" onclick="exportComptableCSV()">📥 Export CSV</button>
             <button class="btn btn-sm" style="border-color:#ed8936;color:#ed8936;" onclick="exportAchatsEspecesCSV()">💵 Export Achats Espèces</button>
+            <button class="btn btn-sm" style="border-color:#7c3aed;color:#7c3aed;background:rgba(124,58,237,0.08);font-weight:700;" onclick="exportFEC()">📊 Export FEC (expert-comptable)</button>
           </div>
         </div>
       </div>
@@ -12514,6 +12515,52 @@ function exportComptableCSV() {
   var url=URL.createObjectURL(blob);var a=document.createElement('a');
   a.href=url;a.download='Recap_Comptable_'+mois+'.csv';a.click();
   showNotif('Export comptable téléchargé !','success');
+}
+
+// ─── Export FEC normalisé BOFiP (article A47 A-1 LPF) ─────────
+// Génère le fichier d'écritures comptables que l'expert-comptable
+// importe direct dans Cegid / Sage / Quadra / EBP / Pennylane.
+async function exportFEC() {
+  var moisSel = document.getElementById('compta-mois');
+  if(!moisSel || !moisSel.value){ showNotif('Sélectionne un mois','error'); return; }
+  var mois = moisSel.value; // format YYYY-MM
+  var btn = event && event.target ? event.target : null;
+  var oldHTML = btn ? btn.innerHTML : '';
+  if(btn){ btn.disabled = true; btn.innerHTML = '⏳ Génération FEC...'; }
+
+  try {
+    var url = '/api/export-fec?month=' + encodeURIComponent(mois);
+    var r = await fetch(url, { credentials: 'same-origin' });
+    if(!r.ok){
+      var j = {}; try{ j = await r.json(); }catch(e){}
+      throw new Error(j.error || ('HTTP ' + r.status));
+    }
+
+    // Stats utiles dans les headers de réponse
+    var nbLignes = r.headers.get('X-FEC-Lignes') || '?';
+    var nbFact   = r.headers.get('X-FEC-Factures') || '0';
+    var nbAchats = r.headers.get('X-FEC-Achats') || '0';
+    var nbDep    = r.headers.get('X-FEC-Depenses') || '0';
+
+    // Récupérer le nom du fichier depuis Content-Disposition (ou fallback)
+    var disp = r.headers.get('Content-Disposition') || '';
+    var fileMatch = disp.match(/filename="([^"]+)"/);
+    var filename = fileMatch ? fileMatch[1] : '801044785FEC' + mois.replace('-','') + '.txt';
+
+    var blob = await r.blob();
+    var blobUrl = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = blobUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 1000);
+
+    showNotif('📊 FEC ' + mois + ' généré (' + nbLignes + ' écritures · ' + nbFact + ' factures · ' + nbAchats + ' achats · ' + nbDep + ' dépenses)', 'success');
+  } catch(e){
+    console.error('[exportFEC]', e);
+    showNotif('❌ Export FEC : ' + (e.message || 'erreur'), 'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.innerHTML = oldHTML; }
+  }
 }
 
 function exportAchatsEspecesCSV() {

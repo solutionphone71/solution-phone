@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   // Tables autorisees (securite: empecher l'acces a des tables sensibles)
   const ALLOWED_TABLES = [
     // App existante
-    'phones', 'clients', 'clients_en_attente', 'factures', 'caisse', 'depenses',
+    'phones', 'clients', 'clients_en_attente', 'factures', 'factures_pdf', 'caisse', 'depenses',
     'reports_mois', 'ecrans_prix', 'batteries_prix', 'prix_reparation_android',
     'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
     'salaries', 'phonilab_import', 'police', 'phones_neufs',
