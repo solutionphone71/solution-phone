@@ -642,6 +642,163 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div class="main">
 
     <div class="page active" id="page-dashboard">
+
+      <!-- ════════════════════════════════════════════════════════════
+           ZAHIRA HERO BLOCK (mai 2026)
+           Greffé sur le dashboard existant. Synthèse du jour + chat.
+           ════════════════════════════════════════════════════════════ -->
+      <style>
+        .zahira-hero-block{
+          display:flex; gap:18px; align-items:center;
+          background: linear-gradient(135deg, rgba(255,59,69,0.08) 0%, rgba(22,22,34,0.85) 50%, rgba(10,132,255,0.06) 100%);
+          backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 28px; padding: 22px 26px;
+          margin-bottom: 18px; position: relative; overflow: hidden;
+        }
+        .zahira-hero-block::before{
+          content:''; position:absolute; top:-30px; right:-30px;
+          width:160px; height:160px; border-radius:50%;
+          background: radial-gradient(circle, rgba(255,59,69,0.18), transparent 70%);
+          pointer-events:none;
+        }
+        .zah-avatar-wrap{ position:relative; padding:6px; flex-shrink:0; }
+        .zah-avatar-wrap::before{
+          content:''; position:absolute; inset:0; border-radius:50%;
+          border:2.5px solid #FF3B45;
+          box-shadow:0 0 28px rgba(255,59,69,0.55), 0 0 56px rgba(255,59,69,0.25), inset 0 0 14px rgba(255,59,69,0.15);
+          animation: zahPulse 3s ease-in-out infinite;
+        }
+        @keyframes zahPulse{ 0%,100%{box-shadow:0 0 24px rgba(255,59,69,0.5),0 0 48px rgba(255,59,69,0.2),inset 0 0 12px rgba(255,59,69,0.12);} 50%{box-shadow:0 0 36px rgba(255,59,69,0.7),0 0 72px rgba(255,59,69,0.3),inset 0 0 18px rgba(255,59,69,0.2);} }
+        .zah-avatar{
+          width:74px; height:74px; border-radius:50%;
+          background: linear-gradient(135deg,#E63946,#C8102E);
+          display:flex; align-items:center; justify-content:center;
+          color:#fff; font-size:26px; font-weight:700; overflow:hidden;
+        }
+        .zah-avatar img{ width:100%; height:100%; object-fit:cover; }
+        .zah-online{
+          position:absolute; bottom:4px; right:4px;
+          background:rgba(20,20,26,0.95);
+          padding:3px 8px 3px 6px; border-radius:999px;
+          display:flex; align-items:center; gap:4px;
+          font-size:9px; font-weight:700; color:#fff;
+          letter-spacing:0.05em; text-transform:uppercase;
+          border:0.5px solid rgba(255,255,255,0.1);
+          box-shadow:0 4px 10px rgba(0,0,0,0.4);
+        }
+        .zah-online::before{ content:''; width:6px; height:6px; background:#34C759; border-radius:50%; box-shadow:0 0 6px rgba(52,199,89,0.8); animation:zahDot 2s infinite; }
+        @keyframes zahDot{ 0%,100%{opacity:1; transform:scale(1);} 50%{opacity:0.5; transform:scale(0.85);} }
+        .zah-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; position:relative; z-index:1; }
+        .zah-greet{ font-size:11px; font-weight:700; color:rgba(255,255,255,0.5); letter-spacing:0.18em; text-transform:uppercase; }
+        .zah-name{ font-family:'Fraunces','Georgia',serif; font-size:26px; font-weight:900; letter-spacing:-0.02em; color:#fff; line-height:1; }
+        .zah-summary{ font-size:13px; color:rgba(255,255,255,0.75); line-height:1.5; max-width:560px; }
+        .zah-summary .hl{ background:linear-gradient(180deg,transparent 55%, rgba(255,214,10,0.4) 55%); color:#fff; font-weight:700; padding:0 3px; }
+        .zah-composer{
+          display:flex; align-items:center; gap:8px;
+          background:rgba(20,20,28,0.7); border:0.5px solid rgba(255,255,255,0.08);
+          border-radius:22px; padding:8px 14px 8px 16px;
+          margin-top:4px; max-width:520px;
+        }
+        .zah-composer input{
+          flex:1; background:transparent; border:none; outline:none;
+          color:#fff; font-size:13px; font-family:inherit; padding:6px 0;
+        }
+        .zah-composer input::placeholder{ color:rgba(255,255,255,0.4); }
+        .zah-send{
+          width:36px; height:36px; border-radius:50%;
+          background:linear-gradient(135deg,#FF5560,#FF3B45 50%,#C8102E);
+          border:none; cursor:pointer; color:#fff;
+          display:flex; align-items:center; justify-content:center;
+          box-shadow:0 4px 12px -2px rgba(255,59,69,0.5);
+          transition: transform .1s;
+        }
+        .zah-send:hover{ transform:translateY(-1px); }
+        .zah-send:active{ transform:scale(0.94); }
+
+        /* ── Équipe IA roster (en bas du dashboard) ── */
+        .zah-team-section{ margin-top:20px; margin-bottom:24px; }
+        .zah-team-title{
+          display:flex; align-items:center; gap:8px;
+          font-size:11px; font-weight:800; color:rgba(255,255,255,0.55);
+          letter-spacing:0.18em; text-transform:uppercase;
+          margin-bottom:14px; padding:0 4px;
+        }
+        .zah-team-title .sparkle{ color:#FF3B45; font-size:14px; text-shadow:0 0 10px rgba(255,59,69,0.6); }
+        .zah-team-list{
+          background:rgba(22,22,34,0.65); backdrop-filter:blur(20px);
+          border:1px solid rgba(255,255,255,0.06);
+          border-radius:20px; overflow:hidden;
+        }
+        .zah-agent-row{
+          display:flex; align-items:center; gap:14px;
+          padding:13px 18px;
+          border-bottom:0.5px solid rgba(255,255,255,0.05);
+          cursor:pointer; transition: background .15s;
+        }
+        .zah-agent-row:last-child{ border-bottom:none; }
+        .zah-agent-row:hover{ background:rgba(255,255,255,0.03); }
+        .zah-agent-row.silent{ opacity:0.55; }
+        .zah-agent-avatar-wrap{ position:relative; padding:4px; flex-shrink:0; }
+        .zah-agent-avatar-wrap::before{
+          content:''; position:absolute; inset:0; border-radius:50%;
+          border:2px solid var(--ring); box-shadow:0 0 14px var(--glow), inset 0 0 6px var(--glow);
+        }
+        .zah-agent-row.silent .zah-agent-avatar-wrap::before{ border-color:#3a3a42; box-shadow:none; }
+        .zah-agent-avatar{
+          width:42px; height:42px; border-radius:50%;
+          background:var(--avbg); overflow:hidden;
+          display:flex; align-items:center; justify-content:center;
+          color:#fff; font-size:14px; font-weight:700;
+        }
+        .zah-agent-avatar img{ width:100%; height:100%; object-fit:cover; }
+        .zah-agent-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+        .zah-agent-name{ display:flex; align-items:baseline; gap:8px; }
+        .zah-agent-name strong{ font-size:14px; font-weight:700; color:#fff; letter-spacing:0.02em; }
+        .zah-agent-name span{ font-size:9px; color:rgba(255,255,255,0.45); font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+        .zah-agent-task{ font-size:12px; color:rgba(255,255,255,0.7); font-weight:400; }
+        .zah-agent-cta{
+          font-size:12px; font-weight:600; color:#fff;
+          background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));
+          border:0.5px solid rgba(255,255,255,0.1); cursor:pointer;
+          padding:6px 14px; border-radius:999px; white-space:nowrap;
+          flex-shrink:0;
+        }
+        .zah-agent-cta:hover{ background:rgba(255,255,255,0.08); }
+        .zah-agent-cta.idle{
+          background:transparent; border:0.5px solid rgba(255,255,255,0.15);
+          color:rgba(255,255,255,0.4);
+          width:28px; height:28px; padding:0;
+          display:flex; align-items:center; justify-content:center;
+        }
+
+        @media (max-width: 700px) {
+          .zahira-hero-block{ flex-direction:column; align-items:flex-start; padding:18px; }
+          .zah-composer{ width:100%; max-width:none; }
+        }
+      </style>
+
+      <div class="zahira-hero-block">
+        <div class="zah-avatar-wrap">
+          <div class="zah-avatar">
+            <img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
+          </div>
+          <div class="zah-online">En ligne</div>
+        </div>
+        <div class="zah-text">
+          <div class="zah-greet" id="zah-greet">Bonjour</div>
+          <div class="zah-name">Sébastien</div>
+          <div class="zah-summary" id="zah-summary">Je prépare ton briefing du jour…</div>
+          <div class="zah-composer" onclick="(function(){if(typeof openBrainChat==='function')openBrainChat();})()">
+            <span style="opacity:0.4;font-size:14px;">💬</span>
+            <input type="text" placeholder="Demande à Zahira..." onfocus="(function(){if(typeof openBrainChat==='function')openBrainChat();})();this.blur();" />
+            <button class="zah-send" type="button" onclick="(function(){if(typeof openBrainChat==='function')openBrainChat();})()" aria-label="Ouvrir le chat">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
         <div class="page-title" style="margin-bottom:0;">Tableau de bord</div>
         <div id="dash-date" style="font-size:13px;color:var(--text-muted);"></div>
@@ -2466,6 +2623,31 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
           <!-- ── TUILES D'ACCUEIL ── -->
           <div id="parcours-tuiles" style="max-width:900px;margin:0 auto;padding:20px;">
+
+            <!-- ════════════════════════════════════════════════════════════
+                 ZAHIRA HERO BLOCK (Parcours client · mai 2026)
+                 ════════════════════════════════════════════════════════════ -->
+            <div class="zahira-hero-block" style="margin-bottom:24px;">
+              <div class="zah-avatar-wrap">
+                <div class="zah-avatar">
+                  <img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
+                </div>
+                <div class="zah-online">En ligne</div>
+              </div>
+              <div class="zah-text">
+                <div class="zah-greet">Bonjour</div>
+                <div class="zah-name">Sébastien</div>
+                <div class="zah-summary" id="zah-summary-parcours">Je prépare ton briefing du jour…</div>
+                <div class="zah-composer" onclick="(function(){if(typeof openBrainChat==='function')openBrainChat();})()">
+                  <span style="opacity:0.4;font-size:14px;">💬</span>
+                  <input type="text" placeholder="Demande à Zahira..." onfocus="(function(){if(typeof openBrainChat==='function')openBrainChat();})();this.blur();" />
+                  <button class="zah-send" type="button" onclick="(function(){if(typeof openBrainChat==='function')openBrainChat();})()" aria-label="Ouvrir le chat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <h2 style="text-align:center;font-size:22px;font-weight:800;margin-bottom:6px;">Parcours Client</h2>
 
             <!-- ── BARRE DE RECHERCHE ── -->
@@ -26123,6 +26305,61 @@ var AvisGoogle = (function(){
   }
   // Aussi sur changement de hash (si Sébastien re-clique sur un lien depuis la même page)
   window.addEventListener('hashchange', dispatchHash);
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     ZAHIRA SUMMARY LOADER (mai 2026)
+     Récupère les décisions en attente et compose une phrase pour le hero.
+     Affecte les éléments #zah-summary (dashboard) et #zah-summary-parcours.
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  function setSummary(html){
+    var t1 = document.getElementById('zah-summary');
+    var t2 = document.getElementById('zah-summary-parcours');
+    if (t1) t1.innerHTML = html;
+    if (t2) t2.innerHTML = html;
+  }
+  function setGreet(){
+    var hr = new Date().getHours();
+    var g = hr < 12 ? 'Bonjour' : hr < 18 ? 'Bon après-midi' : 'Bonsoir';
+    document.querySelectorAll('.zah-greet').forEach(function(el){ el.textContent = g; });
+  }
+  async function loadZahiraSummary(){
+    setGreet();
+    try {
+      var r = await fetch('/api/supabase?table=agent_decisions&query=' + encodeURIComponent('?status=eq.pending_validation&select=id,agent_name,type'));
+      var data = await r.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        setSummary('Tout est calme ce matin. L\'équipe surveille en arrière-plan, tu peux te concentrer sur la boutique.');
+        return;
+      }
+      var counts = {};
+      data.forEach(function(d){
+        var a = d.agent_name || 'autre';
+        counts[a] = (counts[a] || 0) + 1;
+      });
+      var parts = [];
+      if (counts.assya)  parts.push('<strong>' + counts.assya + ' post' + (counts.assya>1?'s':'') + '</strong> par Assya');
+      if (counts.yago)   parts.push('<strong>' + counts.yago + ' dossier' + (counts.yago>1?'s':'') + ' QualiRépar</strong> par Yago');
+      if (counts.anissa) parts.push('<strong>' + counts.anissa + ' alerte' + (counts.anissa>1?'s':'') + '</strong> Anissa');
+      if (counts.obiwan) parts.push('<strong>' + counts.obiwan + '</strong> Obiwan');
+      if (counts.chanel) parts.push('<strong>' + counts.chanel + '</strong> Chanel');
+      var txt = parts.length ? (parts.join(' · ') + '. <span class="hl">Validation 1-clic</span> sur l\'Autopilot.')
+                              : (data.length + ' propositions en attente.');
+      setSummary(txt);
+    } catch(e) {
+      setSummary('Tableau de bord chargé. <span style="opacity:0.6;">(synthèse IA indisponible)</span>');
+    }
+  }
+  if (document.readyState === 'complete') {
+    loadZahiraSummary();
+  } else {
+    window.addEventListener('load', loadZahiraSummary);
+  }
+  // Refresh toutes les 5 min
+  setInterval(loadZahiraSummary, 5 * 60 * 1000);
 })();
 </script>
 
