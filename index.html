@@ -26069,5 +26069,62 @@ var AvisGoogle = (function(){
 })();
 </script>
 
+<!-- ════════════════════════════════════════════════════════════════
+     DISPATCHER #open-xxx (mai 2026)
+     Permet à Zahira home (/home.html) de pointer vers une page précise
+     de l'app via une URL du type /#open-qualirepar
+     L'app classique reste 100% intacte. C'est juste un raccourci d'entrée.
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  // Map page → fonction d'initialisation supplémentaire (si nécessaire)
+  var inits = {
+    'qualirepar':    function(){ if (typeof qrInit === 'function') qrInit(); },
+    'ventes-smart':  function(){ if (typeof renderVentesSmartphones === 'function') renderVentesSmartphones(); },
+    'ventes-neufs':  function(){ if (typeof renderVentesNeufs === 'function') renderVentesNeufs(); },
+    'neufs-access':  function(){ if (typeof naLoad === 'function') { naLoad(); naRender(); } },
+    'phones':        function(){},
+    'reparations':   function(){},
+    'devis':         function(){},
+    'clients':       function(){},
+    'caisse':        function(){},
+    'autopilot':     function(){}
+  };
+
+  function dispatchHash(){
+    var hash = window.location.hash || '';
+    var m = hash.match(/^#open-([a-z0-9-]+)/i);
+    if (!m) return false;
+    var target = m[1];
+    if (typeof showPage !== 'function') return false;
+    try {
+      showPage(target, null);
+      if (inits[target]) inits[target]();
+      // Nettoyer le hash pour éviter une re-ouverture si refresh
+      try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch(_){}
+      return true;
+    } catch(e) {
+      console.warn('[dispatcher #open] échec', target, e);
+      return false;
+    }
+  }
+
+  // Tentatives multiples (au cas où showPage est dispo plus tard)
+  var tries = 0;
+  function tryDispatch(){
+    if (dispatchHash() || tries > 30) return;
+    tries++;
+    setTimeout(tryDispatch, 200);
+  }
+  if (document.readyState === 'complete') {
+    tryDispatch();
+  } else {
+    window.addEventListener('load', tryDispatch);
+  }
+  // Aussi sur changement de hash (si Sébastien re-clique sur un lien depuis la même page)
+  window.addEventListener('hashchange', dispatchHash);
+})();
+</script>
+
 </body>
 </html>
