@@ -9024,6 +9024,7 @@ function clientVersReparation(id){
 function voirClientDetail(id){
   var c = clients.find(function(x){ return String(x.id)===String(id); });
   if(!c) return;
+  selectedClientId = id;  // important pour le re-render après fetch ciblé
   var card = document.getElementById('client-detail-card');
   var content = document.getElementById('client-detail-content');
   if(!card||!content) return;
@@ -9080,11 +9081,10 @@ function voirClientDetail(id){
   if(typeof fetchHRepForClient === 'function' && !window._fetchedHRep[id]){
     window._fetchedHRep[id] = true;
     setTimeout(function(){
-      fetchHRepForClient(c.nom, c.tel).then(function(extra){
+      fetchHRepForClient(c.nom, c.tel, c.email).then(function(extra){
         if(extra && extra.length > 0 && selectedClientId === id){
           var card = document.getElementById('client-detail-card');
           if(card && card.style.display !== 'none'){
-            // Re-render — le cache mémoire contient maintenant les réparations fetched
             voirClientDetail(id);
           }
         }
@@ -15827,38 +15827,69 @@ async function syncHRepFromSupabase(){
   } catch(e){ console.log('syncHRep:', e); }
 }
 
-// Fetch ciblé d'un client : appelé à l'ouverture de la fiche client
-// Fait une recherche fuzzy Supabase et merge dans le cache mémoire.
-async function fetchHRepForClient(clientNom, clientTel){
-  if(!clientNom && !clientTel) return [];
+// Fetch ciblé d'un client : 3 essais successifs (tel → nom → email)
+async function fetchHRepForClient(clientNom, clientTel, clientEmail){
+  console.log('[fetchHRepForClient] Recherche pour:', {nom:clientNom, tel:clientTel, email:clientEmail});
+  if(!clientNom && !clientTel && !clientEmail) return [];
+  var allResults = [];
+
   try {
-    // Cas 1 : on a un téléphone propre — recherche directe par téléphone (priorité)
-    var telClean = (clientTel||'').replace(/\D/g,''); // que les chiffres
+    // ── Essai 1 : par TÉLÉPHONE (le plus fiable) ─────────────
+    var telClean = (clientTel||'').replace(/\D/g,'');
     if(telClean.length >= 8){
-      var qTel = '?client_tel=ilike.*'+telClean+'*&order=date_rep.desc&limit=200';
-      var resTel = await supaFetch('historique_reparations','GET',null, qTel);
-      if(Array.isArray(resTel) && resTel.length > 0){
-        mergeHRepIntoCache(resTel);
-        console.log('[fetchHRepForClient] +'+resTel.length+' réparations par TEL pour '+clientNom);
-        return resTel;
-      }
+      // On cherche avec les 8-10 derniers chiffres pour tolérer formats variables
+      var telLastDigits = telClean.slice(-10);
+      var qTel = '?client_tel=ilike.*'+telLastDigits+'*&order=date_rep.desc&limit=200';
+      try {
+        var resTel = await supaFetch('historique_reparations','GET',null, qTel);
+        if(Array.isArray(resTel) && resTel.length > 0){
+          mergeHRepIntoCache(resTel);
+          allResults = allResults.concat(resTel);
+          console.log('[fetchHRepForClient] ✅ TEL "'+telLastDigits+'" → '+resTel.length+' réparations');
+        } else {
+          console.log('[fetchHRepForClient] ❌ TEL "'+telLastDigits+'" → 0 résultat');
+        }
+      } catch(e){ console.warn('[fetchHRepForClient] erreur TEL:', e); }
     }
-    // Cas 2 : recherche par nom (dernier mot = nom de famille — plus large)
+
+    // ── Essai 2 : par NOM de famille ─────────────────────────
     if(clientNom){
       var nomNet = clientNom.trim();
-      var lastName = nomNet.split(/\s+/).pop(); // "Jean phillipe Dousson" → "Dousson"
-      // Échapper les caractères spéciaux Postgrest
-      var lastNameEnc = encodeURIComponent(lastName.replace(/[%_*]/g, ''));
-      var qNom = '?client_nom=ilike.*'+lastNameEnc+'*&order=date_rep.desc&limit=200';
-      var resNom = await supaFetch('historique_reparations','GET',null, qNom);
-      if(Array.isArray(resNom) && resNom.length > 0){
-        mergeHRepIntoCache(resNom);
-        console.log('[fetchHRepForClient] +'+resNom.length+' réparations par NOM "'+lastName+'" pour '+clientNom);
-        return resNom;
+      var lastName = nomNet.split(/\s+/).pop().replace(/[%_*]/g,'');
+      if(lastName.length >= 2){
+        var qNom = '?client_nom=ilike.*'+encodeURIComponent(lastName)+'*&order=date_rep.desc&limit=200';
+        try {
+          var resNom = await supaFetch('historique_reparations','GET',null, qNom);
+          if(Array.isArray(resNom) && resNom.length > 0){
+            var added = mergeHRepIntoCache(resNom);
+            allResults = allResults.concat(resNom);
+            console.log('[fetchHRepForClient] ✅ NOM "'+lastName+'" → '+resNom.length+' réparations ('+added+' nouvelles)');
+          } else {
+            console.log('[fetchHRepForClient] ❌ NOM "'+lastName+'" → 0 résultat');
+          }
+        } catch(e){ console.warn('[fetchHRepForClient] erreur NOM:', e); }
       }
     }
+
+    // ── Essai 3 : par EMAIL ──────────────────────────────────
+    if(clientEmail && clientEmail.indexOf('@') > 0){
+      var emailClean = clientEmail.trim().toLowerCase().replace(/[%_*]/g,'');
+      var qEmail = '?client_email=ilike.*'+encodeURIComponent(emailClean)+'*&order=date_rep.desc&limit=200';
+      try {
+        var resEmail = await supaFetch('historique_reparations','GET',null, qEmail);
+        if(Array.isArray(resEmail) && resEmail.length > 0){
+          var addedE = mergeHRepIntoCache(resEmail);
+          allResults = allResults.concat(resEmail);
+          console.log('[fetchHRepForClient] ✅ EMAIL → '+resEmail.length+' réparations ('+addedE+' nouvelles)');
+        } else {
+          console.log('[fetchHRepForClient] ❌ EMAIL → 0 résultat');
+        }
+      } catch(e){ console.warn('[fetchHRepForClient] erreur EMAIL:', e); }
+    }
   } catch(e){ console.warn('[fetchHRepForClient]', e); }
-  return [];
+
+  console.log('[fetchHRepForClient] 📊 Total trouvé : '+allResults.length+' réparations');
+  return allResults;
 }
 
 function mergeHRepIntoCache(rows){
