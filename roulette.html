@@ -631,9 +631,9 @@ h1 .acc {
 // ─────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────
-const SUPA_URL = 'https://kdvxcnjfrmvlnrymfyug.supabase.co';
-const SUPA_KEY = 'sb_publishable_3Mub3jSj8wUC8mfFtAuhdA_P4Ljnnhb';
-const BREVO_KEY = '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';
+// SÉCURITÉ — clés Supabase et Brevo déplacées côté serveur (audit 10/05/2026).
+// Toutes les opérations passent désormais par /api/roulette
+const API_ROULETTE = '/api/roulette';
 const SHOP_EMAIL = 'solution.phone71@gmail.com';
 
 const DEFAULT_CONFIG = {
@@ -654,15 +654,13 @@ let TOTAL  = PRIZES.reduce((s,p) => s + p.weight, 0);
 
 async function loadConfig() {
   try {
-    const res  = await fetch(SUPA_URL + '/rest/v1/roulette_config?id=eq.1', {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
-    });
+    const res  = await fetch(API_ROULETTE + '?action=config');
     const data = await res.json();
-    if (data && data[0]) {
-      const prizes = (data[0].prizes || DEFAULT_CONFIG.prizes).map((p,i) => ({
+    if (data && (data.googleUrl || (Array.isArray(data.prizes) && data.prizes.length))) {
+      const prizes = (data.prizes || DEFAULT_CONFIG.prizes).map((p,i) => ({
         ...DEFAULT_CONFIG.prizes[i] || {}, ...p
       }));
-      return { googleUrl: data[0].google_url || DEFAULT_CONFIG.googleUrl, prizes };
+      return { googleUrl: data.googleUrl || DEFAULT_CONFIG.googleUrl, prizes };
     }
   } catch(e) {}
   return DEFAULT_CONFIG;
@@ -1061,36 +1059,21 @@ async function sendPrizeEmail() {
 </html>`;
 
   try {
-    const r1 = await fetch('https://api.brevo.com/v3/smtp/email', {
+    const r = await fetch(API_ROULETTE + '?action=email', {
       method: 'POST',
-      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sender:  { name: 'Solution Phone Roue', email: SHOP_EMAIL },
-        to:      [{ email: email }],
-        subject: '🎡 Votre cadeau Solution Phone — ' + winPrizeName,
-        htmlContent
+        email: email,
+        prize: winPrizeName,
+        html:  htmlContent,
+        phone: _phoneVerifie || ''
       })
     });
-
-    await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: { 'api-key': BREVO_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sender:  { name: 'Roue Cadeaux', email: SHOP_EMAIL },
-        to:      [{ email: SHOP_EMAIL, name: 'Solution Phone' }],
-        subject: '🎁 Nouveau gain roue — ' + winPrizeName,
-        htmlContent: `<p>Nouveau gagnant à la roue !</p>
-          <p><strong>Lot :</strong> ${winPrizeName}</p>
-          <p><strong>Email client :</strong> ${email}</p>
-          <p><strong>Téléphone :</strong> ${_phoneVerifie || 'non renseigné'}</p>
-          <p><strong>Date :</strong> ${new Date().toLocaleString('fr-FR')}</p>`
-      })
-    });
-
+    if (!r.ok) throw new Error('email send failed');
     document.getElementById('email-sent-msg').style.display = 'block';
     btn.textContent = '✅ Email envoyé !';
   } catch(e) {
-    console.warn('Brevo failed, fallback mailto', e);
+    console.warn('Email failed, fallback mailto', e);
     const subject = encodeURIComponent('🎡 Cadeau Roue — ' + winPrizeName);
     const body    = encodeURIComponent(`Client : ${email}\nLot : ${winPrizeName}\nTél : ${_phoneVerifie || '-'}`);
     window.open('mailto:' + SHOP_EMAIL + '?subject=' + subject + '&body=' + body, '_blank');
@@ -1129,18 +1112,17 @@ async function checkPhone() {
   if (loading) loading.style.display = 'flex';
 
   try {
-    var res  = await fetch(SUPA_URL + '/rest/v1/roulette_participations?telephone=eq.' + digits + '&select=id,lot_gagne', {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY }
-    });
+    var res  = await fetch(API_ROULETTE + '?action=check&phone=' + digits);
     var data = await res.json();
+    var rows = data && data.data ? data.data : [];
 
     if (loading) loading.style.display = 'none';
 
-    if (data && data.length > 0) {
+    if (data && data.alreadyPlayed) {
       var msg = document.getElementById('phone-already-msg');
       if (msg) {
         msg.style.display = 'block';
-        var lotGagne = data[0].lot_gagne || '';
+        var lotGagne = (rows[0] && rows[0].lot_gagne) || '';
         if (lotGagne) {
           msg.querySelector('.phone-already-sub').innerHTML =
             'Une seule participation par personne.<br>Vous aviez gagné : <strong>' + lotGagne + '</strong>';
@@ -1156,26 +1138,17 @@ async function checkPhone() {
     if (loading) loading.style.display = 'none';
     _phoneVerifie = digits;
     goTo('s-intro');
-    console.warn('Supabase check failed, allowing play:', e);
+    console.warn('Check phone failed, allowing play:', e);
   }
 }
 
 async function saveParticipation(prizeName) {
   if (!_phoneVerifie) return;
   try {
-    await fetch(SUPA_URL + '/rest/v1/roulette_participations', {
+    await fetch(API_ROULETTE + '?action=save', {
       method: 'POST',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({
-        telephone: _phoneVerifie,
-        lot_gagne: prizeName,
-        date_participation: new Date().toISOString()
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: _phoneVerifie, prize: prizeName })
     });
   } catch(e) { console.warn('Erreur sauvegarde:', e); }
 }

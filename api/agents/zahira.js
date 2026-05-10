@@ -19,6 +19,8 @@
 //   GET /api/agents/zahira?type=morning|evening|weekly|manual  → full team
 //   GET /api/agents/zahira?agent=assya                         → un seul worker (test)
 
+import { handleAuth } from '../_auth.js';
+
 const SUPA_URL = process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_KEY;
 const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY;
@@ -489,8 +491,7 @@ async function runZahira(triggerType) {
 // ──────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (handleAuth(req, res)) return;
 
   const triggerType = (req.query.type || 'manual').toString();
   const onlyAgent = (req.query.agent || '').toString().toLowerCase();

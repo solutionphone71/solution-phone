@@ -8,14 +8,13 @@
 // Body: { filename: "photo.jpg", contentType: "image/jpeg", data: "base64...", folder: "phones" }
 // Returns: { success: true, url: "https://...supabase.co/storage/v1/object/public/media/phones/..." }
 
+import { handleAuth } from './_auth.js';
+
 const SUPA_URL = process.env.SUPABASE_URL;
 const SUPA_KEY = process.env.SUPABASE_KEY;
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (handleAuth(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST uniquement' });
 
   const { filename, contentType, data, folder = 'misc' } = req.body || {};
