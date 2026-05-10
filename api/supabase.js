@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     'brain_briefings', 'brain_suggestions', 'brain_kpi_snapshots',
     'brain_usage_events', 'pennylane_sync',
     // ── HOME ZAHIRA (mai 2026) ──
-    'brain_chat_messages', 'mes_avis_google',
+    'brain_chat_messages', 'mes_avis_google', 'google_reviews', 'google_reviews_config',
     // Vues
     'v_validation_queue', 'v_agent_today', 'v_agent_7days',
     'v_brain_today', 'v_brain_active_suggestions', 'v_brain_kpis_7d',
