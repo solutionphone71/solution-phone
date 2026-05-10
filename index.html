@@ -564,31 +564,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 </div>
 
 <div id="app">
-<!-- ═══ ARIA COMMAND CENTER (pleine largeur) ═══ -->
+<!-- ═══ TOP BAR (Aria retiré · remplacé par Zahira) ═══ -->
 <div id="aria-omnibar-wrap">
-  <div id="aria-bar">
-    <button id="aria-wave-btn" onclick="window.ARIA&&ARIA.open()" title="Ouvrir ARIA">
-      <svg viewBox="0 0 22 14" width="16" height="11" fill="none">
-        <rect class="aria-bar-rect" x="0"    y="3" width="3" height="8"  rx="1.5" fill="white"/>
-        <rect class="aria-bar-rect" x="4.75" y="1" width="3" height="12" rx="1.5" fill="white"/>
-        <rect class="aria-bar-rect" x="9.5"  y="4" width="3" height="6"  rx="1.5" fill="white"/>
-        <rect class="aria-bar-rect" x="14.25" y="0" width="3" height="14" rx="1.5" fill="white"/>
-        <rect class="aria-bar-rect" x="19"   y="2" width="3" height="10" rx="1.5" fill="white"/>
-      </svg>
-    </button>
-    <input id="aria-input-cmd" type="text" placeholder="Chercher, créer, piloter l'app…" autocomplete="off" spellcheck="false"/>
-    <span id="aria-kbd-badge">⌘K</span>
-    <button id="aria-mic-round" title="Parler à ARIA">🎤</button>
+  <div id="aria-bar" style="justify-content:flex-end;gap:10px;">
+    <a href="/home.html" id="zahira-home-btn" title="Aller à la nouvelle home Zahira" style="background:linear-gradient(135deg,#FF3B45,#C8102E);color:#fff;border:none;border-radius:12px;height:44px;padding:0 18px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(255,59,69,0.3);transition:all 0.2s;letter-spacing:0.02em;display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
+      <span style="font-size:16px;">◢</span> Zahira
+    </a>
     <button id="brain-chat-btn" onclick="openBrainChat()" title="Demander à Brain (assistant IA)" style="background:linear-gradient(135deg,#FF0033,#A855F7);color:#fff;border:none;border-radius:12px;width:44px;height:44px;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(255,0,51,0.3);transition:all 0.2s;font-weight:900;">🧠</button>
-    <div id="aria-spotlight"></div>
-  </div>
-  <div id="aria-qas">
-    <button class="aqa" onclick="ariaCmd('Nouvelle réparation')">🔧 Répa</button>
-    <button class="aqa" onclick="ariaCmd('CA aujourd\'hui')">💰 CA</button>
-    <button class="aqa" onclick="ariaCmd('Stock')">📱 Stock</button>
-    <button class="aqa" onclick="ariaCmd('QualiRépar')">🏷️ QR</button>
-    <button class="aqa" onclick="ariaCmd('Facture')">🧾 Facture</button>
-    <button class="aqa" onclick="ariaCmd('Caisse')">🏧 Caisse</button>
   </div>
 </div>
 
@@ -23907,33 +23889,12 @@ Object.defineProperty(window,'spCurrentIntent',{get:function(){return spCurrentI
   };
 })();
 </script>
-<!-- ══ ARIA · Agent IA Solution Phone ══ -->
+<!-- ══ ARIA retiré (mai 2026) · remplacé par Zahira et l'équipe IA ══ -->
+<!-- aria-agent.js et patchAria désactivés. Le fichier reste dans le repo en backup. -->
+<!-- Pour réactiver temporairement, décommenter les lignes ci-dessous -->
+<!--
 <script src="./aria-agent.js"></script>
-<script>
-(function(){
-  function patchAria(){
-    if(!window.ARIA||typeof ARIA.send!=='function'){setTimeout(patchAria,150);return;}
-    var _o=ARIA.send.bind(ARIA);
-    ARIA.send=function(){
-      var inp=document.getElementById('aria-input');
-      var txt=(inp?inp.value:'').trim();
-      if(!txt)return;
-      if(typeof window._ariaOfflineDispatch==='function'){
-        var off=window._ariaOfflineDispatch(txt);
-        if(off){
-          if(typeof ARIA.addMessage==='function')ARIA.addMessage('user',txt);
-          if(inp)inp.value='';
-          if(typeof ARIA.setStatus==='function')ARIA.setStatus('Analyse…',true);
-          Promise.resolve(typeof ARIA.executeIntent==='function'?ARIA.executeIntent(off):null)
-            .finally(function(){if(typeof ARIA.setStatus==='function')ARIA.setStatus('Prête');});
-          return;
-        }
-      }
-      _o();
-    };
-  }
-  patchAria();
-})();
+-->
 // ═══ DARK THEME ENFORCER ═══
 // Force dark bg/color on elements with inline light styles
 (function(){

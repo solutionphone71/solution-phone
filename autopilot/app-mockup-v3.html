@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Solution Phone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+:root {
+  --bg-app:        #0A0A0C;
+  --bg-card:       #16161A;
+  --bg-card-2:     #1C1C20;
+  --bg-input:      #1F1F24;
+  --ink-1:         #FFFFFF;
+  --ink-2:         #B8B8C0;
+  --ink-3:         #6E6E76;
+  --ink-4:         #3A3A40;
+  --line:          rgba(255,255,255,0.08);
+  --line-2:        rgba(255,255,255,0.05);
+  --accent:        #FF3B45;
+  --accent-2:      #C8102E;
+  --green:         #34C759;
+  --orange:        #FF9F0A;
+  --blue:          #0A84FF;
+  --purple:        #BF5AF2;
+  --teal:          #64D2FF;
+  --yellow-glow:   #FFD60A;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: var(--bg-app);
+  color: var(--ink-1);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ─── BACKGROUND ALIVE ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 30% at 15% 5%, rgba(255,59,69,0.18), transparent 70%),
+    radial-gradient(ellipse 45% 30% at 95% 15%, rgba(10,132,255,0.12), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(191,90,242,0.08), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 100px;
+}
+
+/* ─── HEADER ─── */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 12px;
+  background: rgba(10,10,12,0.7);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 0.5px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.logo {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex: 1;
+  text-align: center;
+}
+.logo-bracket { color: var(--accent); margin-right: 2px; }
+.icon-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--ink-2);
+  background: var(--bg-card);
+  border: 0.5px solid var(--line);
+  transition: all 0.15s;
+  position: relative;
+}
+.icon-btn:hover { background: var(--bg-card-2); transform: translateY(-1px); }
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn.has-notif::after {
+  content: '';
+  position: absolute;
+  top: 7px; right: 7px;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--bg-app);
+}
+
+/* ─── ZAHIRA HERO ─── */
+.zahira-hero {
+  display: flex;
+  gap: 18px;
+  padding: 24px 20px 18px;
+  align-items: flex-start;
+}
+.zahira-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  padding: 6px;
+}
+.zahira-avatar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  box-shadow:
+    0 0 24px rgba(255,59,69,0.6),
+    0 0 48px rgba(255,59,69,0.25),
+    inset 0 0 12px rgba(255,59,69,0.15);
+}
+.zahira-avatar {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E63946, #C8102E);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 28px; font-weight: 700;
+  overflow: hidden;
+  position: relative;
+}
+.zahira-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.zahira-online {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  padding: 3px 8px 3px 6px;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: 0.04em;
+  border: 0.5px solid var(--line);
+}
+.zahira-online::before {
+  content: '';
+  width: 6px; height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(52,199,89,0.8);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+.zahira-text {
+  flex: 1;
+  min-width: 0;
+}
+.zahira-name {
+  font-family: 'Fraunces', serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+  line-height: 1;
+  margin-bottom: 10px;
+}
+.zahira-summary {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.highlight {
+  background: linear-gradient(180deg, transparent 55%, rgba(255,214,10,0.4) 55%);
+  color: var(--ink-1);
+  font-weight: 600;
+  padding: 0 3px;
+}
+
+/* ─── KPI STRIP ─── */
+.kpi-strip {
+  display: flex; gap: 8px;
+  padding: 0 20px 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kpi-strip::-webkit-scrollbar { display: none; }
+.kpi-chip {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--bg-card);
+  border: 0.5px solid var(--line);
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 96px;
+}
+.kpi-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.kpi-value {
+  font-family: 'Fraunces', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.kpi-trend {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+  display: flex; align-items: center; gap: 3px;
+}
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.warn { color: var(--orange); }
+.kpi-trend.neutral { color: var(--ink-3); }
+
+/* ─── COMPOSER ─── */
+.composer {
+  margin: 0 20px 28px;
+  display: flex; align-items: center; gap: 10px;
+}
+.composer-field {
+  flex: 1;
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-input);
+  border: 0.5px solid var(--line);
+  border-radius: 26px;
+  padding: 14px 18px;
+}
+.composer-field input {
+  flex: 1; border: none; background: transparent;
+  font-family: inherit; font-size: 15px;
+  color: var(--ink-1); outline: none;
+  min-width: 0;
+}
+.composer-field input::placeholder { color: var(--ink-3); }
+.composer-icon {
+  color: var(--ink-2);
+  cursor: pointer;
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.composer-icon:hover { color: var(--accent); }
+.composer-send {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF3B45, #C8102E);
+  color: white;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.1s, box-shadow 0.15s;
+  box-shadow:
+    0 6px 20px -4px rgba(255,59,69,0.5),
+    0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.composer-send:hover { transform: translateY(-1px); }
+.composer-send:active { transform: scale(0.94); }
+
+/* ─── SECTIONS ─── */
+.section {
+  margin: 0 20px 28px;
+}
+.section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: flex; align-items: center; gap: 8px;
+}
+.section-title .sparkle {
+  color: var(--accent);
+  font-size: 14px;
+}
+.section-action {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-card);
+  border: 0.5px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+/* ─── OPS GRID ─── */
+.ops-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.op-card {
+  border-radius: 22px;
+  padding: 22px 20px;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 168px;
+  position: relative;
+  overflow: hidden;
+  border: 0.5px solid var(--line);
+}
+.op-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--card-gradient);
+  z-index: 0;
+}
+.op-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,0.06), transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+.op-card > * { position: relative; z-index: 1; }
+.op-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -8px var(--card-shadow);
+}
+
+.op-card.qualirepar {
+  --card-gradient: linear-gradient(160deg, #1B3A2E 0%, #0F2A21 100%);
+  --card-shadow: rgba(52,199,89,0.3);
+}
+.op-card.vente {
+  --card-gradient: linear-gradient(160deg, #1A2E4F 0%, #0E1F3A 100%);
+  --card-shadow: rgba(10,132,255,0.3);
+}
+.op-card.achat {
+  --card-gradient: linear-gradient(160deg, #38214F 0%, #25153A 100%);
+  --card-shadow: rgba(191,90,242,0.3);
+}
+.op-card.accessoires {
+  --card-gradient: linear-gradient(160deg, #4A2E10 0%, #2E1D08 100%);
+  --card-shadow: rgba(255,159,10,0.3);
+}
+
+.op-icon {
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+}
+.op-card.qualirepar .op-icon  { color: #6FE08F; filter: drop-shadow(0 0 8px rgba(52,199,89,0.5)); }
+.op-card.vente .op-icon       { color: #4FA9FF; filter: drop-shadow(0 0 8px rgba(10,132,255,0.5)); }
+.op-card.achat .op-icon       { color: #DA8FFF; filter: drop-shadow(0 0 8px rgba(191,90,242,0.5)); }
+.op-card.accessoires .op-icon { color: #FFB94D; filter: drop-shadow(0 0 8px rgba(255,159,10,0.5)); }
+.op-icon svg { width: 30px; height: 30px; stroke-width: 2; }
+
+.op-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-top: auto;
+}
+.op-time {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+/* ─── AGENTS LIST ─── */
+.agents-list {
+  display: flex; flex-direction: column;
+  background: var(--bg-card);
+  border: 0.5px solid var(--line);
+  border-radius: 22px;
+  overflow: hidden;
+}
+.agent-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--line-2);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.agent-row:last-child { border-bottom: none; }
+.agent-row:hover { background: var(--bg-card-2); }
+.agent-row.silent { opacity: 0.55; }
+
+.agent-avatar-wrap {
+  position: relative;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.agent-avatar-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ring-color);
+  box-shadow: 0 0 16px var(--ring-glow);
+}
+.agent-row.silent .agent-avatar-wrap::before {
+  border-color: var(--ink-4);
+  box-shadow: none;
+}
+.agent-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--avatar-bg);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 16px; font-weight: 700;
+  overflow: hidden;
+}
+.agent-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.agent-info {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.agent-name {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.agent-name strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: 0.02em;
+}
+.agent-name span {
+  font-size: 10px;
+  color: var(--ink-3);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.agent-task {
+  font-size: 13px;
+  color: var(--ink-2);
+  font-weight: 400;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.agent-cta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-1);
+  background: var(--bg-card-2);
+  border: 0.5px solid var(--line);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.agent-cta:hover { background: var(--bg-input); border-color: rgba(255,255,255,0.15); }
+.agent-cta:active { transform: scale(0.96); }
+.agent-cta.idle {
+  background: transparent;
+  border: 0.5px solid var(--ink-4);
+  color: var(--ink-3);
+  width: 32px; height: 32px;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ─── BOTTOM TAB BAR ─── */
+.tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 420px;
+  margin: 0 auto;
+  background: rgba(10,10,12,0.85);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-top: 0.5px solid var(--line);
+  padding: 8px 6px 20px;
+  display: flex;
+  z-index: 100;
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 4px;
+  cursor: pointer;
+  color: var(--ink-3);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: color 0.15s;
+}
+.tab.active { color: var(--accent); }
+.tab svg { width: 22px; height: 22px; stroke-width: 2; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="app-header">
+    <div class="icon-btn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </div>
+    <div class="logo"><span class="logo-bracket">◢</span> Solution Phone</div>
+    <div class="icon-btn has-notif" aria-label="Photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ─── ZAHIRA HERO ─── -->
+  <section class="zahira-hero">
+    <div class="zahira-avatar-wrap">
+      <div class="zahira-avatar">
+        <img src="../images/zahira.jpg" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
+      </div>
+      <div class="zahira-online">En ligne</div>
+    </div>
+    <div class="zahira-text">
+      <div class="zahira-name">Bonjour<br>Sébastien</div>
+      <div class="zahira-summary">
+        3 factures Pennylane attendent vos photos. Assya a préparé 4 posts. Yago a 2 dossiers QualiRépar à monter — <span class="highlight">75 € à récupérer</span>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── KPI STRIP ─── -->
+  <div class="kpi-strip">
+    <div class="kpi-chip">
+      <div class="kpi-label">CA Jour</div>
+      <div class="kpi-value">1 546 €</div>
+      <div class="kpi-trend up">↑ +12%</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Avis</div>
+      <div class="kpi-value">4,7 ★</div>
+      <div class="kpi-trend neutral">552 avis</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Marges</div>
+      <div class="kpi-value">+12%</div>
+      <div class="kpi-trend up">vs hier</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Stock</div>
+      <div class="kpi-value">65</div>
+      <div class="kpi-trend warn">2 ruptures</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">QualiRépar</div>
+      <div class="kpi-value">425 €</div>
+      <div class="kpi-trend up">ce mois</div>
+    </div>
+  </div>
+
+  <!-- ─── COMPOSER ─── -->
+  <div class="composer">
+    <div class="composer-field">
+      <input type="text" placeholder="Demande à Zahira..." />
+      <svg class="composer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <svg class="composer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </div>
+    <button class="composer-send" aria-label="Envoyer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="19" x2="12" y2="5"/>
+        <polyline points="5 12 12 5 19 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ─── MES OPÉRATIONS ─── -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Mes opérations</div>
+      <div class="section-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+    </div>
+    <div class="ops-grid">
+
+      <div class="op-card qualirepar">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+        </div>
+        <div class="op-title">Facture<br>QualiRépar</div>
+        <div class="op-time">~ 2 min</div>
+      </div>
+
+      <div class="op-card vente">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="op-title">Vente<br>smartphone</div>
+        <div class="op-time">~ 1 min</div>
+      </div>
+
+      <div class="op-card achat">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="op-title">Achat<br>smartphone</div>
+        <div class="op-time">~ 1 min</div>
+      </div>
+
+      <div class="op-card accessoires">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        </div>
+        <div class="op-title">Accessoires</div>
+        <div class="op-time">~ 30 sec</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── ÉQUIPE IA ─── -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Équipe IA <span class="sparkle">✦</span></div>
+      <div class="section-action">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </div>
+    </div>
+    <div class="agents-list">
+
+      <!-- ANISSA -->
+      <div class="agent-row" style="--ring-color: #2563EB; --ring-glow: rgba(37,99,235,0.5); --avatar-bg: linear-gradient(135deg, #2563EB, #1E40AF);">
+        <div class="agent-avatar-wrap">
+          <div class="agent-avatar">A</div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name"><strong>ANISSA</strong> <span>Compta</span></div>
+          <div class="agent-task">Pennylane signale 3 factures à justifier</div>
+        </div>
+        <button class="agent-cta">Envoyer</button>
+      </div>
+
+      <!-- ASSYA -->
+      <div class="agent-row" style="--ring-color: #FF6B35; --ring-glow: rgba(255,107,53,0.5); --avatar-bg: linear-gradient(135deg, #FF6B35, #D14000);">
+        <div class="agent-avatar-wrap">
+          <div class="agent-avatar">A</div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name"><strong>ASSYA</strong> <span>Communication</span></div>
+          <div class="agent-task">4 posts prêts pour aujourd'hui</div>
+        </div>
+        <button class="agent-cta">Voir les 4</button>
+      </div>
+
+      <!-- YAGO -->
+      <div class="agent-row" style="--ring-color: #16A34A; --ring-glow: rgba(22,163,74,0.5); --avatar-bg: linear-gradient(135deg, #16A34A, #0E7A36);">
+        <div class="agent-avatar-wrap">
+          <div class="agent-avatar">Y</div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name"><strong>YAGO</strong> <span>QualiRépar</span></div>
+          <div class="agent-task">2 dossiers à monter, 75 € à récupérer</div>
+        </div>
+        <button class="agent-cta">Monter</button>
+      </div>
+
+      <!-- OBIWAN -->
+      <div class="agent-row" style="--ring-color: #7C3AED; --ring-glow: rgba(124,58,237,0.5); --avatar-bg: linear-gradient(135deg, #7C3AED, #5B21B6);">
+        <div class="agent-avatar-wrap">
+          <div class="agent-avatar">O</div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name"><strong>OBIWAN</strong> <span>Coach Boutique</span></div>
+          <div class="agent-task">Stock OK, marges +12%</div>
+        </div>
+        <button class="agent-cta">Voir</button>
+      </div>
+
+      <!-- CHANEL -->
+      <div class="agent-row silent" style="--ring-color: #0891B2; --ring-glow: rgba(8,145,178,0.4); --avatar-bg: linear-gradient(135deg, #0891B2, #075E80);">
+        <div class="agent-avatar-wrap">
+          <div class="agent-avatar">C</div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name"><strong>CHANEL</strong> <span>App</span></div>
+          <div class="agent-task">Aucune friction détectée</div>
+        </div>
+        <button class="agent-cta idle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- ─── BOTTOM TAB BAR ─── -->
+<nav class="tab-bar">
+  <a class="tab active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Accueil
+  </a>
+  <a class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2"/>
+      <line x1="12" y1="18" x2="12.01" y2="18"/>
+    </svg>
+    Tickets
+  </a>
+  <a class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    Clients
+  </a>
+  <a class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+    Analytics
+  </a>
+  <a class="tab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="1"/>
+      <circle cx="19" cy="12" r="1"/>
+      <circle cx="5" cy="12" r="1"/>
+    </svg>
+    Plus
+  </a>
+</nav>
+
+</body>
+</html>

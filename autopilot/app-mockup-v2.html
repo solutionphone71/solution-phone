@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Solution Phone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+:root {
+  --bg-app:        #FAFAFC;
+  --bg-card:       #FFFFFF;
+  --bg-soft:       #F2F2F4;
+  --bg-input:      #EEEEEF;
+  --ink-1:         #000000;
+  --ink-2:         #3C3C43;
+  --ink-3:         #8E8E93;
+  --ink-4:         #C7C7CC;
+  --line:          #E5E5EA;
+  --accent:        #C8102E;
+  --green:         #34C759;
+  --orange:        #FF9500;
+  --blue:          #007AFF;
+  --purple:        #AF52DE;
+  --teal:          #5AC8FA;
+  --pink:          #FF2D55;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  background: var(--bg-app);
+  color: var(--ink-1);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Living background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(255,107,53,0.08), transparent 60%),
+    radial-gradient(ellipse 50% 35% at 90% 10%, rgba(0,122,255,0.06), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(200,16,46,0.04), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 48px;
+}
+
+/* ─── HEADER ─── */
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px 14px;
+  background: rgba(250,250,252,0.78);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+  position: sticky; top: 0; z-index: 10;
+}
+.logo {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex: 1;
+  background: linear-gradient(135deg, #000 0%, #444 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.icon-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  color: var(--ink-2);
+  background: rgba(255,255,255,0.6);
+  border: 0.5px solid rgba(0,0,0,0.06);
+  transition: all 0.15s;
+}
+.icon-btn:hover { background: white; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* ─── ZAHIRA HERO (BIGGER, ALIVE) ─── */
+.zahira-hero {
+  display: flex;
+  gap: 22px;
+  padding: 32px 24px 24px;
+  align-items: center;
+}
+.zahira-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.zahira-avatar {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E63946, #C8102E);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 28px; font-weight: 700;
+  overflow: hidden;
+  box-shadow:
+    0 12px 32px -8px rgba(200,16,46,0.35),
+    0 0 0 6px rgba(255,255,255,0.9),
+    0 0 0 7px rgba(200,16,46,0.15);
+}
+.zahira-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.zahira-pulse {
+  position: absolute;
+  bottom: 4px; right: 4px;
+  width: 16px; height: 16px;
+  background: var(--green);
+  border: 3px solid var(--bg-app);
+  border-radius: 50%;
+  z-index: 2;
+}
+.zahira-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--green);
+  opacity: 0.4;
+  animation: pulseRing 2s ease-out infinite;
+}
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.zahira-text {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 6px;
+  min-width: 0;
+}
+.zahira-greeting {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px;
+  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.zahira-greeting::after {
+  content: 'En ligne';
+  background: var(--green);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.05em;
+}
+.zahira-name {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+  line-height: 1;
+}
+.zahira-summary {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.zahira-summary strong {
+  font-weight: 700;
+  color: var(--ink-1);
+}
+.zahira-summary .highlight {
+  background: linear-gradient(180deg, transparent 60%, rgba(255,149,0,0.3) 60%);
+  font-weight: 600;
+  padding: 0 2px;
+}
+
+/* ─── KPI STRIP (vivant) ─── */
+.kpi-strip {
+  display: flex; gap: 10px;
+  padding: 0 24px 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kpi-strip::-webkit-scrollbar { display: none; }
+.kpi-chip {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: white;
+  border: 0.5px solid rgba(0,0,0,0.06);
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 110px;
+  box-shadow: 0 2px 8px -2px rgba(0,0,0,0.04);
+  transition: transform 0.15s;
+}
+.kpi-chip:hover { transform: translateY(-2px); }
+.kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.kpi-value {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.kpi-trend {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.warn { color: var(--orange); }
+
+/* ─── COMPOSER ─── */
+.composer {
+  margin: 0 24px 36px;
+  display: flex; align-items: center; gap: 10px;
+}
+.composer-field {
+  flex: 1;
+  display: flex; align-items: center; gap: 12px;
+  background: white;
+  border: 0.5px solid rgba(0,0,0,0.08);
+  border-radius: 26px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.06);
+}
+.composer-field input {
+  flex: 1; border: none; background: transparent;
+  font-family: inherit; font-size: 15px;
+  color: var(--ink-1); outline: none;
+  min-width: 0;
+}
+.composer-field input::placeholder { color: var(--ink-3); }
+.composer-icon {
+  color: var(--ink-3);
+  cursor: pointer;
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.composer-icon:hover { color: var(--accent); }
+.composer-send {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E63946, #C8102E);
+  color: white;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 6px 16px -4px rgba(200,16,46,0.4);
+}
+.composer-send:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -4px rgba(200,16,46,0.5); }
+.composer-send:active { transform: scale(0.94); }
+
+/* ─── SECTIONS ─── */
+.section {
+  margin: 0 24px 36px;
+}
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink-1);
+}
+.section-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* ─── OPERATIONS GRID — bigger, with color fills ─── */
+.ops-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.op-card {
+  border-radius: 22px;
+  padding: 24px;
+  cursor: pointer;
+  transition: transform 0.18s, box-shadow 0.18s;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 168px;
+  position: relative;
+  overflow: hidden;
+  border: 0.5px solid rgba(0,0,0,0.06);
+}
+.op-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--card-tint);
+  opacity: 0.18;
+  z-index: 0;
+}
+.op-card > * { position: relative; z-index: 1; }
+.op-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.16);
+}
+
+.op-card.qualirepar { background: white; --card-tint: linear-gradient(135deg, #34C759, #00A848); }
+.op-card.vente      { background: white; --card-tint: linear-gradient(135deg, #007AFF, #0051D5); }
+.op-card.achat      { background: white; --card-tint: linear-gradient(135deg, #AF52DE, #6E2DBC); }
+.op-card.accessoires { background: white; --card-tint: linear-gradient(135deg, #FF9500, #C76A00); }
+
+.op-icon {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: white;
+  box-shadow: 0 4px 12px -2px rgba(0,0,0,0.08);
+}
+.op-card.qualirepar .op-icon  { color: var(--green); }
+.op-card.vente .op-icon       { color: var(--blue); }
+.op-card.achat .op-icon       { color: var(--purple); }
+.op-card.accessoires .op-icon { color: var(--orange); }
+
+.op-icon svg { width: 26px; height: 26px; stroke-width: 2.2; }
+
+.op-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.op-meta {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  font-weight: 600;
+  margin-top: auto;
+  letter-spacing: 0.01em;
+}
+.op-time-pill {
+  background: rgba(0,0,0,0.06);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.op-meta-dot {
+  width: 3px; height: 3px;
+  background: var(--ink-3);
+  border-radius: 50%;
+}
+.op-arrow {
+  position: absolute;
+  top: 24px; right: 24px;
+  color: var(--ink-3);
+  width: 22px; height: 22px;
+  transition: transform 0.18s, color 0.18s;
+}
+.op-card:hover .op-arrow {
+  transform: translate(2px, -2px);
+}
+.op-card.qualirepar:hover .op-arrow  { color: var(--green); }
+.op-card.vente:hover .op-arrow       { color: var(--blue); }
+.op-card.achat:hover .op-arrow       { color: var(--purple); }
+.op-card.accessoires:hover .op-arrow { color: var(--orange); }
+
+/* ─── AGENT CARDS ─── */
+.agents-list {
+  display: flex; flex-direction: column;
+  background: white;
+  border: 0.5px solid rgba(0,0,0,0.06);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -8px rgba(0,0,0,0.08);
+}
+.agent-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+.agent-row:last-child { border-bottom: none; }
+.agent-row:hover { background: rgba(0,0,0,0.02); }
+.agent-row.silent { opacity: 0.5; }
+
+.agent-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 17px; font-weight: 700;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 4px 12px -2px rgba(0,0,0,0.12);
+}
+.agent-status-dot {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 13px; height: 13px;
+  border: 3px solid white;
+  border-radius: 50%;
+}
+.agent-row.has-task .agent-status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: pulseRing 2.4s ease-out infinite;
+}
+
+.agent-info {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.agent-name {
+  display: flex; align-items: baseline; gap: 8px;
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink-1);
+  letter-spacing: -0.01em;
+}
+.agent-name span {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.agent-task {
+  font-size: 14px;
+  color: var(--ink-2);
+  font-weight: 400;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.agent-cta {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  background: var(--ink-1);
+  border: none;
+  cursor: pointer;
+  padding: 9px 16px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: transform 0.1s, opacity 0.15s;
+  flex-shrink: 0;
+  letter-spacing: -0.005em;
+}
+.agent-cta:hover { opacity: 0.85; }
+.agent-cta:active { transform: scale(0.96); }
+.agent-cta.secondary {
+  background: rgba(0,0,0,0.06);
+  color: var(--ink-1);
+}
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="app-header">
+    <div class="icon-btn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="4" y1="7" x2="20" y2="7"/>
+        <line x1="4" y1="12" x2="20" y2="12"/>
+        <line x1="4" y1="17" x2="20" y2="17"/>
+      </svg>
+    </div>
+    <div class="logo">◢ Solution Phone</div>
+    <div class="icon-btn" aria-label="Photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+  </header>
+
+  <!-- ─── ZAHIRA HERO PRÉSENT ─── -->
+  <section class="zahira-hero">
+    <div class="zahira-avatar-wrap">
+      <div class="zahira-avatar">
+        <img src="../images/zahira.jpg" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
+      </div>
+      <div class="zahira-pulse"></div>
+    </div>
+    <div class="zahira-text">
+      <div class="zahira-greeting">Dimanche · 09:14</div>
+      <div class="zahira-name">Bonjour Sébastien</div>
+      <div class="zahira-summary">
+        <strong>3 factures Pennylane</strong> attendent vos photos. Assya a préparé 4 posts. Yago a 2 dossiers QualiRépar à monter — <span class="highlight">75 € à récupérer</span>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── KPI STRIP ─── -->
+  <div class="kpi-strip">
+    <div class="kpi-chip">
+      <div class="kpi-label">CA Jour</div>
+      <div class="kpi-value">1 546 €</div>
+      <div class="kpi-trend up">↑ +12% vs hier</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Avis Google</div>
+      <div class="kpi-value">4,7 ★</div>
+      <div class="kpi-trend up">+3 cette semaine</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Marges</div>
+      <div class="kpi-value">+12%</div>
+      <div class="kpi-trend up">vs mai 2025</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">Stock</div>
+      <div class="kpi-value">65</div>
+      <div class="kpi-trend warn">2 ruptures</div>
+    </div>
+    <div class="kpi-chip">
+      <div class="kpi-label">QualiRépar</div>
+      <div class="kpi-value">425 €</div>
+      <div class="kpi-trend up">ce mois</div>
+    </div>
+  </div>
+
+  <!-- ─── COMPOSER ─── -->
+  <div class="composer">
+    <div class="composer-field">
+      <input type="text" placeholder="Demande à Zahira..." />
+      <svg class="composer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <svg class="composer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </div>
+    <button class="composer-send" aria-label="Envoyer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <line x1="12" y1="19" x2="12" y2="5"/>
+        <polyline points="5 12 12 5 19 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ─── MES OPÉRATIONS ─── -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Mes opérations</div>
+      <div class="section-action">Personnaliser</div>
+    </div>
+    <div class="ops-grid">
+
+      <div class="op-card qualirepar">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="13" x2="15" y2="13"/>
+            <line x1="9" y1="17" x2="15" y2="17"/>
+          </svg>
+        </div>
+        <div class="op-title">Facture<br>QualiRépar</div>
+        <div class="op-meta">
+          <span class="op-time-pill">~ 2 min</span>
+          <span class="op-meta-dot"></span>
+          <span>Bonus auto</span>
+        </div>
+        <svg class="op-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="7" y1="17" x2="17" y2="7"/>
+          <polyline points="7 7 17 7 17 17"/>
+        </svg>
+      </div>
+
+      <div class="op-card vente">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="op-title">Vente<br>smartphone</div>
+        <div class="op-meta">
+          <span class="op-time-pill">~ 1 min</span>
+          <span class="op-meta-dot"></span>
+          <span>65 en stock</span>
+        </div>
+        <svg class="op-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="7" y1="17" x2="17" y2="7"/>
+          <polyline points="7 7 17 7 17 17"/>
+        </svg>
+      </div>
+
+      <div class="op-card achat">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="op-title">Achat<br>smartphone</div>
+        <div class="op-meta">
+          <span class="op-time-pill">~ 1 min</span>
+          <span class="op-meta-dot"></span>
+          <span>Estim. IA</span>
+        </div>
+        <svg class="op-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="7" y1="17" x2="17" y2="7"/>
+          <polyline points="7 7 17 7 17 17"/>
+        </svg>
+      </div>
+
+      <div class="op-card accessoires">
+        <div class="op-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        </div>
+        <div class="op-title">Accessoires</div>
+        <div class="op-meta">
+          <span class="op-time-pill">~ 30 sec</span>
+          <span class="op-meta-dot"></span>
+          <span>Caisse rapide</span>
+        </div>
+        <svg class="op-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="7" y1="17" x2="17" y2="7"/>
+          <polyline points="7 7 17 7 17 17"/>
+        </svg>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── ÉQUIPE IA ─── -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-title">Équipe IA</div>
+      <div class="section-action">Voir tout</div>
+    </div>
+    <div class="agents-list">
+
+      <!-- ANISSA -->
+      <div class="agent-row has-task">
+        <div class="agent-avatar" style="background: linear-gradient(135deg, #2563EB, #1E40AF); color: white;">
+          A
+          <div class="agent-status-dot" style="background: var(--orange); color: var(--orange);"></div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name">Anissa <span>Compta</span></div>
+          <div class="agent-task">Pennylane signale <strong>3 factures à justifier</strong> — il me faut juste les photos.</div>
+        </div>
+        <button class="agent-cta">Envoyer</button>
+      </div>
+
+      <!-- ASSYA -->
+      <div class="agent-row has-task">
+        <div class="agent-avatar" style="background: linear-gradient(135deg, #FF6B35, #D14000); color: white;">
+          A
+          <div class="agent-status-dot" style="background: var(--green); color: var(--green);"></div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name">Assya <span>Communication</span></div>
+          <div class="agent-task"><strong>4 posts</strong> prêts pour aujourd'hui : iPhone 13 batterie, story atelier, reel récap, repost avis 5★.</div>
+        </div>
+        <button class="agent-cta">Voir les 4</button>
+      </div>
+
+      <!-- YAGO -->
+      <div class="agent-row has-task">
+        <div class="agent-avatar" style="background: linear-gradient(135deg, #16A34A, #0E7A36); color: white;">
+          Y
+          <div class="agent-status-dot" style="background: var(--orange); color: var(--orange);"></div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name">Yago <span>QualiRépar</span></div>
+          <div class="agent-task"><strong>2 dossiers</strong> à monter : Thomas L. (batterie 25 €) et Sophie D. (écran 50 €). Total <strong>75 €</strong>.</div>
+        </div>
+        <button class="agent-cta">Monter</button>
+      </div>
+
+      <!-- OBIWAN -->
+      <div class="agent-row">
+        <div class="agent-avatar" style="background: linear-gradient(135deg, #7C3AED, #5B21B6); color: white;">
+          O
+          <div class="agent-status-dot" style="background: var(--green);"></div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name">Obiwan <span>Coach Boutique</span></div>
+          <div class="agent-task">Stock OK. Marges <strong>+12 %</strong>. Rahim a fait <strong>14 répas</strong> — record perso.</div>
+        </div>
+        <button class="agent-cta secondary">Voir</button>
+      </div>
+
+      <!-- CHANEL -->
+      <div class="agent-row silent">
+        <div class="agent-avatar" style="background: linear-gradient(135deg, #0891B2, #075E80); color: white;">
+          C
+          <div class="agent-status-dot" style="background: var(--ink-4);"></div>
+        </div>
+        <div class="agent-info">
+          <div class="agent-name">Chanel <span>App</span></div>
+          <div class="agent-task">Aucune friction détectée. L'app tourne propre.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>
