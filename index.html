@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<!-- v20260412_dark_light_toggle -->
+<!-- v20260412_DARK_ONLY -->
 <html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="color-scheme" content="dark">
 <title>Solution Phone — Gestion</title>
+
+<!-- FORCE DARK MODE — pas de mode clair possible -->
+<script>
+(function(){
+  // Bloquer toute tentative de bascule en mode clair
+  try {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    var origSetAttr = Element.prototype.setAttribute;
+    Element.prototype.setAttribute = function(name, value){
+      if (name === 'data-theme' && value !== 'dark' && this === document.documentElement) {
+        return origSetAttr.call(this, name, 'dark');
+      }
+      return origSetAttr.call(this, name, value);
+    };
+    // Localstorage clean
+    try { localStorage.removeItem('theme'); localStorage.setItem('theme', 'dark'); } catch(_){}
+  } catch(e){}
+})();
+</script>
 
 <!-- redirect auto retiré · Zahira home est désormais intégrée dans l'app sécurisée -->
 
@@ -215,6 +234,45 @@
     background: rgba(28,28,36,0.7) !important;
     color: #FFFFFF !important;
     border-color: rgba(255,255,255,0.1) !important;
+  }
+
+  /* ─── TUE LE MODE CLAIR ─── */
+  /* Tout selecteur [data-theme="light"] est neutralisé */
+  [data-theme="light"] *, [data-theme="light"] {
+    background-color: transparent !important;
+    color: inherit !important;
+  }
+  /* Force partout */
+  html, body, #app, .layout, .container, .wrapper, main,
+  header, .header, .top-bar, .topbar, .app-header, .app-bar,
+  .navbar, .nav-bar, .toolbar, .header-bar, .page-header,
+  .content, .main-content, .body-content {
+    background-color: #08080A !important;
+  }
+  /* Aria omnibar dans top */
+  #aria-omnibar-wrap, #aria-bar {
+    background: rgba(8,8,10,0.95) !important;
+    color: #FFFFFF !important;
+  }
+  /* Tout texte par défaut */
+  body * {
+    color: inherit;
+  }
+  /* Override pour les textes par défaut sombres */
+  body, .text, p, span, div, label, td, li, a {
+    color: #FFFFFF;
+  }
+  /* Header app spécifique */
+  .app-header, header.app-header, [class*="header"] {
+    background: rgba(8,8,10,0.92) !important;
+    border-bottom: 0.5px solid rgba(255,255,255,0.08) !important;
+  }
+  /* Modal backdrops */
+  .modal-backdrop, .overlay { background: rgba(0,0,0,0.85) !important; }
+  .modal, .modal-content, .dialog {
+    background: rgba(20,20,28,0.95) !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
   }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
