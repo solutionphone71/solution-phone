@@ -6,6 +6,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual">
 <meta name="color-scheme" content="dark">
 <title>Solution Phone — Gestion</title>
+
+<!-- ════════════════════════════════════════════════════════════════
+     REDIRECT AUTO vers Home Zahira (mai 2026)
+     Si on arrive sur / ou /index.html sans hash et sans ?classic=1,
+     on bascule vers /home.html (= Zahira chat-first home).
+     Pour rester sur l'app classique : /index.html?classic=1 ou /index.html#open-xxx
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  try {
+    var p = window.location.pathname;
+    var h = window.location.hash;
+    var s = window.location.search;
+    var isRoot = (p === '/' || p === '/index.html' || p === '/index');
+    var hasHash = !!h && h.length > 1;
+    var wantClassic = s.indexOf('classic=1') !== -1;
+    if (isRoot && !hasHash && !wantClassic) {
+      window.location.replace('/home.html');
+    }
+  } catch(e) {}
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
 <meta name="theme-color" content="#0a0a1a">
