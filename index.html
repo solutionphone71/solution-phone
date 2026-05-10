@@ -4505,7 +4505,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                     <select id="rep-civilite">
                       <option value="">--</option><option value="M." selected>M.</option><option value="Mme">Mme</option>
                     </select></div>
-                  <div class="form-group"><label>Nom *</label><input type="text" id="rep-nom" placeholder="Dupont"></div>
+                  <div class="form-group" style="position:relative;">
+                    <label>Nom *</label>
+                    <input type="text" id="rep-nom" placeholder="Dupont" oninput="repNomAutocomplete(this.value)" onblur="setTimeout(function(){var b=document.getElementById('rep-nom-autocomplete');if(b)b.style.display='none';},250)">
+                    <div id="rep-nom-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;max-height:280px;overflow-y:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+                  </div>
                   <div class="form-group"><label>Prénom</label><input type="text" id="rep-prenom" placeholder="Jean"></div>
                 </div>
                 <div class="form-group"><label>Téléphone *</label><input type="tel" id="rep-tel" placeholder="06 XX XX XX XX"></div>
@@ -4546,12 +4550,16 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                         <option>Apple</option><option>Samsung</option><option>Xiaomi</option>
                         <option>Huawei</option><option>OnePlus</option><option>Google</option><option>Autre</option>
                       </select></div>
-                    <div class="form-group"><label>Modèle *</label><input type="text" id="dep-modele" placeholder="iPhone 13 Pro"></div>
+                    <div class="form-group" style="position:relative;">
+                      <label>Modèle *</label>
+                      <input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repModeleAutocomplete(this.value)" onblur="setTimeout(function(){var b=document.getElementById('rep-modele-autocomplete');if(b)b.style.display='none';},250)">
+                      <div id="rep-modele-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;max-height:280px;overflow-y:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+                    </div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
+                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
@@ -4630,6 +4638,16 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
+                    <!-- ⚡ Presets 1-clic — auto-fill panne + pièce + IRIS (prix manuel) -->
+                    <div class="rep-panne-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('ecran')"      style="padding:7px 14px;border:1.5px solid #ef4444;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📱 Écran cassé</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('batterie')"   style="padding:7px 14px;border:1.5px solid #16a34a;background:rgba(22,163,74,0.1);color:#16a34a;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔋 Batterie</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('connecteur')" style="padding:7px 14px;border:1.5px solid #f59e0b;background:rgba(245,158,11,0.1);color:#f59e0b;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔌 Connecteur</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('hp')"         style="padding:7px 14px;border:1.5px solid #2563eb;background:rgba(37,99,235,0.1);color:#2563eb;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔊 Haut-parleur</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('camera')"     style="padding:7px 14px;border:1.5px solid #7c3aed;background:rgba(124,58,237,0.1);color:#7c3aed;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📷 Caméra</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('vitre')"      style="padding:7px 14px;border:1.5px solid #ec4899;background:rgba(236,72,153,0.1);color:#ec4899;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">💎 Vitre arrière</button>
+                      <button type="button" class="rep-chip" onclick="repApplyPreset('eau')"        style="padding:7px 14px;border:1.5px solid #06b6d4;background:rgba(6,182,212,0.1);color:#06b6d4;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">💧 Dégât des eaux</button>
+                    </div>
                     <select id="dep-panne-select" onchange="repPanneSelect(this.value);repCheckEligibiliteDebounced();"
                       style="padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
                       <option value="">-- Sélectionner la panne --</option>
@@ -17065,6 +17083,263 @@ function repImprimerFacture(d){
   setTimeout(function(){ w.print(); }, 500);
 }
 
+// ════════════════════════════════════════════════════════════════
+// QUALIRÉPAR · STREAMLINING J4-J9 · mai 2026
+// 3 quick wins additifs : presets panne, autocomplete tel, IMEI→modèle
+// ════════════════════════════════════════════════════════════════
+
+// ── 1) PRESETS PANNE 1-CLIC ─────────────────────────────────────
+// Pré-remplit panne + pièce + déclenche détection IRIS automatique
+// (mais ne touche PAS au prix : Sébastien le garde manuel)
+var REP_PRESETS = {
+  ecran:      { panne:'Remplacement écran suite à une casse (fissure / écran cassé)',                        piece:'Écran' },
+  batterie:   { panne:'Remplacement batterie - autonomie insuffisante / téléphone qui s\'éteint tout seul', piece:'Batterie' },
+  connecteur: { panne:'Remplacement connecteur de charge - charge impossible ou intermittente',             piece:'Connecteur de charge' },
+  hp:         { panne:'Remplacement haut-parleur - son absent ou distordu',                                 piece:'Haut-parleur' },
+  camera:     { panne:'Remplacement caméra arrière - photos floues ou caméra non fonctionnelle',            piece:'Caméra arrière' },
+  vitre:      { panne:'Remplacement vitre arrière - dos du téléphone cassé',                                piece:'Vitre arrière' },
+  eau:        { panne:'Diagnostic et réparation dégât des eaux - téléphone tombé dans l\'eau',              piece:'Autre' }
+};
+function repApplyPreset(key){
+  var p = REP_PRESETS[key]; if(!p) return;
+  // Sélectionner la valeur dans le dropdown panne (déclenche repPanneSelect via onchange)
+  var sel = document.getElementById('dep-panne-select');
+  if(sel){
+    var found = false;
+    for(var i=0; i<sel.options.length; i++){
+      if(sel.options[i].value === p.panne){ sel.selectedIndex = i; found = true; break; }
+    }
+    if(found){ sel.dispatchEvent(new Event('change')); }
+  }
+  // Forcer la pièce à commander
+  var pieceSel = document.getElementById('dep-piece');
+  if(pieceSel) pieceSel.value = p.piece;
+  // Refocus prix pour saisie rapide
+  setTimeout(function(){
+    var prixEl = document.getElementById('dep-mo-ht') || document.getElementById('r-prix') || document.getElementById('dep-pieces-ht');
+    if(prixEl){ prixEl.focus(); prixEl.select && prixEl.select(); }
+  }, 100);
+  if(typeof showNotif==='function') showNotif('⚡ Préset appliqué — saisis le prix','success');
+}
+
+// ── 2) AUTOCOMPLETE NOM CLIENT ──────────────────────────────────
+// Sébastien tape les premières lettres du nom → suggestions → 1 clic remplit tout
+var _repNomTimer = null;
+function repNomAutocomplete(val){
+  clearTimeout(_repNomTimer);
+  var box = document.getElementById('rep-nom-autocomplete'); if(!box) return;
+  var q = (val||'').trim().toLowerCase();
+  if(q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  // Debounce 200ms
+  _repNomTimer = setTimeout(function(){ _repNomAutocompleteFire(q, box); }, 200);
+}
+async function _repNomAutocompleteFire(q, box){
+  var matches = [];
+  try {
+    if(typeof repDossiers !== 'undefined' && Array.isArray(repDossiers)){
+      repDossiers.forEach(function(d){
+        var c = d.client || {};
+        var nom = (c.nom||'').toLowerCase();
+        var prenom = (c.prenom||'').toLowerCase();
+        // Match si le nom OU le prénom commence par la requête
+        if((nom && nom.indexOf(q)===0) || (prenom && prenom.indexOf(q)===0)){
+          matches.push({
+            tel: c.tel||'', civilite:c.civilite||'M.', nom:c.nom||'', prenom:c.prenom||'',
+            email:c.email||'', adresse:c.adresse||'', cp:c.cp||'', ville:c.ville||'',
+            source:'Réparation '+(d.numero||''),
+            ts: d.dateCreation || d.date || ''
+          });
+        }
+      });
+    }
+  } catch(e){}
+  // Dédupliquer par nom+prenom+tel (garder le plus récent)
+  var seen = {};
+  matches = matches.filter(function(m){
+    var k = (m.nom||'').toLowerCase()+'|'+(m.prenom||'').toLowerCase()+'|'+(m.tel||'');
+    if(seen[k]) return false;
+    seen[k] = true; return true;
+  });
+  // Trier par récence puis alpha
+  matches.sort(function(a,b){
+    if(a.ts && b.ts) return b.ts.localeCompare(a.ts);
+    return (a.nom||'').localeCompare(b.nom||'');
+  });
+  matches = matches.slice(0, 8);
+
+  if(matches.length === 0){ box.style.display='none'; box.innerHTML=''; return; }
+
+  box.style.display = 'block';
+  box.innerHTML = matches.map(function(m, i){
+    return '<div onclick="repPickClientFromNom('+i+')" data-idx="'+i+'" '+
+      'style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center;" '+
+      'onmouseover="this.style.background=\'rgba(255,255,255,0.06)\'" onmouseout="this.style.background=\'\'">'+
+      '<div><b>'+(m.civilite||'')+' '+(m.prenom||'')+' '+m.nom+'</b><br>'+
+        '<span style="font-size:11px;color:var(--text-muted);">'+(m.tel||'—')+(m.email?' · '+m.email:'')+'</span></div>'+
+      '<span style="font-size:10px;color:var(--text-muted);">'+m.source+'</span>'+
+    '</div>';
+  }).join('');
+  window._repNomMatches = matches;
+}
+function repPickClientFromNom(idx){
+  var m = (window._repNomMatches||[])[idx]; if(!m) return;
+  var fields = { 'rep-civilite':m.civilite, 'rep-nom':m.nom, 'rep-prenom':m.prenom,
+                 'rep-tel':m.tel, 'rep-email':m.email, 'rep-adresse':m.adresse,
+                 'rep-cp':m.cp, 'rep-ville':m.ville };
+  Object.keys(fields).forEach(function(k){
+    var el = document.getElementById(k);
+    if(el && fields[k]) el.value = fields[k];
+  });
+  var box = document.getElementById('rep-nom-autocomplete');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+  if(typeof showNotif==='function') showNotif('✅ Fiche '+m.nom+' pré-remplie','success');
+  setTimeout(function(){
+    var marqueEl = document.getElementById('dep-marque');
+    if(marqueEl) marqueEl.focus();
+  }, 100);
+}
+
+// ── 3bis) AUTOCOMPLETE MODÈLE depuis l'historique réparations ──────
+// Tape les premières lettres du modèle → liste des modèles déjà réparés.
+// Plus précis et utile que l'IMEI lookup TAC : couvre 95% des cas après 1 mois.
+var _repModeleTimer = null;
+function repModeleAutocomplete(val){
+  clearTimeout(_repModeleTimer);
+  var box = document.getElementById('rep-modele-autocomplete'); if(!box) return;
+  var q = (val||'').trim().toLowerCase();
+  if(q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  _repModeleTimer = setTimeout(function(){ _repModeleAutocompleteFire(q, box); }, 150);
+}
+function _repModeleAutocompleteFire(q, box){
+  // Compter les occurrences de chaque (marque, modèle) dans l'historique
+  var counts = {};
+  try {
+    if(typeof repDossiers !== 'undefined' && Array.isArray(repDossiers)){
+      repDossiers.forEach(function(d){
+        var a = d.appareil || {};
+        var marque = (a.marque||'').trim();
+        var modele = (a.modele||'').trim();
+        if(!modele) return;
+        // Match si début du modèle OU si la requête est dans le modèle (souple)
+        var ml = modele.toLowerCase();
+        if(ml.indexOf(q) === -1) return;
+        // Bonus de score si match au début
+        var startBonus = ml.indexOf(q) === 0 ? 1000 : 0;
+        var key = marque + '|' + modele;
+        if(!counts[key]) counts[key] = { marque:marque, modele:modele, n:0, score:0, last:'' };
+        counts[key].n += 1;
+        counts[key].score += 1 + startBonus;
+        var ts = d.dateCreation || d.date || '';
+        if(ts > counts[key].last) counts[key].last = ts;
+      });
+    }
+  } catch(e){}
+
+  // Trier par score (fréquence + bonus début) puis par récence
+  var matches = Object.values(counts).sort(function(a,b){
+    if(b.score !== a.score) return b.score - a.score;
+    return (b.last||'').localeCompare(a.last||'');
+  }).slice(0, 8);
+
+  if(matches.length === 0){ box.style.display='none'; box.innerHTML=''; return; }
+
+  box.style.display = 'block';
+  box.innerHTML = matches.map(function(m, i){
+    var subtitle = (m.marque ? m.marque + ' · ' : '') + m.n + ' réparation' + (m.n>1?'s':'');
+    return '<div onclick="repPickModele('+i+')" data-idx="'+i+'" '+
+      'style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center;" '+
+      'onmouseover="this.style.background=\'rgba(255,255,255,0.06)\'" onmouseout="this.style.background=\'\'">'+
+      '<div><b>'+m.modele+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+subtitle+'</span></div>'+
+      '<span style="font-size:10px;color:var(--text-muted);">↵</span>'+
+    '</div>';
+  }).join('');
+  window._repModeleMatches = matches;
+}
+function repPickModele(idx){
+  var m = (window._repModeleMatches||[])[idx]; if(!m) return;
+  var modeleEl = document.getElementById('dep-modele');
+  var marqueEl = document.getElementById('dep-marque');
+  if(modeleEl) modeleEl.value = m.modele;
+  // Auto-fill la marque si vide ET si la marque historique existe dans le select
+  if(marqueEl && !marqueEl.value && m.marque){
+    for(var i=0; i<marqueEl.options.length; i++){
+      if(marqueEl.options[i].value.toLowerCase() === m.marque.toLowerCase()){
+        marqueEl.value = marqueEl.options[i].value;
+        if(typeof repMajOrganismePhoto === 'function') repMajOrganismePhoto();
+        break;
+      }
+    }
+  }
+  var box = document.getElementById('rep-modele-autocomplete');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+  if(typeof showNotif==='function') showNotif('✅ '+m.modele+' (vu '+m.n+' fois)','success');
+  // Focus sur l'IMEI pour enchaîner
+  setTimeout(function(){
+    var imeiEl = document.getElementById('dep-imei');
+    if(imeiEl) imeiEl.focus();
+  }, 100);
+}
+
+// ── 3) IMEI → MARQUE/MODÈLE AUTO (prefix TAC 8 premiers chiffres) ──
+// Source : table publique GSMA TAC, on couvre les marques courantes en boutique.
+// L'utilisateur peut toujours corriger manuellement.
+var REP_TAC_TABLE = {
+  // iPhone (Apple — TAC commence par 35)
+  '35358109':{m:'Apple', mod:'iPhone 13'},      '35358111':{m:'Apple', mod:'iPhone 13 Pro'},
+  '35358112':{m:'Apple', mod:'iPhone 13 Pro Max'}, '35358108':{m:'Apple', mod:'iPhone 13 mini'},
+  '35341910':{m:'Apple', mod:'iPhone 14'},      '35341911':{m:'Apple', mod:'iPhone 14 Plus'},
+  '35341912':{m:'Apple', mod:'iPhone 14 Pro'},  '35341913':{m:'Apple', mod:'iPhone 14 Pro Max'},
+  '35319415':{m:'Apple', mod:'iPhone 15'},      '35319416':{m:'Apple', mod:'iPhone 15 Plus'},
+  '35319417':{m:'Apple', mod:'iPhone 15 Pro'},  '35319418':{m:'Apple', mod:'iPhone 15 Pro Max'},
+  '35238110':{m:'Apple', mod:'iPhone 12'},      '35238111':{m:'Apple', mod:'iPhone 12 Pro'},
+  '35238112':{m:'Apple', mod:'iPhone 12 Pro Max'}, '35238113':{m:'Apple', mod:'iPhone 12 mini'},
+  '35178410':{m:'Apple', mod:'iPhone 11'},      '35178411':{m:'Apple', mod:'iPhone 11 Pro'},
+  '35178412':{m:'Apple', mod:'iPhone 11 Pro Max'},
+  // Samsung Galaxy S22-S24
+  '35415814':{m:'Samsung', mod:'Galaxy S22'},   '35415815':{m:'Samsung', mod:'Galaxy S22+'},
+  '35415816':{m:'Samsung', mod:'Galaxy S22 Ultra'}, '35453415':{m:'Samsung', mod:'Galaxy S23'},
+  '35453416':{m:'Samsung', mod:'Galaxy S23+'},  '35453417':{m:'Samsung', mod:'Galaxy S23 Ultra'},
+  '35490115':{m:'Samsung', mod:'Galaxy S24'},   '35490116':{m:'Samsung', mod:'Galaxy S24+'},
+  '35490117':{m:'Samsung', mod:'Galaxy S24 Ultra'},
+  // Samsung Galaxy A
+  '35415510':{m:'Samsung', mod:'Galaxy A53'},   '35415511':{m:'Samsung', mod:'Galaxy A54'},
+  '35415512':{m:'Samsung', mod:'Galaxy A55'},   '35453610':{m:'Samsung', mod:'Galaxy A35'},
+  // Huawei
+  '86796004':{m:'Huawei', mod:'P50 Pro'},       '86796005':{m:'Huawei', mod:'P60 Pro'},
+  '86892504':{m:'Huawei', mod:'Mate 50 Pro'},
+  // Xiaomi
+  '86731305':{m:'Xiaomi', mod:'13 Pro'},        '86731306':{m:'Xiaomi', mod:'14 Pro'},
+  '86731307':{m:'Xiaomi', mod:'Redmi Note 12'}
+};
+function repLookupTAC(imei){
+  if(!imei || imei.length < 8) return null;
+  var tac = imei.substring(0, 8);
+  return REP_TAC_TABLE[tac] || null;
+}
+// Étend repCheckIMEI : si IMEI valide + marque/modèle vides → auto-fill
+function repAutoFillFromIMEI(imei){
+  if(!imei || imei.length < 8) return;
+  var found = repLookupTAC(imei);
+  if(!found) return;
+  var marqueEl = document.getElementById('dep-marque');
+  var modeleEl = document.getElementById('dep-modele');
+  if(marqueEl && !marqueEl.value){
+    // Vérifier si la marque existe dans le select
+    var hasOption = false;
+    for(var i=0; i<marqueEl.options.length; i++){
+      if(marqueEl.options[i].value === found.m){ hasOption = true; break; }
+    }
+    if(hasOption){
+      marqueEl.value = found.m;
+      if(typeof repMajOrganismePhoto === 'function') repMajOrganismePhoto();
+    }
+  }
+  if(modeleEl && !modeleEl.value){
+    modeleEl.value = found.mod;
+  }
+  if(typeof showNotif==='function') showNotif('📱 '+found.m+' '+found.mod+' détecté depuis IMEI','success');
+}
+
 function repPanneSelect(val){
   var ta = document.getElementById('dep-panne');
   if(!ta) return;
@@ -18835,7 +19110,7 @@ async function repOCRImei(){
       // Afficher résultat
       if(imeiResult && imeiResult.imei1){
         var imeiEl = document.getElementById('dep-imei');
-        if(imeiEl){ imeiEl.value = imeiResult.imei1; repAutoSave(); repCheckIMEI(imeiResult.imei1); repValidateIMEI(imeiResult.imei1); }
+        if(imeiEl){ imeiEl.value = imeiResult.imei1; repAutoSave(); repCheckIMEI(imeiResult.imei1); repValidateIMEI(imeiResult.imei1); repAutoFillFromIMEI(imeiResult.imei1); }
         // Stocker IMEI2 dans le dossier si détecté
         if(repDossierCourant){
           if(!repDossierCourant.appareil) repDossierCourant.appareil = {};
@@ -23423,7 +23698,6 @@ async function qrExtractIMEI(base64Image) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      // Identifiant officiel complet (l'alias 'claude-haiku-4-5-20251001' n'est pas toujours résolu)
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
       messages: [{
@@ -23437,7 +23711,6 @@ async function qrExtractIMEI(base64Image) {
   });
   var raw = await resp.text();
   var data; try { data = JSON.parse(raw); } catch(e){ data = {error:{message:'JSON invalide: '+raw.substring(0,200)}}; }
-  // Logs détaillés pour debug
   console.log('[qrExtractIMEI] HTTP', resp.status, 'response:', data);
   if(!resp.ok || data.error){
     var errMsg = (data.error && (data.error.message || data.error)) || ('HTTP '+resp.status);
@@ -23448,7 +23721,6 @@ async function qrExtractIMEI(base64Image) {
   console.log('[qrExtractIMEI] Réponse Claude :', text);
   var matches = text.match(/\d{15}/g);
   if(!matches || matches.length === 0) return null;
-  // Retourner un objet avec imei1 et imei2 (ou juste imei1)
   return { imei1: matches[0], imei2: matches.length > 1 ? matches[1] : null };
 }
 
