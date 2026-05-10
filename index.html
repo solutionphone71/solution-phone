@@ -1263,36 +1263,136 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       #page-zahira-home .zh-kpi-trend.up { color: var(--zh-green); }
       #page-zahira-home .zh-kpi-trend.warn { color: var(--zh-orange); }
 
-      #page-zahira-home .zh-agents {
-        background: rgba(20,20,28,0.5);
-        border: 1px solid var(--zh-line);
-        border-radius: 18px; overflow: hidden;
+      /* ─── ÉQUIPE IA SHOWCASE — chaque agent en carte premium ─── */
+      #page-zahira-home .zh-agents-showcase {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px;
       }
-      #page-zahira-home .zh-agent {
-        display: flex; align-items: center; gap: 12px;
-        padding: 12px 14px;
-        border-bottom: 0.5px solid var(--zh-line2);
-        cursor: pointer; transition: background 0.15s;
+      #page-zahira-home .zh-agent-card {
+        position: relative;
+        border-radius: 24px;
+        padding: 24px 20px 20px;
+        display: flex; flex-direction: column; align-items: center;
+        text-align: center; gap: 12px;
+        background: var(--agent-bg, rgba(20,20,28,0.7));
+        border: 1.5px solid var(--agent-border, rgba(255,255,255,0.08));
+        cursor: pointer;
+        overflow: hidden;
+        transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
       }
-      #page-zahira-home .zh-agent:last-child { border-bottom: none; }
-      #page-zahira-home .zh-agent:hover { background: rgba(255,255,255,0.04); }
-      #page-zahira-home .zh-agent.silent { opacity: 0.5; }
-      #page-zahira-home .zh-agent-avatar-wrap { position: relative; padding: 3px; flex-shrink: 0; }
-      #page-zahira-home .zh-agent-avatar-wrap::before {
+      #page-zahira-home .zh-agent-card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+        background: var(--agent-glow-bg);
+        opacity: 0.45;
+        pointer-events: none; z-index: 0;
+      }
+      #page-zahira-home .zh-agent-card::after {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 60%;
+        background: radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,255,255,0.1), transparent 70%);
+        pointer-events: none; z-index: 0;
+      }
+      #page-zahira-home .zh-agent-card > * { position: relative; z-index: 1; }
+      #page-zahira-home .zh-agent-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -12px var(--agent-shadow);
+        border-color: var(--agent-color);
+      }
+      #page-zahira-home .zh-agent-card.silent { opacity: 0.55; }
+      #page-zahira-home .zh-agent-card.silent::before { opacity: 0.15; }
+      #page-zahira-home .zh-agent-card.silent:hover { transform: none; }
+
+      /* Avatar grand */
+      #page-zahira-home .zh-agent-card-avatar-wrap {
+        position: relative;
+        padding: 6px;
+        margin-bottom: 4px;
+      }
+      #page-zahira-home .zh-agent-card-avatar-wrap::before {
         content: ''; position: absolute; inset: 0; border-radius: 50%;
-        border: 2px solid var(--ring); box-shadow: 0 0 10px var(--glow);
+        border: 3px solid var(--agent-color);
+        box-shadow: 0 0 28px var(--agent-glow), 0 0 56px var(--agent-glow), inset 0 0 12px var(--agent-glow);
+        animation: zhAvatarPulse 3s ease-in-out infinite;
       }
-      #page-zahira-home .zh-agent.silent .zh-agent-avatar-wrap::before { border-color: rgba(255,255,255,0.2); box-shadow: none; }
-      #page-zahira-home .zh-agent-avatar {
-        width: 38px; height: 38px; border-radius: 50%;
-        background: var(--avbg); overflow: hidden;
+      #page-zahira-home .zh-agent-card.silent .zh-agent-card-avatar-wrap::before {
+        border-color: rgba(255,255,255,0.18);
+        box-shadow: none;
+        animation: none;
       }
-      #page-zahira-home .zh-agent-avatar img { width: 100%; height: 100%; object-fit: cover; }
-      #page-zahira-home .zh-agent-info { flex: 1; min-width: 0; }
-      #page-zahira-home .zh-agent-name { display: flex; gap: 6px; align-items: baseline; }
-      #page-zahira-home .zh-agent-name strong { font-size: 13px; font-weight: 700; }
-      #page-zahira-home .zh-agent-name span { font-size: 9px; color: var(--zh-ink3); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-      #page-zahira-home .zh-agent-task { font-size: 12px; color: var(--zh-ink2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      @keyframes zhAvatarPulse {
+        0%, 100% { box-shadow: 0 0 24px var(--agent-glow), 0 0 48px var(--agent-glow), inset 0 0 10px var(--agent-glow); }
+        50%      { box-shadow: 0 0 36px var(--agent-glow), 0 0 72px var(--agent-glow), inset 0 0 14px var(--agent-glow); }
+      }
+      #page-zahira-home .zh-agent-card-avatar {
+        width: 88px; height: 88px;
+        border-radius: 50%;
+        background: var(--agent-bg-grad);
+        overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 30px; font-weight: 800;
+      }
+      #page-zahira-home .zh-agent-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+      /* Pastille count en haut à droite */
+      #page-zahira-home .zh-agent-card-badge {
+        position: absolute;
+        top: 16px; right: 16px;
+        background: var(--agent-color);
+        color: #fff;
+        font-size: 13px; font-weight: 800;
+        min-width: 28px; height: 28px; padding: 0 8px;
+        border-radius: 999px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 12px var(--agent-glow);
+        z-index: 2;
+      }
+
+      #page-zahira-home .zh-agent-card-name {
+        font-family: 'Fraunces', serif;
+        font-size: 24px; font-weight: 800;
+        color: #fff;
+        letter-spacing: -0.02em; line-height: 1;
+      }
+      #page-zahira-home .zh-agent-card-role {
+        font-size: 10px; font-weight: 800;
+        color: var(--agent-color);
+        letter-spacing: 0.18em; text-transform: uppercase;
+        text-shadow: 0 0 12px var(--agent-glow);
+      }
+      #page-zahira-home .zh-agent-card-task {
+        font-size: 14px; font-weight: 500;
+        color: rgba(255,255,255,0.88);
+        line-height: 1.45;
+        margin-top: 2px;
+        min-height: 60px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 4px;
+      }
+      #page-zahira-home .zh-agent-card-task strong {
+        color: #fff; font-weight: 800;
+      }
+      #page-zahira-home .zh-agent-card-cta {
+        margin-top: auto;
+        background: var(--agent-color);
+        color: white;
+        font-family: inherit; font-size: 13px; font-weight: 700;
+        padding: 11px 20px;
+        border-radius: 999px;
+        border: none; cursor: pointer;
+        box-shadow: 0 6px 18px -4px var(--agent-glow);
+        transition: transform 0.1s, box-shadow 0.15s;
+        letter-spacing: -0.005em;
+        display: inline-flex; align-items: center; gap: 6px;
+      }
+      #page-zahira-home .zh-agent-card-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -4px var(--agent-glow); }
+      #page-zahira-home .zh-agent-card-cta:active { transform: scale(0.96); }
+      #page-zahira-home .zh-agent-card.silent .zh-agent-card-cta {
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.5);
+        box-shadow: none;
+        cursor: default;
+      }
+      #page-zahira-home .zh-agent-card.silent .zh-agent-card-cta:hover { transform: none; box-shadow: none; }
 
       #page-zahira-home .zh-shortcuts {
         background: rgba(20,20,28,0.5);
@@ -1381,10 +1481,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             </div>
           </div>
 
-          <!-- Équipe IA -->
+          <!-- Équipe IA SHOWCASE -->
           <div>
-            <div class="zh-section-title" style="margin-bottom:10px;">Équipe IA <span style="color:var(--zh-accent);text-shadow:0 0 8px rgba(255,59,69,0.5);">✦</span></div>
-            <div class="zh-agents" id="zh-agents-list">
+            <div class="zh-section-title" style="margin-bottom:14px; font-size:13px;">Équipe IA <span style="color:var(--zh-accent);text-shadow:0 0 8px rgba(255,59,69,0.5);">✦</span></div>
+            <div class="zh-agents-showcase" id="zh-agents-list">
               <!-- Filled by JS -->
             </div>
           </div>
@@ -1490,22 +1590,76 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         const list = document.getElementById('zh-agents-list');
         list.innerHTML = '';
         const order = ['anissa','assya','yago','obiwan','chanel'];
+
+        // Couleurs RGBA pour chaque agent (utilisées pour gradient bg)
+        const tints = {
+          anissa: 'rgba(37,99,235,',
+          assya:  'rgba(255,107,53,',
+          yago:   'rgba(22,163,74,',
+          obiwan: 'rgba(124,58,237,',
+          chanel: 'rgba(8,145,178,'
+        };
+
+        const tasks = {
+          anissa: { silent: 'Caisse OK · TVA à jour',                   ctaSilent: 'Stable',    cta: 'Voir les alertes' },
+          assya:  { silent: 'Communication calme aujourd\'hui',           ctaSilent: 'Calme',     cta: 'Voir les posts' },
+          yago:   { silent: 'Tous dossiers QualiRépar à jour',           ctaSilent: 'À jour',    cta: 'Monter les dossiers' },
+          obiwan: { silent: 'Stock OK · équipe en forme',                ctaSilent: 'En forme',  cta: 'Voir les points' },
+          chanel: { silent: 'L\'app tourne · aucune friction',            ctaSilent: 'Stable',    cta: 'Voir les idées' }
+        };
+
         order.forEach(name => {
           const info = TEAM[name];
           const count = queue.filter(d => d.agent_name === name).length;
           const silent = count === 0;
-          const row = document.createElement('div');
-          row.className = 'zh-agent' + (silent ? ' silent' : '');
-          row.style.cssText = `--ring:${info.ring};--glow:${info.glow};--avbg:${info.bg};`;
-          row.innerHTML = `
-            <div class="zh-agent-avatar-wrap">
-              <div class="zh-agent-avatar"><img src="${info.img}" alt="${info.label}" onerror="this.style.display='none';this.parentNode.textContent='${info.label[0]}';"></div>
+          const t = tasks[name];
+
+          let taskHtml;
+          if (silent) {
+            taskHtml = `<em style="opacity:0.7;">${t.silent}</em>`;
+          } else {
+            const labels = {
+              anissa: count + ' alerte' + (count>1?'s':'') + ' caisse à examiner',
+              assya:  count + ' propositions de posts/stories à valider',
+              yago:   count + ' dossier' + (count>1?'s':'') + ' QualiRépar à monter',
+              obiwan: count + ' point' + (count>1?'s':'') + ' équipe à valider',
+              chanel: count + ' suggestion' + (count>1?'s':'') + ' UX à examiner'
+            };
+            taskHtml = `<strong>${labels[name]}</strong>`;
+          }
+
+          const card = document.createElement('div');
+          card.className = 'zh-agent-card' + (silent ? ' silent' : '');
+          card.style.cssText = `
+            --agent-color: ${info.ring};
+            --agent-glow: ${info.glow};
+            --agent-bg: rgba(20,20,28,0.7);
+            --agent-bg-grad: ${info.bg};
+            --agent-border: ${tints[name]}0.3);
+            --agent-shadow: ${tints[name]}0.5);
+            --agent-glow-bg: radial-gradient(ellipse 100% 100% at 50% 0%, ${tints[name]}0.2), transparent 70%);
+          `;
+
+          const ctaText = silent ? t.ctaSilent : t.cta;
+          const ctaIcon = silent
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+          card.innerHTML = `
+            ${count > 0 ? `<div class="zh-agent-card-badge">${count}</div>` : ''}
+            <div class="zh-agent-card-avatar-wrap">
+              <div class="zh-agent-card-avatar">
+                <img src="${info.img}" alt="${info.label}" onerror="this.style.display='none';this.parentNode.textContent='${info.label[0]}';">
+              </div>
             </div>
-            <div class="zh-agent-info">
-              <div class="zh-agent-name"><strong>${info.label}</strong><span>${info.role}</span></div>
-              <div class="zh-agent-task">${silent ? 'silencieux' : count + ' à valider'}</div>
-            </div>`;
-          list.appendChild(row);
+            <div class="zh-agent-card-name">${info.label.charAt(0) + info.label.slice(1).toLowerCase()}</div>
+            <div class="zh-agent-card-role">${info.role}</div>
+            <div class="zh-agent-card-task">${taskHtml}</div>
+            <button class="zh-agent-card-cta" onclick="event.stopPropagation();zhSend('Brief ${info.label.toLowerCase()}')">
+              ${ctaText} ${ctaIcon}
+            </button>
+          `;
+          list.appendChild(card);
         });
       }
 
