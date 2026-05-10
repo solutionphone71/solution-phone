@@ -8,6 +8,215 @@
 <title>Solution Phone — Gestion</title>
 
 <!-- redirect auto retiré · Zahira home est désormais intégrée dans l'app sécurisée -->
+
+<!-- ════════════════════════════════════════════════════════════════
+     SOLUTION PHONE · DARK THEME OVERRIDE (mai 2026)
+     Force tout en dark mode + écriture blanche grasse + sidebar colorée.
+     ════════════════════════════════════════════════════════════════ -->
+<style id="solution-phone-dark-override">
+  /* ─── BACKGROUND GLOBAL ─── */
+  html, body, #app, .layout, .app-container, .main, main, .content {
+    background: #08080A !important;
+    color: #FFFFFF !important;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+    font-weight: 500 !important;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 50% 32% at 12% 4%, rgba(255,59,69,0.10), transparent 65%),
+      radial-gradient(ellipse 45% 30% at 95% 18%, rgba(10,132,255,0.06), transparent 65%);
+  }
+
+  /* ─── SIDEBAR (couleurs flashy) ─── */
+  .sidebar, aside.sidebar, nav.sidebar, [class*="sidebar"] {
+    background: rgba(14,14,18,0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-right: 0.5px solid rgba(255,255,255,0.08) !important;
+    color: #FFFFFF !important;
+  }
+  .sidebar-section, .nav-section {
+    color: rgba(255,255,255,0.5) !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    padding: 16px 12px 8px !important;
+  }
+
+  .nav-item, .sidebar-item, [class*="nav-item"], [class*="menu-item"] {
+    background: transparent !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    padding: 11px 12px !important;
+    margin: 2px 6px !important;
+    border-left: 3px solid transparent !important;
+    transition: all 0.15s !important;
+  }
+  .nav-item:hover, .sidebar-item:hover {
+    background: rgba(255,255,255,0.06) !important;
+    border-left-color: rgba(255,255,255,0.3) !important;
+  }
+  .nav-item.active, .sidebar-item.active {
+    background: rgba(255,255,255,0.08) !important;
+    color: #FFFFFF !important;
+  }
+
+  /* Couleurs flashy par item — basé sur l'ordre */
+  .sidebar .nav-item:nth-of-type(1).active,
+  .sidebar .nav-item:nth-of-type(1):hover { border-left-color: #FF3B45 !important; }
+
+  /* Sections colorées */
+  .nav-item[onclick*="reparation"], .nav-item[onclick*="repa"], .mob-menu-item[onclick*="reparation"] {
+    border-left-color: #FF6B6B !important;
+  }
+  .nav-item[onclick*="devis"], .mob-menu-item[onclick*="devis"] {
+    border-left-color: #FFB94D !important;
+  }
+  .nav-item[onclick*="client"], .mob-menu-item[onclick*="client"] {
+    border-left-color: #4FA9FF !important;
+  }
+  .nav-item[onclick*="phones"], .nav-item[onclick*="achat"], .mob-menu-item[onclick*="phones"], .mob-menu-item[onclick*="achat"] {
+    border-left-color: #DA8FFF !important;
+  }
+  .nav-item[onclick*="vente"], .mob-menu-item[onclick*="vente"] {
+    border-left-color: #6FE08F !important;
+  }
+  .nav-item[onclick*="facture"], .mob-menu-item[onclick*="facture"] {
+    border-left-color: #FFD60A !important;
+  }
+  .nav-item[onclick*="caisse"], .nav-item[onclick*="comptable"], .nav-item[onclick*="ecran"], .nav-item[onclick*="batter"], .nav-item[onclick*="salar"], .mob-menu-item[onclick*="caisse"], .mob-menu-item[onclick*="comptable"], .mob-menu-item[onclick*="salar"] {
+    border-left-color: #34C759 !important;
+  }
+  .nav-item[onclick*="autopilot"], .mob-menu-item[onclick*="autopilot"] {
+    border-left-color: #FF3B45 !important;
+  }
+  .nav-item[onclick*="param"], .nav-item[onclick*="setting"], .mob-menu-item[onclick*="param"] {
+    border-left-color: #6E6E78 !important;
+  }
+  .nav-item[onclick*="zahira"], .mob-menu-item[onclick*="zahira"] {
+    border-left-color: #FF3B45 !important;
+    background: rgba(255,59,69,0.08) !important;
+  }
+  .nav-item[onclick*="parcours"], .mob-menu-item[onclick*="parcours"] {
+    border-left-color: #FF3B45 !important;
+  }
+  .nav-item[onclick*="police"], .mob-menu-item[onclick*="police"] {
+    border-left-color: #5AC8FA !important;
+  }
+  .nav-item[onclick*="roulette"], .mob-menu-item[onclick*="roulette"] {
+    border-left-color: #FF9F0A !important;
+  }
+  .nav-item[onclick*="analytics"], .mob-menu-item[onclick*="analytics"] {
+    border-left-color: #BF5AF2 !important;
+  }
+  .nav-item[onclick*="stock"], .nav-item[onclick*="neufs"], .mob-menu-item[onclick*="stock"], .mob-menu-item[onclick*="neufs"] {
+    border-left-color: #4FA9FF !important;
+  }
+  .nav-item[onclick*="access"], .mob-menu-item[onclick*="access"] {
+    border-left-color: #FFB94D !important;
+  }
+  .nav-icon, .mob-menu-icon {
+    margin-right: 10px !important;
+    font-size: 17px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Logo Solution Phone dans sidebar */
+  .sidebar h1, .sidebar h2, .sidebar .logo, .brand, .brand-name {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+  }
+
+  /* ─── PAGES (background dark) ─── */
+  .page, [class*="page-"] {
+    background: transparent !important;
+    color: #FFFFFF !important;
+  }
+
+  /* ─── TYPOGRAPHIE GLOBALE GRASSE ─── */
+  body, p, span, div, td, li, label, input, select, textarea, button {
+    color: #FFFFFF;
+  }
+  h1, h2, h3, h4, h5, h6, .page-title, .card-title, .widget-title {
+    color: #FFFFFF !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+  }
+  .page-title, h1 { font-size: 28px !important; }
+  .page-sub, .subtitle { color: rgba(255,255,255,0.6) !important; }
+
+  /* Texte gras pour meilleure lisibilité */
+  body { font-weight: 500 !important; }
+  strong, b { font-weight: 800 !important; }
+
+  /* ─── CARDS (cards / widgets sont dark) ─── */
+  .card, .widget, .bento-card, .bw, [class*="bento"] {
+    background: rgba(20,20,28,0.7) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #FFFFFF !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+  }
+  .card-header { background: transparent !important; border-bottom: 0.5px solid rgba(255,255,255,0.08) !important; }
+  .card-title { color: #FFFFFF !important; }
+
+  /* ─── INPUTS ─── */
+  input, select, textarea {
+    background: rgba(28,28,36,0.85) !important;
+    color: #FFFFFF !important;
+    border: 0.5px solid rgba(255,255,255,0.1) !important;
+    font-weight: 500 !important;
+  }
+  input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.4) !important; }
+  input:focus, select:focus, textarea:focus { border-color: rgba(255,59,69,0.5) !important; outline: none !important; }
+
+  /* ─── BUTTONS ─── */
+  .btn, button.btn {
+    font-weight: 700 !important;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #FF5560, #C8102E) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    box-shadow: 0 4px 14px -4px rgba(255,59,69,0.4) !important;
+  }
+
+  /* ─── TABLES ─── */
+  table { background: transparent !important; color: #FFFFFF !important; }
+  th { color: rgba(255,255,255,0.5) !important; border-bottom: 0.5px solid rgba(255,255,255,0.08) !important; }
+  td { border-bottom: 0.5px solid rgba(255,255,255,0.05) !important; color: #FFFFFF !important; }
+  tr:hover { background: rgba(255,255,255,0.03) !important; }
+
+  /* ─── SCROLLBARS dark ─── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+  /* ─── LIENS ─── */
+  a { color: #FF6B6B; }
+  a:hover { color: #FF3B45; }
+
+  /* ─── TOP BAR / Aria omnibar ─── */
+  #aria-omnibar-wrap {
+    background: rgba(8,8,10,0.85) !important;
+    border-bottom: 0.5px solid rgba(255,255,255,0.08) !important;
+  }
+
+  /* ─── ALERTS / ÉTAT ─── */
+  .alert, .notice, .info-box {
+    background: rgba(28,28,36,0.7) !important;
+    color: #FFFFFF !important;
+    border-color: rgba(255,255,255,0.1) !important;
+  }
+</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
 <meta name="theme-color" content="#0a0a1a">
