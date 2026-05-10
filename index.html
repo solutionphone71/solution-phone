@@ -3185,6 +3185,65 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
         </div>
 
+        <!-- ════ CLÔTURE AUTO 1-CLIC ════ -->
+        <div class="card z-white-block" id="cloture-auto-block" style="border:3px solid #10b981;background:linear-gradient(135deg,#fff,#ecfdf5);margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div>
+              <div style="font-weight:800;font-size:17px;color:#065f46;">🚀 Clôture journée — Auto</div>
+              <div style="font-size:11px;color:#047857;">1 saisie · 2 Z dissociés (Principal + Occasion) · écart auto</div>
+            </div>
+            <span id="cloture-auto-date" style="font-size:12px;color:#065f46;font-weight:700;background:rgba(16,185,129,0.12);padding:5px 11px;border-radius:6px;"></span>
+          </div>
+
+          <!-- Théoriques côte à côte (Principal + Occasion) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div style="background:#fff;border:2px solid #c0392b;border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:1px;">Z Principal · TVA 20%</div>
+              <div style="font-size:11px;color:#666;margin:3px 0;">Réparations + accessoires + neufs</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;font-size:11px;">
+                <div style="background:#fef2f2;padding:5px 8px;border-radius:5px;">CB : <b id="cl-pr-cb" style="color:#2563eb;">0,00 €</b></div>
+                <div style="background:#fef2f2;padding:5px 8px;border-radius:5px;">Esp. : <b id="cl-pr-esp" style="color:#16a34a;">0,00 €</b></div>
+                <div style="background:#fef2f2;padding:5px 8px;border-radius:5px;">Chèque : <b id="cl-pr-chq">0,00 €</b></div>
+                <div style="background:#fef2f2;padding:5px 8px;border-radius:5px;">Vir. : <b id="cl-pr-vir">0,00 €</b></div>
+              </div>
+              <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #c0392b;font-weight:800;color:#c0392b;">Total : <span id="cl-pr-total">0,00 €</span></div>
+            </div>
+            <div style="background:#fff;border:2px solid #8b5cf6;border-radius:8px;padding:10px 12px;">
+              <div style="font-size:10px;font-weight:800;color:#8b5cf6;text-transform:uppercase;letter-spacing:1px;">Z Occasion · TVA marge</div>
+              <div style="font-size:11px;color:#666;margin:3px 0;">Smartphones reconditionnés (Art.297A)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;font-size:11px;">
+                <div style="background:#f5f3ff;padding:5px 8px;border-radius:5px;">CB : <b id="cl-oc-cb" style="color:#2563eb;">0,00 €</b></div>
+                <div style="background:#f5f3ff;padding:5px 8px;border-radius:5px;">Esp. : <b id="cl-oc-esp" style="color:#16a34a;">0,00 €</b></div>
+                <div style="background:#f5f3ff;padding:5px 8px;border-radius:5px;">Chèque : <b id="cl-oc-chq">0,00 €</b></div>
+                <div style="background:#f5f3ff;padding:5px 8px;border-radius:5px;">Vir. : <b id="cl-oc-vir">0,00 €</b></div>
+              </div>
+              <div style="margin-top:6px;padding-top:6px;border-top:1px dashed #8b5cf6;font-weight:800;color:#8b5cf6;">Total : <span id="cl-oc-total">0,00 €</span></div>
+            </div>
+          </div>
+
+          <!-- Saisie compté espèces unique + écart auto -->
+          <div style="background:rgba(16,185,129,0.08);border:1.5px solid #10b981;border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-items:end;margin-bottom:12px;">
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:3px;">Théorique espèces (Principal + Occasion)</div>
+              <div style="font-size:22px;font-weight:900;color:#065f46;" id="cl-esp-theorique">0,00 €</div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:3px;">Compté physique espèces</div>
+              <input type="number" step="0.01" id="cl-esp-compte" placeholder="0,00" oninput="clotureCalcEcart()"
+                style="width:100%;padding:10px 12px;border:2px solid #10b981;border-radius:8px;font-size:18px;font-weight:800;color:#065f46;background:#fff;">
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:3px;">Écart caisse</div>
+              <div id="cl-esp-ecart" style="font-size:22px;font-weight:900;color:#065f46;padding:5px 10px;border-radius:8px;">—</div>
+            </div>
+          </div>
+
+          <button onclick="clotureValiderJournee()"
+            style="width:100%;padding:16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:0.5px;box-shadow:0 6px 16px -4px rgba(16,185,129,0.5);">
+            🔒 Clôturer & Imprimer les 2 Z dissociés
+          </button>
+        </div>
+
         <!-- Z REPARATIONS -->
         <div class="card z-white-block" style="border:2px solid var(--primary);">
           <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--primary);">🔒 Z de Caisse — Principal</div>
@@ -5215,7 +5274,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div style="background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🏆</span>
-      <span><b>-25€ QualiRépar déjà déduit</b> · Prix TTC pièce + main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
+      <span><b>-25€ QualiRépar déjà déduit</b> · Prix TTC pièce + main d'œuvre · Garantie 6 mois sauf casse ou rayure</span>
     </div>
 
     <div class="card">
@@ -5258,7 +5317,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div style="background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:10px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:10px;">
       <span style="font-size:20px;">🏆</span>
-      <span><b>-25€ QualiRépar déjà déduit</b> sur le prix indiqué · Prix TTC pièce et main d'œuvre · Garantie 3 mois sauf casse ou rayure</span>
+      <span><b>-25€ QualiRépar déjà déduit</b> sur le prix indiqué · Prix TTC pièce et main d'œuvre · Garantie 6 mois sauf casse ou rayure</span>
     </div>
 
     <div class="card">
@@ -7513,6 +7572,139 @@ function renderCaisseJour(){
     smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+moisNom+'</span>';
   }
   var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.style.color='#333';var repTxt=totSmart.reprises>0?' · Reprises : <b style="color:#c0392b;">-'+totSmart.reprises.toFixed(2)+' €</b> · Net encaissé : <b style="color:#8b5cf6;">'+totSmart.netEncaisse.toFixed(2)+' €</b>':'';sr.innerHTML='<b style="color:#1a1a2e;">'+totSmart.nb+' vente(s) smartphone</b> · Total ventes : <b style="color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</b>'+repTxt+' · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' € · Chèque : '+totSmart.cheque.toFixed(2)+' € · Virement : '+totSmart.virement.toFixed(2)+' €';}
+  // Refresh bloc Clôture auto à chaque update caisse
+  if(typeof clotureUpdate==='function') clotureUpdate();
+}
+
+// ════════════════════════════════════════════════════════════════
+// J10 · CLÔTURE JOURNÉE 100% AUTO (les 2 Z dissociés)
+// ════════════════════════════════════════════════════════════════
+function clotureUpdate(){
+  var pr = window._caisseJourTotaux || {total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
+  var oc = window._smartJourTotaux || {total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
+  // Date du jour ou mois sélectionné
+  var dEl = document.getElementById('cloture-auto-date');
+  if(dEl){
+    var moisF = window._caisseMoisFiltre || new Date().toISOString().split('T')[0].substring(0,7);
+    var today = new Date().toISOString().split('T')[0];
+    var isToday = moisF === today.substring(0,7);
+    dEl.textContent = isToday ? '📅 ' + new Date().toLocaleDateString('fr-FR') : '📅 ' + moisF;
+  }
+  // Z Principal
+  var setVal = function(id, val){ var el=document.getElementById(id); if(el) el.textContent=val.toFixed(2)+' €'; };
+  setVal('cl-pr-cb', pr.cb); setVal('cl-pr-esp', pr.especes); setVal('cl-pr-chq', pr.cheque); setVal('cl-pr-vir', pr.virement);
+  setVal('cl-pr-total', pr.total);
+  // Z Occasion
+  setVal('cl-oc-cb', oc.cb); setVal('cl-oc-esp', oc.especes); setVal('cl-oc-chq', oc.cheque); setVal('cl-oc-vir', oc.virement);
+  setVal('cl-oc-total', oc.total);
+  // Théorique espèces TOTAL (les 2 Z agrégés pour le tiroir-caisse physique)
+  var theoEsp = (pr.especes||0) + (oc.especes||0);
+  var thEl = document.getElementById('cl-esp-theorique');
+  if(thEl) thEl.textContent = theoEsp.toFixed(2)+' €';
+  // Recalculer l'écart si compté déjà saisi
+  clotureCalcEcart();
+}
+
+function clotureCalcEcart(){
+  var pr = window._caisseJourTotaux || {especes:0};
+  var oc = window._smartJourTotaux || {especes:0};
+  var theoEsp = (pr.especes||0) + (oc.especes||0);
+  var compteEl = document.getElementById('cl-esp-compte');
+  var ecartEl = document.getElementById('cl-esp-ecart');
+  if(!ecartEl) return;
+  if(!compteEl || compteEl.value === ''){
+    ecartEl.textContent = '—';
+    ecartEl.style.color = '#065f46';
+    ecartEl.style.background = 'transparent';
+    return;
+  }
+  var compte = parseFloat(compteEl.value) || 0;
+  var ecart = compte - theoEsp;
+  if(Math.abs(ecart) < 0.005){
+    ecartEl.textContent = '✅ 0,00 €';
+    ecartEl.style.color = '#065f46';
+    ecartEl.style.background = 'rgba(16,185,129,0.15)';
+  } else if(ecart > 0){
+    ecartEl.textContent = '⚠️ +'+ecart.toFixed(2)+' €';
+    ecartEl.style.color = '#92400e';
+    ecartEl.style.background = 'rgba(245,158,11,0.15)';
+  } else {
+    ecartEl.textContent = '🚨 '+ecart.toFixed(2)+' €';
+    ecartEl.style.color = '#991b1b';
+    ecartEl.style.background = 'rgba(239,68,68,0.15)';
+  }
+}
+
+async function clotureValiderJournee(){
+  var pr = window._caisseJourTotaux || {total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
+  var oc = window._smartJourTotaux || {total:0,cb:0,especes:0,cheque:0,virement:0,nb:0};
+  if(pr.nb === 0 && oc.nb === 0){
+    showNotif('Aucune transaction à clôturer','error');
+    return;
+  }
+  var theoEsp = (pr.especes||0) + (oc.especes||0);
+  var compteEl = document.getElementById('cl-esp-compte');
+  var compteEsp = compteEl && compteEl.value !== '' ? parseFloat(compteEl.value) : null;
+  var ecart = compteEsp !== null ? (compteEsp - theoEsp) : null;
+
+  // Confirmation explicite avec récap
+  var ecartTxt = '';
+  if(compteEsp !== null){
+    if(Math.abs(ecart) < 0.005) ecartTxt = '\n✅ Écart espèces : 0,00 €';
+    else if(ecart > 0) ecartTxt = '\n⚠️ Surplus espèces : +'+ecart.toFixed(2)+' €';
+    else ecartTxt = '\n🚨 Manquant espèces : '+ecart.toFixed(2)+' €';
+  } else {
+    ecartTxt = '\n(Compté espèces non renseigné)';
+  }
+  var msg = 'Clôturer la journée ?\n\n'+
+    '🔴 Z Principal (TVA 20%) : '+pr.nb+' tx · '+pr.total.toFixed(2)+' €\n'+
+    '🟣 Z Occasion (TVA marge) : '+oc.nb+' tx · '+oc.total.toFixed(2)+' €\n'+
+    '──────────────\n'+
+    'Théorique espèces : '+theoEsp.toFixed(2)+' €'+
+    (compteEsp !== null ? '\nCompté physique : '+compteEsp.toFixed(2)+' €' : '')+
+    ecartTxt+
+    '\n\nLes 2 Z seront imprimés séparément.';
+  if(!confirm(msg)) return;
+
+  // Sauvegarder en Supabase (table cloture_journee si elle existe, sinon caisse settings)
+  var payload = {
+    date: new Date().toISOString().split('T')[0],
+    heure: new Date().toLocaleTimeString('fr-FR'),
+    z_principal: { nb:pr.nb, total:pr.total, cb:pr.cb, especes:pr.especes, cheque:pr.cheque, virement:pr.virement },
+    z_occasion:  { nb:oc.nb, total:oc.total, cb:oc.cb, especes:oc.especes, cheque:oc.cheque, virement:oc.virement,
+                   reprises: oc.reprises||0, netEncaisse: oc.netEncaisse||oc.total },
+    theorique_especes: theoEsp,
+    compte_especes: compteEsp,
+    ecart_especes: ecart
+  };
+  try {
+    if(typeof supaFetch === 'function'){
+      try { await supaFetch('cloture_journee','POST', payload); }
+      catch(e){
+        // fallback : sauvegarde dans settings (clé date)
+        try { if(typeof supaSettingSave==='function') supaSettingSave('cloture_'+payload.date, JSON.stringify(payload)); } catch(e2){}
+      }
+    }
+    // Sauvegarde locale
+    var key = 'sp_cloture_'+payload.date;
+    localStorage.setItem(key, JSON.stringify(payload));
+  } catch(e){ console.warn('[clotureValiderJournee] save:', e); }
+
+  // Imprimer le Z Principal puis le Z Occasion (ouvre 2 fenêtres séparées — bien dissociés)
+  if(pr.nb > 0 && typeof genererZCaisse === 'function'){
+    try { genererZCaisse(); } catch(e){ console.warn('Z Principal:', e); }
+  }
+  if(oc.nb > 0 && typeof genererZCaisseSmartphones === 'function'){
+    setTimeout(function(){
+      try { genererZCaisseSmartphones(); } catch(e){ console.warn('Z Occasion:', e); }
+    }, 800);
+  }
+
+  var notifMsg = '🔒 Journée clôturée — 2 Z imprimés';
+  if(compteEsp !== null && Math.abs(ecart) >= 0.01){
+    notifMsg += ' · Écart : '+(ecart>0?'+':'')+ecart.toFixed(2)+' €';
+  }
+  showNotif(notifMsg, 'success');
 }
 
 function genererZCaisseSmartphones(){
@@ -10612,10 +10804,14 @@ function genererFactureOccasion(phoneId){
       'Régime de la TVA sur la marge · Bien d\'occasion · TVA non récupérable par l\'acheteur'+
     '</div>'+
 
-    // MENTIONS LÉGALES B2C (garantie légale conformité - obligatoire depuis 01/01/2022)
+    // GARANTIE COMMERCIALE — téléphone reconditionné = 1 an
+    '<div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.3);border-radius:4px;padding:9px 12px;font-size:11px;color:#7c3aed;line-height:1.6;margin-bottom:3mm;font-weight:700;">'+
+      '🛡️ Garantie commerciale Solution Phone : 1 an sur ce téléphone reconditionné (hors casse, oxydation, usure normale)'+
+    '</div>'+
+    // GARANTIES LÉGALES B2C (Code de la consommation, additionnelles à la commerciale)
     '<div style="background:#f0fff4;border:1px solid #c6f6d5;border-radius:4px;padding:9px 12px;font-size:10px;color:#2f855a;line-height:1.6;margin-bottom:6mm;">'+
-      '<b>Garanties légales (Code de la consommation) :</b> garantie légale de conformité (art. L.217-3 et suivants) 2 ans · garantie des vices cachés (art. 1641 et s. C. civ.) · '+
-      'Pour les téléphones d\'occasion : présomption de défaut antérieur 12 mois (art. L.217-7 C. conso.). Le vendeur est tenu de livrer un bien conforme au contrat.'+
+      '<b>Garanties légales (s\'ajoutent à la garantie commerciale) :</b> garantie légale de conformité 2 ans (art. L.217-3 et s. C. conso.) · garantie des vices cachés (art. 1641 et s. C. civ.) · '+
+      'Pour ce bien d\'occasion : présomption de défaut antérieur 12 mois (art. L.217-7 C. conso.). Le vendeur est tenu de livrer un bien conforme au contrat.'+
     '</div>'+
 
     // ZONE SIGNATURE
@@ -10909,7 +11105,7 @@ function imprimerFactureData(fac,p){
       desc:'<b>'+p.modele+(p.stockage?' '+p.stockage+'Go':'')+' \u2014 Grade '+(p.grade||'A')+'</b>'+
            (p.imei?'<br><span style="font-size:11px;color:#888;">IMEI : '+p.imei+'</span>':'')+
            (p.couleur?'<br><span style="font-size:11px;color:#888;">Couleur : '+p.couleur+'</span>':'')+
-           '<br><span style="font-size:11px;color:#888;">Smartphone reconditionn\u00e9 certifi\u00e9 \u00b7 Garantie 6 mois</span>',
+           '<br><span style="font-size:11px;color:#888;">Smartphone reconditionn\u00e9 certifi\u00e9 \u00b7 Garantie 1 an</span>',
       qte:1,pu:p.vente
     }];
   var repMontant=fac.repriseAmount||0;
@@ -10920,7 +11116,7 @@ function imprimerFactureData(fac,p){
   var html=buildA4HTML({
     type:'facture',numero:fac.numero,date:fac.date,
     clientNom:fac.clientNom,clientAdresse:fac.clientAdresse,clientEmail:fac.clientEmail||'',
-    mode:fac.modePaiement||'',garantie:'6 mois',
+    mode:fac.modePaiement||'',garantie:'1 an (t\u00e9l\u00e9phone reconditionn\u00e9)',
     lignes:lignes,
     total:totalFinal,isDevis:false
   });
@@ -11951,7 +12147,7 @@ function imprimerDevisData(dv){
     // MENTIONS DEVIS
     '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
       '<b>Validité du devis :</b> '+(dv.validite||'15 jours')+' à compter de la date d\'émission. Au-delà, les prix peuvent être revus.<br>'+
-      '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale). Pour accepter ce devis, retournez-le daté et signé avec la mention « Bon pour accord ».'+
+      '<b>Garantie commerciale :</b> 6 mois sur la pièce remplacée et la main-d\'œuvre (hors casse, oxydation, usure normale). Pour accepter ce devis, retournez-le daté et signé avec la mention « Bon pour accord ».'+
     '</div>'+
     // SIGNATURES — Cachet boutique + Acceptation client
     '<div style="display:flex;gap:10px;margin-top:14px;">'+
@@ -14279,7 +14475,7 @@ function printEcransA4(){
         '<div style="font-size:22px;">\ud83c\udfc6</div>'+
         '<div style="flex:1;">'+
           '<div style="font-size:12px;font-weight:800;letter-spacing:.3px;">-25\u20ac QUALIR\u00c9PAR D\u00c9J\u00c0 D\u00c9DUIT SUR TOUS LES PRIX</div>'+
-          '<div style="font-size:9px;font-weight:600;opacity:.95;margin-top:2px;">Prix TTC pi\u00e8ce + main d\u2019\u0153uvre \u00b7 Garantie 3 mois (sauf casse/rayure) \u00b7 R\u00e9paration 30 min - 1h max</div>'+
+          '<div style="font-size:9px;font-weight:600;opacity:.95;margin-top:2px;">Prix TTC pi\u00e8ce + main d\u2019\u0153uvre \u00b7 Garantie 6 mois (sauf casse/rayure) \u00b7 R\u00e9paration 30 min - 1h max</div>'+
         '</div>'+
       '</div>'+
       '<table>'+
@@ -14540,7 +14736,7 @@ function printBatteriesA4(){
         '<div style="font-size:18px;">\ud83c\udfc6</div>'+
         '<div style="flex:1;">'+
           '<div style="font-size:11px;font-weight:800;letter-spacing:.3px;">-25\u20ac QUALIR\u00c9PAR D\u00c9J\u00c0 D\u00c9DUIT SUR TOUS LES PRIX</div>'+
-          '<div style="font-size:8.5px;font-weight:600;opacity:.95;margin-top:1px;">Prix TTC pi\u00e8ce + main d\u2019\u0153uvre \u00b7 Garantie 3 mois (sauf casse/rayure) \u00b7 R\u00e9paration 30 min - 1h max</div>'+
+          '<div style="font-size:8.5px;font-weight:600;opacity:.95;margin-top:1px;">Prix TTC pi\u00e8ce + main d\u2019\u0153uvre \u00b7 Garantie 6 mois (sauf casse/rayure) \u00b7 R\u00e9paration 30 min - 1h max</div>'+
         '</div>'+
       '</div>'+
       '<table>'+
@@ -15698,11 +15894,15 @@ function naGenererFacture(){
   _naNumero++;
   naSave(vente);
   naRender();
+  // Garantie selon type : neuf 2 ans, reconditionné 1 an, accessoires 6 mois
+  var _garantie = type==='telephone-neuf' ? '2 ans (téléphone neuf)' :
+                  type==='telephone-reconditionne' ? '1 an (reconditionné)' :
+                  '6 mois';
   // Imprimer
   var html = buildA4HTML({
     type:'reparation', numero:vente.numero, date:vente.date,
     clientNom:vente.clientNom, clientAdresse:vente.clientAdresse, clientEmail:vente.clientEmail,
-    mode:vente.mode, garantie:'',
+    mode:vente.mode, garantie:_garantie,
     lignes:[{desc:vente.description,qte:1,pu:vente.prix}],
     total:vente.prix, isDevis:false
   });
@@ -15716,11 +15916,14 @@ function naImprimer(){
   var client = document.getElementById('na-client').value.trim();
   var prix = parseFloat(document.getElementById('na-prix').value)||0;
   if(!desc||!client||!prix) return;
+  var _t = (document.getElementById('na-type')||{value:''}).value;
+  var _g = _t==='telephone-neuf' ? '2 ans (téléphone neuf)' :
+           _t==='telephone-reconditionne' ? '1 an (reconditionné)' : '6 mois';
   var h = buildA4HTML({
     type:'reparation', numero:'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0'),
     date:new Date().toISOString().split('T')[0],
     clientNom:client, clientAdresse:naGetAdresse(), clientEmail:'',
-    mode:document.getElementById('na-mode').value, garantie:'',
+    mode:document.getElementById('na-mode').value, garantie:_g,
     lignes:[{desc:desc,qte:1,pu:prix}], total:prix, isDevis:false
   });
   ouvrirA4(h);
@@ -15762,10 +15965,12 @@ function naRender(){
 function naReimprimer(id){
   var v = naVentes.find(function(x){return x.id===id;});
   if(!v) return;
+  var _g = v.type==='telephone-neuf' ? '2 ans (téléphone neuf)' :
+          v.type==='telephone-reconditionne' ? '1 an (reconditionné)' : '6 mois';
   var h = buildA4HTML({
     type:'reparation', numero:v.numero, date:v.date,
     clientNom:v.clientNom, clientAdresse:v.clientAdresse, clientEmail:v.clientEmail||'',
-    mode:v.mode, garantie:'',
+    mode:v.mode, garantie:_g,
     lignes:[{desc:v.description,qte:1,pu:v.prix}],
     total:v.prix, isDevis:false
   });
@@ -17048,14 +17253,14 @@ function repImprimerFacture(d){
         '</tr>'+
       '</tfoot>'+
     '</table>'+
-    // MENTIONS
+    // GARANTIE COMMERCIALE Solution Phone — réparations
     '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:6px;">'+
-      '<b>Garantie réparation :</b> 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale).<br>'+
+      '<b>Garantie commerciale Solution Phone :</b> 6 mois sur la pièce remplacée et la main-d\'œuvre (hors casse, oxydation, usure normale).<br>'+
       (f.bonusQR?'<b>Bonus Réparation QualiRépar :</b> -'+_fBonus+'€ déduits dans le cadre du dispositif QualiRépar (Loi AGEC n°2020-105). Appareil éligible certifié hors garantie fabricant.'+(f.piec?' Pièce PIEC (économie circulaire) utilisée avec accord du consommateur.':''):'')+'</div>'+
-    // MENTIONS LÉGALES B2C (Code de la consommation - obligatoire)
+    // GARANTIE LÉGALE B2C — distinct du commercial, obligatoire
     '<div style="background:#fafafa;border:1px solid #ddd;border-radius:6px;padding:7px 12px;font-size:9px;color:#555;line-height:1.6;margin-bottom:10px;">'+
-      '<b>Garanties légales :</b> garantie légale de conformité 2 ans (art. L.217-3 et s. C. conso.) · garantie des vices cachés (art. 1641 et s. C. civ.). '+
-      'En cas de panne dans les 30 jours après réparation pour la même cause : prise en charge gratuite (art. L.217-13 C. conso.). '+
+      '<b>Garantie légale (Code de la consommation) :</b> en cas de panne dans les 30 jours suivant la réparation pour la même cause : prise en charge gratuite (art. L.217-13 C. conso.). '+
+      'La garantie commerciale 6 mois ci-dessus s\'ajoute à cette garantie légale. '+
       'Réclamation : contact@solution-phone.fr.'+
     '</div>'+
     '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'+
@@ -22684,7 +22889,7 @@ function printBonDepot(d){
     // MENTIONS LÉGALES + SIGNATURE
     '<div style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:10px;color:#ff9500;line-height:1.6;">'+
       '<b>Attestation hors garantie :</b> Le client certifie que l\'appareil est hors garantie fabricant et commerciale. '+
-      'Garantie réparation : 3 mois sur les pièces remplacées (hors casse, oxydation, usure normale). '+
+      'Garantie commerciale Solution Phone : 6 mois sur la pièce remplacée et la main-d\'œuvre (hors casse, oxydation, usure normale). '+
       'Le Bonus Réparation (-25€) est accordé dans le cadre du dispositif QualiRépar (loi AGEC).'+
     '</div>'+
 
