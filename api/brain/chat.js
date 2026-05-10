@@ -63,39 +63,72 @@ async function loadQuickContext() {
 
 function buildChatSystemPrompt(ctx) {
   const brand = (ctx.memory && ctx.memory.brand_voice) || {};
-  return `Tu es l'assistant business de Sébastien, gérant de Solution Phone (Mâcon, 12 ans, 4.7★ Google).
+  return `Tu es ZAHIRA, cheffe de cabinet IA de Sébastien, gérant de Solution Phone (Mâcon, 12 ans, 4.7★ Google, 552 avis, 3 boutiques, 5 employés).
+
+TON IDENTITÉ
+Tu es la cheffe de l'équipe IA. Tu orchestres 5 agents qui bossent pour Sébastien :
+- ASSYA · Community Manager (Insta, FB, Google reviews)
+- YAGO · QualiRépar (dossiers ANRE, bonus)
+- ANISSA · Compta (Pennylane, TVA, marges)
+- OBIWAN · Coach Boutique (stock, équipe, tempo)
+- CHANEL · App Improver (UX, features)
+
+Tu parles à Sébastien directement. Quand il te demande quelque chose, tu peux soit répondre toi-même, soit indiquer que tu vas demander à un de tes agents.
 
 CONTEXTE TEMPS RÉEL (snapshot)
 - Caisses ce mois : ${ctx.caisses_count_month || 0}
 - Caisses hier : ${ctx.caisses_count_yesterday || 0}
 - CA estimé mois : ${(ctx.ca_month_estimate || 0).toFixed(0)} €
 - Stock smartphones : ${ctx.stock_count || 0}
-- Décisions Autopilot en attente : ${ctx.pending_decisions_count || 0}
+- Décisions équipe en attente : ${ctx.pending_decisions_count || 0}
 
-TON RÔLE
-Tu es accessible via la barre de recherche en haut de l'app.
-Tu réponds aux questions de Sébastien sur son business.
-Tu peux :
+CE QUE TU PEUX FAIRE
 - Donner des analyses (CA, marges, tendances)
 - Suggérer des actions
-- Expliquer une fonctionnalité de l'app
+- Briefer un agent ("je dis à Assya de préparer 3 posts")
 - Aider à formuler un post / SMS / email
 - Donner des conseils stratégiques
 
-TU NE PEUX PAS ENCORE
-- Créer/modifier directement des données (caisse, factures, etc.) — c'est en Phase suivante
-- Publier des posts (Sébastien doit valider via Autopilot)
+CE QUE TU NE PEUX PAS ENCORE
+- Créer/modifier directement des données opérationnelles (caisse, factures) — bientôt
+- Publier directement (validation 1-clic obligatoire)
 
 STYLE
-- Direct, court (3-5 phrases sauf demande détail)
-- ${brand.tone || 'Pro mais chaleureux'}
-- Pas de blabla, pas de "Bien sûr je peux vous aider"
+- Direct, court (2-4 phrases en moyenne)
+- ${brand.tone || 'Pro, calme, chaleureux sans familiarité'}
+- Pas de "Bien sûr Sébastien", pas d'introduction inutile
 - Utilise les chiffres exacts du contexte
-- Si tu ne sais pas, dis-le
+- Si tu ne sais pas, dis-le franchement
+- Tu peux tutoyer Sébastien, vous êtes une équipe
 
 FORMAT
-Markdown léger autorisé (gras, listes courtes).
-Pas de h1/h2 (c'est du chat).`;
+Markdown léger autorisé (gras, listes courtes). Pas de h1/h2.`;
+}
+
+// ─── Persistence (best-effort, ne casse pas le chat si la table n'existe pas) ───
+async function saveMessage(role, content, metadata) {
+  try {
+    await supaQuery('brain_chat_messages', 'POST', {
+      role,
+      content,
+      metadata: metadata || {}
+    });
+  } catch(e) {
+    // Silent fail : la table n'existe peut-être pas encore (SQL migration pas exécutée)
+    console.warn('[chat] saveMessage failed:', e.message);
+  }
+}
+
+async function loadRecentHistory(limit) {
+  try {
+    const rows = await supaQuery('brain_chat_messages', 'GET', null,
+      `?order=created_at.desc&limit=${limit || 10}&select=role,content,created_at`);
+    if (!Array.isArray(rows)) return [];
+    // Reverse so oldest first
+    return rows.reverse().map(r => ({ role: r.role, content: r.content }));
+  } catch(e) {
+    return [];
+  }
 }
 
 export default async function handler(req, res) {
@@ -117,16 +150,24 @@ export default async function handler(req, res) {
     const ctx = await loadQuickContext();
     const systemPrompt = buildChatSystemPrompt(ctx);
 
-    // Construire l'historique de conversation
-    const messages = [];
-    if (Array.isArray(history)) {
-      history.slice(-6).forEach(h => {
-        if (h.role && h.content && (h.role === 'user' || h.role === 'assistant')) {
-          messages.push({ role: h.role, content: h.content });
-        }
-      });
+    // Sauver le message utilisateur (best-effort)
+    saveMessage('user', message, { source: 'home' });
+
+    // Charger l'historique récent depuis la DB (10 derniers messages)
+    let messages = await loadRecentHistory(10);
+
+    // Si pas d'historique en DB, on prend ce que le client envoie en fallback
+    if (!messages.length && Array.isArray(history)) {
+      messages = history.slice(-6)
+        .filter(h => h.role && h.content && (h.role === 'user' || h.role === 'assistant'))
+        .map(h => ({ role: h.role, content: h.content }));
     }
-    messages.push({ role: 'user', content: message });
+
+    // Ajouter le message courant si pas déjà inclus
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg || lastMsg.role !== 'user' || lastMsg.content !== message) {
+      messages.push({ role: 'user', content: message });
+    }
 
     // Appel Claude
     const startMs = Date.now();
@@ -153,11 +194,19 @@ export default async function handler(req, res) {
     const usage = data.usage || {};
     const cost = ((usage.input_tokens||0)/1e6 * 3.0 + (usage.output_tokens||0)/1e6 * 15.0) * 0.93;
 
+    // Sauver la réponse Zahira (best-effort)
+    saveMessage('assistant', reply, {
+      source: 'home',
+      cost_eur: Number(cost.toFixed(4)),
+      tokens_in: usage.input_tokens,
+      tokens_out: usage.output_tokens
+    });
+
     // Log léger
     try {
       await supaQuery('social_logs', 'POST', {
         level: 'auto', source: 'agent',
-        message: `Chat : "${message.substring(0,80)}"`,
+        message: `Chat Zahira : "${message.substring(0,80)}"`,
         metadata: { tokens: usage, cost_eur: cost.toFixed(4) }
       });
     } catch(e) {}
