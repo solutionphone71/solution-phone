@@ -57,10 +57,30 @@ body::before {
 .app {
   position: relative;
   z-index: 1;
-  max-width: 480px;
+  max-width: 1100px;
   margin: 0 auto;
   min-height: 100vh;
   padding-bottom: 100px;
+}
+
+/* Desktop : layout plus aéré */
+@media (min-width: 900px) {
+  .zahira-hero { padding: 40px 32px 24px; }
+  .kpi-strip { padding: 0 32px 28px; gap: 12px; }
+  .kpi-chip { min-width: 140px; padding: 16px 20px; }
+  .kpi-value { font-size: 24px; }
+  .composer { margin: 0 32px 36px; }
+  .section { margin: 0 32px 36px; }
+  .ops-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .op-card { min-height: 200px; padding: 28px 26px; }
+  .op-title { font-size: 26px; }
+  .agents-list { display: grid; grid-template-columns: 1fr 1fr; }
+  .agent-row { border-bottom: none; border-right: 0.5px solid var(--line-2); }
+  .agent-row:nth-child(2n) { border-right: none; }
+  .agent-row:nth-last-child(-n+2) { border-bottom: none; }
+  .zahira-name { font-size: 38px; }
+  .zahira-summary { font-size: 16px; }
+  .zahira-avatar { width: 110px; height: 110px; }
 }
 
 /* HEADER */
@@ -539,7 +559,7 @@ body::before {
 .tab-bar {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  max-width: 480px;
+  max-width: 1100px;
   margin: 0 auto;
   background: rgba(8,8,10,0.88);
   backdrop-filter: saturate(180%) blur(28px);
@@ -548,6 +568,10 @@ body::before {
   padding: 8px 6px 22px;
   display: flex;
   z-index: 100;
+}
+@media (min-width: 900px) {
+  .tab-bar { padding: 12px 6px 16px; max-width: 1100px; border-left: 0.5px solid var(--line); border-right: 0.5px solid var(--line); border-radius: 0; }
+  .tab svg { width: 24px; height: 24px; }
 }
 .tab {
   flex: 1;
