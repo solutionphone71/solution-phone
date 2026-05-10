@@ -7,27 +7,7 @@
 <meta name="color-scheme" content="dark">
 <title>Solution Phone — Gestion</title>
 
-<!-- ════════════════════════════════════════════════════════════════
-     REDIRECT AUTO vers Home Zahira (mai 2026)
-     Si on arrive sur / ou /index.html sans hash et sans ?classic=1,
-     on bascule vers /home.html (= Zahira chat-first home).
-     Pour rester sur l'app classique : /index.html?classic=1 ou /index.html#open-xxx
-     ════════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  try {
-    var p = window.location.pathname;
-    var h = window.location.hash;
-    var s = window.location.search;
-    var isRoot = (p === '/' || p === '/index.html' || p === '/index');
-    var hasHash = !!h && h.length > 1;
-    var wantClassic = s.indexOf('classic=1') !== -1;
-    if (isRoot && !hasHash && !wantClassic) {
-      window.location.replace('/home.html');
-    }
-  } catch(e) {}
-})();
-</script>
+<!-- redirect auto retiré · Zahira home est désormais intégrée dans l'app sécurisée -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
 <meta name="theme-color" content="#0a0a1a">
@@ -495,7 +475,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 <!-- BARRE NAV MOBILE -->
 <div id="mobile-nav">
   <div id="mobile-nav-items">
-    <div class="mob-nav-btn active" id="mob-btn-dashboard" onclick="showPageMobile('dashboard','mob-btn-dashboard')">
+    <div class="mob-nav-btn active" id="mob-btn-dashboard" onclick="showPageMobile('zahira-home','mob-btn-dashboard');if(window.zhInit)zhInit();">
       <span class="mob-icon">🏠</span><span>Accueil</span>
     </div>
     <div class="mob-nav-btn" id="mob-btn-reparations" onclick="showPageMobile('reparations','mob-btn-reparations')">
@@ -518,7 +498,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 <div id="mobile-menu-panel">
   <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:0 14px 10px;">Tous les modules</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
-  <div class="mob-menu-item" onclick="showPageMobile('parcours','');closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
+  <div class="mob-menu-item" onclick="showPageMobile('zahira-home','');if(window.zhInit)zhInit();closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
@@ -606,11 +586,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div id="role-badge" style="font-size:11px;font-weight:700;margin-top:4px;color:var(--warning);">👑 Patron</div>
     </div>
 
-    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
+    <div class="nav-item active" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
+    <div class="nav-item" onclick="showPage('dashboard',this)" style="font-size:12px;opacity:0.6;padding-left:32px;"><span class="nav-icon">📊</span><span>Dashboard détaillé</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Réparations</div>
-    <div class="nav-item" onclick="showPage('parcours',this)"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
+    <div class="nav-item" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
@@ -664,7 +645,628 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   </div>
   <div class="main">
 
-    <div class="page active" id="page-dashboard">
+    <!-- ════════════════════════════════════════════════════════════
+         ZAHIRA CHAT-FIRST HOME (mai 2026)
+         Page d'accueil principale. Chat avec l'équipe IA + KPIs + agents.
+         Remplace Tableau de bord et Parcours client comme entry point.
+         ════════════════════════════════════════════════════════════ -->
+    <style>
+      #page-zahira-home {
+        --zh-bg: #08080A;
+        --zh-card: #14141A;
+        --zh-card2: #1C1C24;
+        --zh-line: rgba(255,255,255,0.08);
+        --zh-line2: rgba(255,255,255,0.05);
+        --zh-ink1: #FFFFFF;
+        --zh-ink2: #C0C0C8;
+        --zh-ink3: #6E6E78;
+        --zh-accent: #FF3B45;
+        --zh-green: #34C759;
+        --zh-orange: #FF9F0A;
+        --zh-blue: #0A84FF;
+        --zh-purple: #BF5AF2;
+        --zh-cyan: #64D2FF;
+
+        background: var(--zh-bg);
+        color: var(--zh-ink1);
+        font-size: 17px; line-height: 1.55;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: -16px -16px -16px -16px;
+        min-height: calc(100vh - 0px);
+        position: relative;
+      }
+      #page-zahira-home::before {
+        content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+        background:
+          radial-gradient(ellipse 50% 32% at 12% 4%, rgba(255,59,69,0.18), transparent 65%),
+          radial-gradient(ellipse 45% 30% at 95% 18%, rgba(10,132,255,0.10), transparent 65%);
+      }
+      #page-zahira-home .zh-grid {
+        position: relative; z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+        padding: 24px;
+        min-height: calc(100vh - 80px);
+      }
+      @media (max-width: 1100px) {
+        #page-zahira-home .zh-grid { grid-template-columns: 1fr; }
+        #page-zahira-home .zh-right { display: none; }
+      }
+
+      /* CHAT */
+      #page-zahira-home .zh-chat {
+        background: rgba(20,20,28,0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid var(--zh-line);
+        border-radius: 24px;
+        display: flex; flex-direction: column;
+        overflow: hidden; min-height: 600px;
+      }
+      #page-zahira-home .zh-chat-head {
+        display: flex; align-items: center; gap: 14px;
+        padding: 18px 22px;
+        border-bottom: 0.5px solid var(--zh-line);
+      }
+      #page-zahira-home .zh-head-avatar {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: linear-gradient(135deg, #E63946, #C8102E);
+        overflow: hidden;
+        border: 2.5px solid var(--zh-accent);
+        box-shadow: 0 0 18px rgba(255,59,69,0.6);
+      }
+      #page-zahira-home .zh-head-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      #page-zahira-home .zh-head-info { flex: 1; }
+      #page-zahira-home .zh-head-name {
+        font-family: 'Fraunces', 'Georgia', serif;
+        font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+      }
+      #page-zahira-home .zh-head-status {
+        font-size: 13px; color: var(--zh-ink3);
+        display: flex; align-items: center; gap: 6px;
+      }
+      #page-zahira-home .zh-head-status::before {
+        content: ''; width: 7px; height: 7px; background: var(--zh-green);
+        border-radius: 50%; box-shadow: 0 0 6px rgba(52,199,89,0.7);
+        animation: zhPulse 2s infinite;
+      }
+      @keyframes zhPulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.85);} }
+
+      #page-zahira-home .zh-thread {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px 24px;
+        display: flex; flex-direction: column; gap: 16px;
+        max-height: calc(100vh - 280px);
+      }
+      #page-zahira-home .zh-thread::-webkit-scrollbar { width: 6px; }
+      #page-zahira-home .zh-thread::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+      #page-zahira-home .zh-msg { display: flex; gap: 12px; max-width: 100%; }
+      #page-zahira-home .zh-msg.user { flex-direction: row-reverse; }
+      #page-zahira-home .zh-msg-avatar {
+        width: 44px; height: 44px; border-radius: 50%;
+        flex-shrink: 0; overflow: hidden;
+        background: linear-gradient(135deg, #E63946, #C8102E);
+        border: 2px solid rgba(255,59,69,0.4);
+        box-shadow: 0 0 10px rgba(255,59,69,0.25);
+      }
+      #page-zahira-home .zh-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      #page-zahira-home .zh-msg-content { display: flex; flex-direction: column; gap: 4px; max-width: calc(100% - 60px); }
+      #page-zahira-home .zh-msg.user .zh-msg-content { align-items: flex-end; }
+      #page-zahira-home .zh-bubble {
+        padding: 14px 20px;
+        border-radius: 22px;
+        font-size: 17px; line-height: 1.55;
+        white-space: pre-wrap; word-wrap: break-word;
+      }
+      #page-zahira-home .zh-msg.assistant .zh-bubble {
+        background: rgba(28,28,36,0.85);
+        border: 0.5px solid var(--zh-line);
+        border-bottom-left-radius: 8px;
+        color: var(--zh-ink1);
+      }
+      #page-zahira-home .zh-msg.user .zh-bubble {
+        background: linear-gradient(135deg, #FF5560, #C8102E);
+        border-bottom-right-radius: 8px;
+        color: white;
+        box-shadow: 0 4px 14px -4px rgba(255,59,69,0.4);
+      }
+      #page-zahira-home .zh-bubble strong { font-weight: 700; color: var(--zh-ink1); }
+      #page-zahira-home .zh-bubble .hl { background: linear-gradient(180deg, transparent 55%, rgba(255,214,10,0.4) 55%); padding: 0 3px; }
+      #page-zahira-home .zh-time { font-size: 11px; color: var(--zh-ink3); padding: 0 8px; }
+
+      /* Briefing card */
+      #page-zahira-home .zh-brief {
+        margin-top: 14px;
+        background: linear-gradient(180deg, rgba(255,59,69,0.08), rgba(14,14,18,0.95));
+        border: 1.5px solid rgba(255,59,69,0.3);
+        border-radius: 20px;
+        padding: 20px;
+        display: flex; flex-direction: column; gap: 14px;
+        box-shadow: 0 12px 32px -8px rgba(0,0,0,0.4);
+      }
+      #page-zahira-home .zh-brief-title {
+        font-size: 13px; font-weight: 800; color: var(--zh-accent);
+        letter-spacing: 0.14em; text-transform: uppercase;
+      }
+      #page-zahira-home .zh-brief-list { display: flex; flex-direction: column; gap: 10px; }
+      #page-zahira-home .zh-brief-item {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 14px;
+        background: rgba(255,255,255,0.04);
+        border: 0.5px solid rgba(255,255,255,0.06);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      #page-zahira-home .zh-brief-item:hover { background: rgba(255,255,255,0.07); }
+      #page-zahira-home .zh-brief-item.silent { opacity: 0.5; }
+      #page-zahira-home .zh-brief-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; flex-shrink: 0; }
+      #page-zahira-home .zh-brief-name { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; }
+      #page-zahira-home .zh-brief-desc { font-size: 13px; color: var(--zh-ink2); margin-top: 3px; }
+      #page-zahira-home .zh-brief-actions { display: flex; gap: 10px; padding-top: 12px; border-top: 0.5px solid var(--zh-line); }
+      #page-zahira-home .zh-brief-btn {
+        flex: 1; padding: 12px; border: none; cursor: pointer;
+        border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 700;
+      }
+      #page-zahira-home .zh-brief-btn.primary { background: var(--zh-accent); color: white; }
+      #page-zahira-home .zh-brief-btn.secondary { background: rgba(255,255,255,0.06); color: var(--zh-ink1); border: 0.5px solid var(--zh-line); }
+
+      #page-zahira-home .zh-typing {
+        display: flex; gap: 5px; padding: 16px 18px;
+        background: rgba(28,28,36,0.85);
+        border: 0.5px solid var(--zh-line);
+        border-radius: 22px; border-bottom-left-radius: 8px;
+        width: fit-content;
+      }
+      #page-zahira-home .zh-typing span {
+        width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3);
+        animation: zhBounce 1.4s infinite;
+      }
+      #page-zahira-home .zh-typing span:nth-child(2) { animation-delay: 0.15s; }
+      #page-zahira-home .zh-typing span:nth-child(3) { animation-delay: 0.3s; }
+      @keyframes zhBounce { 0%,60%,100%{opacity:0.4;transform:translateY(0);} 30%{opacity:1;transform:translateY(-3px);} }
+
+      /* COMPOSER */
+      #page-zahira-home .zh-composer-wrap {
+        border-top: 0.5px solid var(--zh-line);
+        padding: 16px 22px;
+        display: flex; flex-direction: column; gap: 12px;
+        background: rgba(8,8,10,0.7);
+      }
+      #page-zahira-home .zh-quick { display: flex; gap: 8px; flex-wrap: wrap; }
+      #page-zahira-home .zh-quick-pill {
+        padding: 8px 14px;
+        background: rgba(28,28,36,0.7);
+        border: 0.5px solid var(--zh-line);
+        border-radius: 999px;
+        font-size: 13px; color: var(--zh-ink1); cursor: pointer;
+        transition: background 0.12s;
+      }
+      #page-zahira-home .zh-quick-pill:hover { background: rgba(40,40,50,0.9); }
+      #page-zahira-home .zh-composer { display: flex; align-items: center; gap: 10px; }
+      #page-zahira-home .zh-input-wrap {
+        flex: 1; display: flex; align-items: center; gap: 10px;
+        background: rgba(28,28,36,0.85);
+        border: 0.5px solid var(--zh-line);
+        border-radius: 24px; padding: 12px 18px;
+      }
+      #page-zahira-home .zh-input-wrap input {
+        flex: 1; border: none; background: transparent; outline: none;
+        color: var(--zh-ink1); font-family: inherit; font-size: 16px; min-width: 0;
+      }
+      #page-zahira-home .zh-input-wrap input::placeholder { color: var(--zh-ink3); }
+      #page-zahira-home .zh-icon-btn {
+        width: 22px; height: 22px; color: var(--zh-ink2); cursor: pointer; flex-shrink: 0;
+      }
+      #page-zahira-home .zh-send {
+        width: 48px; height: 48px;
+        border-radius: 50%; border: none; cursor: pointer;
+        background: linear-gradient(135deg, #FF5560, #FF3B45 50%, #C8102E);
+        color: white;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 18px -4px rgba(255,59,69,0.5);
+        transition: transform 0.1s;
+      }
+      #page-zahira-home .zh-send:active { transform: scale(0.94); }
+      #page-zahira-home .zh-send:disabled { opacity: 0.5; cursor: wait; }
+
+      /* RIGHT PANEL */
+      #page-zahira-home .zh-right { display: flex; flex-direction: column; gap: 18px; }
+      #page-zahira-home .zh-section-title {
+        font-size: 11px; font-weight: 800; color: var(--zh-ink3);
+        letter-spacing: 0.16em; text-transform: uppercase;
+        padding: 0 4px;
+      }
+      #page-zahira-home .zh-kpi-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        background: rgba(20,20,28,0.5);
+        border: 1px solid var(--zh-line);
+        border-radius: 18px; padding: 14px;
+      }
+      #page-zahira-home .zh-kpi {
+        background: rgba(255,255,255,0.03);
+        border: 0.5px solid var(--zh-line);
+        border-radius: 12px; padding: 12px;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      #page-zahira-home .zh-kpi.full { grid-column: span 2; }
+      #page-zahira-home .zh-kpi-lbl { font-size: 10px; font-weight: 700; color: var(--zh-ink3); letter-spacing: 0.08em; text-transform: uppercase; }
+      #page-zahira-home .zh-kpi-val { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+      #page-zahira-home .zh-kpi-trend { font-size: 11px; color: var(--zh-ink3); margin-top: 2px; }
+      #page-zahira-home .zh-kpi-trend.up { color: var(--zh-green); }
+      #page-zahira-home .zh-kpi-trend.warn { color: var(--zh-orange); }
+
+      #page-zahira-home .zh-agents {
+        background: rgba(20,20,28,0.5);
+        border: 1px solid var(--zh-line);
+        border-radius: 18px; overflow: hidden;
+      }
+      #page-zahira-home .zh-agent {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 0.5px solid var(--zh-line2);
+        cursor: pointer; transition: background 0.15s;
+      }
+      #page-zahira-home .zh-agent:last-child { border-bottom: none; }
+      #page-zahira-home .zh-agent:hover { background: rgba(255,255,255,0.04); }
+      #page-zahira-home .zh-agent.silent { opacity: 0.5; }
+      #page-zahira-home .zh-agent-avatar-wrap { position: relative; padding: 3px; flex-shrink: 0; }
+      #page-zahira-home .zh-agent-avatar-wrap::before {
+        content: ''; position: absolute; inset: 0; border-radius: 50%;
+        border: 2px solid var(--ring); box-shadow: 0 0 10px var(--glow);
+      }
+      #page-zahira-home .zh-agent.silent .zh-agent-avatar-wrap::before { border-color: rgba(255,255,255,0.2); box-shadow: none; }
+      #page-zahira-home .zh-agent-avatar {
+        width: 38px; height: 38px; border-radius: 50%;
+        background: var(--avbg); overflow: hidden;
+      }
+      #page-zahira-home .zh-agent-avatar img { width: 100%; height: 100%; object-fit: cover; }
+      #page-zahira-home .zh-agent-info { flex: 1; min-width: 0; }
+      #page-zahira-home .zh-agent-name { display: flex; gap: 6px; align-items: baseline; }
+      #page-zahira-home .zh-agent-name strong { font-size: 13px; font-weight: 700; }
+      #page-zahira-home .zh-agent-name span { font-size: 9px; color: var(--zh-ink3); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+      #page-zahira-home .zh-agent-task { font-size: 12px; color: var(--zh-ink2); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+      #page-zahira-home .zh-shortcuts {
+        background: rgba(20,20,28,0.5);
+        border: 1px solid var(--zh-line);
+        border-radius: 18px;
+        padding: 8px;
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      #page-zahira-home .zh-short-item {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        text-decoration: none; color: var(--zh-ink1); cursor: pointer;
+        transition: background 0.12s;
+      }
+      #page-zahira-home .zh-short-item:hover { background: rgba(255,255,255,0.06); }
+      #page-zahira-home .zh-short-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 8px currentColor; }
+      #page-zahira-home .zh-short-name strong { display: block; font-size: 13px; font-weight: 700; }
+      #page-zahira-home .zh-short-name span { font-size: 11px; color: var(--zh-ink3); }
+    </style>
+
+    <div class="page active" id="page-zahira-home">
+      <div class="zh-grid">
+
+        <!-- CHAT -->
+        <main class="zh-chat">
+          <header class="zh-chat-head">
+            <div class="zh-head-avatar">
+              <img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';">
+            </div>
+            <div class="zh-head-info">
+              <div class="zh-head-name">Zahira</div>
+              <div class="zh-head-status">En ligne · Cheffe d'équipe IA</div>
+            </div>
+          </header>
+
+          <div class="zh-thread" id="zh-thread">
+            <div class="zh-msg assistant">
+              <div class="zh-msg-avatar"><img src="/images/zahira.png" alt="Zahira" onerror="this.style.display='none';this.parentNode.textContent='Z';"></div>
+              <div class="zh-msg-content">
+                <div class="zh-bubble">Je prépare ton briefing...</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="zh-composer-wrap">
+            <div class="zh-quick">
+              <div class="zh-quick-pill" onclick="zhSend('CA cette semaine')">CA cette semaine</div>
+              <div class="zh-quick-pill" onclick="zhSend('Bilan équipe IA')">Bilan équipe</div>
+              <div class="zh-quick-pill" onclick="zhSend('3 idées de posts batterie')">3 posts batterie</div>
+              <div class="zh-quick-pill" onclick="zhSend('Dossiers QualiRépar à monter')">QualiRépar</div>
+            </div>
+            <div class="zh-composer">
+              <div class="zh-input-wrap">
+                <input id="zh-input" type="text" placeholder="Demande à Zahira..." autocomplete="off" />
+                <svg class="zh-icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <svg class="zh-icon-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              </div>
+              <button id="zh-send" class="zh-send" aria-label="Envoyer">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </main>
+
+        <!-- RIGHT PANEL -->
+        <aside class="zh-right">
+          <div>
+            <div class="zh-section-title" style="margin-bottom:10px;">// KPIs Live</div>
+            <div class="zh-kpi-grid">
+              <div class="zh-kpi full"><div class="zh-kpi-lbl">CA Jour</div><div class="zh-kpi-val" id="zh-kpi-ca">—</div><div class="zh-kpi-trend" id="zh-kpi-ca-trend">…</div></div>
+              <div class="zh-kpi"><div class="zh-kpi-lbl">Avis</div><div class="zh-kpi-val" id="zh-kpi-avis">—</div><div class="zh-kpi-trend" id="zh-kpi-avis-trend">…</div></div>
+              <div class="zh-kpi"><div class="zh-kpi-lbl">Stock</div><div class="zh-kpi-val" id="zh-kpi-stock">—</div><div class="zh-kpi-trend">en stock</div></div>
+              <div class="zh-kpi"><div class="zh-kpi-lbl">Queue IA</div><div class="zh-kpi-val" id="zh-kpi-queue">—</div><div class="zh-kpi-trend">à valider</div></div>
+              <div class="zh-kpi"><div class="zh-kpi-lbl">QualiRépar</div><div class="zh-kpi-val" id="zh-kpi-qr">—</div><div class="zh-kpi-trend">ce mois</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="zh-section-title" style="margin-bottom:10px;">Mes opérations</div>
+            <div class="zh-shortcuts">
+              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('reparation'))" style="cursor:pointer;">
+                <div class="zh-short-dot" style="background:#FF6B6B;color:#FF6B6B;"></div>
+                <div class="zh-short-name"><strong>Réparation interne</strong><span>QualiRépar Ecologic / Ecosystem</span></div>
+              </a>
+              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('mobilax'))" style="cursor:pointer;">
+                <div class="zh-short-dot" style="background:#4FA9FF;color:#4FA9FF;"></div>
+                <div class="zh-short-name"><strong>Sous-traitance Mobilax</strong><span>Envoi + suivi client</span></div>
+              </a>
+              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('pieces'))" style="cursor:pointer;">
+                <div class="zh-short-dot" style="background:#6FE08F;color:#6FE08F;"></div>
+                <div class="zh-short-name"><strong>Commande pièces</strong><span>Réparation lendemain</span></div>
+              </a>
+              <a class="zh-short-item" onclick="parcoursOuvrir &amp;&amp; (showPage('parcours',null), parcoursOuvrir('accessoires'))" style="cursor:pointer;">
+                <div class="zh-short-dot" style="background:#FFB94D;color:#FFB94D;"></div>
+                <div class="zh-short-name"><strong>Commande accessoires</strong><span>Coques · verres · câbles</span></div>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <div class="zh-section-title" style="margin-bottom:10px;">Équipe IA <span style="color:var(--zh-accent);text-shadow:0 0 8px rgba(255,59,69,0.5);">✦</span></div>
+            <div class="zh-agents" id="zh-agents-list">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+
+    <script>
+    // ════════════════════════════════════════════════════════════
+    // ZAHIRA HOME · Logic (intégré dans index.html, PIN-protected)
+    // ════════════════════════════════════════════════════════════
+    (function(){
+      const TEAM = {
+        zahira: { label:'ZAHIRA', role:'Cheffe',         ring:'#FF3B45', glow:'rgba(255,59,69,0.55)',  bg:'linear-gradient(135deg,#E63946,#C8102E)', img:'/images/zahira.png' },
+        anissa: { label:'ANISSA', role:'Compta',         ring:'#2563EB', glow:'rgba(37,99,235,0.55)', bg:'linear-gradient(135deg,#2563EB,#1E40AF)', img:'/images/anissa.png' },
+        assya:  { label:'ASSYA',  role:'Communication',  ring:'#FF6B35', glow:'rgba(255,107,53,0.55)',bg:'linear-gradient(135deg,#FF6B35,#D14000)', img:'/images/assya.png' },
+        yago:   { label:'YAGO',   role:'QualiRépar',     ring:'#16A34A', glow:'rgba(22,163,74,0.55)', bg:'linear-gradient(135deg,#16A34A,#0E7A36)', img:'/images/yago.png' },
+        obiwan: { label:'OBIWAN', role:'Coach',          ring:'#7C3AED', glow:'rgba(124,58,237,0.55)',bg:'linear-gradient(135deg,#7C3AED,#5B21B6)', img:'/images/obiwan.png' },
+        chanel: { label:'CHANEL', role:'App',            ring:'#0891B2', glow:'rgba(8,145,178,0.5)',  bg:'linear-gradient(135deg,#0891B2,#075E80)', img:'/images/chanel.png' }
+      };
+
+      async function zhSupa(table, params) {
+        try {
+          const r = await fetch('/api/supabase?table=' + encodeURIComponent(table) + (params ? '&query=' + encodeURIComponent(params) : ''));
+          const data = await r.json();
+          return Array.isArray(data) ? data : [];
+        } catch(e) { return []; }
+      }
+
+      function zhEuro(n) { return Math.round(n||0).toLocaleString('fr-FR') + ' €'; }
+      function zhEsc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      async function zhLoadKpis() {
+        const today = new Date().toISOString().slice(0,10);
+        const monthStart = today.slice(0,7) + '-01';
+        const [caisseToday, avis, phones, queue, caisseMonth] = await Promise.all([
+          zhSupa('caisse', `?date=eq.${today}`),
+          zhSupa('google_reviews', '?select=star_rating&order=create_time.desc&limit=600'),
+          zhSupa('phones', '?select=id&limit=500'),
+          zhSupa('agent_decisions', '?status=eq.pending_validation&select=id,agent_name'),
+          zhSupa('caisse', `?date=gte.${monthStart}`)
+        ]);
+        const lineAmount = c => Number(c.total_jour || c.total || c.montant || c.prix || 0) || 0;
+        document.getElementById('zh-kpi-ca').textContent = zhEuro(caisseToday.reduce((s,c)=>s+lineAmount(c),0));
+        document.getElementById('zh-kpi-ca-trend').textContent = caisseToday.length + ' transactions';
+        if (avis.length) {
+          const avg = (avis.reduce((s,a)=>s+Number(a.star_rating||0),0)/avis.length).toFixed(1).replace('.',',');
+          document.getElementById('zh-kpi-avis').textContent = avg + ' ★';
+          document.getElementById('zh-kpi-avis-trend').textContent = avis.length + ' avis';
+        } else { document.getElementById('zh-kpi-avis').textContent = '4,7 ★'; }
+        document.getElementById('zh-kpi-stock').textContent = phones.length;
+        document.getElementById('zh-kpi-queue').textContent = queue.length;
+        if (queue.length) document.getElementById('zh-kpi-queue').style.color = 'var(--zh-accent)';
+        const qrMonth = caisseMonth.filter(c=>/qualir[ée]par|bonus/i.test(JSON.stringify(c).toLowerCase())).reduce((s,c)=>s+lineAmount(c),0);
+        document.getElementById('zh-kpi-qr').textContent = zhEuro(qrMonth);
+        return { queue };
+      }
+
+      function zhRenderAgents(queue) {
+        const list = document.getElementById('zh-agents-list');
+        list.innerHTML = '';
+        const order = ['anissa','assya','yago','obiwan','chanel'];
+        order.forEach(name => {
+          const info = TEAM[name];
+          const count = queue.filter(d => d.agent_name === name).length;
+          const silent = count === 0;
+          const row = document.createElement('div');
+          row.className = 'zh-agent' + (silent ? ' silent' : '');
+          row.style.cssText = `--ring:${info.ring};--glow:${info.glow};--avbg:${info.bg};`;
+          row.innerHTML = `
+            <div class="zh-agent-avatar-wrap">
+              <div class="zh-agent-avatar"><img src="${info.img}" alt="${info.label}" onerror="this.style.display='none';this.parentNode.textContent='${info.label[0]}';"></div>
+            </div>
+            <div class="zh-agent-info">
+              <div class="zh-agent-name"><strong>${info.label}</strong><span>${info.role}</span></div>
+              <div class="zh-agent-task">${silent ? 'silencieux' : count + ' à valider'}</div>
+            </div>`;
+          list.appendChild(row);
+        });
+      }
+
+      const thread = document.getElementById('zh-thread');
+
+      function zhAvatar(role) {
+        if (role === 'user') return '';
+        return `<div class="zh-msg-avatar"><img src="/images/zahira.png" alt="Z" onerror="this.style.display='none';this.parentNode.textContent='Z';"></div>`;
+      }
+
+      function zhAddMsg(role, html, briefHtml) {
+        const wrap = document.createElement('div');
+        wrap.className = 'zh-msg ' + (role === 'user' ? 'user' : 'assistant');
+        wrap.innerHTML = `${zhAvatar(role)}<div class="zh-msg-content"><div class="zh-bubble">${html}${briefHtml||''}</div></div>`;
+        thread.appendChild(wrap);
+        thread.scrollTop = thread.scrollHeight;
+        return wrap;
+      }
+
+      function zhAddTyping() {
+        const wrap = document.createElement('div');
+        wrap.className = 'zh-msg assistant';
+        wrap.id = 'zh-typing-bubble';
+        wrap.innerHTML = `${zhAvatar('assistant')}<div class="zh-msg-content"><div class="zh-typing"><span></span><span></span><span></span></div></div>`;
+        thread.appendChild(wrap);
+        thread.scrollTop = thread.scrollHeight;
+      }
+      function zhRemoveTyping() {
+        const t = document.getElementById('zh-typing-bubble');
+        if (t) t.remove();
+      }
+
+      function zhBuildBrief(queue) {
+        const counts = {};
+        queue.forEach(d => { const a = d.agent_name || 'autre'; counts[a] = (counts[a]||0) + 1; });
+        const items = [
+          { agent:'assya',  desc: counts.assya  ? counts.assya  + ' propositions de posts'                      : 'silencieuse'  },
+          { agent:'yago',   desc: counts.yago   ? counts.yago   + ' dossier' + (counts.yago>1?'s':'') + ' QualiRépar' : 'aucun urgent' },
+          { agent:'anissa', desc: counts.anissa ? counts.anissa + ' alerte' + (counts.anissa>1?'s':'') + ' caisse'    : 'caisse OK' },
+          { agent:'obiwan', desc: counts.obiwan ? counts.obiwan + ' point équipe'                                : 'équipe en forme' },
+          { agent:'chanel', desc: counts.chanel ? counts.chanel + ' suggestion UX'                                : 'app stable' }
+        ];
+        const itemsHtml = items.map(it => {
+          const t = TEAM[it.agent];
+          const silent = !counts[it.agent];
+          return `<div class="zh-brief-item${silent?' silent':''}">
+            <div class="zh-brief-dot" style="background:${t.ring};color:${t.ring};"></div>
+            <div style="flex:1;min-width:0;">
+              <div class="zh-brief-name">${t.label.charAt(0) + t.label.slice(1).toLowerCase()} · ${t.role}</div>
+              <div class="zh-brief-desc">${zhEsc(it.desc)}</div>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div class="zh-brief">
+          <div class="zh-brief-title">✦ Briefing du matin · ${new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}</div>
+          <div class="zh-brief-list">${itemsHtml}</div>
+          ${queue.length ? `<div class="zh-brief-actions">
+            <button class="zh-brief-btn secondary" onclick="showPage('autopilot',null)">Voir tout</button>
+            <button class="zh-brief-btn primary" onclick="zhSend('Valide tout en bloc')">Valider en bloc</button>
+          </div>` : ''}
+        </div>`;
+      }
+
+      window.zhSend = async function(txt) {
+        const inp = document.getElementById('zh-input');
+        const msg = (typeof txt === 'string' ? txt : inp.value).trim();
+        if (!msg) return;
+        inp.value = '';
+        document.getElementById('zh-send').disabled = true;
+
+        zhAddMsg('user', zhEsc(msg));
+        zhAddTyping();
+
+        try {
+          const r = await fetch('/api/brain/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg, history: [] })
+          });
+          const data = await r.json();
+          zhRemoveTyping();
+          if (data.reply) {
+            const formatted = zhEsc(data.reply).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+            zhAddMsg('assistant', formatted);
+          } else {
+            zhAddMsg('assistant', '<em>Erreur : ' + zhEsc(data.error || 'pas de réponse') + '</em>');
+          }
+        } catch(e) {
+          zhRemoveTyping();
+          zhAddMsg('assistant', '<em>Erreur réseau</em>');
+        }
+        document.getElementById('zh-send').disabled = false;
+        document.getElementById('zh-input').focus();
+      };
+
+      let zhInited = false;
+      window.zhInit = async function() {
+        if (zhInited) return;
+        zhInited = true;
+
+        // Bind composer
+        const inp = document.getElementById('zh-input');
+        document.getElementById('zh-send').addEventListener('click', () => zhSend());
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); zhSend(); } });
+
+        // Load history (last 50, today only for visible)
+        const history = await zhSupa('brain_chat_messages', '?order=created_at.asc&limit=50');
+        thread.innerHTML = '';
+
+        // Display history of last 24h
+        const dayAgo = Date.now() - 24*3600*1000;
+        const recent = history.filter(m => new Date(m.created_at).getTime() > dayAgo);
+        recent.forEach(m => {
+          const html = zhEsc(m.content).replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+          zhAddMsg(m.role, html);
+        });
+
+        // KPIs + agents
+        const { queue } = await zhLoadKpis();
+        zhRenderAgents(queue);
+
+        // Auto-briefing if no message today from assistant
+        const today = new Date().toDateString();
+        const hasToday = recent.some(m => new Date(m.created_at).toDateString() === today && m.role === 'assistant');
+        if (!hasToday) {
+          const hr = new Date().getHours();
+          const greet = hr < 12 ? 'Bonjour' : hr < 18 ? 'Bon après-midi' : 'Bonsoir';
+          const intro = queue.length
+            ? `${greet} Sébastien.<br><br>Voici ton briefing du jour :`
+            : `${greet} Sébastien.<br><br>Tout est calme. L'équipe surveille en arrière-plan.`;
+          zhAddTyping();
+          setTimeout(() => {
+            zhRemoveTyping();
+            zhAddMsg('assistant', intro, zhBuildBrief(queue));
+          }, 600);
+        }
+
+        // Refresh KPIs periodically
+        setInterval(async () => {
+          const { queue } = await zhLoadKpis();
+          zhRenderAgents(queue);
+        }, 5 * 60 * 1000);
+      };
+
+      // Init when page is shown
+      function tryInitZh() {
+        const p = document.getElementById('page-zahira-home');
+        if (p && p.classList.contains('active')) {
+          window.zhInit();
+        }
+      }
+      if (document.readyState === 'complete') tryInitZh();
+      else window.addEventListener('load', tryInitZh);
+    })();
+    </script>
+
+    <div class="page" id="page-dashboard">
 
       <!-- ════════════════════════════════════════════════════════════
            ZAHIRA HERO BLOCK (mai 2026)
