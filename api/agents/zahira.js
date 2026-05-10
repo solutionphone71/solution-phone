@@ -385,18 +385,22 @@ async function runWorker(agentName, shared) {
 
 async function runZahira(triggerType) {
   const startedAt = nowIso();
+  const debugErrors = [];
 
-  // 1. Créer le run
+  // 1. Créer le run (schéma compatible avec run.js existant : type + trigger + status + started_at)
   let runId = null;
   try {
     const runRow = await supaQuery('agent_runs', 'POST', {
       type: triggerType,
+      trigger: `zahira_${triggerType}`,
       status: 'running',
-      started_at: startedAt,
-      metadata: { orchestrator: 'zahira', team: Object.keys(AGENTS) }
+      started_at: startedAt
     });
     runId = runRow?.[0]?.id;
-  } catch (e) { /* continue sans run_id */ }
+    if (!runId) debugErrors.push({ step: 'create_run', error: 'INSERT returned no id', row: runRow });
+  } catch (e) {
+    debugErrors.push({ step: 'create_run', error: e.message });
+  }
 
   // 2. Collecter le contexte partagé (1 seule fois)
   const shared = await buildSharedContext(triggerType);
@@ -417,22 +421,18 @@ async function runZahira(triggerType) {
           run_id: runId,
           agent_name: result.agent,
           type: dec.type,
-          status: 'pending',
+          status: 'pending_validation',
           reasoning: dec.reasoning,
           confidence: dec.confidence ?? 0.7,
-          payload: dec.payload || {},
-          source_data: {
-            urgency: dec.urgency || 'medium',
-            agent_thoughts: result.thoughts,
-            agent_label: result.label,
-            trigger: triggerType
-          }
+          payload: dec.payload || {}
         });
         if (inserted && inserted[0]) {
           allDecisions.push({ ...dec, id: inserted[0].id, agent: result.agent, label: result.label });
+        } else {
+          debugErrors.push({ step: 'insert_decision', agent: result.agent, error: 'INSERT returned empty', row: inserted });
         }
       } catch (e) {
-        console.error(`Insert decision failed (${result.agent}):`, e.message);
+        debugErrors.push({ step: 'insert_decision', agent: result.agent, type: dec.type, error: e.message });
       }
     }
   }
@@ -442,33 +442,21 @@ async function runZahira(triggerType) {
   const totalTokensIn = workerResults.reduce((s, r) => s + (r.usage?.input_tokens || 0), 0);
   const totalTokensOut = workerResults.reduce((s, r) => s + (r.usage?.output_tokens || 0), 0);
 
-  // 6. Mettre à jour le run
+  // 6. Mettre à jour le run (schéma minimal pour matcher la table existante)
   const finishedAt = nowIso();
   if (runId) {
     try {
       await supaQuery('agent_runs', 'PATCH', {
         status: 'success',
         finished_at: finishedAt,
-        metadata: {
-          orchestrator: 'zahira',
-          team: Object.keys(AGENTS),
-          workers: workerResults.map(r => ({
-            agent: r.agent,
-            label: r.label,
-            success: r.success,
-            n_decisions: (r.decisions || []).filter(d => d.type !== 'noop').length,
-            thoughts: r.thoughts,
-            cost_eur: r.cost_eur,
-            duration_ms: r.duration_ms,
-            error: r.error
-          })),
-          n_decisions_total: allDecisions.length,
-          cost_eur: Number(totalCost.toFixed(4)),
-          tokens_in: totalTokensIn,
-          tokens_out: totalTokensOut
-        }
+        decisions_count: allDecisions.length,
+        cost_eur: Number(totalCost.toFixed(4)),
+        tokens_in: totalTokensIn,
+        tokens_out: totalTokensOut
       }, `?id=eq.${runId}`);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      debugErrors.push({ step: 'patch_run', error: e.message });
+    }
   }
 
   return {
@@ -491,7 +479,8 @@ async function runZahira(triggerType) {
       cost_eur: r.cost_eur,
       error: r.error
     })),
-    decisions: allDecisions
+    decisions: allDecisions,
+    debug_errors: debugErrors  // ← visibilité totale sur les échecs SQL
   };
 }
 
