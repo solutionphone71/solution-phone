@@ -187,7 +187,10 @@ export default async function handler(req, res) {
     }
 
     const payload = decision.payload || {};
-    const platforms = payload.platforms || {};
+    // Si l'agent n'a pas précisé les plateformes, on défaut sur les 2 (FB toujours, IG si media_url fourni)
+    const platforms = (payload.platforms && Object.keys(payload.platforms).length > 0)
+      ? payload.platforms
+      : { instagram: !!payload.media_url, facebook: true };
     const host = req.headers.host || 'app.solution-phone.fr';
 
     const results = {};
@@ -196,13 +199,16 @@ export default async function handler(req, res) {
 
 
     // 2. Exécuter selon type
-    if (decision.type === 'post' || decision.type === 'reel') {
-      if (platforms.instagram) {
+    if (decision.type === 'post' || decision.type === 'reel' || decision.type === 'story') {
+      // Instagram : nécessite obligatoirement une image (media_url)
+      if (platforms.instagram && payload.media_url) {
         results.instagram = await publishInstagram(payload);
         if (results.instagram.success) {
           anySuccess = true;
           igPostId = results.instagram.ig_post_id;
         }
+      } else if (platforms.instagram && !payload.media_url) {
+        results.instagram = { success: false, error: 'Instagram nécessite une image (media_url manquant)' };
       }
       if (platforms.facebook) {
         results.facebook = await publishFacebook(payload);
@@ -211,7 +217,6 @@ export default async function handler(req, res) {
           fbPostId = results.facebook.fb_post_id;
         }
       }
-      // GBP : à implémenter (utilise déjà /api/google-reviews ou autre endpoint dédié)
 
     } else if (decision.type === 'sms') {
       results.sms = await sendSms(payload);
