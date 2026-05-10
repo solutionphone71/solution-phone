@@ -15019,31 +15019,34 @@ var PARAMS_KEYS = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MOT DE PASSE API ECOSYSTEM — Rotation tous les 6 mois (durée de validité)
+// MOT DE PASSE API ECOSYSTEM — JAMAIS EN CLAIR DANS LE CODE
 // ═══════════════════════════════════════════════════════════════════════════
-// À CHAQUE CHANGEMENT DE MDP CÔTÉ ECOSYSTEM :
-//   1. Mets à jour ECO_PASS_DEFAULT avec le nouveau mdp
-//   2. Mets ECO_PASS_VERSION à la date du jour (YYYY-MM-DD)
-//   3. Push GitHub → tous les appareils se mettent à jour au prochain chargement
+// SÉCURITÉ : le mdp Ecosystem n'est plus stocké ici (audit du 10/05/2026).
+// Il vient du localStorage de chaque poste, saisi manuellement via Paramètres.
+// TODO migration : déplacer côté serveur (/api/ecosystem-login) avec env var
+//                  process.env.ECOSYSTEM_PASSWORD dans Vercel.
 // ═══════════════════════════════════════════════════════════════════════════
-var ECO_PASS_DEFAULT = 'Cannard71$';
-var ECO_PASS_VERSION = '2026-05-08';
+var ECO_PASS_DEFAULT = '';   // vide : on lit toujours sp_eco_pass depuis localStorage
+var ECO_PASS_VERSION = '';   // déprécié — on n'écrase plus le localStorage automatiquement
 
 
-// Pré-remplir les identifiants connus
+// Pré-remplir les identifiants connus (sauf mdp — saisi manuellement)
 (function(){
   if(!localStorage.getItem('sp_eco_repairer_id')) localStorage.setItem('sp_eco_repairer_id','2002535');
   if(!localStorage.getItem('sp_eco_user'))        localStorage.setItem('sp_eco_user','501710');
-  // Mise à jour mdp Ecosystem — ne s'écrase pas si déjà à jour (basé sur ECO_PASS_VERSION)
-  if(localStorage.getItem('sp_eco_pass_v') !== ECO_PASS_VERSION){
-    localStorage.setItem('sp_eco_pass', ECO_PASS_DEFAULT);
-    localStorage.setItem('sp_eco_pass_v', ECO_PASS_VERSION);
-    // Pousser aussi vers Supabase pour éviter qu'un sync ne ramène l'ancien mdp
-    setTimeout(function(){
-      if(typeof supaSettingSave === 'function'){
-        supaSettingSave('eco_pass', ECO_PASS_DEFAULT);
-      }
-    }, 1500);
+  // mdp Ecosystem : NE JAMAIS PRÉ-REMPLIR. L'utilisateur le saisit une fois via Paramètres.
+  // Si vide → la fenêtre Paramètres demandera de le saisir avant le 1er appel Ecosystem.
+
+  // Nettoyage : ancien mdp en clair encore en localStorage (avant l'audit 10/05/2026)
+  // → on l'efface UNE fois pour forcer une nouvelle saisie post-rotation.
+  if(!localStorage.getItem('sp_eco_pass_cleaned_2026_05')){
+    var oldPass = localStorage.getItem('sp_eco_pass') || '';
+    if(oldPass === 'Cannard71$'){
+      localStorage.removeItem('sp_eco_pass');
+      localStorage.removeItem('sp_eco_pass_v');
+      console.warn('[Sécurité] Ancien mdp Ecosystem effacé du localStorage. Ressaisir via Paramètres.');
+    }
+    localStorage.setItem('sp_eco_pass_cleaned_2026_05', '1');
   }
   // Force modèle Claude Haiku (économique) — avril 2026
   localStorage.setItem('sp_claude_model','claude-haiku-4-5-20251001');
@@ -23979,6 +23982,12 @@ async function qrSendEcosystem() {
   var ECO_BASE      = 'https://solution-phone.fr/proxy-ecosystem';
   var ECO_USER      = '501710';
   var ECO_PASS      = localStorage.getItem(PARAMS_KEYS.ecoPass)||ECO_PASS_DEFAULT;
+  // Si mdp absent : prompt unique pour l'employé puis mémorisation localStorage
+  if(!ECO_PASS){
+    ECO_PASS = (prompt('🔒 Mot de passe Ecosystem requis (à saisir une seule fois sur ce poste) :') || '').trim();
+    if(!ECO_PASS) throw new Error('Login Ecosystem annulé — mot de passe non saisi.');
+    localStorage.setItem('sp_eco_pass', ECO_PASS);
+  }
   var ECO_REPAIRER  = '2002535';
   var ECO_SITE      = '2002535';
 
