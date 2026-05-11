@@ -15,15 +15,18 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000'
 ];
 
-// Accepte aussi tous les previews Vercel : solution-phone-*.vercel.app
-// (déploiements de branches, PRs, etc.)
+// Accepte aussi :
+//  - tous les sous-domaines de solution-phone.fr (app., admin., etc.)
+//  - tous les previews Vercel : solution-phone-*.vercel.app
 function isAllowedOrigin(origin){
   if(!origin) return false;
   if(ALLOWED_ORIGINS.includes(origin)) return true;
-  // Pattern Vercel preview : https://solution-phone-XXX-XXX.vercel.app
   try {
     const u = new URL(origin);
-    if(u.protocol !== 'https:') return false;
+    if(u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    // Sous-domaines solution-phone.fr (incluant le root)
+    if(u.hostname === 'solution-phone.fr' || u.hostname.endsWith('.solution-phone.fr')) return true;
+    // Previews Vercel : solution-phone-XXX-XXX.vercel.app
     if(u.hostname.endsWith('.vercel.app') && u.hostname.startsWith('solution-phone')) return true;
   } catch(e){}
   return false;
