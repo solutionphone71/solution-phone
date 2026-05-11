@@ -4047,6 +4047,111 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- PHASE 1 MÉMOIRE IA · BRAND VOICE & RÉPÉTITION                 -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="card" style="grid-column:1/-1;border:2px solid #8b5cf6;margin-top:8px;">
+        <div class="card-header" style="background:rgba(139,92,246,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-title" style="color:#a78bfa;">🧠 Préférences IA — Brand Voice de l'équipe</div>
+          <div style="font-size:11px;color:var(--text-muted);">Lu par Assya, Chanel, Anissa, Yago, Obiwan avant chaque proposition</div>
+        </div>
+        <div class="card-body">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;padding:10px;background:rgba(139,92,246,0.05);border-radius:8px;">
+            💡 Ces préférences sont injectées dans le prompt système de TOUS les agents IA. Modifie-les pour façonner leur style. Les changements sont actifs <b>immédiatement</b>, sans redéploiement.
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            <div class="form-group">
+              <label>Ton général</label>
+              <input type="text" id="iav-ton" placeholder="Direct, chaleureux, sans bullshit. Comme un voisin pro qui connaît son métier.">
+            </div>
+            <div class="form-group">
+              <label>Tu / Vous</label>
+              <input type="text" id="iav-tu-vous" placeholder="Vouvoiement par défaut. Tutoiement si le client tutoie.">
+            </div>
+
+            <div class="form-group">
+              <label>Signature posts (Insta / FB)</label>
+              <input type="text" id="iav-sig-posts" placeholder="Solution Phone Mâcon">
+            </div>
+            <div class="form-group">
+              <label>Signature réponses avis Google</label>
+              <input type="text" id="iav-sig-avis" placeholder="L'équipe Solution Phone">
+            </div>
+
+            <div class="form-group">
+              <label>Signature SMS</label>
+              <input type="text" id="iav-sig-sms" placeholder="Sébastien — Solution Phone">
+            </div>
+            <div class="form-group">
+              <label>Emojis max par message</label>
+              <input type="number" id="iav-emoji-max" min="0" max="10" step="1" placeholder="2">
+            </div>
+
+            <div class="form-group">
+              <label>Longueur post (lignes)</label>
+              <input type="text" id="iav-len-post" placeholder="3-5">
+            </div>
+            <div class="form-group">
+              <label>Longueur réponse avis (phrases)</label>
+              <input type="text" id="iav-len-avis" placeholder="2-3">
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Hashtags FAVORIS (séparés par espace, sans #)</label>
+              <input type="text" id="iav-hash-fav" placeholder="solutionphone macon smartphone reparation qualirepar">
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Hashtags À ÉVITER (jamais utilisés)</label>
+              <input type="text" id="iav-hash-evit" placeholder="bestoftheday instaday follow4follow">
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Mots INTERDITS (séparés par virgule)</label>
+              <input type="text" id="iav-mots-evit" placeholder="incroyable, fabuleux, génial, n'hésitez pas">
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Tournures À ÉVITER (séparées par |)</label>
+              <input type="text" id="iav-tournures" placeholder="Bonjour cher client | Nous sommes ravis | C'est avec plaisir">
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Valeurs / positionnement</label>
+              <textarea id="iav-valeurs" rows="2" placeholder="Service rapide, prix juste, transparent, label QualiRépar, écologie (reconditionné), 3 boutiques Mâcon depuis 2014" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:transparent;color:inherit;"></textarea>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Arguments clés (USP)</label>
+              <textarea id="iav-usp" rows="2" placeholder="QualiRépar -25€ immédiat · Garantie 6 mois répa / 1 an reconditionné / 2 ans neuf · 4.7★ sur 552+ avis" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;background:transparent;color:inherit;"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:14px;">
+            <button class="btn btn-primary" onclick="iavSave()" style="background:#8b5cf6;border-color:#8b5cf6;">💾 Enregistrer les préférences IA</button>
+            <button class="btn" onclick="iavReset()" style="border-color:#8b5cf6;color:#a78bfa;">🔄 Recharger</button>
+          </div>
+          <div id="iav-status" style="font-size:12px;color:var(--text-muted);margin-top:10px;"></div>
+
+          <!-- ── HISTORIQUE DES DÉCISIONS (debug visibility) ── -->
+          <div style="margin-top:24px;padding-top:18px;border-top:1px solid rgba(139,92,246,0.15);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:12px;font-weight:800;color:#a78bfa;text-transform:uppercase;letter-spacing:1.5px;">🎯 Dernières décisions IA (toutes statuts)</div>
+              <select id="iav-hist-agent" onchange="iavRenderDecisions()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid rgba(139,92,246,0.3);background:transparent;color:inherit;">
+                <option value="">Tous les agents</option>
+                <option value="assya">Assya</option>
+                <option value="chanel">Chanel</option>
+                <option value="anissa">Anissa</option>
+                <option value="yago">Yago</option>
+                <option value="obiwan">Obiwan</option>
+              </select>
+            </div>
+            <div id="iav-decisions-list" style="max-height:300px;overflow-y:auto;border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:6px;">
+              <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       </div>
       </div>
       </div>
@@ -6534,7 +6639,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){renderSuiviQR();}
-  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender();}
+  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
   if(id==='devis')renderDevis();    if(id==='clients'){
@@ -29208,6 +29313,130 @@ window.auditRender = async function(){
         '<div style="flex:1;min-width:0;">'+
           '<div style="color:var(--text);"><b>'+who+'</b> · '+(a.action||'?')+' '+(a.table_name||'?')+(a.record_id?' #'+a.record_id:'')+'</div>'+
           '<div style="font-size:11px;color:var(--text-muted);">'+dateStr+(details?' · '+details:'')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="text-align:center;color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 1 MÉMOIRE IA · BRAND VOICE (N2) + DECISIONS HISTORY (N1)
+// ════════════════════════════════════════════════════════════════
+var _iavCache = null; // cache du brand_voice courant
+
+// Charge le brand_voice depuis agent_memory et remplit le form
+window.iavLoad = async function(){
+  var status = document.getElementById('iav-status');
+  try {
+    var r = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.brand_voice&select=value'));
+    var data = await r.json();
+    var bv = (Array.isArray(data) && data[0]) ? data[0].value : {};
+    _iavCache = bv;
+    function setV(id, val){
+      var el = document.getElementById(id);
+      if(el) el.value = val == null ? '' : val;
+    }
+    setV('iav-ton', bv.ton);
+    setV('iav-tu-vous', bv.tutoiement);
+    setV('iav-sig-posts', bv.signature_posts);
+    setV('iav-sig-avis', bv.signature_avis);
+    setV('iav-sig-sms', bv.signature_sms);
+    setV('iav-emoji-max', bv.emoji_max);
+    setV('iav-len-post', bv.longueur_post_lignes);
+    setV('iav-len-avis', bv.longueur_avis_phrases);
+    setV('iav-hash-fav', Array.isArray(bv.hashtags_favoris) ? bv.hashtags_favoris.join(' ') : '');
+    setV('iav-hash-evit', Array.isArray(bv.hashtags_evites) ? bv.hashtags_evites.join(' ') : '');
+    setV('iav-mots-evit', Array.isArray(bv.mots_evites) ? bv.mots_evites.join(', ') : '');
+    setV('iav-tournures', Array.isArray(bv.tournures_evitees) ? bv.tournures_evitees.join(' | ') : '');
+    setV('iav-valeurs', bv.valeurs);
+    setV('iav-usp', bv.USP);
+    if(status) status.innerHTML = '<span style="color:var(--text-muted);">📥 Brand voice chargé depuis Supabase</span>';
+  } catch(e){
+    if(status) status.innerHTML = '<span style="color:#ef4444;">❌ Erreur chargement : '+e.message+'</span>';
+  }
+};
+
+window.iavReset = function(){ iavLoad(); };
+
+// Sauvegarde le brand_voice dans agent_memory
+window.iavSave = async function(){
+  var status = document.getElementById('iav-status');
+  function getV(id){ var el = document.getElementById(id); return el ? (el.value||'').trim() : ''; }
+  function splitSpaces(s){ return s.split(/\s+/).filter(function(x){return x;}).map(function(x){return x.replace(/^#/,'');}); }
+  function splitComma(s){ return s.split(',').map(function(x){return x.trim();}).filter(function(x){return x;}); }
+  function splitPipe(s){ return s.split('|').map(function(x){return x.trim();}).filter(function(x){return x;}); }
+  var bv = {
+    ton: getV('iav-ton'),
+    tutoiement: getV('iav-tu-vous'),
+    signature_posts: getV('iav-sig-posts'),
+    signature_avis: getV('iav-sig-avis'),
+    signature_sms: getV('iav-sig-sms'),
+    emoji_max: parseInt(getV('iav-emoji-max'),10) || 2,
+    longueur_post_lignes: getV('iav-len-post'),
+    longueur_avis_phrases: getV('iav-len-avis'),
+    hashtags_favoris: splitSpaces(getV('iav-hash-fav')),
+    hashtags_evites: splitSpaces(getV('iav-hash-evit')),
+    mots_evites: splitComma(getV('iav-mots-evit')),
+    tournures_evitees: splitPipe(getV('iav-tournures')),
+    valeurs: getV('iav-valeurs'),
+    USP: getV('iav-usp')
+  };
+  try {
+    // Upsert : essai PATCH d'abord, sinon POST
+    var patchRes = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.brand_voice'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: bv, updated_at: new Date().toISOString() })
+    });
+    if(!patchRes.ok){
+      // Si la ligne n'existe pas, on l'insère
+      await fetch('/api/supabase?table=agent_memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'brand_voice', value: bv })
+      });
+    }
+    _iavCache = bv;
+    if(status) status.innerHTML = '<span style="color:#22c55e;">✅ Préférences IA enregistrées — actives immédiatement pour tous les agents</span>';
+    if(typeof showNotif==='function') showNotif('🧠 Brand voice mis à jour — tous les agents IA l\'utilisent dès maintenant','success');
+    if(typeof logAudit==='function') logAudit('update','agent_memory','brand_voice',null,bv,'Modification brand voice IA');
+  } catch(e){
+    if(status) status.innerHTML = '<span style="color:#ef4444;">❌ Erreur : '+e.message+'</span>';
+  }
+};
+
+// Affiche les 30 dernières décisions IA (toutes statuts) avec filtre par agent
+window.iavRenderDecisions = async function(){
+  var el = document.getElementById('iav-decisions-list');
+  if(!el) return;
+  var filterAgent = (document.getElementById('iav-hist-agent')||{}).value || '';
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var qry = '?select=id,agent_name,type,status,reasoning,feedback_reason,created_at&order=created_at.desc&limit=30';
+    if(filterAgent) qry += '&agent_name=eq.'+encodeURIComponent(filterAgent);
+    var r = await fetch('/api/supabase?table=agent_decisions&query='+encodeURIComponent(qry));
+    var data = await r.json();
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Aucune décision pour ce filtre.</div>';
+      return;
+    }
+    var STATUS_COL = {pending_validation:'#f59e0b', validated:'#22c55e', rejected:'#ef4444', expired:'#a3a3a3', published:'#06b6d4'};
+    var STATUS_ICO = {pending_validation:'⏳', validated:'✅', rejected:'❌', expired:'🕓', published:'📢'};
+    var REJECT_LABELS = {trop_long:'trop long', ton_creux:'ton creux', deja_fait:'déjà fait', non_pertinent:'non pertinent', mauvais_timing:'mauvais timing', autre:'autre'};
+    el.innerHTML = data.map(function(d){
+      var col = STATUS_COL[d.status] || '#888';
+      var ico = STATUS_ICO[d.status] || '•';
+      var date = new Date(d.created_at);
+      var dateStr = date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      var reason = (d.reasoning||'').substring(0, 140);
+      var fb = d.feedback_reason ? ' · <span style="color:#ef4444;">'+(REJECT_LABELS[d.feedback_reason]||d.feedback_reason)+'</span>' : '';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(139,92,246,0.08);font-size:12px;">'+
+        '<span style="font-size:14px;color:'+col+';flex-shrink:0;">'+ico+'</span>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="color:var(--text);"><b>'+(d.agent_name||'?')+'</b> · '+(d.type||'?')+' · <span style="color:'+col+';">'+(d.status||'?')+'</span>'+fb+'</div>'+
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+dateStr+' — '+reason+'</div>'+
         '</div>'+
       '</div>';
     }).join('');

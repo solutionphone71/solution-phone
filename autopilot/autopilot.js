@@ -657,12 +657,95 @@ SP_AUTOPILOT.validateDecision = async function(id) {
 };
 
 SP_AUTOPILOT.rejectDecision = async function(id) {
-  if(!confirm('Rejeter cette décision ?')) return;
-  await this.db('agent_decisions', 'PATCH',
-    {status:'rejected', validated_by:'sebastien', validated_at: new Date().toISOString()},
-    '?id=eq.'+id);
-  this.toast('❌ Décision rejetée');
-  await this.loadQueue();
+  // Modal feedback : pourquoi rejeter ? (alimente la mémoire IA Phase 1 · N3)
+  var self = this;
+  var REASONS = [
+    { key: 'trop_long',       label: '📏 Trop long',           desc: 'Trop verbeux, à raccourcir' },
+    { key: 'ton_creux',       label: '💨 Ton creux',           desc: 'Marketing vide, pas humain' },
+    { key: 'deja_fait',       label: '🔁 Déjà fait',           desc: 'Doublon avec une décision récente' },
+    { key: 'non_pertinent',   label: '🚫 Non pertinent',       desc: 'Pas le bon angle / mauvais sujet' },
+    { key: 'mauvais_timing',  label: '🕒 Mauvais timing',      desc: 'Pas le bon moment pour publier' },
+    { key: 'autre',           label: '✏️ Autre',               desc: 'Précise dans le champ libre ci-dessous' }
+  ];
+
+  // Build modal
+  var existing = document.getElementById('sp-reject-modal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'sp-reject-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:spFadeIn 0.15s ease;';
+
+  var body = document.createElement('div');
+  body.style.cssText = 'background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:12px;width:100%;max-width:560px;padding:24px;color:#eee;font-family:Rajdhani,system-ui,sans-serif;';
+  body.innerHTML =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'+
+      '<div style="font-size:24px;">❌</div>'+
+      '<div>'+
+        '<div style="font-size:18px;font-weight:700;color:#fff;">Pourquoi rejeter ?</div>'+
+        '<div style="font-size:12px;color:#888;">Cette info entraîne l\'IA — la prochaine fois elle évitera ce travers.</div>'+
+      '</div>'+
+    '</div>'+
+    '<div id="sp-reject-reasons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>'+
+    '<div style="margin-bottom:14px;">'+
+      '<label style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:6px;">Commentaire libre (optionnel)</label>'+
+      '<textarea id="sp-reject-comment" rows="2" placeholder="Ex: l\'angle hashtag écolo ne marche pas pour ma clientèle" style="width:100%;padding:10px;background:#161616;border:1px solid #2a2a2a;border-radius:8px;color:#eee;font-family:inherit;font-size:13px;resize:vertical;"></textarea>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end;">'+
+      '<button id="sp-reject-cancel" style="padding:10px 18px;background:transparent;border:1px solid #333;color:#aaa;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;">Annuler</button>'+
+      '<button id="sp-reject-submit" disabled style="padding:10px 18px;background:#c0392b;border:none;color:#fff;border-radius:8px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;opacity:0.4;">Rejeter</button>'+
+    '</div>';
+
+  modal.appendChild(body);
+  document.body.appendChild(modal);
+
+  // Build reason buttons
+  var selectedReason = null;
+  var reasonsBox = body.querySelector('#sp-reject-reasons');
+  REASONS.forEach(function(r){
+    var btn = document.createElement('button');
+    btn.dataset.key = r.key;
+    btn.style.cssText = 'background:#161616;border:1.5px solid #2a2a2a;border-radius:8px;padding:12px;color:#eee;font-family:inherit;text-align:left;cursor:pointer;transition:all 0.12s;';
+    btn.innerHTML = '<div style="font-weight:700;font-size:13px;margin-bottom:2px;">'+r.label+'</div><div style="font-size:11px;color:#888;">'+r.desc+'</div>';
+    btn.onmouseover = function(){ if(selectedReason !== r.key){ btn.style.borderColor='#444'; btn.style.background='#1a1a1a'; } };
+    btn.onmouseout = function(){ if(selectedReason !== r.key){ btn.style.borderColor='#2a2a2a'; btn.style.background='#161616'; } };
+    btn.onclick = function(){
+      selectedReason = r.key;
+      reasonsBox.querySelectorAll('button').forEach(function(b){
+        b.style.borderColor = '#2a2a2a'; b.style.background = '#161616';
+      });
+      btn.style.borderColor = '#c0392b';
+      btn.style.background = 'rgba(192,57,43,0.12)';
+      var submitBtn = body.querySelector('#sp-reject-submit');
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+    };
+    reasonsBox.appendChild(btn);
+  });
+
+  // Wire buttons
+  body.querySelector('#sp-reject-cancel').onclick = function(){ modal.remove(); };
+  modal.onclick = function(e){ if(e.target === modal) modal.remove(); };
+  body.querySelector('#sp-reject-submit').onclick = async function(){
+    if(!selectedReason) return;
+    var comment = (body.querySelector('#sp-reject-comment').value || '').trim();
+    modal.remove();
+    try {
+      await self.db('agent_decisions', 'PATCH',
+        {
+          status: 'rejected',
+          validated_by: 'sebastien',
+          validated_at: new Date().toISOString(),
+          feedback_reason: selectedReason,
+          feedback_comment: comment || null,
+          feedback_at: new Date().toISOString()
+        },
+        '?id=eq.'+id);
+      self.toast('❌ Rejeté — feedback enregistré, l\'IA va apprendre');
+      await self.loadQueue();
+    } catch(e){
+      self.toast('Erreur : '+(e.message||'inconnue'), 'warn');
+    }
+  };
 };
 
 SP_AUTOPILOT.editDecision = function(id) {

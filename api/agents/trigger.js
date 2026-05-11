@@ -39,6 +39,97 @@ async function supa(table, method, body, query) {
   return t ? JSON.parse(t) : null;
 }
 
+// ─── MÉMOIRE IA (Phase 1) ──────────────────────────────────────
+// N1 · Décisions récentes du même agent+type (éviter doublons)
+// N2 · Brand voice (préférences éditoriales explicites de Sébastien)
+// N3 · Rejets récents avec raison (apprendre des erreurs)
+async function loadMemory(agentName, decisionType) {
+  const out = { brand_voice: null, recent_decisions: [], recent_rejects: [] };
+  try {
+    const [bv, rd, rr] = await Promise.all([
+      supa('agent_memory', 'GET', null, `?key=eq.brand_voice&select=value`).catch(() => null),
+      supa('v_recent_decisions', 'GET', null,
+        `?agent_name=eq.${encodeURIComponent(agentName)}&type=eq.${encodeURIComponent(decisionType)}&order=created_at.desc&limit=10`).catch(() => null),
+      supa('v_recent_rejects', 'GET', null,
+        `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=5`).catch(() => null)
+    ]);
+    if (bv && bv[0]) out.brand_voice = bv[0].value;
+    if (Array.isArray(rd)) out.recent_decisions = rd;
+    if (Array.isArray(rr)) out.recent_rejects = rr;
+  } catch (e) {
+    console.warn('[trigger] loadMemory error:', e.message);
+  }
+  return out;
+}
+
+const REJECT_LABELS = {
+  trop_long: 'trop long',
+  ton_creux: 'ton creux / marketing vide',
+  deja_fait: 'déjà fait / déjà vu',
+  non_pertinent: 'non pertinent',
+  mauvais_timing: 'mauvais timing',
+  autre: 'autre raison'
+};
+
+function buildMemoryBlock(memory) {
+  const lines = [];
+
+  // N2 · Brand voice
+  if (memory.brand_voice) {
+    const bv = memory.brand_voice;
+    lines.push('## TON STYLE — BRAND VOICE DE SOLUTION PHONE');
+    if (bv.ton) lines.push('• Ton : ' + bv.ton);
+    if (bv.tutoiement) lines.push('• Tu/Vous : ' + bv.tutoiement);
+    if (bv.emoji_max != null) lines.push('• Emojis : ' + bv.emoji_max + ' MAX par message');
+    if (bv.longueur_post_lignes) lines.push('• Longueur post : ' + bv.longueur_post_lignes + ' lignes');
+    if (bv.longueur_avis_phrases) lines.push('• Longueur réponse avis : ' + bv.longueur_avis_phrases + ' phrases');
+    if (Array.isArray(bv.hashtags_favoris) && bv.hashtags_favoris.length) {
+      lines.push('• Hashtags FAVORIS : #' + bv.hashtags_favoris.join(' #'));
+    }
+    if (Array.isArray(bv.hashtags_evites) && bv.hashtags_evites.length) {
+      lines.push('• Hashtags À ÉVITER (jamais) : #' + bv.hashtags_evites.join(' #'));
+    }
+    if (Array.isArray(bv.mots_evites) && bv.mots_evites.length) {
+      lines.push('• Mots INTERDITS : ' + bv.mots_evites.join(', '));
+    }
+    if (Array.isArray(bv.tournures_evitees) && bv.tournures_evitees.length) {
+      lines.push('• Tournures à ÉVITER : "' + bv.tournures_evitees.join('", "') + '"');
+    }
+    if (bv.valeurs) lines.push('• Valeurs : ' + bv.valeurs);
+    if (bv.USP) lines.push('• Arguments clés (USP) : ' + bv.USP);
+    if (bv.signature_posts) lines.push('• Signature posts : ' + bv.signature_posts);
+    if (bv.signature_avis) lines.push('• Signature avis : ' + bv.signature_avis);
+    lines.push('');
+  }
+
+  // N3 · Rejets récents avec raison (priorité haute)
+  if (memory.recent_rejects && memory.recent_rejects.length) {
+    lines.push('## DERNIERS REJETS DE SÉBASTIEN — APPRENDS DE TES ERREURS');
+    memory.recent_rejects.slice(0, 5).forEach((r, i) => {
+      const reason = r.feedback_reason ? REJECT_LABELS[r.feedback_reason] || r.feedback_reason : 'sans raison';
+      const sample = (r.reasoning || '').substring(0, 120);
+      lines.push(`${i + 1}. [REJETÉ — ${reason}] ${sample}`);
+      if (r.feedback_comment) lines.push(`   Commentaire patron : "${r.feedback_comment.substring(0, 150)}"`);
+    });
+    lines.push('→ NE refais PAS ces erreurs. Adapte ton ton et ta forme.');
+    lines.push('');
+  }
+
+  // N1 · Décisions récentes du même type (éviter doublons)
+  if (memory.recent_decisions && memory.recent_decisions.length) {
+    lines.push('## TES DERNIÈRES PROPOSITIONS DU MÊME TYPE');
+    memory.recent_decisions.slice(0, 10).forEach((d, i) => {
+      const status = d.status || '?';
+      const sample = (d.reasoning || '').substring(0, 100);
+      lines.push(`${i + 1}. [${status}] ${sample}`);
+    });
+    lines.push('→ Si tu vas proposer quelque chose de très similaire à une décision REJETÉE ou ACCEPTÉE récente, change d\'angle. Pas de doublon.');
+    lines.push('');
+  }
+
+  return lines.length ? lines.join('\n') : '';
+}
+
 // ─── PROMPT GENERATORS ─────────────────────────────────────────
 
 function promptNewPhone(p) {
@@ -175,7 +266,11 @@ export default async function handler(req, res) {
   try {
     if (!CLAUDE_KEY) throw new Error('ANTHROPIC_API_KEY manquant');
 
-    // 1. Claude avec Tool Use forcé
+    // 0. Charger la mémoire (Phase 1 : N1 + N2 + N3)
+    const memory = await loadMemory(agent, TYPE_MAP[kind]);
+    const memoryBlock = buildMemoryBlock(memory);
+
+    // 1. Claude avec Tool Use forcé + system prompt mémoire
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -186,6 +281,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: MAX_TOKENS,
+        system: memoryBlock || undefined,
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },
         messages: [{ role: 'user', content: prompt }]
@@ -230,7 +326,15 @@ export default async function handler(req, res) {
         status: 'success',
         decisions_count: 1,
         duration_ms: Date.now() - t0,
-        metadata: { kind, claude_usage: claudeJson.usage }
+        metadata: {
+          kind,
+          claude_usage: claudeJson.usage,
+          memory_used: {
+            brand_voice: !!memory.brand_voice,
+            recent_decisions: memory.recent_decisions.length,
+            recent_rejects: memory.recent_rejects.length
+          }
+        }
       });
     } catch (e) { console.warn('[trigger] log run failed:', e.message); }
 

@@ -347,16 +347,91 @@ async function buildSharedContext(triggerType) {
 // EXÉCUTION D'UN AGENT WORKER
 // ──────────────────────────────────────────────────────────
 
+// Phase 1 Mémoire IA : charge brand voice + décisions récentes + rejets avec raison
+const REJECT_LABELS_ZH = {
+  trop_long: 'trop long',
+  ton_creux: 'ton creux',
+  deja_fait: 'déjà fait',
+  non_pertinent: 'non pertinent',
+  mauvais_timing: 'mauvais timing',
+  autre: 'autre'
+};
+
+async function loadAgentMemory(agentName) {
+  const out = { brand_voice: null, recent_decisions: [], recent_rejects: [] };
+  try {
+    const [bv, rd, rr] = await Promise.all([
+      supaQuery('agent_memory', 'GET', null, '?key=eq.brand_voice&select=value').catch(() => null),
+      supaQuery('v_recent_decisions', 'GET', null, `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=10`).catch(() => null),
+      supaQuery('v_recent_rejects', 'GET', null, `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=5`).catch(() => null)
+    ]);
+    if (bv && bv[0]) out.brand_voice = bv[0].value;
+    if (Array.isArray(rd)) out.recent_decisions = rd;
+    if (Array.isArray(rr)) out.recent_rejects = rr;
+  } catch (e) {
+    console.warn('[zahira] loadAgentMemory error:', e.message);
+  }
+  return out;
+}
+
+function buildMemoryBlock(memory) {
+  const lines = [];
+  if (memory.brand_voice) {
+    const bv = memory.brand_voice;
+    lines.push('## BRAND VOICE — STYLE OBLIGATOIRE POUR TOUTE PROPOSITION');
+    if (bv.ton) lines.push('• Ton : ' + bv.ton);
+    if (bv.tutoiement) lines.push('• Tu/Vous : ' + bv.tutoiement);
+    if (bv.emoji_max != null) lines.push('• Emojis : ' + bv.emoji_max + ' MAX');
+    if (bv.longueur_post_lignes) lines.push('• Post : ' + bv.longueur_post_lignes + ' lignes');
+    if (bv.longueur_avis_phrases) lines.push('• Réponse avis : ' + bv.longueur_avis_phrases + ' phrases');
+    if (Array.isArray(bv.hashtags_favoris) && bv.hashtags_favoris.length) lines.push('• Hashtags FAVORIS : #' + bv.hashtags_favoris.join(' #'));
+    if (Array.isArray(bv.hashtags_evites) && bv.hashtags_evites.length) lines.push('• Hashtags INTERDITS : #' + bv.hashtags_evites.join(' #'));
+    if (Array.isArray(bv.mots_evites) && bv.mots_evites.length) lines.push('• Mots INTERDITS : ' + bv.mots_evites.join(', '));
+    if (Array.isArray(bv.tournures_evitees) && bv.tournures_evitees.length) lines.push('• Tournures INTERDITES : "' + bv.tournures_evitees.join('", "') + '"');
+    if (bv.valeurs) lines.push('• Valeurs : ' + bv.valeurs);
+    if (bv.USP) lines.push('• USP : ' + bv.USP);
+    if (bv.signature_posts) lines.push('• Signature posts : ' + bv.signature_posts);
+    if (bv.signature_avis) lines.push('• Signature avis : ' + bv.signature_avis);
+    lines.push('');
+  }
+  if (memory.recent_rejects && memory.recent_rejects.length) {
+    lines.push('## DERNIERS REJETS DE SÉBASTIEN — APPRENDS DE TES ERREURS');
+    memory.recent_rejects.slice(0, 5).forEach((r, i) => {
+      const reason = r.feedback_reason ? REJECT_LABELS_ZH[r.feedback_reason] || r.feedback_reason : 'sans raison';
+      lines.push(`${i + 1}. [REJETÉ — ${reason}] ${(r.reasoning || '').substring(0, 120)}`);
+      if (r.feedback_comment) lines.push(`   Commentaire patron : "${r.feedback_comment.substring(0, 150)}"`);
+    });
+    lines.push('→ NE refais PAS ces erreurs. Change d\'angle et de ton.');
+    lines.push('');
+  }
+  if (memory.recent_decisions && memory.recent_decisions.length) {
+    lines.push('## TES 10 DERNIÈRES PROPOSITIONS — NE PAS RÉPÉTER');
+    memory.recent_decisions.slice(0, 10).forEach((d, i) => {
+      lines.push(`${i + 1}. [${d.status || '?'}] ${d.type || '?'} — ${(d.reasoning || '').substring(0, 100)}`);
+    });
+    lines.push('→ Si tu vas proposer un truc très similaire, change d\'angle ou propose autre chose.');
+    lines.push('');
+  }
+  return lines.length ? lines.join('\n') : '';
+}
+
 async function runWorker(agentName, shared) {
   const agent = AGENTS[agentName];
   if (!agent) throw new Error(`Agent inconnu: ${agentName}`);
+
+  // Phase 1 Mémoire IA — charge la mémoire avant l'appel Claude
+  const memory = await loadAgentMemory(agentName);
+  const memoryBlock = buildMemoryBlock(memory);
+  const enrichedSystemPrompt = memoryBlock
+    ? `${memoryBlock}\n---\n\n${agent.systemPrompt}`
+    : agent.systemPrompt;
 
   const agentContext = agent.contextBuilder(shared);
   const userMessage = `Contexte du jour (${shared.weekday}, déclencheur=${shared.triggerType}) :\n\n${JSON.stringify(agentContext, null, 2)}\n\nPropose tes décisions via l'outil propose_decisions.`;
 
   const startedAt = Date.now();
   try {
-    const result = await claudeWithTools(agent.systemPrompt, userMessage);
+    const result = await claudeWithTools(enrichedSystemPrompt, userMessage);
     return {
       agent: agentName,
       label: agent.label,
@@ -366,7 +441,12 @@ async function runWorker(agentName, shared) {
       decisions: result.decisions,
       usage: result.usage,
       cost_eur: result.cost_eur,
-      duration_ms: Date.now() - startedAt
+      duration_ms: Date.now() - startedAt,
+      memory_used: {
+        brand_voice: !!memory.brand_voice,
+        recent_decisions: memory.recent_decisions.length,
+        recent_rejects: memory.recent_rejects.length
+      }
     };
   } catch (err) {
     return {
