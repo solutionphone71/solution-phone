@@ -26045,7 +26045,22 @@ function showCalToast(title,body){
 @keyframes sp-pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 #sp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;animation:sp-fadein 0.15s ease;}
 #sp-overlay.open{display:flex;}
-#sp-modal{background:#0d0d0d;border:1.5px solid #1e1e1e;border-radius:12px;width:100%;max-width:580px;overflow:hidden;animation:sp-slidein 0.18s ease;font-family:'Rajdhani',system-ui,sans-serif;}
+#sp-modal{background:#0d0d0d;border:1.5px solid #1e1e1e;border-radius:12px;width:100%;max-width:620px;max-height:85vh;overflow-y:auto;animation:sp-slidein 0.18s ease;font-family:'Rajdhani',system-ui,sans-serif;}
+#sp-modal::-webkit-scrollbar{width:6px;}
+#sp-modal::-webkit-scrollbar-thumb{background:#222;border-radius:3px;}
+#sp-results{padding:4px 12px 8px;}
+.sp-res-cat{font-size:9px;color:#c0392b;letter-spacing:1.5px;padding:10px 4px 5px;font-family:monospace;font-weight:700;display:flex;align-items:center;gap:6px;}
+.sp-res-cat-count{background:#1a1a1a;color:#555;padding:1px 6px;border-radius:8px;font-size:8px;font-weight:600;}
+.sp-res-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:background 0.1s;}
+.sp-res-row:hover,.sp-res-row.sp-sel{background:#141414;border-color:#222;}
+.sp-res-row.sp-sel{background:#181818;border-color:#2a2a2a;}
+.sp-res-ico{font-size:14px;width:22px;text-align:center;flex-shrink:0;}
+.sp-res-body{flex:1;min-width:0;}
+.sp-res-title{font-size:13px;font-weight:600;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-res-sub{font-size:11px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sp-res-meta{font-size:10px;color:#444;font-family:monospace;flex-shrink:0;}
+.sp-res-empty{text-align:center;padding:14px 0;color:#333;font-size:11px;font-family:monospace;letter-spacing:1px;}
+.sp-res-match{color:#c0392b;font-weight:700;}
 #sp-bar-wrap{display:flex;align-items:center;gap:0;border-bottom:1px solid #1a1a1a;}
 #sp-cmd-icon{font-size:18px;padding:0 14px;color:#333;flex-shrink:0;}
 #sp-bar{flex:1;background:transparent;border:none;outline:none;padding:16px 0;font-size:18px;font-family:inherit;font-weight:600;color:#eee;letter-spacing:0.3px;}
@@ -26080,13 +26095,31 @@ function showCalToast(title,body){
 .sp-rec-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .sp-rec-txt{font-size:12px;color:#333;flex:1;}
 .sp-rec-t{font-size:10px;color:#1e1e1e;font-family:monospace;}
-/* FAB */
-#sp-fab{display:none!important;}
-@media(max-width:768px){#sp-overlay{padding-top:40px;padding-left:12px;padding-right:12px;}}
+/* FAB — visible sur tablette + mobile (≤1024px) */
+#sp-fab{display:none;}
+@media(max-width:1024px){
+  #sp-fab{
+    display:flex!important;
+    position:fixed;bottom:24px;right:24px;z-index:9998;
+    width:60px;height:60px;border-radius:50%;
+    background:linear-gradient(135deg,#c0392b,#8e2820);
+    color:#fff;border:none;cursor:pointer;
+    align-items:center;justify-content:center;
+    font-size:24px;
+    box-shadow:0 6px 18px rgba(192,57,43,0.45),0 2px 6px rgba(0,0,0,0.3);
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  #sp-fab:active{transform:scale(0.92);box-shadow:0 3px 10px rgba(192,57,43,0.35);}
+  #sp-fab::before{content:"🔍";}
+}
+@media(max-width:768px){
+  #sp-overlay{padding-top:40px;padding-left:12px;padding-right:12px;}
+  #sp-fab{bottom:16px;right:16px;width:54px;height:54px;font-size:22px;}
+}
 </style>
 
 <!-- Bouton flottant -->
-<button id="sp-fab" onclick="spOpen()" title="Workflow rapide (Ctrl+K)">⌘</button>
+<button id="sp-fab" onclick="spOpen()" title="Recherche globale" aria-label="Recherche globale"></button>
 
 <!-- Modal -->
 <div id="sp-overlay" onclick="spOverlayClick(event)">
@@ -26097,10 +26130,11 @@ function showCalToast(title,body){
     </div>
     <div id="sp-bar-wrap">
       <span id="sp-cmd-icon">⌘</span>
-      <input id="sp-bar" placeholder="IMEI, nom client, marque, panne, n° bon..." autocomplete="off" spellcheck="false" oninput="spUpdate(this.value)" onkeydown="spKey(event)">
+      <input id="sp-bar" placeholder="Rechercher partout — client, IMEI, n° bon, facture, modèle..." autocomplete="off" spellcheck="false" oninput="spUpdate(this.value)" onkeydown="spKey(event)">
       <span id="sp-bar-shortcut">ESC</span>
     </div>
     <div id="sp-intent-wrap" style="display:none;"></div>
+    <div id="sp-results" style="display:none;"></div>
     <div id="sp-shortcuts">
       <div class="sp-sc" onclick="spExec({action:'repair'})"><span class="sp-sc-ico">🔧</span><span class="sp-sc-lbl">Nouvelle réparation</span></div>
       <div class="sp-sc" onclick="spExec({action:'client'})"><span class="sp-sc-ico">👤</span><span class="sp-sc-lbl">Fiche client</span></div>
@@ -26113,11 +26147,12 @@ function showCalToast(title,body){
     <div id="sp-section-lbl">ACCÈS RÉCENTS</div>
     <div id="sp-recent"></div>
     <div id="sp-bottom">
+      <div class="sp-leg"><div class="sp-leg-b">↑↓</div><div class="sp-leg-h">naviguer</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">↵</div><div class="sp-leg-h">ouvrir</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">ESC</div><div class="sp-leg-h">fermer</div></div>
       <div class="sp-leg"><div class="sp-leg-b">IMEI</div><div class="sp-leg-h">15 chiffres</div></div>
       <div class="sp-leg"><div class="sp-leg-b">TEL</div><div class="sp-leg-h">06/07...</div></div>
-      <div class="sp-leg"><div class="sp-leg-b">BON</div><div class="sp-leg-h">4-8 digits</div></div>
-      <div class="sp-leg"><div class="sp-leg-b">RÉPA</div><div class="sp-leg-h">écran, batterie...</div></div>
-      <div class="sp-leg"><div class="sp-leg-b">CLIENT</div><div class="sp-leg-h">Nom Prénom</div></div>
+      <div class="sp-leg"><div class="sp-leg-b">BON</div><div class="sp-leg-h">n° dossier</div></div>
     </div>
   </div>
 </div>
@@ -26190,6 +26225,259 @@ function spUpdate(val){
     iw.style.display='none';
     sc.style.display='grid';
   }
+  // Recherche globale live
+  spSearchLive(val);
+}
+
+// ════════════════════════════════════════════════════
+// RECHERCHE GLOBALE LIVE (J13)
+// Cherche dans : clients, repDossiers (en cours), historiqueReparations (Phonilab),
+// phones occasion, phones neufs, factures
+// ════════════════════════════════════════════════════
+var spResults = []; // résultats à plat pour navigation clavier
+var spSelIdx = -1;  // index sélectionné
+
+function spEsc(s){ return (s==null?'':String(s)).replace(/[<>&"']/g,function(c){return{'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+function spHi(text, q){
+  if(!q || !text) return spEsc(text);
+  var esc = spEsc(text);
+  var qLow = q.toLowerCase();
+  var tLow = esc.toLowerCase();
+  var i = tLow.indexOf(qLow);
+  if(i < 0) return esc;
+  return esc.substring(0,i) + '<span class="sp-res-match">' + esc.substring(i, i+q.length) + '</span>' + esc.substring(i+q.length);
+}
+
+function spTokenMatch(haystack, tokens){
+  if(!haystack) return false;
+  var h = String(haystack).toLowerCase();
+  for(var i=0;i<tokens.length;i++){ if(h.indexOf(tokens[i]) < 0) return false; }
+  return true;
+}
+
+function spSearchLive(rawQ){
+  var rw = document.getElementById('sp-results');
+  if(!rw) return;
+  var q = (rawQ||'').trim();
+  spResults = [];
+  spSelIdx = -1;
+  if(q.length < 2){
+    rw.style.display = 'none';
+    rw.innerHTML = '';
+    return;
+  }
+  var qLow = q.toLowerCase();
+  var qDigits = q.replace(/\D/g,'');
+  var tokens = qLow.replace(/[^a-z0-9àâäéèêëïîôöùûüç\s]/g,' ').split(/\s+/).filter(function(t){return t.length>=2;});
+
+  // ── 1) CLIENTS (locaux, fusion factures) ──
+  var resClients = [];
+  if(Array.isArray(window.clients)){
+    for(var i=0;i<clients.length && resClients.length<5;i++){
+      var c = clients[i];
+      var nomLow = (c.nom||'').toLowerCase();
+      var telDigits = (c.tel||'').replace(/\D/g,'');
+      var emailLow = (c.email||'').toLowerCase();
+      var match = false;
+      if(qDigits.length>=4 && telDigits.indexOf(qDigits)>=0) match = true;
+      else if(emailLow.indexOf(qLow)>=0 && qLow.length>=3) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return nomLow.indexOf(t)>=0;})) match = true;
+      if(match){
+        resClients.push({
+          cat:'client', ico:'👤',
+          title: spHi(c.nom||'(sans nom)', q),
+          sub: (c.tel?spHi(c.tel,q):'') + (c.email?' · '+spHi(c.email,q):''),
+          meta: '',
+          action: function(id){ return function(){ spClose(); showPage('clients'); setTimeout(function(){ if(typeof voirClientDetail==='function') voirClientDetail(id); else if(typeof showClientDetail==='function') showClientDetail(id); },200); }; }(c.id)
+        });
+      }
+    }
+  }
+
+  // ── 2) RÉPARATIONS EN COURS (repDossiers / bonsDepot) ──
+  var resRep = [];
+  if(Array.isArray(window.repDossiers)){
+    for(var i=0;i<repDossiers.length && resRep.length<5;i++){
+      var d = repDossiers[i];
+      var num = String(d.numero||d.id||'');
+      var cliNom = (d.client && d.client.nom)||'';
+      var cliTel = ((d.client && d.client.tel)||'').replace(/\D/g,'');
+      var appMod = (d.appareil && d.appareil.modele)||'';
+      var imei = (d.appareil && d.appareil.imei)||'';
+      var match = false;
+      var fields = (num+' '+cliNom+' '+appMod+' '+imei).toLowerCase();
+      if(qDigits.length>=4 && (cliTel.indexOf(qDigits)>=0 || imei.indexOf(qDigits)>=0 || num.indexOf(qDigits)>=0)) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return fields.indexOf(t)>=0;})) match = true;
+      if(match){
+        resRep.push({
+          cat:'rep_cours', ico:'🔧',
+          title: spHi('Bon #'+num+' · '+(appMod||'?'), q),
+          sub: spHi(cliNom||'Client inconnu', q) + ' · ' + (d.statut||'en cours'),
+          meta: d.dateOuverture ? new Date(d.dateOuverture).toLocaleDateString('fr-FR') : '',
+          action: function(id){ return function(){ spClose(); showPage('reparations'); setTimeout(function(){ if(typeof repOuvrirDossier==='function') repOuvrirDossier(id); },200); }; }(d.id)
+        });
+      }
+    }
+  }
+
+  // ── 3) HISTORIQUE PHONILAB (10 000+ lignes) ──
+  var resHist = [];
+  if(Array.isArray(window.historiqueReparations)){
+    for(var i=0;i<historiqueReparations.length && resHist.length<5;i++){
+      var h = historiqueReparations[i];
+      var nomLow2 = (h.client_nom||'').toLowerCase();
+      var telDig2 = (h.client_tel||'').replace(/\D/g,'');
+      var numStr = String(h.numero||'');
+      var match = false;
+      if(qDigits.length>=4 && (telDig2.indexOf(qDigits)>=0 || numStr.indexOf(qDigits)>=0)) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return nomLow2.indexOf(t)>=0;})) match = true;
+      if(match){
+        resHist.push({
+          cat:'phonilab', ico:'📋',
+          title: spHi((h.client_nom||'?')+' · '+(h.appareil||h.modele||''), q),
+          sub: (h.panne||h.description||'') + (h.client_tel?' · '+spHi(h.client_tel,q):''),
+          meta: h.date_rep ? new Date(h.date_rep).toLocaleDateString('fr-FR') : '',
+          action: function(item){ return function(){
+            spClose();
+            // Si client local existe avec mêmes coordonnées → ouvrir fiche client
+            var c = (window.clients||[]).find(function(cl){
+              if(item.client_tel && cl.tel && cl.tel.replace(/\D/g,'')===item.client_tel.replace(/\D/g,'')) return true;
+              if(item.client_nom && cl.nom && cl.nom.toLowerCase()===item.client_nom.toLowerCase()) return true;
+              return false;
+            });
+            if(c){
+              showPage('clients'); setTimeout(function(){ if(typeof voirClientDetail==='function') voirClientDetail(c.id); },200);
+            } else {
+              showPage('reparations'); setTimeout(function(){
+                var rs2=document.getElementById('rep-hist-search');
+                if(rs2){rs2.value=item.numero||item.client_nom||''; if(typeof renderRepHistorique==='function') renderRepHistorique(); }
+              },200);
+            }
+          }; }(h)
+        });
+      }
+    }
+  }
+
+  // ── 4) PHONES OCCASION (stock) ──
+  var resPhones = [];
+  if(Array.isArray(window.phones)){
+    for(var i=0;i<phones.length && resPhones.length<5;i++){
+      var p = phones[i];
+      var fields = ((p.modele||'')+' '+(p.imei||'')+' '+(p.stockage||'')+' '+(p.couleur||'')+' '+(p.clientNom||'')).toLowerCase();
+      var match = false;
+      if(qDigits.length>=4 && (p.imei||'').indexOf(qDigits)>=0) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return fields.indexOf(t)>=0;})) match = true;
+      if(match){
+        var status = p.etat==='vendu'?'Vendu':'Stock';
+        resPhones.push({
+          cat:'phone_occ', ico:'📱',
+          title: spHi((p.modele||'?')+' '+(p.stockage||'')+' '+(p.couleur||''), q),
+          sub: (p.imei?'IMEI '+spHi(p.imei,q):'') + ' · '+status+(p.vente?' · '+p.vente+'€':''),
+          meta: '',
+          action: function(id){ return function(){ spClose(); showPage('phones'); setTimeout(function(){
+            // Scroll vers le téléphone si possible
+            var card = document.querySelector('[data-phone-id="'+id+'"]');
+            if(card){ card.scrollIntoView({behavior:'smooth',block:'center'}); card.style.outline='2px solid #c0392b'; setTimeout(function(){card.style.outline='';},2500); }
+          },300); }; }(p.id)
+        });
+      }
+    }
+  }
+
+  // ── 5) PHONES NEUFS ──
+  var resNeuf = [];
+  if(Array.isArray(window.phonesNeufs)){
+    for(var i=0;i<phonesNeufs.length && resNeuf.length<3;i++){
+      var pn = phonesNeufs[i];
+      var fields = ((pn.modele||'')+' '+(pn.imei||'')+' '+(pn.stockage||'')+' '+(pn.couleur||'')).toLowerCase();
+      var match = false;
+      if(qDigits.length>=4 && (pn.imei||'').indexOf(qDigits)>=0) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return fields.indexOf(t)>=0;})) match = true;
+      if(match){
+        resNeuf.push({
+          cat:'phone_neuf', ico:'📱',
+          title: spHi((pn.modele||'?')+' '+(pn.stockage||'')+' '+(pn.couleur||'')+' (NEUF)', q),
+          sub: (pn.imei?'IMEI '+spHi(pn.imei,q):'') + (pn.prix?' · '+pn.prix+'€':''),
+          meta: '',
+          action: function(){ spClose(); showPage('phones-neufs'); }
+        });
+      }
+    }
+  }
+
+  // ── 6) FACTURES ──
+  var resFact = [];
+  if(Array.isArray(window.factures)){
+    for(var i=0;i<factures.length && resFact.length<5;i++){
+      var f = factures[i];
+      var fields = ((f.numero||'')+' '+(f.clientNom||'')).toLowerCase();
+      var match = false;
+      if(qDigits.length>=3 && String(f.numero||'').indexOf(qDigits)>=0) match = true;
+      else if(tokens.length>0 && tokens.every(function(t){return fields.indexOf(t)>=0;})) match = true;
+      if(match){
+        resFact.push({
+          cat:'facture', ico:'🧾',
+          title: spHi('Facture '+(f.numero||'?'), q),
+          sub: spHi(f.clientNom||'?', q) + (f.ttc?' · '+Number(f.ttc).toFixed(2)+'€':''),
+          meta: f.date ? new Date(f.date).toLocaleDateString('fr-FR') : '',
+          action: function(){ spClose(); showPage('caisse'); }
+        });
+      }
+    }
+  }
+
+  // ── Rendu ──
+  var html = '';
+  function renderCat(label, items){
+    if(!items.length) return;
+    html += '<div class="sp-res-cat">'+label+' <span class="sp-res-cat-count">'+items.length+'</span></div>';
+    items.forEach(function(it){
+      var idx = spResults.length;
+      spResults.push(it);
+      html += '<div class="sp-res-row" data-spidx="'+idx+'" onclick="spClickResult('+idx+')">'+
+        '<div class="sp-res-ico">'+it.ico+'</div>'+
+        '<div class="sp-res-body">'+
+          '<div class="sp-res-title">'+it.title+'</div>'+
+          '<div class="sp-res-sub">'+it.sub+'</div>'+
+        '</div>'+
+        (it.meta?'<div class="sp-res-meta">'+spEsc(it.meta)+'</div>':'')+
+      '</div>';
+    });
+  }
+  renderCat('CLIENTS', resClients);
+  renderCat('RÉPARATIONS EN COURS', resRep);
+  renderCat('HISTORIQUE PHONILAB', resHist);
+  renderCat('SMARTPHONES OCCASION', resPhones);
+  renderCat('SMARTPHONES NEUFS', resNeuf);
+  renderCat('FACTURES', resFact);
+
+  if(spResults.length === 0){
+    html = '<div class="sp-res-empty">Aucun résultat pour "'+spEsc(q)+'"</div>';
+  }
+
+  rw.innerHTML = html;
+  rw.style.display = 'block';
+  // Masquer shortcuts quand des résultats
+  var sc = document.getElementById('sp-shortcuts');
+  if(sc) sc.style.display = spResults.length>0 ? 'none' : 'grid';
+}
+
+// Click sur un résultat
+window.spClickResult = function(idx){
+  var r = spResults[idx];
+  if(r && typeof r.action === 'function') r.action();
+};
+
+// Navigation clavier dans les résultats
+function spMoveSel(delta){
+  if(!spResults.length) return;
+  spSelIdx = Math.max(0, Math.min(spResults.length-1, spSelIdx + delta));
+  if(spSelIdx < 0) spSelIdx = 0;
+  var rows = document.querySelectorAll('#sp-results .sp-res-row');
+  rows.forEach(function(r,i){ r.classList.toggle('sp-sel', i===spSelIdx); });
+  if(rows[spSelIdx]) rows[spSelIdx].scrollIntoView({block:'nearest'});
 }
 
 function spExec(intent){
@@ -26274,6 +26562,10 @@ function spOpen(){
   var el=document.getElementById('sp-overlay');
   el.classList.add('open');
   document.getElementById('sp-bar').value='';
+  spSelIdx = -1;
+  spResults = [];
+  var rw = document.getElementById('sp-results');
+  if(rw){ rw.style.display='none'; rw.innerHTML=''; }
   spUpdate('');
   spRenderRecent();
   setTimeout(function(){document.getElementById('sp-bar').focus();},50);
@@ -26288,8 +26580,23 @@ function spOverlayClick(e){
 }
 
 function spKey(e){
-  if(e.key==='Enter'&&spCurrentIntent){spExec(spCurrentIntent);}
-  if(e.key==='Escape'){spClose();}
+  if(e.key==='ArrowDown'){ e.preventDefault(); spMoveSel(1); return; }
+  if(e.key==='ArrowUp'){ e.preventDefault(); spMoveSel(-1); return; }
+  if(e.key==='Enter'){
+    // Priorité : résultat sélectionné, sinon intent
+    if(spSelIdx>=0 && spResults[spSelIdx] && typeof spResults[spSelIdx].action==='function'){
+      e.preventDefault();
+      spResults[spSelIdx].action();
+      return;
+    }
+    if(spCurrentIntent){ spExec(spCurrentIntent); return; }
+    // Si un seul résultat → l'ouvrir
+    if(spResults.length===1 && typeof spResults[0].action==='function'){
+      e.preventDefault();
+      spResults[0].action();
+    }
+  }
+  if(e.key==='Escape'){ spClose(); }
 }
 
 // Raccourci clavier global Ctrl+K
