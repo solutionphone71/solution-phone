@@ -4001,6 +4001,52 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div id="params-removebg-status" style="font-size:12px;color:var(--text-muted);margin-top:8px;"></div>
         </div>
 
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- J14 · SAUVEGARDES & JOURNAL D'AUDIT                          -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="card" style="grid-column:1/-1;border:2px solid #16a34a;margin-top:8px;">
+        <div class="card-header" style="background:rgba(34,197,94,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-title" style="color:#22c55e;">💾 Sauvegardes & Journal d'audit</div>
+          <div style="font-size:11px;color:var(--text-muted);">Backup auto chaque nuit à 2h · 30 jours conservés</div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+            <!-- BACKUPS -->
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:800;color:#22c55e;text-transform:uppercase;letter-spacing:1.5px;">📦 Sauvegardes</div>
+                <button class="btn btn-sm" onclick="backupRunNow()" style="background:#16a34a;color:#fff;border-color:#16a34a;">🚀 Backup maintenant</button>
+              </div>
+              <div id="backup-status" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;"></div>
+              <div id="backup-list" style="max-height:340px;overflow-y:auto;border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:6px;">
+                <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+              </div>
+            </div>
+
+            <!-- AUDIT LOG -->
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:800;color:#22c55e;text-transform:uppercase;letter-spacing:1.5px;">📋 Journal d'audit</div>
+                <select id="audit-filter-action" onchange="auditRender()" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid rgba(34,197,94,0.3);background:transparent;color:inherit;">
+                  <option value="">Toutes actions</option>
+                  <option value="create">Créations</option>
+                  <option value="update">Modifications</option>
+                  <option value="delete">Suppressions</option>
+                  <option value="cloture">Clôtures</option>
+                  <option value="export">Exports</option>
+                  <option value="backup">Backups</option>
+                </select>
+              </div>
+              <div id="audit-list" style="max-height:340px;overflow-y:auto;border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:6px;">
+                <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       </div>
       </div>
       </div>
@@ -6478,7 +6524,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){renderSuiviQR();}
-  if(id==='params'){paramsLoad();}
+  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
   if(id==='devis')renderDevis();    if(id==='clients'){
@@ -7705,6 +7751,8 @@ async function clotureValiderJournee(){
     notifMsg += ' · Écart : '+(ecart>0?'+':'')+ecart.toFixed(2)+' €';
   }
   showNotif(notifMsg, 'success');
+  // Audit log
+  if(typeof logAudit==='function') logAudit('cloture','cloture_journee',payload.date,null,payload,'Clôture journée — 2 Z dissociés'+(ecart!==null?' · écart '+ecart.toFixed(2)+'€':''));
 }
 
 function genererZCaisseSmartphones(){
@@ -10390,6 +10438,8 @@ function requireAdminCode(action){
 async function deletePhone(id){
   if(!requireAdminCode('Supprimer un smartphone d\'occasion')) return;
   if(!confirm('Supprimer ce smartphone ?'))return;
+  // Capture l'état avant suppression pour l'audit
+  var phoneBefore = phones.find(function(x){return x.id===id;}) || null;
   if(supabaseReady){
     try{
       await supaFetch('phones','DELETE',null,'?id=eq.'+id);
@@ -10402,6 +10452,7 @@ async function deletePhone(id){
   phones=phones.filter(function(x){return x.id!==id;});
   renderPhones();renderDashboard();
   showNotif('Supprimé','success');
+  if(typeof logAudit==='function') logAudit('delete','phones',id,phoneBefore,null,'Suppression smartphone occasion'+(phoneBefore?' : '+(phoneBefore.modele||'?')+' IMEI '+(phoneBefore.imei||'?'):''));
 }
 
 async function exportInventaire(){
@@ -12505,6 +12556,7 @@ function genererFactureRep() {
   ['r-client-nom','r-client-adresse','r-client-cp','r-client-ville','r-client-email','r-appareil','r-imei','r-description','r-prix'].forEach(function(id){ document.getElementById(id).value=''; });
   document.getElementById('rep-preview-card').style.display = 'none';
   showNotif('Facture ' + num + ' créée !', 'success');
+  if(typeof logAudit==='function') logAudit('create','reparations',rep.id,null,{numero:rep.numero,clientNom:rep.clientNom,appareil:rep.appareil,prix:rep.prix},'Facture réparation '+rep.numero);
 }
 
 function imprimerRepData(r){
@@ -12928,6 +12980,7 @@ async function exportFEC() {
     setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 1000);
 
     showNotif('📊 FEC ' + mois + ' généré (' + nbLignes + ' écritures · ' + nbFact + ' factures · ' + nbAchats + ' achats · ' + nbDep + ' dépenses)', 'success');
+    if(typeof logAudit==='function') logAudit('export','factures',mois,null,{file:filename,lignes:nbLignes,factures:nbFact,achats:nbAchats,depenses:nbDep},'Export FEC '+mois+' pour expert-comptable');
   } catch(e){
     console.error('[exportFEC]', e);
     showNotif('❌ Export FEC : ' + (e.message || 'erreur'), 'error');
@@ -28951,6 +29004,163 @@ var AvisGoogle = (function(){
   }
   // Aussi sur changement de hash (si Sébastien re-clique sur un lien depuis la même page)
   window.addEventListener('hashchange', dispatchHash);
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════════
+     J14 · BACKUP + AUDIT LOG  (mai 2026)
+     - logAudit(action, table, recordId, before, after, context)
+     - backupRunNow() : déclenche /api/backup
+     - backupRenderList() : liste 30 derniers backups
+     - auditRender() : liste 200 dernières actions
+     ════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+
+// ── HELPER : récupère l'identité courante ──
+function _auditWho(){
+  var role = (typeof _userRole !== 'undefined' && _userRole) ? _userRole : 'patron';
+  // Email patron stocké en localStorage (sinon "patron@solution-phone.fr")
+  var email = '';
+  try { email = localStorage.getItem('sp-user-email') || ''; } catch(e){}
+  if(!email){
+    // Salariés : chercher le nom du salarié connecté (si dispo)
+    var salName = '';
+    try { salName = localStorage.getItem('sp-current-salarie') || ''; } catch(e){}
+    email = role==='patron' ? 'sebastien.cannard@gmail.com' : (salName ? salName.toLowerCase().replace(/\s+/g,'.')+'@solution-phone.fr' : 'employe@solution-phone.fr');
+  }
+  return { email: email, role: role };
+}
+
+// ── LOG AUDIT : appelé à chaque action sensible ──
+window.logAudit = async function(action, tableName, recordId, before, after, context){
+  try {
+    var who = _auditWho();
+    var payload = {
+      user_email: who.email,
+      user_role:  who.role,
+      action:     action || 'unknown',
+      table_name: tableName || '',
+      record_id:  recordId == null ? null : String(recordId),
+      before_data: before || null,
+      after_data:  after || null,
+      ip: '',
+      user_agent: (navigator && navigator.userAgent ? navigator.userAgent.substring(0,200) : ''),
+      context: context || ''
+    };
+    // Fire-and-forget : on ne bloque jamais l'app
+    fetch('/api/supabase?table=audit_log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    }).catch(function(e){ console.warn('[audit] insert fail:', e); });
+  } catch(e){
+    console.warn('[audit] error:', e);
+  }
+};
+
+// ── BACKUP : déclencher manuellement ──
+window.backupRunNow = async function(){
+  var btn = event && event.target;
+  var status = document.getElementById('backup-status');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ En cours...'; }
+  if(status) status.innerHTML = '<span style="color:#22c55e;">⏳ Sauvegarde en cours (ça peut prendre 30-60s)...</span>';
+  try {
+    var r = await fetch('/api/backup', { method: 'POST' });
+    var data = await r.json();
+    if(data.ok){
+      if(status) status.innerHTML = '<span style="color:#22c55e;">✅ Backup OK · '+data.size_mb+' Mo · '+data.rows+' lignes · '+data.tables_ok.length+' tables</span>';
+      if(typeof showNotif==='function') showNotif('💾 Backup effectué : '+data.size_mb+' Mo','success');
+      logAudit('backup','backups_meta',data.file,null,{size_mb:data.size_mb,rows:data.rows},'Backup manuel');
+      setTimeout(backupRenderList, 800);
+    } else {
+      if(status) status.innerHTML = '<span style="color:#ef4444;">❌ Erreur : '+(data.error||'inconnue')+'</span>';
+    }
+  } catch(e){
+    if(status) status.innerHTML = '<span style="color:#ef4444;">❌ Erreur réseau : '+e.message+'</span>';
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🚀 Backup maintenant'; }
+  }
+};
+
+// ── BACKUP : afficher la liste des 30 derniers ──
+window.backupRenderList = async function(){
+  var el = document.getElementById('backup-list');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var r = await fetch('/api/supabase?table=backups_meta&query=?select=*&order=created_at.desc&limit=30');
+    var data = await r.json();
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Aucun backup encore — le 1er sera créé cette nuit à 2h.<br><br>Clique "🚀 Backup maintenant" pour en faire un tout de suite.</div>';
+      return;
+    }
+    el.innerHTML = data.map(function(b){
+      var ok = b.status === 'ok';
+      var sizeMB = b.size_bytes ? (b.size_bytes/(1024*1024)).toFixed(2) : '-';
+      var date = new Date(b.created_at);
+      var dateStr = date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(34,197,94,0.08);font-size:12px;">'+
+        '<span style="font-size:14px;">'+(ok?'✅':'❌')+'</span>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-weight:700;color:var(--text);font-family:monospace;">'+(b.file_name||'?')+'</div>'+
+          '<div style="font-size:11px;color:var(--text-muted);">'+dateStr+' · '+sizeMB+' Mo · '+(b.rows_total||0)+' lignes · '+((b.tables||[]).length)+' tables'+(b.error_msg?' · <span style="color:#ef4444;">'+b.error_msg.substring(0,80)+'</span>':'')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="text-align:center;color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+// ── AUDIT : afficher les 200 derniers événements (avec filtre action) ──
+window.auditRender = async function(){
+  var el = document.getElementById('audit-list');
+  if(!el) return;
+  var filterEl = document.getElementById('audit-filter-action');
+  var actionFilter = filterEl ? filterEl.value : '';
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var qry = '?select=*&order=created_at.desc&limit=200';
+    if(actionFilter) qry += '&action=eq.'+encodeURIComponent(actionFilter);
+    var r = await fetch('/api/supabase?table=audit_log&query='+encodeURIComponent(qry));
+    var data = await r.json();
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Aucune action loggée pour le moment.</div>';
+      return;
+    }
+    var ACTION_ICONS = {create:'➕',update:'✏️',delete:'🗑️',cloture:'🔒',export:'📤',backup:'💾',login:'🔓'};
+    var ACTION_COLORS = {create:'#22c55e',update:'#f59e0b',delete:'#ef4444',cloture:'#8b5cf6',export:'#3b82f6',backup:'#06b6d4',login:'#a3a3a3'};
+    el.innerHTML = data.map(function(a){
+      var ico = ACTION_ICONS[a.action] || '•';
+      var col = ACTION_COLORS[a.action] || '#888';
+      var date = new Date(a.created_at);
+      var dateStr = date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+      var who = (a.user_email||'?').split('@')[0];
+      var details = a.context || '';
+      if(!details && a.action==='update' && a.before_data && a.after_data){
+        // Petite diff : montre les clés modifiées
+        try {
+          var changed = [];
+          for(var k in a.after_data){
+            if(JSON.stringify(a.before_data[k])!==JSON.stringify(a.after_data[k])) changed.push(k);
+          }
+          if(changed.length) details = changed.slice(0,4).join(', ') + (changed.length>4?'...':'');
+        } catch(e){}
+      }
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(34,197,94,0.08);font-size:12px;">'+
+        '<span style="font-size:14px;color:'+col+';flex-shrink:0;">'+ico+'</span>'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="color:var(--text);"><b>'+who+'</b> · '+(a.action||'?')+' '+(a.table_name||'?')+(a.record_id?' #'+a.record_id:'')+'</div>'+
+          '<div style="font-size:11px;color:var(--text-muted);">'+dateStr+(details?' · '+details:'')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="text-align:center;color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
 })();
 </script>
 
