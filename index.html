@@ -4152,6 +4152,44 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- PHASE 2 · BRIEFING ZAHIRA + INSIGHTS BUSINESS                 -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="card" style="grid-column:1/-1;border:2px solid #06b6d4;margin-top:8px;">
+        <div class="card-header" style="background:rgba(6,182,212,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-title" style="color:#22d3ee;">🎯 Briefing Zahira & Insights business</div>
+          <div style="font-size:11px;color:var(--text-muted);">Briefing 7h45 · Insights 3h · Tous les agents y ont accès</div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px;">
+
+            <!-- BRIEFING ZAHIRA -->
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:800;color:#22d3ee;text-transform:uppercase;letter-spacing:1.5px;">📋 Briefing du jour</div>
+                <button class="btn btn-sm" onclick="briefingRunNow()" style="background:#06b6d4;color:#fff;border-color:#06b6d4;">🔄 Regénérer maintenant</button>
+              </div>
+              <div id="briefing-text" style="background:rgba(6,182,212,0.04);border:1px solid rgba(6,182,212,0.15);border-radius:8px;padding:14px;font-size:13px;line-height:1.6;white-space:pre-wrap;min-height:180px;">
+                <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:30px;">Chargement...</div>
+              </div>
+              <div id="briefing-meta" style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:right;"></div>
+            </div>
+
+            <!-- INSIGHTS BUSINESS -->
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="font-size:12px;font-weight:800;color:#22d3ee;text-transform:uppercase;letter-spacing:1.5px;">📊 Insights (30j)</div>
+                <button class="btn btn-sm" onclick="insightsRunNow()" style="background:transparent;color:#22d3ee;border-color:#22d3ee;">🔄 Recalculer</button>
+              </div>
+              <div id="insights-list" style="max-height:340px;overflow-y:auto;background:rgba(6,182,212,0.04);border:1px solid rgba(6,182,212,0.15);border-radius:8px;padding:10px;">
+                <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:30px;">Chargement...</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       </div>
       </div>
       </div>
@@ -6639,7 +6677,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){renderSuiviQR();}
-  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions();}
+  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
   if(id==='devis')renderDevis();    if(id==='clients'){
@@ -29404,6 +29442,137 @@ window.iavSave = async function(){
     if(typeof logAudit==='function') logAudit('update','agent_memory','brand_voice',null,bv,'Modification brand voice IA');
   } catch(e){
     if(status) status.innerHTML = '<span style="color:#ef4444;">❌ Erreur : '+e.message+'</span>';
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 2 · BRIEFING ZAHIRA + INSIGHTS BUSINESS
+// ════════════════════════════════════════════════════════════════
+
+window.briefingLoad = async function(){
+  var txtEl = document.getElementById('briefing-text');
+  var metaEl = document.getElementById('briefing-meta');
+  if(!txtEl) return;
+  try {
+    var r = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.daily_briefing&select=value'));
+    var data = await r.json();
+    var br = (Array.isArray(data) && data[0]) ? data[0].value : null;
+    if(!br){
+      txtEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:30px;">Aucun briefing encore — le 1er sera généré demain matin à 7h45.<br><br>Clique "🔄 Regénérer maintenant" pour en faire un tout de suite.</div>';
+      if(metaEl) metaEl.textContent = '';
+      return;
+    }
+    txtEl.textContent = br.text || '';
+    if(metaEl){
+      var d = br.generated_at ? new Date(br.generated_at) : null;
+      var dateStr = d ? d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+      metaEl.textContent = (br.day||'') + ' · généré ' + dateStr + ' · ' + (br.pending_count||0) + ' décisions pending';
+    }
+  } catch(e){
+    txtEl.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+window.briefingRunNow = async function(){
+  var btn = event && event.target;
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Génération...'; }
+  try {
+    var r = await fetch('/api/agents/briefing', { method: 'POST' });
+    var data = await r.json();
+    if(data.ok){
+      if(typeof showNotif==='function') showNotif('🎯 Briefing du jour regénéré','success');
+      await briefingLoad();
+    } else {
+      if(typeof showNotif==='function') showNotif('Erreur : '+(data.error||'?'),'error');
+    }
+  } catch(e){
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Regénérer maintenant'; }
+  }
+};
+
+window.insightsLoad = async function(){
+  var el = document.getElementById('insights-list');
+  if(!el) return;
+  try {
+    var r = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.insights_v2&select=value'));
+    var data = await r.json();
+    var ins = (Array.isArray(data) && data[0]) ? data[0].value : null;
+    if(!ins){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:30px;">Aucun insight encore — sera calculé cette nuit à 3h.<br><br>Clique "🔄 Recalculer" pour en faire un tout de suite.</div>';
+      return;
+    }
+    var html = '';
+    function section(title, items){
+      if(!items || (Array.isArray(items)&&!items.length)) return;
+      html += '<div style="font-size:10px;font-weight:800;color:#22d3ee;text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 6px;">'+title+'</div>';
+      if(Array.isArray(items)){
+        items.forEach(function(it){ html += '<div style="font-size:12px;padding:3px 0;color:var(--text);">'+it+'</div>'; });
+      } else {
+        html += '<div style="font-size:12px;padding:3px 0;color:var(--text);">'+items+'</div>';
+      }
+    }
+    if(Array.isArray(ins.phones_top_vendus_30j) && ins.phones_top_vendus_30j.length){
+      section('Top 5 vendus', ins.phones_top_vendus_30j.map(function(p){ return '• '+p.modele+' — '+p.qty+'×'; }));
+    }
+    if(Array.isArray(ins.phones_marge_moyenne) && ins.phones_marge_moyenne.length){
+      section('Marge moyenne par modèle', ins.phones_marge_moyenne.slice(0,5).map(function(p){ return '• '+p.modele+' : '+p.marge_moyenne+'€ ('+p.n+' ventes)'; }));
+    }
+    if(Array.isArray(ins.phones_delai_vente_jours) && ins.phones_delai_vente_jours.length){
+      section('Délai moyen de vente', ins.phones_delai_vente_jours.slice(0,5).map(function(p){ return '• '+p.modele+' : '+p.delai_jours+'j ('+p.n+' ventes)'; }));
+    }
+    if(Array.isArray(ins.phones_stock_alerte) && ins.phones_stock_alerte.length){
+      section('⚠️ Stock faible', ins.phones_stock_alerte.map(function(p){ return '• '+p.modele+' — '+p.stock+' en stock'; }));
+    }
+    if(Array.isArray(ins.agents_acceptance_rate) && ins.agents_acceptance_rate.length){
+      section('Taux d\'acceptation par agent', ins.agents_acceptance_rate.map(function(a){
+        var pct = a.acceptance_rate != null ? Math.round(a.acceptance_rate*100)+'%' : '?';
+        return '• '+a.agent+' : '+pct+' ('+a.validated+'✅ / '+a.rejected+'❌ / '+a.pending+'⏳)';
+      }));
+    }
+    if(ins.qualirepar_eligibles_non_envoyes > 0){
+      section('⚠️ QualiRépar à envoyer', ins.qualirepar_eligibles_non_envoyes+' dossier(s) éligible(s) non envoyés');
+    }
+    if(ins.ca_30j != null){
+      section('CA 30j', ins.ca_30j+' € (moyenne '+ (ins.ca_moyen_jour||0) +' €/jour sur '+(ins.jours_actifs_30j||0)+' jours actifs)');
+    }
+    if(ins.repartition_paiement_30j){
+      var rp = ins.repartition_paiement_30j;
+      section('Paiements', 'CB '+rp.cb_pct+'% · Esp '+rp.especes_pct+'% · Chèque '+rp.cheque_pct+'% · Vir '+rp.virement_pct+'%');
+    }
+    if(ins.avis_volume_30j != null){
+      section('Avis Google 30j', ins.avis_volume_30j+' avis · '+(ins.avis_5_etoiles_30j||0)+'× 5★ · '+(ins.avis_3_ou_moins_30j||0)+'× ≤3★');
+    }
+    if(Array.isArray(ins.seb_validation_hours) && ins.seb_validation_hours.length){
+      section('Tes créneaux de validation', ins.seb_validation_hours.map(function(h){ return '• '+h.heure+'h — '+h.nb_validations+' validations'; }));
+    }
+    if(ins.generated_at){
+      var d = new Date(ins.generated_at);
+      html += '<div style="text-align:right;font-size:10px;color:var(--text-muted);margin-top:12px;font-family:monospace;">Généré '+d.toLocaleDateString('fr-FR')+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'</div>';
+    }
+    el.innerHTML = html || '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:30px;">Données insuffisantes pour générer des insights.</div>';
+  } catch(e){
+    el.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+window.insightsRunNow = async function(){
+  var btn = event && event.target;
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Calcul...'; }
+  try {
+    var r = await fetch('/api/agents/insights', { method: 'POST' });
+    var data = await r.json();
+    if(data.ok){
+      if(typeof showNotif==='function') showNotif('📊 Insights recalculés','success');
+      await insightsLoad();
+    } else {
+      if(typeof showNotif==='function') showNotif('Erreur : '+(data.error||'?'),'error');
+    }
+  } catch(e){
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Recalculer'; }
   }
 };
 

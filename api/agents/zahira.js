@@ -358,16 +358,20 @@ const REJECT_LABELS_ZH = {
 };
 
 async function loadAgentMemory(agentName) {
-  const out = { brand_voice: null, recent_decisions: [], recent_rejects: [] };
+  const out = { brand_voice: null, recent_decisions: [], recent_rejects: [], daily_briefing: null, insights: null };
   try {
-    const [bv, rd, rr] = await Promise.all([
+    const [bv, rd, rr, db, ins] = await Promise.all([
       supaQuery('agent_memory', 'GET', null, '?key=eq.brand_voice&select=value').catch(() => null),
       supaQuery('v_recent_decisions', 'GET', null, `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=10`).catch(() => null),
-      supaQuery('v_recent_rejects', 'GET', null, `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=5`).catch(() => null)
+      supaQuery('v_recent_rejects', 'GET', null, `?agent_name=eq.${encodeURIComponent(agentName)}&order=created_at.desc&limit=5`).catch(() => null),
+      supaQuery('agent_memory', 'GET', null, '?key=eq.daily_briefing&select=value').catch(() => null),
+      supaQuery('agent_memory', 'GET', null, '?key=eq.insights_v2&select=value').catch(() => null)
     ]);
     if (bv && bv[0]) out.brand_voice = bv[0].value;
     if (Array.isArray(rd)) out.recent_decisions = rd;
     if (Array.isArray(rr)) out.recent_rejects = rr;
+    if (db && db[0]) out.daily_briefing = db[0].value;
+    if (ins && ins[0]) out.insights = ins[0].value;
   } catch (e) {
     console.warn('[zahira] loadAgentMemory error:', e.message);
   }
@@ -376,6 +380,37 @@ async function loadAgentMemory(agentName) {
 
 function buildMemoryBlock(memory) {
   const lines = [];
+  // N5 · BRIEFING ZAHIRA (priorité haute en tête)
+  if (memory.daily_briefing && memory.daily_briefing.text) {
+    lines.push('## BRIEFING DE ZAHIRA — ' + (memory.daily_briefing.day || 'aujourd\'hui'));
+    lines.push(memory.daily_briefing.text);
+    lines.push('');
+  }
+  // N4 · INSIGHTS BUSINESS (chiffres clés)
+  if (memory.insights) {
+    const ins = memory.insights;
+    const bits = [];
+    if (Array.isArray(ins.phones_top_vendus_30j) && ins.phones_top_vendus_30j.length) {
+      bits.push('Top vendus 30j : ' + ins.phones_top_vendus_30j.slice(0,3).map(p => `${p.modele}(${p.qty})`).join(', '));
+    }
+    if (Array.isArray(ins.phones_stock_alerte) && ins.phones_stock_alerte.length) {
+      bits.push('STOCK FAIBLE : ' + ins.phones_stock_alerte.map(p => p.modele).join(', '));
+    }
+    if (ins.qualirepar_eligibles_non_envoyes > 0) {
+      bits.push(ins.qualirepar_eligibles_non_envoyes + ' dossier(s) QualiRépar éligible(s) NON envoyés');
+    }
+    if (ins.avis_3_ou_moins_30j > 0) {
+      bits.push(ins.avis_3_ou_moins_30j + ' avis ≤3★ sur 30j');
+    }
+    if (ins.ca_moyen_jour) {
+      bits.push('CA moyen/jour 30j : ' + ins.ca_moyen_jour + '€');
+    }
+    if (bits.length) {
+      lines.push('## INSIGHTS BUSINESS');
+      bits.forEach(b => lines.push('• ' + b));
+      lines.push('');
+    }
+  }
   if (memory.brand_voice) {
     const bv = memory.brand_voice;
     lines.push('## BRAND VOICE — STYLE OBLIGATOIRE POUR TOUTE PROPOSITION');
