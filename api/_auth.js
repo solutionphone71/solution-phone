@@ -15,6 +15,20 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000'
 ];
 
+// Accepte aussi tous les previews Vercel : solution-phone-*.vercel.app
+// (déploiements de branches, PRs, etc.)
+function isAllowedOrigin(origin){
+  if(!origin) return false;
+  if(ALLOWED_ORIGINS.includes(origin)) return true;
+  // Pattern Vercel preview : https://solution-phone-XXX-XXX.vercel.app
+  try {
+    const u = new URL(origin);
+    if(u.protocol !== 'https:') return false;
+    if(u.hostname.endsWith('.vercel.app') && u.hostname.startsWith('solution-phone')) return true;
+  } catch(e){}
+  return false;
+}
+
 const CRON_SECRET = process.env.CRON_SECRET || '';
 const APP_SECRET = process.env.APP_SECRET || '';
 
@@ -25,11 +39,12 @@ const APP_SECRET = process.env.APP_SECRET || '';
 export function checkAuth(req, res) {
   // CORS strict : seulement les origines connues
   const origin = req.headers.origin || '';
-  const matchedOrigin = ALLOWED_ORIGINS.find(o => origin === o);
-  if (matchedOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', matchedOrigin);
+  const originOk = isAllowedOrigin(origin);
+  if (originOk) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
+  const matchedOrigin = originOk ? origin : null;
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
@@ -52,10 +67,25 @@ export function checkAuth(req, res) {
 
   // Referer fallback (certains navigateurs n'envoient pas Origin sur GET)
   const referer = req.headers.referer || '';
-  if (referer && ALLOWED_ORIGINS.some(o => referer.startsWith(o + '/') || referer === o)) {
-    res.setHeader('Access-Control-Allow-Origin', new URL(referer).origin);
-    res.setHeader('Vary', 'Origin');
-    return { ok: true, source: 'referer' };
+  if (referer) {
+    try {
+      const refOrigin = new URL(referer).origin;
+      if (isAllowedOrigin(refOrigin)) {
+        res.setHeader('Access-Control-Allow-Origin', refOrigin);
+        res.setHeader('Vary', 'Origin');
+        return { ok: true, source: 'referer' };
+      }
+    } catch(e){}
+  }
+
+  // Host fallback : si pas d'origin/referer (POST direct depuis fetch same-origin),
+  // accepter quand le hôte de la requête est lui-même un domaine Solution Phone Vercel
+  const host = req.headers['x-forwarded-host'] || req.headers.host || '';
+  if (host) {
+    const hostOrigin = 'https://' + host;
+    if (isAllowedOrigin(hostOrigin)) {
+      return { ok: true, source: 'same-host' };
+    }
   }
 
   return { ok: false, reason: 'unauthorized' };
