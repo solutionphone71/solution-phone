@@ -57,3 +57,36 @@ COMMENT ON TABLE backups_meta IS 'Métadonnées des backups quotidiens Solution 
 --   - File size limit: 50 MB
 --   - Allowed MIME types: application/gzip
 -- Le cron /api/backup uploadera automatiquement chaque nuit à 2h.
+
+-- ════════════════════════════════════════════════════════════════
+-- POLITIQUES RLS pour le bucket "backups"
+-- L'auth se fait au niveau /api/backup (CRON_SECRET + handleAuth),
+-- donc on autorise le rôle anon à uploader/lister/supprimer dans
+-- CE bucket UNIQUEMENT (les autres buckets restent verrouillés).
+-- ════════════════════════════════════════════════════════════════
+DO $$
+BEGIN
+  -- Drop si existe (pour pouvoir ré-exécuter le script)
+  DROP POLICY IF EXISTS "backups_anon_insert" ON storage.objects;
+  DROP POLICY IF EXISTS "backups_anon_select" ON storage.objects;
+  DROP POLICY IF EXISTS "backups_anon_delete" ON storage.objects;
+  DROP POLICY IF EXISTS "backups_anon_update" ON storage.objects;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE POLICY "backups_anon_insert"
+  ON storage.objects FOR INSERT TO anon, authenticated
+  WITH CHECK (bucket_id = 'backups');
+
+CREATE POLICY "backups_anon_select"
+  ON storage.objects FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'backups');
+
+CREATE POLICY "backups_anon_update"
+  ON storage.objects FOR UPDATE TO anon, authenticated
+  USING (bucket_id = 'backups')
+  WITH CHECK (bucket_id = 'backups');
+
+CREATE POLICY "backups_anon_delete"
+  ON storage.objects FOR DELETE TO anon, authenticated
+  USING (bucket_id = 'backups');
