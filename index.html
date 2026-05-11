@@ -4190,6 +4190,60 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- INTÉGRATION CHATGPT · BANQUE VISUELLE + TEMPLATES IA          -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="card" style="grid-column:1/-1;border:2px solid #f59e0b;margin-top:8px;">
+        <div class="card-header" style="background:rgba(245,158,11,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div class="card-title" style="color:#fbbf24;">🎨 Banque visuelle & Templates IA (ChatGPT)</div>
+          <div style="font-size:11px;color:var(--text-muted);">Kit de marque + templates pour GPT-Image-1</div>
+        </div>
+        <div class="card-body">
+
+          <!-- ── BANQUE VISUELLE ── -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:1.5px;">📦 Banque visuelle — Kit de marque</div>
+            <div style="display:flex;gap:8px;">
+              <input type="file" id="va-file-input" accept="image/*" multiple style="display:none;" onchange="vaUploadFiles(event)">
+              <button class="btn btn-sm" onclick="document.getElementById('va-file-input').click()" style="background:#f59e0b;color:#fff;border-color:#f59e0b;">📤 Uploader</button>
+              <button class="btn btn-sm" onclick="vaRenderList()" style="background:transparent;color:#fbbf24;border-color:#fbbf24;">🔄 Recharger</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;padding:8px;background:rgba(245,158,11,0.05);border-radius:6px;">
+            💡 Uploade ici ton logo HD, le tampon, la mascotte Assya finale, les photos de boutique, les photos produit fond transparent. Ces fichiers sont passés en référence image-to-image à GPT-Image-1 pour garantir la cohérence visuelle.
+          </div>
+          <div id="va-list" style="max-height:280px;overflow-y:auto;border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px;">
+            <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+          </div>
+
+          <!-- ── TEMPLATES ── -->
+          <div style="margin-top:24px;padding-top:18px;border-top:1px solid rgba(245,158,11,0.15);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:12px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:1.5px;">📐 Templates de composition</div>
+              <button class="btn btn-sm" onclick="vtRenderList()" style="background:transparent;color:#fbbf24;border-color:#fbbf24;">🔄 Recharger</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;padding:8px;background:rgba(245,158,11,0.05);border-radius:6px;">
+              💡 Chaque template = un brief structuré pour GPT-Image-1. Quand un événement se produit (ex: ajout phone), Assya choisit le template correspondant et lance la génération.
+            </div>
+            <div id="vt-list" style="border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px;">
+              <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+            </div>
+          </div>
+
+          <!-- ── BUDGET IA ── -->
+          <div style="margin-top:24px;padding-top:18px;border-top:1px solid rgba(245,158,11,0.15);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:12px;font-weight:800;color:#fbbf24;text-transform:uppercase;letter-spacing:1.5px;">💰 Budget IA du jour</div>
+              <button class="btn btn-sm" onclick="aiBudgetLoad()" style="background:transparent;color:#fbbf24;border-color:#fbbf24;">🔄 Recharger</button>
+            </div>
+            <div id="ai-budget-list" style="border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:12px;">
+              <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       </div>
       </div>
       </div>
@@ -6677,7 +6731,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){renderSuiviQR();}
-  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad();}
+  if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
   if(id==='devis')renderDevis();    if(id==='clients'){
@@ -29573,6 +29627,205 @@ window.insightsRunNow = async function(){
     if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = '🔄 Recalculer'; }
+  }
+};
+
+// ════════════════════════════════════════════════════════════════
+// INTÉGRATION CHATGPT · BANQUE VISUELLE + TEMPLATES + BUDGET
+// ════════════════════════════════════════════════════════════════
+
+var ASSET_KIND_LABELS = {
+  logo: '🅢 Logo',
+  tampon: '🔖 Tampon',
+  mascotte: '🤖 Mascotte Assya',
+  photo_boutique: '🏪 Photo boutique',
+  photo_produit: '📱 Photo produit',
+  reference_template: '🎨 Référence template'
+};
+
+// ── BANQUE VISUELLE ──
+window.vaRenderList = async function(){
+  var el = document.getElementById('va-list');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var r = await fetch('/api/supabase?table=visual_assets&query='+encodeURIComponent('?select=*&order=created_at.desc&limit=100'));
+    var data = await r.json();
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Aucun fichier — clique 📤 Uploader pour ajouter logo, mascotte, photos boutique, etc.</div>';
+      return;
+    }
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:10px;">' +
+      data.map(function(a){
+        var kindLabel = ASSET_KIND_LABELS[a.kind] || a.kind;
+        return '<div style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.15);border-radius:8px;padding:8px;position:relative;">' +
+          '<div style="width:100%;height:90px;background:url(\''+a.file_url+'\') center/contain no-repeat #0a0a0a;border-radius:6px;margin-bottom:6px;"></div>' +
+          '<div style="font-size:10px;color:#fbbf24;font-weight:700;text-transform:uppercase;">'+kindLabel+'</div>' +
+          '<div style="font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+a.name+'</div>' +
+          (a.ai_reference?'<div style="font-size:9px;color:#22c55e;margin-top:2px;">✅ utilisé en référence IA</div>':'<div style="font-size:9px;color:var(--text-muted);margin-top:2px;">📦 archive seulement</div>') +
+          '<div style="display:flex;gap:4px;margin-top:6px;">' +
+            '<button onclick="vaToggleAiRef('+a.id+','+(!a.ai_reference)+')" style="flex:1;font-size:9px;padding:3px;background:transparent;border:1px solid rgba(245,158,11,0.3);color:#fbbf24;border-radius:4px;cursor:pointer;">'+(a.ai_reference?'✖ Désactiver':'⭐ Activer IA')+'</button>' +
+            '<button onclick="vaDelete('+a.id+',\''+(a.storage_path||'').replace(/\'/g,"\\\'")+'\')" style="font-size:9px;padding:3px 6px;background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;border-radius:4px;cursor:pointer;">🗑</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  } catch(e){
+    el.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+window.vaUploadFiles = async function(event){
+  var files = event.target.files;
+  if(!files || !files.length) return;
+  var kindPrompt = prompt('Type de fichier ? (logo / tampon / mascotte / photo_boutique / photo_produit / reference_template)', 'photo_produit');
+  if(!kindPrompt) return;
+  var kind = kindPrompt.trim();
+  var aiRef = confirm('Utiliser ce(s) fichier(s) comme référence IA pour GPT-Image-1 ?\n\nOK = oui (passé en image-to-image)\nAnnuler = non (juste archive)');
+  for(var i=0;i<files.length;i++){
+    var file = files[i];
+    var ext = (file.name.split('.').pop()||'png').toLowerCase();
+    var fname = kind+'-'+Date.now()+'-'+i+'.'+ext;
+    var storagePath = fname;
+    try {
+      // Upload direct dans Storage bucket visual_assets
+      var uploadUrl = '/api/upload-media?bucket=visual_assets&path='+encodeURIComponent(storagePath);
+      var formData = new FormData();
+      formData.append('file', file);
+      var upRes = await fetch(uploadUrl, { method:'POST', body: formData });
+      var upData = await upRes.json();
+      var fileUrl = upData.url || upData.publicUrl;
+      if(!fileUrl){
+        // Fallback : URL Supabase publique directe
+        var baseUrl = (await fetch('/api/supabase?table=visual_assets&query=?limit=0').then(function(r){return r.headers.get('x-supabase-base')||'';})) || '';
+        fileUrl = (baseUrl || window.location.origin) + '/storage/v1/object/public/visual_assets/' + storagePath;
+      }
+      // Insert dans visual_assets
+      await fetch('/api/supabase?table=visual_assets', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          kind: kind,
+          name: file.name,
+          file_url: fileUrl,
+          storage_path: 'visual_assets/' + storagePath,
+          ai_reference: aiRef,
+          size_bytes: file.size
+        })
+      });
+    } catch(err){
+      console.error('Upload error:', err);
+      if(typeof showNotif==='function') showNotif('Erreur upload '+file.name+' : '+err.message,'error');
+    }
+  }
+  if(typeof showNotif==='function') showNotif('✅ '+files.length+' fichier(s) uploadé(s)','success');
+  vaRenderList();
+};
+
+window.vaToggleAiRef = async function(id, newValue){
+  try {
+    await fetch('/api/supabase?table=visual_assets&query='+encodeURIComponent('?id=eq.'+id), {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ ai_reference: newValue })
+    });
+    vaRenderList();
+  } catch(e){
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
+  }
+};
+
+window.vaDelete = async function(id, storagePath){
+  if(!confirm('Supprimer ce fichier ?')) return;
+  try {
+    await fetch('/api/supabase?table=visual_assets&query='+encodeURIComponent('?id=eq.'+id), { method:'DELETE' });
+    vaRenderList();
+    if(typeof showNotif==='function') showNotif('Supprimé','success');
+  } catch(e){
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
+  }
+};
+
+// ── TEMPLATES ──
+window.vtRenderList = async function(){
+  var el = document.getElementById('vt-list');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var r = await fetch('/api/supabase?table=visual_templates&query='+encodeURIComponent('?select=*&active=eq.true&order=name.asc'));
+    var data = await r.json();
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Aucun template — exécute le SQL ia-memoire.sql pour seeder les 5 templates par défaut.</div>';
+      return;
+    }
+    el.innerHTML = data.map(function(t){
+      var refCount = Array.isArray(t.reference_asset_ids) ? t.reference_asset_ids.length : 0;
+      return '<div style="padding:10px 12px;border-bottom:1px solid rgba(245,158,11,0.08);">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13px;font-weight:700;color:#fbbf24;">'+(t.name||'?')+'</div>' +
+            '<div style="font-size:11px;color:var(--text);">'+(t.description||'')+'</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);margin-top:3px;font-family:monospace;">'+t.kind+' · '+t.format+' · trigger: '+(t.trigger_event||'manual')+' · '+refCount+' réfs IA · ✅'+t.validation_count+' / ❌'+t.rejection_count+'</div>' +
+          '</div>' +
+          '<button onclick="vtShowPrompt('+t.id+')" style="font-size:11px;padding:6px 10px;background:transparent;border:1px solid rgba(245,158,11,0.3);color:#fbbf24;border-radius:6px;cursor:pointer;">📝 Voir prompt</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
+  }
+};
+
+window.vtShowPrompt = async function(id){
+  try {
+    var r = await fetch('/api/supabase?table=visual_templates&query='+encodeURIComponent('?id=eq.'+id+'&select=base_prompt,name,variables_schema'));
+    var data = await r.json();
+    if(data && data[0]){
+      var t = data[0];
+      var vars = t.variables_schema ? JSON.stringify(t.variables_schema, null, 2) : '{}';
+      alert('━━━ TEMPLATE : '+t.name+' ━━━\n\nVARIABLES :\n'+vars+'\n\nPROMPT :\n\n'+t.base_prompt);
+    }
+  } catch(e){
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error');
+  }
+};
+
+// ── BUDGET IA DU JOUR ──
+window.aiBudgetLoad = async function(){
+  var el = document.getElementById('ai-budget-list');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:20px;">Chargement...</div>';
+  try {
+    var today = new Date().toISOString().slice(0, 10);
+    var r = await fetch('/api/supabase?table=ai_budget&query='+encodeURIComponent('?day=eq.'+today+'&select=*'));
+    var data = await r.json();
+    var capsRes = await fetch('/api/supabase?table=agent_memory&query='+encodeURIComponent('?key=eq.ai_budget_caps&select=value'));
+    var capsData = await capsRes.json();
+    var caps = (Array.isArray(capsData) && capsData[0]) ? capsData[0].value : {};
+    var capTotal = caps.daily_total_cap_eur || 5;
+
+    if(!Array.isArray(data) || data.length===0){
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:10px;">Aucun coût aujourd\'hui. Cap quotidien : <b>'+capTotal+' €</b></div>';
+      return;
+    }
+    var totalCost = data.reduce(function(s, d){ return s + Number(d.cost_eur||0); }, 0);
+    var totalRequests = data.reduce(function(s, d){ return s + (d.requests_count||0); }, 0);
+    var pct = (totalCost / capTotal) * 100;
+    var color = pct >= 80 ? '#ef4444' : pct >= 50 ? '#f59e0b' : '#22c55e';
+
+    el.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+        '<div style="font-size:18px;font-weight:800;color:'+color+';">'+totalCost.toFixed(3)+' € / '+capTotal+' €</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);">'+totalRequests+' requêtes</div>' +
+      '</div>' +
+      '<div style="background:rgba(245,158,11,0.08);height:8px;border-radius:4px;overflow:hidden;margin-bottom:12px;">' +
+        '<div style="height:100%;background:'+color+';width:'+Math.min(100,pct).toFixed(0)+'%;"></div>' +
+      '</div>' +
+      data.map(function(d){
+        var mc = (caps.per_model_cap_eur && caps.per_model_cap_eur[d.model]) || '-';
+        return '<div style="font-size:11px;padding:4px 0;color:var(--text);">• <b>'+d.model+'</b> : '+Number(d.cost_eur||0).toFixed(4)+' € / '+mc+' € ('+(d.requests_count||0)+' req)</div>';
+      }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:20px;">Erreur : '+e.message+'</div>';
   }
 };
 

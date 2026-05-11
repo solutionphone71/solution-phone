@@ -35,10 +35,13 @@ export default async function handler(req, res) {
     'brain_chat_messages', 'mes_avis_google', 'google_reviews', 'google_reviews_config',
     // ── J14 BACKUP + AUDIT (mai 2026) ──
     'audit_log', 'backups_meta',
+    // ── INTÉGRATION CHATGPT GPT-IMAGE-1 (mai 2026) ──
+    'visual_assets', 'visual_templates', 'visual_jobs', 'ai_budget',
     // Vues
     'v_validation_queue', 'v_agent_today', 'v_agent_7days',
     'v_brain_today', 'v_brain_active_suggestions', 'v_brain_kpis_7d',
-    'v_brain_friction', 'v_posts_to_publish'
+    'v_brain_friction', 'v_posts_to_publish',
+    'v_recent_decisions', 'v_recent_rejects', 'v_ai_budget_today'
   ];
   if (!ALLOWED_TABLES.includes(table)) {
     return res.status(403).json({ error: 'Table non autorisee: ' + table });

@@ -596,12 +596,22 @@ SP_AUTOPILOT.renderDecision = function(d) {
   var p = d.payload || {};
   var conf = (d.confidence || 0).toFixed(2);
   var media = '';
-  if(p.media_url) {
+  // Priorité 1 : image générée par GPT-Image-1 (Phase 3)
+  // Priorité 2 : media_url uploadé manuellement
+  var visualUrl = p.image_url || p.media_url;
+  if(visualUrl) {
     if((p.media_type||'image') === 'video') {
-      media = '<video src="'+escHtml(p.media_url)+'" controls></video>';
+      media = '<video src="'+escHtml(visualUrl)+'" controls style="max-width:100%;border-radius:8px;"></video>';
     } else {
-      media = '<img src="'+escHtml(p.media_url)+'" alt="">';
+      media = '<img src="'+escHtml(visualUrl)+'" alt="" style="max-width:100%;border-radius:8px;cursor:zoom-in;" onclick="window.open(this.src,\'_blank\')">';
     }
+  } else if(d.status === 'pending_generation') {
+    media = '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px;color:#f59e0b;">'+
+      '<div style="font-size:32px;">🎨</div>'+
+      '<div style="font-size:13px;font-weight:700;">Génération visuelle en cours...</div>'+
+      '<div style="font-size:11px;color:#888;">Le cron passe toutes les 15 min. Patience.</div>'+
+      '<button onclick="SP_AUTOPILOT.processVisualNow('+d.id+')" style="margin-top:8px;padding:6px 12px;background:#f59e0b;border:none;color:#fff;border-radius:6px;font-size:11px;cursor:pointer;">⚡ Forcer maintenant</button>'+
+    '</div>';
   } else {
     media = '<span style="font-size:42px;opacity:0.4;">'+
       (d.type==='post'?'📝':d.type==='reel'?'🎬':d.type==='sms'?'💬':d.type==='reply_review'?'⭐':'•')+
@@ -622,6 +632,11 @@ SP_AUTOPILOT.renderDecision = function(d) {
   var agentBadge = d.agent_name ?
     '<span class="ap-decision-agent" style="color:'+agentInfo.color+';border-color:'+agentInfo.color+';">'+escHtml(d.agent_name)+'</span>' : '';
 
+  // Bouton "Regénérer visuel" si décision est de type visuel (post, reel, story)
+  var hasVisualKind = ['post', 'reel', 'story'].indexOf(d.type) !== -1;
+  var regenVisualBtn = hasVisualKind && visualUrl ?
+    '<button class="ap-btn" onclick="SP_AUTOPILOT.regenerateVisual(\''+d.id+'\')" style="border-color:#f59e0b;color:#f59e0b;">🎨 Regénérer visuel</button>' : '';
+
   return '<div class="ap-decision-card" data-id="'+d.id+'" style="border-left:3px solid '+agentInfo.color+';">'+
     '<div class="ap-decision-head">'+
       agentBadge +
@@ -639,10 +654,62 @@ SP_AUTOPILOT.renderDecision = function(d) {
     '<div class="ap-decision-actions">'+
       '<button class="ap-btn ap-btn-primary" onclick="SP_AUTOPILOT.validateDecision(\''+d.id+'\')">✅ Publier maintenant</button>'+
       '<button class="ap-btn" onclick="SP_AUTOPILOT.editDecision(\''+d.id+'\')">✏ Éditer</button>'+
-      '<button class="ap-btn" onclick="SP_AUTOPILOT.regenerateDecision(\''+d.id+'\')">↻ Régénérer</button>'+
+      regenVisualBtn+
+      '<button class="ap-btn" onclick="SP_AUTOPILOT.regenerateDecision(\''+d.id+'\')">↻ Régénérer tout</button>'+
       '<button class="ap-btn ap-btn-danger" onclick="SP_AUTOPILOT.rejectDecision(\''+d.id+'\')">❌ Rejeter</button>'+
     '</div>'+
   '</div>';
+};
+
+// Regénère uniquement le visuel sans toucher au texte/caption
+SP_AUTOPILOT.regenerateVisual = async function(decisionId) {
+  if (!confirm('Regénérer le visuel ? L\'image actuelle sera remplacée.')) return;
+  this.toast('🎨 Génération en cours...');
+  try {
+    // Trouve le visual_job existant et remet en queued
+    var jobs = await this.db('visual_jobs', 'GET', null, '?decision_id=eq.'+decisionId+'&order=created_at.desc&limit=1');
+    if (jobs && jobs[0]) {
+      await this.db('visual_jobs', 'PATCH', { status: 'queued', retries: 0, error_msg: null, image_url: null, processed_at: null }, '?id=eq.'+jobs[0].id);
+      // Force traitement immédiat
+      await fetch('/api/render/gpt-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobs[0].id })
+      });
+      this.toast('🎨 Visuel regénéré');
+      await this.loadQueue();
+    } else {
+      this.toast('Aucun visual_job trouvé', 'warn');
+    }
+  } catch(e) {
+    this.toast('Erreur : '+e.message, 'warn');
+  }
+};
+
+// Force la génération d'un visual_job en attente (sans attendre le cron 15 min)
+SP_AUTOPILOT.processVisualNow = async function(decisionId) {
+  this.toast('⚡ Forçage génération...');
+  try {
+    var jobs = await this.db('visual_jobs', 'GET', null, '?decision_id=eq.'+decisionId+'&status=eq.queued&order=created_at.desc&limit=1');
+    if (jobs && jobs[0]) {
+      var r = await fetch('/api/render/gpt-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ job_id: jobs[0].id })
+      });
+      var data = await r.json();
+      if (data.ok) {
+        this.toast('✅ Visuel généré !');
+      } else {
+        this.toast('Erreur : '+(data.error||'?'), 'warn');
+      }
+      await this.loadQueue();
+    } else {
+      this.toast('Aucun job en attente', 'warn');
+    }
+  } catch(e) {
+    this.toast('Erreur : '+e.message, 'warn');
+  }
 };
 
 SP_AUTOPILOT.validateDecision = async function(id) {

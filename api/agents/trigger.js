@@ -335,11 +335,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, skipped: true, reason: payload.reasoning });
     }
 
-    // 3. Insert agent_decision (schéma : run_id, agent_name, type, status, reasoning, confidence, payload)
+    // 3. Pour les triggers visuels (new_phone, five_star_review), on crée la décision
+    // en status='pending_generation' et on file un visual_job dans la queue.
+    // Le cron /api/visual/process-queue génèrera l'image, puis passera la décision
+    // en pending_validation.
+    const needsVisual = (kind === 'new_phone' || kind === 'five_star_review');
+    const initialStatus = needsVisual ? 'pending_generation' : 'pending_validation';
+
     const decision = {
       agent_name: agent,
       type: TYPE_MAP[kind],
-      status: 'pending_validation',
+      status: initialStatus,
       reasoning: payload.reasoning || (kind === 'new_phone'
         ? 'Smartphone occasion ajouté → annonce IG'
         : kind === 'five_star_review' ? 'Avis 5★ → réponse personnalisée'
@@ -348,6 +354,51 @@ export default async function handler(req, res) {
       payload: { ...payload, _trigger: { kind, source: 'trigger', context: data } }
     };
     const inserted = await supa('agent_decisions', 'POST', decision);
+    const decisionId = inserted?.[0]?.id;
+
+    // 4. Si visuel requis → trouver le template et créer le visual_job
+    if (needsVisual && decisionId) {
+      try {
+        const triggerEvent = kind; // 'new_phone' | 'five_star_review'
+        // Récupère le template par défaut pour ce trigger
+        const templates = await supa('visual_templates', 'GET', null,
+          `?trigger_event=eq.${triggerEvent}&active=eq.true&order=validation_count.desc&limit=1&select=id,format,name`);
+        if (Array.isArray(templates) && templates[0]) {
+          const tpl = templates[0];
+          // Variables pour interpolation du prompt template
+          let variables = {};
+          if (kind === 'new_phone') {
+            variables = {
+              modele: data.modele || '?',
+              prix: data.vente || data.prix || '?',
+              grade: data.grade || 'A',
+              batterie: data.batterie || '85',
+              couleur: data.couleur || 'noir'
+            };
+          } else if (kind === 'five_star_review') {
+            variables = {
+              auteur: data.reviewer_name || 'Client',
+              commentaire: (data.comment || '').substring(0, 250),
+              date_relative: 'à l\'instant'
+            };
+          }
+          await supa('visual_jobs', 'POST', {
+            decision_id: decisionId,
+            template_id: tpl.id,
+            status: 'queued',
+            brief: { variables, format: tpl.format, kind: triggerEvent, source: 'trigger' }
+          });
+          console.log(`[trigger] visual_job créé pour decision ${decisionId} (template ${tpl.name})`);
+        } else {
+          console.warn(`[trigger] aucun template trouvé pour ${triggerEvent} — décision sans visuel`);
+          // Bascule en pending_validation puisque pas de visuel à générer
+          await supa('agent_decisions', 'PATCH', { status: 'pending_validation' }, `?id=eq.${decisionId}`);
+        }
+      } catch (e) {
+        console.warn('[trigger] visual_job creation failed:', e.message);
+        await supa('agent_decisions', 'PATCH', { status: 'pending_validation' }, `?id=eq.${decisionId}`).catch(() => {});
+      }
+    }
 
     // 4. Logge dans agent_runs (best-effort)
     try {
