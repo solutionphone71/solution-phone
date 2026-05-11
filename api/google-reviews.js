@@ -388,6 +388,29 @@ async function handleCron(req, res) {
           await sb(`google_reviews?google_review_id=eq.${encodeURIComponent(review.google_review_id)}`, { method: "PATCH", body: { reply_status: "skipped" } });
           continue;
         }
+        // ── J15 TRIGGER IA TEMPS RÉEL ── Nouvel avis 5★ → décision Chanel dans Autopilot
+        if (review.star_rating === 5 && review.comment) {
+          try {
+            const triggerUrl = (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://app.solution-phone.fr') + '/api/agents/trigger';
+            fetch(triggerUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (process.env.CRON_SECRET || '')
+              },
+              body: JSON.stringify({
+                kind: 'five_star_review',
+                data: {
+                  reviewer_name: review.reviewer_name,
+                  star_rating: review.star_rating,
+                  comment: review.comment,
+                  create_time: review.create_time,
+                  google_review_id: review.google_review_id
+                }
+              })
+            }).catch(e => console.warn('[trigger 5★] fail:', e.message));
+          } catch(e) { console.warn('[trigger 5★] error:', e.message); }
+        }
         const draft = await generateDraft(review, config.prompt_system, config.signature_rotation);
         stats.drafts_generated++;
         await sb(`google_reviews?google_review_id=eq.${encodeURIComponent(review.google_review_id)}`, {

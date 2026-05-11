@@ -6363,6 +6363,16 @@ async function savePhone(phone) {
         phone._pendingSync = false;
         console.log('[savePhone] Nouveau ID Supabase:', res[0].id, 'pour', phone.modele);
         try { localStorage.setItem('sp_phones_backup', JSON.stringify(phones)); } catch(e){}
+        // ── J15 TRIGGER IA TEMPS RÉEL ── Nouveau phone occasion ajouté en stock
+        // → Assya prépare un post Instagram (validation 1-clic dans Autopilot)
+        if(typeof triggerIA === 'function' && phone.etat !== 'VENDU'){
+          triggerIA('new_phone', {
+            modele:phone.modele, stockage:phone.stockage, grade:phone.grade,
+            batterie:phone.batterie, vente:phone.vente, imei:phone.imei,
+            couleur:phone.couleur, id:phone.id
+          });
+        }
+        if(typeof logAudit==='function') logAudit('create','phones',phone.id,null,{modele:phone.modele,imei:phone.imei,vente:phone.vente},'Ajout smartphone occasion');
         return true;
       } else {
         console.error('[savePhone] POST ÉCHOUÉ pour', phone.modele, '— conservé en backup local, ne sera pas écrasé par la synchro');
@@ -19488,12 +19498,28 @@ async function repEnvoyerEcologic(){
 
 function repCloturerDossier(){
   if(!repDossierCourant) return;
-  repDossierCourant.statut='cloture';
+  var d = repDossierCourant;
+  d.statut='cloture';
+  d.dateCloture = new Date().toISOString();
   repSauvegarderDossier();
   // Rafraîchir tout
   repLoadDossiers();
   showNotif('Dossier clôturé','success');
   repShowListe();
+  // ── J15 TRIGGER IA TEMPS RÉEL ── Réparation cloturée → Anissa vérifie l'éligibilité QualiRépar
+  if(typeof triggerIA === 'function' && !d.qrEnvoi){
+    triggerIA('cloture_repair', {
+      numero: d.numero||d.id,
+      appareil: ((d.appareil&&d.appareil.marque)||'')+' '+((d.appareil&&d.appareil.modele)||''),
+      modele: (d.appareil&&d.appareil.modele)||'',
+      imei: (d.appareil&&d.appareil.imei)||'',
+      description: d.panne||'',
+      prix: d.moHT||d.devis||0,
+      dateCloture: d.dateCloture,
+      qrEnvoi: !!d.qrEnvoi
+    });
+  }
+  if(typeof logAudit==='function') logAudit('cloture','reparations',d.id,null,{numero:d.numero,statut:'cloture'},'Clôture dossier réparation');
 }
 
 // repSupprimerDossier — version unique async définie ligne ~15286
@@ -29031,6 +29057,35 @@ function _auditWho(){
   }
   return { email: email, role: role };
 }
+
+// ── TRIGGER IA TEMPS RÉEL (J15) ──
+// Déclenche un agent IA spécialisé quand un événement business se produit.
+// kind = 'new_phone' | 'five_star_review' | 'cloture_repair'
+// La décision proposée par Claude apparaît instantanément dans Autopilot.
+window.triggerIA = async function(kind, data){
+  try {
+    var r = await fetch('/api/agents/trigger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: kind, data: data })
+    });
+    var j = await r.json();
+    if(j.ok && j.decision){
+      var label = kind==='new_phone' ? 'Assya prépare un post Instagram' :
+                  kind==='five_star_review' ? 'Chanel prépare une réponse à l\'avis 5★' :
+                  kind==='cloture_repair' ? 'Anissa vérifie l\'éligibilité QualiRépar' :
+                  'Décision IA générée';
+      if(typeof showNotif==='function') showNotif('🤖 '+label+' — à valider dans Autopilot','success');
+      return j.decision;
+    } else if(j.skipped){
+      console.log('[triggerIA] '+kind+' skipped:', j.reason);
+    } else if(!j.ok){
+      console.warn('[triggerIA] '+kind+' échec:', j.error);
+    }
+  } catch(e){
+    console.warn('[triggerIA] erreur réseau:', e.message);
+  }
+};
 
 // ── LOG AUDIT : appelé à chaque action sensible ──
 window.logAudit = async function(action, tableName, recordId, before, after, context){
