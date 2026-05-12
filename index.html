@@ -309,9 +309,17 @@ var SP_LOGO = '/images/sp-logo.jpg';
 
 /* ══ Z DE CAISSE — FOND BLANC LISIBLE ══ */
 .z-white-block { background:#fff !important; color:#1a1a2e !important; }
-.z-white-block div, .z-white-block span, .z-white-block td, .z-white-block th,
-.z-white-block b, .z-white-block p, .z-white-block label { color:#1a1a2e; }
-.z-white-block th { color:#666 !important; }
+.z-white-block div, .z-white-block b, .z-white-block p, .z-white-block label { color:#1a1a2e !important; }
+.z-white-block table td { color:#1a1a2e !important; border-bottom:1px solid #e5e7eb !important; }
+.z-white-block table th { color:#666 !important; }
+/* On garde les badges colorés (CB / ESPECES / etc.) lisibles : leur span a color:#fff inline */
+.z-white-block table td span[style*="color:#fff"],
+.z-white-block table td span[style*="color: #fff"] { color:#fff !important; }
+/* Cellules avec couleur explicite inline (marge verte, reprise rouge...) restent visibles */
+.z-white-block table td[style*="color:#16a34a"] { color:#16a34a !important; }
+.z-white-block table td[style*="color:#c0392b"] { color:#c0392b !important; }
+.z-white-block table td[style*="color:#8b5cf6"] { color:#8b5cf6 !important; }
+.z-white-block table td[style*="color:#666"]    { color:#666 !important; }
 
 /* ═══ MODULE AVIS GOOGLE — Styles ═══ */
 #ig-tab-gmb .ag-header { display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px; }
