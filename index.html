@@ -2414,7 +2414,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="card-title">Stock</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <input type="text" id="search-phones" placeholder="🔍 Rechercher..." style="padding:7px 11px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;width:180px;" oninput="renderPhones()">
-            <button class="btn btn-primary" onclick="populateFournisseurSelects();openModal('modal-add-phone')">➕ Ajouter</button>
+            <button class="btn btn-primary" onclick="populateFournisseurSelects();var _dA=document.getElementById('p-date-achat');if(_dA&&!_dA.value)_dA.value=new Date().toISOString().split('T')[0];openModal('modal-add-phone')">➕ Ajouter</button>
             <button class="btn" style="color:#f39c12;border-color:#f39c12;" onclick="document.getElementById('wegacell-occ-pdf-input').click()">📄 Import Wegacell</button>
             <input type="file" id="wegacell-occ-pdf-input" accept=".pdf" style="display:none" onchange="importWegacellOccasionPDF(this)">
             <button class="btn" style="color:#8b5cf6;border-color:#8b5cf6;" onclick="exportInventaire()">📊 Inventaire</button>
@@ -9751,7 +9751,10 @@ async function addPhone(){
       if(!confirm('⚠️ IMEI déjà en stock !\n'+doublon.modele+' ('+doublon.etat+')\nAjouter quand même ?')){_syncDirty=false;return;}
     }
   }
-  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:document.getElementById('p-date-achat').value,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true,_pendingSync:true};
+  // Fallback : si date d'achat non saisie, on met aujourd'hui (évite que le phone soit invisible dans le Z de caisse)
+  var _dateAchatVal = document.getElementById('p-date-achat').value;
+  if(!_dateAchatVal) _dateAchatVal = new Date().toISOString().split('T')[0];
+  var phone={id:Date.now(),modele:modele,stockage:parseInt(document.getElementById('p-stockage').value)||null,grade:document.getElementById('p-grade').value,batterie:parseInt(document.getElementById('p-batterie').value)||null,imei:document.getElementById('p-imei').value.trim(),achat:achat,vente:vente,mode:document.getElementById('p-mode').value,dateAchat:_dateAchatVal,couleur:document.getElementById('p-couleur').value.trim(),vendeurNom:document.getElementById('p-vendeur-nom').value.trim(),vendeurAdresse:document.getElementById('p-vendeur-adresse').value.trim(),vendeurCI:document.getElementById('p-vendeur-ci').value.trim(),vendeurCIDate:document.getElementById('p-vendeur-ci-date').value,typeAchat:document.getElementById('p-type-achat').value,fournisseur:document.getElementById('p-type-achat').value==='FOURNISSEUR'?document.getElementById('p-fournisseur').value:'',numPolice:phones.length+1,etat:'DISPONIBLE',dateVente:null,isNew:true,_pendingSync:true};
   if(phone.mode==='ESPECES'&&phone.dateAchat){ caisseSortieAchat(phone.dateAchat, achat, phone.modele); }
   phones.push(phone);
   // Sauvegarder en local en backup (évite la perte si Supabase échoue)
