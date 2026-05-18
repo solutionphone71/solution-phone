@@ -2607,6 +2607,17 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
         <div id="studio-history" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:6px 2px;min-height:60px;"></div>
       </div>
+
+      <!-- Section F : Brain Assya v1 — ce qu'elle a appris ce mois -->
+      <div class="card" style="margin-top:20px;background:linear-gradient(135deg,rgba(0,224,255,0.06) 0%,transparent 100%);border-left:4px solid #00e0ff;">
+        <div class="card-header">
+          <div class="card-title">🧠 Brain Assya <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Ce qu'elle a appris ce mois</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshBrain()" style="border-color:#00e0ff;color:#00e0ff;">🔄 Rafraîchir</button>
+        </div>
+        <div id="studio-brain" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:6px 2px;">
+          <div style="color:var(--text-muted);font-size:13px;">Chargement…</div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -2754,28 +2765,32 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         return card;
       };
 
-      // Cartes : décisions Assya en attente
+      // Cartes : décisions Assya en attente (avec validation 1-clic)
       assyaPending.forEach(function(d){
         var payload = d.payload || {};
-        var caption = (payload.caption || d.reasoning || '').substring(0, 70);
-        var html =
-          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div></div>'+
-          '<div style="font-weight:700;font-size:13px;color:#fff;line-height:1.35;min-height:54px;">'+(caption||'(sans aperçu)')+'…</div>'+
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Confiance '+Math.round((d.confidence||0)*100)+'%</div>'+
-          '<div style="margin-top:10px;font-size:11px;color:#f59e0b;font-weight:700;letter-spacing:1px;">CLIC POUR EXAMINER →</div>';
-        feed.appendChild(makeCard(html, function(){
-          // Pré-remplit la caption + plateforme insta + ouvre le studio
-          if(payload.media_url){
-            document.getElementById('studio-platform').value = 'instagram';
-            studioPlatformChange();
-            document.getElementById('studio-format').value = 'post';
-            studioRefreshPrompt();
-            // On peut pas auto-uploader l'image d'Assya, mais on peut afficher la caption
-            var ta = document.getElementById('studio-caption');
-            if(ta){ ta.value = payload.caption || ''; document.getElementById('studio-caption-count').textContent = ta.value.length; }
-            alert('Décision Assya chargée. L\'image générée par l\'IA est dans Storage : '+payload.media_url+'\n\nTu peux l\'uploader manuellement OU générer un visuel custom via ChatGPT/Gemini.');
-          }
-        }, '#f59e0b'));
+        var caption = (payload.caption || d.reasoning || '').substring(0, 80);
+        var thumb = payload.media_url || payload.image_url || '';
+        var conf = Math.round((d.confidence||0)*100);
+        var confColor = conf >= 80 ? '#22c55e' : (conf >= 60 ? '#f59e0b' : '#ef4444');
+        var card = document.createElement('div');
+        card.style.cssText = 'min-width:230px;max-width:260px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid #f59e0b;border-radius:12px;padding:12px;flex-shrink:0;transition:all .2s;';
+        card.dataset.decisionId = d.id;
+        card.innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+            '<div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div>'+
+            '<div style="font-size:10px;color:'+confColor+';font-weight:800;">'+conf+'%</div>'+
+          '</div>'+
+          (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#000;margin-bottom:8px;">' : '')+
+          '<div style="font-weight:600;font-size:12px;color:#fff;line-height:1.4;min-height:44px;">'+escHtml(caption)+'…</div>'+
+          '<div style="display:flex;gap:6px;margin-top:10px;">'+
+            '<button class="btn btn-sm" style="flex:1;background:#22c55e;border:none;color:#000;font-weight:800;padding:8px;" data-act="approve">✅ PUBLIER</button>'+
+            '<button class="btn btn-sm" style="flex:0;border-color:rgba(255,255,255,0.2);padding:8px 10px;" data-act="reject" title="Rejeter">🗑</button>'+
+          '</div>'+
+          '<div data-feedback style="display:none;font-size:11px;margin-top:8px;padding:6px 8px;border-radius:6px;text-align:center;"></div>';
+        // Wire les boutons
+        card.querySelector('[data-act="approve"]').onclick = function(e){ e.stopPropagation(); studioApproveDecision(d.id, card); };
+        card.querySelector('[data-act="reject"]').onclick  = function(e){ e.stopPropagation(); studioRejectDecision(d.id, card); };
+        feed.appendChild(card);
       });
 
       // Cartes : smartphones récents
@@ -2835,6 +2850,61 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         if(s) s.textContent = pubToday;
       } catch(e){
         box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Erreur chargement historique : '+e.message+'</div>';
+      }
+    }
+
+    // ─── Validation 1-clic des décisions Assya ─────────────────
+    async function studioApproveDecision(decisionId, card){
+      var btn = card.querySelector('[data-act="approve"]');
+      var fb = card.querySelector('[data-feedback]');
+      btn.disabled = true;
+      btn.textContent = '⏳ Publication…';
+      try {
+        var res = await fetch('/api/autopilot/execute?decision_id=' + decisionId, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'}
+        });
+        var data = await res.json();
+        if(data.success){
+          fb.style.display = 'block';
+          fb.style.background = 'rgba(34,197,94,0.15)';
+          fb.style.color = '#22c55e';
+          fb.textContent = '✅ Publié — id ' + (data.results?.instagram?.ig_post_id || data.results?.facebook?.fb_post_id || 'OK');
+          card.style.opacity = '0.6';
+          card.style.borderLeftColor = '#22c55e';
+          setTimeout(function(){ studioRefreshFeed(); studioRefreshHistory(); }, 1500);
+        } else {
+          throw new Error(data.error || 'Échec inconnu');
+        }
+      } catch(e){
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(239,68,68,0.15)';
+        fb.style.color = '#ef4444';
+        fb.textContent = '❌ ' + e.message.substring(0, 80);
+        btn.disabled = false;
+        btn.textContent = '✅ PUBLIER';
+      }
+    }
+
+    async function studioRejectDecision(decisionId, card){
+      var reason = prompt('Raison du rejet (optionnel) :\nex: trop_long, ton_creux, deja_fait, non_pertinent, mauvais_timing, autre');
+      if(reason === null) return; // annulé
+      try {
+        await supaFetch('agent_decisions', 'PATCH', {
+          status: 'rejected',
+          feedback_reason: reason || 'autre',
+          feedback_at: new Date().toISOString()
+        }, '?id=eq.' + decisionId);
+        card.style.opacity = '0.4';
+        card.style.borderLeftColor = '#ef4444';
+        var fb = card.querySelector('[data-feedback]');
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(239,68,68,0.15)';
+        fb.style.color = '#ef4444';
+        fb.textContent = '🗑 Rejeté — Assya retient (' + (reason || 'autre') + ')';
+        setTimeout(function(){ studioRefreshFeed(); }, 1500);
+      } catch(e){
+        alert('Erreur rejet : ' + e.message);
       }
     }
 
@@ -3160,6 +3230,115 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       }
     }
 
+    // ─── Brain Assya v1 — apprentissages basiques ─────────────
+    async function studioRefreshBrain(){
+      var box = document.getElementById('studio-brain');
+      if(!box) return;
+      box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Calcul des apprentissages…</div>';
+      try {
+        // Début du mois en cours
+        var now = new Date();
+        var firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+
+        // En parallèle : posts, décisions, jobs, budget
+        var [posts, decisions, jobs, budget] = await Promise.all([
+          supaFetch('social_posts','GET',null,'?published_at=gte.'+firstDay+'&select=id,status,platforms,type,published_at,source_data&order=published_at.desc'),
+          supaFetch('agent_decisions','GET',null,'?created_at=gte.'+firstDay+'&select=id,type,status,confidence,feedback_reason'),
+          supaFetch('visual_jobs','GET',null,'?created_at=gte.'+firstDay+'&select=id,template_id,status,cost_eur,qc_score'),
+          supaFetch('ai_budget','GET',null,'?day=gte.'+firstDay+'&select=model,cost_eur,requests_count')
+        ]);
+
+        // Calculs
+        var stats = {
+          posts_published: 0, posts_failed: 0, stories: 0,
+          decisions_total: 0, decisions_approved: 0, decisions_rejected: 0,
+          confidence_avg: 0,
+          jobs_ready: 0, jobs_failed: 0, qc_score_avg: 0,
+          cost_total: 0,
+          rejection_reasons: {},
+          platforms: { ig: 0, ig_story: 0, fb: 0 }
+        };
+
+        if(Array.isArray(posts)){
+          posts.forEach(function(p){
+            if(p.status === 'published') stats.posts_published++;
+            else stats.posts_failed++;
+            if(p.type === 'story') stats.stories++;
+            if(p.platforms){
+              if(p.platforms.instagram) stats.platforms.ig++;
+              if(p.platforms.instagram_story) stats.platforms.ig_story++;
+              if(p.platforms.facebook) stats.platforms.fb++;
+            }
+          });
+        }
+        var confSum = 0, confCount = 0;
+        if(Array.isArray(decisions)){
+          decisions.forEach(function(d){
+            stats.decisions_total++;
+            if(d.status === 'human_validated' || d.status === 'auto_executed') stats.decisions_approved++;
+            else if(d.status === 'rejected'){
+              stats.decisions_rejected++;
+              var r = d.feedback_reason || 'autre';
+              stats.rejection_reasons[r] = (stats.rejection_reasons[r]||0) + 1;
+            }
+            if(d.confidence != null){ confSum += d.confidence; confCount++; }
+          });
+        }
+        stats.confidence_avg = confCount > 0 ? Math.round((confSum/confCount)*100) : 0;
+
+        var qcSum = 0, qcCount = 0;
+        if(Array.isArray(jobs)){
+          jobs.forEach(function(j){
+            if(j.status === 'ready') stats.jobs_ready++;
+            else if(j.status === 'failed') stats.jobs_failed++;
+            stats.cost_total += Number(j.cost_eur || 0);
+            if(j.qc_score != null){ qcSum += Number(j.qc_score); qcCount++; }
+          });
+        }
+        stats.qc_score_avg = qcCount > 0 ? (qcSum/qcCount).toFixed(1) : '—';
+
+        if(Array.isArray(budget)){
+          budget.forEach(function(b){ stats.cost_total += Number(b.cost_eur || 0); });
+        }
+
+        // Calcul taux de validation Assya
+        var validationRate = stats.decisions_total > 0
+          ? Math.round((stats.decisions_approved / stats.decisions_total) * 100)
+          : 0;
+
+        // Top motif de rejet
+        var topReject = '—';
+        var topRejectCount = 0;
+        Object.entries(stats.rejection_reasons).forEach(function(e){
+          if(e[1] > topRejectCount){ topReject = e[0]; topRejectCount = e[1]; }
+        });
+
+        // Render
+        var monthName = now.toLocaleDateString('fr-FR', { month: 'long' });
+        var tile = function(label, value, sub, color){
+          return '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;">'+
+            '<div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;">'+label+'</div>'+
+            '<div style="font-size:24px;font-weight:800;color:'+(color||'#fff')+';margin-top:4px;">'+value+'</div>'+
+            (sub?'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+sub+'</div>':'')+
+          '</div>';
+        };
+
+        box.innerHTML =
+          tile('📅 '+monthName, stats.posts_published, stats.posts_failed ? stats.posts_failed+' échecs' : 'posts publiés', '#22c55e') +
+          tile('📲 Stories', stats.stories, stats.stories > 0 ? 'sur '+stats.posts_published+' posts' : '—', '#E10600') +
+          tile('🤖 Validation Assya', validationRate+'%', stats.decisions_approved+'/'+stats.decisions_total+' acceptées', validationRate >= 70 ? '#22c55e' : '#f59e0b') +
+          tile('💡 Confiance moy.', stats.confidence_avg+'%', 'des propositions IA', '#00e0ff') +
+          tile('🎯 Score QC moy.', stats.qc_score_avg+'/10', 'qualité visuelle', stats.qc_score_avg >= 7 ? '#22c55e' : '#f59e0b') +
+          tile('💰 Coût IA', stats.cost_total.toFixed(2)+' €', 'depuis le 1er du mois', '#fff') +
+          tile('📷 Instagram', stats.platforms.ig+stats.platforms.ig_story, stats.platforms.ig+' feed · '+stats.platforms.ig_story+' story', '#E1306C') +
+          tile('📘 Facebook', stats.platforms.fb, 'posts ce mois', '#1877F2') +
+          tile('🗑 Top motif rejet', topReject, topRejectCount > 0 ? topRejectCount+'× ce mois' : 'aucun rejet — bravo !', topRejectCount > 0 ? '#ef4444' : '#22c55e');
+
+      } catch(e){
+        box.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:10px;">Erreur Brain : '+e.message+'</div>';
+      }
+    }
+
     // Hook le setup upload dans studioInit
     var _origStudioInit = studioInit;
     studioInit = async function(){
@@ -3167,6 +3346,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       studioSetupUpload();
       studioRenderDailyIdea();
       studioRefreshHistory();
+      studioRefreshBrain();
     };
     </script>
 
