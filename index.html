@@ -2626,15 +2626,34 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <button class="btn btn-sm" onclick="studioRefreshLibrary()" style="border-color:#a855f7;color:#a855f7;">🔄</button>
           </div>
         </div>
-        <div id="studio-library-tabs" style="display:flex;gap:8px;margin:0 0 14px 0;flex-wrap:wrap;">
+        <div id="studio-library-tabs" style="display:flex;gap:8px;margin:0 0 14px 0;flex-wrap:wrap;align-items:center;">
           <button class="lib-tab active" data-format="all"      onclick="studioFilterLibrary('all')"     style="padding:8px 14px;border-radius:8px;border:1.5px solid #a855f7;background:rgba(168,85,247,0.15);color:#a855f7;font-weight:700;font-size:12px;cursor:pointer;">🗂 TOUS</button>
           <button class="lib-tab" data-format="square"   onclick="studioFilterLibrary('square')"  style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟦 CARRÉ 1080×1080</button>
           <button class="lib-tab" data-format="story"    onclick="studioFilterLibrary('story')"   style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">📲 STORY 1080×1920</button>
           <button class="lib-tab" data-format="portrait" onclick="studioFilterLibrary('portrait')" style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟪 PORTRAIT 4:5</button>
           <button class="lib-tab" data-format="landscape" onclick="studioFilterLibrary('landscape')" style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟩 PAYSAGE</button>
+          <div style="flex:1;"></div>
+          <button class="lib-tab" id="studio-lib-upload-tab" data-format="upload" onclick="studioFilterLibrary('upload')" style="padding:8px 14px;border-radius:8px;border:1.5px solid #22c55e;background:rgba(34,197,94,0.10);color:#22c55e;font-weight:800;font-size:12px;cursor:pointer;">📤 UPLOAD</button>
         </div>
+
+        <!-- Vue Grille (par défaut) -->
         <div id="studio-library" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;min-height:80px;">
           <div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement de la bibliothèque…</div>
+        </div>
+
+        <!-- Vue Upload (cachée par défaut) -->
+        <div id="studio-library-upload" style="display:none;">
+          <div id="studio-lib-dropzone" style="border:2.5px dashed rgba(34,197,94,0.45);border-radius:14px;padding:48px 24px;text-align:center;cursor:pointer;background:rgba(34,197,94,0.04);transition:all .2s;">
+            <div style="font-size:48px;margin-bottom:12px;">📤</div>
+            <div style="font-weight:800;font-size:18px;color:#fff;margin-bottom:6px;">Glisse-dépose tes visuels ici</div>
+            <div style="font-size:13px;color:var(--text-muted);">ou clique pour choisir (plusieurs à la fois OK) · PNG/JPG · max 5 Mo chacun</div>
+            <div style="font-size:12px;color:#22c55e;margin-top:14px;font-weight:600;">Ils apparaîtront immédiatement dans ta bibliothèque, prêts à publier.</div>
+            <input type="file" id="studio-lib-file-input" accept="image/png,image/jpeg" multiple style="display:none;">
+          </div>
+          <div id="studio-lib-upload-progress" style="display:none;margin-top:14px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:10px;">
+            <div id="studio-lib-upload-status" style="font-weight:700;color:#22c55e;font-size:14px;"></div>
+            <div id="studio-lib-upload-list" style="margin-top:10px;font-size:12px;color:var(--text-muted);max-height:240px;overflow-y:auto;"></div>
+          </div>
         </div>
 
         <!-- Toolbar flottante : visible uniquement quand on a sélectionné -->
@@ -3633,11 +3652,122 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       // Met à jour les tabs
       document.querySelectorAll('.lib-tab').forEach(function(t){
         var active = t.dataset.format === format;
-        t.style.background = active ? 'rgba(168,85,247,0.15)' : 'transparent';
-        t.style.borderColor = active ? '#a855f7' : 'var(--border)';
-        t.style.color = active ? '#a855f7' : 'var(--text)';
+        var isUpload = t.dataset.format === 'upload';
+        if(isUpload){
+          // Le tab UPLOAD garde sa couleur verte signature
+          t.style.background = active ? '#22c55e' : 'rgba(34,197,94,0.10)';
+          t.style.borderColor = '#22c55e';
+          t.style.color = active ? '#000' : '#22c55e';
+        } else {
+          t.style.background = active ? 'rgba(168,85,247,0.15)' : 'transparent';
+          t.style.borderColor = active ? '#a855f7' : 'var(--border)';
+          t.style.color = active ? '#a855f7' : 'var(--text)';
+        }
       });
-      studioRenderLibrary();
+      // Bascule entre la grille et la zone d'upload
+      var grid = document.getElementById('studio-library');
+      var up   = document.getElementById('studio-library-upload');
+      if(format === 'upload'){
+        grid.style.display = 'none';
+        up.style.display = 'block';
+        studioSetupLibraryUpload();
+      } else {
+        grid.style.display = 'grid';
+        up.style.display = 'none';
+        studioRenderLibrary();
+      }
+    }
+
+    // ─── Upload manuel dans la bibliothèque ───────────────────────
+    function studioSetupLibraryUpload(){
+      var dz = document.getElementById('studio-lib-dropzone');
+      var input = document.getElementById('studio-lib-file-input');
+      if(!dz || !input || dz._libWired) return;
+      dz._libWired = true;
+      dz.addEventListener('click', function(){ input.click(); });
+      dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.style.background='rgba(34,197,94,0.14)'; });
+      dz.addEventListener('dragleave', function(){ dz.style.background='rgba(34,197,94,0.04)'; });
+      dz.addEventListener('drop', function(e){
+        e.preventDefault();
+        dz.style.background='rgba(34,197,94,0.04)';
+        if(e.dataTransfer.files && e.dataTransfer.files.length) studioLibraryHandleFiles(e.dataTransfer.files);
+      });
+      input.addEventListener('change', function(e){
+        if(e.target.files && e.target.files.length) studioLibraryHandleFiles(e.target.files);
+      });
+    }
+
+    async function studioLibraryHandleFiles(fileList){
+      var files = Array.from(fileList).filter(function(f){ return f.type.startsWith('image/'); });
+      if(files.length === 0){ alert('Aucune image détectée'); return; }
+      var prog = document.getElementById('studio-lib-upload-progress');
+      var status = document.getElementById('studio-lib-upload-status');
+      var list = document.getElementById('studio-lib-upload-list');
+      prog.style.display = 'block';
+      status.textContent = '⏳ Upload de ' + files.length + ' visuel(s)…';
+      list.innerHTML = '';
+
+      var nbOk = 0, nbKo = 0;
+      for(var i = 0; i < files.length; i++){
+        var f = files[i];
+        var line = document.createElement('div');
+        line.style.padding = '4px 0';
+        line.innerHTML = '⏳ ' + f.name + ' …';
+        list.appendChild(line);
+        try {
+          // Lit en base64 + dimensions
+          var dataUrl = await new Promise(function(resolve, reject){
+            var r = new FileReader();
+            r.onload = function(e){ resolve(e.target.result); };
+            r.onerror = reject;
+            r.readAsDataURL(f);
+          });
+          var dims = await new Promise(function(resolve){
+            var img = new Image();
+            img.onload = function(){ resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
+            img.onerror = function(){ resolve({ w: 0, h: 0 }); };
+            img.src = dataUrl;
+          });
+          // Appel API
+          var res = await fetch('/api/visual/library-upload', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              image_base64: dataUrl,
+              width: dims.w,
+              height: dims.h,
+              label: f.name
+            })
+          });
+          var data = await res.json();
+          if(data.ok){
+            line.innerHTML = '✅ ' + f.name + ' · ' + dims.w + '×' + dims.h + ' · <span style="color:var(--text-muted);">' + data.format + '</span>';
+            line.style.color = '#22c55e';
+            nbOk++;
+          } else {
+            throw new Error(data.error || 'Erreur inconnue');
+          }
+        } catch(e){
+          line.innerHTML = '❌ ' + f.name + ' · ' + e.message;
+          line.style.color = '#ef4444';
+          nbKo++;
+        }
+        status.textContent = '⏳ ' + (i+1) + ' / ' + files.length + ' (' + nbOk + ' OK, ' + nbKo + ' erreur)';
+      }
+
+      if(nbKo === 0){
+        status.innerHTML = '🎉 <b>' + nbOk + ' visuel(s) ajoutés à ta bibliothèque !</b>';
+      } else {
+        status.innerHTML = '⚠️ ' + nbOk + ' OK · ' + nbKo + ' échec(s)';
+      }
+
+      // Rafraîchit la bibliothèque + revient sur "Tous" après 1.5s
+      setTimeout(function(){
+        studioRefreshLibrary().then(function(){
+          studioFilterLibrary('all');
+        });
+        document.getElementById('studio-lib-file-input').value = '';
+      }, 1800);
     }
 
     function studioRenderLibrary(){
