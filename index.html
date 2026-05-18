@@ -2507,12 +2507,62 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div id="studio-prompt-output" style="font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;background:rgba(0,0,0,0.4);padding:18px;border-radius:10px;max-height:280px;overflow-y:auto;color:rgba(255,255,255,0.88);border:1px solid var(--border);">👆 Choisis une plateforme + format + thème pour générer le prompt.</div>
       </div>
 
-      <!-- Section D : upload + publication (placeholder pour demain) -->
+      <!-- Section D : upload + publication directe Insta/FB -->
       <div class="card">
-        <div class="card-header"><div class="card-title">⬆️ Upload + publication <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">(bientôt — pour l'instant publie manuellement sur Insta/FB)</span></div></div>
-        <div style="text-align:center;padding:32px 20px;border:2px dashed rgba(255,255,255,0.15);border-radius:14px;color:var(--text-muted);">
-          📤 Drag &amp; drop ton visuel ChatGPT/Gemini ici (à venir)<br>
-          <span style="font-size:12px;">Pour l'instant : télécharge depuis ChatGPT, publie manuellement sur Insta + FB. Demain Assya fait ça toute seule.</span>
+        <div class="card-header"><div class="card-title">⬆️ Upload + publication</div></div>
+
+        <!-- Drop zone -->
+        <div id="studio-drop" style="text-align:center;padding:36px 20px;border:2px dashed rgba(225,6,0,0.35);border-radius:14px;cursor:pointer;transition:all .2s;background:rgba(225,6,0,0.04);">
+          <div style="font-size:32px;margin-bottom:8px;">📤</div>
+          <div style="font-weight:700;color:#fff;margin-bottom:4px;">Glisse-dépose ton visuel ChatGPT/Gemini ici</div>
+          <div style="font-size:12px;color:var(--text-muted);">ou clique pour choisir un fichier · PNG/JPG · max 5 Mo</div>
+          <input type="file" id="studio-file-input" accept="image/png,image/jpeg" style="display:none;">
+        </div>
+
+        <!-- Preview + paramètres (caché tant que pas d'upload) -->
+        <div id="studio-publish-form" style="display:none;margin-top:18px;">
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:18px;">
+
+            <!-- Preview -->
+            <div>
+              <img id="studio-preview-img" src="" style="width:100%;border-radius:12px;border:1px solid var(--border);background:#000;display:block;">
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="btn btn-sm" style="flex:1;border-color:rgba(255,255,255,0.15);" onclick="studioClearUpload()">🗑️ Changer</button>
+              </div>
+            </div>
+
+            <!-- Paramètres publication -->
+            <div>
+              <div class="form-group">
+                <label>Plateformes</label>
+                <div style="display:flex;gap:14px;margin-top:6px;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
+                    <input type="checkbox" id="studio-pub-instagram" checked style="width:18px;height:18px;accent-color:#E10600;">
+                    📷 Instagram
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
+                    <input type="checkbox" id="studio-pub-facebook" checked style="width:18px;height:18px;accent-color:#E10600;">
+                    📘 Facebook
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:14px;">
+                <label>Caption</label>
+                <textarea id="studio-caption" rows="6" style="width:100%;padding:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:13px;line-height:1.5;resize:vertical;"></textarea>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                  <span id="studio-caption-count">0</span> / 2200 caractères
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-top:14px;">
+                <button class="btn btn-primary" id="studio-publish-btn" onclick="studioDoPublish()" style="flex:1;padding:14px;font-weight:800;font-size:14px;">🚀 PUBLIER MAINTENANT</button>
+              </div>
+
+              <div id="studio-publish-result" style="margin-top:14px;display:none;padding:14px;border-radius:10px;font-size:13px;line-height:1.5;"></div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -2677,11 +2727,172 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         setInput('batterie', p.batterie || '92');
         setInput('couleur',  p.couleur || 'Noir');
         studioRefreshPrompt();
+        studioRegenerateCaption();
         // Scroll au prompt
         var promptCard = document.getElementById('studio-prompt-output');
         if(promptCard) promptCard.scrollIntoView({ behavior:'smooth', block:'center' });
       }, 100);
     }
+
+    // ═══════════════════════════════════════════════════════════
+    //  STUDIO PUBLISH — drag&drop + publication Insta/FB
+    // ═══════════════════════════════════════════════════════════
+    var _STUDIO_UPLOAD = null; // { base64, mime, fileName }
+
+    function studioSetupUpload(){
+      var dz = document.getElementById('studio-drop');
+      var input = document.getElementById('studio-file-input');
+      if(!dz || !input || dz._wired) return;
+      dz._wired = true;
+
+      dz.addEventListener('click', function(){ input.click(); });
+      dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.style.background='rgba(225,6,0,0.12)'; });
+      dz.addEventListener('dragleave', function(){ dz.style.background='rgba(225,6,0,0.04)'; });
+      dz.addEventListener('drop', function(e){
+        e.preventDefault();
+        dz.style.background='rgba(225,6,0,0.04)';
+        if(e.dataTransfer.files && e.dataTransfer.files[0]) studioHandleFile(e.dataTransfer.files[0]);
+      });
+      input.addEventListener('change', function(e){
+        if(e.target.files && e.target.files[0]) studioHandleFile(e.target.files[0]);
+      });
+
+      var capTa = document.getElementById('studio-caption');
+      if(capTa){
+        capTa.addEventListener('input', function(){
+          document.getElementById('studio-caption-count').textContent = capTa.value.length;
+        });
+      }
+    }
+
+    function studioHandleFile(file){
+      if(!file.type.startsWith('image/')){ alert('Seules les images sont acceptées'); return; }
+      if(file.size > 6*1024*1024){ alert('Fichier trop gros (max 5 Mo)'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        _STUDIO_UPLOAD = { base64: e.target.result, mime: file.type, fileName: file.name };
+        document.getElementById('studio-preview-img').src = e.target.result;
+        document.getElementById('studio-publish-form').style.display = 'block';
+        studioRegenerateCaption();
+        // Scroll au formulaire
+        document.getElementById('studio-publish-form').scrollIntoView({ behavior:'smooth', block:'center' });
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function studioClearUpload(){
+      _STUDIO_UPLOAD = null;
+      document.getElementById('studio-file-input').value = '';
+      document.getElementById('studio-publish-form').style.display = 'none';
+      document.getElementById('studio-publish-result').style.display = 'none';
+    }
+
+    function studioRegenerateCaption(){
+      var ta = document.getElementById('studio-caption');
+      if(!ta) return;
+      var theme = _STUDIO_STATE.theme;
+      var vars = _STUDIO_STATE.vars || {};
+      var caption = '';
+      var hashtags = '#solutionphone #macon #smartphone #reparation #qualirepar';
+
+      if(theme && theme.id === 'smartphone_stock'){
+        caption = '📱 NOUVEAU EN STOCK\n\n'
+          + (vars.modele || 'Smartphone') + ' — ' + (vars.prix || '?') + '€\n'
+          + 'Grade ' + (vars.grade || 'A') + ' · Batterie ' + (vars.batterie || '92') + '% · Garantie 6 mois\n\n'
+          + 'À retrouver au 21 Rue Gambetta, 71000 Mâcon · 03 85 33 06 89\n\n'
+          + hashtags + ' #' + String(vars.modele || '').replace(/\s+/g,'').toLowerCase();
+      } else if(theme && theme.id === 'qualirepar'){
+        caption = '🛡 Solution Phone est labellisé QualiRépar.\n\n'
+          + 'Bénéficiez d\'une réduction immédiate de 25€ sur votre réparation.\n'
+          + 'Pièces certifiées · Garantie 6 mois · Éco-responsable\n\n'
+          + '21 Rue Gambetta, Mâcon · 03 85 33 06 89\n\n'
+          + hashtags + ' #qualirepar #reparationsmartphone';
+      } else if(theme && theme.id === 'hydrogel'){
+        caption = '💎 Protégez votre écran avec notre film HYDROGEL.\n\n'
+          + 'Posé en 5 minutes · Auto-cicatrisant · Compatible tous smartphones\n'
+          + 'Crystal & Obsidian 25€ · Saphir & Onyx 15€\n\n'
+          + 'Solution Phone · 21 Rue Gambetta, Mâcon\n\n'
+          + hashtags + ' #protectionecran #hydrogel';
+      } else if(theme && theme.id === 'avis_5'){
+        caption = '⭐⭐⭐⭐⭐ Merci ' + (vars.auteur || '') + ' !\n\n'
+          + '"' + (vars.commentaire || '') + '"\n\n'
+          + 'Solution Phone Mâcon · ' + hashtags;
+      } else if(theme && theme.id === 'cloture_repair'){
+        caption = '✅ Encore une réparation réussie !\n\n'
+          + (vars.modele || 'Smartphone') + ' — ' + (vars.description_panne || '') + '\n'
+          + 'Réparé en moins d\'1 heure · Garantie 6 mois\n\n'
+          + 'Solution Phone · 21 Rue Gambetta, Mâcon · 03 85 33 06 89\n\n'
+          + hashtags;
+      } else {
+        caption = 'Solution Phone Mâcon · Depuis 2014\n21 Rue Gambetta · 03 85 33 06 89\n\n' + hashtags;
+      }
+      ta.value = caption;
+      document.getElementById('studio-caption-count').textContent = caption.length;
+    }
+
+    async function studioDoPublish(){
+      if(!_STUDIO_UPLOAD || !_STUDIO_UPLOAD.base64){ alert('Aucune image uploadée'); return; }
+      var wantIG = document.getElementById('studio-pub-instagram').checked;
+      var wantFB = document.getElementById('studio-pub-facebook').checked;
+      if(!wantIG && !wantFB){ alert('Sélectionne au moins une plateforme'); return; }
+
+      var caption = document.getElementById('studio-caption').value;
+      var btn = document.getElementById('studio-publish-btn');
+      var result = document.getElementById('studio-publish-result');
+      btn.disabled = true;
+      btn.textContent = '⏳ Publication en cours…';
+      result.style.display = 'none';
+
+      try {
+        var res = await fetch('/api/visual/studio-publish', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            image_base64: _STUDIO_UPLOAD.base64,
+            platforms: { instagram: wantIG, facebook: wantFB },
+            caption: caption,
+            source_template: _STUDIO_STATE.theme ? _STUDIO_STATE.theme.id : null,
+            source_variables: _STUDIO_STATE.vars || {}
+          })
+        });
+        var data = await res.json();
+        if(data.ok){
+          result.style.display = 'block';
+          result.style.background = 'rgba(34,197,94,0.10)';
+          result.style.border = '1px solid rgba(34,197,94,0.35)';
+          result.style.color = '#22c55e';
+          var msg = '✅ <b>Publié avec succès</b><br>';
+          if(data.results.ig?.success) msg += '📷 Instagram : id ' + data.results.ig.ig_post_id + '<br>';
+          if(data.results.ig && !data.results.ig.success) msg += '⚠️ Instagram : ' + data.results.ig.error + '<br>';
+          if(data.results.fb?.success) msg += '📘 Facebook : id ' + data.results.fb.fb_post_id + '<br>';
+          if(data.results.fb && !data.results.fb.success) msg += '⚠️ Facebook : ' + data.results.fb.error + '<br>';
+          msg += '<a href="' + data.uploaded_url + '" target="_blank" style="color:#22c55e;text-decoration:underline;">🖼 Voir l\'image stockée</a>';
+          result.innerHTML = msg;
+        } else {
+          result.style.display = 'block';
+          result.style.background = 'rgba(239,68,68,0.10)';
+          result.style.border = '1px solid rgba(239,68,68,0.35)';
+          result.style.color = '#ef4444';
+          result.innerHTML = '❌ <b>Échec de publication</b><br>' + (data.error || JSON.stringify(data));
+        }
+      } catch(e){
+        result.style.display = 'block';
+        result.style.background = 'rgba(239,68,68,0.10)';
+        result.style.border = '1px solid rgba(239,68,68,0.35)';
+        result.style.color = '#ef4444';
+        result.innerHTML = '💥 ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 PUBLIER MAINTENANT';
+      }
+    }
+
+    // Hook le setup upload dans studioInit
+    var _origStudioInit = studioInit;
+    studioInit = async function(){
+      await _origStudioInit();
+      studioSetupUpload();
+    };
     </script>
 
     <div class="page" id="page-ventes-smart">
