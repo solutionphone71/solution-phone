@@ -2617,6 +2617,24 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div id="studio-history" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:6px 2px;min-height:60px;"></div>
       </div>
 
+      <!-- Section G : Bibliothèque visuels réutilisables -->
+      <div class="card" style="margin-top:20px;border-left:4px solid #a855f7;">
+        <div class="card-header">
+          <div class="card-title">📚 Ma bibliothèque <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Visuels créés · Réutilise à volonté</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshLibrary()" style="border-color:#a855f7;color:#a855f7;">🔄 Rafraîchir</button>
+        </div>
+        <div id="studio-library-tabs" style="display:flex;gap:8px;margin:0 0 14px 0;flex-wrap:wrap;">
+          <button class="lib-tab active" data-format="all"      onclick="studioFilterLibrary('all')"     style="padding:8px 14px;border-radius:8px;border:1.5px solid #a855f7;background:rgba(168,85,247,0.15);color:#a855f7;font-weight:700;font-size:12px;cursor:pointer;">🗂 TOUS</button>
+          <button class="lib-tab" data-format="square"   onclick="studioFilterLibrary('square')"  style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟦 CARRÉ 1080×1080</button>
+          <button class="lib-tab" data-format="story"    onclick="studioFilterLibrary('story')"   style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">📲 STORY 1080×1920</button>
+          <button class="lib-tab" data-format="portrait" onclick="studioFilterLibrary('portrait')" style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟪 PORTRAIT 4:5</button>
+          <button class="lib-tab" data-format="landscape" onclick="studioFilterLibrary('landscape')" style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">🟩 PAYSAGE</button>
+        </div>
+        <div id="studio-library" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;min-height:80px;">
+          <div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement de la bibliothèque…</div>
+        </div>
+      </div>
+
       <!-- Modal détail décision Assya -->
       <div class="modal-overlay" id="modal-decision-detail" onclick="if(event.target===this)closeModal('modal-decision-detail')">
         <div class="modal" style="max-width:640px;">
@@ -3508,6 +3526,187 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  BIBLIOTHÈQUE VISUELS · réutilisation à volonté
+    // ═══════════════════════════════════════════════════════════
+    var _STUDIO_LIBRARY = [];
+    var _STUDIO_LIBRARY_FILTER = 'all';
+
+    async function studioRefreshLibrary(){
+      var box = document.getElementById('studio-library');
+      if(!box) return;
+      box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
+
+      try {
+        // 2 sources : social_posts (publiés) + visual_jobs (générés)
+        var [posts, jobs] = await Promise.all([
+          supaFetch('social_posts','GET',null,'?status=eq.published&order=published_at.desc.nullslast&limit=80&select=id,media_urls,platforms,published_at,type,source_data'),
+          supaFetch('visual_jobs','GET',null,'?status=eq.ready&order=created_at.desc&limit=80&select=id,image_url,brief,created_at')
+        ]);
+
+        var items = [];
+        var seen = {};
+
+        // Source 1 : social_posts
+        if(Array.isArray(posts)){
+          posts.forEach(function(p){
+            var url = p.media_urls && p.media_urls[0];
+            if(!url || seen[url]) return;
+            seen[url] = true;
+            var fmt = studioGuessFormat(p);
+            items.push({
+              url: url,
+              format: fmt,
+              date: p.published_at,
+              source: 'post',
+              type: p.type || 'post',
+              template: p.source_data?.template || null
+            });
+          });
+        }
+
+        // Source 2 : visual_jobs
+        if(Array.isArray(jobs)){
+          jobs.forEach(function(j){
+            var url = j.image_url;
+            if(!url || seen[url]) return;
+            seen[url] = true;
+            var briefFmt = j.brief?.format || '';
+            var fmt = studioParseFormat(briefFmt);
+            items.push({
+              url: url,
+              format: fmt,
+              date: j.created_at,
+              source: 'job',
+              type: j.brief?.kind || 'gen',
+              template: null
+            });
+          });
+        }
+
+        _STUDIO_LIBRARY = items;
+        studioRenderLibrary();
+
+      } catch(e){
+        box.innerHTML = '<div style="color:#ef4444;font-size:13px;padding:10px;">Erreur bibliothèque : '+e.message+'</div>';
+      }
+    }
+
+    function studioGuessFormat(p){
+      // Devine depuis le type ou les plateformes
+      if(p.type === 'story') return 'story';
+      var plats = p.platforms || {};
+      if(plats.instagram_story) return 'story';
+      // Sinon par défaut carré (post Insta classique)
+      return 'square';
+    }
+
+    function studioParseFormat(s){
+      if(!s) return 'square';
+      s = String(s).toLowerCase();
+      if(s.indexOf('1920')!==-1 || s === '9:16') return 'story';
+      if(s.indexOf('1350')!==-1 || s === '4:5')  return 'portrait';
+      if(s.indexOf('628')!==-1 || s.indexOf('566')!==-1 || s === '1.91:1' || s === '16:9') return 'landscape';
+      return 'square';
+    }
+
+    function studioFilterLibrary(format){
+      _STUDIO_LIBRARY_FILTER = format;
+      // Met à jour les tabs
+      document.querySelectorAll('.lib-tab').forEach(function(t){
+        var active = t.dataset.format === format;
+        t.style.background = active ? 'rgba(168,85,247,0.15)' : 'transparent';
+        t.style.borderColor = active ? '#a855f7' : 'var(--border)';
+        t.style.color = active ? '#a855f7' : 'var(--text)';
+      });
+      studioRenderLibrary();
+    }
+
+    function studioRenderLibrary(){
+      var box = document.getElementById('studio-library');
+      if(!box) return;
+      var filtered = _STUDIO_LIBRARY_FILTER === 'all'
+        ? _STUDIO_LIBRARY
+        : _STUDIO_LIBRARY.filter(function(i){ return i.format === _STUDIO_LIBRARY_FILTER; });
+
+      if(filtered.length === 0){
+        box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:14px;grid-column:1/-1;">Aucun visuel pour ce format. Génère-en via le Studio et il apparaîtra ici.</div>';
+        return;
+      }
+
+      box.innerHTML = '';
+      filtered.forEach(function(item){
+        var fmtBadge = ({square:'🟦 1080',story:'📲 9:16',portrait:'🟪 4:5',landscape:'🟩 16:9'})[item.format] || '🗂';
+        var when = item.date ? new Date(item.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+        var card = document.createElement('div');
+        card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s;';
+        card.onmouseover = function(){ card.style.borderColor='#a855f7'; card.style.transform='translateY(-2px)'; };
+        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; card.style.transform='none'; };
+        var aspectStyle = (item.format === 'story') ? 'aspect-ratio:9/16;'
+                       : (item.format === 'portrait') ? 'aspect-ratio:4/5;'
+                       : (item.format === 'landscape') ? 'aspect-ratio:16/9;'
+                       : 'aspect-ratio:1/1;';
+        card.innerHTML =
+          '<div style="position:relative;'+aspectStyle+'background:#000;">'+
+            '<img src="'+item.url+'" style="width:100%;height:100%;object-fit:cover;display:block;">'+
+            '<div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:1px;">'+fmtBadge+'</div>'+
+          '</div>'+
+          '<div style="padding:8px 10px;">'+
+            '<div style="font-size:11px;color:var(--text-muted);">'+when+(item.template ? ' · '+item.template : '')+'</div>'+
+            '<div style="display:flex;gap:6px;margin-top:8px;">'+
+              '<button class="btn btn-sm" style="flex:1;background:#a855f7;border:none;color:#fff;font-weight:800;padding:6px;font-size:11px;" data-act="reuse">🔄 RÉUTILISER</button>'+
+              '<button class="btn btn-sm" style="border-color:rgba(255,255,255,0.2);padding:6px 8px;font-size:11px;" data-act="view" title="Ouvrir dans un nouvel onglet">🔍</button>'+
+            '</div>'+
+          '</div>';
+        card.querySelector('[data-act="reuse"]').onclick = function(e){ e.stopPropagation(); studioReuseImage(item.url); };
+        card.querySelector('[data-act="view"]').onclick  = function(e){ e.stopPropagation(); window.open(item.url,'_blank'); };
+        box.appendChild(card);
+      });
+    }
+
+    async function studioReuseImage(url){
+      try {
+        if(window.showNotif) showNotif('⏳ Chargement du visuel…', 'info');
+        var res = await fetch(url);
+        if(!res.ok) throw new Error('Impossible de charger l\'image ('+res.status+')');
+        var blob = await res.blob();
+        var reader = new FileReader();
+        reader.onload = function(e){
+          // Simule un upload manuel pour réutiliser toute la pipeline existante
+          _STUDIO_UPLOAD = { base64: e.target.result, mime: blob.type, fileName: url.split('/').pop() };
+          var img = new Image();
+          img.onload = function(){
+            _STUDIO_UPLOAD.width = img.naturalWidth;
+            _STUDIO_UPLOAD.height = img.naturalHeight;
+            var ratio = img.naturalHeight / img.naturalWidth;
+            var hint = document.getElementById('studio-platform-hint');
+            var feedCb = document.getElementById('studio-pub-instagram');
+            var storyCb = document.getElementById('studio-pub-instagram-story');
+            var fbCb = document.getElementById('studio-pub-facebook');
+            if(ratio >= 1.5){
+              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format vertical ('+img.naturalWidth+'×'+img.naturalHeight+') → Story';
+              storyCb.checked = true; feedCb.checked = false; fbCb.checked = true;
+            } else if(Math.abs(ratio - 1) < 0.1){
+              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format carré ('+img.naturalWidth+'×'+img.naturalHeight+') → Feed';
+              feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+            } else {
+              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format '+img.naturalWidth+'×'+img.naturalHeight;
+              feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+            }
+          };
+          img.src = e.target.result;
+          document.getElementById('studio-preview-img').src = e.target.result;
+          document.getElementById('studio-publish-form').style.display = 'block';
+          studioRegenerateCaption();
+          document.getElementById('studio-publish-form').scrollIntoView({ behavior:'smooth', block:'center' });
+          if(window.showNotif) showNotif('✅ Visuel chargé · Coche les plateformes et publie', 'success');
+        };
+        reader.readAsDataURL(blob);
+      } catch(e){
+        alert('Erreur de chargement : ' + e.message);
+      }
+    }
+
     // ─── Brain Assya v1 — apprentissages basiques ─────────────
     async function studioRefreshBrain(){
       var box = document.getElementById('studio-brain');
@@ -3625,6 +3824,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       studioRenderDailyIdea();
       studioRefreshHistory();
       studioRefreshBrain();
+      studioRefreshLibrary();
     };
     </script>
 
