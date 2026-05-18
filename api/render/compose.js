@@ -28,9 +28,14 @@ const FONT_800 = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/montserrat/s
 const FONT_700 = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/montserrat/static/Montserrat-Bold.ttf';
 const FONT_400 = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/montserrat/static/Montserrat-Regular.ttf';
 
-// Helper : crée un nœud Satori sans JSX
+// Helper : crée un nœud Satori sans JSX (div, span, etc.)
 function el(type, style, children) {
   return { type, props: { style: style || {}, children: children === undefined ? null : children } };
+}
+
+// Helper image : src/width/height SONT des attributs HTML, pas du style CSS
+function img(src, width, height, style) {
+  return { type: 'img', props: { src, width, height, style: style || {}, children: null } };
 }
 
 async function safeLoadFont(url) {
@@ -46,9 +51,7 @@ function buildComposition(aiImageUrl, vars) {
   const children = [];
 
   // Layer 0 — Image IA en fond
-  children.push(el('img', {
-    src: aiImageUrl,
-    width: 1080, height: 1080,
+  children.push(img(aiImageUrl, 1080, 1080, {
     position: 'absolute', top: 0, left: 0
   }));
 
@@ -59,9 +62,7 @@ function buildComposition(aiImageUrl, vars) {
   }));
 
   // Layer 2 — Logo Solution Phone
-  children.push(el('img', {
-    src: LOGO_URL,
-    width: 140, height: 140,
+  children.push(img(LOGO_URL, 140, 140, {
     position: 'absolute', top: 60, left: 60, borderRadius: 22
   }));
 
