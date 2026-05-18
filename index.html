@@ -2453,6 +2453,18 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div class="page-title">🎨 Studio Visuel</div>
       <div class="page-sub">Assya orchestre · Tu colles dans ChatGPT · L'app publie</div>
 
+      <!-- Section 0 : Story du jour selon Assya -->
+      <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(225,6,0,0.10) 0%,rgba(225,6,0,0.02) 100%);border-left:4px solid #E10600;">
+        <div class="card-header">
+          <div class="card-title">📅 La Story du jour <span id="studio-day-label" style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;"></span></div>
+        </div>
+        <div id="studio-daily-idea" style="font-size:14px;line-height:1.6;color:var(--text);"></div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-primary" onclick="studioApplyDailyIdea()">✨ Préparer cette Story</button>
+          <button class="btn btn-sm" onclick="studioCycleDailyIdea()" style="border-color:rgba(255,255,255,0.20);">🔄 Une autre idée</button>
+        </div>
+      </div>
+
       <!-- Section A : événements à diffuser (smartphones récents) -->
       <div class="card" style="margin-bottom:20px;">
         <div class="card-header">
@@ -2534,15 +2546,20 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <!-- Paramètres publication -->
             <div>
               <div class="form-group">
-                <label>Plateformes</label>
-                <div style="display:flex;gap:14px;margin-top:6px;">
-                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
-                    <input type="checkbox" id="studio-pub-instagram" checked style="width:18px;height:18px;accent-color:#E10600;">
-                    📷 Instagram
+                <label>Où publier ?</label>
+                <div id="studio-platform-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px;margin-bottom:8px;"></div>
+                <div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
+                    <input type="checkbox" id="studio-pub-instagram" checked style="width:16px;height:16px;accent-color:#E10600;">
+                    📷 Insta Feed
                   </label>
-                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;">
-                    <input type="checkbox" id="studio-pub-facebook" checked style="width:18px;height:18px;accent-color:#E10600;">
-                    📘 Facebook
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
+                    <input type="checkbox" id="studio-pub-instagram-story" style="width:16px;height:16px;accent-color:#E10600;">
+                    📲 Insta Story (24h)
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
+                    <input type="checkbox" id="studio-pub-facebook" checked style="width:16px;height:16px;accent-color:#E10600;">
+                    📘 Facebook Feed
                   </label>
                 </div>
               </div>
@@ -2771,6 +2788,31 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       var reader = new FileReader();
       reader.onload = function(e){
         _STUDIO_UPLOAD = { base64: e.target.result, mime: file.type, fileName: file.name };
+        // Lire les dimensions pour détecter le format (carré, vertical, paysage)
+        var img = new Image();
+        img.onload = function(){
+          _STUDIO_UPLOAD.width = img.naturalWidth;
+          _STUDIO_UPLOAD.height = img.naturalHeight;
+          var ratio = img.naturalHeight / img.naturalWidth;
+          var hint = document.getElementById('studio-platform-hint');
+          var feedCb = document.getElementById('studio-pub-instagram');
+          var storyCb = document.getElementById('studio-pub-instagram-story');
+          var fbCb = document.getElementById('studio-pub-facebook');
+          if(ratio >= 1.5){
+            // Format vertical (Story / Reel)
+            if(hint) hint.textContent = '🔎 Format vertical détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal pour Story Insta';
+            storyCb.checked = true; feedCb.checked = false; fbCb.checked = true;
+          } else if(Math.abs(ratio - 1) < 0.1){
+            // Format carré
+            if(hint) hint.textContent = '🔎 Format carré détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal pour Feed Insta + FB';
+            feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+          } else {
+            // Paysage ou autre
+            if(hint) hint.textContent = '🔎 Format '+img.naturalWidth+'×'+img.naturalHeight+' détecté';
+            feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+          }
+        };
+        img.src = e.target.result;
         document.getElementById('studio-preview-img').src = e.target.result;
         document.getElementById('studio-publish-form').style.display = 'block';
         studioRegenerateCaption();
@@ -2832,9 +2874,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     async function studioDoPublish(){
       if(!_STUDIO_UPLOAD || !_STUDIO_UPLOAD.base64){ alert('Aucune image uploadée'); return; }
-      var wantIG = document.getElementById('studio-pub-instagram').checked;
-      var wantFB = document.getElementById('studio-pub-facebook').checked;
-      if(!wantIG && !wantFB){ alert('Sélectionne au moins une plateforme'); return; }
+      var wantIGFeed  = document.getElementById('studio-pub-instagram').checked;
+      var wantIGStory = document.getElementById('studio-pub-instagram-story').checked;
+      var wantFB      = document.getElementById('studio-pub-facebook').checked;
+      if(!wantIGFeed && !wantIGStory && !wantFB){ alert('Sélectionne au moins une cible'); return; }
 
       var caption = document.getElementById('studio-caption').value;
       var btn = document.getElementById('studio-publish-btn');
@@ -2849,7 +2892,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
             image_base64: _STUDIO_UPLOAD.base64,
-            platforms: { instagram: wantIG, facebook: wantFB },
+            platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFB },
             caption: caption,
             source_template: _STUDIO_STATE.theme ? _STUDIO_STATE.theme.id : null,
             source_variables: _STUDIO_STATE.vars || {}
@@ -2862,10 +2905,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           result.style.border = '1px solid rgba(34,197,94,0.35)';
           result.style.color = '#22c55e';
           var msg = '✅ <b>Publié avec succès</b><br>';
-          if(data.results.ig?.success) msg += '📷 Instagram : id ' + data.results.ig.ig_post_id + '<br>';
-          if(data.results.ig && !data.results.ig.success) msg += '⚠️ Instagram : ' + data.results.ig.error + '<br>';
-          if(data.results.fb?.success) msg += '📘 Facebook : id ' + data.results.fb.fb_post_id + '<br>';
-          if(data.results.fb && !data.results.fb.success) msg += '⚠️ Facebook : ' + data.results.fb.error + '<br>';
+          if(data.results.ig_feed?.success)  msg += '📷 Insta Feed : id ' + data.results.ig_feed.ig_post_id + '<br>';
+          if(data.results.ig_feed && !data.results.ig_feed.success)   msg += '⚠️ Insta Feed : ' + data.results.ig_feed.error + '<br>';
+          if(data.results.ig_story?.success) msg += '📲 Insta Story : id ' + data.results.ig_story.ig_post_id + '<br>';
+          if(data.results.ig_story && !data.results.ig_story.success) msg += '⚠️ Insta Story : ' + data.results.ig_story.error + '<br>';
+          if(data.results.fb_feed?.success)  msg += '📘 Facebook : id ' + data.results.fb_feed.fb_post_id + '<br>';
+          if(data.results.fb_feed && !data.results.fb_feed.success)   msg += '⚠️ Facebook : ' + data.results.fb_feed.error + '<br>';
           msg += '<a href="' + data.uploaded_url + '" target="_blank" style="color:#22c55e;text-decoration:underline;">🖼 Voir l\'image stockée</a>';
           result.innerHTML = msg;
         } else {
@@ -2887,11 +2932,110 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       }
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  STORY DU JOUR — calendrier éditorial automatique
+    // ═══════════════════════════════════════════════════════════
+    // 7 thèmes par jour de la semaine + 2 variations alternatives pour cycler
+    var _STUDIO_DAILY_IDEAS = {
+      0: [ // Dimanche
+        { title:'📸 Behind the scenes atelier', theme:'custom', desc:'Une photo détail du tapis QualiRépar, des outils, un smartphone en cours de réparation. Ambiance authentique.', brief:'Story Instagram verticale 1080x1920 montrant l\'atelier Solution Phone en gros plan : tapis QualiRépar bleu, outils précision, smartphone démonté, mains gantées. Ambiance cinéma noir + glow rouge subtil.' },
+        { title:'🏆 +590 avis Google — note 4,7/5', theme:'avis_5', desc:'Mise en avant de la réputation acquise depuis 2014.', brief:null }
+      ],
+      1: [ // Lundi
+        { title:'📱 Smartphone de la semaine', theme:'smartphone_stock', desc:'Met en avant le téléphone le plus récent de ton stock.', brief:null, autoFillPhone:true },
+        { title:'🔥 Lundi motivation — On répare tout', theme:'custom', desc:'Bandeau ON RÉPARE TOUT toutes marques.', brief:'Story 1080x1920 ON REPARE TOUT en titre Montserrat Extra Bold, logos Apple Samsung Huawei Xiaomi en grille, badges engagements en bas, glow rouge cinéma.' }
+      ],
+      2: [ // Mardi
+        { title:'🛡 QualiRépar -25€ bonus', theme:'qualirepar', desc:'Rappel du label et du bonus immédiat sur réparation.', brief:null },
+        { title:'⚡ 90% des réparations en -1h', theme:'custom', desc:'Statistique forte sur la rapidité.', brief:'Story 1080x1920 fond noir, GROS 90% rouge cinéma, "DES RÉPARATIONS EN MOINS D\'1 HEURE" en blanc Montserrat Extra Bold, smartphone allumé à droite, logo SP en haut.' }
+      ],
+      3: [ // Mercredi
+        { title:'💎 Hydrogel — Protection écran', theme:'hydrogel', desc:'Push de la gamme protection (forte marge).', brief:null },
+        { title:'🎁 Accessoires premium', theme:'custom', desc:'Coque, verre, câbles, écouteurs en gamme.', brief:'Story 1080x1920 grille accessoires Solution Accessoire (coque transparente, coque MagSafe, verre trempé, écouteurs Bluetooth) avec prix dans pills rouges, fond noir, glow rouge.' }
+      ],
+      4: [ // Jeudi
+        { title:'⭐⭐⭐⭐⭐ Avis client de la semaine', theme:'avis_5', desc:'Repost d\'un avis Google 5 étoiles authentique.', brief:null },
+        { title:'🤝 Confiance — Depuis 2014 à Mâcon', theme:'custom', desc:'Mise en avant de l\'ancienneté.', brief:'Story 1080x1920 DEPUIS 2014 en énorme, sous-titre "Votre référence smartphone à Mâcon", +590 avis Google · note 4,7/5, glow rouge subtil.' }
+      ],
+      5: [ // Vendredi
+        { title:'✅ Réparation réussie — Avant/Après', theme:'cloture_repair', desc:'Transformation avant/après bluffante.', brief:null },
+        { title:'📞 Devis immédiat sur solution-phone.fr', theme:'custom', desc:'Drive vers le site avec Evan le robot.', brief:'Story 1080x1920 DEVIS IMMÉDIAT EN 30 SECONDES, mockup smartphone affichant chat avec Evan robot SP, lien solution-phone.fr en bas, glow rouge.' }
+      ],
+      6: [ // Samedi
+        { title:'🔥 Offre weekend', theme:'promo', desc:'Réduction ou bundle pour le samedi.', brief:null },
+        { title:'📍 21 Rue Gambetta — Aujourd\'hui ouvert', theme:'custom', desc:'Rappel de la boutique physique + horaires.', brief:'Story 1080x1920 OUVERT AUJOURD\'HUI 10h-19h, adresse 21 RUE GAMBETTA 71000 MÂCON, plan visuel stylisé, logo SP en haut, glow rouge.' }
+      ]
+    };
+    var _STUDIO_DAILY_VARIANT = 0;
+
+    function studioGetTodayIdeas(){
+      var d = new Date().getDay();
+      return _STUDIO_DAILY_IDEAS[d] || [];
+    }
+
+    function studioRenderDailyIdea(){
+      var ideas = studioGetTodayIdeas();
+      if(ideas.length === 0) return;
+      var idx = _STUDIO_DAILY_VARIANT % ideas.length;
+      var idea = ideas[idx];
+      var jours = ['DIMANCHE','LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI'];
+      var todayLabel = jours[new Date().getDay()];
+      var label = document.getElementById('studio-day-label');
+      if(label) label.textContent = todayLabel + ' · IDÉE ' + (idx+1) + '/' + ideas.length;
+      var box = document.getElementById('studio-daily-idea');
+      if(box){
+        box.innerHTML =
+          '<div style="font-weight:800;font-size:17px;color:#fff;margin-bottom:6px;">'+idea.title+'</div>'+
+          '<div style="color:var(--text-muted);font-size:13px;">'+idea.desc+'</div>';
+      }
+      _STUDIO_STATE._dailyIdea = idea;
+    }
+
+    function studioCycleDailyIdea(){
+      _STUDIO_DAILY_VARIANT++;
+      studioRenderDailyIdea();
+    }
+
+    function studioApplyDailyIdea(){
+      var idea = _STUDIO_STATE._dailyIdea;
+      if(!idea || !_STUDIO_PROMPTS) return;
+      // Définit plateforme = Insta + format = reel (vertical) car c'est pour une Story
+      document.getElementById('studio-platform').value = 'instagram';
+      studioPlatformChange();
+      document.getElementById('studio-format').value = 'reel';
+      studioRefreshPrompt();
+      // Applique le thème
+      document.getElementById('studio-theme').value = idea.theme || 'custom';
+      studioThemeChange();
+      // Si autoFillPhone et qu'on a des phones, pré-remplir avec le plus récent
+      if(idea.autoFillPhone && typeof phones !== 'undefined' && Array.isArray(phones) && phones.length){
+        var p = phones.slice().sort(function(a,b){return (b.id||0)-(a.id||0);})[0];
+        setTimeout(function(){ studioSelectPhone(p); }, 60);
+        return;
+      }
+      // Si l'idée a un brief libre (theme=custom), l'injecter dans la variable brief_libre
+      if(idea.brief && idea.theme === 'custom'){
+        setTimeout(function(){
+          var i = document.querySelector('#studio-variables input[data-key="brief_libre"]');
+          if(i){ i.value = idea.brief; _STUDIO_STATE.vars.brief_libre = idea.brief; }
+          studioRefreshPrompt();
+          var promptEl = document.getElementById('studio-prompt-output');
+          if(promptEl) promptEl.scrollIntoView({ behavior:'smooth', block:'center' });
+        }, 60);
+      } else {
+        setTimeout(function(){
+          var promptEl = document.getElementById('studio-prompt-output');
+          if(promptEl) promptEl.scrollIntoView({ behavior:'smooth', block:'center' });
+        }, 60);
+      }
+    }
+
     // Hook le setup upload dans studioInit
     var _origStudioInit = studioInit;
     studioInit = async function(){
       await _origStudioInit();
       studioSetupUpload();
+      studioRenderDailyIdea();
     };
     </script>
 

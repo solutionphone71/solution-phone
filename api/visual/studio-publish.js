@@ -74,30 +74,38 @@ async function uploadToStorage(base64, fileName) {
   return `${SUPA_URL}/storage/v1/object/public/social_media/${path}`;
 }
 
-// ─── Publication Instagram (Meta Graph API) ───────────────────────
+// ─── Publication Instagram (Meta Graph API) — Feed OU Story ───────
 
-async function publishInstagram(mediaUrl, caption) {
+async function publishInstagram(mediaUrl, caption, asStory = false) {
   if (!META_PAGE_TOKEN || !META_IG_USER_ID) {
     return { success: false, error: 'META_PAGE_TOKEN ou META_IG_USER_ID manquant' };
   }
   try {
-    // 1. Container média
+    // 1. Container média — payload différent selon Feed vs Story
+    const containerBody = {
+      image_url: mediaUrl,
+      access_token: META_PAGE_TOKEN
+    };
+    if (asStory) {
+      containerBody.media_type = 'STORIES';
+      // Pas de caption sur les Stories (Meta l'ignore de toute façon)
+    } else {
+      containerBody.caption = caption || '';
+    }
+
     const containerRes = await fetch(
       `https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: mediaUrl,
-          caption: caption || '',
-          access_token: META_PAGE_TOKEN
-        })
+        body: JSON.stringify(containerBody)
       }
     );
     const containerData = await containerRes.json();
     if (!containerData.id) {
-      return { success: false, error: `Container failed: ${JSON.stringify(containerData).substring(0, 200)}` };
+      return { success: false, error: `Container failed (${asStory?'STORY':'FEED'}): ${JSON.stringify(containerData).substring(0, 200)}` };
     }
+
     // 2. Publish
     const publishRes = await fetch(
       `https://graph.facebook.com/v21.0/${META_IG_USER_ID}/media_publish`,
@@ -111,7 +119,7 @@ async function publishInstagram(mediaUrl, caption) {
       }
     );
     const publishData = await publishRes.json();
-    if (publishData.id) return { success: true, ig_post_id: publishData.id };
+    if (publishData.id) return { success: true, ig_post_id: publishData.id, as_story: asStory };
     return { success: false, error: `Publish failed: ${JSON.stringify(publishData).substring(0, 200)}` };
   } catch (e) {
     return { success: false, error: 'Meta IG exception: ' + e.message };
@@ -159,37 +167,42 @@ export default async function handler(req, res) {
     const { image_base64, platforms = {}, caption = '', source_template, source_variables } = req.body || {};
 
     if (!image_base64) return res.status(400).json({ error: 'image_base64 requis' });
-    const wantIG = !!platforms.instagram;
-    const wantFB = !!platforms.facebook;
-    if (!wantIG && !wantFB) return res.status(400).json({ error: 'Sélectionne au moins une plateforme' });
+    // 3 cibles possibles : ig_feed (post Insta) · ig_story (Story Insta) · fb_feed (post Facebook)
+    const wantIGFeed  = !!platforms.instagram;       // legacy alias = feed
+    const wantIGStory = !!platforms.instagram_story;
+    const wantFBFeed  = !!platforms.facebook;
+    if (!wantIGFeed && !wantIGStory && !wantFBFeed) {
+      return res.status(400).json({ error: 'Sélectionne au moins une cible (Feed Insta, Story Insta ou Feed Facebook)' });
+    }
 
     // 1. Upload Storage
     const fileName = `studio-${Date.now()}.png`;
     const uploadedUrl = await uploadToStorage(image_base64, fileName);
 
-    // 2. Publish en parallèle sur les plateformes demandées
+    // 2. Publish en parallèle sur les cibles demandées
     const tasks = [];
-    if (wantIG) tasks.push(publishInstagram(uploadedUrl, caption).then(r => ({ ig: r })));
-    if (wantFB) tasks.push(publishFacebook(uploadedUrl, caption).then(r => ({ fb: r })));
+    if (wantIGFeed)  tasks.push(publishInstagram(uploadedUrl, caption, false).then(r => ({ ig_feed: r })));
+    if (wantIGStory) tasks.push(publishInstagram(uploadedUrl, '',      true ).then(r => ({ ig_story: r })));
+    if (wantFBFeed)  tasks.push(publishFacebook(uploadedUrl, caption).then(r => ({ fb_feed: r })));
     const settled = await Promise.all(tasks);
     const results = {};
     settled.forEach(r => Object.assign(results, r));
 
-    const anySuccess = (results.ig?.success || results.fb?.success);
+    const anySuccess = (results.ig_feed?.success || results.ig_story?.success || results.fb_feed?.success);
 
     // 3. Insert social_posts (historique)
     let socialPostId = null;
     try {
       const inserted = await supa('social_posts', 'POST', {
-        type: 'post',
+        type: wantIGStory ? 'story' : 'post',
         status: anySuccess ? 'published' : 'failed',
         caption,
         media_urls: [uploadedUrl],
-        platforms: { instagram: wantIG, facebook: wantFB },
+        platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFBFeed },
         auto_published: false,
         published_at: new Date().toISOString(),
-        ig_post_id: results.ig?.ig_post_id || null,
-        fb_post_id: results.fb?.fb_post_id || null,
+        ig_post_id: results.ig_feed?.ig_post_id || results.ig_story?.ig_post_id || null,
+        fb_post_id: results.fb_feed?.fb_post_id || null,
         source_data: {
           source: 'studio_visuel',
           template: source_template || null,
