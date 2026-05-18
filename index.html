@@ -888,6 +888,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-item" onclick="showPage('police',this)"><span class="nav-icon">👮</span><span>Livre de police</span></div>
 
     <div class="nav-sep"></div>
+    <div class="nav-group-label">Marketing · Assya</div>
+    <div class="nav-item" onclick="showPage('studio',this);studioInit();"><span class="nav-icon">🎨</span><span>Studio Visuel</span></div>
+
+    <div class="nav-sep"></div>
     <div class="nav-group-label">Comptabilité</div>
     <div class="nav-item" id="nav-caisse" onclick="showPage('caisse',this);setTimeout(function(){window.scrollTo({top:0,behavior:'smooth'});},300)"><span class="nav-icon">💰</span><span>Z caisse Principal</span></div>
     <div class="nav-item" id="nav-caisse-occ" onclick="showPage('caisse',this);setTimeout(function(){var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.scrollIntoView({behavior:'smooth',block:'start'});},500)"><span class="nav-icon">📱</span><span>Z caisse Occasion</span></div>
@@ -2441,6 +2445,244 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
     </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : STUDIO VISUEL (Assya + Sebastien)     -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="page" id="page-studio">
+      <div class="page-title">🎨 Studio Visuel</div>
+      <div class="page-sub">Assya orchestre · Tu colles dans ChatGPT · L'app publie</div>
+
+      <!-- Section A : événements à diffuser (smartphones récents) -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-title">📡 Événements à diffuser <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Smartphones ajoutés récemment</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshFeed()" style="border-color:#00e0ff;color:#00e0ff;">🔄 Rafraîchir</button>
+        </div>
+        <div id="studio-feed" style="display:flex;gap:12px;overflow-x:auto;padding:8px 4px;"></div>
+      </div>
+
+      <!-- Section B : sélecteurs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px;">
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">🎯 Plateforme & format</div></div>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>Plateforme</label>
+            <select id="studio-platform" onchange="studioPlatformChange()" style="font-weight:700;">
+              <option value="">— Choisir —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Format</label>
+            <select id="studio-format" onchange="studioRefreshPrompt()" style="font-weight:700;">
+              <option value="">— Choisir —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">📝 Thème</div></div>
+          <div class="form-group">
+            <label>Type de visuel</label>
+            <select id="studio-theme" onchange="studioThemeChange()" style="font-weight:700;">
+              <option value="">— Choisir —</option>
+            </select>
+          </div>
+          <div id="studio-variables" style="margin-top:10px;"></div>
+        </div>
+
+      </div>
+
+      <!-- Section C : prompt -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+          <div class="card-title">✍️ Prompt prêt à coller</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm btn-primary" onclick="studioCopyPrompt()">📋 Copier</button>
+            <a class="btn btn-sm" href="https://chatgpt.com" target="_blank" rel="noopener" style="text-decoration:none;border-color:#10a37f;color:#10a37f;">🤖 ChatGPT</a>
+            <a class="btn btn-sm" href="https://gemini.google.com" target="_blank" rel="noopener" style="text-decoration:none;border-color:#4285f4;color:#4285f4;">✨ Gemini</a>
+          </div>
+        </div>
+        <div id="studio-prompt-output" style="font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.55;white-space:pre-wrap;background:rgba(0,0,0,0.4);padding:18px;border-radius:10px;max-height:280px;overflow-y:auto;color:rgba(255,255,255,0.88);border:1px solid var(--border);">👆 Choisis une plateforme + format + thème pour générer le prompt.</div>
+      </div>
+
+      <!-- Section D : upload + publication (placeholder pour demain) -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">⬆️ Upload + publication <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">(bientôt — pour l'instant publie manuellement sur Insta/FB)</span></div></div>
+        <div style="text-align:center;padding:32px 20px;border:2px dashed rgba(255,255,255,0.15);border-radius:14px;color:var(--text-muted);">
+          📤 Drag &amp; drop ton visuel ChatGPT/Gemini ici (à venir)<br>
+          <span style="font-size:12px;">Pour l'instant : télécharge depuis ChatGPT, publie manuellement sur Insta + FB. Demain Assya fait ça toute seule.</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    //  STUDIO VISUEL · Solution Phone × Assya
+    //  Chargement des prompts + UI + interaction avec phones[]
+    // ═══════════════════════════════════════════════════════════════
+    var _STUDIO_PROMPTS = null;
+    var _STUDIO_STATE = { platform:null, format:null, theme:null, vars:{} };
+
+    async function studioInit(){
+      if(_STUDIO_PROMPTS){ studioRefreshFeed(); return; }
+      try {
+        var res = await fetch('/brand/studio-prompts.json', { cache:'no-store' });
+        _STUDIO_PROMPTS = await res.json();
+        studioPopulateSelects();
+        studioRefreshFeed();
+      } catch(e){
+        console.error('[Studio] load failed', e);
+        var el = document.getElementById('studio-prompt-output');
+        if(el) el.textContent = '⚠️ Impossible de charger studio-prompts.json : ' + e.message;
+      }
+    }
+
+    function studioPopulateSelects(){
+      var pSel = document.getElementById('studio-platform');
+      pSel.innerHTML = '<option value="">— Choisir —</option>';
+      Object.entries(_STUDIO_PROMPTS.platforms).forEach(function(arr){
+        var id = arr[0], p = arr[1];
+        var o = document.createElement('option');
+        o.value = id; o.textContent = p.icon + '  ' + p.label;
+        pSel.appendChild(o);
+      });
+      var tSel = document.getElementById('studio-theme');
+      tSel.innerHTML = '<option value="">— Choisir —</option>';
+      _STUDIO_PROMPTS.themes.forEach(function(t){
+        var o = document.createElement('option');
+        o.value = t.id; o.textContent = t.icon + '  ' + t.label;
+        tSel.appendChild(o);
+      });
+    }
+
+    function studioPlatformChange(){
+      var pid = document.getElementById('studio-platform').value;
+      _STUDIO_STATE.platform = pid || null;
+      var fSel = document.getElementById('studio-format');
+      fSel.innerHTML = '<option value="">— Choisir —</option>';
+      if(!pid){ studioRefreshPrompt(); return; }
+      _STUDIO_PROMPTS.platforms[pid].formats.forEach(function(f){
+        var o = document.createElement('option');
+        o.value = f.id; o.textContent = f.label + ' · ' + f.dimensions;
+        fSel.appendChild(o);
+      });
+      _STUDIO_STATE.format = null;
+      studioRefreshPrompt();
+    }
+
+    function studioThemeChange(){
+      var tid = document.getElementById('studio-theme').value;
+      var theme = _STUDIO_PROMPTS.themes.find(function(t){ return t.id===tid; });
+      _STUDIO_STATE.theme = theme || null;
+      _STUDIO_STATE.vars = {};
+      var box = document.getElementById('studio-variables');
+      box.innerHTML = '';
+      if(!theme){ studioRefreshPrompt(); return; }
+      theme.variables.forEach(function(v){
+        _STUDIO_STATE.vars[v.key] = v.default || '';
+        var row = document.createElement('div');
+        row.className = 'form-group';
+        row.style.marginBottom = '8px';
+        row.innerHTML = '<label style="font-size:11px;">'+v.label+'</label>'+
+          '<input type="text" data-key="'+v.key+'" value="'+(v.default||'').replace(/"/g,'&quot;')+'" placeholder="'+(v.placeholder||'').replace(/"/g,'&quot;')+'" style="font-weight:600;">';
+        box.appendChild(row);
+      });
+      box.querySelectorAll('input').forEach(function(i){
+        i.addEventListener('input', function(e){
+          _STUDIO_STATE.vars[e.target.dataset.key] = e.target.value;
+          studioRefreshPrompt();
+        });
+      });
+      studioRefreshPrompt();
+    }
+
+    function studioRefreshPrompt(){
+      var fid = document.getElementById('studio-format').value;
+      var format = null;
+      if(_STUDIO_STATE.platform && fid){
+        format = _STUDIO_PROMPTS.platforms[_STUDIO_STATE.platform].formats.find(function(f){ return f.id===fid; });
+      }
+      _STUDIO_STATE.format = format;
+      var out = document.getElementById('studio-prompt-output');
+      if(!_STUDIO_STATE.theme || !format){
+        out.textContent = '👆 Choisis une plateforme + format + thème pour générer le prompt.';
+        return;
+      }
+      var text = _STUDIO_STATE.theme.prompt;
+      var vars = Object.assign({}, _STUDIO_STATE.vars, {
+        dimensions: format.dimensions,
+        aspect: format.aspect,
+        master_brand_prompt: _STUDIO_PROMPTS.master_brand_prompt
+      });
+      Object.entries(vars).forEach(function(arr){
+        text = text.replace(new RegExp('\\{'+arr[0]+'\\}', 'g'), arr[1]==null ? '' : String(arr[1]));
+      });
+      out.textContent = text;
+    }
+
+    function studioCopyPrompt(){
+      var text = document.getElementById('studio-prompt-output').textContent;
+      navigator.clipboard.writeText(text).then(function(){
+        if(window.showNotif) showNotif('✓ Prompt copié — colle-le dans ChatGPT', 'success');
+        else alert('Prompt copié');
+      });
+    }
+
+    function studioRefreshFeed(){
+      var feed = document.getElementById('studio-feed');
+      if(!feed) return;
+      feed.innerHTML = '';
+      // Tente de lire la variable globale phones[] de l'app
+      var list = (typeof phones !== 'undefined' && Array.isArray(phones))
+        ? phones.slice().sort(function(a,b){ return (b.id||0)-(a.id||0); }).slice(0,8)
+        : [];
+      if(list.length===0){
+        feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Aucun smartphone récent. Ajoute-en un dans "Achat smartphones" et il apparaîtra ici.</div>';
+        return;
+      }
+      list.forEach(function(p){
+        var card = document.createElement('div');
+        card.style.cssText = 'min-width:200px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;';
+        card.onmouseover = function(){ card.style.borderColor='#E10600'; card.style.transform='translateY(-2px)'; };
+        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; card.style.transform='none'; };
+        card.onclick = function(){ studioSelectPhone(p); };
+        card.innerHTML =
+          '<div style="font-weight:800;font-size:15px;color:#fff;">'+(p.modele||'?')+'</div>'+
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+(p.couleur||'')+(p.stockage?' · '+p.stockage+'Go':'')+'</div>'+
+          '<div style="font-size:18px;font-weight:800;color:#E10600;margin-top:8px;">'+(p.vente||0)+' €</div>'+
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Grade '+(p.grade||'?')+' · '+(p.batterie||'?')+'%</div>'+
+          '<div style="margin-top:10px;font-size:11px;color:#E10600;font-weight:700;letter-spacing:1px;">CLIC POUR DIFFUSER →</div>';
+        feed.appendChild(card);
+      });
+    }
+
+    function studioSelectPhone(p){
+      // Pré-remplit le thème smartphone_stock avec les données du téléphone
+      document.getElementById('studio-platform').value = 'instagram';
+      studioPlatformChange();
+      document.getElementById('studio-format').value = 'post';
+      document.getElementById('studio-theme').value = 'smartphone_stock';
+      studioThemeChange();
+      // Remplit les inputs variables
+      setTimeout(function(){
+        var setInput = function(key, val){
+          var i = document.querySelector('#studio-variables input[data-key="'+key+'"]');
+          if(i){ i.value = val; _STUDIO_STATE.vars[key] = val; }
+        };
+        setInput('modele',   p.modele || '');
+        setInput('prix',     p.vente  || '');
+        setInput('grade',    p.grade  || 'A');
+        setInput('batterie', p.batterie || '92');
+        setInput('couleur',  p.couleur || 'Noir');
+        studioRefreshPrompt();
+        // Scroll au prompt
+        var promptCard = document.getElementById('studio-prompt-output');
+        if(promptCard) promptCard.scrollIntoView({ behavior:'smooth', block:'center' });
+      }, 100);
+    }
+    </script>
 
     <div class="page" id="page-ventes-smart">
       <div class="page-title">💹 Ventes Smartphones</div>
