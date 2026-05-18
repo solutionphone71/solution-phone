@@ -889,7 +889,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Marketing · Assya</div>
-    <div class="nav-item" onclick="showPage('studio',this);studioInit();"><span class="nav-icon">🎨</span><span>Studio Visuel</span></div>
+    <div class="nav-item" onclick="showPage('studio',this);studioInit();"><span class="nav-icon">📡</span><span>Cockpit Assya</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Comptabilité</div>
@@ -2447,11 +2447,27 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     </div>
 
     <!-- ══════════════════════════════════════════════ -->
-    <!-- PAGE : STUDIO VISUEL (Assya + Sebastien)     -->
+    <!-- PAGE : COCKPIT ASSYA (unifié Studio + Autopilot) -->
     <!-- ══════════════════════════════════════════════ -->
     <div class="page" id="page-studio">
-      <div class="page-title">🎨 Studio Visuel</div>
-      <div class="page-sub">Assya orchestre · Tu colles dans ChatGPT · L'app publie</div>
+      <div class="page-title">📡 Cockpit Assya</div>
+      <div class="page-sub">Tableau de bord marketing unifié · L'IA propose · Tu valides · L'app publie</div>
+
+      <!-- Bandeau Assya — directrice marketing -->
+      <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,#1a0000 0%,#0d0d0d 100%);border:1.5px solid rgba(225,6,0,0.35);">
+        <div style="display:flex;gap:18px;align-items:center;">
+          <div style="width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ff4040,#E10600 70%,#8b0000);box-shadow:0 0 24px rgba(225,6,0,0.45);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">🤖</div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:18px;color:#fff;letter-spacing:0.3px;">ASSYA <span style="font-weight:400;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:6px;">Directrice marketing IA</span></div>
+            <div id="assya-greeting" style="color:var(--text);font-size:14px;margin-top:4px;line-height:1.5;">Bonjour Sebastien. Je prépare ton inbox du jour…</div>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+            <div style="text-align:center;"><div id="assya-stat-published" style="font-weight:800;font-size:22px;color:#22c55e;">—</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;">Publiés aujourd'hui</div></div>
+            <div style="text-align:center;"><div id="assya-stat-pending" style="font-weight:800;font-size:22px;color:#f59e0b;">—</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;">En attente</div></div>
+            <div style="text-align:center;"><div id="assya-stat-ideas" style="font-weight:800;font-size:22px;color:#E10600;">—</div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;">Idées prêtes</div></div>
+          </div>
+        </div>
+      </div>
 
       <!-- Section 0 : Story du jour selon Assya -->
       <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(225,6,0,0.10) 0%,rgba(225,6,0,0.02) 100%);border-left:4px solid #E10600;">
@@ -2465,10 +2481,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
-      <!-- Section A : événements à diffuser (smartphones récents) -->
+      <!-- Section A : Inbox Assya (multi-source) -->
       <div class="card" style="margin-bottom:20px;">
         <div class="card-header">
-          <div class="card-title">📡 Événements à diffuser <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Smartphones ajoutés récemment</span></div>
+          <div class="card-title">📡 Inbox d'Assya <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Tout ce qui peut être publié maintenant</span></div>
           <button class="btn btn-sm" onclick="studioRefreshFeed()" style="border-color:#00e0ff;color:#00e0ff;">🔄 Rafraîchir</button>
         </div>
         <div id="studio-feed" style="display:flex;gap:12px;overflow-x:auto;padding:8px 4px;"></div>
@@ -2521,7 +2537,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
       <!-- Section D : upload + publication directe Insta/FB -->
       <div class="card">
-        <div class="card-header"><div class="card-title">⬆️ Upload + publication</div></div>
+        <div class="card-header"><div class="card-title">⬆️ Upload &amp; publication</div></div>
 
         <!-- Drop zone -->
         <div id="studio-drop" style="text-align:center;padding:36px 20px;border:2px dashed rgba(225,6,0,0.35);border-radius:14px;cursor:pointer;transition:all .2s;background:rgba(225,6,0,0.04);">
@@ -2581,6 +2597,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
           </div>
         </div>
+      </div>
+
+      <!-- Section E : Historique récent des posts -->
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header">
+          <div class="card-title">📊 Mes derniers posts <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Historique publications</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshHistory()" style="border-color:#00e0ff;color:#00e0ff;">🔄 Rafraîchir</button>
+        </div>
+        <div id="studio-history" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:6px 2px;min-height:60px;"></div>
       </div>
     </div>
 
@@ -2697,32 +2722,137 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       });
     }
 
-    function studioRefreshFeed(){
+    async function studioRefreshFeed(){
       var feed = document.getElementById('studio-feed');
       if(!feed) return;
-      feed.innerHTML = '';
-      // Tente de lire la variable globale phones[] de l'app
-      var list = (typeof phones !== 'undefined' && Array.isArray(phones))
-        ? phones.slice().sort(function(a,b){ return (b.id||0)-(a.id||0); }).slice(0,8)
+      feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
+
+      // Source 1 : phones[] récents
+      var phoneList = (typeof phones !== 'undefined' && Array.isArray(phones))
+        ? phones.slice().sort(function(a,b){ return (b.id||0)-(a.id||0); }).slice(0,5)
         : [];
-      if(list.length===0){
-        feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Aucun smartphone récent. Ajoute-en un dans "Achat smartphones" et il apparaîtra ici.</div>';
-        return;
-      }
-      list.forEach(function(p){
+
+      // Source 2 : décisions Assya en attente de validation
+      var assyaPending = [];
+      try {
+        if(typeof supaFetch === 'function'){
+          var rows = await supaFetch('agent_decisions','GET',null,'?status=eq.pending_validation&order=created_at.desc&limit=5');
+          if(Array.isArray(rows)) assyaPending = rows;
+        }
+      } catch(e){}
+
+      feed.innerHTML = '';
+
+      // Helper de carte
+      var makeCard = function(html, onClick, accent){
         var card = document.createElement('div');
-        card.style.cssText = 'min-width:200px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;';
+        card.style.cssText = 'min-width:200px;max-width:240px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;'+(accent?'border-left:4px solid '+accent+';':'');
         card.onmouseover = function(){ card.style.borderColor='#E10600'; card.style.transform='translateY(-2px)'; };
-        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; card.style.transform='none'; };
-        card.onclick = function(){ studioSelectPhone(p); };
-        card.innerHTML =
+        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; if(accent) card.style.borderLeftColor=accent; card.style.transform='none'; };
+        if(onClick) card.onclick = onClick;
+        card.innerHTML = html;
+        return card;
+      };
+
+      // Cartes : décisions Assya en attente
+      assyaPending.forEach(function(d){
+        var payload = d.payload || {};
+        var caption = (payload.caption || d.reasoning || '').substring(0, 70);
+        var html =
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;"><div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div></div>'+
+          '<div style="font-weight:700;font-size:13px;color:#fff;line-height:1.35;min-height:54px;">'+(caption||'(sans aperçu)')+'…</div>'+
+          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Confiance '+Math.round((d.confidence||0)*100)+'%</div>'+
+          '<div style="margin-top:10px;font-size:11px;color:#f59e0b;font-weight:700;letter-spacing:1px;">CLIC POUR EXAMINER →</div>';
+        feed.appendChild(makeCard(html, function(){
+          // Pré-remplit la caption + plateforme insta + ouvre le studio
+          if(payload.media_url){
+            document.getElementById('studio-platform').value = 'instagram';
+            studioPlatformChange();
+            document.getElementById('studio-format').value = 'post';
+            studioRefreshPrompt();
+            // On peut pas auto-uploader l'image d'Assya, mais on peut afficher la caption
+            var ta = document.getElementById('studio-caption');
+            if(ta){ ta.value = payload.caption || ''; document.getElementById('studio-caption-count').textContent = ta.value.length; }
+            alert('Décision Assya chargée. L\'image générée par l\'IA est dans Storage : '+payload.media_url+'\n\nTu peux l\'uploader manuellement OU générer un visuel custom via ChatGPT/Gemini.');
+          }
+        }, '#f59e0b'));
+      });
+
+      // Cartes : smartphones récents
+      phoneList.forEach(function(p){
+        var html =
+          '<div style="font-size:10px;color:#E10600;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">📱 STOCK · #'+(p.id||'?')+'</div>'+
           '<div style="font-weight:800;font-size:15px;color:#fff;">'+(p.modele||'?')+'</div>'+
           '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+(p.couleur||'')+(p.stockage?' · '+p.stockage+'Go':'')+'</div>'+
           '<div style="font-size:18px;font-weight:800;color:#E10600;margin-top:8px;">'+(p.vente||0)+' €</div>'+
           '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Grade '+(p.grade||'?')+' · '+(p.batterie||'?')+'%</div>'+
           '<div style="margin-top:10px;font-size:11px;color:#E10600;font-weight:700;letter-spacing:1px;">CLIC POUR DIFFUSER →</div>';
-        feed.appendChild(card);
+        feed.appendChild(makeCard(html, function(){ studioSelectPhone(p); }, '#E10600'));
       });
+
+      if(feed.children.length === 0){
+        feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Inbox vide. Ajoute un smartphone ou attends qu\'Assya propose quelque chose…</div>';
+      }
+
+      // Met à jour les stats Assya
+      studioUpdateStats(phoneList.length, assyaPending.length);
+    }
+
+    async function studioRefreshHistory(){
+      var box = document.getElementById('studio-history');
+      if(!box) return;
+      box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
+      try {
+        var rows = await supaFetch('social_posts','GET',null,'?order=published_at.desc.nullslast&limit=10');
+        if(!Array.isArray(rows) || rows.length===0){
+          box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Aucun post publié pour le moment.</div>';
+          return;
+        }
+        box.innerHTML = '';
+        var pubToday = 0;
+        var todayStr = new Date().toISOString().slice(0,10);
+        rows.forEach(function(p){
+          if((p.published_at||'').startsWith(todayStr)) pubToday++;
+          var img = (p.media_urls && p.media_urls[0]) || '';
+          var when = p.published_at ? new Date(p.published_at).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+          var plats = p.platforms || {};
+          var icons = (plats.instagram?'📷 ':'') + (plats.instagram_story?'📲 ':'') + (plats.facebook?'📘 ':'');
+          var card = document.createElement('div');
+          card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;';
+          card.onmouseover = function(){ card.style.borderColor='#E10600'; };
+          card.onmouseout  = function(){ card.style.borderColor='var(--border)'; };
+          card.onclick = function(){ if(img) window.open(img,'_blank'); };
+          card.innerHTML =
+            (img ? '<img src="'+img+'" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#000;">' : '<div style="width:100%;aspect-ratio:1;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text-muted);">📷</div>')+
+            '<div style="padding:8px 10px;">'+
+              '<div style="font-size:11px;font-weight:700;color:#fff;">'+(icons||'—')+' '+(p.status==='published'?'<span style="color:#22c55e;">OK</span>':'<span style="color:#ef4444;">FAIL</span>')+'</div>'+
+              '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+when+'</div>'+
+            '</div>';
+          box.appendChild(card);
+        });
+        // Met à jour le stat "publiés aujourd'hui"
+        var s = document.getElementById('assya-stat-published');
+        if(s) s.textContent = pubToday;
+      } catch(e){
+        box.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Erreur chargement historique : '+e.message+'</div>';
+      }
+    }
+
+    function studioUpdateStats(nbPhones, nbPending){
+      var sP = document.getElementById('assya-stat-pending');
+      var sI = document.getElementById('assya-stat-ideas');
+      var greet = document.getElementById('assya-greeting');
+      if(sP) sP.textContent = nbPending;
+      if(sI) sI.textContent = nbPhones;
+      if(greet){
+        var heure = new Date().getHours();
+        var saluation = heure < 12 ? 'Bonjour' : (heure < 18 ? 'Bon après-midi' : 'Bonsoir');
+        var phrases = [];
+        if(nbPhones > 0) phrases.push(nbPhones + ' smartphone' + (nbPhones>1?'s':'') + ' en stock à diffuser');
+        if(nbPending > 0) phrases.push(nbPending + ' décision' + (nbPending>1?'s':'') + ' en attente de toi');
+        var resume = phrases.length ? phrases.join(' · ') + '.' : 'Pas de nouvelle urgence — bon moment pour pousser la Story du jour.';
+        greet.textContent = saluation + ' Sebastien. ' + resume;
+      }
     }
 
     function studioSelectPhone(p){
@@ -3036,6 +3166,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       await _origStudioInit();
       studioSetupUpload();
       studioRenderDailyIdea();
+      studioRefreshHistory();
     };
     </script>
 
