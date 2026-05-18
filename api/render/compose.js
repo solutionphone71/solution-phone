@@ -102,7 +102,7 @@ function buildComposition(aiImageUrl, vars) {
     `GRADE ${vars.grade || 'A'}`,
     `BATTERIE ${vars.batterie != null ? vars.batterie : 92}%`,
     'ÉTAT EXCELLENT',
-    'GARANTIE 6 MOIS',
+    'GARANTIE 12 MOIS',
     'PIÈCES TESTÉES'
   ];
   const bulletChildren = items.map(text =>

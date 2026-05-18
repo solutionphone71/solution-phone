@@ -72,7 +72,11 @@ REQUIRED BRAND ELEMENTS (when relevant):
 - Address line "21 Rue Gambetta, 71000 Mâcon" in Montserrat Regular when contact info is shown
 - Phone "03 85 33 06 89"
 - Site "solution-phone.fr"
-- Trust signals: "Depuis 2014" · "+590 avis Google" · "Garantie 6 mois" · "90% des réparations en -1h"
+- Trust signals: "Depuis 2014" · "+590 avis Google" · "90% des réparations en -1h"
+- Garanties (à choisir selon le contexte du visuel) :
+  • Réparation : "GARANTIE 6 MOIS"
+  • Smartphone reconditionné : "GARANTIE 12 MOIS"
+  • Smartphone neuf : "GARANTIE 24 MOIS"
 ```
 
 ---

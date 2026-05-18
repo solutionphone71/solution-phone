@@ -127,7 +127,10 @@ Usage : paragraphes · descriptions · infos techniques · textes secondaires
 ## 8 · ENGAGEMENTS OFFICIELS (à intégrer dans chaque support)
 
 ⚡ **90% des réparations en moins d'1 heure**
-🛡 **Garantie 6 mois pièces & main-d'œuvre**
+🛡 **Garanties officielles :**
+- **Réparation** : 6 mois pièces & main-d'œuvre
+- **Smartphone reconditionné** : 12 mois
+- **Smartphone neuf** : 24 mois (garantie constructeur)
 📍 **Depuis 2014 à Mâcon**
 ⭐ **+590 avis Google — note 4,7/5**
 ✓ **SAV de qualité**

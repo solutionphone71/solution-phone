@@ -39,7 +39,9 @@ SET value = value || '{
     ],
     "engagements": {
       "rapidite": "90% des réparations en moins d''1 heure",
-      "garantie": "Garantie 6 mois pièces et main d''œuvre",
+      "garantie_reparation": "Garantie 6 mois pièces et main d''œuvre (sauf casse/oxydation/usure)",
+      "garantie_reconditionne": "Garantie 12 mois sur tout smartphone reconditionné",
+      "garantie_neuf": "Garantie 24 mois constructeur sur smartphone neuf",
       "anciennete": "Depuis 2014 à Mâcon",
       "avis": "+590 avis Google · note 4,7/5",
       "sav": "SAV de qualité"
@@ -126,7 +128,7 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
 -- Template 1 : new_phone (smartphone occasion ajouté)
 UPDATE visual_templates
 SET base_prompt = (SELECT value::text FROM agent_memory WHERE key = 'master_visual_prompt')
-  || E'\n\nSPECIFIC SHOT:\nA premium Instagram square 1080x1080 visual announcing a refurbished smartphone now in stock at Solution Phone Mâcon.\n\nLAYOUT:\n- Top-left: Solution Phone red "S" logo (rounded square, chrome S inside) with small "SOLUTION PHONE" label\n- Top-center: a small red pill badge reading "NOUVEAU EN STOCK"\n- Center-left block: model name "{modele}" in HUGE white Montserrat Extra Bold, then price "{prix}€" gigantic red Montserrat Extra Bold below\n- Right side: photorealistic 3/4 perspective shot of the smartphone {modele} in {couleur} color, floating, resting on a subtle red glow ring, soft drop shadow underneath\n- Below the model name: 5 bullet rows with small red dots — "GRADE {grade}", "BATTERIE {batterie}%", "ÉTAT EXCELLENT", "GARANTIE 6 MOIS", "PIÈCES TESTÉES"\n- Footer: thin red bar with "RÉPARATION · ACCESSOIRES · ACHAT · REVENTE" in small white caps, address "21 Rue Gambetta, 71000 Mâcon" and "03 85 33 06 89" in Montserrat Regular\n\nVARIABLES TO USE: modele={modele}, prix={prix}, grade={grade}, batterie={batterie}, couleur={couleur}\n\nMOOD: Apple Store product launch, but Solution Phone branded. Subtle red glow only. No fake Apple/Samsung logos on the device — keep generic.',
+  || E'\n\nSPECIFIC SHOT:\nA premium Instagram square 1080x1080 visual announcing a refurbished smartphone now in stock at Solution Phone Mâcon.\n\nLAYOUT:\n- Top-left: Solution Phone red "S" logo (rounded square, chrome S inside) with small "SOLUTION PHONE" label\n- Top-center: a small red pill badge reading "NOUVEAU EN STOCK"\n- Center-left block: model name "{modele}" in HUGE white Montserrat Extra Bold, then price "{prix}€" gigantic red Montserrat Extra Bold below\n- Right side: photorealistic 3/4 perspective shot of the smartphone {modele} in {couleur} color, floating, resting on a subtle red glow ring, soft drop shadow underneath\n- Below the model name: 5 bullet rows with small red dots — "GRADE {grade}", "BATTERIE {batterie}%", "ÉTAT EXCELLENT", "GARANTIE 12 MOIS", "PIÈCES TESTÉES"\n- Footer: thin red bar with "RÉPARATION · ACCESSOIRES · ACHAT · REVENTE" in small white caps, address "21 Rue Gambetta, 71000 Mâcon" and "03 85 33 06 89" in Montserrat Regular\n\nVARIABLES TO USE: modele={modele}, prix={prix}, grade={grade}, batterie={batterie}, couleur={couleur}\n\nMOOD: Apple Store product launch, but Solution Phone branded. Subtle red glow only. No fake Apple/Samsung logos on the device — keep generic. NOTE: GARANTIE 12 MOIS (smartphone reconditionné) — never 6 mois which is for repairs only.',
     updated_at = NOW()
 WHERE name = 'new_phone_carre';
 
