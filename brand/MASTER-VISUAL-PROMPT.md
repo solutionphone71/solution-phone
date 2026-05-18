@@ -56,8 +56,13 @@ QUALITY:
 - Cinematic color grade: deep blacks, controlled highlights, slight red push in shadows
 - No motion blur unless explicitly requested
 
+BRAND LOGOS (Apple, Samsung, Xiaomi, etc.) — RÈGLE IMPORTANTE :
+- ✅ AUTORISÉ : le logo officiel de la marque SUR le téléphone vendu (ex: pomme Apple à l'arrière d'un iPhone, "SAMSUNG" sur un Galaxy). Solution Phone vend des smartphones AUTHENTIQUES reconditionnés, un téléphone sans logo aurait l'air d'une contrefaçon — ce que nous ne vendons jamais.
+- ❌ INTERDIT : logos Apple/Samsung/etc. AILLEURS dans le visuel (en titre, en bandeau, en grand format) qui suggéreraient un partenariat officiel ou un faux service après-vente officiel.
+- ❌ INTERDIT : imiter la charte graphique Apple (typo San Francisco, layout keynote, slogans "Designed by Apple") ou Samsung.
+
 ABSOLUTELY FORBIDDEN:
-- Watermarks, signatures, fake brand logos (Apple, Samsung, etc. unless explicitly referenced)
+- Watermarks, signatures, fake company logos other than the device manufacturer on the device itself
 - Rainbow gradients, RGB lighting, neon excess
 - 3D cartoon effects, low-poly aesthetics
 - Cheap retail / discount shop typography (Impact, Comic Sans, Bebas variants)
