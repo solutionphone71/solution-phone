@@ -48,9 +48,11 @@ export default async function handler(req, res) {
   if (handleAuth(req, res)) return;
 
   const t0 = Date.now();
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : 'https://app.solution-phone.fr';
+  // FIX 18/05 : utiliser le domaine public toujours, jamais VERCEL_URL.
+  // Sur Vercel Pro avec Authentication, les URLs *.vercel.app passent par
+  // une couche d'auth qui renvoie du HTML → r.json() échoue côté caller.
+  // Le domaine custom app.solution-phone.fr est public et passe.
+  const baseUrl = 'https://app.solution-phone.fr';
 
   try {
     // 1. Récupère les jobs en attente (max MAX_JOBS_PER_RUN)
