@@ -1,21 +1,21 @@
 {
   "functions": {
-    "api/render/gpt-image.js":       { "maxDuration": 60 },
-    "api/visual/process-queue.js":   { "maxDuration": 60 },
-    "api/visual/quality-check.js":   { "maxDuration": 60 },
-    "api/agents/zahira.js":          { "maxDuration": 60 },
-    "api/agents/trigger.js":         { "maxDuration": 60 },
-    "api/autopilot/execute.js":      { "maxDuration": 60 }
+    "api/render/gpt-image.js":      { "maxDuration": 60 },
+    "api/visual/process-queue.js":  { "maxDuration": 60 },
+    "api/visual/quality-check.js":  { "maxDuration": 60 },
+    "api/agents/zahira.js":         { "maxDuration": 60 },
+    "api/agents/trigger.js":        { "maxDuration": 60 },
+    "api/autopilot/execute.js":     { "maxDuration": 60 }
   },
   "rewrites": [
-    { "source": "/proxy-kiwiz/:path*",    "destination": "/api/proxy-kiwiz"    },
-    { "source": "/proxy-ecosystem/:path*","destination": "/api/proxy-ecosystem" },
-    { "source": "/proxy-ecologic/:path*", "destination": "/api/proxy-ecologic"  },
-    { "source": "/api/google-oauth-init",     "destination": "/api/google-reviews.js"  },
-    { "source": "/api/google-oauth-callback", "destination": "/api/google-reviews.js"  },
-    { "source": "/api/google-reviews",        "destination": "/api/google-reviews.js"  },
-    { "source": "/api/cron-reviews",          "destination": "/api/google-reviews.js"  },
-    { "source": "/api/google-reviews-config", "destination": "/api/google-reviews.js"  }
+    { "source": "/proxy-kiwiz/:path*",        "destination": "/api/proxy-kiwiz" },
+    { "source": "/proxy-ecosystem/:path*",    "destination": "/api/proxy-ecosystem" },
+    { "source": "/proxy-ecologic/:path*",     "destination": "/api/proxy-ecologic" },
+    { "source": "/api/google-oauth-init",     "destination": "/api/google-reviews.js" },
+    { "source": "/api/google-oauth-callback", "destination": "/api/google-reviews.js" },
+    { "source": "/api/google-reviews",        "destination": "/api/google-reviews.js" },
+    { "source": "/api/cron-reviews",          "destination": "/api/google-reviews.js" },
+    { "source": "/api/google-reviews-config", "destination": "/api/google-reviews.js" }
   ],
   "crons": [
     { "path": "/api/cron-reviews",                "schedule": "0 9 * * *" },
