@@ -1,0 +1,121 @@
+{
+  "_comment": "Bibliothèque officielle de prompts Solution Phone — pour ChatGPT-image / Gemini. Modifiables par Sebastien depuis brand/studio-prompts.json.",
+  "version": "v1-2026-05-18",
+
+  "master_brand_prompt": "BRAND: Solution Phone — premium smartphone repair shop in Mâcon, France, since 2014. STYLE: Apple keynote × Tesla × Bang & Olufsen. Cinematic, premium, minimalist, modern tech high-end. NEVER cheap, NEVER discount-shop, NEVER gaming RGB. STRICT COLOR PALETTE 60/30/10: 60% deep matte black #0D0D0D, 30% pure white #FFFFFF, 10% signature red #E10600 used ONLY as accents. LIGHTING: dramatic side lighting, subtle red rim-light, soft cinematic falloff. COMPOSITION: ultra minimalist, generous negative space, mobile-first readability. TYPOGRAPHY (when text): Montserrat Extra Bold for titles, Montserrat Regular for body. MATERIALS: matte black, premium glass, chrome/silver accents. QUALITY: 8K detail, studio photography, shallow depth of field. FORBIDDEN: watermarks, rainbow gradients, RGB neon, 3D cartoon, cheap retail typography, cluttered backgrounds, stock-photo people, lens flares.",
+
+  "platforms": {
+    "instagram": {
+      "label": "Instagram",
+      "icon": "📷",
+      "formats": [
+        { "id": "post", "label": "Post carré", "dimensions": "1080×1080", "aspect": "1:1" },
+        { "id": "reel", "label": "Reel / Story", "dimensions": "1080×1920", "aspect": "9:16" },
+        { "id": "portrait", "label": "Post portrait", "dimensions": "1080×1350", "aspect": "4:5" }
+      ]
+    },
+    "facebook": {
+      "label": "Facebook",
+      "icon": "📘",
+      "formats": [
+        { "id": "post", "label": "Post carré", "dimensions": "1080×1080", "aspect": "1:1" },
+        { "id": "cover", "label": "Couverture page", "dimensions": "1640×859", "aspect": "1.91:1" },
+        { "id": "story", "label": "Story", "dimensions": "1080×1920", "aspect": "9:16" }
+      ]
+    },
+    "google": {
+      "label": "Google Ads",
+      "icon": "🔍",
+      "formats": [
+        { "id": "landscape", "label": "Paysage", "dimensions": "1200×628", "aspect": "1.91:1" },
+        { "id": "square", "label": "Carré", "dimensions": "1080×1080", "aspect": "1:1" },
+        { "id": "portrait", "label": "Portrait", "dimensions": "1200×1500", "aspect": "4:5" }
+      ]
+    },
+    "tv_magasin": {
+      "label": "TV Magasin",
+      "icon": "📺",
+      "formats": [
+        { "id": "landscape", "label": "Paysage HD", "dimensions": "1920×1080", "aspect": "16:9" },
+        { "id": "portrait", "label": "Portrait (écran vertical)", "dimensions": "1080×1920", "aspect": "9:16" }
+      ]
+    }
+  },
+
+  "themes": [
+    {
+      "id": "smartphone_stock",
+      "label": "Smartphone occasion ajouté",
+      "icon": "📱",
+      "variables": [
+        { "key": "modele",   "label": "Modèle",   "placeholder": "iPhone 13",  "default": "iPhone 13" },
+        { "key": "prix",     "label": "Prix (€)", "placeholder": "349",        "default": "349" },
+        { "key": "grade",    "label": "Grade",    "placeholder": "A",          "default": "A" },
+        { "key": "batterie", "label": "Batterie (%)", "placeholder": "92",     "default": "92" },
+        { "key": "couleur",  "label": "Couleur",  "placeholder": "Noir",       "default": "Noir" }
+      ],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} visual ({dimensions}) announcing a refurbished smartphone in stock at Solution Phone Mâcon.\n\nLAYOUT:\n- Top-left: small red rounded square \"S\" logo (Solution Phone signature mark, do not add any other words)\n- Top-right: red pill badge with text NOUVEAU EN STOCK in white Montserrat Extra Bold\n- Center-left block: HUGE white title \"{modele}\", then GIGANTIC red \"{prix} €\" below\n- Center-right: photorealistic 3/4 view of a {modele} smartphone in {couleur}, floating, subtle red glow halo behind it, soft shadow below. Keep device generic-premium-looking, no fake Apple/Samsung logo.\n- Below price: 5 bullet rows, each = small red dot + Montserrat Extra Bold white text. Exact rows in this order:\n   1. GRADE {grade}\n   2. BATTERIE {batterie}%\n   3. ETAT EXCELLENT\n   4. GARANTIE 6 MOIS\n   5. PIECES TESTEES\n- Bottom: thin red bar with white text REPARATION · ACCESSOIRES · ACHAT · REVENTE\n- Below the red bar: white Montserrat Regular line: 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES:\n- Copy every quoted text character-for-character, no translation, no paraphrase.\n- Do NOT invent any other text, phone number, address, URL or hashtag.\n- Use NO accents in the image text (write ETAT not ÉTAT, REPARATION not RÉPARATION).\n- Battery is exactly {batterie}%, warranty is exactly 6 MOIS, address is exactly 21 RUE GAMBETTA - 71000 MACON.\n- Spell-check: word is ETAT (E-T-A-T) never ETAI, word is PIECES (P-I-E-C-E-S) never PIESES."
+    },
+
+    {
+      "id": "promo",
+      "label": "Promo / Réduction",
+      "icon": "🔥",
+      "variables": [
+        { "key": "titre",      "label": "Titre",      "placeholder": "PROMO RENTRÉE", "default": "PROMO RENTREE" },
+        { "key": "reduction",  "label": "Réduction (€)", "placeholder": "30",         "default": "30" },
+        { "key": "sous_titre", "label": "Sous-titre", "placeholder": "Sur tous les iPhone reconditionnés", "default": "Sur tous les iPhone reconditionnés" }
+      ],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} visual ({dimensions}) announcing a promotion at Solution Phone Mâcon.\n\nLAYOUT:\n- Top-left: red rounded \"S\" logo only\n- Center: red pill badge containing white Montserrat Extra Bold \"-{reduction}€\"\n- Below: HUGE white title \"{titre}\" in Montserrat Extra Bold, all caps\n- Below: \"{sous_titre}\" in Montserrat Regular medium gray\n- Subtle red glow originating from behind the central text\n- Right side: optional smartphone product visual with subtle red rim light\n- Bottom: red CTA pill \"DISPONIBLE EN BOUTIQUE\" in white\n- Footer line: 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES:\n- Discount is exactly -{reduction}€, never another number.\n- No accents in image text.\n- No invented phone/address/URL beside the official footer."
+    },
+
+    {
+      "id": "avis_5",
+      "label": "Avis client 5 étoiles",
+      "icon": "⭐",
+      "variables": [
+        { "key": "auteur",       "label": "Prénom client", "placeholder": "Sophie M.", "default": "Sophie M." },
+        { "key": "commentaire",  "label": "Commentaire (max 200 car)", "placeholder": "Service rapide, prix correct, équipe au top.", "default": "Service rapide, prix correct, equipe au top. Je recommande." },
+        { "key": "date_relative", "label": "Date", "placeholder": "il y a 2 jours", "default": "il y a 2 jours" }
+      ],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium editorial {aspect} visual ({dimensions}) reposting a 5-star Google review for Solution Phone.\n\nLAYOUT:\n- Top: a horizontal row of 5 gold stars (single accent color allowed for stars)\n- Below stars: small red Montserrat Regular label AVIS GOOGLE 5 ETOILES\n- Center: a large opening red quote mark, then the review comment in white Montserrat Regular italic, broken into 3-4 lines, max 220 characters:\n   \"{commentaire}\"\n- Bottom: a clean circular photo placeholder (soft warm gray gradient — do NOT generate a person's face), then author name {auteur} in white Montserrat Extra Bold, with date {date_relative} below in light gray Montserrat Regular\n- Solution Phone red S logo bottom-right corner\n- Footer thin red bar: 21 RUE GAMBETTA - 71000 MACON - solution-phone.fr\n\nABSOLUTE TEXT RULES:\n- Quote text must be copied EXACTLY: \"{commentaire}\"\n- Author name exact: \"{auteur}\"\n- Date exact: \"{date_relative}\"\n- Do NOT auto-correct, do NOT translate, do NOT add words.\n- Stars are gold; red used only for the quote mark. Palette stays 60% black / 30% white / 10% red."
+    },
+
+    {
+      "id": "qualirepar",
+      "label": "QualiRépar -25€",
+      "icon": "🛡",
+      "variables": [],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} visual ({dimensions}) highlighting the QualiRépar -25€ discount at Solution Phone Mâcon.\n\nLAYOUT (50/50 split):\n- LEFT HALF: photorealistic medium shot of a young male technician in a black hoodie with the small red S Solution Phone logo on chest, black nitrile gloves, holding a precision screwdriver, working on a disassembled smartphone on a blue QualiRépar repair mat. Microscope blurred background. Clean atelier, warm side light.\n- RIGHT HALF (dark backdrop):\n   - Top: red S logo small\n   - HUGE white title two lines:\n        REPARATEUR\n        LABELLISE\n   - Below in QualiRépar blue (#0066CC) Montserrat Extra Bold:\n        QUALIREPAR\n   - Below: a massive red rounded rectangle containing white Montserrat Extra Bold:\n        -25€ SUR VOTRE REPARATION\n   - Below: 4 tiny icon+label rows in white Montserrat Regular:\n        PIECES CERTIFIEES · REPARATION DE QUALITE · GARANTIE 6 MOIS · ECO-RESPONSABLE\n- Bottom: thin red bar with: 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES:\n- Exact strings: REPARATEUR LABELLISE, QUALIREPAR, -25€ SUR VOTRE REPARATION, GARANTIE 6 MOIS.\n- No accents.\n- The discount is exactly -25€.\n- QualiRépar blue is allowed only on the label area, palette discipline elsewhere."
+    },
+
+    {
+      "id": "hydrogel",
+      "label": "Hydrogel — Protection écran",
+      "icon": "💎",
+      "variables": [],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} visual ({dimensions}) for the Solution Phone hydrogel screen protection range.\n\nLAYOUT (top to bottom):\n- Top: small red pill PROTECTION ECRAN in white Montserrat Extra Bold\n- Title arrangement:\n   - VERRE TREMPE in white Montserrat Extra Bold WITH a red strikethrough line through it\n   - Directly below: MASSIVE red Montserrat Extra Bold word HYDROGEL\n- Below: single line white Montserrat Regular: Film auto-cicatrisant pose en 5 MIN (make \"5 MIN\" pop in red)\n- Center: photorealistic close-up of a flexible transparent hydrogel film draping over a black premium smartphone, subtle red glow underneath, a few abstract red shards floating to suggest impact protection\n- Bottom: 4 small product cards in a row:\n   CRYSTAL — 25€ — \"Anti-reflets, hydrophobe, auto-cicatrisant\"\n   OBSIDIAN — 25€ — \"Privacy, anti-reflets, auto-cicatrisant\"\n   SAPHIR — 15€ — \"Anti-rayures, transparent HD\"\n   ONYX — 15€ — \"Privacy, anti-rayures\"\n- Footer thin red bar: 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES:\n- Exact words: HYDROGEL (H-Y-D-R-O-G-E-L), VERRE TREMPE, PROTECTION ECRAN.\n- Prices exact: 25€, 25€, 15€, 15€.\n- No accents in image text."
+    },
+
+    {
+      "id": "cloture_repair",
+      "label": "Avant / Après réparation",
+      "icon": "🔧",
+      "variables": [
+        { "key": "modele",           "label": "Modèle réparé",    "placeholder": "iPhone 14",                 "default": "iPhone 14" },
+        { "key": "description_panne", "label": "Type de panne",   "placeholder": "Écran cassé remplacé",      "default": "Ecran casse remplace" }
+      ],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} before/after visual ({dimensions}) showing a smartphone repair transformation at Solution Phone Mâcon.\n\nLAYOUT:\n- Vertical split with a thin red separator line in the middle\n- LEFT HALF (label AVANT in red top-left): the {modele} with a dramatic cracked, fractured screen, dark moody lighting, broken glass spiderwebs, subtle red rim. Premium framing, no liquid or blood effects.\n- RIGHT HALF (label APRES in green top-right): the same {modele}, screen pristine and lit, soft red glow halo behind, premium presentation\n- Bottom band on black backdrop:\n   - HUGE white Montserrat Extra Bold: REPARE EN MOINS D'1H\n   - Below: {description_panne} in Montserrat Regular white smaller\n- Optional small QualiRépar blue badge BONUS -25€ bottom-left\n- Footer red bar: 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES:\n- Exact strings: AVANT, APRES, REPARE EN MOINS D'1H.\n- No accents in image text.\n- Description copied exactly: \"{description_panne}\"."
+    },
+
+    {
+      "id": "custom",
+      "label": "Personnalisé (vide)",
+      "icon": "✨",
+      "variables": [
+        { "key": "brief_libre", "label": "Décris ce que tu veux", "placeholder": "Ex: une affiche Black Friday smartphones reconditionnés -100€", "default": "" }
+      ],
+      "prompt": "{master_brand_prompt}\n\nCREATE: A premium {aspect} visual ({dimensions}) for Solution Phone Mâcon.\n\nBRIEF:\n{brief_libre}\n\nFOOTER (always include): 21 RUE GAMBETTA - 71000 MACON - 03 85 33 06 89\n\nABSOLUTE TEXT RULES: No accents in image text. Do not invent any phone number, URL or hashtag besides the footer."
+    }
+  ]
+}

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Visuel · Solution Phone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rouge: #E10600;
+  --rouge-glow: rgba(225,6,0,0.35);
+  --noir: #0D0D0D;
+  --noir-soft: #1a1a1a;
+  --blanc: #FFFFFF;
+  --muted: rgba(255,255,255,0.55);
+  --border: rgba(255,255,255,0.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', -apple-system, sans-serif;
+  background: var(--noir);
+  color: var(--blanc);
+  min-height: 100vh;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 24px 40px;
+  display: flex; align-items: center; gap: 20px;
+  background: linear-gradient(180deg, rgba(225,6,0,0.05) 0%, transparent 100%);
+}
+.header-logo {
+  width: 56px; height: 56px;
+  background: var(--rouge);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 32px;
+  box-shadow: 0 0 30px var(--rouge-glow);
+}
+.header-title { font-weight: 800; font-size: 24px; letter-spacing: -0.5px; }
+.header-subtitle { font-size: 14px; color: var(--muted); margin-top: 2px; letter-spacing: 1px; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 40px; }
+
+.step {
+  margin-bottom: 48px;
+}
+.step-num {
+  display: inline-block;
+  width: 36px; height: 36px;
+  background: var(--rouge);
+  color: var(--blanc);
+  border-radius: 50%;
+  text-align: center; line-height: 36px;
+  font-weight: 800; font-size: 16px;
+  margin-right: 16px;
+  vertical-align: middle;
+}
+.step-title {
+  font-size: 22px; font-weight: 800;
+  display: inline-block;
+  vertical-align: middle;
+  letter-spacing: -0.3px;
+}
+.step-desc {
+  font-size: 14px; color: var(--muted);
+  margin-left: 52px; margin-top: 4px; margin-bottom: 20px;
+}
+
+.grid { display: grid; gap: 16px; margin-left: 52px; }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.card {
+  background: var(--noir-soft);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: center;
+  user-select: none;
+}
+.card:hover {
+  border-color: var(--rouge);
+  background: rgba(225,6,0,0.08);
+  transform: translateY(-2px);
+}
+.card.selected {
+  border-color: var(--rouge);
+  background: rgba(225,6,0,0.12);
+  box-shadow: 0 0 24px var(--rouge-glow);
+}
+.card-icon { font-size: 32px; margin-bottom: 8px; }
+.card-label { font-weight: 700; font-size: 15px; }
+.card-meta { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; }
+
+.format-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-left: 52px; margin-top: 12px;
+}
+.format-chip {
+  padding: 10px 18px;
+  background: var(--noir-soft);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 13px; font-weight: 700;
+  transition: all 0.18s;
+}
+.format-chip:hover { border-color: var(--rouge); }
+.format-chip.selected {
+  background: var(--rouge); border-color: var(--rouge); color: var(--blanc);
+}
+.format-chip-dim { font-weight: 400; opacity: 0.75; font-size: 11px; margin-left: 6px; }
+
+.form-row { display: grid; grid-template-columns: 180px 1fr; gap: 12px; margin-bottom: 10px; }
+.form-row label { font-size: 13px; font-weight: 700; align-self: center; color: var(--muted); }
+.form-row input {
+  background: var(--noir-soft);
+  border: 1.5px solid var(--border);
+  color: var(--blanc);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+}
+.form-row input:focus { outline: none; border-color: var(--rouge); }
+
+.variables { margin-left: 52px; }
+
+.prompt-zone {
+  margin-left: 52px;
+  background: var(--noir-soft);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  position: relative;
+}
+.prompt-text {
+  font-family: 'SF Mono', Consolas, Monaco, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.85);
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.prompt-actions {
+  display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;
+}
+
+.btn {
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--noir-soft);
+  color: var(--blanc);
+  font-family: inherit;
+  font-weight: 700; font-size: 14px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn:hover { border-color: var(--rouge); }
+.btn-primary {
+  background: var(--rouge); border-color: var(--rouge);
+  box-shadow: 0 0 24px var(--rouge-glow);
+}
+.btn-primary:hover { background: #c00500; }
+
+.empty-state {
+  margin-left: 52px;
+  padding: 40px;
+  background: var(--noir-soft);
+  border: 1.5px dashed var(--border);
+  border-radius: 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.copy-feedback {
+  position: fixed;
+  bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: var(--rouge);
+  color: var(--blanc);
+  padding: 14px 28px;
+  border-radius: 30px;
+  font-weight: 800;
+  box-shadow: 0 0 30px var(--rouge-glow);
+  opacity: 0; transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+.copy-feedback.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+
+.footer-mini {
+  text-align: center;
+  padding: 30px;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 50px;
+}
+.footer-mini strong { color: var(--rouge); font-weight: 800; }
+
+@media (max-width: 720px) {
+  .header { padding: 18px 20px; }
+  .container { padding: 24px 16px; }
+  .grid, .format-row, .variables, .prompt-zone, .empty-state, .step-desc { margin-left: 0; }
+  .step-desc { margin-top: 12px; }
+  .form-row { grid-template-columns: 1fr; gap: 4px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">S</div>
+  <div>
+    <div class="header-title">Studio Visuel</div>
+    <div class="header-subtitle">SOLUTION PHONE · GÉNÉRATEUR DE BRIEFS IA</div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ÉTAPE 1 — Plateforme -->
+  <section class="step">
+    <div><span class="step-num">1</span><span class="step-title">Plateforme</span></div>
+    <div class="step-desc">Choisis où tu veux poster — ça détermine le format et le ratio.</div>
+    <div class="grid grid-4" id="platforms-grid"></div>
+  </section>
+
+  <!-- ÉTAPE 2 — Format -->
+  <section class="step" id="step-format" style="display:none;">
+    <div><span class="step-num">2</span><span class="step-title">Format</span></div>
+    <div class="step-desc">Choisis le format spécifique à la plateforme.</div>
+    <div class="format-row" id="formats-row"></div>
+  </section>
+
+  <!-- ÉTAPE 3 — Thème -->
+  <section class="step" id="step-theme" style="display:none;">
+    <div><span class="step-num">3</span><span class="step-title">Thème du visuel</span></div>
+    <div class="step-desc">Quel genre de visuel veux-tu créer ?</div>
+    <div class="grid grid-3" id="themes-grid"></div>
+  </section>
+
+  <!-- ÉTAPE 4 — Variables -->
+  <section class="step" id="step-variables" style="display:none;">
+    <div><span class="step-num">4</span><span class="step-title">Détails</span></div>
+    <div class="step-desc">Remplis les valeurs exactes qui apparaîtront dans le visuel.</div>
+    <div class="variables" id="variables-form"></div>
+  </section>
+
+  <!-- ÉTAPE 5 — Prompt -->
+  <section class="step" id="step-prompt" style="display:none;">
+    <div><span class="step-num">5</span><span class="step-title">Prompt prêt à coller</span></div>
+    <div class="step-desc">Copie ce prompt, va sur ChatGPT ou Gemini, colle-le, génère, télécharge le visuel sur ton ordi.</div>
+    <div class="prompt-zone">
+      <div class="prompt-text" id="prompt-output">…</div>
+      <div class="prompt-actions">
+        <button class="btn btn-primary" onclick="copyPrompt()">📋 Copier le prompt</button>
+        <a class="btn" href="https://chatgpt.com" target="_blank" rel="noopener">🤖 Ouvrir ChatGPT</a>
+        <a class="btn" href="https://gemini.google.com" target="_blank" rel="noopener">✨ Ouvrir Gemini</a>
+      </div>
+    </div>
+  </section>
+
+  <div id="empty-hint" class="empty-state" style="margin-left:0;">
+    👆 Choisis d'abord une plateforme pour commencer.
+  </div>
+
+</main>
+
+<div class="footer-mini">
+  <strong>SOLUTION PHONE</strong> · MÂCON · DEPUIS 2014 · 21 RUE GAMBETTA · 03 85 33 06 89
+</div>
+
+<div class="copy-feedback" id="copy-feedback">✓ Prompt copié dans le presse-papiers</div>
+
+<script>
+let PROMPTS = null;
+const state = {
+  platform: null,
+  format: null,
+  theme: null,
+  variables: {}
+};
+
+// Charge le fichier de prompts
+fetch('/brand/studio-prompts.json')
+  .then(r => r.json())
+  .then(data => {
+    PROMPTS = data;
+    renderPlatforms();
+    document.getElementById('empty-hint').style.display = 'none';
+  })
+  .catch(e => {
+    document.getElementById('empty-hint').textContent = '⚠️ Impossible de charger les prompts (' + e.message + ')';
+  });
+
+function renderPlatforms() {
+  const grid = document.getElementById('platforms-grid');
+  grid.innerHTML = '';
+  Object.entries(PROMPTS.platforms).forEach(([id, p]) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.platform = id;
+    card.innerHTML = `<div class="card-icon">${p.icon}</div><div class="card-label">${p.label}</div>`;
+    card.onclick = () => selectPlatform(id);
+    grid.appendChild(card);
+  });
+}
+
+function selectPlatform(id) {
+  state.platform = id;
+  state.format = null;
+  state.theme = null;
+  state.variables = {};
+
+  document.querySelectorAll('#platforms-grid .card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.platform === id);
+  });
+
+  // Affiche l'étape 2 (formats)
+  document.getElementById('step-format').style.display = 'block';
+  document.getElementById('step-theme').style.display = 'none';
+  document.getElementById('step-variables').style.display = 'none';
+  document.getElementById('step-prompt').style.display = 'none';
+
+  renderFormats();
+}
+
+function renderFormats() {
+  const row = document.getElementById('formats-row');
+  row.innerHTML = '';
+  const formats = PROMPTS.platforms[state.platform].formats;
+  formats.forEach(f => {
+    const chip = document.createElement('div');
+    chip.className = 'format-chip';
+    chip.dataset.format = f.id;
+    chip.innerHTML = `${f.label}<span class="format-chip-dim">${f.dimensions}</span>`;
+    chip.onclick = () => selectFormat(f);
+    row.appendChild(chip);
+  });
+}
+
+function selectFormat(f) {
+  state.format = f;
+
+  document.querySelectorAll('#formats-row .format-chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.format === f.id);
+  });
+
+  // Affiche l'étape 3 (themes)
+  document.getElementById('step-theme').style.display = 'block';
+  document.getElementById('step-variables').style.display = 'none';
+  document.getElementById('step-prompt').style.display = 'none';
+
+  renderThemes();
+}
+
+function renderThemes() {
+  const grid = document.getElementById('themes-grid');
+  grid.innerHTML = '';
+  PROMPTS.themes.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.theme = t.id;
+    card.innerHTML = `<div class="card-icon">${t.icon}</div><div class="card-label">${t.label}</div>`;
+    card.onclick = () => selectTheme(t);
+    grid.appendChild(card);
+  });
+}
+
+function selectTheme(t) {
+  state.theme = t;
+  state.variables = {};
+  t.variables.forEach(v => state.variables[v.key] = v.default || '');
+
+  document.querySelectorAll('#themes-grid .card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.theme === t.id);
+  });
+
+  // Affiche les étapes 4 et 5
+  document.getElementById('step-variables').style.display = t.variables.length > 0 ? 'block' : 'none';
+  document.getElementById('step-prompt').style.display = 'block';
+
+  renderVariables();
+  renderPrompt();
+}
+
+function renderVariables() {
+  const form = document.getElementById('variables-form');
+  form.innerHTML = '';
+  state.theme.variables.forEach(v => {
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    row.innerHTML = `
+      <label>${v.label}</label>
+      <input type="text" value="${(state.variables[v.key]||'').replace(/"/g,'&quot;')}" placeholder="${v.placeholder||''}" data-key="${v.key}">
+    `;
+    form.appendChild(row);
+  });
+  form.querySelectorAll('input').forEach(i => {
+    i.addEventListener('input', e => {
+      state.variables[e.target.dataset.key] = e.target.value;
+      renderPrompt();
+    });
+  });
+}
+
+function renderPrompt() {
+  let text = state.theme.prompt;
+  // Variables substitutables
+  const vars = {
+    ...state.variables,
+    dimensions: state.format.dimensions,
+    aspect: state.format.aspect,
+    master_brand_prompt: PROMPTS.master_brand_prompt
+  };
+  Object.entries(vars).forEach(([k, v]) => {
+    text = text.replace(new RegExp('\\{'+k+'\\}', 'g'), v == null ? '' : String(v));
+  });
+  document.getElementById('prompt-output').textContent = text;
+}
+
+function copyPrompt() {
+  const text = document.getElementById('prompt-output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const fb = document.getElementById('copy-feedback');
+    fb.classList.add('show');
+    setTimeout(() => fb.classList.remove('show'), 1800);
+  });
+}
+</script>
+
+</body>
+</html>
