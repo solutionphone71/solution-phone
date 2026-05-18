@@ -2617,6 +2617,31 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div id="studio-history" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;padding:6px 2px;min-height:60px;"></div>
       </div>
 
+      <!-- Modal détail décision Assya -->
+      <div class="modal-overlay" id="modal-decision-detail" onclick="if(event.target===this)closeModal('modal-decision-detail')">
+        <div class="modal" style="max-width:640px;">
+          <div class="modal-title" style="display:flex;align-items:center;gap:12px;">
+            <span id="mdd-icon" style="font-size:28px;">🤖</span>
+            <span>
+              <span id="mdd-title">Décision Assya</span>
+              <span id="mdd-type" style="display:block;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;font-weight:400;margin-top:2px;"></span>
+            </span>
+            <button onclick="closeModal('modal-decision-detail')" style="margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;">✕</button>
+          </div>
+
+          <div id="mdd-content" style="margin-top:14px;"></div>
+
+          <div id="mdd-reasoning-block" style="margin-top:14px;padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#f59e0b;font-weight:800;margin-bottom:6px;">💭 RAISONNEMENT D'ASSYA</div>
+            <div id="mdd-reasoning" style="font-size:13px;color:var(--text);line-height:1.5;"></div>
+          </div>
+
+          <div id="mdd-actions" style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;"></div>
+
+          <div id="mdd-feedback" style="margin-top:12px;display:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;"></div>
+        </div>
+      </div>
+
       <!-- Section F : Brain Assya v1 — ce qu'elle a appris ce mois -->
       <div class="card" style="margin-top:20px;background:linear-gradient(135deg,rgba(0,224,255,0.06) 0%,transparent 100%);border-left:4px solid #00e0ff;">
         <div class="card-header">
@@ -2796,27 +2821,37 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       };
       assyaPending.forEach(function(d){
         try {
+          var meta = studioDecisionMeta(d.type);
           var payload = d.payload || {};
-          var caption = (payload.caption || d.reasoning || '').substring(0, 80);
+          // Snippet adapté au type (caption pour post, message pour sms, titre pour idée, etc.)
+          var snippet = payload.caption || payload.message || payload.reply_text || payload.title || d.reasoning || '';
+          snippet = String(snippet).substring(0, 90);
           var thumb = payload.media_url || payload.image_url || '';
           var conf = Math.round((d.confidence||0)*100);
           var confColor = conf >= 80 ? '#22c55e' : (conf >= 60 ? '#f59e0b' : '#ef4444');
           var card = document.createElement('div');
-          card.style.cssText = 'min-width:230px;max-width:260px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid #f59e0b;border-radius:12px;padding:12px;flex-shrink:0;transition:all .2s;';
+          card.style.cssText = 'min-width:240px;max-width:260px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid '+meta.color+';border-radius:12px;padding:12px;flex-shrink:0;transition:all .2s;cursor:pointer;';
+          card.onmouseover = function(){ card.style.transform='translateY(-2px)'; card.style.borderColor=meta.color; };
+          card.onmouseout = function(){ card.style.transform='none'; card.style.borderColor='var(--border)'; card.style.borderLeftColor=meta.color; };
           card.dataset.decisionId = d.id;
           card.innerHTML =
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
-              '<div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div>'+
+              '<div style="font-size:10px;color:'+meta.color+';font-weight:800;letter-spacing:1.5px;">'+meta.icon+' '+meta.label+'</div>'+
               '<div style="font-size:10px;color:'+confColor+';font-weight:800;">'+conf+'%</div>'+
             '</div>'+
             (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#000;margin-bottom:8px;">' : '')+
-            '<div style="font-weight:600;font-size:12px;color:#fff;line-height:1.4;min-height:44px;">'+safeEsc(caption)+'…</div>'+
+            '<div style="font-weight:600;font-size:12px;color:#fff;line-height:1.4;min-height:44px;">'+safeEsc(snippet)+(snippet.length>=90?'…':'')+'</div>'+
             '<div style="display:flex;gap:6px;margin-top:10px;">'+
-              '<button class="btn btn-sm" style="flex:1;background:#22c55e;border:none;color:#000;font-weight:800;padding:8px;" data-act="approve">✅ PUBLIER</button>'+
+              '<button class="btn btn-sm" style="flex:1;background:'+meta.actionColor+';border:none;color:#000;font-weight:800;padding:8px;font-size:11px;" data-act="primary">'+meta.actionLabel+'</button>'+
               '<button class="btn btn-sm" style="flex:0;border-color:rgba(255,255,255,0.2);padding:8px 10px;" data-act="reject" title="Rejeter">🗑</button>'+
             '</div>'+
             '<div data-feedback style="display:none;font-size:11px;margin-top:8px;padding:6px 8px;border-radius:6px;text-align:center;"></div>';
-          card.querySelector('[data-act="approve"]').onclick = function(e){ e.stopPropagation(); studioApproveDecision(d.id, card); };
+          // Clic sur la carte (hors boutons) → ouvre le détail
+          card.onclick = function(e){
+            if(e.target.closest('button')) return;
+            studioOpenDecisionDetail(d);
+          };
+          card.querySelector('[data-act="primary"]').onclick = function(e){ e.stopPropagation(); studioOpenDecisionDetail(d); };
           card.querySelector('[data-act="reject"]').onclick  = function(e){ e.stopPropagation(); studioRejectDecision(d.id, card); };
           feedAssya.appendChild(card);
         } catch(err){ console.error('[Cockpit] assya card render', err); }
@@ -2870,12 +2905,122 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       }
     }
 
-    // ─── Validation 1-clic des décisions Assya ─────────────────
-    async function studioApproveDecision(decisionId, card){
-      var btn = card.querySelector('[data-act="approve"]');
-      var fb = card.querySelector('[data-feedback]');
-      btn.disabled = true;
-      btn.textContent = '⏳ Publication…';
+    // ─── Métadonnées par type de décision Assya ───────────────
+    function studioDecisionMeta(type){
+      var map = {
+        'post':          { icon:'📷', label:'POST INSTA/FB', color:'#E1306C', actionLabel:'✅ Voir & Publier',  actionColor:'#22c55e', executable:true },
+        'story':         { icon:'📲', label:'STORY 24H',     color:'#E1306C', actionLabel:'✅ Voir & Publier',  actionColor:'#22c55e', executable:true },
+        'reel':          { icon:'🎥', label:'REEL VIDÉO',    color:'#E1306C', actionLabel:'✅ Voir & Publier',  actionColor:'#22c55e', executable:true },
+        'sms':           { icon:'📩', label:'SMS CLIENT',    color:'#0066CC', actionLabel:'📩 Voir & Envoyer', actionColor:'#22c55e', executable:true },
+        'reply_review':  { icon:'💬', label:'RÉPONSE AVIS',  color:'#fbbf24', actionLabel:'💬 Voir & Répondre',actionColor:'#22c55e', executable:true },
+        'feature_idea':  { icon:'💡', label:'IDÉE FEATURE',  color:'#a855f7', actionLabel:'✓ Noter',           actionColor:'#a855f7', executable:false },
+        'challenge':     { icon:'🎯', label:'CHALLENGE',     color:'#f59e0b', actionLabel:'✓ J\'ai vu',        actionColor:'#f59e0b', executable:false },
+        'alert':         { icon:'⚠️', label:'ALERTE',        color:'#ef4444', actionLabel:'✓ Marquer traité', actionColor:'#ef4444', executable:false },
+        'noop':          { icon:'⏸',  label:'INFO',          color:'#6b7280', actionLabel:'✓ OK',              actionColor:'#6b7280', executable:false }
+      };
+      return map[type] || { icon:'🤖', label:'AUTRE', color:'#f59e0b', actionLabel:'Voir détails', actionColor:'#f59e0b', executable:false };
+    }
+
+    // ─── Ouvre le modal de détail d'une décision ──────────────
+    var _STUDIO_DECISION_OPEN = null;
+    function studioOpenDecisionDetail(d){
+      _STUDIO_DECISION_OPEN = d;
+      var meta = studioDecisionMeta(d.type);
+      var payload = d.payload || {};
+      document.getElementById('mdd-icon').textContent = meta.icon;
+      document.getElementById('mdd-title').textContent = meta.label;
+      document.getElementById('mdd-type').textContent = 'TYPE : ' + (d.type || 'inconnu') + ' · CONFIANCE ' + Math.round((d.confidence||0)*100) + '%';
+      document.getElementById('mdd-reasoning').textContent = d.reasoning || '(pas de raisonnement fourni)';
+
+      // Contenu adapté au type
+      var content = '';
+      if(d.type === 'post' || d.type === 'story' || d.type === 'reel'){
+        if(payload.media_url || payload.image_url){
+          content += '<img src="'+(payload.media_url || payload.image_url)+'" style="width:100%;max-height:380px;object-fit:contain;border-radius:10px;background:#000;border:1px solid var(--border);margin-bottom:12px;">';
+        } else {
+          content += '<div style="padding:24px;background:rgba(255,255,255,0.04);border-radius:10px;text-align:center;color:var(--text-muted);font-size:13px;margin-bottom:12px;">⏳ Visuel pas encore généré par l\'IA</div>';
+        }
+        if(payload.caption){
+          content += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:6px;">CAPTION QUI SERA POSTÉE</div>';
+          content += '<div style="white-space:pre-wrap;font-size:13px;line-height:1.5;background:rgba(0,0,0,0.4);padding:12px 14px;border-radius:8px;border:1px solid var(--border);max-height:240px;overflow-y:auto;">'+studioEsc(payload.caption)+'</div>';
+        }
+        if(payload.platforms){
+          var plats = [];
+          if(payload.platforms.instagram) plats.push('📷 Instagram');
+          if(payload.platforms.facebook) plats.push('📘 Facebook');
+          if(plats.length) content += '<div style="margin-top:10px;font-size:12px;color:var(--text-muted);">Plateformes ciblées : '+plats.join(' · ')+'</div>';
+        }
+      } else if(d.type === 'sms'){
+        content += '<div style="background:rgba(0,102,204,0.10);border:1px solid rgba(0,102,204,0.3);border-radius:10px;padding:12px 14px;">'+
+          '<div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#0066CC;font-weight:800;margin-bottom:8px;">📩 SMS À ENVOYER</div>'+
+          '<div style="font-size:13px;color:var(--text-muted);">À : <b>'+(payload.client_phone || payload.client_name || 'client')+'</b></div>'+
+          '<div style="margin-top:8px;font-size:14px;white-space:pre-wrap;background:rgba(0,0,0,0.3);padding:10px;border-radius:6px;">'+studioEsc(payload.message || '(message vide)')+'</div>'+
+        '</div>';
+      } else if(d.type === 'reply_review'){
+        content += '<div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.3);border-radius:10px;padding:12px 14px;">'+
+          '<div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#fbbf24;font-weight:800;margin-bottom:8px;">💬 RÉPONSE À L\'AVIS GOOGLE</div>'+
+          (payload.review_text ? '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;"><i>Avis original :</i> "'+studioEsc(payload.review_text)+'"</div>' : '')+
+          '<div style="margin-top:8px;font-size:14px;white-space:pre-wrap;background:rgba(0,0,0,0.3);padding:10px;border-radius:6px;">'+studioEsc(payload.reply_text || '(réponse vide)')+'</div>'+
+        '</div>';
+      } else if(d.type === 'feature_idea' || d.type === 'challenge' || d.type === 'alert' || d.type === 'noop'){
+        content += '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;">'+
+          '<div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);font-weight:800;margin-bottom:8px;">CONTENU DE LA NOTE</div>'+
+          (payload.title ? '<div style="font-weight:800;font-size:15px;color:#fff;margin-bottom:6px;">'+studioEsc(payload.title)+'</div>' : '')+
+          '<div style="font-size:14px;white-space:pre-wrap;color:var(--text);">'+studioEsc(payload.description || payload.message || JSON.stringify(payload, null, 2))+'</div>'+
+        '</div>';
+      } else {
+        content += '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:240px;overflow:auto;">'+studioEsc(JSON.stringify(payload, null, 2))+'</div>';
+      }
+      document.getElementById('mdd-content').innerHTML = content;
+
+      // Actions adaptées
+      var actionsEl = document.getElementById('mdd-actions');
+      actionsEl.innerHTML = '';
+      if(meta.executable){
+        var btnGo = document.createElement('button');
+        btnGo.className = 'btn btn-primary';
+        btnGo.style.cssText = 'flex:1;background:'+meta.actionColor+';border:none;color:#000;font-weight:800;padding:12px;';
+        btnGo.textContent = meta.actionLabel;
+        btnGo.onclick = function(){ studioExecuteDecision(d.id, d.type); };
+        actionsEl.appendChild(btnGo);
+      } else {
+        var btnNote = document.createElement('button');
+        btnNote.className = 'btn btn-primary';
+        btnNote.style.cssText = 'flex:1;background:'+meta.actionColor+';border:none;color:#fff;font-weight:800;padding:12px;';
+        btnNote.textContent = meta.actionLabel;
+        btnNote.onclick = function(){ studioMarkAsNoted(d.id); };
+        actionsEl.appendChild(btnNote);
+      }
+      var btnReject = document.createElement('button');
+      btnReject.className = 'btn';
+      btnReject.style.cssText = 'border-color:rgba(255,255,255,0.2);padding:12px 18px;';
+      btnReject.textContent = '🗑 Rejeter';
+      btnReject.onclick = function(){ studioRejectDecision(d.id, null); closeModal('modal-decision-detail'); };
+      actionsEl.appendChild(btnReject);
+
+      // Reset feedback
+      var fb = document.getElementById('mdd-feedback');
+      fb.style.display = 'none';
+      fb.innerHTML = '';
+
+      openModal('modal-decision-detail');
+    }
+
+    function studioEsc(s){
+      try { return (typeof escHtml === 'function') ? escHtml(s) : String(s).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]; }); }
+      catch(e){ return String(s||''); }
+    }
+
+    // ─── Exécution d'une décision exécutable (post/story/sms/reply) ──
+    async function studioExecuteDecision(decisionId, type){
+      var fb = document.getElementById('mdd-feedback');
+      var actionsEl = document.getElementById('mdd-actions');
+      actionsEl.style.opacity = '0.5';
+      actionsEl.style.pointerEvents = 'none';
+      fb.style.display = 'block';
+      fb.style.background = 'rgba(245,158,11,0.15)';
+      fb.style.color = '#f59e0b';
+      fb.textContent = '⏳ Exécution en cours…';
       try {
         var res = await fetch('/api/autopilot/execute?decision_id=' + decisionId, {
           method: 'POST',
@@ -2883,24 +3028,59 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         });
         var data = await res.json();
         if(data.success){
-          fb.style.display = 'block';
           fb.style.background = 'rgba(34,197,94,0.15)';
           fb.style.color = '#22c55e';
-          fb.textContent = '✅ Publié — id ' + (data.results?.instagram?.ig_post_id || data.results?.facebook?.fb_post_id || 'OK');
-          card.style.opacity = '0.6';
-          card.style.borderLeftColor = '#22c55e';
-          setTimeout(function(){ studioRefreshFeed(); studioRefreshHistory(); }, 1500);
+          var msg = '✅ <b>Exécuté avec succès</b><br>';
+          if(data.results?.instagram?.success) msg += '📷 Instagram : id ' + data.results.instagram.ig_post_id + '<br>';
+          if(data.results?.facebook?.success)  msg += '📘 Facebook : id ' + data.results.facebook.fb_post_id + '<br>';
+          if(data.results?.sms?.success)       msg += '📩 SMS envoyé · id ' + data.results.sms.messageId + '<br>';
+          if(data.results?.reply?.success)     msg += '💬 Avis répondu<br>';
+          fb.innerHTML = msg;
+          setTimeout(function(){
+            closeModal('modal-decision-detail');
+            studioRefreshFeed();
+            studioRefreshHistory();
+          }, 1800);
         } else {
           throw new Error(data.error || 'Échec inconnu');
         }
       } catch(e){
+        fb.style.background = 'rgba(239,68,68,0.15)';
+        fb.style.color = '#ef4444';
+        fb.textContent = '❌ ' + e.message.substring(0, 120);
+        actionsEl.style.opacity = '1';
+        actionsEl.style.pointerEvents = 'auto';
+      }
+    }
+
+    // ─── Marquer une note comme lue (feature_idea / challenge / alert / noop) ──
+    async function studioMarkAsNoted(decisionId){
+      var fb = document.getElementById('mdd-feedback');
+      try {
+        await supaFetch('agent_decisions', 'PATCH', {
+          status: 'human_validated',
+          executed_at: new Date().toISOString()
+        }, '?id=eq.' + decisionId);
+        fb.style.display = 'block';
+        fb.style.background = 'rgba(34,197,94,0.15)';
+        fb.style.color = '#22c55e';
+        fb.textContent = '✓ Marqué comme traité — Assya retient.';
+        setTimeout(function(){
+          closeModal('modal-decision-detail');
+          studioRefreshFeed();
+        }, 1200);
+      } catch(e){
         fb.style.display = 'block';
         fb.style.background = 'rgba(239,68,68,0.15)';
         fb.style.color = '#ef4444';
-        fb.textContent = '❌ ' + e.message.substring(0, 80);
-        btn.disabled = false;
-        btn.textContent = '✅ PUBLIER';
+        fb.textContent = '❌ ' + e.message;
       }
+    }
+
+    // ─── Legacy : conserver studioApproveDecision pour compatibilité ─
+    async function studioApproveDecision(decisionId, card){
+      // Maintenant le flow par défaut passe par studioOpenDecisionDetail
+      studioExecuteDecision(decisionId, null);
     }
 
     async function studioRejectDecision(decisionId, card){
@@ -2912,14 +3092,19 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           feedback_reason: reason || 'autre',
           feedback_at: new Date().toISOString()
         }, '?id=eq.' + decisionId);
-        card.style.opacity = '0.4';
-        card.style.borderLeftColor = '#ef4444';
-        var fb = card.querySelector('[data-feedback]');
-        fb.style.display = 'block';
-        fb.style.background = 'rgba(239,68,68,0.15)';
-        fb.style.color = '#ef4444';
-        fb.textContent = '🗑 Rejeté — Assya retient (' + (reason || 'autre') + ')';
-        setTimeout(function(){ studioRefreshFeed(); }, 1500);
+        if(card){
+          card.style.opacity = '0.4';
+          card.style.borderLeftColor = '#ef4444';
+          var fb = card.querySelector('[data-feedback]');
+          if(fb){
+            fb.style.display = 'block';
+            fb.style.background = 'rgba(239,68,68,0.15)';
+            fb.style.color = '#ef4444';
+            fb.textContent = '🗑 Rejeté — Assya retient (' + (reason || 'autre') + ')';
+          }
+        }
+        if(window.showNotif) showNotif('🗑 Décision rejetée — Assya retient', 'info');
+        setTimeout(function(){ studioRefreshFeed(); }, 800);
       } catch(e){
         alert('Erreur rejet : ' + e.message);
       }
