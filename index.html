@@ -2481,13 +2481,22 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
-      <!-- Section A : Inbox Assya (multi-source) -->
-      <div class="card" style="margin-bottom:20px;">
+      <!-- Section A1 : Smartphones à diffuser -->
+      <div class="card" style="margin-bottom:14px;border-left:4px solid #E10600;">
         <div class="card-header">
-          <div class="card-title">📡 Inbox d'Assya <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Tout ce qui peut être publié maintenant</span></div>
-          <button class="btn btn-sm" onclick="studioRefreshFeed()" style="border-color:#00e0ff;color:#00e0ff;">🔄 Rafraîchir</button>
+          <div class="card-title">📱 Smartphones à diffuser <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Stock récent à pousser sur les réseaux</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshFeed()" style="border-color:#E10600;color:#E10600;">🔄</button>
         </div>
-        <div id="studio-feed" style="display:flex;gap:12px;overflow-x:auto;padding:8px 4px;"></div>
+        <div id="studio-feed-phones" style="display:flex;gap:12px;overflow-x:auto;padding:8px 4px;min-height:60px;"></div>
+      </div>
+
+      <!-- Section A2 : Idées visuels Assya -->
+      <div class="card" style="margin-bottom:20px;border-left:4px solid #f59e0b;">
+        <div class="card-header">
+          <div class="card-title">🤖 Idées visuels d'Assya <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Propositions en attente de validation</span></div>
+          <button class="btn btn-sm" onclick="studioRefreshFeed()" style="border-color:#f59e0b;color:#f59e0b;">🔄</button>
+        </div>
+        <div id="studio-feed-assya" style="display:flex;gap:12px;overflow-x:auto;padding:8px 4px;min-height:60px;"></div>
       </div>
 
       <!-- Section B : sélecteurs -->
@@ -2734,82 +2743,90 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     }
 
     async function studioRefreshFeed(){
-      var feed = document.getElementById('studio-feed');
-      if(!feed) return;
-      feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
+      var feedPhones = document.getElementById('studio-feed-phones');
+      var feedAssya  = document.getElementById('studio-feed-assya');
+      if(!feedPhones || !feedAssya) return;
+      feedPhones.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
+      feedAssya.innerHTML  = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement…</div>';
 
       // Source 1 : phones[] récents
       var phoneList = (typeof phones !== 'undefined' && Array.isArray(phones))
-        ? phones.slice().sort(function(a,b){ return (b.id||0)-(a.id||0); }).slice(0,5)
+        ? phones.slice().sort(function(a,b){ return (b.id||0)-(a.id||0); }).slice(0,12)
         : [];
 
       // Source 2 : décisions Assya en attente de validation
       var assyaPending = [];
       try {
         if(typeof supaFetch === 'function'){
-          var rows = await supaFetch('agent_decisions','GET',null,'?status=eq.pending_validation&order=created_at.desc&limit=5');
+          var rows = await supaFetch('agent_decisions','GET',null,'?status=eq.pending_validation&order=created_at.desc&limit=12');
           if(Array.isArray(rows)) assyaPending = rows;
         }
       } catch(e){}
 
-      feed.innerHTML = '';
+      feedPhones.innerHTML = '';
+      feedAssya.innerHTML  = '';
 
-      // Helper de carte
-      var makeCard = function(html, onClick, accent){
-        var card = document.createElement('div');
-        card.style.cssText = 'min-width:200px;max-width:240px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;'+(accent?'border-left:4px solid '+accent+';':'');
-        card.onmouseover = function(){ card.style.borderColor='#E10600'; card.style.transform='translateY(-2px)'; };
-        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; if(accent) card.style.borderLeftColor=accent; card.style.transform='none'; };
-        if(onClick) card.onclick = onClick;
-        card.innerHTML = html;
-        return card;
-      };
+      // ── LIGNE 1 : Smartphones à diffuser ──
+      try {
+        phoneList.forEach(function(p){
+          var card = document.createElement('div');
+          card.style.cssText = 'min-width:200px;max-width:230px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid #E10600;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;flex-shrink:0;';
+          card.onmouseover = function(){ card.style.borderColor='#E10600'; card.style.transform='translateY(-2px)'; };
+          card.onmouseout  = function(){ card.style.borderColor='var(--border)'; card.style.borderLeftColor='#E10600'; card.style.transform='none'; };
+          card.onclick = function(){ studioSelectPhone(p); };
+          card.innerHTML =
+            '<div style="font-size:10px;color:#E10600;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">📱 STOCK · #'+(p.id||'?')+'</div>'+
+            '<div style="font-weight:800;font-size:15px;color:#fff;">'+(p.modele||'?')+'</div>'+
+            '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+(p.couleur||'')+(p.stockage?' · '+p.stockage+'Go':'')+'</div>'+
+            '<div style="font-size:18px;font-weight:800;color:#E10600;margin-top:8px;">'+(p.vente||0)+' €</div>'+
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Grade '+(p.grade||'?')+' · '+(p.batterie||'?')+'%</div>'+
+            '<div style="margin-top:10px;font-size:11px;color:#E10600;font-weight:700;letter-spacing:1px;">CLIC POUR DIFFUSER →</div>';
+          feedPhones.appendChild(card);
+        });
+      } catch(e){ console.error('[Cockpit] phones render', e); }
 
-      // Cartes : décisions Assya en attente (avec validation 1-clic)
-      assyaPending.forEach(function(d){
-        var payload = d.payload || {};
-        var caption = (payload.caption || d.reasoning || '').substring(0, 80);
-        var thumb = payload.media_url || payload.image_url || '';
-        var conf = Math.round((d.confidence||0)*100);
-        var confColor = conf >= 80 ? '#22c55e' : (conf >= 60 ? '#f59e0b' : '#ef4444');
-        var card = document.createElement('div');
-        card.style.cssText = 'min-width:230px;max-width:260px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid #f59e0b;border-radius:12px;padding:12px;flex-shrink:0;transition:all .2s;';
-        card.dataset.decisionId = d.id;
-        card.innerHTML =
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
-            '<div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div>'+
-            '<div style="font-size:10px;color:'+confColor+';font-weight:800;">'+conf+'%</div>'+
-          '</div>'+
-          (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#000;margin-bottom:8px;">' : '')+
-          '<div style="font-weight:600;font-size:12px;color:#fff;line-height:1.4;min-height:44px;">'+escHtml(caption)+'…</div>'+
-          '<div style="display:flex;gap:6px;margin-top:10px;">'+
-            '<button class="btn btn-sm" style="flex:1;background:#22c55e;border:none;color:#000;font-weight:800;padding:8px;" data-act="approve">✅ PUBLIER</button>'+
-            '<button class="btn btn-sm" style="flex:0;border-color:rgba(255,255,255,0.2);padding:8px 10px;" data-act="reject" title="Rejeter">🗑</button>'+
-          '</div>'+
-          '<div data-feedback style="display:none;font-size:11px;margin-top:8px;padding:6px 8px;border-radius:6px;text-align:center;"></div>';
-        // Wire les boutons
-        card.querySelector('[data-act="approve"]').onclick = function(e){ e.stopPropagation(); studioApproveDecision(d.id, card); };
-        card.querySelector('[data-act="reject"]').onclick  = function(e){ e.stopPropagation(); studioRejectDecision(d.id, card); };
-        feed.appendChild(card);
-      });
-
-      // Cartes : smartphones récents
-      phoneList.forEach(function(p){
-        var html =
-          '<div style="font-size:10px;color:#E10600;font-weight:800;letter-spacing:1.5px;margin-bottom:6px;">📱 STOCK · #'+(p.id||'?')+'</div>'+
-          '<div style="font-weight:800;font-size:15px;color:#fff;">'+(p.modele||'?')+'</div>'+
-          '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+(p.couleur||'')+(p.stockage?' · '+p.stockage+'Go':'')+'</div>'+
-          '<div style="font-size:18px;font-weight:800;color:#E10600;margin-top:8px;">'+(p.vente||0)+' €</div>'+
-          '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Grade '+(p.grade||'?')+' · '+(p.batterie||'?')+'%</div>'+
-          '<div style="margin-top:10px;font-size:11px;color:#E10600;font-weight:700;letter-spacing:1px;">CLIC POUR DIFFUSER →</div>';
-        feed.appendChild(makeCard(html, function(){ studioSelectPhone(p); }, '#E10600'));
-      });
-
-      if(feed.children.length === 0){
-        feed.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:10px;">Inbox vide. Ajoute un smartphone ou attends qu\'Assya propose quelque chose…</div>';
+      if(feedPhones.children.length === 0){
+        feedPhones.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:14px;">Aucun smartphone récent. Ajoute-en un dans <b>Achat smartphones</b> et il apparaîtra ici.</div>';
       }
 
-      // Met à jour les stats Assya
+      // ── LIGNE 2 : Idées visuels Assya ──
+      var safeEsc = function(s){
+        try { return (typeof escHtml === 'function') ? escHtml(s) : String(s).replace(/[<>&"']/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]; }); }
+        catch(e){ return String(s||''); }
+      };
+      assyaPending.forEach(function(d){
+        try {
+          var payload = d.payload || {};
+          var caption = (payload.caption || d.reasoning || '').substring(0, 80);
+          var thumb = payload.media_url || payload.image_url || '';
+          var conf = Math.round((d.confidence||0)*100);
+          var confColor = conf >= 80 ? '#22c55e' : (conf >= 60 ? '#f59e0b' : '#ef4444');
+          var card = document.createElement('div');
+          card.style.cssText = 'min-width:230px;max-width:260px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-left:4px solid #f59e0b;border-radius:12px;padding:12px;flex-shrink:0;transition:all .2s;';
+          card.dataset.decisionId = d.id;
+          card.innerHTML =
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+              '<div style="font-size:10px;color:#f59e0b;font-weight:800;letter-spacing:1.5px;">🤖 ASSYA · '+(d.type||'').toUpperCase()+'</div>'+
+              '<div style="font-size:10px;color:'+confColor+';font-weight:800;">'+conf+'%</div>'+
+            '</div>'+
+            (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#000;margin-bottom:8px;">' : '')+
+            '<div style="font-weight:600;font-size:12px;color:#fff;line-height:1.4;min-height:44px;">'+safeEsc(caption)+'…</div>'+
+            '<div style="display:flex;gap:6px;margin-top:10px;">'+
+              '<button class="btn btn-sm" style="flex:1;background:#22c55e;border:none;color:#000;font-weight:800;padding:8px;" data-act="approve">✅ PUBLIER</button>'+
+              '<button class="btn btn-sm" style="flex:0;border-color:rgba(255,255,255,0.2);padding:8px 10px;" data-act="reject" title="Rejeter">🗑</button>'+
+            '</div>'+
+            '<div data-feedback style="display:none;font-size:11px;margin-top:8px;padding:6px 8px;border-radius:6px;text-align:center;"></div>';
+          card.querySelector('[data-act="approve"]').onclick = function(e){ e.stopPropagation(); studioApproveDecision(d.id, card); };
+          card.querySelector('[data-act="reject"]').onclick  = function(e){ e.stopPropagation(); studioRejectDecision(d.id, card); };
+          feedAssya.appendChild(card);
+        } catch(err){ console.error('[Cockpit] assya card render', err); }
+      });
+
+      if(feedAssya.children.length === 0){
+        feedAssya.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:14px;">Assya n\'a pas de propositions en attente. Lance un run depuis Autopilot pour qu\'elle réfléchisse à ta journée.</div>';
+      }
+
+      // Met à jour les stats Assya en haut
       studioUpdateStats(phoneList.length, assyaPending.length);
     }
 
