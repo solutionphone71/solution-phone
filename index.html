@@ -2621,7 +2621,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div class="card" style="margin-top:20px;border-left:4px solid #a855f7;">
         <div class="card-header">
           <div class="card-title">📚 Ma bibliothèque <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-left:8px;">Visuels créés · Réutilise à volonté</span></div>
-          <button class="btn btn-sm" onclick="studioRefreshLibrary()" style="border-color:#a855f7;color:#a855f7;">🔄 Rafraîchir</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm" id="studio-lib-select-btn" onclick="studioToggleSelectMode()" style="border-color:#a855f7;color:#a855f7;">✔ Sélection multiple</button>
+            <button class="btn btn-sm" onclick="studioRefreshLibrary()" style="border-color:#a855f7;color:#a855f7;">🔄</button>
+          </div>
         </div>
         <div id="studio-library-tabs" style="display:flex;gap:8px;margin:0 0 14px 0;flex-wrap:wrap;">
           <button class="lib-tab active" data-format="all"      onclick="studioFilterLibrary('all')"     style="padding:8px 14px;border-radius:8px;border:1.5px solid #a855f7;background:rgba(168,85,247,0.15);color:#a855f7;font-weight:700;font-size:12px;cursor:pointer;">🗂 TOUS</button>
@@ -2632,6 +2635,19 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
         <div id="studio-library" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;min-height:80px;">
           <div style="color:var(--text-muted);font-size:13px;padding:10px;">Chargement de la bibliothèque…</div>
+        </div>
+
+        <!-- Toolbar flottante : visible uniquement quand on a sélectionné -->
+        <div id="studio-lib-batchbar" style="display:none;position:sticky;bottom:14px;margin-top:14px;background:linear-gradient(135deg,#a855f7,#7e22ce);border-radius:14px;padding:14px 18px;box-shadow:0 8px 30px rgba(168,85,247,0.45);">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <div style="font-weight:800;font-size:15px;color:#fff;">
+              <span id="studio-lib-count">0</span> visuel(s) sélectionné(s)
+            </div>
+            <div style="flex:1;"></div>
+            <button class="btn" onclick="studioClearSelection()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-weight:700;">Annuler</button>
+            <button class="btn" onclick="studioPublishBatch('instagram_story')" style="background:#fff;border:none;color:#7e22ce;font-weight:800;">📲 Publier la série en Stories Insta</button>
+          </div>
+          <div id="studio-lib-batch-progress" style="display:none;margin-top:10px;font-size:13px;color:#fff;font-weight:600;"></div>
         </div>
       </div>
 
@@ -3531,6 +3547,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     // ═══════════════════════════════════════════════════════════
     var _STUDIO_LIBRARY = [];
     var _STUDIO_LIBRARY_FILTER = 'all';
+    var _STUDIO_LIB_SELECT_MODE = false;
+    var _STUDIO_LIB_SELECTED = []; // array d'URLs dans l'ordre de sélection
 
     async function studioRefreshLibrary(){
       var box = document.getElementById('studio-library');
@@ -3639,29 +3657,131 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         var fmtBadge = ({square:'🟦 1080',story:'📲 9:16',portrait:'🟪 4:5',landscape:'🟩 16:9'})[item.format] || '🗂';
         var when = item.date ? new Date(item.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
         var card = document.createElement('div');
-        card.style.cssText = 'background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s;';
-        card.onmouseover = function(){ card.style.borderColor='#a855f7'; card.style.transform='translateY(-2px)'; };
-        card.onmouseout  = function(){ card.style.borderColor='var(--border)'; card.style.transform='none'; };
+        var selIdx = _STUDIO_LIB_SELECTED.indexOf(item.url);
+        var isSelected = selIdx !== -1;
+        card.style.cssText = 'background:rgba(255,255,255,0.03);border:'+(isSelected?'2.5px solid #a855f7':'1px solid var(--border)')+';border-radius:10px;overflow:hidden;transition:all .2s;'+(isSelected?'box-shadow:0 0 24px rgba(168,85,247,0.4);':'');
+        card.onmouseover = function(){ if(!isSelected) card.style.borderColor='#a855f7'; card.style.transform='translateY(-2px)'; };
+        card.onmouseout  = function(){ if(!isSelected) card.style.borderColor='var(--border)'; card.style.transform='none'; };
         var aspectStyle = (item.format === 'story') ? 'aspect-ratio:9/16;'
                        : (item.format === 'portrait') ? 'aspect-ratio:4/5;'
                        : (item.format === 'landscape') ? 'aspect-ratio:16/9;'
                        : 'aspect-ratio:1/1;';
         card.innerHTML =
-          '<div style="position:relative;'+aspectStyle+'background:#000;">'+
-            '<img src="'+item.url+'" style="width:100%;height:100%;object-fit:cover;display:block;">'+
+          '<div style="position:relative;'+aspectStyle+'background:#000;cursor:'+(_STUDIO_LIB_SELECT_MODE?'pointer':'default')+';">'+
+            '<img src="'+item.url+'" style="width:100%;height:100%;object-fit:cover;display:block;'+(isSelected?'opacity:0.85;':'')+'">'+
             '<div style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.7);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:1px;">'+fmtBadge+'</div>'+
+            (_STUDIO_LIB_SELECT_MODE
+              ? '<div style="position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;background:'+(isSelected?'#a855f7':'rgba(0,0,0,0.6)')+';border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;">'+(isSelected?(selIdx+1):'')+'</div>'
+              : '')+
           '</div>'+
           '<div style="padding:8px 10px;">'+
             '<div style="font-size:11px;color:var(--text-muted);">'+when+(item.template ? ' · '+item.template : '')+'</div>'+
-            '<div style="display:flex;gap:6px;margin-top:8px;">'+
-              '<button class="btn btn-sm" style="flex:1;background:#a855f7;border:none;color:#fff;font-weight:800;padding:6px;font-size:11px;" data-act="reuse">🔄 RÉUTILISER</button>'+
-              '<button class="btn btn-sm" style="border-color:rgba(255,255,255,0.2);padding:6px 8px;font-size:11px;" data-act="view" title="Ouvrir dans un nouvel onglet">🔍</button>'+
-            '</div>'+
+            (_STUDIO_LIB_SELECT_MODE
+              ? '<div style="margin-top:8px;font-size:11px;color:'+(isSelected?'#a855f7':'var(--text-muted)')+';font-weight:700;text-align:center;">'+(isSelected?'✓ SÉLECTIONNÉ ('+(selIdx+1)+')':'Clic pour ajouter')+'</div>'
+              : '<div style="display:flex;gap:6px;margin-top:8px;">'+
+                  '<button class="btn btn-sm" style="flex:1;background:#a855f7;border:none;color:#fff;font-weight:800;padding:6px;font-size:11px;" data-act="reuse">🔄 RÉUTILISER</button>'+
+                  '<button class="btn btn-sm" style="border-color:rgba(255,255,255,0.2);padding:6px 8px;font-size:11px;" data-act="view" title="Ouvrir dans un nouvel onglet">🔍</button>'+
+                '</div>')+
           '</div>';
-        card.querySelector('[data-act="reuse"]').onclick = function(e){ e.stopPropagation(); studioReuseImage(item.url); };
-        card.querySelector('[data-act="view"]').onclick  = function(e){ e.stopPropagation(); window.open(item.url,'_blank'); };
+        // Comportements selon le mode
+        if(_STUDIO_LIB_SELECT_MODE){
+          card.onclick = function(){ studioToggleImageSelection(item.url); };
+        } else {
+          var btnReuse = card.querySelector('[data-act="reuse"]');
+          var btnView  = card.querySelector('[data-act="view"]');
+          if(btnReuse) btnReuse.onclick = function(e){ e.stopPropagation(); studioReuseImage(item.url); };
+          if(btnView)  btnView.onclick  = function(e){ e.stopPropagation(); window.open(item.url,'_blank'); };
+        }
         box.appendChild(card);
       });
+    }
+
+    function studioToggleSelectMode(){
+      _STUDIO_LIB_SELECT_MODE = !_STUDIO_LIB_SELECT_MODE;
+      var btn = document.getElementById('studio-lib-select-btn');
+      var bar = document.getElementById('studio-lib-batchbar');
+      if(_STUDIO_LIB_SELECT_MODE){
+        btn.textContent = '✕ Quitter sélection';
+        btn.style.background = '#a855f7';
+        btn.style.color = '#fff';
+        bar.style.display = _STUDIO_LIB_SELECTED.length > 0 ? 'block' : 'none';
+      } else {
+        btn.textContent = '✔ Sélection multiple';
+        btn.style.background = 'transparent';
+        btn.style.color = '#a855f7';
+        _STUDIO_LIB_SELECTED = [];
+        bar.style.display = 'none';
+      }
+      studioRenderLibrary();
+    }
+
+    function studioToggleImageSelection(url){
+      var idx = _STUDIO_LIB_SELECTED.indexOf(url);
+      if(idx === -1) _STUDIO_LIB_SELECTED.push(url);
+      else _STUDIO_LIB_SELECTED.splice(idx, 1);
+      document.getElementById('studio-lib-count').textContent = _STUDIO_LIB_SELECTED.length;
+      document.getElementById('studio-lib-batchbar').style.display = _STUDIO_LIB_SELECTED.length > 0 ? 'block' : 'none';
+      studioRenderLibrary();
+    }
+
+    function studioClearSelection(){
+      _STUDIO_LIB_SELECTED = [];
+      _STUDIO_LIB_SELECT_MODE = false;
+      var btn = document.getElementById('studio-lib-select-btn');
+      btn.textContent = '✔ Sélection multiple';
+      btn.style.background = 'transparent';
+      btn.style.color = '#a855f7';
+      document.getElementById('studio-lib-batchbar').style.display = 'none';
+      studioRenderLibrary();
+    }
+
+    async function studioPublishBatch(target){
+      if(_STUDIO_LIB_SELECTED.length === 0) return;
+      var urls = _STUDIO_LIB_SELECTED.slice();
+      var prog = document.getElementById('studio-lib-batch-progress');
+      prog.style.display = 'block';
+      prog.innerHTML = '⏳ Publication en série de ' + urls.length + ' visuels…';
+
+      var results = [];
+      var platformsBody;
+      if(target === 'instagram_story') platformsBody = { instagram_story: true };
+      else if(target === 'instagram') platformsBody = { instagram: true };
+      else if(target === 'facebook') platformsBody = { facebook: true };
+      else platformsBody = { instagram_story: true };
+
+      for(var i = 0; i < urls.length; i++){
+        var url = urls[i];
+        prog.innerHTML = '⏳ Publication ' + (i+1) + ' / ' + urls.length + '…';
+        try {
+          var res = await fetch('/api/visual/studio-publish', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              image_url: url,
+              platforms: platformsBody,
+              caption: '',
+              source_template: 'library_batch',
+              source_variables: { batch_order: i + 1, batch_total: urls.length }
+            })
+          });
+          var data = await res.json();
+          results.push({ url: url, ok: !!data.ok, data: data });
+        } catch(e){
+          results.push({ url: url, ok: false, error: e.message });
+        }
+      }
+
+      var nbOk = results.filter(function(r){ return r.ok; }).length;
+      var nbKo = results.length - nbOk;
+      prog.innerHTML = (nbKo === 0
+        ? '✅ <b>'+nbOk+' visuels publiés avec succès</b>'
+        : '⚠️ '+nbOk+' OK, '+nbKo+' échec(s). Vois ton historique.');
+
+      setTimeout(function(){
+        studioClearSelection();
+        studioRefreshHistory();
+        studioRefreshLibrary();
+      }, 2500);
     }
 
     async function studioReuseImage(url){

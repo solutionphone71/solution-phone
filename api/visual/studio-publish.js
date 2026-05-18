@@ -164,9 +164,9 @@ export default async function handler(req, res) {
 
   const t0 = Date.now();
   try {
-    const { image_base64, platforms = {}, caption = '', source_template, source_variables } = req.body || {};
+    const { image_base64, image_url: reuseUrl, platforms = {}, caption = '', source_template, source_variables } = req.body || {};
 
-    if (!image_base64) return res.status(400).json({ error: 'image_base64 requis' });
+    if (!image_base64 && !reuseUrl) return res.status(400).json({ error: 'image_base64 ou image_url requis' });
     // 3 cibles possibles : ig_feed (post Insta) · ig_story (Story Insta) · fb_feed (post Facebook)
     const wantIGFeed  = !!platforms.instagram;       // legacy alias = feed
     const wantIGStory = !!platforms.instagram_story;
@@ -175,9 +175,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Sélectionne au moins une cible (Feed Insta, Story Insta ou Feed Facebook)' });
     }
 
-    // 1. Upload Storage
-    const fileName = `studio-${Date.now()}.png`;
-    const uploadedUrl = await uploadToStorage(image_base64, fileName);
+    // 1. Upload Storage SI nouveau base64. Sinon réutilise l'URL fournie.
+    let uploadedUrl;
+    if (reuseUrl) {
+      uploadedUrl = reuseUrl;
+    } else {
+      const fileName = `studio-${Date.now()}.png`;
+      uploadedUrl = await uploadToStorage(image_base64, fileName);
+    }
 
     // 2. Publish en parallèle sur les cibles demandées
     const tasks = [];
