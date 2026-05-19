@@ -126,14 +126,14 @@ async function publishInstagram(mediaUrl, caption, asStory = false) {
   }
 }
 
-// ─── Publication Facebook (Meta Graph API) ────────────────────────
+// ─── Publication Facebook Feed (Meta Graph API) ──────────────────
 
 async function publishFacebook(mediaUrl, caption) {
   if (!META_PAGE_TOKEN || !META_FB_PAGE_ID) {
     return { success: false, error: 'META_PAGE_TOKEN ou META_FB_PAGE_ID manquant' };
   }
   try {
-    // Pour FB, on POST sur /{page-id}/photos avec url + message pour avoir une vraie image
+    // Pour FB Feed, on POST sur /{page-id}/photos avec url + message pour avoir une vraie image
     const res = await fetch(
       `https://graph.facebook.com/v21.0/${META_FB_PAGE_ID}/photos`,
       {
@@ -156,6 +156,52 @@ async function publishFacebook(mediaUrl, caption) {
   }
 }
 
+// ─── Publication Facebook Story (Meta Graph API) ─────────────────
+//   Workflow Meta : 1) upload photo unpublished → photo_id
+//                   2) POST /photo_stories?photo_id=X
+
+async function publishFacebookStory(mediaUrl) {
+  if (!META_PAGE_TOKEN || !META_FB_PAGE_ID) {
+    return { success: false, error: 'META_PAGE_TOKEN ou META_FB_PAGE_ID manquant' };
+  }
+  try {
+    // 1) Upload la photo sans la publier dans le Feed
+    const upRes = await fetch(
+      `https://graph.facebook.com/v21.0/${META_FB_PAGE_ID}/photos`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: mediaUrl,
+          published: false,
+          access_token: META_PAGE_TOKEN
+        })
+      }
+    );
+    const upData = await upRes.json();
+    if (!upData.id) {
+      return { success: false, error: `FB story upload failed: ${JSON.stringify(upData).substring(0, 200)}` };
+    }
+
+    // 2) Crée la Story à partir de cette photo
+    const stRes = await fetch(
+      `https://graph.facebook.com/v21.0/${META_FB_PAGE_ID}/photo_stories?photo_id=${upData.id}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ access_token: META_PAGE_TOKEN })
+      }
+    );
+    const stData = await stRes.json();
+    if (stData.success === true || stData.post_id || stData.id) {
+      return { success: true, fb_post_id: stData.post_id || stData.id || upData.id, as_story: true };
+    }
+    return { success: false, error: `FB story publish failed: ${JSON.stringify(stData).substring(0, 200)}` };
+  } catch (e) {
+    return { success: false, error: 'Meta FB Story exception: ' + e.message };
+  }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -167,12 +213,13 @@ export default async function handler(req, res) {
     const { image_base64, image_url: reuseUrl, platforms = {}, caption = '', source_template, source_variables } = req.body || {};
 
     if (!image_base64 && !reuseUrl) return res.status(400).json({ error: 'image_base64 ou image_url requis' });
-    // 3 cibles possibles : ig_feed (post Insta) · ig_story (Story Insta) · fb_feed (post Facebook)
+    // 4 cibles possibles : ig_feed (post Insta) · ig_story (Story Insta) · fb_feed (post Facebook) · fb_story (Story Facebook)
     const wantIGFeed  = !!platforms.instagram;       // legacy alias = feed
     const wantIGStory = !!platforms.instagram_story;
     const wantFBFeed  = !!platforms.facebook;
-    if (!wantIGFeed && !wantIGStory && !wantFBFeed) {
-      return res.status(400).json({ error: 'Sélectionne au moins une cible (Feed Insta, Story Insta ou Feed Facebook)' });
+    const wantFBStory = !!platforms.facebook_story;
+    if (!wantIGFeed && !wantIGStory && !wantFBFeed && !wantFBStory) {
+      return res.status(400).json({ error: 'Sélectionne au moins une cible (Feed Insta, Story Insta, Feed Facebook ou Story Facebook)' });
     }
 
     // 1. Upload Storage SI nouveau base64. Sinon réutilise l'URL fournie.
@@ -189,25 +236,26 @@ export default async function handler(req, res) {
     if (wantIGFeed)  tasks.push(publishInstagram(uploadedUrl, caption, false).then(r => ({ ig_feed: r })));
     if (wantIGStory) tasks.push(publishInstagram(uploadedUrl, '',      true ).then(r => ({ ig_story: r })));
     if (wantFBFeed)  tasks.push(publishFacebook(uploadedUrl, caption).then(r => ({ fb_feed: r })));
+    if (wantFBStory) tasks.push(publishFacebookStory(uploadedUrl).then(r => ({ fb_story: r })));
     const settled = await Promise.all(tasks);
     const results = {};
     settled.forEach(r => Object.assign(results, r));
 
-    const anySuccess = (results.ig_feed?.success || results.ig_story?.success || results.fb_feed?.success);
+    const anySuccess = (results.ig_feed?.success || results.ig_story?.success || results.fb_feed?.success || results.fb_story?.success);
 
     // 3. Insert social_posts (historique)
     let socialPostId = null;
     try {
       const inserted = await supa('social_posts', 'POST', {
-        type: wantIGStory ? 'story' : 'post',
+        type: (wantIGStory || wantFBStory) ? 'story' : 'post',
         status: anySuccess ? 'published' : 'failed',
         caption,
         media_urls: [uploadedUrl],
-        platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFBFeed },
+        platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFBFeed, facebook_story: wantFBStory },
         auto_published: false,
         published_at: new Date().toISOString(),
         ig_post_id: results.ig_feed?.ig_post_id || results.ig_story?.ig_post_id || null,
-        fb_post_id: results.fb_feed?.fb_post_id || null,
+        fb_post_id: results.fb_feed?.fb_post_id || results.fb_story?.fb_post_id || null,
         source_data: {
           source: 'studio_visuel',
           template: source_template || null,

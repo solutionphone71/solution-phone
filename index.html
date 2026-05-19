@@ -2586,6 +2586,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                     <input type="checkbox" id="studio-pub-facebook" checked style="width:16px;height:16px;accent-color:#E10600;">
                     📘 Facebook Feed
                   </label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;">
+                    <input type="checkbox" id="studio-pub-facebook-story" style="width:16px;height:16px;accent-color:#E10600;">
+                    📲 FB Story (24h)
+                  </label>
                 </div>
               </div>
 
@@ -3254,18 +3258,22 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           var feedCb = document.getElementById('studio-pub-instagram');
           var storyCb = document.getElementById('studio-pub-instagram-story');
           var fbCb = document.getElementById('studio-pub-facebook');
+          var fbStoryCb = document.getElementById('studio-pub-facebook-story');
           if(ratio >= 1.5){
-            // Format vertical (Story / Reel)
-            if(hint) hint.textContent = '🔎 Format vertical détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal pour Story Insta';
-            storyCb.checked = true; feedCb.checked = false; fbCb.checked = true;
+            // Format vertical (Story / Reel) → on coche les 2 stories
+            if(hint) hint.textContent = '🔎 Format vertical détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal Stories Insta + FB';
+            storyCb.checked = true; feedCb.checked = false; fbCb.checked = false;
+            if(fbStoryCb) fbStoryCb.checked = true;
           } else if(Math.abs(ratio - 1) < 0.1){
-            // Format carré
-            if(hint) hint.textContent = '🔎 Format carré détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal pour Feed Insta + FB';
+            // Format carré → Feed Insta + Feed FB
+            if(hint) hint.textContent = '🔎 Format carré détecté ('+img.naturalWidth+'×'+img.naturalHeight+') → idéal Feed Insta + FB';
             feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+            if(fbStoryCb) fbStoryCb.checked = false;
           } else {
             // Paysage ou autre
             if(hint) hint.textContent = '🔎 Format '+img.naturalWidth+'×'+img.naturalHeight+' détecté';
             feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+            if(fbStoryCb) fbStoryCb.checked = false;
           }
         };
         img.src = e.target.result;
@@ -3409,7 +3417,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       var wantIGFeed  = document.getElementById('studio-pub-instagram').checked;
       var wantIGStory = document.getElementById('studio-pub-instagram-story').checked;
       var wantFB      = document.getElementById('studio-pub-facebook').checked;
-      if(!wantIGFeed && !wantIGStory && !wantFB){ alert('Sélectionne au moins une cible'); return; }
+      var wantFBStory = document.getElementById('studio-pub-facebook-story') ? document.getElementById('studio-pub-facebook-story').checked : false;
+      if(!wantIGFeed && !wantIGStory && !wantFB && !wantFBStory){ alert('Sélectionne au moins une cible'); return; }
 
       var caption = document.getElementById('studio-caption').value;
       var btn = document.getElementById('studio-publish-btn');
@@ -3424,7 +3433,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
             image_base64: _STUDIO_UPLOAD.base64,
-            platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFB },
+            platforms: { instagram: wantIGFeed, instagram_story: wantIGStory, facebook: wantFB, facebook_story: wantFBStory },
             caption: caption,
             source_template: _STUDIO_STATE.theme ? _STUDIO_STATE.theme.id : null,
             source_variables: _STUDIO_STATE.vars || {}
@@ -3441,8 +3450,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           if(data.results.ig_feed && !data.results.ig_feed.success)   msg += '⚠️ Insta Feed : ' + data.results.ig_feed.error + '<br>';
           if(data.results.ig_story?.success) msg += '📲 Insta Story : id ' + data.results.ig_story.ig_post_id + '<br>';
           if(data.results.ig_story && !data.results.ig_story.success) msg += '⚠️ Insta Story : ' + data.results.ig_story.error + '<br>';
-          if(data.results.fb_feed?.success)  msg += '📘 Facebook : id ' + data.results.fb_feed.fb_post_id + '<br>';
-          if(data.results.fb_feed && !data.results.fb_feed.success)   msg += '⚠️ Facebook : ' + data.results.fb_feed.error + '<br>';
+          if(data.results.fb_feed?.success)  msg += '📘 Facebook Feed : id ' + data.results.fb_feed.fb_post_id + '<br>';
+          if(data.results.fb_feed && !data.results.fb_feed.success)   msg += '⚠️ Facebook Feed : ' + data.results.fb_feed.error + '<br>';
+          if(data.results.fb_story?.success) msg += '📲 FB Story : id ' + data.results.fb_story.fb_post_id + '<br>';
+          if(data.results.fb_story && !data.results.fb_story.success) msg += '⚠️ FB Story : ' + data.results.fb_story.error + '<br>';
           msg += '<a href="' + data.uploaded_url + '" target="_blank" style="color:#22c55e;text-decoration:underline;">🖼 Voir l\'image stockée</a>';
           result.innerHTML = msg;
         } else {
