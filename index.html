@@ -2664,6 +2664,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             </div>
             <div style="flex:1;"></div>
             <button class="btn" onclick="studioClearSelection()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-weight:700;">Annuler</button>
+            <button class="btn" onclick="studioDeleteBatch()" style="background:rgba(239,68,68,0.85);border:none;color:#fff;font-weight:800;">🗑 Supprimer</button>
             <button class="btn" onclick="studioPublishBatch('instagram_story')" style="background:#fff;border:none;color:#7e22ce;font-weight:800;">📲 Publier la série en Stories Insta</button>
           </div>
           <div id="studio-lib-batch-progress" style="display:none;margin-top:10px;font-size:13px;color:#fff;font-weight:600;"></div>
@@ -3811,6 +3812,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               : '<div style="display:flex;gap:6px;margin-top:8px;">'+
                   '<button class="btn btn-sm" style="flex:1;background:#a855f7;border:none;color:#fff;font-weight:800;padding:6px;font-size:11px;" data-act="reuse">🔄 RÉUTILISER</button>'+
                   '<button class="btn btn-sm" style="border-color:rgba(255,255,255,0.2);padding:6px 8px;font-size:11px;" data-act="view" title="Ouvrir dans un nouvel onglet">🔍</button>'+
+                  '<button class="btn btn-sm" style="border-color:rgba(239,68,68,0.4);color:#ef4444;padding:6px 8px;font-size:11px;" data-act="delete" title="Supprimer ce visuel">🗑</button>'+
                 '</div>')+
           '</div>';
         // Comportements selon le mode
@@ -3819,8 +3821,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         } else {
           var btnReuse = card.querySelector('[data-act="reuse"]');
           var btnView  = card.querySelector('[data-act="view"]');
+          var btnDel   = card.querySelector('[data-act="delete"]');
           if(btnReuse) btnReuse.onclick = function(e){ e.stopPropagation(); studioReuseImage(item.url); };
           if(btnView)  btnView.onclick  = function(e){ e.stopPropagation(); window.open(item.url,'_blank'); };
+          if(btnDel)   btnDel.onclick   = function(e){ e.stopPropagation(); studioDeleteImage(item.url); };
         }
         box.appendChild(card);
       });
@@ -3912,6 +3916,69 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         studioRefreshHistory();
         studioRefreshLibrary();
       }, 2500);
+    }
+
+    // ─── Suppression d'un visuel (individuel) ──────────────────
+    async function studioDeleteImage(url){
+      if(!confirm('Supprimer ce visuel de la bibliothèque ?\n\nL\'image sera retirée de Storage + historique. Les posts déjà publiés sur Insta/FB ne seront PAS supprimés.')) return;
+      try {
+        if(window.showNotif) showNotif('⏳ Suppression…', 'info');
+        var res = await fetch('/api/visual/library-delete', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ image_url: url })
+        });
+        var data = await res.json();
+        if(data.ok){
+          if(window.showNotif) showNotif('🗑 Visuel supprimé', 'success');
+          // Retire de la liste locale + refresh
+          _STUDIO_LIBRARY = _STUDIO_LIBRARY.filter(function(i){ return i.url !== url; });
+          studioRenderLibrary();
+          // Refresh également Brain + Historique (compteurs)
+          studioRefreshHistory();
+          studioRefreshBrain();
+        } else {
+          alert('Erreur suppression : ' + (data.error || 'inconnue'));
+        }
+      } catch(e){
+        alert('Erreur réseau : ' + e.message);
+      }
+    }
+
+    // ─── Suppression en masse (mode sélection multi) ──────────
+    async function studioDeleteBatch(){
+      if(_STUDIO_LIB_SELECTED.length === 0) return;
+      var n = _STUDIO_LIB_SELECTED.length;
+      if(!confirm('Supprimer '+n+' visuel(s) de la bibliothèque ?\n\nCette action est définitive.')) return;
+      var urls = _STUDIO_LIB_SELECTED.slice();
+      var prog = document.getElementById('studio-lib-batch-progress');
+      prog.style.display = 'block';
+      prog.innerHTML = '⏳ Suppression de ' + n + ' visuel(s)…';
+
+      var nbOk = 0, nbKo = 0;
+      for(var i = 0; i < urls.length; i++){
+        try {
+          var res = await fetch('/api/visual/library-delete', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ image_url: urls[i] })
+          });
+          var data = await res.json();
+          if(data.ok) nbOk++; else nbKo++;
+        } catch(e){ nbKo++; }
+        prog.innerHTML = '⏳ ' + (i+1) + ' / ' + n + ' (' + nbOk + ' OK, ' + nbKo + ' erreur)';
+      }
+
+      prog.innerHTML = nbKo === 0
+        ? '✅ <b>' + nbOk + ' visuel(s) supprimés</b>'
+        : '⚠️ ' + nbOk + ' OK · ' + nbKo + ' échec(s)';
+
+      setTimeout(function(){
+        studioClearSelection();
+        studioRefreshLibrary();
+        studioRefreshHistory();
+        studioRefreshBrain();
+      }, 1800);
     }
 
     async function studioReuseImage(url){
