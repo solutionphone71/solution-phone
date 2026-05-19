@@ -890,6 +890,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-sep"></div>
     <div class="nav-group-label">Marketing · Assya</div>
     <div class="nav-item" onclick="showPage('studio',this);studioInit();"><span class="nav-icon">📡</span><span>Cockpit Assya</span></div>
+    <div class="nav-item" onclick="showPage('avis-google',this);AvisGoogle.init();"><span class="nav-icon">💬</span><span>Avis Google IA</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Comptabilité</div>
@@ -2601,7 +2602,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 </div>
               </div>
 
-              <div style="display:flex;gap:10px;margin-top:14px;">
+              <!-- Récap dynamique des destinations -->
+              <div id="studio-targets-recap" style="margin-top:14px;padding:12px 14px;background:rgba(225,6,0,0.08);border:1.5px solid rgba(225,6,0,0.35);border-radius:10px;font-size:13px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="color:#E10600;">📍</span><span>Sera publié sur :</span>
+                <span id="studio-targets-list" style="color:#fff;font-weight:800;">—</span>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-top:10px;">
                 <button class="btn btn-primary" id="studio-publish-btn" onclick="studioDoPublish()" style="flex:1;padding:14px;font-weight:800;font-size:14px;">🚀 PUBLIER MAINTENANT</button>
               </div>
 
@@ -3240,6 +3247,45 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           document.getElementById('studio-caption-count').textContent = capTa.value.length;
         });
       }
+
+      // Branche les checkbox pour update le récap en live
+      ['studio-pub-instagram','studio-pub-instagram-story','studio-pub-facebook','studio-pub-facebook-story'].forEach(function(id){
+        var cb = document.getElementById(id);
+        if(cb && !cb._recapWired){
+          cb._recapWired = true;
+          cb.addEventListener('change', studioUpdateTargetsRecap);
+        }
+      });
+      studioUpdateTargetsRecap();
+    }
+
+    function studioUpdateTargetsRecap(){
+      var recap = document.getElementById('studio-targets-list');
+      var box   = document.getElementById('studio-targets-recap');
+      var btn   = document.getElementById('studio-publish-btn');
+      if(!recap || !btn) return;
+      var wantIGFeed  = document.getElementById('studio-pub-instagram') ? document.getElementById('studio-pub-instagram').checked : false;
+      var wantIGStory = document.getElementById('studio-pub-instagram-story') ? document.getElementById('studio-pub-instagram-story').checked : false;
+      var wantFB      = document.getElementById('studio-pub-facebook') ? document.getElementById('studio-pub-facebook').checked : false;
+      var wantFBStory = document.getElementById('studio-pub-facebook-story') ? document.getElementById('studio-pub-facebook-story').checked : false;
+      var parts = [];
+      if(wantIGFeed)  parts.push('<span style="color:#E1306C;">📷 Insta Feed</span>');
+      if(wantIGStory) parts.push('<span style="color:#E1306C;">📲 Insta Story (24h)</span>');
+      if(wantFB)      parts.push('<span style="color:#1877F2;">📘 Facebook Feed</span>');
+      if(wantFBStory) parts.push('<span style="color:#1877F2;">📲 FB Story (24h)</span>');
+      if(parts.length === 0){
+        recap.innerHTML = '<span style="color:#ef4444;">⚠️ Aucune cible cochée — sélectionne au moins une plateforme</span>';
+        if(box) box.style.borderColor = 'rgba(239,68,68,0.5)';
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      } else {
+        recap.innerHTML = parts.join(' · ');
+        if(box) box.style.borderColor = 'rgba(225,6,0,0.35)';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
     }
 
     function studioHandleFile(file){
@@ -3275,13 +3321,17 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
             if(fbStoryCb) fbStoryCb.checked = false;
           }
+          studioUpdateTargetsRecap();
         };
         img.src = e.target.result;
         document.getElementById('studio-preview-img').src = e.target.result;
         document.getElementById('studio-publish-form').style.display = 'block';
         studioRegenerateCaption();
-        // Scroll au formulaire
-        document.getElementById('studio-publish-form').scrollIntoView({ behavior:'smooth', block:'center' });
+        // Scroll au formulaire pour que les cases plateformes soient visibles
+        setTimeout(function(){
+          var target = document.getElementById('studio-platform-hint') || document.getElementById('studio-publish-form');
+          if(target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+        }, 200);
       };
       reader.readAsDataURL(file);
     }
@@ -4011,23 +4061,32 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             var feedCb = document.getElementById('studio-pub-instagram');
             var storyCb = document.getElementById('studio-pub-instagram-story');
             var fbCb = document.getElementById('studio-pub-facebook');
+            var fbStoryCb = document.getElementById('studio-pub-facebook-story');
             if(ratio >= 1.5){
-              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format vertical ('+img.naturalWidth+'×'+img.naturalHeight+') → Story';
-              storyCb.checked = true; feedCb.checked = false; fbCb.checked = true;
+              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format vertical ('+img.naturalWidth+'×'+img.naturalHeight+') → Stories Insta + FB';
+              storyCb.checked = true; feedCb.checked = false; fbCb.checked = false;
+              if(fbStoryCb) fbStoryCb.checked = true;
             } else if(Math.abs(ratio - 1) < 0.1){
-              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format carré ('+img.naturalWidth+'×'+img.naturalHeight+') → Feed';
+              if(hint) hint.textContent = '🔁 Visuel réutilisé · Format carré ('+img.naturalWidth+'×'+img.naturalHeight+') → Feed Insta + FB';
               feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+              if(fbStoryCb) fbStoryCb.checked = false;
             } else {
               if(hint) hint.textContent = '🔁 Visuel réutilisé · Format '+img.naturalWidth+'×'+img.naturalHeight;
               feedCb.checked = true; storyCb.checked = false; fbCb.checked = true;
+              if(fbStoryCb) fbStoryCb.checked = false;
             }
+            studioUpdateTargetsRecap();
           };
           img.src = e.target.result;
           document.getElementById('studio-preview-img').src = e.target.result;
           document.getElementById('studio-publish-form').style.display = 'block';
           studioRegenerateCaption();
-          document.getElementById('studio-publish-form').scrollIntoView({ behavior:'smooth', block:'center' });
-          if(window.showNotif) showNotif('✅ Visuel chargé · Coche les plateformes et publie', 'success');
+          // Scroll aux cases plateformes (pas tout en bas) pour que Sebastien voie d'abord où ça va
+          setTimeout(function(){
+            var target = document.getElementById('studio-platform-hint') || document.getElementById('studio-publish-form');
+            if(target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+          }, 200);
+          if(window.showNotif) showNotif('✅ Visuel chargé · Vérifie les cibles cochées', 'success');
         };
         reader.readAsDataURL(blob);
       } catch(e){
@@ -4155,6 +4214,63 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       studioRefreshLibrary();
     };
     </script>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : AVIS GOOGLE avec IA                   -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="page" id="page-avis-google">
+      <div class="page-title">💬 Avis Google IA</div>
+      <div class="page-sub">Réponses générées par Assya · Tu valides · L'app publie sur Google Business</div>
+
+      <!-- En-tête : actions globales -->
+      <div class="card" style="margin-bottom:18px;background:linear-gradient(135deg,rgba(251,191,36,0.08) 0%,transparent 100%);border-left:4px solid #fbbf24;">
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+          <div style="font-size:28px;">⭐</div>
+          <div style="flex:1;min-width:200px;">
+            <div style="font-weight:800;font-size:16px;color:#fff;">Tes derniers avis Google</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Assya rédige une réponse personnalisée. Tu approuves, l'app publie sur Google Business.</div>
+          </div>
+          <button class="btn btn-sm" onclick="AvisGoogle.refresh(true)" style="border-color:#fbbf24;color:#fbbf24;">🔄 Synchroniser Google</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="ag-stats" id="ig-tab-gmb-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;">
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">Note moyenne</div>
+          <div id="ag-avg" style="font-size:28px;font-weight:800;color:#fbbf24;margin-top:4px;">—</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">Total avis</div>
+          <div id="ag-count" style="font-size:28px;font-weight:800;color:#fff;margin-top:4px;">—</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">Taux de réponse</div>
+          <div style="font-size:28px;font-weight:800;color:#22c55e;margin-top:4px;"><span id="ag-reply-rate">—</span>%</div>
+        </div>
+        <div class="card" style="text-align:center;padding:16px;border-left:3px solid #f59e0b;">
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;">À traiter</div>
+          <div id="ag-pending" style="font-size:28px;font-weight:800;color:#f59e0b;margin-top:4px;">—</div>
+        </div>
+      </div>
+
+      <!-- Filtres + barre lieux -->
+      <div id="ig-tab-gmb" style="display:block;">
+        <div id="ag-loc-bar" style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;"></div>
+        <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+          <button class="btn btn-sm ag-filter" data-f="all"       onclick="AvisGoogle.setFilter('all')">Tous</button>
+          <button class="btn btn-sm ag-filter" data-f="pending"   onclick="AvisGoogle.setFilter('pending')"   style="border-color:#f59e0b;color:#f59e0b;">À répondre</button>
+          <button class="btn btn-sm ag-filter" data-f="draft"     onclick="AvisGoogle.setFilter('draft')"     style="border-color:#fbbf24;color:#fbbf24;">Brouillon IA</button>
+          <button class="btn btn-sm ag-filter" data-f="negative"  onclick="AvisGoogle.setFilter('negative')"  style="border-color:#ef4444;color:#ef4444;">≤ 3★ négatifs</button>
+          <button class="btn btn-sm ag-filter" data-f="published" onclick="AvisGoogle.setFilter('published')" style="border-color:#22c55e;color:#22c55e;">Publiés</button>
+        </div>
+
+        <!-- Liste des avis -->
+        <div id="ag-list" class="ag-list" style="display:flex;flex-direction:column;gap:14px;">
+          <div class="ag-empty" style="color:var(--text-muted);padding:30px;text-align:center;">Chargement des avis Google…</div>
+        </div>
+      </div>
+    </div>
 
     <div class="page" id="page-ventes-smart">
       <div class="page-title">💹 Ventes Smartphones</div>
