@@ -305,11 +305,17 @@ async function handleReviews(req, res) {
         const freshReviews = await fetchReviewsFromGoogle();
         if (freshReviews.length > 0) {
           // UPSERT sur google_review_id : si l'avis existe déjà, on le met à jour au lieu de planter en 409.
-          await sb("google_reviews?on_conflict=google_review_id", {
-            method: "POST",
-            body: freshReviews,
-            prefer: "resolution=merge-duplicates,return=minimal"
-          });
+          // Best-effort : si le upsert échoue (RLS / contrainte / 4xx), on log et continue pour quand même
+          // afficher les avis déjà en base.
+          try {
+            await sb("google_reviews?on_conflict=google_review_id", {
+              method: "POST",
+              body: freshReviews,
+              prefer: "resolution=merge-duplicates"
+            });
+          } catch (e) {
+            console.warn("[google-reviews] upsert partial failure:", e.message);
+          }
         }
       }
       const reviews = await sb("google_reviews?order=create_time.desc&limit=200");
