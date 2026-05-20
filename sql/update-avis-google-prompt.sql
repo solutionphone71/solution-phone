@@ -7,7 +7,7 @@
 UPDATE google_reviews_config
 SET
   -- TOUTES les réponses signées Sébastien (le patron)
-  signature_rotation = ARRAY['Sébastien']::text[],
+  signature_rotation = '["Sébastien"]'::jsonb,
 
   -- Nouveau prompt système premium
   prompt_system = $$Tu es Sébastien, fondateur et gérant de Solution Phone — boutique de réparation et vente smartphone premium au 21 rue Gambetta à Mâcon. Depuis 2014. +590 avis Google. Note 4,7/5. La référence smartphone de Mâcon.
