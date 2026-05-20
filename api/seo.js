@@ -204,8 +204,19 @@ async function handleAudit(req, res) {
   breakdown.categories = Math.min(10, catCount * 2);
   score += breakdown.categories;
 
-  // c) Services (10 pts max)
-  const serviceCount = gbpOk ? (loc.serviceItems?.length || 0) : 0;
+  // c) Services (10 pts max) — multi-source : serviceItems + serviceTypes des catégories
+  let serviceCount = 0;
+  if (gbpOk) {
+    // Source 1 : serviceItems explicites (custom freeForm OU structured)
+    serviceCount = loc.serviceItems?.length || 0;
+    // Source 2 : serviceTypes liés aux catégories (predefined service types Google)
+    if (serviceCount === 0) {
+      const primaryServiceTypes = loc.categories?.primaryCategory?.serviceTypes?.length || 0;
+      const additionalServiceTypes = (loc.categories?.additionalCategories || [])
+        .reduce((sum, c) => sum + (c.serviceTypes?.length || 0), 0);
+      serviceCount = primaryServiceTypes + additionalServiceTypes;
+    }
+  }
   breakdown.services = Math.min(10, serviceCount);
   score += breakdown.services;
 
@@ -259,11 +270,20 @@ async function handleAudit(req, res) {
       title: `Ajouter des catégories (${catCount}/5+ recommandé)`,
       action: 'Catégories à ajouter : Magasin de téléphonie mobile · Atelier de réparation de téléphones mobiles · Magasin de matériel électronique · Magasin d\'accessoires de téléphonie mobile · Magasin de matériel d\'occasion.'
     });
-    if (serviceCount < 8) suggestions.push({
-      severity: 'medium', impact: `+${10 - Math.min(10, serviceCount)} pts`,
-      title: `Compléter les services (${serviceCount}/8+)`,
-      action: 'Lister chaque service : Remplacement écran iPhone, Remplacement écran Samsung, Remplacement batterie, Désoxydation, Réparation connecteur de charge, Vente smartphone neuf, Vente smartphone reconditionné, Rachat de téléphone, Accessoires, Coques sur mesure...'
-    });
+    if (serviceCount === 0) {
+      // Cas limite : l'API Google ne retourne pas les services. Suggestion soft.
+      suggestions.push({
+        severity: 'low', impact: 'À vérifier',
+        title: 'Services GBP non lisibles via l\'API Google',
+        action: 'Léo ne voit aucun service dans la réponse Google. Si tu en as déjà ajouté (Réparation, Vente reconditionné, etc.), c\'est juste un problème de remontée API. Vérifie sur https://business.google.com → ton établissement → Services.'
+      });
+    } else if (serviceCount < 8) {
+      suggestions.push({
+        severity: 'medium', impact: `+${10 - Math.min(10, serviceCount)} pts`,
+        title: `Compléter les services (${serviceCount}/8+ détectés)`,
+        action: 'Lister chaque service : Remplacement écran iPhone, Remplacement écran Samsung, Remplacement batterie, Désoxydation, Réparation connecteur de charge, Vente smartphone neuf, Vente smartphone reconditionné, Rachat de téléphone, Accessoires, Coques sur mesure...'
+      });
+    }
   }
   if (postsLast30Days < 4) suggestions.push({
     severity: 'high', impact: `+${15 - Math.min(15, postsLast30Days * 4)} pts`,
