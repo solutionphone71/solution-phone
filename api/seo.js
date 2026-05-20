@@ -280,6 +280,7 @@ async function handleAudit(req, res) {
   } catch (e) { warnings.push(`Save audit fail: ${e.message}`); }
 
   // ─── 7. Réponse finale (TOUJOURS 200 OK) ────────────────────────
+  const isDebug = req.query?.debug === '1';
   return res.status(200).json({
     ok: true,
     gbp_connected: gbpOk,
@@ -300,7 +301,12 @@ async function handleAudit(req, res) {
       adresse: loc.storefrontAddress?.addressLines?.join(', ') || null
     },
     audit_id: auditRow?.id,
-    audited_at: auditRow?.audited_at || new Date().toISOString()
+    audited_at: auditRow?.audited_at || new Date().toISOString(),
+    // Champs debug : utile pour comprendre pourquoi services=0 alors qu'il y en a
+    raw_gbp_keys: gbpOk ? Object.keys(loc) : [],
+    raw_serviceItems_count: loc.serviceItems?.length || 0,
+    raw_categories: loc.categories || null,
+    ...(isDebug ? { raw_full_gbp: loc } : {})
   });
 }
 
