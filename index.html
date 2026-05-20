@@ -4439,7 +4439,14 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             body: opts.body ? JSON.stringify(opts.body) : undefined,
             credentials: 'include'
           });
-          return r.json();
+          const text = await r.text();
+          // Détection HTML (déploiement pas fini / 404 / 500 Vercel)
+          if (text.trim().startsWith('<')) {
+            const snippet = text.substring(0, 100).replace(/\s+/g,' ').trim();
+            throw new Error(`L'API /api/seo n'est pas disponible (HTTP ${r.status}). ${r.status === 404 ? 'L\'endpoint n\'existe pas — vérifie que api/seo.js est bien pushé sur GitHub et que Vercel a fini de déployer.' : r.status >= 500 ? 'Erreur serveur — vérifie les Vercel logs.' : 'Réponse HTML reçue.'} [${snippet}]`);
+          }
+          try { return JSON.parse(text); }
+          catch (e) { throw new Error(`Réponse non-JSON (${r.status}): ${text.substring(0,150)}`); }
         }
 
         function setScore(score, breakdown, stats) {
