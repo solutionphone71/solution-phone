@@ -423,6 +423,90 @@ async function handleListPosts(req, res) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// ACTION : attacher / détacher une photo à un post
+// ════════════════════════════════════════════════════════════════════
+async function handleAttachPhoto(req, res) {
+  try {
+    const { post_id, media_url } = req.body || {};
+    if (!post_id) return res.status(400).json({ error: 'post_id requis' });
+    // media_url peut être null/'' → détache
+    const cleanUrl = (typeof media_url === 'string' && media_url.trim()) ? media_url.trim() : null;
+    await sb(`gbp_posts?id=eq.${post_id}`, {
+      method: 'PATCH',
+      body: { media_url: cleanUrl }
+    });
+    return res.status(200).json({ ok: true, media_url: cleanUrl });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ACTION : générer un prompt photo ChatGPT/Gemini adapté au post
+// ════════════════════════════════════════════════════════════════════
+async function handlePhotoPrompt(req, res) {
+  try {
+    const { post_id } = req.body || {};
+    if (!post_id) return res.status(400).json({ error: 'post_id requis' });
+    const rows = await sb(`gbp_posts?id=eq.${post_id}&select=summary,keywords_targeted`);
+    if (!rows?.[0]) return res.status(404).json({ error: 'Post introuvable' });
+    const post = rows[0];
+
+    const systemPrompt = `Tu es directeur artistique de Solution Phone — boutique smartphone premium à Mâcon, charte rouge #E10600 / noir #0D0D0D / blanc / police Montserrat, esthétique Apple × Tesla × B&O.
+
+Tu génères un PROMPT photo prêt à coller dans ChatGPT (DALL-E) ou Gemini Pro Image. Format paysage 1200×900 (idéal Google Business Profile post).
+
+RÈGLES :
+- Image PROPRE, premium, lumière naturelle douce, fond minimaliste (bois clair, marbre blanc, surface mate sombre)
+- Smartphone obligatoirement bien identifiable, logo Apple ou Samsung AUTORISÉ (anti-faux SAV)
+- AUCUN texte dans l'image (Google Business gère le texte à côté)
+- AUCUN logo Solution Phone ou QualiRépar dans l'image (on les ajoute en post-prod si besoin)
+- Cadrage : 1 sujet principal centré, profondeur de champ photo réaliste
+- Ambiance : journal magazine premium type Monocle / The Verge / Wired
+- Pas de personnes au visage visible (droits image)
+
+Tu réponds UNIQUEMENT en JSON :
+{
+  "chatgpt_prompt": "le prompt complet en anglais, prêt à coller dans ChatGPT",
+  "gemini_prompt": "le prompt complet en français, prêt à coller dans Gemini",
+  "preview_description": "2-3 phrases en français qui décrivent l'image attendue"
+}`;
+
+    const userMsg = `POST GBP à illustrer :
+"${post.summary}"
+
+Mots-clés visés : ${(post.keywords_targeted || []).join(', ') || 'aucun spécifique'}
+
+Génère un prompt photo qui illustre PARFAITEMENT ce post.`;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(`Claude ${r.status}: ${JSON.stringify(data).substring(0, 200)}`);
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Réponse non-JSON');
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    return res.status(200).json({ ok: true, ...parsed });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
 // ACTION : supprimer un post (brouillon uniquement)
 // ════════════════════════════════════════════════════════════════════
 async function handleDeletePost(req, res) {
@@ -558,6 +642,8 @@ export default async function handler(req, res) {
       case 'generate':    return handleGenerate(req, res);
       case 'publish':     return handlePublish(req, res);
       case 'list-posts':  return handleListPosts(req, res);
+      case 'attach-photo': return handleAttachPhoto(req, res);
+      case 'photo-prompt': return handlePhotoPrompt(req, res);
       case 'delete-post': return handleDeletePost(req, res);
       case 'config':      return handleConfig(req, res);
       case 'keywords':    return handleKeywords(req, res);

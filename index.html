@@ -4501,13 +4501,42 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               ? `<button class="btn btn-sm" onclick="Leo.publishPost(${p.id})" style="border-color:#22c55e;color:#22c55e;">✓ Publier sur Google</button>
                  <button class="btn btn-sm" onclick="Leo.deletePost(${p.id})" style="border-color:#ef4444;color:#ef4444;">Supprimer</button>`
               : '';
+
+            // Section PHOTO
+            let photoHtml = '';
+            if (p.status === 'draft' || p.status === 'scheduled') {
+              if (p.media_url) {
+                photoHtml = `
+                  <div style="margin:12px 0;display:flex;gap:14px;align-items:center;background:rgba(0,0,0,0.20);padding:10px;border-radius:10px;">
+                    <img src="${escapeHtml(p.media_url)}" style="width:80px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.10);" />
+                    <div style="flex:1;font-size:12px;color:var(--text-muted);">Photo attachée pour Google Business</div>
+                    <button class="btn btn-sm" onclick="Leo.pickFromLibrary(${p.id})" style="border-color:#fbbf24;color:#fbbf24;">Changer</button>
+                    <button class="btn btn-sm" onclick="Leo.detachPhoto(${p.id})" style="border-color:#ef4444;color:#ef4444;">Retirer</button>
+                  </div>`;
+              } else {
+                photoHtml = `
+                  <div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,0.15);padding:10px;border-radius:10px;">
+                    <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">📷 Photo (optionnel) :</span>
+                    <button class="btn btn-sm" onclick="Leo.pickFromLibrary(${p.id})" style="border-color:#7a5cff;color:#7a5cff;">📚 Bibliothèque</button>
+                    <button class="btn btn-sm" onclick="Leo.suggestChatGPTPrompt(${p.id})" style="border-color:#10a37f;color:#10a37f;">🤖 Prompt ChatGPT</button>
+                    <button class="btn btn-sm" onclick="Leo.uploadPhoto(${p.id})" style="border-color:#fbbf24;color:#fbbf24;">⬆️ Uploader</button>
+                  </div>`;
+              }
+            } else if (p.media_url) {
+              photoHtml = `
+                <div style="margin:12px 0;">
+                  <img src="${escapeHtml(p.media_url)}" style="max-width:200px;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.10);" />
+                </div>`;
+            }
+
             return `
-              <div class="leo-post">
+              <div class="leo-post" data-post-id="${p.id}">
                 <div class="leo-post-head">
                   <div style="display:flex;gap:8px;align-items:center;">${statusBadge}${autoBadge}<span style="font-size:12px;color:var(--text-muted);">${date}</span></div>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">${actions}</div>
                 </div>
                 <div class="leo-post-summary">${escapeHtml(p.summary || '')}</div>
+                ${photoHtml}
                 <div class="leo-post-meta">
                   <span>${p.summary?.length || 0} car.</span>
                   ${p.cta_type ? `<span>CTA : ${p.cta_type}</span>` : ''}
@@ -4517,6 +4546,162 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               </div>
             `;
           }).join('');
+        }
+
+        // ─── Photo : picker bibliothèque ────────────────────────────
+        async function pickFromLibrary(postId) {
+          // Charge depuis Supabase REST via SUPABASE_URL exposé dans window.__SP_SUPA (sinon fallback config)
+          let items = [];
+          try {
+            // On utilise la même approche que studioRefreshLibrary : supaFetch global
+            const jobs = await (window.supaFetch
+              ? window.supaFetch('visual_jobs','GET',null,'?status=eq.ready&order=created_at.desc&limit=80&select=id,image_url,brief,created_at')
+              : Promise.resolve([]));
+            const posts = await (window.supaFetch
+              ? window.supaFetch('social_posts','GET',null,'?status=eq.published&order=published_at.desc.nullslast&limit=80&select=id,media_urls,published_at')
+              : Promise.resolve([]));
+            const seen = {};
+            (jobs || []).forEach(j => {
+              if (j.image_url && !seen[j.image_url]) { seen[j.image_url] = true; items.push({ url: j.image_url, date: j.created_at }); }
+            });
+            (posts || []).forEach(p => {
+              const u = p.media_urls?.[0];
+              if (u && !seen[u]) { seen[u] = true; items.push({ url: u, date: p.published_at }); }
+            });
+          } catch (e) { console.error('[Leo lib]', e); }
+
+          if (!items.length) {
+            alert('Bibliothèque vide. Va dans Cockpit Assya → Bibliothèque pour uploader des visuels.');
+            return;
+          }
+
+          // Modal picker
+          openPickerModal(items, async (url) => {
+            await attachUrl(postId, url);
+          });
+        }
+
+        function openPickerModal(items, onPick) {
+          // Construit la modal au vol
+          let existing = document.getElementById('leo-picker-modal');
+          if (existing) existing.remove();
+          const modal = document.createElement('div');
+          modal.id = 'leo-picker-modal';
+          modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+          modal.innerHTML = `
+            <div style="background:#1a1a1a;border-radius:18px;padding:24px;max-width:900px;width:100%;max-height:85vh;overflow-y:auto;border:1px solid rgba(255,255,255,0.10);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="margin:0;color:#fff;">📚 Choisir une photo</h3>
+                <button onclick="document.getElementById('leo-picker-modal').remove()" style="background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer;">×</button>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">
+                ${items.map(it => `
+                  <div onclick="Leo.__pickerSelect('${encodeURIComponent(it.url)}')" style="cursor:pointer;border:2px solid rgba(255,255,255,0.10);border-radius:10px;overflow:hidden;transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.04)';this.style.borderColor='#E10600';" onmouseout="this.style.transform='scale(1)';this.style.borderColor='rgba(255,255,255,0.10)';">
+                    <img src="${escapeHtml(it.url)}" style="width:100%;height:140px;object-fit:cover;display:block;" />
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+          window.Leo.__pickerCallback = onPick;
+          window.Leo.__pickerSelect = (encUrl) => {
+            const url = decodeURIComponent(encUrl);
+            document.getElementById('leo-picker-modal')?.remove();
+            window.Leo.__pickerCallback?.(url);
+          };
+        }
+
+        async function attachUrl(postId, url) {
+          try {
+            const r = await apiCall('attach-photo', { method:'POST', body: { post_id: postId, media_url: url } });
+            if (!r.ok) throw new Error(r.error || 'Attach échoué');
+            loadPosts();
+          } catch (e) {
+            alert(`Erreur attache photo : ${e.message}`);
+          }
+        }
+
+        async function detachPhoto(postId) {
+          try {
+            await apiCall('attach-photo', { method:'POST', body: { post_id: postId, media_url: null } });
+            loadPosts();
+          } catch (e) { alert(e.message); }
+        }
+
+        // ─── Photo : prompt ChatGPT ─────────────────────────────────
+        async function suggestChatGPTPrompt(postId) {
+          try {
+            const r = await apiCall('photo-prompt', { method:'POST', body: { post_id: postId } });
+            if (!r.ok) throw new Error(r.error || 'Génération prompt échouée');
+            const promptText = r.chatgpt_prompt || r.gemini_prompt || '';
+            // Copie dans presse-papier
+            try { await navigator.clipboard.writeText(promptText); } catch(_) {}
+            // Modal d'instruction
+            let existing = document.getElementById('leo-prompt-modal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'leo-prompt-modal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+            modal.innerHTML = `
+              <div style="background:#1a1a1a;border-radius:18px;padding:24px;max-width:700px;width:100%;border:1px solid #10a37f;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                  <h3 style="margin:0;color:#fff;">🤖 Prompt photo généré</h3>
+                  <button onclick="document.getElementById('leo-prompt-modal').remove()" style="background:transparent;border:none;color:#fff;font-size:28px;cursor:pointer;">×</button>
+                </div>
+                <div style="background:rgba(16,163,127,0.10);border:1px solid #10a37f;border-radius:10px;padding:14px;color:#fff;font-size:13px;line-height:1.6;margin-bottom:14px;white-space:pre-wrap;">${escapeHtml(promptText)}</div>
+                ${r.preview_description ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;"><b>Aperçu attendu :</b> ${escapeHtml(r.preview_description)}</div>` : ''}
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <a href="https://chat.openai.com/" target="_blank" class="btn" style="background:#10a37f;border:none;color:#fff;font-weight:700;">Ouvrir ChatGPT →</a>
+                  <a href="https://gemini.google.com/" target="_blank" class="btn btn-sm" style="border-color:#4285f4;color:#4285f4;">Ouvrir Gemini →</a>
+                  <button onclick="navigator.clipboard.writeText(${JSON.stringify(promptText)});this.textContent='✓ Copié !'" class="btn btn-sm" style="border-color:#fbbf24;color:#fbbf24;">📋 Recopier</button>
+                  <button onclick="document.getElementById('leo-prompt-modal').remove();Leo.uploadPhoto(${postId})" class="btn btn-sm" style="border-color:#22c55e;color:#22c55e;">⬆️ J'ai l'image, je l'uploade</button>
+                </div>
+                <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">✓ Le prompt est déjà copié dans ton presse-papier. Colle-le dans ChatGPT, télécharge l'image, puis clique « J'ai l'image ».</div>
+              </div>
+            `;
+            document.body.appendChild(modal);
+          } catch (e) {
+            alert(`Erreur prompt : ${e.message}`);
+          }
+        }
+
+        // ─── Photo : upload direct ──────────────────────────────────
+        function uploadPhoto(postId) {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+              const base64 = ev.target.result; // data:image/...;base64,xxx
+              try {
+                // Upload via library-upload (ajoute aussi à la Bibliothèque)
+                const up = await fetch('/api/visual/library-upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({
+                    image_base64: base64,
+                    filename: `leo-${postId}-${Date.now()}.png`,
+                    format: 'landscape',
+                    template: 'leo_gbp_post'
+                  })
+                });
+                const data = await up.json();
+                if (!up.ok) throw new Error(data.error || 'Upload échoué');
+                const url = data.uploaded_url || data.url || data.image_url;
+                if (!url) throw new Error('Pas d\'URL retournée');
+                await attachUrl(postId, url);
+              } catch (err) {
+                alert(`Erreur upload : ${err.message}`);
+              }
+            };
+            reader.readAsDataURL(file);
+          };
+          input.click();
         }
 
         function renderKeywords(keywords) {
@@ -4630,7 +4815,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           ]);
         }
 
-        return { init, runAudit, generatePost, publishPost, deletePost };
+        return { init, runAudit, generatePost, publishPost, deletePost, pickFromLibrary, detachPhoto, suggestChatGPTPrompt, uploadPhoto };
       })();
     </script>
 
