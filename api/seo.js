@@ -93,92 +93,123 @@ async function getValidAccessToken() {
 
 // ════════════════════════════════════════════════════════════════════
 // ACTION : audit GBP → score + suggestions
+// Version 100% défensive : ne plante JAMAIS, retourne toujours 200
+// même si OAuth Google manquant. Chaque étape isolée en try/catch.
 // ════════════════════════════════════════════════════════════════════
 async function handleAudit(req, res) {
+  const warnings = [];
+  let loc = {}; // données GBP (vide si OAuth/Google KO)
+  let gbpOk = false;
+
+  // ─── 1. Tente de récupérer les infos GBP (OAuth Google) ─────────
   try {
     const { accessToken, accountId, locationIds } = await getValidAccessToken();
-    const locId = typeof locationIds[0] === 'string' ? locationIds[0] : locationIds[0]?.id;
-    if (!locId) throw new Error('Aucune location GBP trouvée');
-
-    // 1. Récupère la fiche GBP avec un readMask exhaustif
-    const readMask = [
-      'name', 'title', 'storefrontAddress', 'phoneNumbers', 'websiteUri',
-      'regularHours', 'specialHours', 'serviceArea', 'categories',
-      'profile', 'serviceItems', 'metadata', 'openInfo', 'labels'
-    ].join(',');
-
-    const locRes = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/${locId}?readMask=${readMask}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const loc = await locRes.json();
-    if (!locRes.ok) throw new Error(`GBP location ${locRes.status}: ${JSON.stringify(loc).substring(0, 200)}`);
-
-    // 2. Compte posts récents (30 derniers jours)
-    const postsRows = await sb(`gbp_posts?status=eq.published&published_at=gte.${new Date(Date.now() - 30*24*3600*1000).toISOString()}&select=id`);
-    const postsLast30Days = postsRows?.length || 0;
-
-    // 3. Récupère avis stats depuis google_reviews
-    let avgRating = 4.7, reviewCount = 590, reviewsLast30 = 0, repliedRatio = 0;
-    try {
-      const allReviews = await sb('google_reviews?select=star_rating,reply_status,create_time');
-      if (allReviews?.length) {
-        reviewCount = allReviews.length;
-        avgRating = allReviews.reduce((s, r) => s + (r.star_rating || 0), 0) / reviewCount;
-        const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
-        reviewsLast30 = allReviews.filter(r => new Date(r.create_time).getTime() > cutoff).length;
-        const replied = allReviews.filter(r => r.reply_status === 'published').length;
-        repliedRatio = replied / reviewCount;
+    const locId = locationIds?.length
+      ? (typeof locationIds[0] === 'string' ? locationIds[0] : locationIds[0]?.id)
+      : null;
+    if (!locId) {
+      warnings.push('Aucune location GBP trouvée dans google_oauth_tokens.');
+    } else {
+      const readMask = [
+        'name', 'title', 'storefrontAddress', 'phoneNumbers', 'websiteUri',
+        'regularHours', 'specialHours', 'serviceArea', 'categories',
+        'profile', 'serviceItems', 'metadata', 'openInfo', 'labels'
+      ].join(',');
+      const locRes = await fetch(
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/${locId}?readMask=${readMask}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const locText = await locRes.text();
+      if (locRes.ok) {
+        try { loc = JSON.parse(locText); gbpOk = true; }
+        catch (e) { warnings.push(`Parse GBP fail: ${e.message}`); }
+      } else {
+        warnings.push(`Google API ${locRes.status}: ${locText.substring(0, 150)}`);
       }
-    } catch (_) { /* fallback to defaults */ }
+    }
+  } catch (e) {
+    warnings.push(`OAuth/GBP indisponible: ${e.message || e}`);
+  }
 
-    // 4. Score sur 100 (système Léo)
-    const breakdown = {};
-    let score = 0;
+  // ─── 2. Posts récents (Supabase, 30 derniers jours) ─────────────
+  let postsLast30Days = 0;
+  try {
+    const postsRows = await sb(`gbp_posts?status=eq.published&published_at=gte.${new Date(Date.now() - 30*24*3600*1000).toISOString()}&select=id`);
+    postsLast30Days = postsRows?.length || 0;
+  } catch (e) { warnings.push(`Posts query fail: ${e.message}`); }
 
-    // a) Descriptif (15 pts) : longueur > 600 + contient "magasin de téléphone" + "Mâcon"
-    const descLen = (loc.profile?.description || '').length;
-    const descLower = (loc.profile?.description || '').toLowerCase();
-    const hasMacon = descLower.includes('mâcon') || descLower.includes('macon');
-    const hasMagasinTel = descLower.includes('magasin de téléphone') || descLower.includes('magasin de telephone');
-    const hasRepa = descLower.includes('réparation') || descLower.includes('reparation');
-    breakdown.descriptif = (descLen >= 600 ? 5 : Math.round(descLen / 120))
-                        + (hasMacon ? 4 : 0)
-                        + (hasMagasinTel ? 3 : 0)
-                        + (hasRepa ? 3 : 0);
-    score += breakdown.descriptif;
+  // ─── 3. Stats avis (Supabase google_reviews) ────────────────────
+  let avgRating = 4.7, reviewCount = 590, reviewsLast30 = 0, repliedRatio = 0;
+  try {
+    const allReviews = await sb('google_reviews?select=star_rating,reply_status,create_time');
+    if (allReviews?.length) {
+      reviewCount = allReviews.length;
+      avgRating = allReviews.reduce((s, r) => s + (r.star_rating || 0), 0) / reviewCount;
+      const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+      reviewsLast30 = allReviews.filter(r => new Date(r.create_time).getTime() > cutoff).length;
+      const replied = allReviews.filter(r => r.reply_status === 'published').length;
+      repliedRatio = replied / reviewCount;
+    }
+  } catch (e) { warnings.push(`Reviews query fail: ${e.message}`); }
 
-    // b) Catégories (10 pts) : > 3 catégories
-    const catCount = 1 + (loc.categories?.additionalCategories?.length || 0);
-    breakdown.categories = Math.min(10, catCount * 2);
-    score += breakdown.categories;
+  // ─── 4. Score sur 100 (système Léo) ─────────────────────────────
+  const breakdown = {};
+  let score = 0;
 
-    // c) Services (10 pts) : > 8 services
-    const serviceCount = loc.serviceItems?.length || 0;
-    breakdown.services = Math.min(10, serviceCount);
-    score += breakdown.services;
+  // a) Descriptif (15 pts max)
+  const descLen = (loc.profile?.description || '').length;
+  const descLower = (loc.profile?.description || '').toLowerCase();
+  const hasMacon = descLower.includes('mâcon') || descLower.includes('macon');
+  const hasMagasinTel = descLower.includes('magasin de téléphone') || descLower.includes('magasin de telephone');
+  const hasRepa = descLower.includes('réparation') || descLower.includes('reparation');
+  breakdown.descriptif = gbpOk
+    ? ((descLen >= 600 ? 5 : Math.round(descLen / 120))
+        + (hasMacon ? 4 : 0)
+        + (hasMagasinTel ? 3 : 0)
+        + (hasRepa ? 3 : 0))
+    : 0;
+  score += breakdown.descriptif;
 
-    // d) Posts récents (15 pts) : 4+ posts dans les 30 derniers jours
-    breakdown.posts_recents = Math.min(15, postsLast30Days * 4);
-    score += breakdown.posts_recents;
+  // b) Catégories (10 pts max)
+  const catCount = gbpOk ? (1 + (loc.categories?.additionalCategories?.length || 0)) : 0;
+  breakdown.categories = Math.min(10, catCount * 2);
+  score += breakdown.categories;
 
-    // e) Avis : volume (10 pts) + note (10 pts) + fraîcheur (5 pts) + taux de réponse (5 pts) = 30
-    breakdown.avis_volume = Math.min(10, Math.floor(reviewCount / 60));
-    breakdown.avis_note = Math.min(10, Math.round((avgRating - 3) * 5));
-    breakdown.avis_fraicheur = Math.min(5, reviewsLast30);
-    breakdown.avis_taux_reponse = Math.min(5, Math.round(repliedRatio * 5));
-    score += breakdown.avis_volume + breakdown.avis_note + breakdown.avis_fraicheur + breakdown.avis_taux_reponse;
+  // c) Services (10 pts max)
+  const serviceCount = gbpOk ? (loc.serviceItems?.length || 0) : 0;
+  breakdown.services = Math.min(10, serviceCount);
+  score += breakdown.services;
 
-    // f) Horaires + téléphone + site (10 pts)
-    breakdown.contact = 0;
+  // d) Posts récents (15 pts max)
+  breakdown.posts_recents = Math.min(15, postsLast30Days * 4);
+  score += breakdown.posts_recents;
+
+  // e) Avis : volume + note + fraîcheur + taux de réponse = 30 pts max
+  breakdown.avis_volume = Math.min(10, Math.floor(reviewCount / 60));
+  breakdown.avis_note = Math.min(10, Math.round((avgRating - 3) * 5));
+  breakdown.avis_fraicheur = Math.min(5, reviewsLast30);
+  breakdown.avis_taux_reponse = Math.min(5, Math.round(repliedRatio * 5));
+  score += breakdown.avis_volume + breakdown.avis_note + breakdown.avis_fraicheur + breakdown.avis_taux_reponse;
+
+  // f) Contact (10 pts max)
+  breakdown.contact = 0;
+  if (gbpOk) {
     if (loc.regularHours?.periods?.length) breakdown.contact += 4;
     if (loc.phoneNumbers?.primaryPhone) breakdown.contact += 3;
     if (loc.websiteUri) breakdown.contact += 3;
-    score += breakdown.contact;
+  }
+  score += breakdown.contact;
 
-    // 5. Suggestions personnalisées
-    const suggestions = [];
+  // ─── 5. Suggestions personnalisées ──────────────────────────────
+  const suggestions = [];
 
+  if (!gbpOk) {
+    suggestions.push({
+      severity: 'critical', impact: 'Bloquant',
+      title: 'OAuth Google Business Profile non connecté',
+      action: 'Léo a besoin d\'accéder à ta fiche Google Business pour auditer descriptif, catégories, services, horaires. Va sur /api/google-oauth-init pour autoriser. Si déjà fait, vérifie que le scope inclut "https://www.googleapis.com/auth/business.manage".'
+    });
+  } else {
     if (descLen < 600) suggestions.push({
       severity: 'high', impact: '+5 pts',
       title: `Étoffer le descriptif (${descLen} car / 750 max)`,
@@ -204,69 +235,70 @@ async function handleAudit(req, res) {
       title: `Compléter les services (${serviceCount}/8+)`,
       action: 'Lister chaque service : Remplacement écran iPhone, Remplacement écran Samsung, Remplacement batterie, Désoxydation, Réparation connecteur de charge, Vente smartphone neuf, Vente smartphone reconditionné, Rachat de téléphone, Accessoires, Coques sur mesure...'
     });
-    if (postsLast30Days < 4) suggestions.push({
-      severity: 'high', impact: `+${15 - Math.min(15, postsLast30Days * 4)} pts`,
-      title: `Publier plus de posts (${postsLast30Days}/4 sur 30j)`,
-      action: 'Léo peut générer + publier un post chaque lundi automatiquement (cron actif). Active-le dans la config.'
-    });
-    if (reviewsLast30 < 5) suggestions.push({
-      severity: 'high', impact: `+${5 - Math.min(5, reviewsLast30)} pts`,
-      title: `Pas assez de nouveaux avis (${reviewsLast30}/5 sur 30j)`,
-      action: 'Active la relance SMS automatique après chaque réparation/vente (Léo → config → auto_review_requests).'
-    });
-    if (repliedRatio < 0.9) suggestions.push({
-      severity: 'medium', impact: `+${5 - Math.min(5, Math.round(repliedRatio * 5))} pts`,
-      title: `Répondre à tous les avis (${Math.round(repliedRatio * 100)}% répondus)`,
-      action: 'L\'agent Avis Google IA peut le faire pour toi. Page : Avis Google IA → mode auto.'
-    });
-    if (avgRating < 4.8) suggestions.push({
-      severity: 'critical', impact: 'Effet boule de neige',
-      title: `Faire monter la note (${avgRating.toFixed(2)}/5)`,
-      action: 'Phone Expert est à 4,9. À volume égal, Google fait remonter la meilleure note. Combo gagnant : (1) relances 5★ post-réparation (2) réponses chaleureuses sur les 5★ (3) traitement immédiat des < 4★ en boutique avant qu\'ils ne deviennent publics.'
-    });
-
-    // 6. Persiste l'audit
-    let auditRow = null;
-    try {
-      const ins = await sb('seo_audits', {
-        method: 'POST',
-        prefer: 'return=representation',
-        body: {
-          score, score_breakdown: breakdown, suggestions,
-          gbp_snapshot: {
-            title: loc.title, descLen, hasMagasinTel, hasMacon, hasRepa,
-            categories: catCount, services: serviceCount, postsLast30Days,
-            reviewCount, avgRating, reviewsLast30, repliedRatio
-          }
-        }
-      });
-      auditRow = ins?.[0];
-    } catch (e) { console.error('[audit save]', e.message); }
-
-    return res.status(200).json({
-      ok: true,
-      score, max: 100, breakdown, suggestions,
-      stats: {
-        title: loc.title,
-        descriptif_chars: descLen,
-        categories_total: catCount,
-        services_total: serviceCount,
-        posts_last_30d: postsLast30Days,
-        avis_total: reviewCount,
-        avis_moyenne: Number(avgRating.toFixed(2)),
-        avis_30j: reviewsLast30,
-        taux_reponse_pct: Math.round(repliedRatio * 100),
-        site: loc.websiteUri || null,
-        telephone: loc.phoneNumbers?.primaryPhone || null,
-        adresse: loc.storefrontAddress?.addressLines?.join(', ') || null
-      },
-      audit_id: auditRow?.id,
-      audited_at: auditRow?.audited_at || new Date().toISOString()
-    });
-  } catch (e) {
-    console.error('[seo audit]', e);
-    return res.status(500).json({ ok: false, error: String(e.message || e) });
   }
+  if (postsLast30Days < 4) suggestions.push({
+    severity: 'high', impact: `+${15 - Math.min(15, postsLast30Days * 4)} pts`,
+    title: `Publier plus de posts (${postsLast30Days}/4 sur 30j)`,
+    action: 'Léo peut générer + publier un post chaque lundi automatiquement (cron actif). Active-le dans la config.'
+  });
+  if (reviewsLast30 < 5) suggestions.push({
+    severity: 'high', impact: `+${5 - Math.min(5, reviewsLast30)} pts`,
+    title: `Pas assez de nouveaux avis (${reviewsLast30}/5 sur 30j)`,
+    action: 'Active la relance SMS automatique après chaque réparation/vente (Léo → config → auto_review_requests).'
+  });
+  if (repliedRatio < 0.9) suggestions.push({
+    severity: 'medium', impact: `+${5 - Math.min(5, Math.round(repliedRatio * 5))} pts`,
+    title: `Répondre à tous les avis (${Math.round(repliedRatio * 100)}% répondus)`,
+    action: 'L\'agent Avis Google IA peut le faire pour toi. Page : Avis Google IA → mode auto.'
+  });
+  if (avgRating < 4.8) suggestions.push({
+    severity: 'critical', impact: 'Effet boule de neige',
+    title: `Faire monter la note (${avgRating.toFixed(2)}/5)`,
+    action: 'Phone Expert est à 4,9. À volume égal, Google fait remonter la meilleure note. Combo gagnant : (1) relances 5★ post-réparation (2) réponses chaleureuses sur les 5★ (3) traitement immédiat des < 4★ en boutique avant qu\'ils ne deviennent publics.'
+  });
+
+  // ─── 6. Persiste l'audit (best effort) ──────────────────────────
+  let auditRow = null;
+  try {
+    const ins = await sb('seo_audits', {
+      method: 'POST',
+      prefer: 'return=representation',
+      body: {
+        score, score_breakdown: breakdown, suggestions,
+        gbp_snapshot: {
+          title: loc.title || null, descLen, hasMagasinTel, hasMacon, hasRepa,
+          categories: catCount, services: serviceCount, postsLast30Days,
+          reviewCount, avgRating, reviewsLast30, repliedRatio,
+          gbpOk, warnings
+        }
+      }
+    });
+    auditRow = ins?.[0];
+  } catch (e) { warnings.push(`Save audit fail: ${e.message}`); }
+
+  // ─── 7. Réponse finale (TOUJOURS 200 OK) ────────────────────────
+  return res.status(200).json({
+    ok: true,
+    gbp_connected: gbpOk,
+    warnings,
+    score, max: 100, breakdown, suggestions,
+    stats: {
+      title: loc.title || 'Fiche GBP non accessible',
+      descriptif_chars: descLen,
+      categories_total: catCount,
+      services_total: serviceCount,
+      posts_last_30d: postsLast30Days,
+      avis_total: reviewCount,
+      avis_moyenne: Number(avgRating.toFixed(2)),
+      avis_30j: reviewsLast30,
+      taux_reponse_pct: Math.round(repliedRatio * 100),
+      site: loc.websiteUri || null,
+      telephone: loc.phoneNumbers?.primaryPhone || null,
+      adresse: loc.storefrontAddress?.addressLines?.join(', ') || null
+    },
+    audit_id: auditRow?.id,
+    audited_at: auditRow?.audited_at || new Date().toISOString()
+  });
 }
 
 // ════════════════════════════════════════════════════════════════════
