@@ -115,8 +115,11 @@ async function handleAudit(req, res) {
         'regularHours', 'specialHours', 'serviceArea', 'categories',
         'profile', 'serviceItems', 'metadata', 'openInfo', 'labels'
       ].join(',');
+      // API mybusinessbusinessinformation v1 : URL = /v1/locations/{id}
+      // (PAS /v1/{accountId}/locations/{id} — l'accountId crée un 404)
+      const locPath = locId.startsWith('locations/') ? locId : `locations/${locId}`;
       const locRes = await fetch(
-        `https://mybusinessbusinessinformation.googleapis.com/v1/${accountId}/${locId}?readMask=${readMask}`,
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${locPath}?readMask=${readMask}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const locText = await locRes.text();
