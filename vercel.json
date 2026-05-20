@@ -9,7 +9,8 @@
     "api/visual/library-delete.js":   { "maxDuration": 30 },
     "api/agents/zahira.js":           { "maxDuration": 60 },
     "api/agents/trigger.js":          { "maxDuration": 60 },
-    "api/autopilot/execute.js":       { "maxDuration": 60 }
+    "api/autopilot/execute.js":       { "maxDuration": 60 },
+    "api/seo.js":                     { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/proxy-kiwiz/:path*",        "destination": "/api/proxy-kiwiz" },
@@ -30,7 +31,8 @@
     { "path": "/api/backup",                      "schedule": "0 2 * * *" },
     { "path": "/api/agents/insights",             "schedule": "0 3 * * *" },
     { "path": "/api/agents/briefing",             "schedule": "45 7 * * *" },
-    { "path": "/api/visual/process-queue",        "schedule": "*/15 * * * *" }
+    { "path": "/api/visual/process-queue",        "schedule": "*/15 * * * *" },
+    { "path": "/api/seo?action=weekly-cron",      "schedule": "0 9 * * 1" }
   ],
   "headers": [
     {

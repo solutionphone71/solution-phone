@@ -891,6 +891,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-group-label">Marketing · Assya</div>
     <div class="nav-item" onclick="showPage('studio',this);studioInit();"><span class="nav-icon">📡</span><span>Cockpit Assya</span></div>
     <div class="nav-item" onclick="showPage('avis-google',this);AvisGoogle.init();"><span class="nav-icon">💬</span><span>Avis Google IA</span></div>
+    <div class="nav-item" onclick="showPage('seo-local',this);Leo.init();"><span class="nav-icon">🎯</span><span>SEO Local · Léo</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Comptabilité</div>
@@ -4304,6 +4305,334 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
     </div>
+
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- 🎯 SEO LOCAL · LÉO — Agent IA Google Business Profile        -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <style>
+      #page-seo-local .leo-hero { background:linear-gradient(135deg,rgba(225,6,0,0.10) 0%,rgba(13,13,13,0.40) 100%);border:1px solid rgba(225,6,0,0.20);border-radius:18px;padding:24px;margin-bottom:24px;display:flex;gap:24px;align-items:center;flex-wrap:wrap; }
+      #page-seo-local .leo-avatar { width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#E10600,#7a0500);display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0; }
+      #page-seo-local .leo-titles h1 { color:#fff;margin:0 0 4px;font-size:22px;font-weight:800; }
+      #page-seo-local .leo-titles p { color:var(--text-muted);margin:0;font-size:13px; }
+      #page-seo-local .leo-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-bottom:24px; }
+      #page-seo-local .leo-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:20px; }
+      #page-seo-local .leo-card-title { font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:10px; }
+      #page-seo-local .leo-score-big { font-size:60px;font-weight:900;line-height:1;background:linear-gradient(135deg,#E10600,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:8px 0; }
+      #page-seo-local .leo-score-detail { font-size:13px;color:var(--text-muted); }
+      #page-seo-local .leo-stat { font-size:24px;font-weight:800;color:#fff;margin:4px 0; }
+      #page-seo-local .leo-stat-sub { font-size:12px;color:var(--text-muted); }
+      #page-seo-local .leo-section { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;margin-bottom:18px; }
+      #page-seo-local .leo-section-title { font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center; }
+      #page-seo-local .leo-sug { background:rgba(255,255,255,0.04);border-left:4px solid var(--sev-color,#fbbf24);border-radius:10px;padding:14px;margin-bottom:10px; }
+      #page-seo-local .leo-sug.sev-critical { --sev-color:#ef4444; }
+      #page-seo-local .leo-sug.sev-high { --sev-color:#f59e0b; }
+      #page-seo-local .leo-sug.sev-medium { --sev-color:#fbbf24; }
+      #page-seo-local .leo-sug.sev-low { --sev-color:#22c55e; }
+      #page-seo-local .leo-sug-head { display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap; }
+      #page-seo-local .leo-sug-title { font-weight:700;color:#fff;font-size:14px; }
+      #page-seo-local .leo-sug-impact { font-size:12px;font-weight:700;color:#22c55e;background:rgba(34,197,94,0.10);padding:2px 8px;border-radius:6px;white-space:nowrap; }
+      #page-seo-local .leo-sug-action { font-size:13px;color:var(--text-muted);line-height:1.5; }
+      #page-seo-local .leo-post { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:16px;margin-bottom:10px; }
+      #page-seo-local .leo-post-head { display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap; }
+      #page-seo-local .leo-post-summary { font-size:14px;color:#fff;line-height:1.5;margin-bottom:10px;white-space:pre-wrap; }
+      #page-seo-local .leo-post-meta { font-size:12px;color:var(--text-muted);display:flex;gap:14px;flex-wrap:wrap; }
+      #page-seo-local .leo-badge { font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:1px; }
+      #page-seo-local .leo-badge-draft { background:rgba(251,191,36,0.20);color:#fbbf24; }
+      #page-seo-local .leo-badge-published { background:rgba(34,197,94,0.20);color:#22c55e; }
+      #page-seo-local .leo-badge-failed { background:rgba(239,68,68,0.20);color:#ef4444; }
+      #page-seo-local .leo-kw { display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06); }
+      #page-seo-local .leo-kw:last-child { border:none; }
+      #page-seo-local .leo-kw-text { color:#fff;font-size:14px;font-weight:600; }
+      #page-seo-local .leo-kw-pos { font-weight:700;font-size:13px;padding:3px 9px;border-radius:6px; }
+      #page-seo-local .leo-kw-pos.top3 { background:rgba(34,197,94,0.20);color:#22c55e; }
+      #page-seo-local .leo-kw-pos.top10 { background:rgba(251,191,36,0.20);color:#fbbf24; }
+      #page-seo-local .leo-kw-pos.beyond { background:rgba(239,68,68,0.20);color:#ef4444; }
+      #page-seo-local .leo-empty { text-align:center;padding:30px;color:var(--text-muted); }
+    </style>
+    <div class="page" id="page-seo-local">
+      <div class="page-title">🎯 SEO Local · Léo</div>
+      <div class="page-sub">Agent IA dédié à ta visibilité Google Business Profile · Mâcon</div>
+
+      <!-- Hero Léo -->
+      <div class="leo-hero">
+        <div class="leo-avatar">🎯</div>
+        <div class="leo-titles" style="flex:1;min-width:200px;">
+          <h1>Léo — Local SEO Optimizer</h1>
+          <p>Je surveille ta fiche Google Business, je publie des posts hebdo et je traque ta position sur tes mots-clés Mâcon. Objectif : passer devant Phone Expert.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="Leo.runAudit()" style="background:linear-gradient(135deg,#E10600,#a30400);border:none;color:#fff;font-weight:700;">🔍 Lancer un audit</button>
+          <button class="btn btn-sm" onclick="Leo.generatePost()" style="border-color:#fbbf24;color:#fbbf24;">✍️ Générer un post</button>
+        </div>
+      </div>
+
+      <!-- Score + stats principales -->
+      <div class="leo-grid">
+        <div class="leo-card">
+          <div class="leo-card-title">Score SEO Local</div>
+          <div class="leo-score-big" id="leo-score">—</div>
+          <div class="leo-score-detail" id="leo-score-detail">Clique « Lancer un audit » pour le calculer.</div>
+        </div>
+        <div class="leo-card">
+          <div class="leo-card-title">Note Google</div>
+          <div class="leo-stat" id="leo-avg-rating">—</div>
+          <div class="leo-stat-sub"><span id="leo-review-count">—</span> avis · objectif 4,9★</div>
+        </div>
+        <div class="leo-card">
+          <div class="leo-card-title">Posts GBP (30j)</div>
+          <div class="leo-stat" id="leo-posts-30d">—</div>
+          <div class="leo-stat-sub">Léo publie chaque lundi 9h auto</div>
+        </div>
+        <div class="leo-card">
+          <div class="leo-card-title">Avis 30j</div>
+          <div class="leo-stat" id="leo-reviews-30d">—</div>
+          <div class="leo-stat-sub">Signal fraîcheur Google</div>
+        </div>
+      </div>
+
+      <!-- Suggestions priorisées -->
+      <div class="leo-section">
+        <div class="leo-section-title">
+          <span>💡 Suggestions de Léo</span>
+          <span id="leo-sug-count" style="font-size:12px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;"></span>
+        </div>
+        <div id="leo-suggestions">
+          <div class="leo-empty">Lance un audit pour voir les suggestions priorisées.</div>
+        </div>
+      </div>
+
+      <!-- Posts GBP -->
+      <div class="leo-section">
+        <div class="leo-section-title">
+          <span>📣 Posts Google Business</span>
+          <button class="btn btn-sm" onclick="Leo.generatePost()" style="border-color:#22c55e;color:#22c55e;font-weight:700;">✍️ Nouveau post</button>
+        </div>
+        <div id="leo-posts">
+          <div class="leo-empty">Aucun post pour le moment.</div>
+        </div>
+      </div>
+
+      <!-- Mots-clés -->
+      <div class="leo-section">
+        <div class="leo-section-title">
+          <span>🔑 Mots-clés trackés (Mâcon)</span>
+          <span style="font-size:12px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">Position dans Google</span>
+        </div>
+        <div id="leo-keywords">
+          <div class="leo-empty">Chargement des mots-clés…</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════════
+      // Module Léo — Agent SEO Local
+      // ═══════════════════════════════════════════════════════════════
+      window.Leo = (function() {
+        const API = '/api/seo';
+
+        async function apiCall(action, opts = {}) {
+          const url = `${API}?action=${action}`;
+          const r = await fetch(url, {
+            method: opts.method || 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            body: opts.body ? JSON.stringify(opts.body) : undefined,
+            credentials: 'include'
+          });
+          return r.json();
+        }
+
+        function setScore(score, breakdown, stats) {
+          const el = document.getElementById('leo-score');
+          if (el) el.textContent = `${score}/100`;
+          const det = document.getElementById('leo-score-detail');
+          if (det && breakdown) {
+            const top = Object.entries(breakdown).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k.replace(/_/g,' ')}: ${v}`).join(' · ');
+            det.textContent = top;
+          }
+          if (stats) {
+            const r = document.getElementById('leo-avg-rating');
+            if (r) r.textContent = stats.avis_moyenne ? `${stats.avis_moyenne}★` : '—';
+            const c = document.getElementById('leo-review-count');
+            if (c) c.textContent = stats.avis_total || '—';
+            const p = document.getElementById('leo-posts-30d');
+            if (p) p.textContent = stats.posts_last_30d ?? '—';
+            const r30 = document.getElementById('leo-reviews-30d');
+            if (r30) r30.textContent = stats.avis_30j ?? '—';
+          }
+        }
+
+        function renderSuggestions(suggestions) {
+          const box = document.getElementById('leo-suggestions');
+          const count = document.getElementById('leo-sug-count');
+          if (!box) return;
+          if (!suggestions?.length) {
+            box.innerHTML = '<div class="leo-empty" style="color:#22c55e;">🎉 Tout est en ordre. Léo n\'a aucune suggestion.</div>';
+            if (count) count.textContent = '';
+            return;
+          }
+          // Tri par sévérité
+          const order = { critical: 0, high: 1, medium: 2, low: 3 };
+          const sorted = [...suggestions].sort((a,b) => (order[a.severity]??9) - (order[b.severity]??9));
+          if (count) count.textContent = `${sorted.length} suggestion${sorted.length>1?'s':''}`;
+          box.innerHTML = sorted.map(s => `
+            <div class="leo-sug sev-${s.severity || 'medium'}">
+              <div class="leo-sug-head">
+                <div class="leo-sug-title">${escapeHtml(s.title)}</div>
+                ${s.impact ? `<div class="leo-sug-impact">${escapeHtml(s.impact)}</div>` : ''}
+              </div>
+              <div class="leo-sug-action">${escapeHtml(s.action || '')}</div>
+            </div>
+          `).join('');
+        }
+
+        function renderPosts(posts) {
+          const box = document.getElementById('leo-posts');
+          if (!box) return;
+          if (!posts?.length) {
+            box.innerHTML = '<div class="leo-empty">Aucun post pour le moment. Clique « Nouveau post » pour démarrer.</div>';
+            return;
+          }
+          box.innerHTML = posts.map(p => {
+            const date = new Date(p.created_at).toLocaleDateString('fr-FR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+            const statusBadge = `<span class="leo-badge leo-badge-${p.status}">${p.status}</span>`;
+            const autoBadge = p.auto_published ? `<span class="leo-badge" style="background:rgba(225,6,0,0.15);color:#E10600;">Auto Léo</span>` : '';
+            const actions = p.status === 'draft'
+              ? `<button class="btn btn-sm" onclick="Leo.publishPost(${p.id})" style="border-color:#22c55e;color:#22c55e;">✓ Publier sur Google</button>
+                 <button class="btn btn-sm" onclick="Leo.deletePost(${p.id})" style="border-color:#ef4444;color:#ef4444;">Supprimer</button>`
+              : '';
+            return `
+              <div class="leo-post">
+                <div class="leo-post-head">
+                  <div style="display:flex;gap:8px;align-items:center;">${statusBadge}${autoBadge}<span style="font-size:12px;color:var(--text-muted);">${date}</span></div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">${actions}</div>
+                </div>
+                <div class="leo-post-summary">${escapeHtml(p.summary || '')}</div>
+                <div class="leo-post-meta">
+                  <span>${p.summary?.length || 0} car.</span>
+                  ${p.cta_type ? `<span>CTA : ${p.cta_type}</span>` : ''}
+                  ${p.keywords_targeted?.length ? `<span>🔑 ${p.keywords_targeted.join(', ')}</span>` : ''}
+                  ${p.error ? `<span style="color:#ef4444;">⚠️ ${escapeHtml(p.error.substring(0,80))}</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        function renderKeywords(keywords) {
+          const box = document.getElementById('leo-keywords');
+          if (!box) return;
+          if (!keywords?.length) {
+            box.innerHTML = '<div class="leo-empty">Aucun mot-clé configuré.</div>';
+            return;
+          }
+          box.innerHTML = keywords.map(k => {
+            const pos = k.last_ranking?.position;
+            let posClass = 'beyond', posLabel = 'Non classé';
+            if (pos && pos <= 3) { posClass = 'top3'; posLabel = `#${pos} 🏆`; }
+            else if (pos && pos <= 10) { posClass = 'top10'; posLabel = `#${pos}`; }
+            else if (pos) { posClass = 'beyond'; posLabel = `#${pos}`; }
+            const lastCheck = k.last_ranking?.checked_at ? new Date(k.last_ranking.checked_at).toLocaleDateString('fr-FR') : '—';
+            return `
+              <div class="leo-kw">
+                <div>
+                  <div class="leo-kw-text">${escapeHtml(k.keyword)}</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Priorité ${k.priority} · Vérif : ${lastCheck}</div>
+                </div>
+                <div class="leo-kw-pos ${posClass}">${posLabel}</div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        function escapeHtml(s) {
+          return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        async function runAudit() {
+          const btn = event?.target;
+          if (btn) { btn.disabled = true; btn.textContent = '⏳ Audit en cours…'; }
+          try {
+            const r = await apiCall('audit');
+            if (!r.ok) throw new Error(r.error || 'Audit échoué');
+            setScore(r.score, r.breakdown, r.stats);
+            renderSuggestions(r.suggestions);
+          } catch (e) {
+            alert(`Erreur audit : ${e.message}`);
+          } finally {
+            if (btn) { btn.disabled = false; btn.innerHTML = '🔍 Lancer un audit'; }
+          }
+        }
+
+        async function generatePost(customAngle) {
+          const angle = customAngle || prompt('Angle du post (ou laisse vide pour que Léo choisisse) :\n\nExemples : "garantie 6 mois réparation", "rentrée scolaire iPhone reconditionné", "écran iPhone 30 min", "QualiRépar bonus 50€"', '');
+          if (angle === null) return; // cancel
+          try {
+            const r = await apiCall('generate', { method:'POST', body: { angle: angle || undefined } });
+            if (!r.ok) throw new Error(r.error || 'Génération échouée');
+            loadPosts();
+          } catch (e) {
+            alert(`Erreur génération : ${e.message}`);
+          }
+        }
+
+        async function publishPost(id) {
+          if (!confirm('Publier ce post sur Google Business Profile maintenant ?')) return;
+          try {
+            const r = await apiCall('publish', { method:'POST', body: { post_id: id } });
+            if (!r.ok) throw new Error(r.error || 'Publication échouée');
+            alert('✓ Post publié sur Google Business !');
+            loadPosts();
+          } catch (e) {
+            alert(`Erreur publication : ${e.message}`);
+          }
+        }
+
+        async function deletePost(id) {
+          if (!confirm('Supprimer ce brouillon ?')) return;
+          // Soft delete via PATCH status='deleted' n'existe pas — on utilise une suppression douce côté UI
+          // À implémenter côté API plus tard. Pour l'instant on recharge.
+          try {
+            await fetch(`/api/seo?action=delete-post&id=${id}`, { method:'DELETE', credentials:'include' });
+          } catch(_) {}
+          loadPosts();
+        }
+
+        async function loadPosts() {
+          try {
+            const r = await apiCall('list-posts');
+            if (r.ok) renderPosts(r.posts);
+          } catch (e) { console.error('[Leo loadPosts]', e); }
+        }
+
+        async function loadKeywords() {
+          try {
+            const r = await apiCall('keywords');
+            if (r.ok) renderKeywords(r.keywords);
+          } catch (e) { console.error('[Leo loadKeywords]', e); }
+        }
+
+        async function init() {
+          // Chargement parallèle
+          await Promise.allSettled([
+            loadPosts(),
+            loadKeywords(),
+            // Audit léger : juste fetch le dernier audit, sans relancer
+            (async () => {
+              try {
+                const cached = await fetch('/rest/v1/seo_audits?order=audited_at.desc&limit=1', {
+                  headers: { apikey: '', Authorization: '' }
+                }).catch(()=>null);
+                // L'app n'a pas accès direct à Supabase REST sans clé, donc on ne fait rien ici
+                // L'utilisateur cliquera sur "Lancer un audit"
+              } catch(_) {}
+            })()
+          ]);
+        }
+
+        return { init, runAudit, generatePost, publishPost, deletePost };
+      })();
+    </script>
 
     <div class="page" id="page-ventes-smart">
       <div class="page-title">💹 Ventes Smartphones</div>
