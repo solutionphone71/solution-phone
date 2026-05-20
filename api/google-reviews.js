@@ -304,7 +304,12 @@ async function handleReviews(req, res) {
       if (req.query.refresh === "1") {
         const freshReviews = await fetchReviewsFromGoogle();
         if (freshReviews.length > 0) {
-          await sb("google_reviews", { method: "POST", body: freshReviews, prefer: "resolution=merge-duplicates" });
+          // UPSERT sur google_review_id : si l'avis existe déjà, on le met à jour au lieu de planter en 409.
+          await sb("google_reviews?on_conflict=google_review_id", {
+            method: "POST",
+            body: freshReviews,
+            prefer: "resolution=merge-duplicates,return=minimal"
+          });
         }
       }
       const reviews = await sb("google_reviews?order=create_time.desc&limit=200");
