@@ -134,12 +134,38 @@ async function handleAudit(req, res) {
     warnings.push(`OAuth/GBP indisponible: ${e.message || e}`);
   }
 
-  // ─── 2. Posts récents (Supabase, 30 derniers jours) ─────────────
+  // ─── 2. Posts récents : combine Google API + Léo local DB ───────
   let postsLast30Days = 0;
+  let postsSourceGoogle = 0, postsSourceLeo = 0;
+  // Source 1 : posts publiés via Léo dans Supabase
   try {
     const postsRows = await sb(`gbp_posts?status=eq.published&published_at=gte.${new Date(Date.now() - 30*24*3600*1000).toISOString()}&select=id`);
-    postsLast30Days = postsRows?.length || 0;
-  } catch (e) { warnings.push(`Posts query fail: ${e.message}`); }
+    postsSourceLeo = postsRows?.length || 0;
+  } catch (e) { warnings.push(`Posts Supabase fail: ${e.message}`); }
+  // Source 2 : posts existants directement sur Google Business Profile
+  if (gbpOk) {
+    try {
+      const { accessToken, accountId, locationIds } = await getValidAccessToken();
+      const locIdRaw = typeof locationIds[0] === 'string' ? locationIds[0] : locationIds[0]?.id;
+      const cutoff = Date.now() - 30 * 24 * 3600 * 1000;
+      const gpostsRes = await fetch(
+        `https://mybusiness.googleapis.com/v4/${accountId}/${locIdRaw}/localPosts?pageSize=20`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if (gpostsRes.ok) {
+        const gpostsData = await gpostsRes.json();
+        const list = gpostsData.localPosts || [];
+        postsSourceGoogle = list.filter(p => {
+          const t = new Date(p.createTime || p.updateTime || 0).getTime();
+          return t > cutoff && (p.state === 'LIVE' || !p.state);
+        }).length;
+      } else {
+        const txt = await gpostsRes.text();
+        warnings.push(`Posts Google API ${gpostsRes.status}: ${txt.substring(0, 100)}`);
+      }
+    } catch (e) { warnings.push(`Posts Google fail: ${e.message}`); }
+  }
+  postsLast30Days = Math.max(postsSourceLeo, postsSourceGoogle);
 
   // ─── 3. Stats avis (Supabase google_reviews) ────────────────────
   let avgRating = 4.7, reviewCount = 590, reviewsLast30 = 0, repliedRatio = 0;
@@ -306,6 +332,7 @@ async function handleAudit(req, res) {
     raw_gbp_keys: gbpOk ? Object.keys(loc) : [],
     raw_serviceItems_count: loc.serviceItems?.length || 0,
     raw_categories: loc.categories || null,
+    posts_source_breakdown: { leo: postsSourceLeo, google_api: postsSourceGoogle },
     ...(isDebug ? { raw_full_gbp: loc } : {})
   });
 }
