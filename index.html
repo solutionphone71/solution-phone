@@ -3078,19 +3078,152 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           renderInventaire();
         }
 
-        // Impression : mode inventaire SEUL (masque le reste de la page)
+        // Impression : ouvre une fenêtre HTML propre dédiée à l'inventaire
         function printInventaire() {
-          // Met à jour la date dans le header print
-          const dateEl = document.getElementById('sa-inv-print-date');
-          if (dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
-          document.body.classList.add('print-inventaire-only');
-          // Attend le rendu puis imprime
-          setTimeout(() => {
-            window.print();
-            setTimeout(() => {
-              document.body.classList.remove('print-inventaire-only');
-            }, 500);
-          }, 100);
+          // Récupère le stock filtré (mêmes filtres que l'écran)
+          const stockOcc = _allPhones.filter(p => !isSold(p));
+          const stockNeufRaw = _allNeufs.filter(p => !isSold(p) && (p.stock == null || Number(p.stock) > 0));
+          const expandedNeuf = [];
+          stockNeufRaw.forEach(p => {
+            const qty = Math.max(1, Number(p.stock || 1));
+            for (let i = 0; i < qty; i++) expandedNeuf.push({ ...p, __invUnit: i + 1, __invTotal: qty });
+          });
+          let list = [];
+          if (_invFilter === 'all' || _invFilter === 'occasion') list = list.concat(stockOcc.map(p => ({ ...p, __type: 'occasion' })));
+          if (_invFilter === 'all' || _invFilter === 'neuf')     list = list.concat(expandedNeuf.map(p => ({ ...p, __type: 'neuf' })));
+          if (_invSearch) {
+            const q = _invSearch.toLowerCase();
+            list = list.filter(p =>
+              (p.modele||'').toLowerCase().includes(q) ||
+              (p.imei||'').toLowerCase().includes(q) ||
+              (p.fournisseur||'').toLowerCase().includes(q) ||
+              (p.vendeur_nom||'').toLowerCase().includes(q) ||
+              (p.couleur||'').toLowerCase().includes(q)
+            );
+          }
+          list.sort((a,b) => String(a.modele||'').localeCompare(String(b.modele||'')));
+
+          const dateStr = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+          const heureStr = new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+          const totalVal = list.reduce((s,p) => s + Number(p.achat||0), 0);
+          const nbOcc = list.filter(p => p.__type === 'occasion').length;
+          const nbNeuf = list.filter(p => p.__type === 'neuf').length;
+
+          // Construit le HTML de la page d'impression
+          const rows = list.map(p => {
+            const isNeuf = p.__type === 'neuf';
+            const unitInfo = isNeuf && p.__invTotal > 1 ? ` (${p.__invUnit}/${p.__invTotal})` : '';
+            return `<tr>
+              <td class="chk"><span class="box"></span></td>
+              <td class="modele"><b>${escapeHtml(p.modele || '—')}</b>${unitInfo}<div class="meta">${escapeHtml(p.vendeur_nom || p.fournisseur || '')}</div></td>
+              <td>${p.stockage ? p.stockage + ' Go' : '—'}</td>
+              <td>${escapeHtml(p.grade || '—')}</td>
+              <td>${escapeHtml(p.couleur || '—')}</td>
+              <td class="imei">${escapeHtml(p.imei || '—')}</td>
+              <td>${isNeuf ? 'Neuf' : 'Occ.'}</td>
+              <td>${fmtDate(p.date_achat || p.created_at)}</td>
+              <td class="prix">${fmtEUR(p.achat)}</td>
+            </tr>`;
+          }).join('');
+
+          const html = `<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="utf-8">
+<title>Inventaire smartphones — Solution Phone — ${dateStr}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; color: #000; background: #fff; margin: 0; padding: 16px 22px; font-size: 11px; }
+  header { border-bottom: 2.5px solid #000; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+  header .left h1 { margin: 0 0 4px; font-size: 18px; letter-spacing: 0.5px; }
+  header .left .sub { font-size: 11px; color: #444; }
+  header .right { text-align: right; font-size: 11px; line-height: 1.5; }
+  header .right b { font-size: 13px; }
+  .summary { display: flex; gap: 22px; flex-wrap: wrap; margin-bottom: 14px; font-size: 11px; padding: 8px 12px; background: #f5f5f5; border-radius: 4px; }
+  .summary b { font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { background: #000; color: #fff; padding: 6px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  thead th.prix-col { text-align: right; }
+  tbody td { padding: 7px 8px; border-bottom: 1px solid #ddd; vertical-align: middle; font-size: 11px; }
+  tbody tr:nth-child(even) td { background: #fafafa; }
+  td.chk { width: 22px; }
+  td.chk .box { display: inline-block; width: 14px; height: 14px; border: 1.8px solid #000; border-radius: 2px; vertical-align: middle; }
+  td.modele b { font-size: 12px; }
+  td.modele .meta { font-size: 9.5px; color: #666; margin-top: 2px; }
+  td.imei { font-family: 'Courier New', monospace; font-size: 10px; color: #555; }
+  td.prix { text-align: right; font-weight: 700; white-space: nowrap; }
+  .signature { margin-top: 24px; display: flex; gap: 22px; }
+  .signature > div { flex: 1; border-top: 1.5px solid #000; padding-top: 6px; font-size: 10px; min-height: 60px; }
+  .signature b { font-size: 11px; }
+  footer { margin-top: 18px; padding-top: 8px; border-top: 1px solid #ccc; font-size: 9px; color: #666; display: flex; justify-content: space-between; }
+  @page { size: A4 portrait; margin: 10mm; }
+  @media print { body { padding: 0; } }
+</style>
+</head><body>
+  <header>
+    <div class="left">
+      <h1>📋 Inventaire physique smartphones</h1>
+      <div class="sub">Solution Phone · 21 rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div>
+    </div>
+    <div class="right">
+      <b>Édité le ${dateStr}</b><br>
+      à ${heureStr}<br>
+      Filtre : ${_invFilter === 'all' ? 'Tous' : _invFilter === 'occasion' ? 'Occasion' : 'Neufs'}${_invSearch ? ' · "' + escapeHtml(_invSearch) + '"' : ''}
+    </div>
+  </header>
+  <div class="summary">
+    <span>Total : <b>${list.length}</b> smartphone${list.length>1?'s':''}</span>
+    <span>Occasion : <b>${nbOcc}</b></span>
+    <span>Neufs : <b>${nbNeuf}</b></span>
+    <span>Valeur totale : <b>${fmtEUR(totalVal)}</b></span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>✓</th>
+        <th>Modèle</th>
+        <th>Stockage</th>
+        <th>Grade</th>
+        <th>Couleur</th>
+        <th>IMEI</th>
+        <th>Type</th>
+        <th>Date achat</th>
+        <th class="prix-col">Prix achat</th>
+      </tr>
+    </thead>
+    <tbody>${rows || '<tr><td colspan="9" style="text-align:center;padding:30px;">Aucun smartphone en stock</td></tr>'}</tbody>
+  </table>
+  <div class="signature">
+    <div>
+      <b>Vérifié par :</b><br><br>
+      ____________________<br>
+      <span style="color:#666;">(Nom et signature)</span>
+    </div>
+    <div>
+      <b>Date de vérification :</b><br><br>
+      ____________________
+    </div>
+    <div>
+      <b>Écarts constatés :</b><br>
+      ____________________<br>
+      ____________________<br>
+      ____________________
+    </div>
+  </div>
+  <footer>
+    <span>Solution Phone · Inventaire au ${dateStr}</span>
+    <span>app.solution-phone.fr</span>
+  </footer>
+  <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</scr` + `ipt>
+</body></html>`;
+
+          const win = window.open('', '_blank', 'width=900,height=1100');
+          if (!win) {
+            alert('Le navigateur a bloqué la fenêtre d\\'impression. Autorise les pop-ups pour app.solution-phone.fr et réessaye.');
+            return;
+          }
+          win.document.open();
+          win.document.write(html);
+          win.document.close();
         }
 
         async function refresh() { await loadData(); }
