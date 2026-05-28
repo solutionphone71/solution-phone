@@ -882,6 +882,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-sep"></div>
     <div class="nav-group-label">Smartphones Occasion</div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📥</span><span>Achat smartphones</span></div>
+    <div class="nav-item" onclick="showPage('suivi-achats',this);SuiviAchats.init();"><span class="nav-icon">💼</span><span>Suivi achats & stock</span></div>
     <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">📤</span><span>Vente smartphones</span></div>
     <div class="nav-item" id="nav-factures" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
     <div class="nav-item" onclick="showPage('factures-pdf',this)"><span class="nav-icon">📄</span><span>Factures PDF</span></div>
@@ -2449,6 +2450,292 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     </div>
 
     <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : SUIVI ACHATS & VALEUR STOCK              -->
+    <!-- ══════════════════════════════════════════════ -->
+    <style>
+      #page-suivi-achats .sa-period { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px; }
+      #page-suivi-achats .sa-period .btn-period { padding:8px 16px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:700;font-size:12px;cursor:pointer; }
+      #page-suivi-achats .sa-period .btn-period.active { background:var(--red, #E10600);border-color:var(--red, #E10600);color:#fff; }
+      #page-suivi-achats .sa-kpi { display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:22px; }
+      #page-suivi-achats .sa-kpi-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:18px;position:relative; }
+      #page-suivi-achats .sa-kpi-card.especes  { border-left:4px solid #22c55e; }
+      #page-suivi-achats .sa-kpi-card.virement { border-left:4px solid #3b82f6; }
+      #page-suivi-achats .sa-kpi-card.cheque   { border-left:4px solid #fbbf24; }
+      #page-suivi-achats .sa-kpi-card.cb       { border-left:4px solid #a855f7; }
+      #page-suivi-achats .sa-kpi-card.total    { border-left:4px solid var(--red, #E10600);background:linear-gradient(135deg,rgba(225,6,0,0.10) 0%,rgba(255,255,255,0.03) 100%); }
+      #page-suivi-achats .sa-kpi-title { font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:8px; }
+      #page-suivi-achats .sa-kpi-value { font-size:30px;font-weight:900;color:#fff;line-height:1.1; }
+      #page-suivi-achats .sa-kpi-sub { font-size:12px;color:var(--text-muted);margin-top:6px; }
+      #page-suivi-achats .sa-stock-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:22px; }
+      #page-suivi-achats .sa-stock-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:18px; }
+      #page-suivi-achats .sa-stock-card.occasion { border-left:4px solid #f59e0b; }
+      #page-suivi-achats .sa-stock-card.neuf { border-left:4px solid #06b6d4; }
+      #page-suivi-achats .sa-stock-card.total-stock { border-left:4px solid #22c55e;background:linear-gradient(135deg,rgba(34,197,94,0.10) 0%,rgba(255,255,255,0.03) 100%); }
+      #page-suivi-achats .sa-section { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;margin-bottom:22px; }
+      #page-suivi-achats .sa-section-title { font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px; }
+      #page-suivi-achats table { width:100%;border-collapse:collapse; }
+      #page-suivi-achats thead th { padding:10px 12px;text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.10); }
+      #page-suivi-achats tbody td { padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#fff;font-size:13px; }
+      #page-suivi-achats tbody tr:hover { background:rgba(255,255,255,0.03); }
+      #page-suivi-achats .mode-tag { font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:1px; }
+      #page-suivi-achats .mode-especes  { background:rgba(34,197,94,0.15);color:#22c55e; }
+      #page-suivi-achats .mode-virement { background:rgba(59,130,246,0.15);color:#3b82f6; }
+      #page-suivi-achats .mode-cheque   { background:rgba(251,191,36,0.15);color:#fbbf24; }
+      #page-suivi-achats .mode-cb       { background:rgba(168,85,247,0.15);color:#a855f7; }
+      #page-suivi-achats .sa-empty { text-align:center;padding:40px;color:var(--text-muted); }
+    </style>
+    <div class="page" id="page-suivi-achats">
+      <div class="page-title">💼 Suivi achats & stock</div>
+      <div class="page-sub">Suivi des achats par mode de paiement · Valeur du stock en temps réel</div>
+
+      <!-- Filtre période -->
+      <div class="sa-period">
+        <button class="btn-period active" data-period="month" onclick="SuiviAchats.setPeriod('month',this)">📅 Mois en cours</button>
+        <button class="btn-period" data-period="30d" onclick="SuiviAchats.setPeriod('30d',this)">30 jours</button>
+        <button class="btn-period" data-period="90d" onclick="SuiviAchats.setPeriod('90d',this)">90 jours</button>
+        <button class="btn-period" data-period="ytd" onclick="SuiviAchats.setPeriod('ytd',this)">Année en cours</button>
+        <button class="btn-period" data-period="all" onclick="SuiviAchats.setPeriod('all',this)">Tout</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-sm" onclick="SuiviAchats.refresh()" style="border-color:#22c55e;color:#22c55e;font-weight:700;">🔄 Rafraîchir</button>
+      </div>
+
+      <!-- KPIs achats par mode de paiement -->
+      <div class="sa-section-title">💳 Achats par mode de paiement</div>
+      <div class="sa-kpi">
+        <div class="sa-kpi-card especes">
+          <div class="sa-kpi-title">💵 Espèces</div>
+          <div class="sa-kpi-value" id="sa-especes">— €</div>
+          <div class="sa-kpi-sub" id="sa-especes-count">— achats</div>
+        </div>
+        <div class="sa-kpi-card virement">
+          <div class="sa-kpi-title">🏦 Virement</div>
+          <div class="sa-kpi-value" id="sa-virement">— €</div>
+          <div class="sa-kpi-sub" id="sa-virement-count">— achats</div>
+        </div>
+        <div class="sa-kpi-card cheque">
+          <div class="sa-kpi-title">📝 Chèque</div>
+          <div class="sa-kpi-value" id="sa-cheque">— €</div>
+          <div class="sa-kpi-sub" id="sa-cheque-count">— achats</div>
+        </div>
+        <div class="sa-kpi-card cb">
+          <div class="sa-kpi-title">💳 Carte Bancaire</div>
+          <div class="sa-kpi-value" id="sa-cb">— €</div>
+          <div class="sa-kpi-sub" id="sa-cb-count">— achats</div>
+        </div>
+        <div class="sa-kpi-card total">
+          <div class="sa-kpi-title">🎯 Total période</div>
+          <div class="sa-kpi-value" id="sa-total">— €</div>
+          <div class="sa-kpi-sub" id="sa-total-count">— achats au total</div>
+        </div>
+      </div>
+
+      <!-- Valeur stock -->
+      <div class="sa-section-title">📦 Valeur du stock actuel (non vendus)</div>
+      <div class="sa-stock-grid">
+        <div class="sa-stock-card occasion">
+          <div class="sa-kpi-title">📥 Stock occasion</div>
+          <div class="sa-kpi-value" id="sa-stock-occ">— €</div>
+          <div class="sa-kpi-sub" id="sa-stock-occ-count">— smartphones en stock</div>
+        </div>
+        <div class="sa-stock-card neuf">
+          <div class="sa-kpi-title">✨ Stock neufs</div>
+          <div class="sa-kpi-value" id="sa-stock-neuf">— €</div>
+          <div class="sa-kpi-sub" id="sa-stock-neuf-count">— smartphones en stock</div>
+        </div>
+        <div class="sa-stock-card total-stock">
+          <div class="sa-kpi-title">💎 Valeur totale stock</div>
+          <div class="sa-kpi-value" id="sa-stock-total">— €</div>
+          <div class="sa-kpi-sub">Trésorerie immobilisée</div>
+        </div>
+      </div>
+
+      <!-- Détail liste -->
+      <div class="sa-section">
+        <div class="sa-section-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>📋 Détail des achats sur la période</span>
+          <span id="sa-list-count" style="font-size:12px;font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0;"></span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Modèle</th>
+                <th>Type</th>
+                <th>Vendeur / Fournisseur</th>
+                <th>Mode</th>
+                <th style="text-align:right;">Prix achat</th>
+                <th>Statut</th>
+              </tr>
+            </thead>
+            <tbody id="sa-list-body">
+              <tr><td colspan="7" class="sa-empty">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════
+      // Module Suivi achats & valeur stock
+      // ═══════════════════════════════════════════════════════════
+      window.SuiviAchats = (function() {
+        let _allPhones = [];     // phones occasion
+        let _allNeufs = [];      // phones neufs
+        let _period = 'month';
+
+        function periodStart(period) {
+          const now = new Date();
+          if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+          if (period === '30d')   return now.getTime() - 30 * 86400000;
+          if (period === '90d')   return now.getTime() - 90 * 86400000;
+          if (period === 'ytd')   return new Date(now.getFullYear(), 0, 1).getTime();
+          return 0; // all
+        }
+
+        function fmtEUR(n) {
+          if (n == null || isNaN(n)) return '0 €';
+          return Math.round(n).toLocaleString('fr-FR') + ' €';
+        }
+
+        function fmtDate(d) {
+          if (!d) return '—';
+          try { return new Date(d).toLocaleDateString('fr-FR'); } catch(_) { return d; }
+        }
+
+        function isSold(phone) {
+          // Considère vendu si etat=VENDU ou date_vente non null
+          if (phone.etat && String(phone.etat).toUpperCase() === 'VENDU') return true;
+          if (phone.date_vente) return true;
+          return false;
+        }
+
+        async function loadData() {
+          try {
+            // 2 tables : phones (occasion) + phones_neufs
+            const [phones, neufs] = await Promise.all([
+              window.supaFetch ? window.supaFetch('phones', 'GET', null, '?order=date_achat.desc.nullslast&limit=2000') : Promise.resolve([]),
+              window.supaFetch ? window.supaFetch('phones_neufs', 'GET', null, '?order=id.desc&limit=2000') : Promise.resolve([])
+            ]);
+            _allPhones = Array.isArray(phones) ? phones : [];
+            _allNeufs  = Array.isArray(neufs)  ? neufs  : [];
+            render();
+          } catch (e) {
+            console.error('[SuiviAchats loadData]', e);
+            const body = document.getElementById('sa-list-body');
+            if (body) body.innerHTML = '<tr><td colspan="7" class="sa-empty" style="color:#ef4444;">Erreur chargement : '+e.message+'</td></tr>';
+          }
+        }
+
+        function render() {
+          const cutoff = periodStart(_period);
+
+          // ─── 1. Achats sur la période ───
+          // On combine phones (occasion) + phones_neufs
+          const inPeriod = _allPhones.filter(p => {
+            const t = new Date(p.date_achat || 0).getTime();
+            return t >= cutoff;
+          });
+          const neufsInPeriod = _allNeufs.filter(p => {
+            // Pour les neufs, on regarde date_achat si présent, sinon created_at
+            const t = new Date(p.date_achat || p.created_at || 0).getTime();
+            return t >= cutoff;
+          });
+          const allAchats = [...inPeriod, ...neufsInPeriod];
+
+          // Aggrégation par mode
+          const modes = { ESPECES: { total:0, count:0 }, VIREMENT: { total:0, count:0 }, CHEQUE: { total:0, count:0 }, CB: { total:0, count:0 } };
+          let grandTotal = 0;
+          allAchats.forEach(p => {
+            const mode = (p.mode || '').toUpperCase();
+            const prix = Number(p.achat || 0);
+            if (modes[mode]) { modes[mode].total += prix; modes[mode].count += 1; }
+            grandTotal += prix;
+          });
+
+          // Affichage KPIs
+          document.getElementById('sa-especes').textContent  = fmtEUR(modes.ESPECES.total);
+          document.getElementById('sa-virement').textContent = fmtEUR(modes.VIREMENT.total);
+          document.getElementById('sa-cheque').textContent   = fmtEUR(modes.CHEQUE.total);
+          document.getElementById('sa-cb').textContent       = fmtEUR(modes.CB.total);
+          document.getElementById('sa-total').textContent    = fmtEUR(grandTotal);
+          document.getElementById('sa-especes-count').textContent  = modes.ESPECES.count  + ' achat' + (modes.ESPECES.count>1?'s':'');
+          document.getElementById('sa-virement-count').textContent = modes.VIREMENT.count + ' achat' + (modes.VIREMENT.count>1?'s':'');
+          document.getElementById('sa-cheque-count').textContent   = modes.CHEQUE.count   + ' achat' + (modes.CHEQUE.count>1?'s':'');
+          document.getElementById('sa-cb-count').textContent       = modes.CB.count       + ' achat' + (modes.CB.count>1?'s':'');
+          document.getElementById('sa-total-count').textContent    = allAchats.length     + ' achat' + (allAchats.length>1?'s':'') + ' au total';
+
+          // ─── 2. Valeur du stock actuel (tous, non vendus) ───
+          const stockOcc = _allPhones.filter(p => !isSold(p));
+          const stockNeuf = _allNeufs.filter(p => !isSold(p) && (p.stock == null || Number(p.stock) > 0));
+          const valOcc = stockOcc.reduce((s,p) => s + Number(p.achat || 0), 0);
+          // Pour les neufs : achat × stock (si quantité présente) sinon juste achat unitaire
+          const valNeuf = stockNeuf.reduce((s,p) => {
+            const qty = Number(p.stock || 1);
+            return s + Number(p.achat || 0) * qty;
+          }, 0);
+
+          document.getElementById('sa-stock-occ').textContent       = fmtEUR(valOcc);
+          document.getElementById('sa-stock-occ-count').textContent = stockOcc.length + ' smartphone' + (stockOcc.length>1?'s':'') + ' en stock';
+          document.getElementById('sa-stock-neuf').textContent      = fmtEUR(valNeuf);
+          const totalNeufQty = stockNeuf.reduce((s,p) => s + Number(p.stock || 1), 0);
+          document.getElementById('sa-stock-neuf-count').textContent = totalNeufQty + ' smartphone' + (totalNeufQty>1?'s':'') + ' en stock';
+          document.getElementById('sa-stock-total').textContent     = fmtEUR(valOcc + valNeuf);
+
+          // ─── 3. Liste détaillée ───
+          const sorted = [...allAchats].sort((a,b) => {
+            const ta = new Date(a.date_achat || a.created_at || 0).getTime();
+            const tb = new Date(b.date_achat || b.created_at || 0).getTime();
+            return tb - ta;
+          });
+
+          const body = document.getElementById('sa-list-body');
+          document.getElementById('sa-list-count').textContent = sorted.length + ' achat' + (sorted.length>1?'s':'');
+          if (!sorted.length) {
+            body.innerHTML = '<tr><td colspan="7" class="sa-empty">Aucun achat sur cette période.</td></tr>';
+            return;
+          }
+          body.innerHTML = sorted.slice(0, 200).map(p => {
+            const isNeuf = _allNeufs.includes(p);
+            const mode = (p.mode || '').toUpperCase();
+            const modeTag = mode ? `<span class="mode-tag mode-${mode.toLowerCase()}">${mode}</span>` : '—';
+            const vendeur = p.vendeur_nom || p.fournisseur || '—';
+            const sold = isSold(p);
+            const statut = sold
+              ? '<span style="color:#22c55e;font-weight:700;">✓ Vendu</span>'
+              : '<span style="color:#fbbf24;font-weight:700;">📦 En stock</span>';
+            return `<tr>
+              <td>${fmtDate(p.date_achat || p.created_at)}</td>
+              <td><b>${escapeHtml(p.modele || '—')}</b>${p.stockage ? ` <span style="color:var(--text-muted);">${p.stockage}Go</span>` : ''}</td>
+              <td>${isNeuf ? '<span style="color:#06b6d4;">Neuf</span>' : '<span style="color:#f59e0b;">Occasion</span>'}</td>
+              <td>${escapeHtml(vendeur)}</td>
+              <td>${modeTag}</td>
+              <td style="text-align:right;font-weight:700;">${fmtEUR(p.achat)}</td>
+              <td>${statut}</td>
+            </tr>`;
+          }).join('');
+        }
+
+        function escapeHtml(s) {
+          return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function setPeriod(p, btn) {
+          _period = p;
+          document.querySelectorAll('#page-suivi-achats .btn-period').forEach(b => b.classList.remove('active'));
+          if (btn) btn.classList.add('active');
+          render();
+        }
+
+        async function refresh() { await loadData(); }
+        async function init() { await loadData(); }
+
+        return { init, setPeriod, refresh };
+      })();
+    </script>
+
+    <!-- ══════════════════════════════════════════════ -->
     <!-- PAGE : COCKPIT ASSYA (unifié Studio + Autopilot) -->
     <!-- ══════════════════════════════════════════════ -->
     <div class="page" id="page-studio">
@@ -2677,7 +2964,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <div style="flex:1;"></div>
             <button class="btn" onclick="studioClearSelection()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-weight:700;">Annuler</button>
             <button class="btn" onclick="studioDeleteBatch()" style="background:rgba(239,68,68,0.85);border:none;color:#fff;font-weight:800;">🗑 Supprimer</button>
-            <button class="btn" onclick="studioPublishBatch('instagram_story')" style="background:#fff;border:none;color:#7e22ce;font-weight:800;">📲 Publier la série en Stories Insta</button>
+            <button class="btn" onclick="studioPublishBatch('instagram_story')" style="background:rgba(255,255,255,0.85);border:none;color:#7e22ce;font-weight:800;">📲 Stories Insta</button>
+            <button class="btn" onclick="studioPublishBatch('all_stories')" style="background:#fff;border:none;color:#7e22ce;font-weight:800;">📲 Stories Insta + FB</button>
           </div>
           <div id="studio-lib-batch-progress" style="display:none;margin-top:10px;font-size:13px;color:#fff;font-weight:600;"></div>
         </div>
@@ -3941,8 +4229,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       var results = [];
       var platformsBody;
       if(target === 'instagram_story') platformsBody = { instagram_story: true };
+      else if(target === 'facebook_story')  platformsBody = { facebook_story: true };
+      else if(target === 'all_stories')     platformsBody = { instagram_story: true, facebook_story: true };
       else if(target === 'instagram') platformsBody = { instagram: true };
-      else if(target === 'facebook') platformsBody = { facebook: true };
+      else if(target === 'facebook')  platformsBody = { facebook: true };
+      else if(target === 'all_feeds') platformsBody = { instagram: true, facebook: true };
       else platformsBody = { instagram_story: true };
 
       for(var i = 0; i < urls.length; i++){
