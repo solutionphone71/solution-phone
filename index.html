@@ -2483,6 +2483,33 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       #page-suivi-achats .mode-cheque   { background:rgba(251,191,36,0.15);color:#fbbf24; }
       #page-suivi-achats .mode-cb       { background:rgba(168,85,247,0.15);color:#a855f7; }
       #page-suivi-achats .sa-empty { text-align:center;padding:40px;color:var(--text-muted); }
+      #page-suivi-achats .sa-margin-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:18px;border-left:4px solid #22c55e; }
+      #page-suivi-achats .sa-margin-card.taux { border-left-color:#a855f7; }
+      #page-suivi-achats .sa-margin-card.moy { border-left-color:#3b82f6; }
+      #page-suivi-achats .sa-chart-wrap { background:rgba(0,0,0,0.20);border-radius:10px;padding:18px;overflow-x:auto; }
+      #page-suivi-achats .sa-bar { fill:#E10600;transition:fill 0.2s; }
+      #page-suivi-achats .sa-bar:hover { fill:#ff3b30; }
+      #page-suivi-achats .sa-bar-marge { fill:#22c55e; }
+      #page-suivi-achats .sa-bar-marge:hover { fill:#16a34a; }
+      #page-suivi-achats .sa-axis { font-size:10px;fill:var(--text-muted);font-family:Inter,system-ui,sans-serif; }
+      #page-suivi-achats .sa-legend { display:flex;gap:18px;font-size:12px;color:var(--text-muted);margin-top:10px;flex-wrap:wrap; }
+      #page-suivi-achats .sa-legend-dot { display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:6px; }
+
+      /* Print styles : optimisé A4 portrait */
+      @media print {
+        body * { visibility: hidden !important; }
+        #page-suivi-achats, #page-suivi-achats * { visibility: visible !important; }
+        #page-suivi-achats { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: white !important; color: black !important; padding: 20px !important; }
+        #page-suivi-achats * { background: white !important; color: black !important; border-color: #ccc !important; }
+        #page-suivi-achats .sa-period, #page-suivi-achats .btn, #page-suivi-achats button { display: none !important; }
+        #page-suivi-achats .sa-kpi-value, #page-suivi-achats .sa-kpi-title, #page-suivi-achats h1, #page-suivi-achats h2, #page-suivi-achats .page-title, #page-suivi-achats .sa-section-title, #page-suivi-achats td b { color: black !important; }
+        #page-suivi-achats .sa-bar { fill: #555 !important; }
+        #page-suivi-achats .sa-bar-marge { fill: #22c55e !important; }
+        #page-suivi-achats .mode-tag { border: 1px solid #888 !important; color: black !important; background: white !important; }
+        #page-suivi-achats table { font-size: 10px !important; }
+        #page-suivi-achats tbody tr:nth-child(even) td { background: #f8f8f8 !important; }
+        @page { size: A4 portrait; margin: 12mm; }
+      }
     </style>
     <div class="page" id="page-suivi-achats">
       <div class="page-title">💼 Suivi achats & stock</div>
@@ -2497,6 +2524,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <button class="btn-period" data-period="all" onclick="SuiviAchats.setPeriod('all',this)">Tout</button>
         <div style="flex:1;"></div>
         <button class="btn btn-sm" onclick="SuiviAchats.refresh()" style="border-color:#22c55e;color:#22c55e;font-weight:700;">🔄 Rafraîchir</button>
+        <button class="btn btn-sm" onclick="SuiviAchats.exportPDF()" style="border-color:#E10600;color:#E10600;font-weight:700;">🖨️ Export PDF</button>
       </div>
 
       <!-- KPIs achats par mode de paiement -->
@@ -2546,6 +2574,40 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="sa-kpi-title">💎 Valeur totale stock</div>
           <div class="sa-kpi-value" id="sa-stock-total">— €</div>
           <div class="sa-kpi-sub">Trésorerie immobilisée</div>
+        </div>
+      </div>
+
+      <!-- Marge réalisée -->
+      <div class="sa-section-title">💰 Marge réalisée sur la période (smartphones vendus)</div>
+      <div class="sa-kpi">
+        <div class="sa-margin-card">
+          <div class="sa-kpi-title">💵 Marge totale</div>
+          <div class="sa-kpi-value" id="sa-marge-total">— €</div>
+          <div class="sa-kpi-sub" id="sa-marge-total-sub">— smartphones vendus</div>
+        </div>
+        <div class="sa-margin-card moy">
+          <div class="sa-kpi-title">📊 Marge moyenne / unité</div>
+          <div class="sa-kpi-value" id="sa-marge-moy">— €</div>
+          <div class="sa-kpi-sub" id="sa-marge-moy-sub">par smartphone vendu</div>
+        </div>
+        <div class="sa-margin-card taux">
+          <div class="sa-kpi-title">📈 Taux de marge moyen</div>
+          <div class="sa-kpi-value" id="sa-marge-taux">— %</div>
+          <div class="sa-kpi-sub" id="sa-marge-taux-sub">CA <span id="sa-marge-ca">—</span></div>
+        </div>
+      </div>
+
+      <!-- Évolution mensuelle (12 derniers mois) -->
+      <div class="sa-section">
+        <div class="sa-section-title">📈 Évolution mensuelle (12 derniers mois)</div>
+        <div class="sa-chart-wrap" id="sa-chart-wrap">
+          <svg id="sa-chart" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;">
+            <text x="400" y="140" text-anchor="middle" class="sa-axis" fill="#888">Chargement…</text>
+          </svg>
+          <div class="sa-legend">
+            <span><span class="sa-legend-dot" style="background:#E10600;"></span>Achats (€)</span>
+            <span><span class="sa-legend-dot" style="background:#22c55e;"></span>Marge réalisée (€)</span>
+          </div>
         </div>
       </div>
 
@@ -2728,10 +2790,129 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           render();
         }
 
+        // ─── Marge réalisée (sur la période) ────────────────────────
+        function renderMarge(cutoff) {
+          const allSold = [..._allPhones, ..._allNeufs].filter(p => {
+            if (!isSold(p)) return false;
+            const t = new Date(p.date_vente || 0).getTime();
+            return t >= cutoff;
+          });
+          let totalMarge = 0, totalCA = 0, count = 0;
+          allSold.forEach(p => {
+            const achat = Number(p.achat || 0);
+            const vente = Number(p.vente || 0);
+            if (vente > 0) {
+              totalMarge += (vente - achat);
+              totalCA += vente;
+              count += 1;
+            }
+          });
+          const margeMoy = count > 0 ? totalMarge / count : 0;
+          const tauxMarge = totalCA > 0 ? (totalMarge / totalCA) * 100 : 0;
+          document.getElementById('sa-marge-total').textContent = fmtEUR(totalMarge);
+          document.getElementById('sa-marge-total-sub').textContent = count + ' smartphone' + (count>1?'s':'') + ' vendu' + (count>1?'s':'');
+          document.getElementById('sa-marge-moy').textContent = fmtEUR(margeMoy);
+          document.getElementById('sa-marge-moy-sub').textContent = 'par smartphone vendu';
+          document.getElementById('sa-marge-taux').textContent = tauxMarge.toFixed(1) + ' %';
+          document.getElementById('sa-marge-ca').textContent = fmtEUR(totalCA);
+        }
+
+        // ─── Évolution mensuelle (12 mois glissants) ────────────────
+        function renderChart() {
+          const months = [];
+          const now = new Date();
+          for (let i = 11; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const start = d.getTime();
+            const end = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
+            const label = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+            const labelLong = d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).replace('.', '');
+            months.push({ start, end, label, labelLong, achats: 0, marge: 0 });
+          }
+          [..._allPhones, ..._allNeufs].forEach(p => {
+            const dAchat = new Date(p.date_achat || p.created_at || 0).getTime();
+            const dVente = new Date(p.date_vente || 0).getTime();
+            const achat = Number(p.achat || 0);
+            const vente = Number(p.vente || 0);
+            const isPhoneSold = isSold(p);
+            months.forEach(m => {
+              if (dAchat >= m.start && dAchat < m.end) m.achats += achat;
+              if (isPhoneSold && dVente >= m.start && dVente < m.end && vente > 0) {
+                m.marge += (vente - achat);
+              }
+            });
+          });
+
+          const maxVal = Math.max(1, ...months.map(m => Math.max(m.achats, m.marge)));
+          const W = 800, H = 240, padL = 50, padR = 10, padT = 16, padB = 38;
+          const innerW = W - padL - padR;
+          const innerH = H - padT - padB;
+          const barWidth = innerW / months.length;
+          const subBarW = (barWidth - 8) / 2;
+
+          let bars = '';
+          months.forEach((m, i) => {
+            const xBase = padL + i * barWidth + 4;
+            const hAchats = (m.achats / maxVal) * innerH;
+            const hMarge = (m.marge / maxVal) * innerH;
+            const xA = xBase;
+            const xM = xBase + subBarW + 2;
+            const yA = padT + innerH - hAchats;
+            const yM = padT + innerH - hMarge;
+            // Bar Achats
+            bars += `<rect class="sa-bar" x="${xA}" y="${yA}" width="${subBarW}" height="${hAchats}" rx="2">
+              <title>${m.labelLong} · Achats : ${fmtEUR(m.achats)}</title>
+            </rect>`;
+            // Bar Marge
+            bars += `<rect class="sa-bar-marge" x="${xM}" y="${yM}" width="${subBarW}" height="${hMarge}" rx="2">
+              <title>${m.labelLong} · Marge : ${fmtEUR(m.marge)}</title>
+            </rect>`;
+            // Label X
+            bars += `<text x="${xBase + subBarW}" y="${H - 18}" text-anchor="middle" class="sa-axis">${m.label}</text>`;
+          });
+
+          // Y-axis ticks (0, 25%, 50%, 75%, 100%)
+          let yAxis = '';
+          for (let i = 0; i <= 4; i++) {
+            const v = maxVal * (i / 4);
+            const y = padT + innerH - (v / maxVal) * innerH;
+            yAxis += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(255,255,255,0.05)" />`;
+            yAxis += `<text x="${padL - 6}" y="${y + 4}" text-anchor="end" class="sa-axis">${fmtEURShort(v)}</text>`;
+          }
+
+          const svg = document.getElementById('sa-chart');
+          if (svg) {
+            svg.innerHTML = yAxis + bars;
+          }
+        }
+
+        function fmtEURShort(n) {
+          if (n == null || isNaN(n)) return '0';
+          const abs = Math.abs(n);
+          if (abs >= 1000) return Math.round(n / 1000) + 'k€';
+          return Math.round(n) + '€';
+        }
+
+        // ─── Export PDF / Impression ────────────────────────────────
+        function exportPDF() {
+          // Force le rendu puis lance window.print()
+          // Le navigateur affiche le dialogue d'impression → l'utilisateur choisit "Enregistrer en PDF"
+          window.print();
+        }
+
         async function refresh() { await loadData(); }
         async function init() { await loadData(); }
 
-        return { init, setPeriod, refresh };
+        // Modifier render() existant pour appeler renderMarge + renderChart
+        const _origRender = render;
+        render = function() {
+          _origRender();
+          const cutoff = periodStart(_period);
+          try { renderMarge(cutoff); } catch (e) { console.error('[Marge]', e); }
+          try { renderChart(); } catch (e) { console.error('[Chart]', e); }
+        };
+
+        return { init, setPeriod, refresh, exportPDF };
       })();
     </script>
 
