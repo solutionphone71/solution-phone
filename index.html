@@ -2509,6 +2509,29 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         #page-suivi-achats table { font-size: 10px !important; }
         #page-suivi-achats tbody tr:nth-child(even) td { background: #f8f8f8 !important; }
         @page { size: A4 portrait; margin: 12mm; }
+        /* Mode inventaire seul */
+        body.print-inventaire-only #page-suivi-achats > *:not(.sa-inventaire-section):not(.page-title):not(.page-sub) { display: none !important; }
+        body.print-inventaire-only .sa-inventaire-section { display: block !important; }
+        body.print-inventaire-only .sa-inv-checkbox { border: 2px solid #000 !important; width: 14px !important; height: 14px !important; display: inline-block !important; background: white !important; }
+      }
+      /* Section inventaire physique */
+      #page-suivi-achats .sa-inv-toolbar { display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px; }
+      #page-suivi-achats .sa-inv-filter { display:flex;gap:6px;flex-wrap:wrap; }
+      #page-suivi-achats .sa-inv-filter button { padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--text);font-weight:600;font-size:11px;cursor:pointer; }
+      #page-suivi-achats .sa-inv-filter button.active { background:var(--red, #E10600);border-color:var(--red, #E10600);color:#fff; }
+      #page-suivi-achats .sa-inv-search { flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:rgba(0,0,0,0.20);color:#fff;font-size:13px; }
+      #page-suivi-achats .sa-inv-checkbox { display:inline-block;width:16px;height:16px;border:2px solid #888;border-radius:3px;vertical-align:middle;background:transparent; }
+      #page-suivi-achats .sa-inv-imei { font-family:monospace;font-size:11px;color:var(--text-muted); }
+      #page-suivi-achats .sa-inv-meta { font-size:11px;color:var(--text-muted); }
+      #page-suivi-achats .sa-inv-summary { display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:13px; }
+      #page-suivi-achats .sa-inv-summary b { color:#fff;font-size:16px; }
+      .sa-inv-print-header { display:none; }
+      @media print {
+        .sa-inv-print-header { display:block !important; margin-bottom: 16px !important; border-bottom: 2px solid #000 !important; padding-bottom: 8px !important; }
+        .sa-inv-print-header h2 { font-size: 18px !important; margin: 0 0 4px !important; }
+        .sa-inv-print-header .meta { font-size: 11px !important; color: #555 !important; }
+        .sa-inv-signature { margin-top: 24px !important; display: flex !important; justify-content: space-between !important; gap: 30px !important; }
+        .sa-inv-signature > div { flex: 1 !important; border-top: 1px solid #000 !important; padding-top: 6px !important; font-size: 11px !important; }
       }
     </style>
     <div class="page" id="page-suivi-achats">
@@ -2607,6 +2630,78 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="sa-legend">
             <span><span class="sa-legend-dot" style="background:#E10600;"></span>Achats (€)</span>
             <span><span class="sa-legend-dot" style="background:#22c55e;"></span>Marge réalisée (€)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventaire physique (stock complet, cases à cocher, PDF) -->
+      <div class="sa-section sa-inventaire-section">
+        <!-- En-tête print only -->
+        <div class="sa-inv-print-header">
+          <h2>📋 Inventaire physique smartphones — Solution Phone</h2>
+          <div class="meta">Édité le <span id="sa-inv-print-date"></span> · 21 rue Gambetta, Mâcon</div>
+        </div>
+
+        <div class="sa-section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <span>📋 Inventaire physique — Stock actuel</span>
+          <button class="btn btn-sm" onclick="SuiviAchats.printInventaire()" style="border-color:#E10600;color:#E10600;font-weight:700;">🖨️ Imprimer / PDF inventaire</button>
+        </div>
+
+        <!-- Résumé -->
+        <div class="sa-inv-summary" id="sa-inv-summary">
+          <span>Total : <b id="sa-inv-total-count">—</b> smartphones</span>
+          <span>· Occasion : <b id="sa-inv-occ-count">—</b></span>
+          <span>· Neufs : <b id="sa-inv-neuf-count">—</b></span>
+          <span>· Valeur : <b id="sa-inv-total-value">— €</b></span>
+        </div>
+
+        <!-- Filtres + recherche -->
+        <div class="sa-inv-toolbar">
+          <div class="sa-inv-filter">
+            <button class="active" data-inv-filter="all" onclick="SuiviAchats.setInvFilter('all',this)">Tous</button>
+            <button data-inv-filter="occasion" onclick="SuiviAchats.setInvFilter('occasion',this)">Occasion</button>
+            <button data-inv-filter="neuf" onclick="SuiviAchats.setInvFilter('neuf',this)">Neufs</button>
+          </div>
+          <input type="text" class="sa-inv-search" id="sa-inv-search" placeholder="🔍 Rechercher modèle, IMEI, fournisseur…" oninput="SuiviAchats.searchInv(this.value)">
+        </div>
+
+        <!-- Liste inventaire -->
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:30px;">✓</th>
+                <th>Modèle</th>
+                <th>Stockage</th>
+                <th>Grade</th>
+                <th>Couleur</th>
+                <th>IMEI</th>
+                <th>Type</th>
+                <th>Date achat</th>
+                <th style="text-align:right;">Prix achat</th>
+              </tr>
+            </thead>
+            <tbody id="sa-inv-body">
+              <tr><td colspan="9" class="sa-empty">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Signature (visible uniquement en PDF) -->
+        <div class="sa-inv-signature">
+          <div>
+            <b>Vérifié par :</b><br>
+            ____________________<br>
+            (Nom et signature)
+          </div>
+          <div>
+            <b>Date :</b><br>
+            ____________________
+          </div>
+          <div>
+            <b>Écarts constatés :</b><br>
+            ____________________<br>
+            ____________________
           </div>
         </div>
       </div>
@@ -2893,26 +2988,125 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           return Math.round(n) + '€';
         }
 
-        // ─── Export PDF / Impression ────────────────────────────────
+        // ─── Export PDF / Impression complète ───────────────────────
         function exportPDF() {
-          // Force le rendu puis lance window.print()
-          // Le navigateur affiche le dialogue d'impression → l'utilisateur choisit "Enregistrer en PDF"
+          document.body.classList.remove('print-inventaire-only');
           window.print();
+        }
+
+        // ─── Inventaire physique : filtres + rendu + print ──────────
+        let _invFilter = 'all';
+        let _invSearch = '';
+
+        function renderInventaire() {
+          // Stock complet = tous les phones (occasion + neuf) NON vendus
+          const stockOcc = _allPhones.filter(p => !isSold(p));
+          const stockNeuf = _allNeufs.filter(p => !isSold(p) && (p.stock == null || Number(p.stock) > 0));
+
+          // Pour les neufs, on duplique si stock > 1 (chaque unité = 1 ligne d'inventaire)
+          const expandedNeuf = [];
+          stockNeuf.forEach(p => {
+            const qty = Math.max(1, Number(p.stock || 1));
+            for (let i = 0; i < qty; i++) {
+              expandedNeuf.push({ ...p, __invUnit: i + 1, __invTotal: qty });
+            }
+          });
+
+          // Résumé
+          document.getElementById('sa-inv-occ-count').textContent = stockOcc.length;
+          document.getElementById('sa-inv-neuf-count').textContent = expandedNeuf.length;
+          document.getElementById('sa-inv-total-count').textContent = stockOcc.length + expandedNeuf.length;
+          const totalVal = stockOcc.reduce((s, p) => s + Number(p.achat || 0), 0)
+                         + expandedNeuf.reduce((s, p) => s + Number(p.achat || 0), 0);
+          document.getElementById('sa-inv-total-value').textContent = fmtEUR(totalVal);
+
+          // Application des filtres
+          let list = [];
+          if (_invFilter === 'all' || _invFilter === 'occasion') {
+            list = list.concat(stockOcc.map(p => ({ ...p, __type: 'occasion' })));
+          }
+          if (_invFilter === 'all' || _invFilter === 'neuf') {
+            list = list.concat(expandedNeuf.map(p => ({ ...p, __type: 'neuf' })));
+          }
+
+          // Recherche
+          if (_invSearch) {
+            const q = _invSearch.toLowerCase();
+            list = list.filter(p =>
+              (p.modele || '').toLowerCase().includes(q) ||
+              (p.imei || '').toLowerCase().includes(q) ||
+              (p.fournisseur || '').toLowerCase().includes(q) ||
+              (p.vendeur_nom || '').toLowerCase().includes(q) ||
+              (p.couleur || '').toLowerCase().includes(q)
+            );
+          }
+
+          // Tri : modèle alphabétique
+          list.sort((a, b) => String(a.modele || '').localeCompare(String(b.modele || '')));
+
+          const body = document.getElementById('sa-inv-body');
+          if (!list.length) {
+            body.innerHTML = '<tr><td colspan="9" class="sa-empty">Aucun smartphone en stock pour ces filtres.</td></tr>';
+            return;
+          }
+          body.innerHTML = list.map(p => {
+            const isNeuf = p.__type === 'neuf';
+            const unitInfo = isNeuf && p.__invTotal > 1 ? ` <span style="font-size:10px;color:var(--text-muted);">(${p.__invUnit}/${p.__invTotal})</span>` : '';
+            return `<tr>
+              <td><span class="sa-inv-checkbox"></span></td>
+              <td><b>${escapeHtml(p.modele || '—')}</b>${unitInfo}<div class="sa-inv-meta">${escapeHtml(p.vendeur_nom || p.fournisseur || '')}</div></td>
+              <td>${p.stockage ? p.stockage + ' Go' : '—'}</td>
+              <td>${escapeHtml(p.grade || '—')}</td>
+              <td>${escapeHtml(p.couleur || '—')}</td>
+              <td class="sa-inv-imei">${escapeHtml(p.imei || '—')}</td>
+              <td>${isNeuf ? '<span style="color:#06b6d4;">Neuf</span>' : '<span style="color:#f59e0b;">Occasion</span>'}</td>
+              <td>${fmtDate(p.date_achat || p.created_at)}</td>
+              <td style="text-align:right;font-weight:700;">${fmtEUR(p.achat)}</td>
+            </tr>`;
+          }).join('');
+        }
+
+        function setInvFilter(f, btn) {
+          _invFilter = f;
+          document.querySelectorAll('#page-suivi-achats .sa-inv-filter button').forEach(b => b.classList.remove('active'));
+          if (btn) btn.classList.add('active');
+          renderInventaire();
+        }
+
+        function searchInv(q) {
+          _invSearch = q || '';
+          renderInventaire();
+        }
+
+        // Impression : mode inventaire SEUL (masque le reste de la page)
+        function printInventaire() {
+          // Met à jour la date dans le header print
+          const dateEl = document.getElementById('sa-inv-print-date');
+          if (dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+          document.body.classList.add('print-inventaire-only');
+          // Attend le rendu puis imprime
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+              document.body.classList.remove('print-inventaire-only');
+            }, 500);
+          }, 100);
         }
 
         async function refresh() { await loadData(); }
         async function init() { await loadData(); }
 
-        // Modifier render() existant pour appeler renderMarge + renderChart
+        // Modifier render() existant pour appeler renderMarge + renderChart + renderInventaire
         const _origRender = render;
         render = function() {
           _origRender();
           const cutoff = periodStart(_period);
           try { renderMarge(cutoff); } catch (e) { console.error('[Marge]', e); }
           try { renderChart(); } catch (e) { console.error('[Chart]', e); }
+          try { renderInventaire(); } catch (e) { console.error('[Inventaire]', e); }
         };
 
-        return { init, setPeriod, refresh, exportPDF };
+        return { init, setPeriod, refresh, exportPDF, setInvFilter, searchInv, printInventaire };
       })();
     </script>
 
