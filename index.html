@@ -14986,8 +14986,18 @@ async function loadSalariesFromSupabase() {
       salaries = JSON.parse(rows[0].value) || [];
     }
   } catch(e) {
-    console.warn('Erreur chargement salariés:', e);
+    console.warn('Erreur chargement salariés (Supabase) :', e);
     salaries = [];
+  }
+  // Fallback localStorage si Supabase ne renvoie rien
+  if (salaries.length === 0) {
+    try {
+      var ls = localStorage.getItem('solphone_salaries_data');
+      if (ls) {
+        salaries = JSON.parse(ls) || [];
+        if (salaries.length > 0) console.log('✅ Salariés rechargés depuis localStorage (' + salaries.length + ')');
+      }
+    } catch(e) { console.warn('LS load err:', e); }
   }
   // Pré-remplir si vide (données bulletins mars 2026)
   if (salaries.length === 0) {
@@ -15004,6 +15014,12 @@ async function loadSalariesFromSupabase() {
 }
 
 async function saveSalariesToSupabase() {
+  // 1. TOUJOURS sauver en localStorage d'abord (fallback de sécurité)
+  try {
+    localStorage.setItem('solphone_salaries_data', JSON.stringify(salaries));
+    localStorage.setItem('solphone_salaries_lastsave', new Date().toISOString());
+  } catch(e) { console.warn('LS save err:', e); }
+  // 2. Tenter Supabase (échoue silencieusement si pas configuré)
   try {
     var existing = await supaFetch('settings', 'GET', null, '?key=eq.salaries_data');
     var data = JSON.stringify(salaries);
@@ -15013,7 +15029,7 @@ async function saveSalariesToSupabase() {
       await supaFetch('settings', 'POST', {key: 'salaries_data', value: data});
     }
   } catch(e) {
-    console.warn('Erreur sauvegarde salariés:', e);
+    console.warn('Erreur sauvegarde salariés (Supabase, donnée OK en local):', e);
   }
 }
 
