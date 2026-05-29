@@ -7486,11 +7486,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <p style="text-align:center;color:var(--text-muted);margin-bottom:16px;font-size:14px;">Nouveau parcours client</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
 
-              <!-- Tuile 1 : Réparation interne -->
+              <!-- Tuile 1 : Réparation interne (= page-reparations 5-step) -->
               <div onclick="parcoursOuvrir('reparation')" style="background:linear-gradient(135deg,#fee2e2,#fecaca);border:2px solid #fca5a5;border-radius:16px;padding:28px 20px;cursor:pointer;transition:all .2s;text-align:center;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(239,68,68,.2)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
                 <div style="font-size:42px;margin-bottom:10px;">🔧</div>
-                <div style="font-size:17px;font-weight:800;color:#dc2626;margin-bottom:6px;">Réparation interne</div>
-                <div style="font-size:12px;color:#991b1b;line-height:1.5;">Prise en charge téléphone<br>→ Réparation en boutique<br>→ QualiRépar Ecologic / Ecosystem</div>
+                <div style="font-size:17px;font-weight:800;color:#dc2626;margin-bottom:6px;">Nouvelle réparation</div>
+                <div style="font-size:12px;color:#991b1b;line-height:1.5;">Client → Appareil → Devis<br>→ Facturation → Envoi QR<br>Inclut QualiRépar, PIEC, signature</div>
               </div>
 
               <!-- Tuile 2 : Sous-traitance Mobilax -->
@@ -7558,8 +7558,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             </div>
           </div>
 
-          <!-- ── PARCOURS 1 : RÉPARATION INTERNE ── -->
-          <div id="parcours-reparation" style="display:none;max-width:700px;margin:0 auto;padding:20px;">
+          <!-- ── PARCOURS 1 : RÉPARATION INTERNE — DÉSACTIVÉ mai 2026 ──
+               Harmonisation : tout passe maintenant par page-reparations (5-step Nouveau dossier)
+               Cette section reste dans le DOM pour compat mais n'est jamais affichée. -->
+          <div id="parcours-reparation" style="display:none !important;visibility:hidden;" hidden>
             <button onclick="parcoursRetour()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:6px;">← Retour aux parcours</button>
             <div style="background:linear-gradient(135deg,#fee2e2,#fff);border:2px solid #fca5a5;border-radius:16px;padding:24px;">
               <h3 style="font-size:18px;font-weight:800;color:#dc2626;margin-bottom:16px;">🔧 Prise en charge — Réparation interne</h3>
@@ -7838,7 +7840,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <!-- Actions rapides réparations -->
         <div style="display:flex;gap:8px;margin-bottom:14px;">
           <button class="btn btn-primary" onclick="repNewDossier()" style="flex:1;padding:12px;font-size:13px;font-weight:700;">🔧 Nouvelle réparation</button>
-          <button class="btn" onclick="showPage('qualirepar',null);qrInit();" style="flex:1;padding:12px;font-size:13px;font-weight:700;border-color:#a78bfa;color:#a78bfa;">🏷️ Nouvelle répa QualiRépar</button>
           <button class="btn btn-sm" onclick="repLoadDossiers();renderRepListe();renderRepHistorique();" style="padding:12px;font-size:13px;">🔄</button>
         </div>
       </div>
@@ -9930,6 +9931,13 @@ function applyTheme(theme){
 })();
 
 function showPage(id,el){
+  // ── HARMONISATION mai 2026 : tout parcours qualirepar redirige vers le 5-step page-reparations ──
+  if (id === 'qualirepar') {
+    id = 'reparations';
+    setTimeout(function(){
+      try { if (typeof repNewDossier === 'function') repNewDossier(); } catch(e){}
+    }, 100);
+  }
   // Sécurité : bloquer accès pages patron pour les employés
   if(_userRole === 'employe' && _modulesPatronOnly.indexOf(id) !== -1){
     showNotif('⛔ Accès réservé au patron','error');
@@ -31043,9 +31051,21 @@ function pcSearchOpen(type,id){
 }
 
 function parcoursOuvrir(type){
+  // ─── HARMONISATION (mai 2026) ───
+  // Le parcours "reparation" simple form est REMPLACÉ par page-reparations (5-step Nouveau dossier)
+  // Idem pour QualiRépar (anciennement page-qualirepar) → tout passe par page-reparations
+  if (type === 'reparation' || type === 'qualirepar') {
+    if (typeof showPage === 'function') showPage('reparations', null);
+    if (typeof repNewDossier === 'function') {
+      setTimeout(function(){ try { repNewDossier(); } catch(e){} }, 100);
+    }
+    return;
+  }
+
   document.getElementById('parcours-tuiles').style.display='none';
   ['parcours-reparation','parcours-mobilax','parcours-pieces','parcours-accessoires'].forEach(function(id){
-    document.getElementById(id).style.display='none';
+    var el = document.getElementById(id);
+    if (el) el.style.display='none';
   });
   var el=document.getElementById('parcours-'+type);
   if(el) el.style.display='block';
