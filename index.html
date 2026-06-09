@@ -883,6 +883,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-group-label">Smartphones Occasion</div>
     <div class="nav-item" onclick="showPage('phones',this)"><span class="nav-icon">📥</span><span>Achat smartphones</span></div>
     <div class="nav-item" onclick="showPage('suivi-achats',this);SuiviAchats.init();"><span class="nav-icon">💼</span><span>Suivi achats & stock</span></div>
+    <div class="nav-item" onclick="showPage('inventaires',this);Inventaires.init();"><span class="nav-icon">📦</span><span>Inventaires comptables</span></div>
     <div class="nav-item" id="nav-ventes-smart" onclick="showPage('ventes-smart',this);renderVentesSmartphones();"><span class="nav-icon">📤</span><span>Vente smartphones</span></div>
     <div class="nav-item" id="nav-factures" onclick="showPage('factures',this)"><span class="nav-icon">🧾</span><span>Factures TVA marge</span></div>
     <div class="nav-item" onclick="showPage('factures-pdf',this)"><span class="nav-icon">📄</span><span>Factures PDF</span></div>
@@ -3240,6 +3241,339 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         };
 
         return { init, setPeriod, refresh, exportPDF, setInvFilter, searchInv, printInventaire };
+      })();
+    </script>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- PAGE : INVENTAIRES COMPTABLES                  -->
+    <!-- ══════════════════════════════════════════════ -->
+    <style>
+      #page-inventaires .inv-toolbar { display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px; }
+      #page-inventaires .inv-card { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:18px;margin-bottom:14px;cursor:pointer;transition:all .15s; }
+      #page-inventaires .inv-card:hover { background:rgba(255,255,255,0.06);transform:translateY(-1px); }
+      #page-inventaires .inv-card-head { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px; }
+      #page-inventaires .inv-card-date { font-size:18px;font-weight:800;color:#fff; }
+      #page-inventaires .inv-card-total { font-size:22px;font-weight:900;color:#22c55e; }
+      #page-inventaires .inv-card-sub { font-size:12px;color:var(--text-muted);margin-top:6px; }
+      #page-inventaires .inv-section { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:22px;margin-bottom:18px; }
+      #page-inventaires .inv-section-title { font-size:14px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px; }
+      #page-inventaires table { width:100%;border-collapse:collapse; }
+      #page-inventaires thead th { padding:10px 12px;text-align:left;color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.10); }
+      #page-inventaires tbody td { padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);color:#fff;font-size:13px; }
+      #page-inventaires tbody tr:hover { background:rgba(255,255,255,0.03); }
+      #page-inventaires .inv-cat-row td { background:rgba(225,6,0,0.08);font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:1px;font-size:11px; }
+      #page-inventaires .inv-subtotal td { background:rgba(255,255,255,0.04);font-weight:700; }
+      #page-inventaires .badge-statut { font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:1px; }
+      #page-inventaires .badge-draft { background:rgba(251,191,36,0.18);color:#fbbf24; }
+      #page-inventaires .badge-validated { background:rgba(34,197,94,0.18);color:#22c55e; }
+      #page-inventaires .badge-archived { background:rgba(255,255,255,0.10);color:var(--text-muted); }
+    </style>
+    <div class="page" id="page-inventaires">
+      <div class="page-title">📦 Inventaires comptables</div>
+      <div class="page-sub">Historique de tes inventaires valorisés · Import Excel · Export PDF</div>
+
+      <!-- Vue liste -->
+      <div id="inv-view-list">
+        <div class="inv-toolbar">
+          <button class="btn btn-primary" onclick="Inventaires.openCreate()" style="background:linear-gradient(135deg,#E10600,#a30400);border:none;color:#fff;font-weight:700;">➕ Nouvel inventaire</button>
+          <button class="btn btn-sm" onclick="Inventaires.openUpload()" style="border-color:#22c55e;color:#22c55e;font-weight:700;">📤 Importer un Excel</button>
+          <button class="btn btn-sm" onclick="Inventaires.refresh()" style="border-color:#fbbf24;color:#fbbf24;">🔄 Rafraîchir</button>
+          <div style="flex:1;"></div>
+          <div id="inv-count" style="font-size:13px;color:var(--text-muted);"></div>
+        </div>
+        <div id="inv-list">
+          <div style="text-align:center;padding:40px;color:var(--text-muted);">Chargement…</div>
+        </div>
+      </div>
+
+      <!-- Vue détail -->
+      <div id="inv-view-detail" style="display:none;">
+        <div class="inv-toolbar">
+          <button class="btn btn-sm" onclick="Inventaires.backToList()" style="border-color:var(--text-muted);">← Retour à la liste</button>
+          <button class="btn btn-sm" onclick="Inventaires.printDetail()" style="border-color:#E10600;color:#E10600;font-weight:700;">🖨️ Imprimer / PDF</button>
+          <button class="btn btn-sm" onclick="Inventaires.exportXlsx()" style="border-color:#22c55e;color:#22c55e;">⬇️ Export Excel</button>
+          <div style="flex:1;"></div>
+          <button class="btn btn-sm" onclick="Inventaires.deleteCurrent()" style="border-color:#ef4444;color:#ef4444;">🗑 Supprimer</button>
+        </div>
+        <div id="inv-detail-content"></div>
+      </div>
+    </div>
+
+    <script>
+      // ═══════════════════════════════════════════════════════════
+      // Module Inventaires
+      // ═══════════════════════════════════════════════════════════
+      window.Inventaires = (function() {
+        let _list = [];
+        let _current = null;
+
+        function escapeHtml(s) {
+          return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function fmtEUR(n) {
+          if (n == null || isNaN(n)) return '0,00 €';
+          return Number(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        }
+        function fmtDate(d) {
+          if (!d) return '—';
+          try { return new Date(d).toLocaleDateString('fr-FR'); } catch(_) { return d; }
+        }
+
+        async function api(action, opts = {}) {
+          const qs = new URLSearchParams({ action, ...(opts.query || {}) });
+          const r = await fetch('/api/inventaires?' + qs.toString(), {
+            method: opts.method || 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: opts.body ? JSON.stringify(opts.body) : undefined
+          });
+          const text = await r.text();
+          if (text.trim().startsWith('<')) throw new Error('Réponse HTML (' + r.status + ') — endpoint pas déployé ?');
+          try { return JSON.parse(text); } catch(e) { throw new Error('Non-JSON: ' + text.substring(0,100)); }
+        }
+
+        // ─── LISTE ────────────────────────────────────────────────
+        async function init() {
+          backToList();
+          await refresh();
+        }
+
+        async function refresh() {
+          const box = document.getElementById('inv-list');
+          box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Chargement…</div>';
+          try {
+            const r = await api('list');
+            if (!r.ok) throw new Error(r.error || 'Erreur');
+            _list = r.inventaires || [];
+            renderList();
+          } catch (e) {
+            box.innerHTML = '<div style="text-align:center;padding:30px;color:#ef4444;">Erreur : ' + escapeHtml(e.message) + '</div>';
+          }
+        }
+
+        function renderList() {
+          const box = document.getElementById('inv-list');
+          document.getElementById('inv-count').textContent = _list.length + ' inventaire' + (_list.length>1?'s':'');
+          if (!_list.length) {
+            box.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">Aucun inventaire pour le moment.<br>Clique « ➕ Nouvel inventaire » ou « 📤 Importer un Excel » pour commencer.</div>';
+            return;
+          }
+          box.innerHTML = _list.map(inv => {
+            const badge = '<span class="badge-statut badge-' + (inv.statut || 'draft') + '">' + (inv.statut || 'draft') + '</span>';
+            return '<div class="inv-card" onclick="Inventaires.openDetail(' + inv.id + ')">'
+              + '<div class="inv-card-head">'
+                + '<div><div class="inv-card-date">📅 ' + fmtDate(inv.date_inventaire) + '</div>'
+                + '<div class="inv-card-sub">' + escapeHtml(inv.nom || '—') + ' · ' + badge + '</div></div>'
+                + '<div class="inv-card-total">' + fmtEUR(inv.total_ht) + '</div>'
+              + '</div>'
+              + '<div class="inv-card-sub" style="margin-top:12px;display:flex;gap:18px;flex-wrap:wrap;">'
+                + '<span>📦 Accessoires/pièces : <b style="color:#fff;">' + fmtEUR(inv.total_section1) + '</b></span>'
+                + '<span>✨ Neufs Samsung/Motorola : <b style="color:#fff;">' + fmtEUR(inv.total_section2) + '</b></span>'
+                + '<span>📥 Occasions : <b style="color:#fff;">' + fmtEUR(inv.total_section3) + '</b></span>'
+              + '</div></div>';
+          }).join('');
+        }
+
+        function backToList() {
+          document.getElementById('inv-view-list').style.display = '';
+          document.getElementById('inv-view-detail').style.display = 'none';
+          _current = null;
+        }
+
+        // ─── DÉTAIL ───────────────────────────────────────────────
+        async function openDetail(id) {
+          document.getElementById('inv-view-list').style.display = 'none';
+          document.getElementById('inv-view-detail').style.display = '';
+          const box = document.getElementById('inv-detail-content');
+          box.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">Chargement…</div>';
+          try {
+            const r = await api('detail', { query: { id } });
+            if (!r.ok) throw new Error(r.error || 'Erreur');
+            _current = r;
+            renderDetail();
+          } catch (e) {
+            box.innerHTML = '<div style="text-align:center;padding:30px;color:#ef4444;">Erreur : ' + escapeHtml(e.message) + '</div>';
+          }
+        }
+
+        function renderDetail() {
+          if (!_current) return;
+          const inv = _current.inventaire;
+          const items = _current.items || [];
+
+          // Group items by section then category
+          const sections = { 1: { label: '📦 Accessoires & pièces détachées', total: inv.total_section1, cats: {} },
+                             2: { label: '✨ Smartphones neufs Samsung & Motorola', total: inv.total_section2, cats: {} },
+                             3: { label: '📥 Smartphones d\'occasion', total: inv.total_section3, cats: {} } };
+          for (const it of items) {
+            if (!sections[it.section]) continue;
+            if (!sections[it.section].cats[it.categorie]) sections[it.section].cats[it.categorie] = [];
+            sections[it.section].cats[it.categorie].push(it);
+          }
+
+          let html = '<div class="inv-section">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">'
+              + '<div><div style="font-size:22px;font-weight:900;color:#fff;">📅 ' + fmtDate(inv.date_inventaire) + '</div>'
+              + '<div style="color:var(--text-muted);font-size:13px;">' + escapeHtml(inv.nom) + ' · Établi par ' + escapeHtml(inv.etabli_par || '—') + '</div></div>'
+              + '<div style="font-size:30px;font-weight:900;color:#22c55e;">' + fmtEUR(inv.total_ht) + '</div>'
+            + '</div></div>';
+
+          for (const sNum of [1,2,3]) {
+            const s = sections[sNum];
+            html += '<div class="inv-section">';
+            html += '<div class="inv-section-title" style="display:flex;justify-content:space-between;align-items:center;">'
+                  + '<span>' + s.label + '</span><span style="color:#22c55e;font-size:18px;">' + fmtEUR(s.total) + '</span></div>';
+            const catKeys = Object.keys(s.cats);
+            if (!catKeys.length) {
+              html += '<div style="text-align:center;padding:20px;color:var(--text-muted);">Aucune ligne dans cette section.</div>';
+            } else {
+              html += '<table><thead><tr><th>Désignation</th><th style="text-align:center;">Qté</th><th style="text-align:right;">PU HT</th><th style="text-align:right;">Montant HT</th></tr></thead><tbody>';
+              for (const cat of catKeys) {
+                html += '<tr class="inv-cat-row"><td colspan="4">▸ ' + escapeHtml(cat) + '</td></tr>';
+                let subt = 0;
+                for (const it of s.cats[cat]) {
+                  subt += Number(it.montant_ht || 0);
+                  html += '<tr>'
+                    + '<td>' + escapeHtml(it.designation) + '</td>'
+                    + '<td style="text-align:center;">' + Number(it.quantite || 0) + '</td>'
+                    + '<td style="text-align:right;">' + fmtEUR(it.pu_ht) + '</td>'
+                    + '<td style="text-align:right;font-weight:700;">' + fmtEUR(it.montant_ht) + '</td>'
+                  + '</tr>';
+                }
+                html += '<tr class="inv-subtotal"><td colspan="3" style="text-align:right;">Sous-total ' + escapeHtml(cat) + '</td><td style="text-align:right;">' + fmtEUR(subt) + '</td></tr>';
+              }
+              html += '</tbody></table>';
+            }
+            html += '</div>';
+          }
+
+          document.getElementById('inv-detail-content').innerHTML = html;
+        }
+
+        // ─── IMPRESSION PDF (fenêtre dédiée) ─────────────────────
+        function printDetail() {
+          if (!_current) return;
+          const inv = _current.inventaire;
+          const items = _current.items || [];
+          const sections = { 1: { label: '1. Accessoires & pièces détachées', total: inv.total_section1, cats: {} },
+                             2: { label: '2. Smartphones neufs Samsung & Motorola', total: inv.total_section2, cats: {} },
+                             3: { label: '3. Smartphones d\'occasion', total: inv.total_section3, cats: {} } };
+          for (const it of items) {
+            if (!sections[it.section]) continue;
+            if (!sections[it.section].cats[it.categorie]) sections[it.section].cats[it.categorie] = [];
+            sections[it.section].cats[it.categorie].push(it);
+          }
+          let rows = '';
+          for (const sNum of [1,2,3]) {
+            const s = sections[sNum];
+            rows += '<h2>' + s.label + ' — <span style="color:#c0392b">' + fmtEUR(s.total) + '</span></h2>';
+            const catKeys = Object.keys(s.cats);
+            if (!catKeys.length) { rows += '<p style="color:#888;font-style:italic;">Aucune ligne.</p>'; continue; }
+            rows += '<table><thead><tr><th>Désignation</th><th class="num">Qté</th><th class="eur">PU HT</th><th class="eur">Montant HT</th></tr></thead><tbody>';
+            for (const cat of catKeys) {
+              rows += '<tr class="cat"><td colspan="4">▸ ' + escapeHtml(cat) + '</td></tr>';
+              let subt = 0;
+              for (const it of s.cats[cat]) {
+                subt += Number(it.montant_ht || 0);
+                rows += '<tr><td>' + escapeHtml(it.designation) + '</td><td class="num">' + Number(it.quantite||0) + '</td><td class="eur">' + fmtEUR(it.pu_ht) + '</td><td class="eur">' + fmtEUR(it.montant_ht) + '</td></tr>';
+              }
+              rows += '<tr class="sub"><td colspan="3">Sous-total ' + escapeHtml(cat) + '</td><td class="eur">' + fmtEUR(subt) + '</td></tr>';
+            }
+            rows += '</tbody></table>';
+          }
+          const dateStr = fmtDate(inv.date_inventaire);
+          const html = '<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Inventaire ' + dateStr + '</title>'
+            + '<style>'
+            + 'body{font-family:Helvetica,Arial,sans-serif;color:#000;background:#fff;padding:14mm;font-size:10.5px;}'
+            + 'header{border-bottom:2.5px solid #000;padding-bottom:10px;margin-bottom:18px;display:flex;justify-content:space-between;}'
+            + 'header h1{margin:0 0 4px;font-size:20px;color:#c0392b;}'
+            + 'header .sub{font-size:10px;color:#333;}'
+            + 'header .right{text-align:right;font-size:11px;}'
+            + 'h2{background:#000;color:#fff;padding:6px 10px;margin:18px 0 8px;font-size:13px;}'
+            + 'table{width:100%;border-collapse:collapse;margin-bottom:6px;}'
+            + 'thead th{background:#f0f0f0;padding:5px 8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:1.5px solid #888;}'
+            + 'th.num,td.num{text-align:center;}th.eur,td.eur{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}'
+            + 'tbody td{padding:4px 8px;border-bottom:1px solid #e0e0e0;font-size:10.5px;}'
+            + 'tr.cat td{background:#fee2e2;font-weight:700;text-transform:uppercase;font-size:10px;color:#c0392b;}'
+            + 'tr.sub td{background:#f5f5f5;font-weight:700;}'
+            + '.grand-total{margin-top:18px;padding:12px 16px;background:#fff8e6;border:2px solid #c0392b;font-size:14px;font-weight:800;display:flex;justify-content:space-between;}'
+            + '.signature{margin-top:24px;display:flex;gap:22px;}'
+            + '.signature>div{flex:1;border-top:1.5px solid #000;padding-top:6px;font-size:10px;min-height:60px;}'
+            + 'footer{margin-top:18px;padding-top:8px;border-top:1px solid #ccc;font-size:9px;color:#666;display:flex;justify-content:space-between;}'
+            + '@page{size:A4 portrait;margin:8mm;}'
+            + '</style></head><body>'
+            + '<header><div><h1>📦 Inventaire valorisé au ' + dateStr + '</h1>'
+            + '<div class="sub"><b>Solution Phone</b> · 21 rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div></div>'
+            + '<div class="right"><b>' + escapeHtml(inv.nom) + '</b><br>Établi par : ' + escapeHtml(inv.etabli_par||'—') + '<br>Statut : ' + (inv.statut||'draft') + '</div></header>'
+            + rows
+            + '<div class="grand-total"><span>TOTAL INVENTAIRE HT</span><span>' + fmtEUR(inv.total_ht) + '</span></div>'
+            + '<div class="signature">'
+              + '<div><b>Établi par :</b><br>' + escapeHtml(inv.etabli_par||'') + '<br><br>____________________</div>'
+              + '<div><b>Date :</b><br>' + dateStr + '</div>'
+              + '<div><b>Vérifié par :</b><br><br>____________________</div>'
+            + '</div>'
+            + '<footer><span>Solution Phone · Inventaire au ' + dateStr + ' · Coût d\'acquisition HT (Art. R123-179)</span><span>Édité le ' + new Date().toLocaleDateString('fr-FR') + '</span></footer>'
+            + '<scr' + 'ipt>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};</scr' + 'ipt>'
+            + '</body></html>';
+          const win = window.open('', '_blank', 'width=900,height=1100');
+          if (!win) { alert('Pop-ups bloqués. Autorise les pop-ups pour cette page.'); return; }
+          win.document.open();
+          win.document.write(html);
+          win.document.close();
+        }
+
+        // ─── EXPORT XLSX (CSV simple → ouvrable Excel) ───────────
+        function exportXlsx() {
+          if (!_current) return;
+          const inv = _current.inventaire;
+          const items = _current.items || [];
+          let csv = 'Section;Catégorie;Désignation;Quantité;PU HT;Montant HT\n';
+          for (const it of items) {
+            const sLabel = it.section === 1 ? 'Accessoires-Pièces' : (it.section === 2 ? 'Samsung-Motorola neufs' : 'Smartphones occasion');
+            csv += [sLabel, it.categorie, '"' + (it.designation||'').replace(/"/g,'""') + '"', it.quantite, it.pu_ht, it.montant_ht].join(';') + '\n';
+          }
+          csv += '\n;TOTAL HT;;;;' + inv.total_ht + '\n';
+          const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'inventaire-' + (inv.date_inventaire || 'export') + '.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+
+        // ─── SUPPRESSION ─────────────────────────────────────────
+        async function deleteCurrent() {
+          if (!_current) return;
+          if (!confirm('Supprimer définitivement cet inventaire ? Toutes les lignes seront perdues.')) return;
+          try {
+            const r = await api('delete', { method: 'POST', query: { id: _current.inventaire.id } });
+            if (!r.ok) throw new Error(r.error);
+            backToList();
+            await refresh();
+          } catch (e) { alert('Erreur : ' + e.message); }
+        }
+
+        // ─── CRÉATION (vide, manuelle) ───────────────────────────
+        async function openCreate() {
+          const date = prompt('Date de l\'inventaire (YYYY-MM-DD) :', new Date().toISOString().slice(0,10));
+          if (!date) return;
+          const nom = prompt('Nom de l\'inventaire :', 'Inventaire au ' + new Date(date).toLocaleDateString('fr-FR'));
+          if (!nom) return;
+          try {
+            const r = await api('create', { method: 'POST', body: { date_inventaire: date, nom, etabli_par: 'Sébastien Cannard', statut: 'draft', sections: [] } });
+            if (!r.ok) throw new Error(r.error);
+            await refresh();
+            openDetail(r.inventaire_id);
+          } catch (e) { alert('Erreur : ' + e.message); }
+        }
+
+        // ─── IMPORT EXCEL/CSV ────────────────────────────────────
+        function openUpload() {
+          alert('Pour importer un fichier Excel : exporte ton Google Sheets en CSV, ou contacte-moi pour parser un xlsx. Pour cette version, utilise « Nouvel inventaire » + ajout manuel des lignes via SQL Editor Supabase.');
+        }
+
+        return { init, refresh, openDetail, openCreate, openUpload, backToList, printDetail, exportXlsx, deleteCurrent };
       })();
     </script>
 
