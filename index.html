@@ -21873,11 +21873,19 @@ async function repGenererFacture(){
   var _qrExist=d.qrEnvoi||{};
   var _dejaEnvoye=!!(_qrExist.ecologicId||_qrExist.ecologicClaimId||_qrExist.ecosystemId||_qrExist.ecosystemRepairId);
   if(d.bonusQR&&!_dejaEnvoye){
-    var _marque=((d.appareil||{}).marque||'').toLowerCase();
-    var _isEcologic=['apple','xiaomi','oneplus','sony','nokia','motorola','wiko','realme','crosscall','google','lg'].some(function(m){return _marque.indexOf(m)>=0;});
-    var _isEcosystem=['samsung','huawei','oppo','honor','blackview','vivo','tcl'].some(function(m){return _marque.indexOf(m)>=0;});
-    if(_isEcologic&&typeof qrEnvoyerEcologicComplet==='function'){_kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});});}
-    else if(_isEcosystem&&typeof qrEnvoyerEcosystemComplet==='function'){_kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});});}
+    // FIX juin 2026 : utilise qrGetOrganisme() comme source de v\u00e9rit\u00e9 unique.
+    // \u26a0\ufe0f IMPORTANT : Ecosystem est PRIORITAIRE car Samsung Galaxy Note 9
+    // ne doit JAMAIS partir sur Ecologic.
+    var _marqueRaw = (d.appareil||{}).marque||'';
+    var _orgType = (typeof qrGetOrganisme === 'function') ? qrGetOrganisme(_marqueRaw) : null;
+    if(_orgType === 'ecosystem' && typeof qrEnvoyerEcosystemComplet==='function'){
+      _kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecosystem...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});});
+    } else if(_orgType === 'ecologic' && typeof qrEnvoyerEcologicComplet==='function'){
+      _kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecologic...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});});
+    } else {
+      console.warn('[QR] Marque non reconnue pour routage QualiR\u00e9par :', _marqueRaw, '\u2192 aucun envoi auto');
+      showNotif('\u26a0\ufe0f Marque "'+_marqueRaw+'" non reconnue \u2014 envoi manuel requis','warning');
+    }
   }
 
   // Imprimer la facture automatiquement
@@ -22383,6 +22391,7 @@ function repClearForm(){
 
 
 // Met à jour le label organisme dans la miniature photo quand la marque change
+// FIX juin 2026 : utilise qrGetOrganisme() (insensible à la casse) au lieu d'un match strict
 function repMajOrganismePhoto(){
   if(!repDossierCourant) return;
   var marqueEl = document.getElementById('dep-marque');
@@ -22390,8 +22399,9 @@ function repMajOrganismePhoto(){
   var org = document.getElementById('dep-photo-org');
   if(!org) return;
   if(!marque){ org.textContent = 'Prête pour QualiRépar'; org.style.color='#16a34a'; return; }
-  var ecosystemBrands = ['Samsung','Huawei','Oppo','Honor','Blackview','Vivo','TCL'];
-  var isEco = ecosystemBrands.indexOf(marque) >= 0;
+  // Helper centralisé : reconnaît "Samsung", "samsung", "SAMSUNG", etc.
+  var orgType = (typeof qrGetOrganisme === 'function') ? qrGetOrganisme(marque) : 'ecologic';
+  var isEco = orgType === 'ecosystem';
   org.textContent = isEco ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
   org.style.color  = isEco ? '#16a34a' : '#2563eb';
 }
@@ -22407,12 +22417,12 @@ function repAfficherPhotoThumb(url, marque){
   if(url){
     img.src  = url;
     if(link) link.href = url;
-    // Indiquer l'organisme selon QR_BRAND_TYPE (source de vérité)
+    // Indiquer l'organisme — FIX juin 2026 : qrGetOrganisme() insensible à la casse
     if(org){
-      var orgType = (typeof QR_BRAND_TYPE !== 'undefined' && marque) ? QR_BRAND_TYPE[marque] : null;
-      var isEcosystem = orgType === 'ecosystem';
-      org.textContent = isEcosystem ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
-      org.style.color  = isEcosystem ? '#16a34a' : '#2563eb';
+      var orgType2 = (typeof qrGetOrganisme === 'function' && marque) ? qrGetOrganisme(marque) : 'ecologic';
+      var isEcosystem2 = orgType2 === 'ecosystem';
+      org.textContent = isEcosystem2 ? '🟢 Prête pour Ecosystem' : '🔵 Prête pour Ecologic';
+      org.style.color  = isEcosystem2 ? '#16a34a' : '#2563eb';
     }
     empty.style.display = 'none';
     thumb.style.display = 'block';
