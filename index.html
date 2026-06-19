@@ -7358,7 +7358,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
   <div class="page" id="page-params">
     <div class="page-title">⚙️ Paramètres API</div>
-    <div class="page-sub">Connexions aux services externes — AgoraPlus · Ecosystem · Ecologic · Pennylane</div>
+    <div class="page-sub">Connexions aux services externes — AgoraPlus · Ecosystem · Ecologic · Kiwiz NF525</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;">
 
@@ -9322,7 +9322,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <!-- ══════════════ PAGE QUALIREPAR ══════════════ -->
     <div class="page" id="page-qualirepar">
       <div class="page-title">🏷️ QualiRépar</div>
-      <div class="page-sub">Parcours guidé — Devis · Bonus -25€ · Pennylane · AgoraPlus</div>
+      <div class="page-sub">Parcours guidé — Devis · Bonus -25€ · Kiwiz NF525 · AgoraPlus</div>
 
       <!-- Barre de progression -->
       <div class="qr-wrap" id="qr-wrap">
@@ -9464,15 +9464,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="qr-panel">
             <div class="qr-panel-title">⚡ Actions automatiques</div>
 
-            <div class="qr-status-card" id="qr-card-pennylane">
+            <div class="qr-status-card" id="qr-card-kiwiz">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:24px;">💼</span>
+                <span style="font-size:24px;">🔒</span>
                 <div>
-                  <div style="font-weight:700;">Pennylane</div>
-                  <div style="font-size:12px;color:var(--text-muted);">Envoi facture + comptabilité</div>
+                  <div style="font-weight:700;">Kiwiz NF525</div>
+                  <div style="font-size:12px;color:var(--text-muted);">Certification facture conforme</div>
                 </div>
               </div>
-              <button class="btn btn-primary btn-sm" id="qr-btn-pennylane" onclick="qrSendPennylane()">Envoyer</button>
+              <span class="badge" style="background:rgba(72,187,120,0.18);color:var(--green);padding:4px 9px;border-radius:6px;font-size:11px;">Auto</span>
             </div>
 
             <div class="qr-status-card" id="qr-card-agora" style="opacity:0.4;">
@@ -9483,14 +9483,14 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <div style="font-size:12px;color:var(--text-muted);" id="qr-agora-sub">IMEI : — | -25,00€</div>
                 </div>
               </div>
-              <span class="badge badge-blue" id="qr-agora-wait">En attente Pennylane</span>
+              <span class="badge badge-blue" id="qr-agora-wait">En attente certif NF525</span>
               <button class="btn btn-sm btn-primary" id="qr-btn-agora" onclick="qrSendAgora()" style="display:none;"></button>
             </div>
           </div>
 
           <div id="qr-done-banner" style="display:none;background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:12px;padding:16px;margin-bottom:16px;font-size:13px;color:var(--green);line-height:2;">
             ✓ Devis signé par le client<br>
-            ✓ Facture envoyée à Pennylane<br>
+            ✓ Facture certifiée NF525 (Kiwiz)<br>
             ✓ Demande de remboursement soumise<br>
             <b>Remboursement de 25€ sous 15 jours ouvrés.</b>
           </div>
@@ -17254,7 +17254,7 @@ function exportComptableCSV() {
 
 // ─── Export FEC normalisé BOFiP (article A47 A-1 LPF) ─────────
 // Génère le fichier d'écritures comptables que l'expert-comptable
-// importe direct dans Cegid / Sage / Quadra / EBP / Pennylane.
+// importe direct dans Cegid / Sage / Quadra / EBP / Kiwiz.
 async function exportFEC() {
   var moisSel = document.getElementById('compta-mois');
   if(!moisSel || !moisSel.value){ showNotif('Sélectionne un mois','error'); return; }
@@ -19787,7 +19787,7 @@ showPage = function(id, el){
 
 
 // ============================================================
-//  PARAMÈTRES API — AgoraPlus · Ecosystem · Ecologic · Pennylane
+//  PARAMÈTRES API — AgoraPlus · Ecosystem · Ecologic · Kiwiz NF525
 // ============================================================
 
 // Clés localStorage
@@ -28438,7 +28438,8 @@ var qrData = {
   appareil: {},
   devis: { prixHT: 0, bonusActif: false, signature: null },
   refRep: '',
-  pennylaneOK: false,
+  kiwizOK: false,
+  pennylaneOK: false, // déprécié — gardé pour compat
   agoraOK: false,
   stream: null
 };
@@ -28449,7 +28450,7 @@ function qrInit() {
     step: 1, client: {}, appareil: {},
     devis: { prixHT: 0, bonusActif: false, signature: null },
     refRep: 'SO_' + Math.random().toString(36).substr(2, 8).toUpperCase(),
-    pennylaneOK: false, agoraOK: false, stream: null
+    kiwizOK: false, pennylaneOK: false, agoraOK: false, stream: null
   };
   // Reset fields
   ['qr-prenom','qr-nom','qr-tel','qr-email','qr-adresse','qr-cp','qr-ville',
@@ -28861,75 +28862,19 @@ function qrRenderFinal() {
   qrData.agoraOK = false;
 }
 
-// ── Envoi Pennylane ──
+// ── Pennylane DÉPRÉCIÉ (juin 2026) — remplacé par Kiwiz NF525 ──
+// La certification facture est désormais 100% Kiwiz (voir certifierFactureKiwiz)
+// Cette fonction reste comme stub pour compatibilité avec les anciens DOM/onclick.
 async function qrSendPennylane() {
-  var btn  = document.getElementById('qr-btn-pennylane');
-  var card = document.getElementById('qr-card-pennylane');
-  if(btn) btn.disabled = true;
-  if(card) card.classList.add('sending');
-
-  var key = localStorage.getItem('sp_pennylane_key') || '';
-  var c = qrData.client;
-  var a = qrData.appareil;
-  var d = qrData.devis;
-  var ht    = parseFloat(d.prixHT)||0;
-  var tva   = ht * 0.2;
-  var ttc   = ht + tva;
-  var total = d.bonusActif ? ttc - 25 : ttc;
-  var today = new Date().toISOString().split('T')[0];
-
-  try {
-    if(key){
-      // Appel réel API Pennylane
-      var lines = [{
-        label: 'Réparation '+(a.typeRep||'')+' '+a.marque+' '+a.modele,
-        quantity: 1,
-        unit_price_without_tax: ht,
-        tax: { type: 'percentage', rate: '20.0' }
-      }];
-      if(d.bonusActif){
-        lines.push({
-          label: 'Bonus Réparation – Remise Ecosystem Ecologic',
-          quantity: 1,
-          unit_price_without_tax: -25,
-          tax: { type: 'percentage', rate: '0.0' }
-        });
-      }
-      var body = {
-        customer_invoice: {
-          date: today,
-          deadline: today,
-          currency: 'EUR',
-          customer: { name: c.prenom+' '+c.nom, email: c.email||'' },
-          line_items_attributes: lines
-        }
-      };
-      await fetch('/api/pennylane?endpoint=customer_invoices', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-    } else {
-      // Simulation si pas de clé
-      await new Promise(function(r){setTimeout(r,1200);});
-    }
-    if(card){ card.classList.remove('sending'); card.classList.add('done'); }
-    if(btn){ btn.outerHTML = '<span class="badge badge-green">✓ Envoyé</span>'; }
-    qrData.pennylaneOK = true;
-    // Débloquer Agora
-    var cardA = document.getElementById('qr-card-agora');
-    if(cardA && qrData.appareil.bonusType){
-      cardA.style.opacity = '1';
-      var waitBadge = document.getElementById('qr-agora-wait');
-      var btnA = document.getElementById('qr-btn-agora');
-      if(waitBadge) waitBadge.style.display = 'none';
-      if(btnA){ btnA.style.display = ''; }
-    }
-    showNotif('✅ Pennylane : facture envoyée !','success');
-  } catch(e){
-    if(card){ card.classList.remove('sending'); }
-    if(btn){ btn.disabled = false; }
-    showNotif('❌ Erreur Pennylane : '+e.message,'error');
+  // No-op : on débloque juste la suite (Agora) si appelée par un vieux DOM
+  qrData.pennylaneOK = true;
+  var cardA = document.getElementById('qr-card-agora');
+  if(cardA && qrData.appareil && qrData.appareil.bonusType){
+    cardA.style.opacity = '1';
+    var waitBadge = document.getElementById('qr-agora-wait');
+    var btnA = document.getElementById('qr-btn-agora');
+    if(waitBadge) waitBadge.style.display = 'none';
+    if(btnA){ btnA.style.display = ''; }
   }
 }
 
