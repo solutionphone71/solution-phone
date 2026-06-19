@@ -18,27 +18,38 @@ function fetchWithTimeout(url, options = {}, ms = 10000) {
 
 async function checkEcologic() {
   const started = Date.now();
+  // /printbrandlist = endpoint réel utilisé par l'app (liste des marques)
+  const url = `${ECOLOGIC_API_BASE}/printbrandlist`;
   try {
-    // Endpoint simple qui retourne les infos du compte (auth via clé API)
-    const r = await fetchWithTimeout(`${ECOLOGIC_API_BASE}/reparateurs/me`, {
+    const r = await fetchWithTimeout(url, {
       method: 'GET',
       headers: { 'Accept': 'application/json', 'api_key': ECOLOGIC_API_KEY }
     });
     const body = await r.text();
     const ms = Date.now() - started;
+    // Essaie de parser JSON pour vérifier que c'est bien une liste de marques
+    let isValidJson = false;
+    let nbBrands = 0;
+    try {
+      const parsed = JSON.parse(body);
+      isValidJson = true;
+      if (Array.isArray(parsed)) nbBrands = parsed.length;
+      else if (parsed?.brands?.length) nbBrands = parsed.brands.length;
+    } catch (_) {}
     return {
       service: 'Ecologic',
-      url: `${ECOLOGIC_API_BASE}/reparateurs/me`,
-      ok: r.ok,
+      url,
+      ok: r.ok && isValidJson,
       http_status: r.status,
       duration_ms: ms,
-      auth: r.status === 401 ? 'clé API rejetée' : (r.ok ? 'clé OK' : 'inconnu'),
+      auth: r.status === 401 || r.status === 403 ? 'clé API rejetée' : (r.ok && isValidJson ? 'clé OK' : 'inconnu'),
+      nb_brands: nbBrands || undefined,
       preview: body.substring(0, 200)
     };
   } catch (e) {
     return {
       service: 'Ecologic',
-      url: `${ECOLOGIC_API_BASE}/reparateurs/me`,
+      url,
       ok: false,
       error: e.message,
       duration_ms: Date.now() - started
