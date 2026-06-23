@@ -682,7 +682,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
-  <!-- Suivi QR fusionné dans Réparations -->
+  <div class="mob-menu-item" onclick="showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">🛡️</span>Suivi QualiRépar</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
   <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Smartphones</div>
@@ -775,7 +775,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
-    <!-- Suivi QR fusionné dans Réparations -->
+    <div class="nav-item" onclick="showPage('suivi-qr',this)"><span class="nav-icon">🛡️</span><span>Suivi QualiRépar</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; Neufs</div>
@@ -10252,7 +10252,11 @@ function showPage(id,el){
     // Auto-vérification des statuts QR en arrière-plan
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
-  if(id==='suivi-qr'){renderSuiviQR();}
+  if(id==='suivi-qr'){
+    if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
+      loadBonsDepot().then(function(){ renderSuiviQR(); }).catch(function(){ renderSuiviQR(); });
+    } else { renderSuiviQR(); }
+  }
   if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
@@ -29697,7 +29701,7 @@ function renderSuiviQR(){
         '<td style="padding:8px 10px;">'+(a.marque||'')+' '+(a.modele||'')+'<br><span style="font-size:11px;color:var(--text-muted);">'+(a.imei||'—')+'</span></td>'+
         '<td style="padding:8px 10px;">'+dateEnvoi+'</td>'+
         '<td style="padding:8px 10px;font-family:monospace;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="'+refId+'">'+refId+'</td>'+
-        '<td style="padding:8px 10px;">'+qrStatutBadge(q.statut||'Sent')+'</td>'+
+        '<td style="padding:8px 10px;">'+qrStatutBadge(q.statut||'Sent')+((q.manquants&&q.manquants.length)?'<br><span style="font-size:10px;color:#dc2626;font-weight:600;">⚠ À compléter : '+q.manquants.join(', ')+'</span>':'')+'</td>'+
         '<td style="padding:8px 10px;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')">🔄</button> <button class="btn btn-sm" onclick="qrChangerStatut(\''+d.id+'\')" >✏️</button></td>'+
       '</tr>';
     }).join('');
