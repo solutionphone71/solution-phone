@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcours QualiRépar fluide</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{--bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--muted:#6e6e73;--line:rgba(0,0,0,.10);--red:#E0102E;--amber:#FF9F0A;--green:#34C759;--blue:#0A84FF}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);padding:22px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:680px}
+h1{font-family:'Fraunces',serif;font-size:26px;font-weight:900;letter-spacing:-.02em}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 4px;font-size:12px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}
+.counter{margin:14px 0 16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.counter .big{font-family:'Fraunces',serif;font-size:30px;font-weight:900;color:var(--amber)}
+.counter.done .big{color:var(--green)}
+.step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:14px;transition:.18s}
+.step.todo{border:2px solid var(--amber);background:linear-gradient(135deg,#fffaf0,#fff)}
+.step.done{border-color:rgba(52,199,89,.4)}
+.step .ic{width:46px;height:46px;border-radius:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:23px;background:#f5f5f7}
+.step.todo .ic{background:rgba(255,159,10,.15)}
+.step.done .ic{background:rgba(52,199,89,.15)}
+.step .body{flex:1;min-width:0}
+.step .t{font-weight:800;font-size:16px}
+.step .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.step.done .s{color:#1a7e3a;font-weight:600}
+.badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.b-todo{background:var(--amber);color:#fff;border:none;cursor:pointer;padding:11px 16px;border-radius:11px;font-size:13px;font-weight:800}
+.b-auto{background:rgba(52,199,89,.14);color:#1a7e3a}
+.cta{margin-top:6px;width:100%;background:#cfcfd4;color:#fff;border:none;border-radius:16px;padding:18px;font-size:17px;font-weight:900;cursor:not-allowed;transition:.2s}
+.cta.on{background:var(--red);cursor:pointer;box-shadow:0 10px 24px -10px rgba(224,16,46,.5)}
+.auto-pop{font-size:11px;color:#1a7e3a;font-weight:700;margin-top:4px}
+</style></head><body><div class="wrap">
+<h1>Parcours QualiRépar</h1>
+<div class="legend"><span><span class="dot" style="background:var(--amber)"></span>À toi de jouer</span><span><span class="dot" style="background:var(--green)"></span>Rempli automatiquement</span></div>
+
+<div class="counter" id="counter">
+  <div><div class="big" id="cnum">3</div><div style="font-size:13px;color:var(--muted)">action(s) pour toi — le reste, je le remplis</div></div>
+  <div style="font-size:13px;color:var(--muted)" id="cmsg">Touche les tuiles oranges</div>
+</div>
+
+<!-- 1. Appareil : à toi (scan), le reste auto -->
+<div class="step todo" id="s1">
+  <div class="ic">📱</div>
+  <div class="body"><div class="t">Appareil</div><div class="s" id="s1s">Scanne l'IMEI — j'en déduis marque, modèle, organisme et codes IRIS.</div></div>
+  <button class="b-todo" onclick="doStep(1)">📷 Scanner</button>
+</div>
+
+<!-- 2. Panne : à toi (1 tap) -->
+<div class="step todo" id="s2">
+  <div class="ic">🔧</div>
+  <div class="body"><div class="t">Panne</div><div class="s" id="s2s">Un appui — je choisis les codes techniques pour toi.</div></div>
+  <button class="b-todo" onclick="doStep(2)">Choisir</button>
+</div>
+
+<!-- 3. Client : auto (dernier) -->
+<div class="step done" id="s3">
+  <div class="ic">👤</div>
+  <div class="body"><div class="t">Client</div><div class="s">Auto : fiche pré-remplie · adresse Mâcon par défaut</div></div>
+  <span class="badge b-auto">✓ auto</span>
+</div>
+
+<!-- 4. Devis : à toi (prix), le reste auto -->
+<div class="step todo" id="s4">
+  <div class="ic">💶</div>
+  <div class="body"><div class="t">Devis</div><div class="s" id="s4s">Entre juste le prix — je calcule le bonus et ce que paie le client.</div></div>
+  <button class="b-todo" onclick="doStep(4)">Prix</button>
+</div>
+
+<!-- 5. Photo + signature : groupées, à toi -->
+<div class="step done" id="s5">
+  <div class="ic">📸</div>
+  <div class="body"><div class="t">Photo IMEI &amp; signature</div><div class="s">Auto : photo lue + signature à l'écran (2 gestes)</div></div>
+  <span class="badge b-auto">✓ prêt</span>
+</div>
+
+<!-- 6. Facture : auto -->
+<div class="step done" id="s6">
+  <div class="ic">🧾</div>
+  <div class="body"><div class="t">Facture NF525</div><div class="s">Auto : générée et certifiée à la validation</div></div>
+  <span class="badge b-auto">✓ auto</span>
+</div>
+
+<!-- 7. Envoi : auto -->
+<div class="step done" id="s7">
+  <div class="ic">📤</div>
+  <div class="body"><div class="t">Envoi éco-organisme</div><div class="s">Auto : envoyé au bon organisme, codes IRIS inclus</div></div>
+  <span class="badge b-auto">✓ auto</span>
+</div>
+
+<button class="cta" id="cta">Termine les 3 actions oranges</button>
+
+<script>
+var left=3;
+function doStep(n){
+  var el=document.getElementById('s'+n);
+  el.className='step done';
+  el.querySelector('.b-todo').outerHTML='<span class="badge b-auto">✓ fait</span>';
+  if(n===1) document.getElementById('s1s').innerHTML='Apple iPhone 13 · IMEI 3538…406 <span class="auto-pop">→ 🔵 Ecologic + codes IRIS remplis auto</span>';
+  if(n===2) document.getElementById('s2s').innerHTML='Écran cassé <span class="auto-pop">→ codes IRIS (CAS/E7/W10) remplis auto</span>';
+  if(n===4) document.getElementById('s4s').innerHTML='89 € <span class="auto-pop">→ bonus −25 € · le client paie 64 € (auto)</span>';
+  left--;
+  document.getElementById('cnum').textContent=left;
+  if(left<=0){
+    document.getElementById('counter').className='counter done';
+    document.getElementById('cnum').textContent='✓';
+    document.getElementById('cmsg').textContent='Tout est prêt — je m\\'occupe du reste';
+    var c=document.getElementById('cta'); c.className='cta on'; c.textContent='Déposer le dossier →';
+    c.onclick=function(){c.textContent='✓ Dossier déposé · facture + bonus envoyés';c.style.background='#1a7e3a';};
+  }
+}
+</script>
+</div></body></html>

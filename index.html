@@ -678,7 +678,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 <div id="mobile-menu-panel">
   <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:0 14px 10px;">Tous les modules</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
-  <div class="mob-menu-item" onclick="showPageMobile('zahira-home','');if(window.zhInit)zhInit();closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
   <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparation</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
@@ -773,7 +772,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
-    <div class="nav-item" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
     <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparation</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
@@ -8223,6 +8221,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </button>
         </div>
 
+        <!-- Panneau « à toi de jouer » (orange) vs auto (vert) -->
+        <div id="rep-todo-banner"></div>
+
         <!-- ══ ÉTAPE 1 : CLIENT ══ -->
         <div id="rep-step-1" class="rep-step-content">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
@@ -8485,7 +8486,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div class="form-group" style="margin-bottom:0;"><label>Main d'œuvre HT (€)</label>
-                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" onchange="repCalcDevisDebounced()" onblur="repCalcDevis()" style="font-weight:600;">
+                        <input type="number" id="dep-mo-ht" placeholder="0.00" step="0.01" oninput="if(typeof repTodoBanner==='function')repTodoBanner();" onchange="repCalcDevisDebounced()" onblur="repCalcDevis()" style="font-weight:600;">
                       </div>
                       <div class="form-group" style="margin-bottom:0;"><label>Pièces détachées HT (€)</label>
                         <input type="number" id="dep-pieces-ht" placeholder="0.00" step="0.01" onchange="repCalcDevisDebounced()" onblur="repCalcDevis()">
@@ -8498,7 +8499,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group">
                       <label id="dep-devis-label">Prix TTC à facturer (€) <span style="color:var(--red);font-weight:700;">*</span></label>
-                      <input type="number" id="dep-devis" placeholder="ex: 90 (prix payé par le client)" step="0.01" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:16px;font-weight:700;">
+                      <input type="number" id="dep-devis" placeholder="ex: 90 (prix payé par le client)" step="0.01" oninput="if(typeof repTodoBanner==='function')repTodoBanner();" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:16px;font-weight:700;">
                       <div id="dep-devis-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                       <div style="font-size:11px;color:#60a5fa;margin-top:4px;">💡 Tapez le prix → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                     </div>
@@ -20889,87 +20890,17 @@ var REP_STATUTS = {
 function qrBadgeHTML(d){
   if(!d.bonusQR) return '';
   var qr=d.qrEnvoi||{};
+  if(qr.statut && typeof qr.statut==='object') qr.statut=qr.statut.statut||'Sent';
   var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
   var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
-  // ENVOYÉ = identifiant externe réel uniquement. La clôture seule ne suffit PAS
-  // (sinon un bonus jamais transmis est marqué « fait » et perdu — fix 23/06/2026).
-  var envoye=hasEcologic||hasEcosystem;
-  var org=hasEcologic?'Ecologic':(hasEcosystem?'Ecosystem':'?');
-  var orgIcon=hasEcologic?'\ud83d\udfe2':'\ud83d\udfe3';
-
-  // step: 0=non envoyé, 1=envoyé, 2=en vérif, 3=approuvé, 4=remboursé, -1=refusé
-  var step=0;var rejected=false;
-  // Fix: si statut est un objet (bug ancien), extraire la string
-  if(qr.statut && typeof qr.statut==='object') qr.statut=qr.statut.statut||'Sent';
-  if(envoye){
-    step=2; // envoyé = en vérification par défaut
-    var st=qr.statut||'Sent';
-    if(st==='Sent'||st==='Pending'||st==='Processing') step=2;
-    else if(st==='Approved') step=3;
-    else if(st==='Paid') step=4;
-    else if(st==='Rejected'){ rejected=true; }
-  }
-
-  // Définition des étapes
-  var steps=[
-    {icon:'\ud83d\udce4',label:'Envoy\u00e9'},
-    {icon:'\ud83d\udd0d',label:'V\u00e9rif.'},
-    {icon:'\u2705',      label:'Approuv\u00e9'},
-    {icon:'\ud83d\udcb6',label:'Rembours\u00e9'}
-  ];
-
-  // Non envoyé
-  if(!envoye){
-    return '<div style="min-width:180px;padding:6px 8px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">'+
-      '<div style="font-size:11px;font-weight:800;color:#dc2626;text-align:center;margin-bottom:4px;">\u26a0\ufe0f \u00c0 envoyer</div>'+
-      '<div style="display:flex;gap:2px;">'+
-        '<div style="flex:1;height:4px;border-radius:2px;background:rgba(239,68,68,0.2);"></div>'+
-        '<div style="flex:1;height:4px;border-radius:2px;background:rgba(239,68,68,0.2);"></div>'+
-        '<div style="flex:1;height:4px;border-radius:2px;background:rgba(239,68,68,0.2);"></div>'+
-        '<div style="flex:1;height:4px;border-radius:2px;background:rgba(239,68,68,0.2);"></div>'+
-      '</div>'+
-    '</div>';
-  }
-
-  // Refusé
-  if(rejected){
-    return '<div style="min-width:180px;padding:6px 8px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;">'+
-      '<div style="font-size:11px;font-weight:800;color:#dc2626;text-align:center;">\u274c Refus\u00e9</div>'+
-      '<div style="font-size:9px;color:var(--text-muted);text-align:center;margin-top:2px;">'+orgIcon+' '+org+'</div>'+
-    '</div>';
-  }
-
-  // Barre de progression
-  var colors=['#f59e0b','#f59e0b','#16a34a','#2563eb'];
-  var h='<div style="min-width:180px;padding:6px 8px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:8px;">';
-
-  // Labels au-dessus
-  h+='<div style="display:flex;justify-content:space-between;margin-bottom:4px;">';
-  for(var i=0;i<steps.length;i++){
-    var active=i<step;
-    var isCurrent=i===step-1;
-    var col=active?colors[i]:'rgba(0,0,0,0.15)';
-    h+='<div style="text-align:center;flex:1;">';
-    h+='<div style="font-size:'+(isCurrent?'13':'11')+'px;'+(isCurrent?'transform:scale(1.1);':'')+'">'+steps[i].icon+'</div>';
-    h+='<div style="font-size:9px;font-weight:'+(active?'800':'400')+';color:'+col+';">'+steps[i].label+'</div>';
-    h+='</div>';
-  }
-  h+='</div>';
-
-  // Barre
-  h+='<div style="display:flex;gap:2px;margin-bottom:3px;">';
-  for(var i=0;i<steps.length;i++){
-    var active=i<step;
-    var col=active?colors[i]:'rgba(0,0,0,0.06)';
-    var glow=active?'box-shadow:0 0 4px '+col+';':'';
-    h+='<div style="flex:1;height:5px;border-radius:3px;background:'+col+';'+glow+'transition:all .3s;"></div>';
-  }
-  h+='</div>';
-
-  // Organisme
-  h+='<div style="text-align:center;font-size:9px;color:var(--text-muted);">'+orgIcon+' '+org+'</div>';
-  h+='</div>';
-  return h;
+  var org=hasEcologic?'\ud83d\udd35 Ecologic':(hasEcosystem?'\ud83d\udfe2 Ecosystem':'');
+  function chip(txt,col,bg){ return '<span style="display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:800;color:'+col+';background:'+bg+';white-space:nowrap;">'+txt+'</span>'; }
+  if(!(hasEcologic||hasEcosystem)) return chip('\u26a0\ufe0f \u00c0 envoyer QR','#dc2626','rgba(220,38,38,.10)');
+  var st=qr.statut||'Sent';
+  if(st==='Rejected'||st==='NonConform') return chip('\u274c Refus\u00e9 \u00b7 '+org,'#b91c1c','rgba(220,38,38,.10)');
+  if(st==='Paid')     return chip('\ud83d\udcb6 Rembours\u00e9 \u00b7 '+org,'#1a7e3a','rgba(52,199,89,.14)');
+  if(st==='Approved') return chip('\u2705 Approuv\u00e9 \u00b7 '+org,'#1a7e3a','rgba(52,199,89,.12)');
+  return chip('\u23f3 En v\u00e9rif \u00b7 '+org,'#0a5bd0','rgba(10,132,255,.10)');
 }
 
 // Charger les dossiers = bonsDepot enrichis
@@ -22399,6 +22330,7 @@ function repAfficherPhotoThumb(url, marque){
     thumb.style.display = 'none';
     img.src = '';
   }
+  if(typeof repTodoBanner==='function') repTodoBanner();
 }
 
 function repSupprimerPhotoImei(){
@@ -22556,6 +22488,7 @@ function repGoStep(n){
   if(n===3) repUpdateDevisRecap();
   if(n===4){ setTimeout(function(){ repAutoFillStep4(); repSetMode(repDossierCourant && repDossierCourant.facture ? repDossierCourant.facture.mode||'CB' : 'CB'); }, 400); repUpdateFacturePreview(); }
   if(n===5) repUpdateStep5();
+  if(typeof repTodoBanner==='function') repTodoBanner();
 }
 
 
@@ -24322,7 +24255,39 @@ function repQRVerdict(){
   }
 }
 // Conservé pour compat : tout déclencheur d'éligibilité passe par le verdict
-function repCheckEligibilite(){ repQRVerdict(); }
+function repCheckEligibilite(){ repQRVerdict(); if(typeof repTodoBanner==='function') repTodoBanner(); }
+
+// ── Panneau « À TOI DE JOUER » (orange) vs auto (vert) — sur le parcours existant ──
+function repTodoBanner(){
+  var host=document.getElementById('rep-todo-banner'); if(!host) return;
+  var d=window.repDossierCourant||{};
+  var V=function(id){ var e=document.getElementById(id); return e?(''+(e.value||'')).trim():''; };
+  var imei=V('dep-imei').replace(/\D/g,'');
+  var marque=V('dep-marque'), modele=V('dep-modele');
+  var panne=V('dep-panne-select')||V('dep-panne');
+  var prix=(parseFloat(V('dep-mo-ht')||0)+parseFloat(V('dep-pieces-ht')||0))||parseFloat(V('dep-devis')||0)||0;
+  var todo=[
+    {ok:(imei.length===15 && !!marque && !!modele), ic:'📱', lbl:'Appareil + IMEI'},
+    {ok:!!panne, ic:'🔧', lbl:'Panne'},
+    {ok:prix>0, ic:'💶', lbl:'Prix'},
+    {ok:!!d.photoImeiUrl, ic:'📸', lbl:'Photo IMEI'},
+    {ok:!!d.signature, ic:'✍️', lbl:'Signature'}
+  ];
+  var reste=todo.filter(function(t){return !t.ok;}).length;
+  var chip=function(t){
+    return '<span style="display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:800;'
+      +(t.ok?'background:rgba(52,199,89,.14);color:#1a7e3a;':'background:rgba(255,159,10,.16);color:#9a5b00;border:1.5px solid #FF9F0A;')+'">'
+      +(t.ok?'✓':t.ic)+' '+t.lbl+'</span>';
+  };
+  var head=reste>0
+    ? '🟠 <b style="color:#9a5b00;">À toi de jouer — '+reste+' action'+(reste>1?'s':'')+' restante'+(reste>1?'s':'')+'</b>'
+    : '✅ <b style="color:#1a7e3a;">Tout est rempli — je m\'occupe du reste</b>';
+  host.innerHTML='<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.05);">'
+    +'<div style="font-size:13.5px;margin-bottom:11px;">'+head+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;">'+todo.map(chip).join('')+'</div>'
+    +'<div style="margin-top:11px;font-size:11.5px;color:#1a7e3a;font-weight:700;">🟢 Je remplis automatiquement : organisme, codes IRIS, bonus, facture NF525, envoi.</div>'
+  +'</div>';
+}
 
 // ── Jauge « prêt à envoyer » (Bloc 3) — contrôle avant soumission ──
 function repQRReadiness(){
@@ -29750,7 +29715,7 @@ function qrStatutBadge(statut){
 //  Timeline à grosses icônes · surbrillance des défauts · filtre · 1-clic CORRIGER
 var _qrSuiviFiltre = 'tous';
 function qrDossierBonus(d){ return ((d.piec||(d.facture&&d.facture.piec))?30:25); }
-function qrIsDefaut(q){ return q && (q.statut==='Rejected' || q.statut==='NonConform' || (q.manquants && q.manquants.length>0)); }
+function qrIsDefaut(q){ return q && (q.statut==='Rejected' || q.statut==='NonConform' || (q.manquants && q.manquants.length>0) || !!q.rejectionReason); }
 function qrSuiviSetFiltre(f){
   _qrSuiviFiltre = f;
   ['tous','defaut'].forEach(function(k){ var b=document.getElementById('qr-filtre-'+k); if(b) b.className = 'btn'+(k===f?' btn-primary':''); });
@@ -29788,6 +29753,9 @@ function qrCarteDossier(d, accent){
   else                          action='<button class="btn btn-sm" onclick="repOuvrirDossier(\''+d.id+'\')">Voir</button>';
   var hi = etat==='urgent' ? ['2px solid #dc2626','#fff5f5'] : etat==='a_transmettre' ? ['2px solid #FF9F0A','#fffaf0'] : ['1px solid var(--border)','var(--card)'];
   var manq = (q.manquants&&q.manquants.length) ? '<div style="margin-top:10px;font-size:12px;color:#dc2626;font-weight:700;">⚠ Manque : '+q.manquants.join(', ')+'</div>' : '';
+  // Message d'erreur réel renvoyé par l'éco-organisme (façon Phonilab)
+  var apiErr = q.rejectionReason ? '<div style="margin-top:10px;font-size:12px;color:#b91c1c;font-weight:700;background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.25);border-radius:9px;padding:9px 11px;line-height:1.5;">🛑 Réponse '+org+' : '+q.rejectionReason+'</div>' : '';
+  manq = manq + apiErr;
   return '<div class="card qr-dossier-card" style="border:'+hi[0]+';border-left:7px solid '+(accent||'#FF375F')+';background:'+hi[1]+';margin-bottom:12px;">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">'
       +'<div><div style="font-weight:800;font-size:16px;">'+(c.prenom||'')+' '+(c.nom||'')+'</div>'
@@ -30075,8 +30043,11 @@ async function qrVerifierStatutEcosystem(dossier){
     var upper = apiStatut.toUpperCase();
     var lower = apiStatut.toLowerCase();
     // Rejets avec code entre parenthèses: "Rejeté (08 : le bonus est absent)"
-    if(lower.indexOf('rejet') === 0) return 'Rejected';
-    return map[upper] || mapFR[lower] || apiStatut || 'Sent';
+    if(lower.indexOf('rejet') === 0){
+      var _m = apiStatut.match(/\(([^)]+)\)/);
+      return { statut:'Rejected', reason: _m ? _m[1].trim() : apiStatut };
+    }
+    return { statut: (map[upper] || mapFR[lower] || apiStatut || 'Sent'), reason:'' };
   } catch(e){
     console.warn('Ecosystem status check error:', e);
     return null;
@@ -30084,10 +30055,11 @@ async function qrVerifierStatutEcosystem(dossier){
 }
 
 async function qrVerifierStatutEcologic(dossier) {
-  if (!dossier || !dossier.agoraClaimId) return null;
+  var _claimId = (dossier && (dossier.agoraClaimId || (dossier.qrEnvoi && dossier.qrEnvoi.ecologicClaimId)));
+  if (!_claimId) return null;
   try {
     var r = await fetch(
-      QR_ECOLOGIC_PROXY + '/getclaimstatus?ClaimId=' + dossier.agoraClaimId
+      QR_ECOLOGIC_PROXY + '/getclaimstatus?ClaimId=' + _claimId
     );
     var _sText=await r.text();var data;try{data=JSON.parse(_sText);}catch(e){console.warn('Ecologic status non-JSON:',_sText.substring(0,200));return null;}
     var rd = data.ResponseData || {};
@@ -30101,8 +30073,12 @@ async function qrVerifierStatutEcologic(dossier) {
       'pending':'Pending','processing':'Processing','claimprocessing':'Processing'
     };
     var statut = mapEco[raw] || 'Sent';
-    console.log('Ecologic statut brut:', rd.LastStatus, '→ mappé:', statut);
-    return statut;
+    var _reason='';
+    var _ve = rd.ValidationErrors || rd.validationErrors || [];
+    if(Array.isArray(_ve) && _ve.length) _reason = _ve.map(function(e){return e.ErrorMessage||e.Message||e.errorMessage||'';}).filter(Boolean).join(' · ');
+    if(!_reason) _reason = rd.RejectionReason || rd.LastStatusReason || rd.StatusReason || rd.Reason || '';
+    console.log('Ecologic statut brut:', rd.LastStatus, '→ mappé:', statut, '| reason:', _reason);
+    return { statut: statut, reason: _reason };
   } catch (e) {
     console.warn('Ecologic status check error:', e);
     return null;
@@ -30153,8 +30129,12 @@ async function qrVerifierTousLesStatuts(){
       ? await qrVerifierStatutEcosystem(d)
       : await qrVerifierStatutEcologic(d);
     var newStatut = (rawSt && typeof rawSt === 'object') ? (rawSt.statut || 'Sent') : rawSt;
-    if(newStatut && newStatut !== d.qrEnvoi.statut){
-      d.qrEnvoi.statut = newStatut;
+    var newReason = (rawSt && typeof rawSt === 'object') ? (rawSt.reason || '') : '';
+    var _changed = false;
+    if(newStatut && newStatut !== d.qrEnvoi.statut){ d.qrEnvoi.statut = newStatut; _changed = true; }
+    // Stocke le message d'erreur réel de l'éco-organisme (façon Phonilab)
+    if(rawSt && typeof rawSt === 'object' && (d.qrEnvoi.rejectionReason||'') !== newReason){ d.qrEnvoi.rejectionReason = newReason; _changed = true; }
+    if(_changed){
       saveBonsDepot();
       saveBonDepotSupabase(d);
       updated++;
