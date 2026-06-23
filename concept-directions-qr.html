@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QualiRépar — 3 directions de design</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:#ececed;color:#1d1d1f;padding:24px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:860px}
+.fr{font-family:'Fraunces',serif}
+.dirlabel{display:flex;align-items:center;gap:10px;margin:34px 0 14px}
+.dirlabel .num{width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px}
+.dirlabel .t{font-weight:900;font-size:20px;font-family:'Fraunces',serif}
+.dirlabel .for{margin-left:auto;font-size:12px;color:#6e6e73;font-weight:600}
+.panel{border-radius:24px;overflow:hidden;box-shadow:0 10px 40px -16px rgba(0,0,0,.35)}
+
+/* ============ DIRECTION 1 — COCKPIT (dark, énervé, analytique) ============ */
+.cockpit{background:#0b0b10;color:#fff;padding:24px}
+.cp-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.cp-big{font-family:'Fraunces',serif;font-size:52px;font-weight:900;line-height:1;background:linear-gradient(90deg,#FF375F,#FF9F0A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cp-lbl{color:#9a9aa5;font-size:13px;margin-top:6px}
+.cp-kpis{display:flex;gap:10px;flex-wrap:wrap}
+.cp-k{background:#16161f;border:1px solid #26263300;border-radius:16px;padding:12px 16px;min-width:96px}
+.cp-k .n{font-family:'Fraunces',serif;font-size:24px;font-weight:900}
+.cp-k .s{font-size:11px;color:#9a9aa5;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.cp-funnel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:22px}
+.cp-seg{border-radius:14px;padding:16px 10px;text-align:center;font-weight:800}
+.cp-funnel .n{font-family:'Fraunces',serif;font-size:28px;font-weight:900;display:block}
+.cp-funnel .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.9;margin-top:2px}
+.cp-err{margin-top:18px;background:linear-gradient(90deg,#FF375F,#C8102E);border-radius:16px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.cp-err .corr{background:#fff;color:#C8102E;border:none;border-radius:10px;padding:11px 18px;font-weight:900;cursor:pointer}
+
+/* ============ DIRECTION 2 — TRIAGE (light, blocs vifs, action) ============ */
+.triage{background:#f5f5f7;padding:22px}
+.tg-sec{margin-bottom:18px}
+.tg-bar{display:flex;align-items:center;gap:10px;color:#fff;border-radius:14px;padding:11px 16px;font-weight:900;font-size:15px}
+.tg-bar .c{margin-left:auto;background:rgba(255,255,255,.25);border-radius:999px;padding:2px 11px;font-size:13px}
+.tg-card{background:#fff;border-radius:16px;padding:16px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-left:6px solid #ccc}
+.tg-card .n{font-weight:800;font-size:16px}.tg-card .m{font-size:12px;color:#6e6e73}
+.tg-eur{font-family:'Fraunces',serif;font-weight:900;font-size:20px}
+.tg-btn{border:none;border-radius:11px;padding:11px 18px;font-weight:800;cursor:pointer;color:#fff}
+.pulse{animation:pls 1.3s infinite}@keyframes pls{0%{box-shadow:0 0 0 0 rgba(255,55,95,.5)}70%{box-shadow:0 0 0 12px rgba(255,55,95,0)}100%{box-shadow:0 0 0 0 rgba(255,55,95,0)}}
+
+/* ============ DIRECTION 3 — PIPELINE (kanban, gradients vifs) ============ */
+.pipe{background:#fff;padding:22px}
+.pp-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.pp-col{background:#f5f5f7;border-radius:16px;padding:10px}
+.pp-h{border-radius:11px;padding:9px 12px;color:#fff;font-weight:900;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.pp-c{background:#fff;border-radius:12px;padding:11px;margin-top:9px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.pp-c .n{font-weight:800;font-size:13px}.pp-c .m{font-size:11px;color:#6e6e73}
+.pp-c .e{font-family:'Fraunces',serif;font-weight:900;font-size:15px;margin-top:4px}
+@media(max-width:680px){.pp-cols,.cp-funnel{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><div class="wrap">
+
+<div style="font-family:'Fraunces',serif;font-size:26px;font-weight:900">QualiRépar — 3 directions</div>
+<div style="color:#6e6e73;font-size:13px;margin-top:4px">Mêmes données, 3 partis pris. Dis-moi laquelle te parle (ou un mix).</div>
+
+<!-- DIRECTION 1 -->
+<div class="dirlabel"><span class="num">1</span><span class="t">Cockpit</span><span class="for">analyser · vue patron · sombre & punchy</span></div>
+<div class="panel cockpit">
+  <div class="cp-hero">
+    <div><div class="cp-big">320 €</div><div class="cp-lbl">à encaisser · 7 dossiers en jeu</div></div>
+    <div class="cp-kpis">
+      <div class="cp-k"><div class="n" style="color:#FF375F">2</div><div class="s">à corriger</div></div>
+      <div class="cp-k"><div class="n" style="color:#FF9F0A">3</div><div class="s">à transmettre</div></div>
+      <div class="cp-k"><div class="n" style="color:#34C759">86%</div><div class="s">taux accept.</div></div>
+    </div>
+  </div>
+  <div class="cp-funnel">
+    <div class="cp-seg" style="background:#FF9F0A22;color:#FF9F0A"><span class="n">3</span><span class="l">À transmettre</span></div>
+    <div class="cp-seg" style="background:#0A84FF22;color:#4FA9FF"><span class="n">4</span><span class="l">Envoyé</span></div>
+    <div class="cp-seg" style="background:#34C75922;color:#34C759"><span class="n">2</span><span class="l">Validé</span></div>
+    <div class="cp-seg" style="background:#34C75933;color:#5DE27E"><span class="n">6</span><span class="l">Remboursé</span></div>
+  </div>
+  <div class="cp-err">
+    <div><div style="font-weight:900;font-size:15px">🚨 Clara Martin · iPhone 12</div><div style="font-size:12px;opacity:.9">Refusé — manque la signature</div></div>
+    <button class="corr">⚠️ CORRIGER</button>
+  </div>
+</div>
+
+<!-- DIRECTION 2 -->
+<div class="dirlabel"><span class="num">2</span><span class="t">Triage</span><span class="for">agir vite · vue employé · clair & vif</span></div>
+<div class="panel triage">
+  <div class="tg-sec">
+    <div class="tg-bar" style="background:linear-gradient(90deg,#FF375F,#C8102E)">🚨 Urgent à corriger <span class="c">1</span></div>
+    <div class="tg-card" style="border-left-color:#FF375F">
+      <div><div class="n">Clara Martin</div><div class="m">iPhone 12 · Ecologic · ⚠ manque signature</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="tg-eur">25 €</span><button class="tg-btn pulse" style="background:#FF375F">⚠️ CORRIGER</button></div>
+    </div>
+  </div>
+  <div class="tg-sec">
+    <div class="tg-bar" style="background:linear-gradient(90deg,#FF9F0A,#FF7A00)">📤 Prêts à transmettre <span class="c">1</span></div>
+    <div class="tg-card" style="border-left-color:#FF9F0A">
+      <div><div class="n">Karim Benali</div><div class="m">Xiaomi 13 · Ecologic</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="tg-eur">25 €</span><button class="tg-btn" style="background:#FF9F0A">📤 Transmettre</button></div>
+    </div>
+  </div>
+  <div class="tg-sec">
+    <div class="tg-bar" style="background:linear-gradient(90deg,#0A84FF,#5E5CE6)">⏳ En attente <span class="c">1</span></div>
+    <div class="tg-card" style="border-left-color:#0A84FF">
+      <div><div class="n">Arnaud Piquet</div><div class="m">Samsung S21 · Ecosystem</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><span class="tg-eur">25 €</span><button class="tg-btn" style="background:#0A84FF">🔄 Actualiser</button></div>
+    </div>
+  </div>
+  <div class="tg-sec" style="margin-bottom:0">
+    <div class="tg-bar" style="background:linear-gradient(90deg,#34C759,#2AA44F)">✅ Terminés <span class="c">1</span></div>
+    <div class="tg-card" style="border-left-color:#34C759">
+      <div><div class="n">Delphine Duchamps</div><div class="m">iPhone 13 · Ecologic · remboursé</div></div>
+      <span class="tg-eur" style="color:#2AA44F">25 €</span>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTION 3 -->
+<div class="dirlabel"><span class="num">3</span><span class="t">Pipeline</span><span class="for">voir le flux · style Phonilab+ · kanban</span></div>
+<div class="panel pipe">
+  <div class="pp-cols">
+    <div class="pp-col"><div class="pp-h" style="background:linear-gradient(90deg,#FF9F0A,#FF7A00)">À transmettre<span>3</span></div>
+      <div class="pp-c" style="border-left:4px solid #FF9F0A"><div class="n">Karim Benali</div><div class="m">Xiaomi 13 · 🔵</div><div class="e">25 €</div></div></div>
+    <div class="pp-col"><div class="pp-h" style="background:linear-gradient(90deg,#0A84FF,#5E5CE6)">Envoyé<span>4</span></div>
+      <div class="pp-c"><div class="n">Arnaud Piquet</div><div class="m">Samsung S21 · 🟢</div><div class="e">25 €</div></div></div>
+    <div class="pp-col"><div class="pp-h" style="background:linear-gradient(90deg,#BF5AF2,#9F45D6)">Validé<span>2</span></div>
+      <div class="pp-c"><div class="n">M. Petit</div><div class="m">iPhone 11 · 🔵</div><div class="e">25 €</div></div></div>
+    <div class="pp-col"><div class="pp-h" style="background:linear-gradient(90deg,#34C759,#2AA44F)">Remboursé<span>6</span></div>
+      <div class="pp-c"><div class="n">Delphine D.</div><div class="m">iPhone 13 · 🔵</div><div class="e" style="color:#2AA44F">25 €</div></div></div>
+  </div>
+  <div style="margin-top:14px;background:#FFF0F2;border:1px solid #FFB3BF;border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <div style="font-weight:800;color:#C8102E">🚨 1 dossier refusé : Clara Martin — manque signature</div>
+    <button style="background:#FF375F;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:800;cursor:pointer">CORRIGER</button>
+  </div>
+</div>
+
+<div style="height:30px"></div>
+</div></body></html>

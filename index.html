@@ -10254,9 +10254,10 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){
+    var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecosystem'); else renderSuiviQR(); };
     if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
-      loadBonsDepot().then(function(){ renderSuiviQR(); }).catch(function(){ renderSuiviQR(); });
-    } else { renderSuiviQR(); }
+      loadBonsDepot().then(_qrShow).catch(_qrShow);
+    } else { _qrShow(); }
   }
   if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
@@ -20886,8 +20887,9 @@ function qrBadgeHTML(d){
   var qr=d.qrEnvoi||{};
   var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
   var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
-  // Si dossier clôturé avec bonusQR mais qrEnvoi perdu → considérer comme envoyé
-  var envoye=hasEcologic||hasEcosystem||(d.statut==='cloture'&&d.bonusQR);
+  // ENVOYÉ = identifiant externe réel uniquement. La clôture seule ne suffit PAS
+  // (sinon un bonus jamais transmis est marqué « fait » et perdu — fix 23/06/2026).
+  var envoye=hasEcologic||hasEcosystem;
   var org=hasEcologic?'Ecologic':(hasEcosystem?'Ecosystem':'?');
   var orgIcon=hasEcologic?'\ud83d\udfe2':'\ud83d\udfe3';
 
@@ -23136,7 +23138,7 @@ function repUpdateDevisRecap(){
 
     // Vérifier si déjà envoyé
     var qr=d.qrEnvoi||{};
-    var dejaEnvoye=!!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemId||qr.ecosystemRepairId)||(d.statut==='cloture'&&d.bonusQR);
+    var dejaEnvoye=!!(qr.ecologicClaimId||qr.ecosystemClaimId||qr.ecosystemRepairId||qr.ecologicId||qr.ecosystemId);
     var qrSt=qr.statut||'';
     var envoyeBtn=document.querySelector('#rep-qr-actions > button.btn-primary');
 
@@ -29740,53 +29742,247 @@ function qrStatutBadge(statut){
   return '<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:'+s.cls+';background:'+s.bg+';">'+s.label+'</span>';
 }
 
+// ════════ SUIVI QUALIRÉPAR — refonte visuelle (23/06/2026) ════════
+//  Timeline à grosses icônes · surbrillance des défauts · filtre · 1-clic CORRIGER
+var _qrSuiviFiltre = 'tous';
+function qrDossierBonus(d){ return ((d.piec||(d.facture&&d.facture.piec))?30:25); }
+function qrIsDefaut(q){ return q && (q.statut==='Rejected' || q.statut==='NonConform' || (q.manquants && q.manquants.length>0)); }
+function qrSuiviSetFiltre(f){
+  _qrSuiviFiltre = f;
+  ['tous','defaut'].forEach(function(k){ var b=document.getElementById('qr-filtre-'+k); if(b) b.className = 'btn'+(k===f?' btn-primary':''); });
+  renderSuiviQR();
+}
+function qrStep(state, emoji, label){
+  var m={ok:['rgba(52,199,89,.15)','#34C759','#1a7e3a'],wait:['rgba(255,159,10,.15)','#FF9F0A','#9a5b00'],bad:['rgba(220,38,38,.12)','#dc2626','#dc2626'],todo:['#f0f0f2','rgba(0,0,0,.10)','#9a9a9e']};
+  var cc=m[state]||m.todo;
+  var em = state==='todo' ? '<span style="opacity:.35">'+emoji+'</span>' : emoji;
+  return '<div style="flex:1;text-align:center;min-width:80px;">'
+    +'<div style="width:46px;height:46px;margin:0 auto;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;background:'+cc[0]+';border:2px solid '+cc[1]+';">'+em+'</div>'
+    +'<div style="font-size:11px;font-weight:600;margin-top:5px;color:'+cc[2]+';">'+label+'</div></div>';
+}
+function qrCarteDossier(d, accent){
+  var c=d.client||{}, a=d.appareil||{}, q=d.qrEnvoi||{};
+  var org = (typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[a.marque]==='ecosystem') ? 'Ecosystem' : 'Ecologic';
+  var bonus = qrDossierBonus(d);
+  var defaut = qrIsDefaut(q);
+  var statut = q.statut||'Sent';
+  var photoOK = !!d.photoImeiUrl;
+  var kiwizOK = !!(d.facture && d.facture.kiwizRef);
+  var hasId = qrHasExternalId(q);
+  var etat = qrEtatDossier(d);
+  var step3s, step3e, step3l;
+  if(statut==='Rejected'||statut==='NonConform'){ step3s='bad'; step3e='❌'; step3l='Refusé'; }
+  else if(statut==='Paid'){ step3s='ok'; step3e='✅'; step3l='Remboursé'; }
+  else if(statut==='Approved'){ step3s='ok'; step3e='✅'; step3l='Approuvé'; }
+  else if(hasId){ step3s='wait'; step3e='⏳'; step3l='En cours'; }
+  else { step3s='todo'; step3e='🛡'; step3l='À transmettre'; }
+  var dateEnvoi = (q.date||d.date) ? new Date(q.date||d.date).toLocaleDateString('fr-FR') : '—';
+  var action;
+  if(etat==='urgent')           action='<button class="qr-corriger-btn" onclick="repOuvrirDossier(\''+d.id+'\')">⚠️ CORRIGER</button>';
+  else if(etat==='a_transmettre') action='<button class="btn btn-sm" style="background:var(--red);border-color:var(--red);color:#fff;font-weight:800;" onclick="repOuvrirDossier(\''+d.id+'\')">📤 Ouvrir & transmettre</button>';
+  else if(etat==='en_attente')  action='<button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')">🔄 Actualiser</button>';
+  else                          action='<button class="btn btn-sm" onclick="repOuvrirDossier(\''+d.id+'\')">Voir</button>';
+  var hi = etat==='urgent' ? ['2px solid #dc2626','#fff5f5'] : etat==='a_transmettre' ? ['2px solid #FF9F0A','#fffaf0'] : ['1px solid var(--border)','var(--card)'];
+  var manq = (q.manquants&&q.manquants.length) ? '<div style="margin-top:10px;font-size:12px;color:#dc2626;font-weight:700;">⚠ Manque : '+q.manquants.join(', ')+'</div>' : '';
+  return '<div class="card qr-dossier-card" style="border:'+hi[0]+';border-left:7px solid '+(accent||'#FF375F')+';background:'+hi[1]+';margin-bottom:12px;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">'
+      +'<div><div style="font-weight:800;font-size:16px;">'+(c.prenom||'')+' '+(c.nom||'')+'</div>'
+      +'<div style="font-size:12px;color:var(--text-muted);">'+(a.marque||'')+' '+(a.modele||'')+' · '+org+' · '+dateEnvoi+'</div></div>'
+      +'<div style="display:flex;align-items:center;gap:14px;">'
+        +'<span style="font-weight:900;font-size:20px;color:'+(statut==='Paid'?'#1a7e3a':'var(--text)')+';">'+bonus+' €</span>'+action
+      +'</div></div>'
+    +'<div style="display:flex;align-items:flex-start;gap:6px;margin-top:14px;">'
+      +qrStep(photoOK?'ok':'todo','📸','Photo IMEI')
+      +qrStep(kiwizOK?'ok':'todo','🧾','Facture NF525')
+      +qrStep(step3s,step3e,step3l)
+    +'</div>'+manq
+  +'</div>';
+}
+// ENVOYÉ = identifiant externe réel uniquement (pas la simple clôture)
+function qrHasExternalId(q){ q=q||{}; return !!(q.ecologicClaimId||q.ecosystemClaimId||q.ecosystemRepairId||q.ecologicId||q.ecosystemId); }
+// État métier d'un dossier : urgent / a_transmettre / en_attente / termine
+function qrEtatDossier(d){
+  var q=d.qrEnvoi||{};
+  if(q.statut==='Paid') return 'termine';
+  if(q.statut==='Rejected'||q.statut==='NonConform') return 'urgent';
+  if(q.manquants && q.manquants.length) return 'urgent';
+  if(qrHasExternalId(q)) return 'en_attente';
+  return 'a_transmettre';
+}
+function qrSectionHeader(grad,icon,titre,n){
+  return '<div style="display:flex;align-items:center;gap:10px;color:#fff;border-radius:13px;padding:11px 16px;margin:6px 0 12px;font-weight:900;font-size:15px;background:'+grad+';">'
+    +'<span style="font-size:18px;">'+icon+'</span><span>'+titre+'</span>'
+    +'<span style="margin-left:auto;background:rgba(255,255,255,.28);border-radius:999px;padding:2px 11px;font-size:13px;">'+n+'</span></div>';
+}
+// Organisme réel : d'abord l'identifiant retourné, sinon déduit de la marque
+function qrDossierOrg(d){
+  var q=d.qrEnvoi||{};
+  if(q.ecologicClaimId||q.ecologicId) return 'ecologic';
+  if(q.ecosystemClaimId||q.ecosystemRepairId||q.ecosystemId) return 'ecosystem';
+  return (typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[(d.appareil||{}).marque]==='ecosystem') ? 'ecosystem' : 'ecologic';
+}
+var _qrSuiviOrg='ecosystem';
+var _qrTab='ecosystem';
+// ── Onglets QualiRépar : Parcours · Suivi Ecosystem · Suivi Ecologic · Analyse ──
+function qrShowTab(tab){
+  _qrTab=tab;
+  [['parcours','qrtab-parcours'],['ecosystem','qrtab-ecosystem'],['ecologic','qrtab-ecologic'],['analyse','qrtab-analyse']].forEach(function(p){
+    var b=document.getElementById(p[1]); if(b) b.className='qr-tab'+(p[0]===tab?' on':'');
+  });
+  var stats=document.getElementById('qr-suivi-stats'), list=document.getElementById('qr-suivi-list'), parc=document.getElementById('qr-parcours-pane');
+  var verif=document.getElementById('btn-qr-verif-all');
+  if(tab==='parcours'){
+    if(stats)stats.style.display='none'; if(list)list.style.display='none';
+    if(parc){ parc.style.display='block'; renderParcoursPane(); }
+    if(verif)verif.style.display='none';
+  } else if(tab==='analyse'){
+    if(parc)parc.style.display='none'; if(stats)stats.style.display=''; if(list)list.style.display='';
+    if(verif)verif.style.display='none';
+    renderAnalyseQR();
+  } else {
+    if(parc)parc.style.display='none'; if(stats)stats.style.display=''; if(list)list.style.display='';
+    if(verif)verif.style.display='';
+    _qrSuiviOrg=tab; renderSuiviQR();
+  }
+}
+// Onglet Parcours : grosses tuiles marque qui lancent le dossier (couleur = organisme)
+var QR_PARCOURS_BRANDS=[['Apple','ecologic'],['Samsung','ecosystem'],['Xiaomi','ecologic'],['Huawei','ecosystem'],['Google','ecologic'],['Oppo','ecosystem'],['Honor','ecosystem'],['OnePlus','ecologic']];
+function renderParcoursPane(){
+  var p=document.getElementById('qr-parcours-pane'); if(!p) return;
+  var tiles=QR_PARCOURS_BRANDS.map(function(b){
+    var col=b[1]==='ecosystem'?'#34C759':'#0A84FF';
+    var lbl=b[1]==='ecosystem'?'🟢 Ecosystem':'🔵 Ecologic';
+    return '<div class="qr-brand-tile" style="border-color:'+col+'33;" onclick="qrParcoursStart(\''+b[0]+'\')">'
+      +'<div style="font-size:19px;">'+b[0]+'</div>'
+      +'<div style="font-size:11px;font-weight:700;margin-top:8px;display:inline-block;padding:3px 9px;border-radius:999px;background:'+col+'1f;color:'+col+';">'+lbl+'</div></div>';
+  }).join('');
+  p.innerHTML='<div class="card" style="padding:22px;">'
+    +'<div style="font-size:20px;font-weight:900;letter-spacing:-.01em;">Nouveau dossier QualiRépar</div>'
+    +'<div style="color:var(--text-muted);font-size:13px;margin:4px 0 18px;">Choisis la marque — la couleur t\'amène sur le bon éco-organisme. Codes IRIS, envoi et contrôles : automatiques.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;">'+tiles
+    +'<div class="qr-brand-tile" style="border-style:dashed;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;justify-content:center;" onclick="qrParcoursStart(\'\')"><div style="font-size:22px;">🔍</div><div style="font-size:14px;margin-top:6px;">Autre marque</div></div>'
+    +'</div></div>';
+}
+function qrParcoursStart(brand){
+  try{
+    showPage('reparations', null);
+    setTimeout(function(){
+      if(typeof repNewDossier==='function') repNewDossier();
+      if(brand){ setTimeout(function(){ var m=document.getElementById('dep-marque'); if(m){ m.value=brand; if(typeof m.onchange==='function') m.onchange(); } }, 250); }
+    }, 120);
+  }catch(e){ if(typeof showPage==='function') showPage('reparations',null); }
+}
 function renderSuiviQR(){
-  var dossiers = (window.bonsDepot||[]).filter(function(d){ return d.qrEnvoi; });
-  var isEcosystem = function(d){ var m=d.appareil&&d.appareil.marque; return typeof QR_BRAND_TYPE!=='undefined'&&QR_BRAND_TYPE[m]==='ecosystem'; };
-  var ecosystem = dossiers.filter(isEcosystem);
-  var ecologic  = dossiers.filter(function(d){ return !isEcosystem(d); });
+  // Source : dossiers transmis OU avec bonus (récupère les bonus jamais transmis)
+  var all = (window.bonsDepot||[]).filter(function(d){ return d.qrEnvoi || d.bonusQR || (d.facture&&d.facture.bonusQR); });
+  // Dissociation Ecosystem / Ecologic (onglets façon Phonilab)
+  if(_qrSuiviOrg!=='tous') all = all.filter(function(d){ return qrDossierOrg(d)===_qrSuiviOrg; });
 
-  // Stats
-  var stats = document.getElementById('qr-suivi-stats');
+  var g = {urgent:[], a_transmettre:[], en_attente:[], termine:[]};
+  all.forEach(function(d){ (g[qrEtatDossier(d)]||g.termine).push(d); });
+  Object.keys(g).forEach(function(k){ g[k].sort(function(a,b){ return (((b.qrEnvoi||{}).date)||b.date||'').localeCompare(((a.qrEnvoi||{}).date)||a.date||''); }); });
+
+  var st=function(d){ return (d.qrEnvoi||{}).statut; };
+  var euroAtt  = g.a_transmettre.concat(g.en_attente).reduce(function(s,d){ return s+qrDossierBonus(d); },0);
+  var euroPaid = g.termine.reduce(function(s,d){ return s+qrDossierBonus(d); },0);
+  var nbAtt = g.a_transmettre.length+g.en_attente.length;
+  // Entonnoir + taux d'acceptation
+  var fEnv = g.en_attente.filter(function(d){ return ['Sent','Pending','Processing'].indexOf(st(d))>=0 || !st(d); }).length;
+  var fVal = g.en_attente.filter(function(d){ return st(d)==='Approved'; }).length;
+  var fRem = g.termine.length;
+  var nbRej= g.urgent.filter(function(d){ return st(d)==='Rejected'||st(d)==='NonConform'; }).length;
+  var verdict = fVal+fRem+nbRej;
+  var taux = verdict>0 ? Math.round((fVal+fRem)/verdict*100) : null;
+
+  var hero=document.getElementById('qr-suivi-stats');
+  if(hero){
+    var seg=function(grad,col,n,l){ return '<div style="flex:1;min-width:78px;border-radius:13px;padding:13px 8px;text-align:center;background:'+grad+';"><div style="font-size:26px;font-weight:900;color:'+col+';line-height:1;">'+n+'</div><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:'+col+';margin-top:3px;">'+l+'</div></div>'; };
+    hero.innerHTML='<div class="card" style="padding:20px;">'
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;">'
+        +'<div><div style="font-size:46px;font-weight:900;letter-spacing:-.02em;line-height:1;background:linear-gradient(90deg,#FF375F,#FF9F0A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'+euroAtt.toFixed(0)+' €</div>'
+        +'<div style="color:var(--text-muted);font-size:13px;margin-top:6px;">à encaisser · '+nbAtt+' dossier(s)</div></div>'
+        +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+        +(taux!==null?'<span style="padding:8px 14px;border-radius:999px;background:rgba(52,199,89,.16);color:#1a7e3a;font-weight:900;font-size:14px;">'+taux+'% acceptés</span>':'')
+        +(g.urgent.length?'<span style="padding:8px 14px;border-radius:999px;background:rgba(255,55,95,.14);color:#d70036;font-weight:800;font-size:13px;">🚨 '+g.urgent.length+'</span>':'')
+        +'<span style="padding:8px 14px;border-radius:999px;background:rgba(10,132,255,.12);color:#0a5bd0;font-weight:800;font-size:13px;">💶 '+euroPaid.toFixed(0)+' € reçus</span>'
+        +'</div></div>'
+      +'<div style="display:flex;gap:8px;margin-top:18px;">'
+        +seg('rgba(255,159,10,.14)','#b56a00',g.a_transmettre.length,'À transmettre')
+        +seg('rgba(10,132,255,.12)','#0a5bd0',fEnv,'Envoyé')
+        +seg('rgba(191,90,242,.14)','#8c2fd0',fVal,'Validé')
+        +seg('rgba(52,199,89,.16)','#1a7e3a',fRem,'Remboursé')
+      +'</div></div>';
+  }
+  var sections=[
+    {grad:'linear-gradient(90deg,#FF375F,#C8102E)', accent:'#FF375F', icon:'🚨', titre:'Urgent à corriger',     list:g.urgent},
+    {grad:'linear-gradient(90deg,#FF9F0A,#FF7A00)', accent:'#FF9F0A', icon:'📤', titre:'Prêts à transmettre',   list:g.a_transmettre},
+    {grad:'linear-gradient(90deg,#0A84FF,#5E5CE6)', accent:'#0A84FF', icon:'⏳', titre:'En attente de réponse', list:g.en_attente},
+    {grad:'linear-gradient(90deg,#34C759,#2AA44F)', accent:'#34C759', icon:'✅', titre:'Terminés',              list:g.termine}
+  ];
+  var host=document.getElementById('qr-suivi-list'); if(!host) return;
+  var html='';
+  sections.forEach(function(s){
+    if(!s.list.length){
+      html+=qrSectionHeader(s.grad,s.icon,s.titre,0)+'<div class="card" style="color:var(--text-muted);text-align:center;padding:14px;margin-bottom:18px;font-size:13px;">Aucun</div>';
+      return;
+    }
+    html+=qrSectionHeader(s.grad,s.icon,s.titre,s.list.length)+s.list.map(function(d){ return qrCarteDossier(d, s.accent); }).join('')+'<div style="height:10px;"></div>';
+  });
+  if(!html) html='<div class="card" style="text-align:center;color:var(--text-muted);padding:34px;">Aucun dossier QualiRépar pour le moment.</div>';
+  host.innerHTML=html;
+}
+
+// ── Onglet Analyse : vue d'ensemble Ecosystem vs Ecologic ──
+function qrAnalyseSummarize(list){
+  var g={urgent:[],a_transmettre:[],en_attente:[],termine:[]};
+  list.forEach(function(d){ (g[qrEtatDossier(d)]||g.termine).push(d); });
+  var st=function(d){ return (d.qrEnvoi||{}).statut; };
+  var euroAtt=g.a_transmettre.concat(g.en_attente).reduce(function(s,d){ return s+qrDossierBonus(d); },0);
+  var euroPaid=g.termine.reduce(function(s,d){ return s+qrDossierBonus(d); },0);
+  var fRem=g.termine.length, fVal=g.en_attente.filter(function(d){ return st(d)==='Approved'; }).length;
+  var nbRej=g.urgent.filter(function(d){ return st(d)==='Rejected'||st(d)==='NonConform'; }).length;
+  var verdict=fVal+fRem+nbRej, taux=verdict>0?Math.round((fVal+fRem)/verdict*100):null;
+  return {n:list.length, euroAtt:euroAtt, euroPaid:euroPaid, urgent:g.urgent.length, transm:g.a_transmettre.length, attente:g.en_attente.length, termine:g.termine.length, taux:taux};
+}
+function renderAnalyseQR(){
+  var all=(window.bonsDepot||[]).filter(function(d){ return d.qrEnvoi||d.bonusQR||(d.facture&&d.facture.bonusQR); });
+  var eco=qrAnalyseSummarize(all.filter(function(d){ return qrDossierOrg(d)==='ecosystem'; }));
+  var ecol=qrAnalyseSummarize(all.filter(function(d){ return qrDossierOrg(d)==='ecologic'; }));
+  var tot=qrAnalyseSummarize(all);
+  var stats=document.getElementById('qr-suivi-stats');
   if(stats){
-    var paid     = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Paid'; }).length;
-    var approved = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Approved'; }).length;
-    var sent     = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Sent'||!d.qrEnvoi.statut; }).length;
-    var rejected = dossiers.filter(function(d){ return d.qrEnvoi.statut==='Rejected'; }).length;
-    stats.innerHTML =
-      '<div class="card" style="text-align:center;padding:12px 8px;"><div style="font-size:11px;color:var(--text-muted);">Total</div><div style="font-size:22px;font-weight:800;">'+dossiers.length+'</div><div style="font-size:11px;color:var(--text-muted);">'+(dossiers.length*25)+' € attendus</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(255,149,0,0.08);border-color:#f59e0b;"><div style="font-size:11px;color:#ff9500;">En vérification</div><div style="font-size:22px;font-weight:800;color:#ff9500;">'+sent+'</div><div style="font-size:11px;color:#ff9500;">'+(sent*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(52,211,153,0.06);border-color:#22c55e;"><div style="font-size:11px;color:#34d399;">Approuvés</div><div style="font-size:22px;font-weight:800;color:#34d399;">'+approved+'</div><div style="font-size:11px;color:#34d399;">'+(approved*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(96,165,250,0.06);border-color:#3b82f6;"><div style="font-size:11px;color:#60a5fa;">Remboursés</div><div style="font-size:22px;font-weight:800;color:#60a5fa;">'+paid+'</div><div style="font-size:11px;color:#60a5fa;">'+(paid*25)+' €</div></div>'+
-      '<div class="card" style="text-align:center;padding:12px 8px;background:rgba(255,59,48,0.08);border-color:#fca5a5;"><div style="font-size:11px;color:#dc2626;">Refusés</div><div style="font-size:22px;font-weight:800;color:#dc2626;">'+rejected+'</div><div style="font-size:11px;color:#dc2626;">'+(rejected*25)+' €</div></div>';
+    var seg=function(grad,col,n,l){ return '<div style="flex:1;min-width:78px;border-radius:13px;padding:13px 8px;text-align:center;background:'+grad+';"><div style="font-size:26px;font-weight:900;color:'+col+';line-height:1;">'+n+'</div><div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:'+col+';margin-top:3px;">'+l+'</div></div>'; };
+    stats.innerHTML='<div class="card" style="padding:20px;">'
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;">'
+        +'<div><div style="font-size:46px;font-weight:900;letter-spacing:-.02em;line-height:1;background:linear-gradient(90deg,#FF375F,#FF9F0A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'+tot.euroAtt.toFixed(0)+' €</div>'
+        +'<div style="color:var(--text-muted);font-size:13px;margin-top:6px;">à encaisser (total) · '+(tot.transm+tot.attente)+' dossiers</div></div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+        +(tot.taux!==null?'<span style="padding:8px 14px;border-radius:999px;background:rgba(52,199,89,.16);color:#1a7e3a;font-weight:900;font-size:14px;">'+tot.taux+'% acceptés</span>':'')
+        +'<span style="padding:8px 14px;border-radius:999px;background:rgba(10,132,255,.12);color:#0a5bd0;font-weight:800;font-size:13px;">💶 '+tot.euroPaid.toFixed(0)+' € reçus</span>'
+        +'</div></div>'
+      +'<div style="display:flex;gap:8px;margin-top:18px;">'
+        +seg('rgba(255,55,95,.12)','#d70036',tot.urgent,'À corriger')
+        +seg('rgba(255,159,10,.14)','#b56a00',tot.transm,'À transmettre')
+        +seg('rgba(10,132,255,.12)','#0a5bd0',tot.attente,'En attente')
+        +seg('rgba(52,199,89,.16)','#1a7e3a',tot.termine,'Remboursés')
+      +'</div></div>';
   }
-
-  function buildRows(list, idCol){
-    if(!list.length) return '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Aucun dossier</td></tr>';
-    return list.sort(function(a,b){ return (b.qrEnvoi.date||'').localeCompare(a.qrEnvoi.date||''); }).map(function(d){
-      var c=d.client||{}, a=d.appareil||{}, q=d.qrEnvoi||{};
-      var dateEnvoi = q.date ? new Date(q.date).toLocaleDateString('fr-FR') : '—';
-      var refId = idCol==='ecosystem' ? (q.ecosystemId||'—') : (q.supportId||q.claimId||'—');
-      return '<tr style="border-bottom:1px solid var(--border);">'+
-        '<td style="padding:8px 10px;"><b>'+d.numero+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+fmtDate(d.date)+'</span></td>'+
-        '<td style="padding:8px 10px;">'+(c.prenom||'')+' '+c.nom+'<br><span style="font-size:11px;color:var(--text-muted);">'+(c.tel||'')+'</span></td>'+
-        '<td style="padding:8px 10px;">'+(a.marque||'')+' '+(a.modele||'')+'<br><span style="font-size:11px;color:var(--text-muted);">'+(a.imei||'—')+'</span></td>'+
-        '<td style="padding:8px 10px;">'+dateEnvoi+'</td>'+
-        '<td style="padding:8px 10px;font-family:monospace;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;" title="'+refId+'">'+refId+'</td>'+
-        '<td style="padding:8px 10px;">'+qrStatutBadge(q.statut||'Sent')+((q.manquants&&q.manquants.length)?'<br><span style="font-size:10px;color:#dc2626;font-weight:600;">⚠ À compléter : '+q.manquants.join(', ')+'</span>':'')+'</td>'+
-        '<td style="padding:8px 10px;"><button class="btn btn-sm" onclick="qrVerifierUnDossier(\''+d.id+'\')">🔄</button> <button class="btn btn-sm" onclick="qrChangerStatut(\''+d.id+'\')" >✏️</button></td>'+
-      '</tr>';
-    }).join('');
+  var list=document.getElementById('qr-suivi-list');
+  if(list){
+    var orgCard=function(titre,col,s){
+      return '<div class="card" style="border-left:7px solid '+col+';margin-bottom:14px;">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">'
+          +'<div style="font-weight:900;font-size:17px;color:'+col+';">'+titre+'</div>'
+          +'<div style="font-size:13px;color:var(--text-muted);">'+s.n+' dossier(s)'+(s.taux!==null?' · '+s.taux+'% acceptés':'')+'</div></div>'
+        +'<div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:12px;">'
+          +'<div><div style="font-size:22px;font-weight:900;">'+s.euroAtt.toFixed(0)+' €</div><div style="font-size:11px;color:var(--text-muted);">à encaisser</div></div>'
+          +'<div><div style="font-size:22px;font-weight:900;color:#1a7e3a;">'+s.euroPaid.toFixed(0)+' €</div><div style="font-size:11px;color:var(--text-muted);">reçus</div></div>'
+          +'<div><div style="font-size:22px;font-weight:900;color:#d70036;">'+s.urgent+'</div><div style="font-size:11px;color:var(--text-muted);">à corriger</div></div>'
+          +'<div><div style="font-size:22px;font-weight:900;color:#b56a00;">'+s.transm+'</div><div style="font-size:11px;color:var(--text-muted);">à transmettre</div></div>'
+        +'</div></div>';
+    };
+    list.innerHTML=orgCard('🟢 Ecosystem','#34C759',eco)+orgCard('🔵 Ecologic','#0A84FF',ecol);
   }
-
-  var ecoCount = document.getElementById('qr-eco-count');
-  var ecolCount = document.getElementById('qr-ecol-count');
-  var ecoTbody = document.getElementById('qr-ecosystem-tbody');
-  var ecolTbody = document.getElementById('qr-ecologic-tbody');
-  if(ecoCount)  ecoCount.textContent  = ecosystem.length+' dossier(s)';
-  if(ecolCount) ecolCount.textContent = ecologic.length+' dossier(s)';
-  if(ecoTbody)  ecoTbody.innerHTML    = buildRows(ecosystem,'ecosystem');
-  if(ecolTbody) ecolTbody.innerHTML   = buildRows(ecologic,'ecologic');
 }
 
 function qrChangerStatut(dossierId){
@@ -30334,69 +30530,39 @@ function showCalToast(title,body){
 <div class="page" id="page-suivi-qr">
   <div class="page-header">
     <div>
-      <div class="page-title">🔄 Suivi QualiRépar</div>
-      <div class="page-sub">Remboursements Ecosystem &amp; Ecologic — mise à jour en temps réel</div>
+      <div class="page-title">🛡️ QualiRépar</div>
+      <div class="page-sub">Parcours · Suivi par éco-organisme · Analyse</div>
     </div>
     <div style="display:flex;gap:10px;">
       <button id="btn-qr-verif-all" class="btn btn-primary" onclick="qrVerifierTousLesStatuts()" style="background:#2563eb;border-color:#2563eb;">🔄 Tout vérifier via API</button>
-      <button class="btn" onclick="renderSuiviQR()">↻ Actualiser</button>
+      <button class="btn" onclick="qrShowTab(_qrTab)">↻ Actualiser</button>
     </div>
   </div>
 
-  <!-- Statistiques rapides -->
-  <div id="qr-suivi-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;"></div>
-
-  <!-- Ecosystem -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-header">
-      <div class="card-title" style="color:#16a34a;">🟢 Ecosystem</div>
-      <span id="qr-eco-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:rgba(52,211,153,0.06);">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">ID Ecosystem</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecosystem-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- Onglets QualiRépar -->
+  <div class="qr-tabbar">
+    <button id="qrtab-parcours"  class="qr-tab"    onclick="qrShowTab('parcours')">🛠 Parcours</button>
+    <button id="qrtab-ecosystem" class="qr-tab on" onclick="qrShowTab('ecosystem')">🟢 Suivi Ecosystem</button>
+    <button id="qrtab-ecologic"  class="qr-tab"    onclick="qrShowTab('ecologic')">🔵 Suivi Ecologic</button>
+    <button id="qrtab-analyse"   class="qr-tab"    onclick="qrShowTab('analyse')">📊 Analyse</button>
   </div>
 
-  <!-- Ecologic -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title" style="color:#2563eb;">🔵 Ecologic</div>
-      <span id="qr-ecol-count" style="font-size:12px;color:var(--text-muted);"></span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;font-size:13px;">
-        <thead>
-          <tr style="background:rgba(96,165,250,0.06);">
-            <th style="padding:8px 10px;text-align:left;">Dossier</th>
-            <th style="padding:8px 10px;text-align:left;">Client</th>
-            <th style="padding:8px 10px;text-align:left;">Appareil</th>
-            <th style="padding:8px 10px;text-align:left;">Date envoi</th>
-            <th style="padding:8px 10px;text-align:left;">Support ID</th>
-            <th style="padding:8px 10px;text-align:left;">Statut</th>
-            <th style="padding:8px 10px;text-align:left;">Action</th>
-          </tr>
-        </thead>
-        <tbody id="qr-ecologic-tbody">
-          <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Chargement...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <div id="qr-parcours-pane" style="display:none;"></div>
+  <div id="qr-suivi-stats" style="margin-bottom:16px;"></div>
+  <div id="qr-suivi-list"></div>
+
+  <style>
+  .qr-tabbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .qr-tab{border:1px solid var(--border);background:#fff;border-radius:12px;padding:10px 16px;font-weight:800;font-size:13px;cursor:pointer;color:var(--text);}
+  .qr-tab.on{background:#1d1d1f;color:#fff;border-color:#1d1d1f;}
+  .qr-corriger-btn{background:#FF375F;color:#fff;border:none;border-radius:11px;padding:11px 18px;font-weight:900;font-size:13px;cursor:pointer;animation:qrPulse 1.3s ease-in-out infinite;}
+  .qr-corriger-btn:hover{background:#e0224d;}
+  @keyframes qrPulse{0%{box-shadow:0 0 0 0 rgba(255,55,95,.5);}70%{box-shadow:0 0 0 12px rgba(255,55,95,0);}100%{box-shadow:0 0 0 0 rgba(255,55,95,0);}}
+  .qr-dossier-card{transition:transform .15s;} .qr-dossier-card:hover{transform:translateY(-2px);}
+  .qr-brand-tile{background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:22px 12px;text-align:center;cursor:pointer;font-weight:800;transition:.15s;}
+  .qr-brand-tile:hover{transform:translateY(-3px);box-shadow:0 12px 28px -12px rgba(0,0,0,.25);}
+  @media (prefers-reduced-motion: reduce){ .qr-corriger-btn{animation:none;} }
+  </style>
 </div>
 
 <!-- ===== VERSION NOTIFICATION ===== -->

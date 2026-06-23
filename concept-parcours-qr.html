@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parcours QualiRépar — tuiles marque</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{--bg:#f5f5f7;--card:#fff;--text:#1d1d1f;--muted:#6e6e73;--line:rgba(0,0,0,.10);--accent:#0A84FF}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:24px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:780px}
+.fr{font-family:'Fraunces',serif}
+h1{font-family:'Fraunces',serif;font-size:28px;font-weight:900;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 20px}
+/* progress */
+.steps{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.stp{font-size:12px;font-weight:700;color:var(--muted);padding:7px 12px;border-radius:999px;background:#ececef}
+.stp.on{background:var(--accent);color:#fff}
+.q{font-size:20px;font-weight:800;margin:6px 0 14px}
+/* brand grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tile{background:var(--card);border:1.5px solid var(--line);border-radius:22px;padding:24px 14px;text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.tile:hover{transform:translateY(-3px);box-shadow:0 12px 30px -12px rgba(0,0,0,.25)}
+.tile .bn{font-weight:800;font-size:19px}
+.tile .org{font-size:11px;font-weight:700;margin-top:8px;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px}
+.org.eco{background:rgba(52,199,89,.14);color:#1a7e3a}
+.org.col{background:rgba(10,132,255,.12);color:#0a5bd0}
+.tile.autre{display:flex;flex-direction:column;align-items:center;justify-content:center;border-style:dashed;color:var(--muted)}
+.tile.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent)}
+/* result banner */
+.route{display:none;margin-top:20px;border-radius:18px;padding:18px 20px;color:#fff;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.route .big{font-family:'Fraunces',serif;font-size:22px;font-weight:900}
+.route .go{background:#fff;border:none;border-radius:12px;padding:12px 20px;font-weight:800;cursor:pointer}
+/* next preview */
+.next{display:none;margin-top:22px}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:18px 8px;text-align:center;font-weight:700;cursor:pointer}
+.chip .em{font-size:24px;display:block;margin-bottom:6px}
+.chip:hover{border-color:var(--accent)}
+.flowline{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.fl{font-size:12px;font-weight:700;color:#fff;background:var(--accent);border-radius:999px;padding:6px 12px;opacity:.55}
+.fl.cur{opacity:1}
+</style></head><body><div class="wrap">
+<h1>Nouveau dossier QualiRépar</h1>
+<div class="sub">Concept — touche une marque : la couleur t'amène automatiquement sur le bon éco-organisme.</div>
+
+<div class="steps">
+  <span class="stp on" id="ps1">1 · Marque</span>
+  <span class="stp" id="ps2">2 · Client</span>
+  <span class="stp" id="ps3">3 · Panne</span>
+  <span class="stp" id="ps4">4 · IMEI & photo</span>
+  <span class="stp" id="ps5">5 · Signature</span>
+</div>
+
+<div class="q">Quelle marque ?</div>
+<div class="grid" id="brands">
+  <div class="tile" onclick="pick(this,'Apple','col')"><div class="bn"> Apple</div><div class="org col">🔵 Ecologic</div></div>
+  <div class="tile" onclick="pick(this,'Samsung','eco')"><div class="bn">Samsung</div><div class="org eco">🟢 Ecosystem</div></div>
+  <div class="tile" onclick="pick(this,'Xiaomi','col')"><div class="bn">Xiaomi</div><div class="org col">🔵 Ecologic</div></div>
+  <div class="tile" onclick="pick(this,'Huawei','eco')"><div class="bn">Huawei</div><div class="org eco">🟢 Ecosystem</div></div>
+  <div class="tile" onclick="pick(this,'Google','col')"><div class="bn">Google</div><div class="org col">🔵 Ecologic</div></div>
+  <div class="tile" onclick="pick(this,'Oppo','eco')"><div class="bn">Oppo</div><div class="org eco">🟢 Ecosystem</div></div>
+  <div class="tile" onclick="pick(this,'Honor','eco')"><div class="bn">Honor</div><div class="org eco">🟢 Ecosystem</div></div>
+  <div class="tile" onclick="pick(this,'OnePlus','col')"><div class="bn">OnePlus</div><div class="org col">🔵 Ecologic</div></div>
+  <div class="tile autre" onclick="pick(this,'Autre','col')"><div style="font-size:24px">🔍</div><div class="bn" style="font-size:15px;margin-top:6px">Autre marque</div></div>
+</div>
+
+<div class="route" id="route" style="background:var(--accent)">
+  <div><div style="font-size:12px;opacity:.85;font-weight:700">MARQUE SÉLECTIONNÉE</div><div class="big" id="routeTxt">Apple → Ecologic</div></div>
+  <button class="go" id="goBtn" onclick="showNext()" style="color:var(--accent)">Continuer →</button>
+</div>
+
+<div class="next" id="next">
+  <div class="flowline">
+    <span class="fl" id="f1">Marque ✓</span><span class="fl cur" id="f2">Client</span><span class="fl" id="f3">Panne</span><span class="fl" id="f4">IMEI & photo</span><span class="fl" id="f5">Signature</span>
+  </div>
+  <div class="q" style="margin-top:20px">Et après, une chose par écran — en gros et simple :</div>
+  <div class="chips">
+    <div class="chip"><span class="em">👤</span>Client<br><span style="font-size:11px;color:var(--muted);font-weight:500">existant ou + nouveau</span></div>
+    <div class="chip"><span class="em">📱</span>Écran</div>
+    <div class="chip"><span class="em">🔋</span>Batterie</div>
+    <div class="chip"><span class="em">🔌</span>Charge</div>
+    <div class="chip"><span class="em">📷</span>Caméra</div>
+    <div class="chip"><span class="em">✍️</span>Signature</div>
+  </div>
+  <div style="margin-top:16px;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid var(--line);font-size:13px;color:var(--muted)">
+    L'accent couleur reste celui de l'organisme tout le long du parcours. Les codes IRIS, l'envoi et l'organisme sont gérés <b style="color:var(--text)">automatiquement</b> — l'employé ne voit que l'essentiel.
+  </div>
+</div>
+
+<script>
+function pick(el,brand,kind){
+  document.querySelectorAll('.tile').forEach(t=>t.classList.remove('sel'));
+  el.classList.add('sel');
+  var accent = kind==='eco' ? '#34C759' : '#0A84FF';
+  document.documentElement.style.setProperty('--accent', accent);
+  var org = kind==='eco' ? 'Ecosystem' : 'Ecologic';
+  document.getElementById('routeTxt').textContent = brand + ' → ' + org;
+  var r=document.getElementById('route'); r.style.display='flex'; r.style.background=accent;
+  document.getElementById('goBtn').style.color=accent;
+  document.getElementById('next').style.display='none';
+}
+function showNext(){ document.getElementById('next').style.display='block';
+  document.getElementById('ps2').classList.add('on');
+  document.getElementById('next').scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</div></body></html>

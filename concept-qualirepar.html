@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concept QualiRépar · Solution Phone</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{--bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--ink2:#6e6e73;--line:rgba(0,0,0,.10);--red:#E0102E;--green:#34C759;--amber:#FF9F0A;--blue:#0A84FF}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:24px;display:flex;justify-content:center}
+.wrap{width:100%;max-width:840px}
+.fr{font-family:'Fraunces',serif}
+h1{font-family:'Fraunces',serif;font-size:30px;font-weight:900;letter-spacing:-.02em;margin-bottom:4px}
+.sub{color:var(--ink2);font-size:14px;margin-bottom:22px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin:26px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.step{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.step:last-child{border-bottom:none}
+.dot{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:#f0f0f2;color:var(--ink2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+.step.done .dot{background:var(--green);color:#fff}
+.step .body{flex:1}
+.step .t{font-weight:700;font-size:16px}
+.step .d{color:var(--ink2);font-size:13px;margin-top:2px}
+.scanbtn{margin-top:10px;width:100%;border:2px dashed var(--line);background:#fafafa;border-radius:16px;padding:18px;text-align:center;cursor:pointer;font-weight:700;color:var(--ink);font-size:15px;transition:.15s}
+.scanbtn:hover{border-color:var(--red);color:var(--red)}
+.devchip{margin-top:12px;display:none;align-items:center;gap:12px;background:#f7f7f9;border-radius:14px;padding:12px 14px}
+.devchip .ic{width:40px;height:40px;border-radius:10px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:20px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:5px 11px;border-radius:999px}
+.pill.green{background:rgba(52,199,89,.12);color:#1a7e3a}
+.pill.amber{background:rgba(255,159,10,.14);color:#9a5b00}
+.pill.blue{background:rgba(10,132,255,.12);color:#0a5bd0}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.chip{border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;font-weight:700;font-size:14px;transition:.12s}
+.chip .em{font-size:22px;display:block;margin-bottom:4px}
+.chip:hover{border-color:var(--red)}
+.chip.sel{border-color:var(--red);background:rgba(224,16,46,.06);color:var(--red)}
+.hero{margin-top:14px;display:none;background:linear-gradient(135deg,#e9faf0,#d8f5e3);border:1px solid rgba(52,199,89,.4);border-radius:18px;padding:18px 20px}
+.hero .big{font-family:'Fraunces',serif;font-size:34px;font-weight:900;color:#1a7e3a;letter-spacing:-.02em}
+.hero .calc{color:#2c7a48;font-size:13px;font-weight:600;margin-top:2px}
+.toggles{display:flex;gap:10px;margin-top:14px}
+.tg{flex:1;border:1.5px solid var(--line);border-radius:14px;padding:12px;text-align:center;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink2);transition:.12s}
+.tg.on{border-color:var(--green);background:rgba(52,199,89,.08);color:#1a7e3a}
+.cta{margin-top:18px;width:100%;background:var(--red);color:#fff;border:none;border-radius:16px;padding:18px;font-size:17px;font-weight:800;cursor:pointer;box-shadow:0 8px 20px -8px rgba(224,16,46,.5)}
+.invisible-note{text-align:center;color:var(--ink2);font-size:12px;margin-top:10px}
+/* SUIVI */
+.moneyhero{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.moneyhero .big{font-family:'Fraunces',serif;font-size:40px;font-weight:900;color:var(--ink);letter-spacing:-.02em;line-height:1}
+.moneyhero .lbl{color:var(--ink2);font-size:13px;margin-top:6px}
+.pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}
+.stage{border-radius:16px;padding:14px;text-align:center}
+.stage .n{font-family:'Fraunces',serif;font-size:26px;font-weight:900}
+.stage .s{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.st-todo{background:rgba(255,159,10,.10)} .st-todo .n{color:#9a5b00}
+.st-sent{background:rgba(10,132,255,.10)} .st-sent .n{color:#0a5bd0}
+.st-ok{background:rgba(52,199,89,.12)} .st-ok .n{color:#1a7e3a}
+.st-paid{background:rgba(52,199,89,.20)} .st-paid .n{color:#13682f}
+.dossier{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid rgba(0,0,0,.06)}
+.dossier:last-child{border-bottom:none}
+.dossier .who{flex:1}
+.dossier .who .n{font-weight:700;font-size:15px}
+.dossier .who .m{color:var(--ink2);font-size:12px}
+.dossier .eur{font-family:'Fraunces',serif;font-weight:900;font-size:18px;margin-right:6px}
+.act{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:700;font-size:12px;cursor:pointer}
+.act.red{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>QualiRépar</h1>
+  <div class="sub">Concept — un geste pour déposer, une vue claire pour suivre l'argent. Touche les éléments, c'est interactif.</div>
+
+  <div class="eyebrow">① La prise en charge — un seul flux</div>
+  <div class="card">
+    <div class="step done">
+      <div class="dot">✓</div>
+      <div class="body">
+        <div class="t">Le client</div>
+        <div class="d">Martin Dupont · 06 12 34 56 78</div>
+      </div>
+    </div>
+
+    <div class="step" id="s-app">
+      <div class="dot" id="d-app">1</div>
+      <div class="body">
+        <div class="t">L'appareil</div>
+        <div class="d">Prends en photo la plaque IMEI — le reste se remplit tout seul.</div>
+        <div class="scanbtn" id="scan" onclick="doScan()">📷 &nbsp;Scanner l'IMEI</div>
+        <div class="devchip" id="dev">
+          <div class="ic">📱</div>
+          <div style="flex:1">
+            <div style="font-weight:700">iPhone 13 · 128 Go</div>
+            <div style="font-size:12px;color:var(--ink2)">IMEI 353840 10 763440 6</div>
+          </div>
+          <span class="pill green">✓ Éligible · Ecologic · 25 €</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step" id="s-panne">
+      <div class="dot" id="d-panne">2</div>
+      <div class="body">
+        <div class="t">La panne</div>
+        <div class="d">Un appui, c'est tout. Les codes techniques sont choisis pour toi.</div>
+        <div class="chips">
+          <div class="chip" onclick="pick(this,'écran',25)"><span class="em">📱</span>Écran</div>
+          <div class="chip" onclick="pick(this,'batterie',25)"><span class="em">🔋</span>Batterie</div>
+          <div class="chip" onclick="pick(this,'charge',25)"><span class="em">🔌</span>Charge</div>
+          <div class="chip" onclick="pick(this,'haut-parleur',25)"><span class="em">🔊</span>Audio</div>
+          <div class="chip" onclick="pick(this,'caméra',25)"><span class="em">📷</span>Caméra</div>
+          <div class="chip" onclick="pick(this,'autre',25)"><span class="em">⋯</span>Autre</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="big">Bonus −25 €</div>
+      <div class="calc">Réparation 89 € → le client paie <b>64 €</b> · l'éco-organisme te verse 25 €</div>
+    </div>
+
+    <div class="step" id="s-fin" style="margin-top:6px">
+      <div class="dot" id="d-fin">3</div>
+      <div class="body">
+        <div class="t">Photo & signature</div>
+        <div class="d">Deux appuis pour valider le dossier.</div>
+        <div class="toggles">
+          <div class="tg" id="tg-photo" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'✓ Photo plaque':'Photo plaque'">Photo plaque</div>
+          <div class="tg" id="tg-sig" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'✓ Signature':'Signature client'">Signature client</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="cta" onclick="this.textContent='✓ Dossier déposé — bonus en route';this.style.background='#1a7e3a'">Déposer le dossier →</button>
+    <div class="invisible-note">Codes IRIS, choix de l'organisme et envoi : gérés automatiquement, en arrière-plan.</div>
+  </div>
+
+  <div class="eyebrow">② Le suivi — « où est mon argent »</div>
+  <div class="card">
+    <div class="moneyhero">
+      <div>
+        <div class="big">312 €</div>
+        <div class="lbl">en attente de remboursement · 7 dossiers</div>
+      </div>
+      <span class="pill amber">⚠ 1 dossier à compléter</span>
+    </div>
+    <div class="pipe">
+      <div class="stage st-todo"><div class="n">1</div><div class="s">À envoyer</div></div>
+      <div class="stage st-sent"><div class="n">4</div><div class="s">Envoyé</div></div>
+      <div class="stage st-ok"><div class="n">2</div><div class="s">Validé</div></div>
+      <div class="stage st-paid"><div class="n">6</div><div class="s">Payé</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="dossier">
+        <span class="pill amber">À compléter</span>
+        <div class="who"><div class="n">Clara Martin · iPhone 12</div><div class="m" style="color:#9a5b00">⚠ Manque : signature</div></div>
+        <span class="eur">25 €</span>
+        <button class="act red">Compléter</button>
+      </div>
+      <div class="dossier">
+        <span class="pill blue">Envoyé</span>
+        <div class="who"><div class="n">Arnaud Piquet · Samsung S21</div><div class="m">Déposé hier · Ecosystem</div></div>
+        <span class="eur">25 €</span>
+        <button class="act">Voir</button>
+      </div>
+      <div class="dossier">
+        <span class="pill green">Payé</span>
+        <div class="who"><div class="n">Delphine Duchamps · iPhone 13</div><div class="m">Remboursé le 19/06</div></div>
+        <span class="eur" style="color:#1a7e3a">25 €</span>
+        <button class="act">Voir</button>
+      </div>
+    </div>
+  </div>
+  <div style="height:30px"></div>
+</div>
+<script>
+function doScan(){document.getElementById('scan').style.display='none';document.getElementById('dev').style.display='flex';var s=document.getElementById('s-app');s.classList.add('done');document.getElementById('d-app').textContent='✓';}
+function pick(el,name,bonus){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');var s=document.getElementById('s-panne');s.classList.add('done');document.getElementById('d-panne').textContent='✓';document.getElementById('hero').style.display='block';}
+</script>
+</body>
+</html>
