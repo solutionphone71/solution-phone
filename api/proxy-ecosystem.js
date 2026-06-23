@@ -6,8 +6,29 @@ const ENVS = {
   prod:    'https://prod-api-reparateurs.ecosystem.eco',
 };
 
+// CORS restreint aux domaines Solution Phone (appels same-origin → ne casse rien).
+const ALLOWED_ORIGINS = [
+  'https://app.solution-phone.fr',
+  'https://solution-phone.fr',
+  'https://www.solution-phone.fr',
+];
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin',
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
+  res.setHeader('Vary', 'Origin');
+}
+
+// Les modes debug/test ne sont accessibles que si un token secret est fourni
+// (?key=) ET qu'il correspond à la variable Vercel DEBUG_TOKEN. Sans variable
+// configurée, ces modes restent désactivés en production.
+function debugAllowed(req) {
+  const token = process.env.DEBUG_TOKEN;
+  return !!token && req.query.key === token;
+}
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  applyCors(req, res);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
 
@@ -16,8 +37,9 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Mode debug: GET /api/proxy-ecosystem?debug=1
+  // Mode debug: GET /api/proxy-ecosystem?debug=1&key=<DEBUG_TOKEN>
   if (req.query.debug === '1') {
+    if (!debugAllowed(req)) return res.status(404).end();
     return res.status(200).json({
       debug: true,
       version: '2026-05-05-v6-prod',
@@ -32,6 +54,7 @@ export default async function handler(req, res) {
   // Mode test: GET /api/proxy-ecosystem?test=1 — teste /login sur tous les envs
   // (payload aligné avec l'app: {username, password} et path /login en minuscules)
   if (req.query.test === '1') {
+    if (!debugAllowed(req)) return res.status(404).end();
     const id = req.query.id || '501710';
     const pw = req.query.pw || '';
     const results = {};

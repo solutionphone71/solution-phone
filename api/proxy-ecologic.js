@@ -1,11 +1,34 @@
 // api/proxy-ecologic.js — Proxy Vercel pour Ecologic GesCo QualiRépar
 // Doc officielle : header "api_key" (minuscule + underscore)
+//
+// SÉCURITÉ : la clé API se configure dans Vercel → Settings → Environment
+// Variables → ECOLOGIC_API_KEY. Le fallback ci-dessous garde la prod
+// fonctionnelle le temps de la migration ; une fois la variable posée dans
+// Vercel, supprimer la valeur en clair de ce fichier.
 
-const ECOLOGIC_API_KEY = '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
+const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
 const ECOLOGIC_API_BASE = 'https://apiecologic.e-reparateur.eco/api/v1/ecosupport';
 
+// CORS : on n'autorise que les domaines Solution Phone (les appels du proxy
+// sont same-origin, donc ça ne casse rien et ça empêche un site tiers
+// d'utiliser ce proxy — et donc la clé API — depuis le navigateur).
+const ALLOWED_ORIGINS = [
+  'https://app.solution-phone.fr',
+  'https://solution-phone.fr',
+  'https://www.solution-phone.fr',
+];
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[0]);
+  }
+  res.setHeader('Vary', 'Origin');
+}
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  applyCors(req, res);
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
 

@@ -4,7 +4,9 @@
 //
 // Retourne un JSON avec le statut de chaque API.
 
-const ECOLOGIC_API_KEY = '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
+// Clé lue depuis Vercel (ECOLOGIC_API_KEY) ; fallback en clair à supprimer
+// une fois la variable d'environnement configurée.
+const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
 const ECOLOGIC_API_BASE = 'https://apiecologic.e-reparateur.eco/api/v1/ecosupport';
 const ECOSYSTEM_PROD = 'https://prod-api-reparateurs.ecosystem.eco';
 const KIWIZ_BASE = 'https://api.kiwiz.io';
