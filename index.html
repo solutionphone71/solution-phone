@@ -679,10 +679,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:0 14px 10px;">Tous les modules</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
   <div class="mob-menu-item" onclick="showPageMobile('zahira-home','');if(window.zhInit)zhInit();closeMobileMenu()"><span class="mob-menu-icon">🎯</span>Parcours client</div>
-  <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparations</div>
+  <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparation</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
-  <div class="mob-menu-item" onclick="showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">🛡️</span>Suivi QualiRépar</div>
+  <div class="mob-menu-item" onclick="_qrTab='ecologic';showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">🔵</span>Ecologic</div>
+  <div class="mob-menu-item" onclick="_qrTab='ecosystem';showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">🟢</span>Ecosystem</div>
+  <div class="mob-menu-item" onclick="_qrTab='analyse';showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">📊</span>Bilan &amp; Analyse</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Accessoires &amp; neufs</div>
   <div class="mob-menu-item" onclick="showPageMobile('neufs-access','');naLoad();naRender();closeMobileMenu()"><span class="mob-menu-icon">📦</span>Tél. neufs &amp; access.</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Smartphones</div>
@@ -770,12 +772,14 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-item" onclick="showPage('dashboard',this)" style="font-size:12px;opacity:0.6;padding-left:32px;"><span class="nav-icon">📊</span><span>Dashboard détaillé</span></div>
 
     <div class="nav-sep"></div>
-    <div class="nav-group-label">Réparations</div>
+    <div class="nav-group-label">QualiRépar</div>
     <div class="nav-item" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🎯</span><span>Parcours client</span></div>
-    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparations</span></div>
+    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparation</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
-    <div class="nav-item" onclick="showPage('suivi-qr',this)"><span class="nav-icon">🛡️</span><span>Suivi QualiRépar</span></div>
+    <div class="nav-item" onclick="_qrTab='ecologic';showPage('suivi-qr',this);"><span class="nav-icon">🔵</span><span>Ecologic</span></div>
+    <div class="nav-item" onclick="_qrTab='ecosystem';showPage('suivi-qr',this);"><span class="nav-icon">🟢</span><span>Ecosystem</span></div>
+    <div class="nav-item" onclick="_qrTab='analyse';showPage('suivi-qr',this);"><span class="nav-icon">📊</span><span>Bilan &amp; Analyse</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">Accessoires &amp; Neufs</div>
@@ -2117,7 +2121,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
 
         <!-- ② YESTERDAY'S FLASHBACK -->
-        <div class="bw" style="background:linear-gradient(135deg,#ffffff,rgba(30,58,95,0.8));">
+        <div class="bw" style="background:linear-gradient(135deg,#ffffff,#e8f1fd);">
           <div class="bw-glow" style="bottom:-20px;left:-20px;background:#60a5fa;"></div>
           <div class="bw-label">⏪ Hier</div>
           <div id="wg-hier-ca" class="bw-val" style="color:#60a5fa;font-size:26px;">0 €</div>
@@ -2126,7 +2130,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
 
         <!-- ③ MÉTÉO MÂCON -->
-        <div class="bw" style="background:linear-gradient(135deg,#ffffff,rgba(20,40,60,0.9));">
+        <div class="bw" style="background:linear-gradient(135deg,#ffffff,#e9f5fb);">
           <div class="bw-label">🌤️ Mâcon</div>
           <div style="display:flex;align-items:center;gap:10px;">
             <div id="wg-meteo-icon" style="font-size:40px;">⏳</div>
@@ -2192,7 +2196,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
 
         <!-- ⑨ HORLOGE LIVE -->
-        <div class="bw" style="background:linear-gradient(135deg,#ffffff,rgba(20,30,50,0.9));">
+        <div class="bw" style="background:linear-gradient(135deg,#ffffff,#eef3fb);">
           <div class="bw-label">🕐 Live</div>
           <div id="wg-clock" class="bw-val" style="color:#00F5FF;font-family:'Share Tech Mono',monospace;font-size:36px;letter-spacing:2px;"></div>
           <div id="wg-clock-date" class="bw-sub"></div>
@@ -8038,7 +8042,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;">
 
           <!-- Aujourd'hui -->
-          <div style="background:linear-gradient(135deg,#ffffff,rgba(30,50,70,0.9));border:1px solid rgba(96,165,250,0.2);border-radius:12px;padding:14px;text-align:center;">
+          <div style="background:linear-gradient(135deg,#ffffff,#eaf2ff);border:1px solid rgba(96,165,250,0.2);border-radius:12px;padding:14px;text-align:center;">
             <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">⚡ Aujourd'hui</div>
             <div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#60a5fa;margin:4px 0;">0</div>
             <div style="font-size:10px;color:rgba(0,0,0,0.3);">réparations</div>
@@ -8053,7 +8057,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
 
           <!-- Ecosystem envoyés -->
-          <div style="background:linear-gradient(135deg,#ffffff,rgba(35,20,50,0.9));border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;text-align:center;">
+          <div style="background:linear-gradient(135deg,#ffffff,#f3effe);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;text-align:center;">
             <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">🟣 Ecosystem</div>
             <div id="rep-w-ecosystem" style="font-size:28px;font-weight:900;color:#a78bfa;margin:4px 0;">0</div>
             <div style="font-size:10px;color:rgba(0,0,0,0.3);">dossiers envoyés</div>
@@ -8067,7 +8071,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
 
           <!-- Non envoyés (attention!) -->
-          <div id="rep-w-nonenvoye-card" style="background:linear-gradient(135deg,#ffffff,rgba(50,20,20,0.9));border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;text-align:center;">
+          <div id="rep-w-nonenvoye-card" style="background:linear-gradient(135deg,#ffffff,#fdecec);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;text-align:center;">
             <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">⚠️ Non envoyés</div>
             <div id="rep-w-nonenvoye" style="font-size:28px;font-weight:900;color:#ef4444;margin:4px 0;">0</div>
             <div style="font-size:10px;color:rgba(239,68,68,0.5);">à envoyer QR</div>
@@ -10254,7 +10258,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){
-    var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecosystem'); else renderSuiviQR(); };
+    var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else renderSuiviQR(); };
     if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
       loadBonsDepot().then(_qrShow).catch(_qrShow);
     } else { _qrShow(); }
@@ -29821,8 +29825,8 @@ function qrDossierOrg(d){
   if(q.ecosystemClaimId||q.ecosystemRepairId||q.ecosystemId) return 'ecosystem';
   return (typeof QR_BRAND_TYPE!=='undefined' && QR_BRAND_TYPE[(d.appareil||{}).marque]==='ecosystem') ? 'ecosystem' : 'ecologic';
 }
-var _qrSuiviOrg='ecosystem';
-var _qrTab='ecosystem';
+var _qrSuiviOrg='ecologic';
+var _qrTab='ecologic';
 // ── Onglets QualiRépar : Parcours · Suivi Ecosystem · Suivi Ecologic · Analyse ──
 function qrShowTab(tab){
   _qrTab=tab;
@@ -29843,6 +29847,12 @@ function qrShowTab(tab){
     if(parc)parc.style.display='none'; if(stats)stats.style.display=''; if(list)list.style.display='';
     if(verif)verif.style.display='';
     _qrSuiviOrg=tab; renderSuiviQR();
+    // Mise à jour AUTO des statuts via API à l'ouverture (max 1×/2 min pour ne pas spammer)
+    var _now=Date.now();
+    if(typeof qrVerifierTousLesStatuts==='function' && (!window._qrLastVerif || _now-window._qrLastVerif>120000)){
+      window._qrLastVerif=_now;
+      try{ qrVerifierTousLesStatuts(); }catch(e){}
+    }
   }
 }
 // Onglet Parcours : grosses tuiles marque qui lancent le dossier (couleur = organisme)
@@ -30541,10 +30551,9 @@ function showCalToast(title,body){
 
   <!-- Onglets QualiRépar -->
   <div class="qr-tabbar">
-    <button id="qrtab-parcours"  class="qr-tab"    onclick="qrShowTab('parcours')">🛠 Parcours</button>
-    <button id="qrtab-ecosystem" class="qr-tab on" onclick="qrShowTab('ecosystem')">🟢 Suivi Ecosystem</button>
-    <button id="qrtab-ecologic"  class="qr-tab"    onclick="qrShowTab('ecologic')">🔵 Suivi Ecologic</button>
-    <button id="qrtab-analyse"   class="qr-tab"    onclick="qrShowTab('analyse')">📊 Analyse</button>
+    <button id="qrtab-ecologic"  class="qr-tab on" onclick="qrShowTab('ecologic')">🔵 Ecologic</button>
+    <button id="qrtab-ecosystem" class="qr-tab"    onclick="qrShowTab('ecosystem')">🟢 Ecosystem</button>
+    <button id="qrtab-analyse"   class="qr-tab"    onclick="qrShowTab('analyse')">📊 Bilan &amp; Analyse</button>
   </div>
 
   <div id="qr-parcours-pane" style="display:none;"></div>
