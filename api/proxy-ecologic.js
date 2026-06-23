@@ -1,12 +1,11 @@
 // api/proxy-ecologic.js — Proxy Vercel pour Ecologic GesCo QualiRépar
 // Doc officielle : header "api_key" (minuscule + underscore)
 //
-// SÉCURITÉ : la clé API se configure dans Vercel → Settings → Environment
-// Variables → ECOLOGIC_API_KEY. Le fallback ci-dessous garde la prod
-// fonctionnelle le temps de la migration ; une fois la variable posée dans
-// Vercel, supprimer la valeur en clair de ce fichier.
+// SÉCURITÉ : la clé API vient de Vercel → Settings → Environment Variables →
+// ECOLOGIC_API_KEY (scope Production + Preview, vérifié le 23/06/2026).
+// Ne JAMAIS remettre la valeur en clair ici.
 
-const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY || '8121d135-4635-412d-b7ab-3b4dd61cbdb8';
+const ECOLOGIC_API_KEY = process.env.ECOLOGIC_API_KEY;
 const ECOLOGIC_API_BASE = 'https://apiecologic.e-reparateur.eco/api/v1/ecosupport';
 
 // CORS : on n'autorise que les domaines Solution Phone (les appels du proxy

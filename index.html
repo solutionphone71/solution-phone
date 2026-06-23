@@ -23512,7 +23512,9 @@ async function qrEnvoyerEcologicComplet(d){
   // ── Pré-validation : bloquer si éléments obligatoires manquants ──
   var manquants=[];
   if(!(c.nom||'').trim()) manquants.push('Nom du client');
-  if(!(a.imei||'').trim()) manquants.push('IMEI');
+  var _imeiClean=(a.imei||'').replace(/\s/g,'');
+  if(!_imeiClean) manquants.push('IMEI');
+  else if(_imeiClean.length!==15) manquants.push('IMEI à 15 chiffres (actuel : '+_imeiClean.length+')');
   if(!(a.marque||'').trim()) manquants.push('Marque');
   if(!(a.modele||'').trim()) manquants.push('Modele');
   if(!(d.panne||'').trim()&&!(a.typeRep||a.type||'').trim()) manquants.push('Type de reparation');
@@ -23554,8 +23556,27 @@ async function qrEnvoyerEcologicComplet(d){
     else if(panneNorm.includes('cam')) qrPanneKey='camera';
     else if(panneNorm.includes('bouton')) qrPanneKey='bouton';
   }
-  var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey]||{repair:'ELO',condition:'5',symptom:'XX1',section:'XX',def:'09'};
+  // ── BLOCAGE : sans panne reconnue, les codes IRIS seraient invalides (XX1/XX)
+  //    → Ecologic accepte le dossier mais le marque en erreur. On refuse l'envoi. ──
+  if(!PANNE_ECOLOGIC_MAP[qrPanneKey]){
+    var msgPanne="Panne / code IRIS non sélectionné. Choisissez la panne (écran cassé, batterie, etc.) à l'étape réparation avant d'envoyer à Ecologic — sinon le dossier part avec des codes invalides et est refusé.";
+    showNotif&&showNotif(msgPanne,"error");
+    var elP=document.getElementById("rep-qr-envoi-statut");
+    if(elP)elP.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+msgPanne+"</div>";
+    var selP=document.getElementById('rep-qr-panne'); if(selP){ try{ selP.focus(); selP.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){} }
+    return;
+  }
+  var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey];
   console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
+  // ── Alerte clé de contrôle IMEI (probable erreur de lecture OCR) ──
+  if(typeof imeiLuhnValid==='function' && !imeiLuhnValid(a.imei)){
+    var okSend=window.confirm("⚠️ L'IMEI "+(a.imei||'')+" a une clé de contrôle invalide (un chiffre est peut-être mal lu sur la photo).\n\nVérifiez-le avant d'envoyer à Ecologic.\n\nEnvoyer quand même ?");
+    if(!okSend){
+      var elI=document.getElementById("rep-qr-envoi-statut");
+      if(elI)elI.innerHTML="<div style='background:rgba(255,159,10,0.1);padding:12px;border-radius:8px;color:#b45309;'>&#9888; Envoi annulé — corrigez l'IMEI puis réessayez.</div>";
+      return;
+    }
+  }
   var brandId=String((d.qrData&&d.qrData.brandId)||243);
   var today=d.date || new Date().toISOString().split('T')[0];
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
@@ -23600,11 +23621,19 @@ async function qrEnvoyerEcologicComplet(d){
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
-    var msg="&#9989; Ecologic OK! ClaimId: "+claimId;
-    if(errs.length>0)msg+="<br><small style='color:orange;'>&#9888; A completer: "+errs.join(", ")+"</small>";
-    msg+="<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
-    if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
-    showNotif&&showNotif("&#9989; ClaimId: "+claimId,"success");
+    if(errs.length>0){
+      // Dossier créé mais INCOMPLET côté Ecologic → bandeau bien visible, pas un petit texte.
+      var msgW="&#9888;&#65039; <b>Dossier Ecologic INCOMPLET</b> — ClaimId "+claimId+
+        "<br><span style='font-weight:600;'>À compléter avant remboursement :</span> "+errs.join(", ")+
+        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Ouvrir le portail Ecologic &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:1.5px solid #FF9F0A;padding:14px;border-radius:8px;color:#92400e;'>"+msgW+"</div>";
+      showNotif&&showNotif("⚠️ Ecologic incomplet ("+claimId+") — à compléter : "+errs.join(", "),"error");
+    } else {
+      var msg="&#9989; <b>Ecologic OK</b> — ClaimId: "+claimId+
+        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
+      showNotif&&showNotif("&#9989; Dossier complet — ClaimId: "+claimId,"success");
+    }
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
     showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
@@ -23930,6 +23959,21 @@ function repUpdateFacturePreview(){ /* alias */ }
 
 // ── Vérification IMEI — alerte 6 mois QualiRépar ──────────────
 
+// Validation de la clé de contrôle IMEI (algorithme de Luhn).
+// Un vrai IMEI a un 15e chiffre calculé : si l'OCR lit mal un chiffre,
+// le numéro reste à 15 chiffres mais échoue à ce test → on détecte l'erreur.
+function imeiLuhnValid(imei){
+  imei = (imei||'').replace(/\D/g,'');
+  if(imei.length !== 15) return false;
+  var sum = 0;
+  for(var i=0;i<15;i++){
+    var d = parseInt(imei.charAt(i),10);
+    if((15 - i) % 2 === 0){ d *= 2; if(d > 9) d -= 9; }
+    sum += d;
+  }
+  return sum % 10 === 0;
+}
+
 function repValidateIMEI(val){
   var imei = (val||'').replace(/\s/g,'');
   var alertEl = document.getElementById('dep-imei-alert');
@@ -23947,8 +23991,10 @@ function repValidateIMEI(val){
     alertEl.innerHTML = '<span style="color:var(--warning);">⚠️ IMEI incomplet : '+imei.length+'/15 chiffres</span>';
   } else if(imei.length > 15){
     alertEl.innerHTML = '<span style="color:var(--red);">⚠️ IMEI trop long : '+imei.length+' chiffres (max 15)</span>';
+  } else if(!imeiLuhnValid(imei)){
+    alertEl.innerHTML = '<span style="color:var(--red);">⚠️ IMEI à 15 chiffres mais clé de contrôle invalide — vérifiez la saisie ou reprenez la photo (un chiffre est probablement mal lu)</span>';
   } else {
-    alertEl.innerHTML = '<span style="color:var(--green);">✅ IMEI valide (15 chiffres)</span>';
+    alertEl.innerHTML = '<span style="color:var(--green);">✅ IMEI valide (15 chiffres, clé OK)</span>';
   }
 }
 
@@ -24182,9 +24228,16 @@ async function repOCRImei(){
           repDossierCourant.appareil.imei2 = imeiResult.imei2 || null;
           if(imeiResult.imei2) console.log('[OCR] IMEI2 détecté et stocké :', imeiResult.imei2);
         }
-        var txt = '✅ IMEI 1 lu : ' + imeiResult.imei1;
-        if(imeiResult.imei2) txt += '<br>📱 IMEI 2 détecté : ' + imeiResult.imei2;
-        status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">' + txt + '</span>';
+        var _imeiLuhnOK = (typeof imeiLuhnValid==='function') ? imeiLuhnValid(imeiResult.imei1) : true;
+        if(_imeiLuhnOK){
+          var txt = '✅ IMEI 1 lu : ' + imeiResult.imei1;
+          if(imeiResult.imei2) txt += '<br>📱 IMEI 2 détecté : ' + imeiResult.imei2;
+          status.innerHTML = '<span style="color:#4ade80;font-size:15px;font-weight:700;">' + txt + '</span>';
+        } else {
+          // Lecture douteuse : clé de contrôle invalide → l'IA a probablement mal lu un chiffre
+          var txtW = '⚠️ IMEI lu : <b>' + imeiResult.imei1 + '</b><br>Clé de contrôle invalide — un chiffre est sûrement mal lu.<br>Vérifiez sur la plaque et corrigez à la main, ou reprenez la photo.';
+          status.innerHTML = '<span style="color:#fbbf24;font-size:14px;font-weight:700;">' + txtW + '</span>';
+        }
       } else if(ocrError){
         // Erreur IA visible : aide à diagnostiquer (clé API manquante, modèle invalide, etc.)
         status.innerHTML = '<span style="color:#ef4444;font-size:13px;">❌ OCR : '+ocrError+'</span><br><span style="color:#fbbf24;font-size:12px;">Saisissez l\'IMEI manuellement.</span>';
@@ -28811,13 +28864,21 @@ async function qrProcessImage(dataUrl) {
         qrData.appareil.imei2 = imeiResult.imei2 || null;
       }
       if(status){
-        status.style.background = 'rgba(72,187,120,0.1)';
-        status.style.border = '1px solid var(--green)';
-        status.style.color = 'var(--green)';
-        var txt = '✅ IMEI 1 détecté : <b>'+imeiResult.imei1+'</b>';
-        if(imeiResult.imei2) txt += '<br>📱 IMEI 2 : <b>'+imeiResult.imei2+'</b>';
-        txt += ' — Vérifiez et corrigez si nécessaire';
-        status.innerHTML = txt;
+        var _luhnOK = (typeof imeiLuhnValid==='function') ? imeiLuhnValid(imeiResult.imei1) : true;
+        if(_luhnOK){
+          status.style.background = 'rgba(72,187,120,0.1)';
+          status.style.border = '1px solid var(--green)';
+          status.style.color = 'var(--green)';
+          var txt = '✅ IMEI 1 détecté : <b>'+imeiResult.imei1+'</b>';
+          if(imeiResult.imei2) txt += '<br>📱 IMEI 2 : <b>'+imeiResult.imei2+'</b>';
+          txt += ' — Vérifiez et corrigez si nécessaire';
+          status.innerHTML = txt;
+        } else {
+          status.style.background = 'rgba(237,137,54,0.1)';
+          status.style.border = '1px solid var(--warning)';
+          status.style.color = 'var(--warning)';
+          status.innerHTML = '⚠️ IMEI lu : <b>'+imeiResult.imei1+'</b> — clé de contrôle invalide, un chiffre est sûrement mal lu. Vérifiez sur la plaque et corrigez.';
+        }
       }
     } else {
       if(status){

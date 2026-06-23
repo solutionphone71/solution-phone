@@ -58,6 +58,40 @@ toujours 25 € en dur, et le mail affichait « -25 € » même pour un dossier
 
 ---
 
+## 🚑 Corrections envoi Ecologic (bloquant prod — 23/06 après-midi)
+
+Suite à ton test réel : le dossier partait à Ecologic « avec des erreurs »
+sans que l'app te prévienne. Trois causes traitées.
+
+### 5. Panne / code IRIS manquant → dossier refusé en silence
+Si la panne n'était pas sélectionnée, l'app envoyait quand même avec des codes
+IRIS bidons (`symptom: XX1`, `section: XX`). Ecologic créait le dossier puis le
+marquait en erreur — invisible côté app.
+
+**Fait** : l'envoi est désormais **bloqué** si la panne n'est pas reconnue. Message
+clair + focus automatique sur le sélecteur de panne. Plus aucun envoi avec des
+codes IRIS invalides.
+
+### 6. Erreurs de validation post-envoi maintenant affichées
+Quand Ecologic renvoie des `ValidationErrors`, l'app affichait un minuscule texte
+orange facile à rater.
+
+**Fait** : bandeau orange bien visible « Dossier Ecologic INCOMPLET — à compléter :
+… » + notification, avec lien direct vers le portail Ecologic.
+
+### 7. IMEI mal lu par la photo (OCR) → détection par clé de contrôle
+Un IMEI a un 15ᵉ chiffre calculé (algorithme de Luhn). Quand l'IA lisait mal un
+chiffre, l'app affichait quand même « ✅ IMEI lu » et l'envoyait tel quel.
+
+**Fait** :
+- La saisie IMEI vérifie maintenant la clé de contrôle, pas seulement « 15 chiffres ».
+- Après l'OCR, si la clé est fausse → avertissement orange « un chiffre est sûrement
+  mal lu, vérifiez/reprenez la photo » au lieu d'un faux ✅.
+- L'envoi Ecologic exige 15 chiffres et **demande confirmation** si la clé Luhn
+  échoue (« Envoyer quand même ? »).
+
+---
+
 ## 💡 Pistes pour plus tard (non urgent)
 
 - **Dédupliquer le montant du bonus** : la règle `piec ? 30 : 25` est répétée
