@@ -678,7 +678,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 <div id="mobile-menu-panel">
   <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:0 14px 10px;">Tous les modules</div>
   <div style="font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;padding:12px 16px 4px;">Réparations</div>
-  <div class="mob-menu-item" onclick="showPageMobile('reparations','');closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparation</div>
+  <div class="mob-menu-item" onclick="showPageMobile('reparations','');setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);closeMobileMenu()"><span class="mob-menu-icon">🔧</span>Réparation</div>
   <div class="mob-menu-item" onclick="showPageMobile('devis','');closeMobileMenu()"><span class="mob-menu-icon">📝</span>Devis</div>
   <div class="mob-menu-item" onclick="showPageMobile('clients','');closeMobileMenu()"><span class="mob-menu-icon">👥</span>Clients</div>
   <div class="mob-menu-item" onclick="_qrTab='ecologic';showPageMobile('suivi-qr','');closeMobileMenu()"><span class="mob-menu-icon">🔵</span>Ecologic</div>
@@ -772,7 +772,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
-    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparation</span></div>
+    <div class="nav-item" onclick="showPage('reparations',this);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);"><span class="nav-icon">🔧</span><span>Réparation</span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="_qrTab='ecologic';showPage('suivi-qr',this);"><span class="nav-icon">🔵</span><span>Ecologic</span></div>
@@ -8138,7 +8138,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       </div>
 
       <!-- ── SUIVI QUALIREPAR INTÉGRÉ ── -->
-      <div class="card" style="margin-top:16px;border:1.5px solid #a78bfa;" id="rep-qr-suivi-section">
+      <div class="card" style="margin-top:16px;border:1.5px solid #a78bfa;display:none;" id="rep-qr-suivi-section">
         <div class="card-header" style="background:rgba(167,139,250,0.06);cursor:pointer;" onclick="var b=document.getElementById('rep-qr-suivi-body');b.style.display=b.style.display==='none'?'block':'none';">
           <div class="card-title" style="color:#a78bfa;">
             🏷️ Suivi QualiRépar
