@@ -8277,7 +8277,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Marque *</label>
-                      <select id="dep-marque" onchange="repMajOrganismePhoto();">
+                      <select id="dep-marque" onchange="repMajOrganismePhoto();if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();">
                         <option value="">— Choisir —</option>
                         <optgroup label="🟢 Organisme Ecosystem">
                           <option>Samsung</option>
@@ -8314,7 +8314,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);" maxlength="15" inputmode="numeric" style="flex:1;">
+                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();" maxlength="15" inputmode="numeric" style="flex:1;">
                         <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
@@ -8790,6 +8790,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 ℹ️ Aucun bonus QualiRépar n'a été appliqué sur cette réparation.<br>Aucun envoi à effectuer.
               </div>
               <div id="rep-qr-actions" style="display:none;margin-top:14px;">
+                <div id="rep-qr-readiness"></div>
                 <button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="width:100%;padding:14px;font-size:15px;">
                   📤 Envoyer à <span id="rep-qr-btn-label">Ecosystem</span>
                 </button>
@@ -23127,6 +23128,7 @@ function repUpdateDevisRecap(){
   if(f&&f.bonusQR){
     if(qrNo) qrNo.style.display='none';
     if(qrActions) qrActions.style.display='block';
+    if(typeof repQRReadiness==='function') repQRReadiness();
     var marque=(document.getElementById('rep-qr-marque')||{value:''}).value;
     var type=QR_BRAND_TYPE&&QR_BRAND_TYPE[marque];
     var org=type==='ecosystem'?'Ecosystem':type==='ecologic'?'Ecologic':'Eco-organisme';
@@ -24243,28 +24245,98 @@ var QR_INELIGIBLE = [
   { mots: ['oxydation','eau','humidité','liquide'],     raison: 'Dommage lié à l\'environnement (eau) — vérifiez l\'éligibilité avant d\'appliquer le bonus' },
 ];
 
-function repCheckEligibilite(){
-  var panne = (document.getElementById('dep-panne')||{value:''}).value.toLowerCase();
-  var box = document.getElementById('rep-inelig-alert');
-  if(!box) return;
-  if(!panne){ box.style.display='none'; return; }
-
-  for(var i=0; i<QR_INELIGIBLE.length; i++){
-    var rule = QR_INELIGIBLE[i];
-    for(var j=0; j<rule.mots.length; j++){
-      if(panne.includes(rule.mots[j])){
-        box.style.display = 'block';
-        box.innerHTML = '⚠️ <b>Attention QualiRépar :</b> ' + rule.raison + '<br><span style="font-size:11px;">Vérifiez l\'éligibilité avant d\'appliquer le bonus -25€</span>';
-        // Décocher le bonus en step 4 si présent
-        var cbQR = document.getElementById('rep-qr-actif');
-        if(cbQR) cbQR.disabled = true;
-        return;
-      }
-    }
+// ════════════════════════════════════════════════════════════════
+//  GARDIEN QUALIRÉPAR (23/06/2026) — verdict d'éligibilité en amont
+//  Objectif : zéro dossier bancal ni doublon ne part. Verdict live :
+//  organisme, montant, IMEI (clé Luhn), panne éligible, anti-doublon.
+// ════════════════════════════════════════════════════════════════
+function repQRBonusBase(){
+  var piec = (document.getElementById('dep-piec')||{checked:false}).checked || !!(window.repDossierCourant&&repDossierCourant.piec);
+  return piec ? 30 : 25;
+}
+function repQRFindOrganisme(marque){
+  if(!marque || typeof QR_BRAND_TYPE==='undefined') return null;
+  var keys=Object.keys(QR_BRAND_TYPE), m=marque.toLowerCase();
+  for(var i=0;i<keys.length;i++){ if(keys[i].toLowerCase()===m) return QR_BRAND_TYPE[keys[i]]; }
+  for(var j=0;j<keys.length;j++){ if(m.indexOf(keys[j].toLowerCase())>=0) return QR_BRAND_TYPE[keys[j]]; }
+  return null;
+}
+// Cherche un bonus déjà accordé sur le même IMEI il y a moins d'un an
+function repQRDuplicateInfo(imei){
+  imei=(imei||'').replace(/\D/g,'');
+  if(imei.length<15) return null;
+  var pool=(window.bonsDepot&&bonsDepot.length?bonsDepot:(window.repDossiers||[]));
+  var cur=window.repDossierCourant, now=Date.now(), unAn=365*86400000;
+  for(var i=0;i<pool.length;i++){
+    var d=pool[i]; if(!d||!d.appareil) continue;
+    if(cur && String(d.id)===String(cur.id)) continue;
+    if((d.appareil.imei||'').replace(/\D/g,'')!==imei) continue;
+    var hasBonus=!!(d.bonusQR||(d.facture&&d.facture.bonusQR)||d.qrEnvoi);
+    if(!hasBonus) continue;
+    var dt=(d.qrEnvoi&&d.qrEnvoi.date)?new Date(d.qrEnvoi.date).getTime():(d.date?new Date(d.date).getTime():0);
+    if(dt && (now-dt)<unAn) return {numero:d.numero||'?', date:d.date||(d.qrEnvoi&&d.qrEnvoi.date)||''};
   }
-  box.style.display = 'none';
-  var cbQR = document.getElementById('rep-qr-actif');
-  if(cbQR) cbQR.disabled = false;
+  return null;
+}
+function repQRVerdict(){
+  var box=document.getElementById('rep-inelig-alert'); if(!box) return;
+  var marque=((document.getElementById('dep-marque')||{value:''}).value||'').trim();
+  var imei=((document.getElementById('dep-imei')||{value:''}).value||'').replace(/\D/g,'');
+  var panneSel=(document.getElementById('dep-panne-select')||{value:''}).value||'';
+  var panneTxt=(document.getElementById('dep-panne')||{value:''}).value||'';
+  var panneAll=(panneSel+' '+panneTxt).toLowerCase().trim();
+  if(!marque && !imei && !panneAll){ box.style.display='none'; return; }
+
+  var problems=[], infos=[], blocking=false;
+  // 1) Panne inéligible (mots-clés)
+  var inelig=null;
+  for(var i=0;i<QR_INELIGIBLE.length && !inelig;i++){ for(var j=0;j<QR_INELIGIBLE[i].mots.length;j++){ if(panneAll.indexOf(QR_INELIGIBLE[i].mots[j])>=0){ inelig=QR_INELIGIBLE[i].raison; break; } } }
+  if(inelig){ problems.push('Panne possiblement non éligible — '+inelig); blocking=true; }
+  // 2) Organisme
+  var org=repQRFindOrganisme(marque);
+  if(marque && !org) infos.push('Marque hors référentiel — organisme à confirmer');
+  // 3) IMEI clé de contrôle
+  if(imei && imei.length===15 && typeof imeiLuhnValid==='function' && !imeiLuhnValid(imei)){ problems.push('IMEI : clé de contrôle invalide (un chiffre est sûrement mal lu)'); blocking=true; }
+  if(imei && imei.length>0 && imei.length<15){ infos.push('IMEI incomplet ('+imei.length+'/15)'); }
+  // 4) Anti-doublon
+  var dup=repQRDuplicateInfo(imei);
+  if(dup){ problems.push('Cet IMEI a déjà eu un bonus il y a moins d\'un an (dossier '+dup.numero+') — risque de rejet'); blocking=true; }
+
+  var bonus=repQRBonusBase();
+  var cb=document.getElementById('rep-qr-actif');
+  if(problems.length){
+    box.style.display='block'; box.style.background='rgba(255,59,48,0.08)'; box.style.borderColor='var(--red)'; box.style.color='var(--red)';
+    box.innerHTML='⚠️ <b>À vérifier avant d\'appliquer le bonus :</b><br>• '+problems.join('<br>• ')+(infos.length?'<br><span style="font-size:11px;opacity:.8;">'+infos.join(' · ')+'</span>':'');
+    if(cb) cb.disabled=blocking;
+  } else {
+    box.style.display='block'; box.style.background='rgba(52,199,89,0.08)'; box.style.borderColor='var(--green)'; box.style.color='#16a34a';
+    var orgLabel=org==='ecosystem'?'Ecosystem':org==='ecologic'?'Ecologic':'éco-organisme';
+    box.innerHTML='✅ <b>Éligible QualiRépar</b> — bonus <b>'+bonus+' €</b> · organisme '+orgLabel+(infos.length?'<br><span style="font-size:11px;color:#d97706;">'+infos.join(' · ')+'</span>':'');
+    if(cb) cb.disabled=false;
+  }
+}
+// Conservé pour compat : tout déclencheur d'éligibilité passe par le verdict
+function repCheckEligibilite(){ repQRVerdict(); }
+
+// ── Jauge « prêt à envoyer » (Bloc 3) — contrôle avant soumission ──
+function repQRReadiness(){
+  var host=document.getElementById('rep-qr-readiness'); if(!host) return;
+  var d=window.repDossierCourant||{}, a=d.appareil||{}, f=d.facture;
+  var imei=(a.imei||'').replace(/\D/g,'');
+  var imeiOK=imei.length===15 && (typeof imeiLuhnValid!=='function'||imeiLuhnValid(imei));
+  var checks=[
+    {ok:imeiOK, label:'IMEI valide (15 chiffres + clé de contrôle)'},
+    {ok:!!(d.panne||a.typeRep||a.type), label:'Panne renseignée'},
+    {ok:!!d.photoImeiUrl, label:'Photo de la plaque IMEI'},
+    {ok:!!d.signature, label:'Signature client'},
+    {ok:!!f, label:'Facture NF525 générée'},
+    {ok:((f?(f.prix||0):(d.devis||0))>0), label:'Montant renseigné'}
+  ];
+  var nOK=checks.filter(function(c){return c.ok;}).length, n=checks.length, allOK=nOK===n;
+  host.innerHTML='<div style="padding:12px 14px;border-radius:10px;border:1px solid '+(allOK?'var(--green)':'var(--warning)')+';background:'+(allOK?'rgba(52,199,89,0.06)':'rgba(255,149,0,0.06)')+';margin-bottom:12px;">'
+    +'<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:'+(allOK?'#16a34a':'#d97706')+';">'+(allOK?'✅ Dossier prêt à envoyer ('+nOK+'/'+n+')':'⚠️ Dossier incomplet ('+nOK+'/'+n+')')+'</div>'
+    +checks.map(function(c){return '<div style="font-size:12px;line-height:1.8;color:'+(c.ok?'#16a34a':'#dc2626')+';">'+(c.ok?'✓':'✗')+'&nbsp; '+c.label+'</div>';}).join('')
+    +'</div>';
 }
 
 
