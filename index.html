@@ -15315,10 +15315,14 @@ async function loadSalariesFromSupabase() {
           {date:'2026-05-08',jours:1,mois:'2026-05',motif:'CP mai (à supprimer si boutique fermée le 8 mai)'},
           {date:'2026-05-15',jours:1,mois:'2026-05',motif:'CP mai'}
         ]
+      },
+      {prenom:'Gaya',nom:'BELLACHE',secu:'1 93 02 99 353 061 46',matricule:'00011',dateEntree:'2026-06-10',type:'cdi',categorie:'Employé',niveau:'Niveau 1 Échelon 1 — Vendeur',salaire:'1867.02',anciennete:'0',pas:'0',adresse:'129 rue de Gerland',cp:'69007',ville:'Lyon',iban:'',apprentiPct:'0',paies:{},
+        cpSoldeN1: 0,
+        cpHistorique: []
       }
     ];
     await saveSalariesToSupabase();
-    console.log('✅ 4 salariés pré-remplis avec CP de mai 2026 (Evan retiré)');
+    console.log('✅ 5 salariés pré-remplis (dont Gaya BELLACHE, embauche 10/06/2026)');
   }
 }
 
@@ -16088,7 +16092,23 @@ function creerModalCP() {
             '<input type="text" id="cp-new-motif" placeholder="Vacances, RDV..." style="width:100%;"></div>' +
           '<button class="btn btn-primary btn-sm" onclick="ajouterCPDepuisModal()">➕</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">💡 Pour plusieurs jours consécutifs, ajoutez-les un par un.</div>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">💡 Pour un seul jour. Pour des vacances complètes, utilisez « Ajouter une période » ci-dessous.</div>' +
+      '</div>' +
+      '<div style="background:rgba(88,86,214,0.06);border:1px solid rgba(88,86,214,0.18);border-radius:12px;padding:14px;margin-bottom:16px;">' +
+        '<div style="font-size:12px;font-weight:600;color:#5856D6;margin-bottom:8px;">📆 Ajouter une période (vacances)</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:flex-end;">' +
+          '<div class="form-group" style="margin:0;"><label style="font-size:11px;">Du</label>' +
+            '<input type="date" id="cp-range-debut" style="width:100%;"></div>' +
+          '<div class="form-group" style="margin:0;"><label style="font-size:11px;">Au</label>' +
+            '<input type="date" id="cp-range-fin" style="width:100%;"></div>' +
+          '<div class="form-group" style="margin:0;"><label style="font-size:11px;">Motif (optionnel)</label>' +
+            '<input type="text" id="cp-range-motif" placeholder="Vacances d\'été..." style="width:100%;"></div>' +
+          '<button class="btn btn-primary btn-sm" onclick="ajouterCPPeriodeDepuisModal()">➕</button>' +
+        '</div>' +
+        '<div style="display:flex;gap:14px;align-items:center;margin-top:8px;font-size:11px;color:var(--text-muted);">' +
+          '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="cp-range-excl-dim" checked> Exclure les dimanches</label>' +
+          '<span>Chaque jour ouvrable de la période sera ajouté (1 j/jour).</span>' +
+        '</div>' +
       '</div>' +
       '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(0,0,0,0.4);margin-bottom:10px;">Historique des CP pris</div>' +
       '<div id="cp-historique" style="max-height:280px;overflow-y:auto;"></div>' +
@@ -16169,6 +16189,43 @@ async function ajouterCPDepuisModal() {
   renderCPSoldes();
   renderCPHistorique();
   if (typeof showNotif === 'function') showNotif('CP ajouté ✅', 'success');
+  if (typeof renderSalaries === 'function') renderSalaries();
+}
+
+async function ajouterCPPeriodeDepuisModal() {
+  var d1 = document.getElementById('cp-range-debut').value;
+  var d2 = document.getElementById('cp-range-fin').value;
+  var motif = document.getElementById('cp-range-motif').value.trim();
+  var exclDim = document.getElementById('cp-range-excl-dim').checked;
+  if (!d1 || !d2) { if (typeof showNotif === 'function') showNotif('Choisissez les deux dates','error'); return; }
+  if (d2 < d1) { if (typeof showNotif === 'function') showNotif('La date de fin doit être après le début','error'); return; }
+  var s = salaries[cpModalSalIdx];
+  if (!s) return;
+  if (!s.cpHistorique) s.cpHistorique = [];
+  function isoLocal(dt){ var m=dt.getMonth()+1, d=dt.getDate(); return dt.getFullYear()+'-'+(m<10?'0'+m:m)+'-'+(d<10?'0'+d:d); }
+  var cur = new Date(d1 + 'T12:00:00');
+  var fin = new Date(d2 + 'T12:00:00');
+  var moisTouches = {};
+  var count = 0;
+  while (cur <= fin) {
+    if (!(exclDim && cur.getDay() === 0)) {
+      var iso = isoLocal(cur);
+      s.cpHistorique.push({ date: iso, jours: 1, mois: iso.substring(0,7), motif: motif || '', ajouteLe: new Date().toISOString() });
+      moisTouches[iso.substring(0,7)] = true;
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (count === 0) { if (typeof showNotif === 'function') showNotif('Aucun jour ouvrable dans cette période','error'); return; }
+  s.cpHistorique.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  await saveSalariesToSupabase();
+  Object.keys(moisTouches).forEach(function(m){ syncCPVersPaie(s, m); });
+  document.getElementById('cp-range-debut').value = '';
+  document.getElementById('cp-range-fin').value = '';
+  document.getElementById('cp-range-motif').value = '';
+  renderCPSoldes();
+  renderCPHistorique();
+  if (typeof showNotif === 'function') showNotif(count + ' jour(s) de CP ajouté(s) ✅', 'success');
   if (typeof renderSalaries === 'function') renderSalaries();
 }
 
