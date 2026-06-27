@@ -15236,10 +15236,11 @@ var salaries = [];
 var paieEnCours = null; // salarié sélectionné pour la fiche de paie
 
 // Constantes paie CC 3251
-var SAL_TAUX_HORAIRE    = 12.02;
+var SMIC_MENSUEL        = 1867.02;  // SMIC mensuel brut 35h au 01/06/2026
+var SAL_TAUX_HORAIRE    = 12.31;    // SMIC horaire brut au 01/06/2026
 var SAL_BASE_HEURES     = 151.67;
-var SAL_SALAIRE_BASE    = 1823.07;
-var SAL_PRIME_ANC_BASE  = 1802.00;
+var SAL_SALAIRE_BASE    = 1867.02;  // = SMIC mensuel (juin 2026)
+var SAL_PRIME_ANC_BASE  = 1802.00;  // base conventionnelle CC 3251 (à vérifier)
 
 // Taux cotisations (approximatifs CC 3251)
 var COTIS = {
@@ -15284,7 +15285,7 @@ async function loadSalariesFromSupabase() {
   // ⚠️ Evan ANGOSTO retiré (n'est plus dans l'entreprise)
   if (salaries.length === 0) {
     salaries = [
-      {prenom:'Nawfel',nom:'CRANCE',secu:'1 03 12 71 270 162 01',matricule:'00006',dateEntree:'2024-11-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1823.07',anciennete:'3',pas:'0',adresse:'96 Rue Jules Ferry',cp:'01750',ville:'Saint Laurent sur Saône',iban:'',apprentiPct:'0',paies:{},
+      {prenom:'Nawfel',nom:'CRANCE',secu:'1 03 12 71 270 162 01',matricule:'00006',dateEntree:'2024-11-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1867.02',anciennete:'3',pas:'0',adresse:'96 Rue Jules Ferry',cp:'01750',ville:'Saint Laurent sur Saône',iban:'',apprentiPct:'0',paies:{},
         cpSoldeN1: 9,
         cpHistorique: [
           {date:'2026-04-30',jours:21,mois:'2026-04',motif:'Cumul CP pris avant intégration'},
@@ -15292,7 +15293,7 @@ async function loadSalariesFromSupabase() {
           {date:'2026-05-27',jours:1,mois:'2026-05',motif:'CP mai'}
         ]
       },
-      {prenom:'Rahim',nom:'HASSANI',secu:'1 05 12 98 511 033 27',matricule:'00007',dateEntree:'2025-10-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1823.07',anciennete:'3',pas:'0',adresse:'4 Rue de Bretagne',cp:'71000',ville:'Mâcon',iban:'',apprentiPct:'0',paies:{},
+      {prenom:'Rahim',nom:'HASSANI',secu:'1 05 12 98 511 033 27',matricule:'00007',dateEntree:'2025-10-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1867.02',anciennete:'3',pas:'0',adresse:'4 Rue de Bretagne',cp:'71000',ville:'Mâcon',iban:'',apprentiPct:'0',paies:{},
         cpSoldeN1: 0,
         cpHistorique: [
           {date:'2026-05-28',jours:1,mois:'2026-05',motif:'CP mai (jeudi)'},
@@ -15580,12 +15581,18 @@ function calculerBulletin(sal, cpPris, absJours, heuresSup, prime) {
     cotPat += brutTotal * COTIS.chom_pat;
     cotPat += brutTotal * COTIS.autres_pat;
 
-    // Réduction Fillon (simplifiée)
-    var smicMensuel = 1801.80;
-    var coeff = (0.3199 / 0.6) * (1.6 * smicMensuel / brutTotal - 1);
-    coeff = Math.min(Math.max(coeff, 0), 0.3199);
-    var reductionFillon = brutTotal * coeff;
-    cotPat = Math.max(0, cotPat - reductionFillon);
+    // Réduction générale dégressive unique (RGDU) — réforme 2026
+    // Remplace la réduction Fillon ET les taux réduits maladie/famille. S'applique jusqu'à 3 SMIC.
+    // Entreprise < 50 salariés (FNAL 0,10 %) : Tmin=0,0200 · Tdelta=0,3781 · Tmax=0,3981
+    var smicMensuel = SMIC_MENSUEL;
+    var coeff = 0;
+    if (brutTotal < 3 * smicMensuel) {
+      var x = 0.5 * (3 * smicMensuel / brutTotal - 1);
+      coeff = 0.0200 + 0.3781 * Math.pow(x, 1.75);
+      coeff = Math.min(Math.max(coeff, 0), 0.3981);
+    }
+    var reductionRGDU = brutTotal * coeff;
+    cotPat = Math.max(0, cotPat - reductionRGDU);
   }
 
   var netAvantIR = brutTotal - cotSal;
