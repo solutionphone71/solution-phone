@@ -15286,7 +15286,7 @@ async function loadSalariesFromSupabase() {
   if (salaries.length === 0) {
     salaries = [
       {prenom:'Nawfel',nom:'CRANCE',secu:'1 03 12 71 270 162 01',matricule:'00006',dateEntree:'2024-11-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1867.02',anciennete:'3',pas:'0',adresse:'96 Rue Jules Ferry',cp:'01750',ville:'Saint Laurent sur Saône',iban:'',apprentiPct:'0',paies:{},
-        cpSoldeN1: 9,
+        cpSoldeN1: 9, cpAncrage: {date:'2026-05-01', solde:15.5},
         cpHistorique: [
           {date:'2026-04-30',jours:21,mois:'2026-04',motif:'Cumul CP pris avant intégration'},
           {date:'2026-05-15',jours:1,mois:'2026-05',motif:'CP mai'},
@@ -15294,7 +15294,7 @@ async function loadSalariesFromSupabase() {
         ]
       },
       {prenom:'Rahim',nom:'HASSANI',secu:'1 05 12 98 511 033 27',matricule:'00007',dateEntree:'2025-10-01',type:'cdi',categorie:'Employé',niveau:'Echelon Niveau 3 — Vendeur',salaire:'1867.02',anciennete:'3',pas:'0',adresse:'4 Rue de Bretagne',cp:'71000',ville:'Mâcon',iban:'',apprentiPct:'0',paies:{},
-        cpSoldeN1: 0,
+        cpSoldeN1: 0, cpAncrage: {date:'2026-05-01', solde:17.5},
         cpHistorique: [
           {date:'2026-05-28',jours:1,mois:'2026-05',motif:'CP mai (jeudi)'},
           {date:'2026-05-29',jours:1,mois:'2026-05',motif:'CP mai (vendredi - jour de repos permuté)'},
@@ -15302,7 +15302,7 @@ async function loadSalariesFromSupabase() {
         ]
       },
       {prenom:'Raphaël',nom:'JOUIN',secu:'1 06 01 78 646 471 25',matricule:'00009',dateEntree:'2024-08-01',type:'apprenti',categorie:'Apprenti',niveau:'Apprenti Vendeur',salaire:'929.77',anciennete:'1',pas:'0',adresse:'47 Impasse de la Grisière',cp:'71118',ville:'Saint Martin Belle Roche',iban:'',apprentiPct:'51',paies:{},
-        cpSoldeN1: 12,
+        cpSoldeN1: 12, cpAncrage: {date:'2026-05-01', solde:17.5},
         cpHistorique: [
           {date:'2026-04-30',jours:22,mois:'2026-04',motif:'Cumul CP pris avant intégration'},
           {date:'2026-05-15',jours:1,mois:'2026-05',motif:'CP mai'},
@@ -15310,7 +15310,7 @@ async function loadSalariesFromSupabase() {
         ]
       },
       {prenom:'Martin',nom:'CHAVET',secu:'1 08 10 01 451 206 20',matricule:'00010',dateEntree:'2024-09-01',type:'apprenti',categorie:'Apprenti',niveau:'Apprenti',salaire:'711.00',anciennete:'1',pas:'0',adresse:'189 Chemin des Rollets',cp:'01140',ville:'Illiat',iban:'',apprentiPct:'39',paies:{},
-        cpSoldeN1: 16,
+        cpSoldeN1: 16, cpAncrage: {date:'2026-05-01', solde:17.5},
         cpHistorique: [
           {date:'2026-04-30',jours:26,mois:'2026-04',motif:'Cumul CP pris avant intégration'},
           {date:'2026-05-08',jours:1,mois:'2026-05',motif:'CP mai (à supprimer si boutique fermée le 8 mai)'},
@@ -15318,7 +15318,7 @@ async function loadSalariesFromSupabase() {
         ]
       },
       {prenom:'Gaya',nom:'BELLACHE',secu:'1 93 02 99 353 061 46',matricule:'00011',dateEntree:'2026-06-10',type:'cdi',categorie:'Employé',niveau:'Niveau 1 Échelon 1 — Vendeur',salaire:'1867.02',anciennete:'0',pas:'0',adresse:'129 rue de Gerland',cp:'69007',ville:'Lyon',iban:'',apprentiPct:'0',paies:{},
-        cpSoldeN1: 0,
+        cpSoldeN1: 0, cpAncrage: {date:'2026-06-01', solde:0},
         cpHistorique: []
       }
     ];
@@ -15990,15 +15990,76 @@ function calculerCPPrisRef(salarie, dateAuJour) {
 }
 
 // Renvoie le solde complet CP pour un salarié à une date donnée
+// ── MODÈLE AUTOMATIQUE : grand livre mensuel des congés ──
+// Plus de report manuel : tout se calcule à partir d'un ancrage (solde connu à
+// une date) puis se reporte automatiquement chaque mois (+2,5 j acquis, - congés pris).
+function getAncrageCP(salarie) {
+  if (salarie.cpAncrage && salarie.cpAncrage.date) {
+    return { date: new Date(salarie.cpAncrage.date), solde: parseFloat(salarie.cpAncrage.solde) || 0 };
+  }
+  // Repli : début de la période courante avec l'ancien champ cpSoldeN1
+  return { date: getDebutPeriodeRefCP(), solde: parseFloat(salarie.cpSoldeN1) || 0 };
+}
+
+function moisDiffCP(d1, d2) {
+  return (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+}
+
+// Grand livre mois par mois, de l'ancrage jusqu'au mois de dateRef (inclus).
+function genererLedgerCP(salarie, dateRef) {
+  var fin = dateRef ? new Date(dateRef) : new Date();
+  var anc = getAncrageCP(salarie);
+  var debut = new Date(anc.date.getFullYear(), anc.date.getMonth(), 1);
+  var entree = salarie.dateEntree ? new Date(salarie.dateEntree) : debut;
+  var moisEntree = new Date(entree.getFullYear(), entree.getMonth(), 1);
+  var nb = moisDiffCP(debut, fin);
+  if (nb < 0) nb = 0;
+  var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var ledger = [], solde = anc.solde, acquisPeriode = 0;
+  var periodeCourante = getDebutPeriodeRefCP(debut).getFullYear();
+  for (var i = 0; i <= nb; i++) {
+    var m = new Date(debut.getFullYear(), debut.getMonth() + i, 1);
+    var ym = m.getFullYear() + '-' + ('0' + (m.getMonth() + 1)).slice(-2);
+    var perAn = getDebutPeriodeRefCP(m).getFullYear();
+    if (perAn !== periodeCourante) { periodeCourante = perAn; acquisPeriode = 0; }
+    var acquis = 0;
+    if (m >= moisEntree) {
+      acquis = Math.min(CP_ACQUIS_PAR_MOIS, Math.max(0, CP_MAX_LEGAL - acquisPeriode));
+      acquisPeriode += acquis;
+    }
+    var prisList = getCPMois(salarie, ym);
+    var pris = prisList.reduce(function(a, c) { return a + (parseFloat(c.jours) || 0); }, 0);
+    solde = solde + acquis - pris;
+    ledger.push({
+      mois: ym,
+      label: moisNoms[m.getMonth()] + ' ' + m.getFullYear(),
+      acquis: acquis,
+      pris: pris,
+      prisDetail: prisList,
+      soldeFin: Math.round(solde * 100) / 100
+    });
+  }
+  return ledger;
+}
+
+function soldeCPAuto(salarie, dateRef) {
+  var l = genererLedgerCP(salarie, dateRef);
+  return l.length ? l[l.length - 1].soldeFin : (getAncrageCP(salarie).solde || 0);
+}
+
+// Conserve la même forme de retour (soldeN1 / acquisN / pris / solde) mais à partir du ledger auto.
 function calculerSoldeCP(salarie, dateAuJour) {
-  var soldeN1 = parseFloat(salarie.cpSoldeN1) || 0;
-  var acquisN = calculerAcquisN(salarie, dateAuJour);
-  var pris = calculerCPPrisRef(salarie, dateAuJour);
-  var solde = soldeN1 + acquisN - pris;
+  var ledger = genererLedgerCP(salarie, dateAuJour);
+  var debutRef = getDebutPeriodeRefCP(dateAuJour);
+  var acquisN = 0, pris = 0;
+  ledger.forEach(function(row) {
+    if (new Date(row.mois + '-01') >= debutRef) { acquisN += row.acquis; pris += row.pris; }
+  });
+  var solde = ledger.length ? ledger[ledger.length - 1].soldeFin : (getAncrageCP(salarie).solde || 0);
   return {
-    soldeN1: soldeN1,
-    acquisN: acquisN,
-    pris: pris,
+    soldeN1: Math.round((solde - acquisN + pris) * 100) / 100,
+    acquisN: Math.round(acquisN * 100) / 100,
+    pris: Math.round(pris * 100) / 100,
     solde: Math.round(solde * 100) / 100
   };
 }
@@ -16057,8 +16118,11 @@ function ouvrirModalCP(idx) {
     creerModalCP();
   }
   document.getElementById('modal-cp-title').textContent = '📅 Congés payés — ' + s.prenom + ' ' + s.nom;
-  document.getElementById('cp-solde-n1').value = s.cpSoldeN1 || 0;
+  var anc = getAncrageCP(s);
+  document.getElementById('cp-ancrage-date').value = anc.date.getFullYear() + '-' + ('0' + (anc.date.getMonth() + 1)).slice(-2);
+  document.getElementById('cp-ancrage-solde').value = anc.solde || 0;
   renderCPSoldes();
+  renderCPMensuel();
   renderCPHistorique();
   document.getElementById('modal-conges').style.display = 'block';
 }
@@ -16079,15 +16143,19 @@ function creerModalCP() {
         '<button class="btn btn-sm" onclick="fermerModalCP()">✖</button>' +
       '</div>' +
       '<div id="cp-soldes-bloc" style="background:rgba(0,0,0,0.04);border-radius:12px;padding:16px;margin-bottom:16px;"></div>' +
-      '<div style="background:rgba(0,122,255,0.06);border:1px solid rgba(0,122,255,0.15);border-radius:12px;padding:14px;margin-bottom:16px;">' +
-        '<div style="font-size:12px;font-weight:600;color:#60a5fa;margin-bottom:8px;">⚙️ Initialisation au 01/06 (acquis N-1)</div>' +
+      '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(0,0,0,0.4);margin-bottom:10px;">📆 Suivi mois par mois (automatique)</div>' +
+      '<div id="cp-mensuel" style="margin-bottom:18px;"></div>' +
+      '<details style="background:rgba(0,122,255,0.06);border:1px solid rgba(0,122,255,0.15);border-radius:12px;padding:12px;margin-bottom:16px;">' +
+        '<summary style="font-size:12px;font-weight:600;color:#60a5fa;cursor:pointer;">⚙️ Point de départ du suivi (rarement à modifier)</summary>' +
+        '<div style="font-size:11px;color:var(--text-muted);margin:8px 0;">Solde de congés connu au début du suivi. Ensuite tout se reporte <b>automatiquement</b> chaque mois (+2,5 j acquis, − congés pris). Aucun report manuel à faire chaque année.</div>' +
         '<div style="display:flex;gap:10px;align-items:flex-end;">' +
-          '<div class="form-group" style="flex:1;margin:0;"><label style="font-size:11px;">CP acquis avant le 1er juin (solde N-1)</label>' +
-            '<input type="number" id="cp-solde-n1" value="0" min="0" max="30" step="0.5" style="width:100%;"></div>' +
-          '<button class="btn btn-sm btn-primary" onclick="sauvegarderSoldeN1()">💾</button>' +
+          '<div class="form-group" style="margin:0;"><label style="font-size:11px;">Date de départ</label>' +
+            '<input type="month" id="cp-ancrage-date" style="width:100%;"></div>' +
+          '<div class="form-group" style="flex:1;margin:0;"><label style="font-size:11px;">Solde à cette date (jours)</label>' +
+            '<input type="number" id="cp-ancrage-solde" value="0" min="0" step="0.5" style="width:100%;"></div>' +
+          '<button class="btn btn-sm btn-primary" onclick="sauvegarderAncrageCP()">💾</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Ex : si Evan avait 8j de CP non pris au 31/05/2025, indiquez 8.</div>' +
-      '</div>' +
+      '</details>' +
       '<div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.15);border-radius:12px;padding:14px;margin-bottom:16px;">' +
         '<div style="font-size:12px;font-weight:600;color:#34C759;margin-bottom:8px;">➕ Ajouter un congé payé</div>' +
         '<div style="display:grid;grid-template-columns:1fr 80px 1fr auto;gap:10px;align-items:flex-end;">' +
@@ -16152,6 +16220,46 @@ function renderCPSoldes() {
     '<div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">Période de référence : 01/06/' + (getDebutPeriodeRefCP(dateRef).getFullYear()) + ' → 31/05/' + (getDebutPeriodeRefCP(dateRef).getFullYear()+1) + '</div>';
 }
 
+// Tableau clair mois par mois : acquis, congés pris (avec dates), solde de fin de mois
+function renderCPMensuel() {
+  var s = salaries[cpModalSalIdx];
+  var cont = document.getElementById('cp-mensuel');
+  if (!s || !cont) return;
+  var moisRef = (document.getElementById('sal-mois-sel')||{value:''}).value || new Date().toISOString().substring(0,7);
+  var ledger = genererLedgerCP(s, moisRef + '-28');
+  if (ledger.length === 0) { cont.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Aucun mois à afficher.</div>'; return; }
+  var jsem = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var rows = ledger.slice().reverse().map(function(r) {
+    var estCourant = (r.mois === moisRef);
+    var datesTxt = r.prisDetail.length
+      ? r.prisDetail.map(function(c){ var d=new Date(c.date); return '<span style="display:inline-block;background:rgba(255,149,0,0.14);color:#c2410c;border-radius:6px;padding:1px 7px;margin:2px 3px 2px 0;font-size:11px;white-space:nowrap;">' + jsem[d.getDay()] + ' ' + formatDateFR(c.date) + (parseFloat(c.jours)!==1?(' ('+c.jours+'j)'):'') + '</span>'; }).join('')
+      : '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+    return '<div style="display:grid;grid-template-columns:120px 70px 1fr 90px;gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--border);' + (estCourant?'background:rgba(0,122,255,0.07);border-radius:8px;':'') + '">' +
+      '<div style="font-weight:700;font-size:13px;">' + r.label + (estCourant?' <span style="font-size:10px;color:#007aff;">(en cours)</span>':'') + '</div>' +
+      '<div style="text-align:center;font-size:13px;color:#34C759;font-weight:600;">' + (r.acquis?('+'+r.acquis.toFixed(1)):'—') + '</div>' +
+      '<div>' + datesTxt + '</div>' +
+      '<div style="text-align:right;font-weight:800;font-size:15px;color:' + (r.soldeFin<0?'#FF3B30':'#1d1d1f') + ';">' + r.soldeFin.toFixed(1) + ' j</div>' +
+    '</div>';
+  }).join('');
+  cont.innerHTML =
+    '<div style="display:grid;grid-template-columns:120px 70px 1fr 90px;gap:8px;padding:8px 10px;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);font-weight:700;">' +
+      '<div>Mois</div><div style="text-align:center;">Acquis</div><div>Congés pris</div><div style="text-align:right;">Solde fin</div>' +
+    '</div>' +
+    '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">' + rows + '</div>';
+}
+
+async function sauvegarderAncrageCP() {
+  var s = salaries[cpModalSalIdx];
+  if (!s) return;
+  var d = document.getElementById('cp-ancrage-date').value;
+  s.cpAncrage = { date: (d ? d + '-01' : new Date().toISOString().substring(0,7) + '-01'), solde: parseFloat(document.getElementById('cp-ancrage-solde').value) || 0 };
+  await saveSalariesToSupabase();
+  renderCPSoldes();
+  renderCPMensuel();
+  if (typeof showNotif === 'function') showNotif('Point de départ enregistré ✅', 'success');
+  if (typeof renderSalaries === 'function') renderSalaries();
+}
+
 function renderCPHistorique() {
   var s = salaries[cpModalSalIdx];
   if (!s || !s.cpHistorique || s.cpHistorique.length === 0) {
@@ -16194,6 +16302,7 @@ async function ajouterCPDepuisModal() {
   document.getElementById('cp-new-jours').value = 1;
   document.getElementById('cp-new-motif').value = '';
   renderCPSoldes();
+  renderCPMensuel();
   renderCPHistorique();
   if (typeof showNotif === 'function') showNotif('CP ajouté ✅', 'success');
   if (typeof renderSalaries === 'function') renderSalaries();
@@ -16231,6 +16340,7 @@ async function ajouterCPPeriodeDepuisModal() {
   document.getElementById('cp-range-fin').value = '';
   document.getElementById('cp-range-motif').value = '';
   renderCPSoldes();
+  renderCPMensuel();
   renderCPHistorique();
   if (typeof showNotif === 'function') showNotif(count + ' jour(s) de CP ajouté(s) ✅', 'success');
   if (typeof renderSalaries === 'function') renderSalaries();
@@ -16240,6 +16350,7 @@ async function supprimerCPModal(cpIdx) {
   if (!confirm('Supprimer ce CP ?')) return;
   await supprimerCP(cpModalSalIdx, cpIdx);
   renderCPSoldes();
+  renderCPMensuel();
   renderCPHistorique();
   if (typeof renderSalaries === 'function') renderSalaries();
 }
