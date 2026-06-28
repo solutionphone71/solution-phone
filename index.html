@@ -23896,7 +23896,7 @@ async function qrEnvoyerEcosystemComplet(d){
       RepairerId:'2002535',
       RepairPlaceID:'2002535',
       Product:{ProductID:_pid,BrandID:_bid,ProductIdentificationNumber:a.imei||'',CommercialReference:a.modele||'Smartphone',RepairTypeCode:_rcode},
-      SpareParts:{NewSparePartsAmount:isPIEC?0:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:isPIEC?1:0,SparePartsDescription:isPIEC?((d.pieceNom||'Pièce')+' (PIEC)'):(d.pieceNom||'')},
+      SpareParts:{NewSparePartsAmount:isPIEC?0:1,SecondHandSparePartsAmount:0,CircularEconomyPartsAmount:isPIEC?1:0},
       Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
@@ -29780,8 +29780,7 @@ async function qrSendEcosystem() {
     SpareParts: {
       NewSparePartsAmount:              (d.piec?0:1),
       SecondHandSparePartsAmount:       0,
-      CircularEconomyPartsAmount:       (d.piec?1:0),
-      SparePartsDescription:            d.piec?((d.pieceNom||'Pièce')+' (PIEC)'):(d.pieceNom||'')
+      CircularEconomyPartsAmount:       (d.piec?1:0)
     },
     Customer: {
       Title:        (cli.civilite === 'Mme' || cli.civilite === 'Madame') ? 'Mme' : 'M.',
