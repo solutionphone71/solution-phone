@@ -22284,15 +22284,8 @@ function repImprimerFacture(d){
   mo  = 25;
   pie = Math.max(0, Math.round((ht - mo) * 100) / 100);
 
+  // Codes IRIS : usage interne éco-organisme uniquement — NON affichés sur la facture client.
   var irisHtml = '';
-  if(f.irisLines && f.irisLines.length > 0){
-    irisHtml = '<tr style="background:#f0f9ff;"><td colspan="6" style="padding:6px 10px;font-size:10px;color:#60a5fa;">'+
-      '<b>Codes IRIS (QualiRépar) :</b> ';
-    irisHtml += (f.irisLines||[]).map(function(l,i){
-      return 'L'+(i+1)+': Cond.'+l.condition+' / Sym.'+l.symptom+' / Sec.'+l.section+' / Réf.'+l.repairCode;
-    }).join(' | ');
-    irisHtml += '</td></tr>';
-  }
 
   var w = window.open('','_blank');
   if(!w){ showNotif('Autorisez les popups','error'); return; }
