@@ -8850,10 +8850,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               </div>
               <div id="rep-qr-actions" style="display:none;margin-top:14px;">
                 <div id="rep-qr-readiness"></div>
-                <button class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="width:100%;padding:14px;font-size:15px;">
+                <button id="rep-qr-btn-envoyer" class="btn btn-primary" onclick="repEnvoyerOrganisme()" style="width:100%;padding:14px;font-size:15px;">
                   📤 Envoyer à <span id="rep-qr-btn-label">Ecosystem</span>
                 </button>
-                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">Remboursement sous 15 jours ouvrés</div>
+                <button id="rep-qr-btn-valider" onclick="repValiderOrganisme()" style="display:none;width:100%;padding:14px;font-size:15px;margin-top:8px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;">
+                  ✅ Valider l'envoi
+                </button>
+                <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">1) Envoyer (crée + pièces) · 2) Valider (confirme) · Remboursement sous 15 j ouvrés</div>
                 <div id="rep-qr-envoi-statut" style="margin-top:10px;"></div>
               </div>
             </div>
@@ -8869,7 +8872,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
             <button class="btn" onclick="repGoStep(4)">← Retour</button>
-            <button class="btn" onclick="repCloturerDossier()" style="background:var(--green);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;">✅ Clôturer le dossier</button>
+            <button id="rep-step5-fin" class="btn" onclick="repCloturerDossier()" style="background:var(--green);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;">✅ Terminer le dossier</button>
           </div>
         </div>
 
@@ -21291,14 +21294,21 @@ function qrBadgeHTML(d){
   var qr=d.qrEnvoi||{};
   if(qr.statut && typeof qr.statut==='object') qr.statut=qr.statut.statut||'Sent';
   var hasEcologic=!!(qr.ecologicId||qr.ecologicClaimId);
-  var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId);
+  var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId||qr.ecosystemClaimId);
   var org=hasEcologic?'\ud83d\udd35 Ecologic':(hasEcosystem?'\ud83d\udfe2 Ecosystem':'');
   function chip(txt,col,bg){ return '<span style="display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:800;color:'+col+';background:'+bg+';white-space:nowrap;">'+txt+'</span>'; }
+  // Feu tricolore : non envoy\u00e9 / \u00e0 valider / \u00e0 corriger / valid\u00e9 / approuv\u00e9 / rembours\u00e9.
   if(!(hasEcologic||hasEcosystem)) return chip('\u26a0\ufe0f \u00c0 envoyer QR','#dc2626','rgba(220,38,38,.10)');
   var st=qr.statut||'Sent';
   if(st==='Rejected'||st==='NonConform') return chip('\u274c Refus\u00e9 \u00b7 '+org,'#b91c1c','rgba(220,38,38,.10)');
   if(st==='Paid')     return chip('\ud83d\udcb6 Rembours\u00e9 \u00b7 '+org,'#1a7e3a','rgba(52,199,89,.14)');
   if(st==='Approved') return chip('\u2705 Approuv\u00e9 \u00b7 '+org,'#1a7e3a','rgba(52,199,89,.12)');
+  // Cr\u00e9\u00e9 mais pas confirm\u00e9/soumis (erreur) \u2192 \u00e0 corriger.
+  if(qr.confirme===false || qr.confirmErreur) return chip('\ud83d\udfe0 \u00c0 corriger \u00b7 '+org,'#b45309','rgba(245,158,11,.16)');
+  // Envoy\u00e9 (pi\u00e8ces d\u00e9pos\u00e9es) mais pas encore valid\u00e9 \u2192 \u00e0 valider.
+  if(qr.aValider===true || (!qr.confirme && !qr.ecosystemServiceOrder && !hasEcologic)) return chip('\ud83d\udd35 \u00c0 valider \u00b7 '+org,'#0a5bd0','rgba(10,132,255,.12)');
+  // Valid\u00e9 sans erreur (confirm\u00e9 / N\u00b0 de service obtenu / Ecologic soumis).
+  if(qr.confirme===true || qr.ecosystemServiceOrder) return chip('\u2705 Valid\u00e9 \u00b7 '+org,'#1a7e3a','rgba(52,199,89,.14)');
   return chip('\u23f3 En v\u00e9rif \u00b7 '+org,'#0a5bd0','rgba(10,132,255,.10)');
 }
 
@@ -22942,6 +22952,10 @@ function repUpdateStep5(){
   var d = repDossierCourant;
   if(!d) return;
 
+  // Bouton bas par défaut : « Terminer le dossier » (utile pour les dossiers SANS QualiRépar).
+  var _finBtn=document.getElementById('rep-step5-fin');
+  if(_finBtn){ _finBtn.textContent='✅ Terminer le dossier'; _finBtn.style.background='var(--green)'; _finBtn.style.color='#fff'; _finBtn.setAttribute('onclick','repCloturerDossier()'); }
+
   var f = d.facture||{};
   var bonusQR = f.bonusQR || (document.getElementById('rep-qr-actif')||{checked:false}).checked;
 
@@ -23022,14 +23036,19 @@ function repUpdateStep5(){
         : '<div style="margin-top:10px;padding:8px 12px;background:rgba(255,59,48,0.08);border-radius:8px;border:1px solid #fca5a5;font-size:13px;font-weight:700;color:#dc2626;">❌ Compléter les points manquants avant envoi</div>'
       );
     
-    // Désactiver le bouton si pas prêt
-    var btnEnvoyer = document.querySelector('[onclick="repEnvoyerOrganisme()"]');
-    if(btnEnvoyer){
+    // Désactiver le bouton ENVOYER si pas prêt (seulement si dossier pas encore envoyé)
+    var _qrSent = !!((d.qrEnvoi||{}).ecosystemClaimId || (d.qrEnvoi||{}).ecologicClaimId);
+    var btnEnvoyer = document.getElementById('rep-qr-btn-envoyer');
+    if(btnEnvoyer && !_qrSent){
       btnEnvoyer.disabled = !allOk;
       btnEnvoyer.style.opacity = allOk ? '1' : '0.5';
       btnEnvoyer.style.cursor = allOk ? 'pointer' : 'not-allowed';
     }
   }
+  // Dossier QualiRépar : Envoyer/Valider gèrent la clôture → le bouton bas devient
+  // « Retour à la liste » (on ne reclôture pas manuellement).
+  if(typeof repMajBoutonsEnvoi==='function') repMajBoutonsEnvoi();
+  if(_finBtn){ _finBtn.textContent='↩︎ Retour à la liste'; _finBtn.style.background='var(--card)'; _finBtn.style.color='var(--text)'; _finBtn.style.fontWeight='600'; _finBtn.setAttribute('onclick','repShowListe()'); }
 }
 
 function repUpdateStatutBadge(){
@@ -23807,6 +23826,36 @@ function repEnvoyerOrganisme(){
   }
 }
 
+// PHASE 2 — Valider (confirmer/soumettre) le dossier déjà envoyé, selon l'organisme.
+function repValiderOrganisme(){
+  var d = repDossierCourant;
+  if(!d){ showNotif('Aucun dossier','error'); return; }
+  var organisme = qrGetOrganisme((d.appareil||{}).marque||'');
+  if(organisme === 'ecologic'){ qrValiderEcologic(d); } else { qrValiderEcosystem(d); }
+}
+
+// Affiche/masque et active les boutons Envoyer / Valider selon l'état du dossier.
+function repMajBoutonsEnvoi(){
+  var d = repDossierCourant; if(!d) return;
+  var qr = d.qrEnvoi||{};
+  var btnEnv = document.getElementById('rep-qr-btn-envoyer');
+  var btnVal = document.getElementById('rep-qr-btn-valider');
+  var envoye = !!(qr.ecosystemClaimId||qr.ecologicClaimId);
+  var valide = qr.confirme===true;
+  var aValider = qr.aValider===true || (envoye && !valide);
+  if(btnEnv){
+    if(valide){ btnEnv.style.display='none'; }
+    else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
+      btnEnv.innerHTML = envoye ? '🔄 Renvoyer (recréer le dossier)' : '📤 Envoyer à <span id="rep-qr-btn-label">'+( qrGetOrganisme((d.appareil||{}).marque||'')==='ecosystem'?'Ecosystem':'Ecologic')+'</span>';
+    }
+  }
+  if(btnVal){
+    if(envoye && !valide){ btnVal.style.display=''; btnVal.disabled=false; btnVal.style.opacity='1'; }
+    else if(valide){ btnVal.style.display=''; btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
+    else { btnVal.style.display='none'; }
+  }
+}
+
 
 
 
@@ -23970,45 +24019,64 @@ async function qrEnvoyerEcologicComplet(d){
     }catch(ef){console.warn("Facture NF525:",ef);}
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
-    if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
-    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId+ecoAuth,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
-    var submitJson={};try{submitJson=JSON.parse(submitText);}catch(e){}
-    // Soumission OK seulement si HTTP ok ET pas de message d'erreur renvoyé par Ecologic.
-    var submitOk = submitResp.ok && !submitJson.ResponseErrorMessage;
+    // PHASE 1 terminée : dossier Ecologic créé + pièces jointes. La soumission
+    // (validation) se fait au 2e clic via « Valider » → qrValiderEcologic(d).
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
-    d.qrEnvoi.statut = submitOk ? 'Sent' : 'Pending';
-    d.qrEnvoi.confirme = !!submitOk;
-    if(submitOk){ delete d.qrEnvoi.confirmErreur; }
-    else { d.qrEnvoi.confirmErreur = 'Soumission Ecologic non aboutie (HTTP '+submitResp.status+(submitJson.ResponseErrorMessage?' : '+submitJson.ResponseErrorMessage:'')+')'; }
+    d.qrEnvoi.statut='AValider';
+    d.qrEnvoi.aValider=true;
+    delete d.qrEnvoi.confirme; delete d.qrEnvoi.confirmErreur;
     d.qrEnvoi.date=today;
     d.statut="cloture";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
-    if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
-    if(!submitOk){
-      // Dossier créé mais SOUMISSION non aboutie → ne sera pas traité tant qu'il n'est pas soumis.
-      var msgS="&#9888;&#65039; <b>Dossier Ecologic créé mais NON soumis</b> — ClaimId "+claimId+
-        "<br>"+(d.qrEnvoi.confirmErreur||'')+
-        "<br>&#128073; Recliquez « Envoyer Ecologic » pour relancer la soumission."+
-        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
-      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:1.5px solid #FF9F0A;padding:14px;border-radius:8px;color:#92400e;'>"+msgS+"</div>";
-      showNotif&&showNotif("⚠️ Ecologic NON soumis ("+claimId+") — à relancer","error");
-    } else if(errs.length>0){
-      // Dossier soumis mais INCOMPLET côté Ecologic → bandeau bien visible, pas un petit texte.
-      var msgW="&#9888;&#65039; <b>Dossier Ecologic INCOMPLET</b> — ClaimId "+claimId+
-        "<br><span style='font-weight:600;'>À compléter avant remboursement :</span> "+errs.join(", ")+
-        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Ouvrir le portail Ecologic &rarr;</a>";
-      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:1.5px solid #FF9F0A;padding:14px;border-radius:8px;color:#92400e;'>"+msgW+"</div>";
-      showNotif&&showNotif("⚠️ Ecologic incomplet ("+claimId+") — à compléter : "+errs.join(", "),"error");
-    } else {
-      var msg="&#9989; <b>Ecologic OK</b> — ClaimId: "+claimId+
-        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
-      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
-      showNotif&&showNotif("&#9989; Dossier complet — ClaimId: "+claimId,"success");
-    }
+    if(typeof repUpdateStep5==="function")repUpdateStep5();
+    var _msgEnvE="&#9989; <b>Dossier envoy&eacute; chez Ecologic</b> (pi&egrave;ces jointes)."+(errs.length?"<br>&#9888;&#65039; &Agrave; compl&eacute;ter : "+errs.join(", "):"")+"<br><small>ClaimId: "+claimId+"</small><br>&#128073; Cliquez sur <b>&laquo; Valider l'envoi &raquo;</b> pour soumettre le dossier.";
+    if(el)el.innerHTML="<div style='background:rgba(10,132,255,0.08);border:1.5px solid #0a84ff;padding:12px;border-radius:8px;color:#0a5bd0;font-size:13px;line-height:1.55;'>"+_msgEnvE+"</div>";
+    showNotif&&showNotif("&#9989; Envoy&eacute; — cliquez Valider l'envoi","success");
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
+  }
+}
+
+// PHASE 2 — Validation Ecologic : soumet le dossier déjà créé (SubmitClaim).
+async function qrValiderEcologic(d){
+  if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
+  var el=document.getElementById("rep-qr-envoi-statut");
+  var claimId=d.qrEnvoi&&d.qrEnvoi.ecologicClaimId;
+  if(!claimId){ showNotif&&showNotif("Rien à valider — envoyez d'abord le dossier","error"); return; }
+  var proxy=QR_ECOLOGIC_PROXY;
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Validation Ecologic...</div>";
+  try{
+    var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId,{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,submitText.substring(0,300));
+    var submitJson={};try{submitJson=JSON.parse(submitText);}catch(e){}
+    var submitOk=submitResp.ok && !submitJson.ResponseErrorMessage;
+    var errs=(d.qrEnvoi&&d.qrEnvoi.manquants)||[];
+    if(!d.qrEnvoi)d.qrEnvoi={};
+    d.qrEnvoi.statut=submitOk?'Sent':'AValider';
+    d.qrEnvoi.aValider=submitOk?false:true;
+    d.qrEnvoi.confirme=!!submitOk;
+    if(submitOk)delete d.qrEnvoi.confirmErreur; else d.qrEnvoi.confirmErreur='Soumission Ecologic non aboutie (HTTP '+submitResp.status+(submitJson.ResponseErrorMessage?' : '+submitJson.ResponseErrorMessage:'')+')';
+    if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
+    if(typeof renderRepHistorique==="function")renderRepHistorique();
+    if(typeof repUpdateStep5==="function")repUpdateStep5();
+    if(!submitOk){
+      var msgKO="&#9888;&#65039; <b>Validation Ecologic non aboutie</b><br><small>"+(d.qrEnvoi.confirmErreur||'')+"</small><br>&#128073; Recliquez &laquo; Valider l'envoi &raquo;.";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;'>"+msgKO+"</div>";
+      showNotif&&showNotif("&#9888;&#65039; Ecologic non soumis","error");
+    } else if(errs.length>0){
+      var msgW="&#9888;&#65039; <b>Validé mais INCOMPLET</b> — à compléter : "+errs.join(", ")+"<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#92400e;'>"+msgW+"</div>";
+      showNotif&&showNotif("⚠️ Ecologic incomplet — "+errs.join(", "),"error");
+    } else {
+      var msg="&#9989; <b>Validé chez Ecologic !</b> ClaimId: "+claimId+"<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
+      showNotif&&showNotif("&#9989; Validé Ecologic !","success");
+    }
+  }catch(e){
+    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
   }
 }
@@ -24188,66 +24256,84 @@ async function qrEnvoyerEcosystemComplet(d){
         showNotif&&showNotif("&#9888;&#65039; Pi&egrave;ce(s) manquante(s)&nbsp;: "+_manquePJ.join(', '),"error");
         return;
       }
-      // ④ Confirm-claim → récupère le N° Ordre de Service
-      if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
-      var serviceOrder='';var confirmFailed=false;var confirmErr='';
-      async function _ecoConfirmOnce(){
-        var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
-        var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,300));
-        if(!cfR.ok){ return {ok:false,status:cfR.status,body:cfT}; }
-        var so='';try{var cfJ=JSON.parse(cfT);so=cfJ.SapServiceOrder||cfJ.sapServiceOrder||cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||cfJ.ReimbursementClaimReference||'';}catch(pe){}
-        return {ok:true,so:so,body:cfT};
-      }
-      try{
-        var cf=await _ecoConfirmOnce();
-        if(!cf.ok){ // 2e tentative : Ecosystem peut être en retard juste après les uploads
-          await new Promise(function(r){setTimeout(r,1500);});
-          cf=await _ecoConfirmOnce();
-        }
-        if(cf.ok){ serviceOrder=cf.so; }
-        else { confirmFailed=true; confirmErr='HTTP '+cf.status+' '+((cf.body||'').substring(0,150)); }
-      }catch(ec){
-        console.error('[Ecosystem] confirm-claim:',ec.message);
-        confirmFailed=true; confirmErr=ec.message;
-      }
-      // SÉCURITÉ ARGENT : sans N° d'ordre de service confirmé, le dossier n'est PAS
-      // soumis (il reste en brouillon chez Ecosystem) → on le marque comme NON confirmé.
-      if(!confirmFailed && !serviceOrder){
-        confirmFailed=true;
-        confirmErr="Confirmation sans N° d'ordre de service (dossier resté en brouillon)";
-        console.warn('[Ecosystem] '+confirmErr);
-      }
-      // (le message définitif — succès confirmé OU brouillon non confirmé — est géré plus bas)
+      // PHASE 1 terminée : dossier créé chez Ecosystem + 3 pièces déposées.
+      // La confirmation (N° de service) se fait au 2e clic via « Valider » → qrValiderEcosystem(d).
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
     d.qrEnvoi.ecosystemClaimId=repairId;
-    d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
-    d.qrEnvoi.ecosystemRepairId=serviceOrder||repairId;
-    d.qrEnvoi.ecosystemId=serviceOrder||repairId;
-    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut=confirmFailed?'Pending':'Sent';
-    if(confirmFailed){ d.qrEnvoi.confirmErreur=confirmErr||'Confirmation non aboutie'; d.qrEnvoi.confirme=false; }
-    else { d.qrEnvoi.confirme=true; delete d.qrEnvoi.confirmErreur; }
+    d.qrEnvoi.ecosystemId=repairId;
+    d.qrEnvoi.ecosystemDate=new Date().toISOString();
+    d.qrEnvoi.statut='AValider';
+    d.qrEnvoi.aValider=true;
+    delete d.qrEnvoi.confirme; delete d.qrEnvoi.confirmErreur;
     d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
-    if(confirmFailed){
-      var msgKO="&#9888;&#65039; Dossier cr&eacute;&eacute; mais <b>NON confirm&eacute;</b> chez Ecosystem.<br>Il n'appara&icirc;tra <b>pas</b> dans le portail et ne sera <b>pas rembours&eacute;</b> tant qu'il n'est pas confirm&eacute;.<br><small>Claim ID: "+repairId+(confirmErr?" &middot; "+confirmErr:"")+"</small><br>&#128073; Cliquez de nouveau sur <b>Envoyer Ecosystem</b> pour relancer la confirmation.";
-      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;font-size:13px;line-height:1.55;'>"+msgKO+"</div>";
-      showNotif&&showNotif("&#9888;&#65039; Dossier NON confirm&eacute; — &agrave; relancer","error");
-    } else {
-      var msg="&#9989; Ecosystem confirm&eacute; ! N&deg;: "+serviceOrder;
-      msg+="<br><small>Claim ID: "+repairId+" &middot; Ordre de service: "+serviceOrder+"</small>";
-      msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
-      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
-      showNotif&&showNotif("&#9989; Ecosystem confirm&eacute; !","success");
-    }
+    if(typeof repUpdateStep5==="function")repUpdateStep5();
+    var _msgEnv="&#9989; <b>Dossier envoy&eacute; chez Ecosystem</b> (3 pi&egrave;ces d&eacute;pos&eacute;es).<br><small>Claim ID: "+repairId+"</small><br>&#128073; Cliquez sur <b>&laquo; Valider l'envoi &raquo;</b> pour confirmer et obtenir le N&deg; de service.";
+    if(el)el.innerHTML="<div style='background:rgba(10,132,255,0.08);border:1.5px solid #0a84ff;padding:12px;border-radius:8px;color:#0a5bd0;font-size:13px;line-height:1.55;'>"+_msgEnv+"</div>";
+    showNotif&&showNotif("&#9989; Envoy&eacute; — cliquez Valider l'envoi","success");
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
   }
 }
 async function repEnvoyerEcosystem(){await qrEnvoyerEcosystemComplet(repDossierCourant);}
+
+// PHASE 2 — Validation Ecosystem : confirme le dossier déjà créé (confirm-claim)
+// et récupère le N° d'ordre de service. Ne recrée rien, ne re-dépose rien.
+async function qrValiderEcosystem(d){
+  if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
+  var el=document.getElementById("rep-qr-envoi-statut");
+  var claimId=d.qrEnvoi&&d.qrEnvoi.ecosystemClaimId;
+  if(!claimId){ showNotif&&showNotif("Rien à valider — envoyez d'abord le dossier","error"); return; }
+  if(el)el.innerHTML="<div style='color:blue'>&#9203; Validation Ecosystem...</div>";
+  try{
+    var ecoUser=localStorage.getItem(PARAMS_KEYS.ecoUser)||'501710';
+    var ecoPass=localStorage.getItem(PARAMS_KEYS.ecoPass)||ECO_PASS_DEFAULT;
+    var lr=await ecoFetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:ecoUser,password:ecoPass})});
+    var lt=await lr.text(); if(!lr.ok)throw new Error('Login Ecosystem: '+lt.substring(0,100));
+    var ld; try{ld=JSON.parse(lt);}catch(e){ld={};}
+    var token=ld.IdToken||ld.idToken||ld.token||ld.id_token||ld.access_token;
+    if(!token)throw new Error('Login: pas de token');
+    var serviceOrder='',confirmFailed=false,confirmErr='';
+    async function _once(){
+      var cfR=await ecoFetch('/reimbursement-claims/'+claimId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
+      var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,300));
+      if(!cfR.ok){return {ok:false,status:cfR.status,body:cfT};}
+      var so='';try{var cfJ=JSON.parse(cfT);so=cfJ.SapServiceOrder||cfJ.sapServiceOrder||cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||cfJ.ReimbursementClaimReference||'';}catch(pe){}
+      return {ok:true,so:so,body:cfT};
+    }
+    var cf=await _once();
+    if(!cf.ok){ await new Promise(function(r){setTimeout(r,1500);}); cf=await _once(); }
+    if(cf.ok){serviceOrder=cf.so;} else {confirmFailed=true;confirmErr='HTTP '+cf.status+' '+((cf.body||'').substring(0,150));}
+    if(!confirmFailed && !serviceOrder){confirmFailed=true;confirmErr="Confirmation sans N° d'ordre de service";}
+    if(!d.qrEnvoi)d.qrEnvoi={};
+    d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
+    d.qrEnvoi.ecosystemRepairId=serviceOrder||claimId;
+    if(serviceOrder)d.qrEnvoi.ecosystemId=serviceOrder;
+    d.qrEnvoi.statut=confirmFailed?'AValider':'Sent';
+    d.qrEnvoi.aValider=confirmFailed?true:false;
+    d.qrEnvoi.confirme=!confirmFailed;
+    if(confirmFailed)d.qrEnvoi.confirmErreur=confirmErr; else delete d.qrEnvoi.confirmErreur;
+    if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
+    if(typeof renderRepHistorique==="function")renderRepHistorique();
+    if(typeof repUpdateStep5==="function")repUpdateStep5();
+    if(confirmFailed){
+      var msgKO="&#9888;&#65039; <b>Validation non aboutie</b><br><small>"+confirmErr+"</small><br>&#128073; Recliquez &laquo; Valider l'envoi &raquo;.";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;'>"+msgKO+"</div>";
+      showNotif&&showNotif("&#9888;&#65039; Validation non aboutie","error");
+    } else {
+      var msg="&#9989; <b>Validé chez Ecosystem !</b> N&deg;: "+serviceOrder+"<br><small>Claim ID: "+claimId+"</small><br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
+      showNotif&&showNotif("&#9989; Validé ! N°: "+serviceOrder,"success");
+    }
+  }catch(e){
+    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"</div>";
+    showNotif&&showNotif("&#10060; "+e.message,"error");
+  }
+}
 
 // Génère un PDF "Devis signé" : infos dossier + signature client → ConsumerValidation Ecologic
 async function repDevisSignePDFBase64(d){
