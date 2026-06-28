@@ -16116,6 +16116,63 @@ async function toggleVacancesIA() {
 
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(initVacancesIA, 1200); });
 
+// ════════════════════════════════════════════════════════════════
+// 💸 BRIQUE 1 — ARGENT QUALIRÉPAR À RISQUE
+// Classe les dossiers éligibles : non envoyés / en retard / refusés.
+// ════════════════════════════════════════════════════════════════
+function qrBonusMontant(d){ return d && d.piec ? 30 : 25; }
+
+function qrCalcArgentARisque(){
+  var D = Array.isArray(window.repDossiers) ? window.repDossiers : [];
+  var elig = D.filter(function(d){ return d && d.bonusQR; });
+  var nonEnv=[], retard=[], refus=[], attente=[], remb=[];
+  var now = Date.now();
+  elig.forEach(function(d){
+    var qe = d.qrEnvoi || {};
+    var envoye = qe.ecologicId || qe.ecosystemId || qe.statut;
+    var st = (qe.statut || '').toLowerCase();
+    if(d.statut==='cloture' && !envoye){ nonEnv.push(d); return; }
+    if(st==='paid'){ remb.push(d); return; }
+    if(st==='rejected'){ refus.push(d); return; }
+    var dt = qe.date || d.dateCloture || d.dateDepot;
+    var j = dt ? (now - new Date(dt).getTime())/86400000 : 0;
+    if(envoye && j>15) retard.push(d); else if(envoye) attente.push(d);
+  });
+  var somme = function(a){ return a.reduce(function(s,d){ return s + qrBonusMontant(d); }, 0); };
+  return {
+    nonEnv:nonEnv, retard:retard, refus:refus, attente:attente, remb:remb,
+    totalRisque: somme(nonEnv)+somme(retard)+somme(refus),
+    eurNonEnv:somme(nonEnv), eurRetard:somme(retard), eurRefus:somme(refus)
+  };
+}
+
+function renderQrRisqueBanner(){
+  var el = document.getElementById('qr-risque-banner');
+  if(!el) return;
+  if(typeof repLoadDossiers==='function' && (!window.repDossiers || !window.repDossiers.length)){
+    try{ repLoadDossiers(); }catch(e){}
+  }
+  var r = qrCalcArgentARisque();
+  if(r.totalRisque <= 0){
+    el.innerHTML = '<div style="background:rgba(52,199,89,0.10);border:1px solid rgba(52,199,89,0.30);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:#1a7e3a;">✅ Aucun dossier à risque — tout est suivi.</div>';
+    return;
+  }
+  var ligne = function(emoji, nb, eur, label){
+    if(nb<=0) return '';
+    return '<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:4px;">'+emoji+' <b>'+nb+'</b> '+label+' <span style="color:#9a3412;font-weight:700;margin-left:auto;">'+eur+' €</span></div>';
+  };
+  el.innerHTML =
+    '<div onclick="qrShowTab(\'ecologic\')" style="cursor:pointer;background:rgba(245,158,11,0.10);border:1.5px solid rgba(245,158,11,0.45);border-radius:16px;padding:16px 20px;">'+
+      '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">'+
+        '<span style="font-size:30px;font-weight:900;color:#c2410c;">💸 '+r.totalRisque+' €</span>'+
+        '<span style="font-size:13px;color:#9a3412;font-weight:600;">à récupérer · '+(r.nonEnv.length+r.retard.length+r.refus.length)+' dossier'+((r.nonEnv.length+r.retard.length+r.refus.length)>1?'s':'')+'</span>'+
+      '</div>'+
+      ligne('🔴', r.nonEnv.length, r.eurNonEnv, 'jamais envoyés')+
+      ligne('🟠', r.retard.length, r.eurRetard, 'en retard (+15 j)')+
+      ligne('❌', r.refus.length, r.eurRefus, 'refusés à corriger')+
+    '</div>';
+}
+
 // Conserve la même forme de retour (soldeN1 / acquisN / pris / solde) mais à partir du ledger auto.
 function calculerSoldeCP(salarie, dateAuJour) {
   var ledger = genererLedgerCP(salarie, dateAuJour);
@@ -30042,6 +30099,7 @@ var _qrTab='ecologic';
 // ── Onglets QualiRépar : Parcours · Suivi Ecosystem · Suivi Ecologic · Analyse ──
 function qrShowTab(tab){
   _qrTab=tab;
+  try{ renderQrRisqueBanner(); }catch(e){}
   [['parcours','qrtab-parcours'],['ecosystem','qrtab-ecosystem'],['ecologic','qrtab-ecologic'],['analyse','qrtab-analyse']].forEach(function(p){
     var b=document.getElementById(p[1]); if(b) b.className='qr-tab'+(p[0]===tab?' on':'');
   });
@@ -30772,6 +30830,9 @@ function showCalToast(title,body){
       <button class="btn" onclick="qrShowTab(_qrTab)">↻ Actualiser</button>
     </div>
   </div>
+
+  <!-- Bandeau Argent à risque (brique 1) -->
+  <div id="qr-risque-banner" style="margin:0 0 14px;"></div>
 
   <!-- Onglets QualiRépar -->
   <div class="qr-tabbar">
