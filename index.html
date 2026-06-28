@@ -8331,7 +8331,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Marque *</label>
-                      <select id="dep-marque" onchange="repMajOrganismePhoto();if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();">
+                      <div id="rep-marque-tiles"></div>
+                      <select id="dep-marque" onchange="repMajOrganismePhoto();if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();if(typeof renderRepMarqueTiles==='function')renderRepMarqueTiles();" style="margin-top:8px;">
                         <option value="">— Choisir —</option>
                         <optgroup label="🟢 Organisme Ecosystem">
                           <option>Samsung</option>
@@ -10308,6 +10309,8 @@ function showPage(id,el){
     }
     // Auto-vérification des statuts QR en arrière-plan
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
+    // Tuiles de marques (départ parcours QualiRépar)
+    if(typeof renderRepMarqueTiles==='function') setTimeout(renderRepMarqueTiles, 250);
   }
   if(id==='suivi-qr'){
     var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else renderSuiviQR(); if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts(); };
@@ -30616,6 +30619,34 @@ function renderCaJourBar(){
     '</div>';
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(renderCaJourBar, 3000); });
+
+// Tuiles de marques groupées par éco-organisme (départ du parcours QualiRépar)
+function repPickMarque(m){
+  var sel=document.getElementById('dep-marque'); if(!sel) return;
+  var found=false;
+  for(var i=0;i<sel.options.length;i++){ if((sel.options[i].value||sel.options[i].text).toLowerCase()===m.toLowerCase()){ sel.value=sel.options[i].value||sel.options[i].text; found=true; break; } }
+  if(!found){ var o=document.createElement('option'); o.value=m; o.textContent=m; sel.appendChild(o); sel.value=m; }
+  if(typeof repMajOrganismePhoto==='function') repMajOrganismePhoto();
+  if(typeof repCheckEligibiliteDebounced==='function') repCheckEligibiliteDebounced();
+  if(typeof repAutoSaveDebounced==='function') repAutoSaveDebounced();
+  renderRepMarqueTiles();
+}
+function renderRepMarqueTiles(){
+  var cont=document.getElementById('rep-marque-tiles');
+  if(!cont || typeof QR_BRAND_TYPE==='undefined') return;
+  var sel=document.getElementById('dep-marque'); var cur=(sel&&sel.value||'').toLowerCase();
+  var eco=[], ecosys=[];
+  Object.keys(QR_BRAND_TYPE).forEach(function(b){ (QR_BRAND_TYPE[b]==='ecosystem'?ecosys:eco).push(b); });
+  function tile(b,color){
+    var on=(b.toLowerCase()===cur);
+    return '<button type="button" onclick="repPickMarque(\''+b+'\')" style="padding:13px 6px;border:2px solid '+color+';background:'+(on?color:'rgba(0,0,0,0.02)')+';color:'+(on?'#fff':color)+';border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;">'+b+'</button>';
+  }
+  cont.innerHTML=
+    '<div style="font-size:11px;font-weight:800;color:#2563eb;margin:2px 0 6px;">🔵 Ecologic</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px;margin-bottom:10px;">'+eco.map(function(b){return tile(b,'#2563eb');}).join('')+'</div>'+
+    '<div style="font-size:11px;font-weight:800;color:#16a34a;margin:2px 0 6px;">🟢 Ecosystem</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px;">'+ecosys.map(function(b){return tile(b,'#16a34a');}).join('')+'</div>';
+}
 
 // Choix pièce neuve / reconditionnée (PIEC) via 2 gros boutons → bascule la case + recalcule le bonus
 function repSetPiec(piec){
