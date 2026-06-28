@@ -7317,31 +7317,27 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
   <div class="page" id="page-params">
     <div class="page-title">⚙️ Paramètres API</div>
-    <div class="page-sub">Connexions aux services externes — AgoraPlus · Ecosystem · Ecologic · Kiwiz NF525</div>
+    <div class="page-sub">Connexions aux services externes — AgoraPlus · Ecosystem · Ecologic · NF525 interne</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px;">
 
-      <!-- Kiwiz NF525 -->
-      <div class="card" style="border:2px solid #1e40af;">
-        <div class="card-header" style="background:rgba(96,165,250,0.06);">
-          <div class="card-title" style="color:#60a5fa;">🔒 Kiwiz — Certification NF525</div>
+      <!-- Certification NF525 interne (remplace Kiwiz) -->
+      <div class="card" style="border:2px solid #16a34a;">
+        <div class="card-header" style="background:rgba(22,163,74,0.06);">
+          <div class="card-title" style="color:#16a34a;">🔒 Certification NF525 — interne</div>
         </div>
         <div class="card-body">
-          <div class="form-group"><label>Identifiant Kiwiz</label>
-            <input type="text" id="params-kiwiz-user" placeholder="votre@email.com"></div>
-          <div class="form-group"><label>Mot de passe Kiwiz</label>
-            <div style="position:relative;">
-              <input type="password" id="params-kiwiz-pass" placeholder="••••••••" style="padding-right:42px;">
-              <button type="button" class="pwd-eye-btn" onclick="togglePwd('params-kiwiz-pass', this)" title="Afficher/masquer">👁️</button>
-            </div></div>
-          <div class="form-group"><label>N° d'abonnement Kiwiz</label>
-            <input type="text" id="params-kiwiz-sub" placeholder="ex: 12345"></div>
-          <button class="btn btn-primary" style="background:#1e40af;border-color:#60a5fa;width:100%;" onclick="paramsSaveKiwiz()">💾 Enregistrer</button>
-          <button class="btn btn-sm" onclick="paramsTestKiwiz()" style="border-color:#60a5fa;color:#60a5fa;margin-top:8px;width:100%;">🧪 Tester la connexion</button>
-          <div id="params-kiwiz-status" style="margin-top:8px;font-size:12px;"></div>
-          <div style="margin-top:10px;padding:8px;background:rgba(96,165,250,0.06);border-radius:6px;font-size:11px;color:#60a5fa;">
-            💡 Compte sur <b>kiwiz.io</b> → à partir de 4,99€ HT/mois · Sans engagement<br>
-            Chaque facture certifiée NF525 automatiquement — conforme contrôle fiscal
+          <div style="padding:10px;background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.3);border-radius:8px;font-size:13px;color:#16a34a;line-height:1.6;">
+            ✅ Vos factures sont certifiées <b>directement par l'application</b> (chaînage cryptographique inaltérable SHA-256). <b>Aucun service externe payant requis.</b><br>
+            Auto-certification (loi de finances 2026) — référence inaltérable <code>SP-000000-…</code> sur chaque facture.
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">L'abonnement Kiwiz n'est plus nécessaire et peut être résilié. Pensez à faire valider votre attestation par votre expert-comptable.</div>
+          <!-- Anciens champs Kiwiz conservés masqués (compatibilité interne) -->
+          <div style="display:none;">
+            <input type="text" id="params-kiwiz-user">
+            <input type="password" id="params-kiwiz-pass">
+            <input type="text" id="params-kiwiz-sub">
+            <span id="params-kiwiz-status"></span>
           </div>
         </div>
       </div>
@@ -9310,7 +9306,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <!-- ══════════════ PAGE QUALIREPAR ══════════════ -->
     <div class="page" id="page-qualirepar">
       <div class="page-title">🏷️ QualiRépar</div>
-      <div class="page-sub">Parcours guidé — Devis · Bonus -25€ · Kiwiz NF525 · AgoraPlus</div>
+      <div class="page-sub">Parcours guidé — Devis · Bonus -25€ · NF525 interne · AgoraPlus</div>
 
       <!-- Barre de progression -->
       <div class="qr-wrap" id="qr-wrap">
@@ -9456,7 +9452,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div style="display:flex;align-items:center;gap:12px;">
                 <span style="font-size:24px;">🔒</span>
                 <div>
-                  <div style="font-weight:700;">Kiwiz NF525</div>
+                  <div style="font-weight:700;">NF525 interne</div>
                   <div style="font-size:12px;color:var(--text-muted);">Certification facture conforme</div>
                 </div>
               </div>
@@ -9478,7 +9474,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
           <div id="qr-done-banner" style="display:none;background:rgba(72,187,120,0.1);border:1px solid var(--green);border-radius:12px;padding:16px;margin-bottom:16px;font-size:13px;color:var(--green);line-height:2;">
             ✓ Devis signé par le client<br>
-            ✓ Facture certifiée NF525 (Kiwiz)<br>
+            ✓ Facture certifiée NF525 (interne)<br>
             ✓ Demande de remboursement soumise<br>
             <b>Remboursement de 25€ sous 15 jours ouvrés.</b>
           </div>
@@ -20125,7 +20121,7 @@ showPage = function(id, el){
 
 
 // ============================================================
-//  PARAMÈTRES API — AgoraPlus · Ecosystem · Ecologic · Kiwiz NF525
+//  PARAMÈTRES API — AgoraPlus · Ecosystem · Ecologic · NF525 interne
 // ============================================================
 
 // Clés localStorage
@@ -29350,7 +29346,7 @@ function qrRenderFinal() {
   qrData.agoraOK = false;
 }
 
-// ── Pennylane DÉPRÉCIÉ (juin 2026) — remplacé par Kiwiz NF525 ──
+// ── Pennylane DÉPRÉCIÉ (juin 2026) — remplacé par NF525 interne ──
 // La certification facture est désormais 100% Kiwiz (voir certifierFactureKiwiz)
 // Cette fonction reste comme stub pour compatibilité avec les anciens DOM/onclick.
 async function qrSendPennylane() {
