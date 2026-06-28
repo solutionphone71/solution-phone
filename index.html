@@ -23955,9 +23955,13 @@ async function qrEnvoyerEcosystemComplet(d){
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
     var repairId='';
-    // Brouillon existant = un dossier déjà créé chez Ecosystem mais jamais confirmé
-    // (confirme===false, OU un ClaimID présent sans N° d'ordre de service).
-    var _existingClaim=(d.qrEnvoi && (d.qrEnvoi.confirme===false || (d.qrEnvoi.ecosystemClaimId && !d.qrEnvoi.ecosystemServiceOrder)))?(d.qrEnvoi.ecosystemClaimId||''):'';
+    // IMPORTANT : on ne réutilise PAS un brouillon non confirmé.
+    // Ecosystem crée les emplacements de pièces dès le 1er upload-file et refuse
+    // ensuite de re-déposer une pièce (« TYPE_DE_FICHIER_EXISTANT »). Si le contenu
+    // d'une pièce avait échoué, le brouillon devient irrécupérable. On crée donc
+    // toujours un dossier neuf et propre ; l'ancien brouillon reste orphelin (non
+    // confirmé = non remboursé, donc sans impact ni risque de double remboursement).
+    var _existingClaim='';
     if(_existingClaim){
       // ANTI-DOUBLON : un brouillon existe déjà chez Ecosystem (envoi précédent non confirmé).
       // On NE recrée PAS de dossier — on réutilise son ID pour ré-uploader + reconfirmer.
