@@ -21772,7 +21772,8 @@ function repNewDossier(){
     var dossier = document.getElementById('rep-dossier-view');
     if(liste) liste.style.display='none';
     if(dossier) dossier.style.display='block';
-    repGoStep(1);
+    repGoStep(2); // démarrer sur « Appareil » (marque + IMEI) — parcours commence par le téléphone
+    if(typeof renderRepMarqueTiles==='function') setTimeout(renderRepMarqueTiles, 60);
     repApplyClientLock(false); // nouveau dossier = champs déverrouillés
   } catch(e) {
     console.error('repNewDossier error:', e);
