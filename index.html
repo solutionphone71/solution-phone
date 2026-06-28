@@ -8368,9 +8368,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
+                      <button onclick="repOCRImei()" title="Lire l'IMEI via la caméra" style="width:100%;padding:16px;margin-bottom:8px;font-size:16px;font-weight:800;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(37,99,235,0.28);">📷 Scanner l'IMEI (photo)</button>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();" maxlength="15" inputmode="numeric" style="flex:1;">
-                        <button class="btn btn-sm" onclick="repOCRImei()" title="Lire IMEI via caméra" style="padding:8px 10px;white-space:nowrap;">📷 Photo IMEI</button>
+                        <input type="text" id="dep-imei" placeholder="ou saisir : 352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();" maxlength="15" inputmode="numeric" style="flex:1;">
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
                         <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);display:flex;align-items:center;gap:8px;">
@@ -30642,6 +30642,7 @@ function renderRepMarqueTiles(){
     return '<button type="button" onclick="repPickMarque(\''+b+'\')" style="padding:13px 6px;border:2px solid '+color+';background:'+(on?color:'rgba(0,0,0,0.02)')+';color:'+(on?'#fff':color)+';border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;">'+b+'</button>';
   }
   cont.innerHTML=
+    '<button type="button" onclick="if(typeof openBrainChat===\'function\')openBrainChat()" style="width:100%;padding:11px;margin-bottom:12px;border:1.5px dashed #7c3aed;background:rgba(124,58,237,0.06);color:#7c3aed;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">🤖 Besoin d\'aide ? Demander à l\'assistant</button>'+
     '<div style="font-size:11px;font-weight:800;color:#2563eb;margin:2px 0 6px;">🔵 Ecologic</div>'+
     '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px;margin-bottom:10px;">'+eco.map(function(b){return tile(b,'#2563eb');}).join('')+'</div>'+
     '<div style="font-size:11px;font-weight:800;color:#16a34a;margin:2px 0 6px;">🟢 Ecosystem</div>'+
