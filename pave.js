@@ -127,8 +127,10 @@ async function _pinInitDefaults() {
 var _userRole = 'patron'; // 'patron', 'employe' ou 'comptable'
 
 // Modules par rôle
-var _modulesPatronOnly = ['caisse','comptable','analytics','salaries'];
-var _modulesComptable  = ['caisse','comptable','analytics','salaries'];
+// Patron uniquement = tout l'administratif/gestion. L'employé garde l'opérationnel
+// (caisse accessoires, réparation, achat/vente occasion, QualiRépar, clients, devis, stock, prix).
+var _modulesPatronOnly = ['caisse','comptable','analytics','salaries','params','autopilot','studio','avis-google','seo-local','inventaires','roulette'];
+var _modulesComptable  = ['caisse','comptable','analytics','salaries','inventaires'];
 var _modulesEmploye    = []; // employés voient tout SAUF _modulesPatronOnly
 
 function appliquerRole(){
