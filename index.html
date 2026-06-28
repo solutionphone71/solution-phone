@@ -23100,7 +23100,7 @@ function repStep2Next(){
   var a=repDossierCourant.appareil;
   if(!a.marque||!a.modele){showNotif('⚠️ Marque et Modèle sont obligatoires','error');return;}
   if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
-  if(!a.couleur){showNotif('⚠️ Couleur de l\'appareil obligatoire','error');return;}
+  // Couleur : non obligatoire (retiré à la demande)
   // Photo IMEI obligatoire (plaque signalétique)
   if(!repDossierCourant.photoImeiUrl){
     showNotif('⚠️ Photo IMEI / plaque signalétique obligatoire — utilisez le bouton 📷 OCR','error');
