@@ -23283,6 +23283,19 @@ function repSauvegarderDossierImmediatement(){
   };
   clearTimeout(_repSupaSaveTimer); // annuler le debounce en cours
   saveBonDepotSupabase(depot);    // sauvegarder immédiatement
+  // Sync mémoire : maj bonsDepot ET repDossiers pour que le suivi QualiRépar
+  // reflète tout de suite l'envoi (sans recharger la page).
+  try {
+    if(!Array.isArray(window.bonsDepot)) window.bonsDepot = [];
+    var _bidx = bonsDepot.findIndex(function(d){ return String(d.id)===String(depot.id); });
+    if(_bidx>=0) bonsDepot[_bidx]=depot; else bonsDepot.push(depot);
+    if(typeof saveBonsDepot==='function') saveBonsDepot();
+    if(Array.isArray(window.repDossiers)){
+      var _ridx = repDossiers.findIndex(function(d){ return String(d.id)===String(depot.id); });
+      if(_ridx>=0) repDossiers[_ridx].qrEnvoi = repDossierCourant.qrEnvoi;
+    }
+    if(typeof renderSuiviQR==='function' && typeof _qrTab!=='undefined' && _qrTab==='analyse'){ /* analyse se recalcule à l'ouverture */ }
+  } catch(_e){ console.warn('[rep] sync bonsDepot immédiat:', _e.message); }
 }
 
 function repSauvegarderDossier(){
