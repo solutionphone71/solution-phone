@@ -8518,15 +8518,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                       <option>Haut-parleur</option><option>Micro</option><option>Autre</option>
                     </select></div>
 
-                  <!-- PIEC — Pièce Issue de l'Économie Circulaire -->
-                  <div id="dep-piec-wrap" style="background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.04));border:1.5px solid rgba(16,185,129,0.3);border-radius:10px;padding:12px 14px;margin-bottom:8px;">
-                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;margin:0;">
-                      <input type="checkbox" id="dep-piec" onchange="repAutoSaveDebounced()" style="width:18px;height:18px;accent-color:#059669;">
-                      <span>♻️ <b>Pièce PIEC</b> <span style="font-weight:400;color:var(--text-muted);font-size:12px;">— Pièce Issue de l'Économie Circulaire (reconditionné / occasion)</span></span>
-                    </label>
-                    <div style="font-size:11px;color:#059669;margin-top:6px;margin-left:28px;">
-                      💡 Si coché : bonus QualiRépar majoré de 20% (30 € au lieu de 25 €) · Le client doit donner son accord écrit
+                  <!-- PIEC — Pièce Issue de l'Économie Circulaire — 2 GROS BOUTONS -->
+                  <div id="dep-piec-wrap" style="margin-bottom:8px;">
+                    <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin-bottom:8px;">Type de pièce posée</div>
+                    <input type="checkbox" id="dep-piec" onchange="repAutoSaveDebounced()" style="display:none;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                      <button type="button" id="dep-piec-neuve" onclick="repSetPiec(false)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border:2px solid #94a3b8;background:rgba(148,163,184,0.08);color:#475569;border-radius:14px;cursor:pointer;font-weight:800;transition:.15s;"><span style="font-size:30px;line-height:1;">🆕</span>Pièce neuve<span style="font-size:12px;font-weight:700;opacity:.8;">bonus 25 €</span></button>
+                      <button type="button" id="dep-piec-recond" onclick="repSetPiec(true)" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 10px;border:2px solid #059669;background:rgba(5,150,105,0.08);color:#059669;border-radius:14px;cursor:pointer;font-weight:800;transition:.15s;"><span style="font-size:30px;line-height:1;">♻️</span>Reconditionnée (PIEC)<span style="font-size:12px;font-weight:700;opacity:.8;">bonus 30 €</span></button>
                     </div>
+                    <div style="font-size:11px;color:#059669;margin-top:6px;">💡 Pièce reconditionnée (PIEC) = bonus majoré à 30 € · le client doit donner son accord écrit.</div>
                   </div>
 
                   <!-- Décomposition HT obligatoire pour QR -->
@@ -30616,6 +30616,18 @@ function renderCaJourBar(){
     '</div>';
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(renderCaJourBar, 3000); });
+
+// Choix pièce neuve / reconditionnée (PIEC) via 2 gros boutons → bascule la case + recalcule le bonus
+function repSetPiec(piec){
+  try{
+    var cb=document.getElementById('dep-piec'); if(cb) cb.checked=!!piec;
+    var bN=document.getElementById('dep-piec-neuve'), bR=document.getElementById('dep-piec-recond');
+    if(bN){ bN.style.outline = piec?'':'3px solid #475569'; bN.style.outlineOffset='2px'; bN.style.transform=piec?'':'translateY(-2px)'; }
+    if(bR){ bR.style.outline = piec?'3px solid #059669':''; bR.style.outlineOffset='2px'; bR.style.transform=piec?'translateY(-2px)':''; }
+    if(typeof repAutoSaveDebounced==='function') repAutoSaveDebounced();
+    if(typeof repCalcDevis==='function') repCalcDevis();
+  }catch(e){}
+}
 
 // Surligne l'icône de panne sélectionnée (retour visuel employé)
 function repMajIconePanne(btn){
