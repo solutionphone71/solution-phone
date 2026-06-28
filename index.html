@@ -23931,9 +23931,26 @@ async function qrEnvoyerEcologicComplet(d){
     console.log('[Ecologic] CreateClaim response status:',r2.status,'body:',r2Text.substring(0,500));
     if(r2.status===401||r2.status===403){throw new Error("Ecologic "+r2.status+" — Clé API rejetée. Vérifiez ECOLOGIC_API_KEY dans Vercel.");}
     var j2;try{j2=JSON.parse(r2Text);}catch(pe){throw new Error("Ecologic a répondu (HTTP "+r2.status+"): "+r2Text.substring(0,200));}
-    var claimId=j2.ResponseData&&j2.ResponseData.ClaimId;
-    if(!claimId)throw new Error("Pas de ClaimId: "+(j2.ResponseErrorMessage||JSON.stringify(j2.ResponseData)));
-    var errs=(j2.ResponseData.ValidationErrors||[]).filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
+    var _rd = j2.ResponseData || {};
+    var _vErrs = _rd.ValidationErrors || j2.ValidationErrors || [];
+    // On récupère le MESSAGE réel d'Ecologic (pas seulement le nom du champ) :
+    // c'est là que figure « IMEI déjà saisi / couvert par la garantie / déjà aidé ».
+    var _ecoMsgs = _vErrs.map(function(e){ return String(e.Message||e.Field||'').trim(); }).filter(Boolean);
+    var _respMsg = String(j2.ResponseErrorMessage || j2.ResponseMessage || '').trim();
+    var claimId = _rd.ClaimId;
+    if(!claimId){
+      // Ecologic a refusé la création → on affiche SON message exact (comme Phonilab).
+      var _human = _respMsg || _ecoMsgs.join(' · ') || ('Réponse Ecologic : '+JSON.stringify(_rd).substring(0,200));
+      throw new Error(_human);
+    }
+    var errs=_vErrs.filter(function(e){return e.MessageType==="E";}).map(function(e){return e.Field;});
+    // Avertissement éligibilité même si un ClaimId est renvoyé (IMEI déjà aidé / garantie).
+    var _eligTxt = ((_respMsg||'')+' '+_ecoMsgs.join(' ')).toLowerCase();
+    if(/d[eé]j[aà] saisi|garantie|d[eé]j[aà] couvert|d[eé]j[aà] aid|already|non ?[ée]ligible/.test(_eligTxt)){
+      var _msgElig="&#9888;&#65039; <b>Ecologic — éligibilité</b> : "+(_respMsg||_ecoMsgs.join(' · '));
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:1.5px solid #FF9F0A;padding:14px;border-radius:8px;color:#92400e;'>"+_msgElig+"</div>";
+      showNotif&&showNotif("⚠️ Ecologic : "+(_respMsg||_ecoMsgs.join(' · ')),"error");
+    }
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 2/3...</div>";
     // Facture PDF — utiliser la VRAIE facture NF525 (repFactureToPDFBase64) si d.facture existe
     try{
