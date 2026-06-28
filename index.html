@@ -23995,51 +23995,58 @@ async function qrEnvoyerEcosystemComplet(d){
         if(!putR.ok) throw new Error('dépôt S3 facture échoué (HTTP '+putR.status+')');
         invoiceOk=true;
       }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);uploadErrors.push('facture: '+ef.message);}
-      // Photo IMEI / plaque signalétique
+      // Photo IMEI / plaque signalétique (serial_tag) — vérifié de bout en bout
+      var serialOk=false;
       if(d.photoImeiUrl){
         try{
           var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();
           var uf2=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'imei.jpg',FileSizeInMB:Math.ceil(ib.size/1024/1024)||1,FileType:'serial_tag'})});
           var uf2j=await uf2.json();console.log('[Ecosystem] upload-file serial_tag:',uf2.status,JSON.stringify(uf2j).substring(0,200));
-          if(uf2j.url){
-            var putR2=await fetch(uf2j.url,{method:'PUT',body:ib,headers:{'Content-Type':ib.type||'image/jpeg'}});
-            console.log('[Ecosystem] S3 PUT IMEI:',putR2.status);
-          }
-        }catch(ei){console.warn('[Ecosystem] Upload IMEI:',ei.message);uploadErrors.push('imei');}
+          if(!uf2.ok || !uf2j.url) throw new Error("URL d'upload IMEI refusée (HTTP "+uf2.status+")");
+          var putR2=await fetch(uf2j.url,{method:'PUT',body:ib,headers:{'Content-Type':ib.type||'image/jpeg'}});
+          console.log('[Ecosystem] S3 PUT IMEI:',putR2.status);
+          if(!putR2.ok) throw new Error('dépôt S3 IMEI échoué (HTTP '+putR2.status+')');
+          serialOk=true;
+        }catch(ei){console.warn('[Ecosystem] Upload IMEI:',ei.message);uploadErrors.push('photo IMEI: '+ei.message);}
       }
-      // Devis signé (signature client)
+      // Devis signé (claim_request) — vérifié de bout en bout
+      var claimReqOk=false;
       if(d.signature && typeof repDevisSignePDFBase64==='function'){
         try{
           var dsb=await repDevisSignePDFBase64(d);
-          if(dsb){
-            var uf3=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'devis_signe.pdf',FileSizeInMB:Math.ceil(dsb.length*0.75/1024/1024)||1,FileType:'claim_request'})});
-            var uf3j=await uf3.json();console.log('[Ecosystem] upload-file claim_request:',uf3.status,JSON.stringify(uf3j).substring(0,200));
-            if(uf3j.url){
-              var pdfBytes3=Uint8Array.from(atob(dsb),function(c){return c.charCodeAt(0);});
-              var putR3=await fetch(uf3j.url,{method:'PUT',body:pdfBytes3,headers:{'Content-Type':'application/pdf'}});
-              console.log('[Ecosystem] S3 PUT devis signé:',putR3.status);
-            }
-          }
-        }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis');}
+          if(!dsb) throw new Error('devis signé non généré');
+          var uf3=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'devis_signe.pdf',FileSizeInMB:Math.ceil(dsb.length*0.75/1024/1024)||1,FileType:'claim_request'})});
+          var uf3j=await uf3.json();console.log('[Ecosystem] upload-file claim_request:',uf3.status,JSON.stringify(uf3j).substring(0,200));
+          if(!uf3.ok || !uf3j.url) throw new Error("URL d'upload devis refusée (HTTP "+uf3.status+")");
+          var pdfBytes3=Uint8Array.from(atob(dsb),function(c){return c.charCodeAt(0);});
+          var putR3=await fetch(uf3j.url,{method:'PUT',body:pdfBytes3,headers:{'Content-Type':'application/pdf'}});
+          console.log('[Ecosystem] S3 PUT devis signé:',putR3.status);
+          if(!putR3.ok) throw new Error('dépôt S3 devis échoué (HTTP '+putR3.status+')');
+          claimReqOk=true;
+        }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis signé: '+es.message);}
       }
-      // GARDE-FOU FACTURE : Ecosystem exige la pièce 'invoice' pour confirmer.
-      // Si elle n'est pas réellement déposée, on N'APPELLE PAS confirm-claim (qui
-      // renverrait PIECE_JOINTE_MANQUANTE) et on marque le dossier à relancer.
-      if(!invoiceOk){
+      // GARDE-FOU PIÈCES JOINTES : Ecosystem exige facture + photo IMEI + devis signé.
+      // Si une pièce obligatoire n'est pas réellement déposée, on N'APPELLE PAS
+      // confirm-claim (qui renverrait PIECE_JOINTE_MANQUANTE) → dossier marqué à relancer.
+      var _manquePJ=[];
+      if(!invoiceOk) _manquePJ.push('facture');
+      if(d.photoImeiUrl && !serialOk) _manquePJ.push('photo IMEI');
+      if(d.signature && !claimReqOk) _manquePJ.push('devis signé');
+      if(_manquePJ.length){
         if(!d.qrEnvoi)d.qrEnvoi={};
         d.qrEnvoi.ecosystemClaimId=repairId;
         d.qrEnvoi.ecosystemId=repairId;
         d.qrEnvoi.ecosystemDate=new Date().toISOString();
         d.qrEnvoi.statut='Pending';
         d.qrEnvoi.confirme=false;
-        d.qrEnvoi.confirmErreur="Facture (invoice) non jointe — confirmation impossible";
+        d.qrEnvoi.confirmErreur="Pièces non jointes: "+_manquePJ.join(', ');
         d.qrEnvoi.date=new Date().toISOString();
         d.statut='cloture';
         if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
         if(typeof renderRepHistorique==="function")renderRepHistorique();
-        var msgInv="&#9888;&#65039; <b>Facture non jointe</b> — le dossier est cr&eacute;&eacute; chez Ecosystem mais <b>ne peut pas &ecirc;tre confirm&eacute;</b> tant que la facture PDF n'est pas attach&eacute;e (erreur Ecosystem&nbsp;: PIECE_JOINTE_MANQUANTE 'invoice').<br><small>Claim ID: "+repairId+(uploadErrors.length?" &middot; "+uploadErrors.join(' / '):"")+"</small><br>&#128073; V&eacute;rifiez que la facture est bien g&eacute;n&eacute;r&eacute;e, puis recliquez « Envoyer Ecosystem » pour relancer.";
+        var msgInv="&#9888;&#65039; <b>Pi&egrave;ce(s) non jointe(s)&nbsp;: "+_manquePJ.join(', ')+"</b><br>Le dossier est cr&eacute;&eacute; chez Ecosystem mais <b>ne peut pas &ecirc;tre confirm&eacute;</b> tant que ces pi&egrave;ces ne sont pas d&eacute;pos&eacute;es (sinon Ecosystem renvoie PIECE_JOINTE_MANQUANTE).<br><small>Claim ID: "+repairId+(uploadErrors.length?" &middot; "+uploadErrors.join(' / '):"")+"</small><br>&#128073; Corrigez la/les pi&egrave;ce(s), puis recliquez « Envoyer Ecosystem ».";
         if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;font-size:13px;line-height:1.55;'>"+msgInv+"</div>";
-        showNotif&&showNotif("&#9888;&#65039; Facture non jointe — dossier non confirm&eacute;","error");
+        showNotif&&showNotif("&#9888;&#65039; Pi&egrave;ce(s) manquante(s)&nbsp;: "+_manquePJ.join(', '),"error");
         return;
       }
       // ④ Confirm-claim → récupère le N° Ordre de Service
