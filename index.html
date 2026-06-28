@@ -10260,7 +10260,7 @@ function showPage(id,el){
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
   }
   if(id==='suivi-qr'){
-    var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else renderSuiviQR(); };
+    var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else renderSuiviQR(); if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts(); };
     if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
       loadBonsDepot().then(_qrShow).catch(_qrShow);
     } else { _qrShow(); }
@@ -30494,7 +30494,35 @@ async function qrAutoCheckStatuts(){
     renderRepHistorique();
     showNotif(updated+' statut(s) QR mis à jour automatiquement ✅', 'success');
   }
+  // Brique 1+2 : rafraîchir le bandeau « argent à risque » après synchro
+  try{ if(typeof renderQrRisqueBanner==='function') renderQrRisqueBanner(); }catch(e){}
 }
+
+// ══════════════════════════════════════════════════════════════════
+// 💸 BRIQUE 4 — RAPPEL QUOTIDIEN « argent QualiRépar à risque »
+// Au 1er chargement de la journée, si de l'argent est à récupérer,
+// affiche une alerte (1×/jour max). Pas de cron, pas de serveur.
+// ══════════════════════════════════════════════════════════════════
+async function qrRappelQuotidien(){
+  try{
+    var ajd = new Date().toISOString().substring(0,10);
+    if(localStorage.getItem('qr_rappel_jour') === ajd) return; // déjà fait aujourd'hui
+    if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
+      try{ await loadBonsDepot(); }catch(e){}
+    }
+    if(typeof repLoadDossiers==='function'){ try{ repLoadDossiers(); }catch(e){} }
+    if(typeof qrCalcArgentARisque!=='function') return;
+    var r = qrCalcArgentARisque();
+    if(r.totalRisque > 0){
+      localStorage.setItem('qr_rappel_jour', ajd);
+      var nb = r.nonEnv.length + r.retard.length + r.refus.length;
+      var msg = '💸 QualiRépar : ' + r.totalRisque + ' € à récupérer (' + nb + ' dossier' + (nb>1?'s':'') + ')';
+      if(r.nonEnv.length) msg += ' — dont ' + r.nonEnv.length + ' jamais envoyé' + (r.nonEnv.length>1?'s':'');
+      if(typeof showNotif==='function') showNotif(msg, 'warning');
+    }
+  }catch(e){ console.warn('qrRappelQuotidien:', e); }
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(qrRappelQuotidien, 4000); });
 // ══════════════════════════════════════════════════════════════════
 
 
