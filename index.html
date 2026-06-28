@@ -23951,7 +23951,9 @@ async function qrEnvoyerEcosystemComplet(d){
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
     var repairId='';
-    var _existingClaim=(d.qrEnvoi&&d.qrEnvoi.confirme===false)?(d.qrEnvoi.ecosystemClaimId||''):'';
+    // Brouillon existant = un dossier déjà créé chez Ecosystem mais jamais confirmé
+    // (confirme===false, OU un ClaimID présent sans N° d'ordre de service).
+    var _existingClaim=(d.qrEnvoi && (d.qrEnvoi.confirme===false || (d.qrEnvoi.ecosystemClaimId && !d.qrEnvoi.ecosystemServiceOrder)))?(d.qrEnvoi.ecosystemClaimId||''):'';
     if(_existingClaim){
       // ANTI-DOUBLON : un brouillon existe déjà chez Ecosystem (envoi précédent non confirmé).
       // On NE recrée PAS de dossier — on réutilise son ID pour ré-uploader + reconfirmer.
@@ -23975,23 +23977,24 @@ async function qrEnvoyerEcosystemComplet(d){
     if(repairId){
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Upload pièces jointes...</div>";
       var uploadErrors=[];
-      // Facture PDF (NF525)
+      // Facture PDF (NF525) — OBLIGATOIRE : sans elle, Ecosystem refuse la confirmation.
+      var invoiceOk=false;
       try{
         var fb=null;
         if(d.facture && typeof repFactureToPDFBase64==='function'){
           console.log('[Ecosystem] Génération facture NF525...');
           fb=await repFactureToPDFBase64(d);
         }
-        if(fb){
-          var uf1=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'facture.pdf',FileSizeInMB:Math.ceil(fb.length*0.75/1024/1024)||1,FileType:'invoice'})});
-          var uf1j=await uf1.json();console.log('[Ecosystem] upload-file invoice:',uf1.status,JSON.stringify(uf1j).substring(0,200));
-          if(uf1j.url){
-            var pdfBytes=Uint8Array.from(atob(fb),function(c){return c.charCodeAt(0);});
-            var putR=await fetch(uf1j.url,{method:'PUT',body:pdfBytes,headers:{'Content-Type':'application/pdf'}});
-            console.log('[Ecosystem] S3 PUT facture:',putR.status);
-          }
-        } else { console.warn('[Ecosystem] Pas de facture PDF disponible'); }
-      }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);uploadErrors.push('facture');}
+        if(!fb) throw new Error('facture PDF non générée');
+        var uf1=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'facture.pdf',FileSizeInMB:Math.ceil(fb.length*0.75/1024/1024)||1,FileType:'invoice'})});
+        var uf1j=await uf1.json();console.log('[Ecosystem] upload-file invoice:',uf1.status,JSON.stringify(uf1j).substring(0,200));
+        if(!uf1.ok || !uf1j.url) throw new Error("URL d'upload facture refusée (HTTP "+uf1.status+")");
+        var pdfBytes=Uint8Array.from(atob(fb),function(c){return c.charCodeAt(0);});
+        var putR=await fetch(uf1j.url,{method:'PUT',body:pdfBytes,headers:{'Content-Type':'application/pdf'}});
+        console.log('[Ecosystem] S3 PUT facture:',putR.status);
+        if(!putR.ok) throw new Error('dépôt S3 facture échoué (HTTP '+putR.status+')');
+        invoiceOk=true;
+      }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);uploadErrors.push('facture: '+ef.message);}
       // Photo IMEI / plaque signalétique
       if(d.photoImeiUrl){
         try{
@@ -24018,6 +24021,26 @@ async function qrEnvoyerEcosystemComplet(d){
             }
           }
         }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis');}
+      }
+      // GARDE-FOU FACTURE : Ecosystem exige la pièce 'invoice' pour confirmer.
+      // Si elle n'est pas réellement déposée, on N'APPELLE PAS confirm-claim (qui
+      // renverrait PIECE_JOINTE_MANQUANTE) et on marque le dossier à relancer.
+      if(!invoiceOk){
+        if(!d.qrEnvoi)d.qrEnvoi={};
+        d.qrEnvoi.ecosystemClaimId=repairId;
+        d.qrEnvoi.ecosystemId=repairId;
+        d.qrEnvoi.ecosystemDate=new Date().toISOString();
+        d.qrEnvoi.statut='Pending';
+        d.qrEnvoi.confirme=false;
+        d.qrEnvoi.confirmErreur="Facture (invoice) non jointe — confirmation impossible";
+        d.qrEnvoi.date=new Date().toISOString();
+        d.statut='cloture';
+        if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
+        if(typeof renderRepHistorique==="function")renderRepHistorique();
+        var msgInv="&#9888;&#65039; <b>Facture non jointe</b> — le dossier est cr&eacute;&eacute; chez Ecosystem mais <b>ne peut pas &ecirc;tre confirm&eacute;</b> tant que la facture PDF n'est pas attach&eacute;e (erreur Ecosystem&nbsp;: PIECE_JOINTE_MANQUANTE 'invoice').<br><small>Claim ID: "+repairId+(uploadErrors.length?" &middot; "+uploadErrors.join(' / '):"")+"</small><br>&#128073; V&eacute;rifiez que la facture est bien g&eacute;n&eacute;r&eacute;e, puis recliquez « Envoyer Ecosystem » pour relancer.";
+        if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;font-size:13px;line-height:1.55;'>"+msgInv+"</div>";
+        showNotif&&showNotif("&#9888;&#65039; Facture non jointe — dossier non confirm&eacute;","error");
+        return;
       }
       // ④ Confirm-claim → récupère le N° Ordre de Service
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
