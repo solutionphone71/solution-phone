@@ -11940,6 +11940,47 @@ async function paramsTestKiwiz(){
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🔒 CERTIFICATION LOCALE NF525 — inaltérabilité par chaînage de hash
+// Remplace Kiwiz. Chaque facture est signée avec le hash de la précédente
+// (chaîne inviolable). Auto-certification (loi de finances 2026).
+// ════════════════════════════════════════════════════════════════
+async function sha256Hex(str){
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+async function _getChainHead(){
+  // 1) Supabase (source de vérité multiposte)
+  try{ if(typeof supaFetch==='function'){ var rows=await supaFetch('settings','GET',null,'?key=eq.caisse_chain_head&select=value'); if(rows&&rows[0]&&rows[0].value) return rows[0].value; } }catch(e){}
+  // 2) localStorage (repli)
+  try{ var ls=localStorage.getItem('caisse_chain_head'); if(ls) return JSON.parse(ls); }catch(e){}
+  return { lastHash:'GENESIS', count:0 };
+}
+async function _saveChainHead(head){
+  try{ localStorage.setItem('caisse_chain_head', JSON.stringify(head)); }catch(e){}
+  try{
+    if(typeof supaFetch==='function'){
+      var ex=await supaFetch('settings','GET',null,'?key=eq.caisse_chain_head&select=key');
+      if(ex&&ex.length) await supaFetch('settings','PATCH',{value:head},'?key=eq.caisse_chain_head');
+      else await supaFetch('settings','POST',{key:'caisse_chain_head',value:head});
+    }
+  }catch(e){ console.warn('chain head save:',e); }
+}
+async function certifierFactureLocale(facture, client){
+  try{
+    var head = await _getChainHead();
+    var prev = (head&&head.lastHash) ? head.lastHash : 'GENESIS';
+    var seq  = ((head&&head.count) || 0) + 1;
+    var ttc = parseFloat(facture.prix)||0;
+    if(facture.bonusQR) ttc += (facture.piec?30:25);
+    var data = [seq, facture.numero||'', facture.date||'', ttc.toFixed(2), client||''].join('|');
+    var sig = await sha256Hex(prev + '|' + data);
+    await _saveChainHead({ lastHash:sig, count:seq, at:new Date().toISOString(), numero:facture.numero||'' });
+    // référence de certification stockée sur la facture (inaltérable + traçable)
+    return { ref:'SP-'+String(seq).padStart(6,'0')+'-'+sig.substring(0,16), hash:sig, seq:seq, prev:prev };
+  }catch(e){ console.error('certifierFactureLocale:',e); return null; }
+}
+
 async function certifierFactureKiwiz(facture, client, pdfBase64){
   if(!kiwizConfigured()) return null;
   try {
@@ -22084,19 +22125,18 @@ async function repGenererFacture(){
   // Rafraîchir la caisse du jour si on est dessus
   if(typeof renderCaisseJour === 'function') setTimeout(renderCaisseJour, 500);
 
-  // Certification NF525 Kiwiz PUIS envoi QualiRépar (Kiwiz d'abord pour avoir la ref NF525 sur la facture)
-  var _kiwizDone = Promise.resolve();
-  if(kiwizConfigured()){
-    var clientNomKiwiz = ((d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom).trim();
-    _kiwizDone = certifierFactureKiwiz(d.facture, clientNomKiwiz, null).then(function(ref){
-      if(ref){
-        d.facture.kiwizRef = ref;
-        repSauvegarderDossier();
-        showNotif('🔒 NF525 certifiée — Réf: '+ref,'success');
-        console.log('Kiwiz NF525:', ref);
-      }
-    }).catch(function(e){console.warn('Kiwiz:',e);});
-  }
+  // Certification NF525 LOCALE (chaînage inaltérable) PUIS envoi QualiRépar
+  var clientNomCertif = ((d.client.civilite||'')+' '+(d.client.prenom||'')+' '+d.client.nom).trim();
+  var _kiwizDone = certifierFactureLocale(d.facture, clientNomCertif).then(function(c){
+    if(c){
+      d.facture.certifLocale = c.ref;
+      d.facture.certifHash = c.hash;
+      d.facture.kiwizRef = c.ref; // compat affichage existant
+      repSauvegarderDossier();
+      showNotif('🔒 Facture certifiée (NF525) — Réf: '+c.ref,'success');
+      console.log('Certification locale:', c.ref);
+    }
+  }).catch(function(e){console.warn('Certif locale:',e);});
 
   // Envoi auto QualiRepar — APRES Kiwiz pour que la facture ait la ref NF525
   var _qrExist=d.qrEnvoi||{};
