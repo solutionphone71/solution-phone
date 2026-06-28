@@ -1,18 +1,4 @@
 {
-  "functions": {
-    "api/render/gpt-image.js":        { "maxDuration": 60 },
-    "api/render/compose.js":          { "maxDuration": 60 },
-    "api/visual/process-queue.js":    { "maxDuration": 60 },
-    "api/visual/quality-check.js":    { "maxDuration": 60 },
-    "api/visual/studio-publish.js":   { "maxDuration": 60 },
-    "api/visual/library-upload.js":   { "maxDuration": 60 },
-    "api/visual/library-delete.js":   { "maxDuration": 30 },
-    "api/agents/zahira.js":           { "maxDuration": 60 },
-    "api/agents/trigger.js":          { "maxDuration": 60 },
-    "api/autopilot/execute.js":       { "maxDuration": 60 },
-    "api/seo.js":                     { "maxDuration": 60 },
-    "api/inventaires.js":             { "maxDuration": 60 }
-  },
   "rewrites": [
     { "source": "/proxy-kiwiz/:path*",        "destination": "/api/proxy-kiwiz" },
     { "source": "/proxy-ecosystem/:path*",    "destination": "/api/proxy-ecosystem" },
@@ -24,16 +10,7 @@
     { "source": "/api/google-reviews-config", "destination": "/api/google-reviews.js" }
   ],
   "crons": [
-    { "path": "/api/cron-reviews",                "schedule": "0 9 * * *" },
-    { "path": "/api/agents/zahira?type=morning",  "schedule": "0 8 * * *" },
-    { "path": "/api/agents/zahira?type=evening",  "schedule": "0 19 * * *" },
-    { "path": "/api/agents/zahira?type=weekly",   "schedule": "0 18 * * 0" },
-    { "path": "/api/brain/morning-run",           "schedule": "5 8 * * *" },
-    { "path": "/api/backup",                      "schedule": "0 2 * * *" },
-    { "path": "/api/agents/insights",             "schedule": "0 3 * * *" },
-    { "path": "/api/agents/briefing",             "schedule": "45 7 * * *" },
-    { "path": "/api/visual/process-queue",        "schedule": "*/15 * * * *" },
-    { "path": "/api/seo?action=weekly-cron",      "schedule": "0 9 * * 1" }
+    { "path": "/api/backup", "schedule": "0 2 * * *" }
   ],
   "headers": [
     {
