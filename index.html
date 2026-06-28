@@ -23668,11 +23668,15 @@ function repEnvoyerOrganisme(){
   var d = repDossierCourant;
   if(!d){ showNotif('Aucun dossier','error'); return; }
 
-  // Protection double envoi
+  // Protection double envoi — on bloque UNIQUEMENT si le dossier est vraiment abouti :
+  //  • Ecologic : un identifiant de dossier a été obtenu
+  //  • Ecosystem : un N° d'ordre de service CONFIRMÉ existe
+  // Un brouillon Ecosystem non confirmé (UUID sans N° de service) peut être relancé :
+  // qrEnvoyerEcosystemComplet réutilisera le brouillon (anti-doublon) au lieu d'en créer un.
   var qr = d.qrEnvoi||{};
-  var dejaEnvoye = !!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemId||qr.ecosystemRepairId);
-  if(dejaEnvoye){
-    showNotif('Ce dossier a déjà été envoyé ! Utilisez "Forcer le renvoi" si nécessaire.','error');
+  var dejaAbouti = (!!qr.ecologicId || !!qr.ecologicClaimId || !!qr.ecosystemServiceOrder) && qr.confirme!==false;
+  if(dejaAbouti){
+    showNotif('Ce dossier a déjà été envoyé et confirmé ! Utilisez "Forcer le renvoi" si nécessaire.','error');
     return;
   }
 
