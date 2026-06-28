@@ -755,6 +755,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <span>Zahira</span>
     </a>
     <button id="brain-chat-btn" onclick="openBrainChat()" title="Chat rapide" style="background:rgba(0,0,0,0.05);color:#1d1d1f;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;width:40px;height:40px;font-size:18px;cursor:pointer;transition:all 0.2s;">🧠</button>
+    <button id="ia-vacances-btn" onclick="toggleVacancesIA()" title="Mettre les agents IA en pause (stoppe la consommation de tokens)" style="background:rgba(0,0,0,0.05);color:#1d1d1f;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;height:40px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;">🏖️ Vacances IA</button>
   </div>
 </div>
 
@@ -33932,6 +33933,74 @@ window.auditRender = async function(){
 // PHASE 1 MÉMOIRE IA · BRAND VOICE (N2) + DECISIONS HISTORY (N1)
 // ════════════════════════════════════════════════════════════════
 var _iavCache = null; // cache du brand_voice courant
+
+// ════════════════════════════════════════════════════════════════
+// 🏖️ VACANCES IA — bouton global pour mettre les agents IA en pause
+// (stoppe la consommation de tokens). S'appuie sur agent_memory.agent_status.
+// ════════════════════════════════════════════════════════════════
+async function chargerStatutIA() {
+  try {
+    var r = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.agent_status&select=value'));
+    var rows = await r.json();
+    return (rows && rows[0] && rows[0].value) || {};
+  } catch(e) { return {}; }
+}
+
+function majBoutonVacancesIA(actif) {
+  var btn = document.getElementById('ia-vacances-btn');
+  if(!btn) return;
+  if(actif === false) {
+    btn.textContent = '▶️ Réactiver IA';
+    btn.title = 'Agents IA en pause — aucun token consommé. Cliquer pour réactiver.';
+    btn.style.background = 'rgba(245,158,11,0.18)';
+    btn.style.color = '#b8860b';
+    btn.style.border = '0.5px solid rgba(245,158,11,0.5)';
+  } else {
+    btn.textContent = '🏖️ Vacances IA';
+    btn.title = 'Mettre les agents IA en pause (stoppe la consommation de tokens).';
+    btn.style.background = 'rgba(0,0,0,0.05)';
+    btn.style.color = '#1d1d1f';
+    btn.style.border = '0.5px solid rgba(0,0,0,0.1)';
+  }
+}
+
+async function initVacancesIA() {
+  var v = await chargerStatutIA();
+  majBoutonVacancesIA(v.active !== false);
+}
+
+async function toggleVacancesIA() {
+  var v = await chargerStatutIA();
+  var actuel = (v.active !== false); // true = agents actifs
+  var nouvelActif = !actuel;
+  if(!nouvelActif && !confirm('Mettre les agents IA en vacances ?\nIls seront mis en pause et ne consommeront plus de tokens.')) return;
+  if(nouvelActif && !confirm('Réactiver les agents IA ?')) return;
+  v.active = nouvelActif;
+  v.paused_reason = nouvelActif ? null : 'vacances';
+  v.paused_at = nouvelActif ? null : new Date().toISOString();
+  if(nouvelActif) v.consecutive_errors = 0;
+  try {
+    var patchRes = await fetch('/api/supabase?table=agent_memory&query=' + encodeURIComponent('?key=eq.agent_status'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value: v, updated_at: new Date().toISOString() })
+    });
+    if(!patchRes.ok){
+      await fetch('/api/supabase?table=agent_memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'agent_status', value: v })
+      });
+    }
+    majBoutonVacancesIA(nouvelActif);
+    if(typeof logAudit==='function') logAudit('update','agent_memory','agent_status',null,v, nouvelActif?'Réactivation agents IA':'Mise en vacances agents IA');
+    if(typeof showNotif==='function') showNotif(nouvelActif ? '▶️ Agents IA réactivés' : '🏖️ Agents IA en vacances — 0 token consommé', nouvelActif ? 'success' : 'warning');
+  } catch(e) {
+    if(typeof showNotif==='function') showNotif('Erreur : '+e.message,'error'); else alert('Erreur : '+e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(initVacancesIA, 1000); });
 
 // Charge le brand_voice depuis agent_memory et remplit le form
 window.iavLoad = async function(){
