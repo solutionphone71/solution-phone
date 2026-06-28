@@ -23832,21 +23832,32 @@ function repValiderOrganisme(){
 function repMajBoutonsEnvoi(){
   var d = repDossierCourant; if(!d) return;
   var qr = d.qrEnvoi||{};
+  var org = (typeof qrGetOrganisme==='function') ? qrGetOrganisme((d.appareil||{}).marque||'') : 'ecosystem';
   var btnEnv = document.getElementById('rep-qr-btn-envoyer');
   var btnVal = document.getElementById('rep-qr-btn-valider');
-  var envoye = !!(qr.ecosystemClaimId||qr.ecologicClaimId);
   var valide = qr.confirme===true;
-  var aValider = qr.aValider===true || (envoye && !valide);
-  if(btnEnv){
-    if(valide){ btnEnv.style.display='none'; }
-    else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
-      btnEnv.innerHTML = envoye ? '🔄 Renvoyer (recréer le dossier)' : '📤 Envoyer à <span id="rep-qr-btn-label">'+( qrGetOrganisme((d.appareil||{}).marque||'')==='ecosystem'?'Ecosystem':'Ecologic')+'</span>';
+
+  if(org === 'ecologic'){
+    // ECOLOGIC = 2 temps : Envoyer (crée + pièces) → on attend le retour → Valider (soumet).
+    var envoyeE = !!qr.ecologicClaimId;
+    if(btnEnv){
+      if(valide){ btnEnv.style.display='none'; }
+      else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
+        btnEnv.innerHTML = envoyeE ? '🔄 Renvoyer à Ecologic' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecologic</span>'; }
     }
-  }
-  if(btnVal){
-    if(envoye && !valide){ btnVal.style.display=''; btnVal.disabled=false; btnVal.style.opacity='1'; }
-    else if(valide){ btnVal.style.display=''; btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
-    else { btnVal.style.display='none'; }
+    if(btnVal){
+      if(valide){ btnVal.style.display=''; btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
+      else if(envoyeE){ btnVal.style.display=''; btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML="✅ Valider l'envoi"; }
+      else { btnVal.style.display='none'; }
+    }
+  } else {
+    // ECOSYSTEM = 1 seul bouton (création + pièces + confirmation d'un coup). Si erreur → renvoyer.
+    if(btnVal) btnVal.style.display='none';
+    if(btnEnv){
+      if(valide){ btnEnv.style.display=''; btnEnv.disabled=true; btnEnv.style.opacity='0.6'; btnEnv.innerHTML='✅ Envoyé &amp; validé'; }
+      else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
+        btnEnv.innerHTML = qr.ecosystemClaimId ? '🔄 Renvoyer à Ecosystem' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecosystem</span>'; }
+    }
   }
 }
 
@@ -24258,16 +24269,11 @@ async function qrEnvoyerEcosystemComplet(d){
     d.qrEnvoi.ecosystemClaimId=repairId;
     d.qrEnvoi.ecosystemId=repairId;
     d.qrEnvoi.ecosystemDate=new Date().toISOString();
-    d.qrEnvoi.statut='AValider';
-    d.qrEnvoi.aValider=true;
-    delete d.qrEnvoi.confirme; delete d.qrEnvoi.confirmErreur;
     d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
-    if(typeof renderRepHistorique==="function")renderRepHistorique();
-    if(typeof repUpdateStep5==="function")repUpdateStep5();
-    var _msgEnv="&#9989; <b>Dossier envoy&eacute; chez Ecosystem</b> (3 pi&egrave;ces d&eacute;pos&eacute;es).<br><small>Claim ID: "+repairId+"</small><br>&#128073; Cliquez sur <b>&laquo; Valider l'envoi &raquo;</b> pour confirmer et obtenir le N&deg; de service.";
-    if(el)el.innerHTML="<div style='background:rgba(10,132,255,0.08);border:1.5px solid #0a84ff;padding:12px;border-radius:8px;color:#0a5bd0;font-size:13px;line-height:1.55;'>"+_msgEnv+"</div>";
-    showNotif&&showNotif("&#9989; Envoy&eacute; — cliquez Valider l'envoi","success");
+    // Ecosystem = envoi en 1 fois : on confirme immédiatement dans la foulée.
+    // (Si la confirmation échoue, qrValiderEcosystem marque le dossier "à renvoyer".)
+    await qrValiderEcosystem(d);
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
@@ -24307,17 +24313,17 @@ async function qrValiderEcosystem(d){
     d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
     d.qrEnvoi.ecosystemRepairId=serviceOrder||claimId;
     if(serviceOrder)d.qrEnvoi.ecosystemId=serviceOrder;
-    d.qrEnvoi.statut=confirmFailed?'AValider':'Sent';
-    d.qrEnvoi.aValider=confirmFailed?true:false;
+    d.qrEnvoi.statut=confirmFailed?'Pending':'Sent';
+    d.qrEnvoi.aValider=false;
     d.qrEnvoi.confirme=!confirmFailed;
     if(confirmFailed)d.qrEnvoi.confirmErreur=confirmErr; else delete d.qrEnvoi.confirmErreur;
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     if(typeof repUpdateStep5==="function")repUpdateStep5();
     if(confirmFailed){
-      var msgKO="&#9888;&#65039; <b>Validation non aboutie</b><br><small>"+confirmErr+"</small><br>&#128073; Recliquez &laquo; Valider l'envoi &raquo;.";
+      var msgKO="&#9888;&#65039; <b>Envoi Ecosystem non abouti</b><br><small>"+confirmErr+"</small><br>&#128073; Recliquez &laquo; Envoyer Ecosystem &raquo; pour r&eacute;essayer (nouveau dossier propre).";
       if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;'>"+msgKO+"</div>";
-      showNotif&&showNotif("&#9888;&#65039; Validation non aboutie","error");
+      showNotif&&showNotif("&#9888;&#65039; Ecosystem non abouti — renvoyer","error");
     } else {
       var msg="&#9989; <b>Validé chez Ecosystem !</b> N&deg;: "+serviceOrder+"<br><small>Claim ID: "+claimId+"</small><br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
       if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
