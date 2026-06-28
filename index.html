@@ -16225,6 +16225,7 @@ function qrCalcArgentARisque(){
     var qe = d.qrEnvoi || {};
     var envoye = qe.ecologicId || qe.ecosystemId || qe.statut;
     var st = (qe.statut || '').toLowerCase();
+    if(qe.confirme===false){ nonEnv.push(d); return; } // créé mais NON confirmé = argent à récupérer
     if(d.statut==='cloture' && !envoye){ nonEnv.push(d); return; }
     if(st==='paid'){ remb.push(d); return; }
     if(st==='rejected'){ refus.push(d); return; }
@@ -23949,18 +23950,27 @@ async function qrEnvoyerEcosystemComplet(d){
       Customer:{Title:(c.civilite==='Mme'||c.civilite==='Madame')?'Mme':'M.',LastName:c.nom||'Client',FirstName:c.prenom||'-',Email:c.email||'client@solution-phone.fr',PhoneNumber:tel2,StreetLine1:c.adresse||'21 Rue Gambetta',City:c.ville||'Macon',PostalCode:c.cp||'71000',Country:'FR'},
       Bill:{SparePartsCost:{amount:pHT,currency:'EUR'},TotalAmountInclVAT:{amount:montantTTC,currency:'EUR'},AmountCovered:{amount:bonus,currency:'EUR'}}
     };
-    console.log('[Ecosystem] new_claim payload:', JSON.stringify(claimPayload).substring(0,500));
-    var r2=await ecoFetch('/reimbursement-claims/new_claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(claimPayload)});
-    var j2Text=await r2.text();console.log('[Ecosystem] new-claim:',r2.status,j2Text.substring(0,300));
-    var j2;try{j2=JSON.parse(j2Text);}catch(e){j2={raw:j2Text};}
-    if(!r2.ok){
-      var _ecoErr='Ecosystem refusé ('+r2.status+') : '+j2Text.substring(0,500);
-      if(typeof showNotif==='function') showNotif(_ecoErr,'error');
-      var _ecoEl=document.getElementById('rep-qr-envoi-statut');
-      if(_ecoEl) _ecoEl.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:#dc2626;font-size:12px;line-height:1.5;'>❌ "+_ecoErr+"</div>";
-      throw new Error(_ecoErr);
+    var repairId='';
+    var _existingClaim=(d.qrEnvoi&&d.qrEnvoi.confirme===false)?(d.qrEnvoi.ecosystemClaimId||''):'';
+    if(_existingClaim){
+      // ANTI-DOUBLON : un brouillon existe déjà chez Ecosystem (envoi précédent non confirmé).
+      // On NE recrée PAS de dossier — on réutilise son ID pour ré-uploader + reconfirmer.
+      repairId=_existingClaim;
+      console.log('[Ecosystem] Relance sur claim existant (pas de nouveau dossier):', repairId);
+    } else {
+      console.log('[Ecosystem] new_claim payload:', JSON.stringify(claimPayload).substring(0,500));
+      var r2=await ecoFetch('/reimbursement-claims/new_claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(claimPayload)});
+      var j2Text=await r2.text();console.log('[Ecosystem] new-claim:',r2.status,j2Text.substring(0,300));
+      var j2;try{j2=JSON.parse(j2Text);}catch(e){j2={raw:j2Text};}
+      if(!r2.ok){
+        var _ecoErr='Ecosystem refusé ('+r2.status+') : '+j2Text.substring(0,500);
+        if(typeof showNotif==='function') showNotif(_ecoErr,'error');
+        var _ecoEl=document.getElementById('rep-qr-envoi-statut');
+        if(_ecoEl) _ecoEl.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:#dc2626;font-size:12px;line-height:1.5;'>❌ "+_ecoErr+"</div>";
+        throw new Error(_ecoErr);
+      }
+      repairId=j2.ReimbursementClaimID||j2.reimbursementClaimId||j2.id||j2.claimId;
     }
-    var repairId=j2.ReimbursementClaimID||j2.reimbursementClaimId||j2.id||j2.claimId;
     // ③ Upload pièces jointes (facture + photo IMEI + devis signé)
     if(repairId){
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Upload pièces jointes...</div>";
@@ -24011,26 +24021,34 @@ async function qrEnvoyerEcosystemComplet(d){
       }
       // ④ Confirm-claim → récupère le N° Ordre de Service
       if(el)el.innerHTML="<div style='color:blue'>&#9203; Confirmation dossier...</div>";
-      var serviceOrder='';var confirmFailed=false;
-      try{
+      var serviceOrder='';var confirmFailed=false;var confirmErr='';
+      async function _ecoConfirmOnce(){
         var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
-        var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,200));
-        try{
-          var cfJ=JSON.parse(cfT);
-          serviceOrder=cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||'';
-          console.log('[Ecosystem] N° Ordre de Service:',serviceOrder);
-        }catch(pe){}
+        var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,300));
+        if(!cfR.ok){ return {ok:false,status:cfR.status,body:cfT}; }
+        var so='';try{var cfJ=JSON.parse(cfT);so=cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||'';}catch(pe){}
+        return {ok:true,so:so,body:cfT};
+      }
+      try{
+        var cf=await _ecoConfirmOnce();
+        if(!cf.ok){ // 2e tentative : Ecosystem peut être en retard juste après les uploads
+          await new Promise(function(r){setTimeout(r,1500);});
+          cf=await _ecoConfirmOnce();
+        }
+        if(cf.ok){ serviceOrder=cf.so; }
+        else { confirmFailed=true; confirmErr='HTTP '+cf.status+' '+((cf.body||'').substring(0,150)); }
       }catch(ec){
         console.error('[Ecosystem] confirm-claim:',ec.message);
-        confirmFailed=true;
+        confirmFailed=true; confirmErr=ec.message;
       }
+      // SÉCURITÉ ARGENT : sans N° d'ordre de service confirmé, le dossier n'est PAS
+      // soumis (il reste en brouillon chez Ecosystem) → on le marque comme NON confirmé.
       if(!confirmFailed && !serviceOrder){
-        console.warn('[Ecosystem] confirm OK mais pas de N° Ordre de Service dans la réponse');
+        confirmFailed=true;
+        confirmErr="Confirmation sans N° d'ordre de service (dossier resté en brouillon)";
+        console.warn('[Ecosystem] '+confirmErr);
       }
-      if(confirmFailed){
-        if(el)el.innerHTML="<div style='background:rgba(255,165,0,0.1);padding:12px;border-radius:8px;color:#e67e22;'>⚠️ Dossier créé ("+repairId+") mais NON confirmé. Relancez l'envoi.</div>";
-        showNotif&&showNotif('⚠️ Claim créé mais non confirmé','error');
-      }
+      // (le message définitif — succès confirmé OU brouillon non confirmé — est géré plus bas)
       if(uploadErrors.length>0)console.warn('[Ecosystem] Uploads en erreur:',uploadErrors.join(', '));
     }
     if(!d.qrEnvoi)d.qrEnvoi={};
@@ -24038,15 +24056,23 @@ async function qrEnvoyerEcosystemComplet(d){
     d.qrEnvoi.ecosystemServiceOrder=serviceOrder;
     d.qrEnvoi.ecosystemRepairId=serviceOrder||repairId;
     d.qrEnvoi.ecosystemId=serviceOrder||repairId;
-    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut=confirmFailed?'Pending':'Sent';d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
+    d.qrEnvoi.ecosystemDate=new Date().toISOString();d.qrEnvoi.statut=confirmFailed?'Pending':'Sent';
+    if(confirmFailed){ d.qrEnvoi.confirmErreur=confirmErr||'Confirmation non aboutie'; d.qrEnvoi.confirme=false; }
+    else { d.qrEnvoi.confirme=true; delete d.qrEnvoi.confirmErreur; }
+    d.qrEnvoi.date=new Date().toISOString();d.statut='cloture';
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
-    var displayId=serviceOrder||repairId;
-    var msg="&#9989; Ecosystem OK!"+(displayId?" N°: "+displayId:"");
-    if(serviceOrder) msg+="<br><small>Claim ID: "+repairId+" · Ordre de service: "+serviceOrder+"</small>";
-    msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
-    if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
-    showNotif&&showNotif("&#9989; Ecosystem OK!","success");
+    if(confirmFailed){
+      var msgKO="&#9888;&#65039; Dossier cr&eacute;&eacute; mais <b>NON confirm&eacute;</b> chez Ecosystem.<br>Il n'appara&icirc;tra <b>pas</b> dans le portail et ne sera <b>pas rembours&eacute;</b> tant qu'il n'est pas confirm&eacute;.<br><small>Claim ID: "+repairId+(confirmErr?" &middot; "+confirmErr:"")+"</small><br>&#128073; Cliquez de nouveau sur <b>Envoyer Ecosystem</b> pour relancer la confirmation.";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;font-size:13px;line-height:1.55;'>"+msgKO+"</div>";
+      showNotif&&showNotif("&#9888;&#65039; Dossier NON confirm&eacute; — &agrave; relancer","error");
+    } else {
+      var msg="&#9989; Ecosystem confirm&eacute; ! N&deg;: "+serviceOrder;
+      msg+="<br><small>Claim ID: "+repairId+" &middot; Ordre de service: "+serviceOrder+"</small>";
+      msg+="<br><a href='https://portail-reparateurs.ecosystem.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecosystem &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.06);padding:12px;border-radius:8px;'>"+msg+"</div>";
+      showNotif&&showNotif("&#9989; Ecosystem confirm&eacute; !","success");
+    }
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; Ecosystem: "+e.message+"</div>";
     showNotif&&showNotif("&#10060; Ecosystem: "+e.message,"error");
@@ -30198,6 +30224,7 @@ function qrEtatDossier(d){
   var q=d.qrEnvoi||{};
   if(q.statut==='Paid') return 'termine';
   if(q.statut==='Rejected'||q.statut==='NonConform') return 'urgent';
+  if(q.confirme===false) return 'urgent'; // créé mais NON confirmé → resté en brouillon, à relancer
   if(q.manquants && q.manquants.length) return 'urgent';
   if(qrHasExternalId(q)) return 'en_attente';
   return 'a_transmettre';
