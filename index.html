@@ -23767,6 +23767,35 @@ function repEnvoyerOrganisme(){
     return;
   }
 
+  // ── Contrôle éligibilité : même IMEI déjà aidé QualiRépar < 6 mois ? ──
+  // Le bonus est limité à 1× par appareil sur ~6 mois. On vérifie l'historique
+  // LOCAL (tes dossiers) avant d'envoyer — un 2e envoi serait refusé par l'éco-organisme.
+  var _imeiClean = ((d.appareil||{}).imei||'').replace(/\s/g,'');
+  if(_imeiClean){
+    var _now = Date.now();
+    var _6mois = 183*24*3600*1000;
+    var _dejaAide = (window.bonsDepot||[]).find(function(b){
+      if(String(b.id)===String(d.id)) return false;
+      var bImei = ((b.appareil||{}).imei||'').replace(/\s/g,'');
+      if(bImei!==_imeiClean) return false;
+      var bq = b.qrEnvoi||{};
+      var aide = !!(bq.ecologicId||bq.ecologicClaimId||bq.ecosystemServiceOrder||bq.ecosystemId||bq.confirme===true);
+      if(!aide) return false;
+      var dt = bq.date||bq.ecologicDate||bq.ecosystemDate||b.date;
+      var t = dt ? new Date(dt).getTime() : 0;
+      return t && (_now - t) < _6mois;
+    });
+    if(_dejaAide){
+      var _bq = _dejaAide.qrEnvoi||{};
+      var _dAide = String(_bq.date||_bq.ecologicDate||_bq.ecosystemDate||_dejaAide.date||'').substring(0,10);
+      if(!confirm('⚠️ Cet IMEI ('+_imeiClean+') a déjà bénéficié d\'un bonus QualiRépar le '+_dAide+' (dossier '+(_dejaAide.numero||_dejaAide.id)+').\n\nLe bonus est limité à 1 fois par appareil sur ~6 mois — un 2e envoi sera très probablement refusé.\n\nEnvoyer quand même ?')){
+        var _elE=document.getElementById('rep-qr-envoi-statut');
+        if(_elE)_elE.innerHTML="<div style='background:rgba(255,159,10,0.12);padding:12px;border-radius:8px;color:#b45309;'>&#9888;&#65039; Envoi annulé — IMEI déjà aidé le "+_dAide+" (dossier "+(_dejaAide.numero||_dejaAide.id)+").</div>";
+        return;
+      }
+    }
+  }
+
   var panne    = (document.getElementById('rep-qr-panne')||{value:''}).value;
   var marque    = (d.appareil||{}).marque||'';
   var organisme = qrGetOrganisme(marque);
