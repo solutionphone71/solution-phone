@@ -1517,6 +1517,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
+      <!-- 📊 Barre CA du jour (façon Phonilab) -->
+      <div id="zh-ca-jour-bar" style="margin:0 0 22px;"></div>
+
       <div class="zh-grid">
 
         <!-- ═══ CENTER : KPIs + 4 BIG widgets + Équipe IA ═══ -->
@@ -10288,6 +10291,7 @@ function showPage(id,el){
   if(id==='analytics')renderAnalytics();
   if(id==='police')renderPolice();
   if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
+  if(id==='zahira-home'){ if(typeof renderCaJourBar==='function') setTimeout(renderCaJourBar, 300); }
   if(id==='reparations'){
     var _dosView = document.getElementById('rep-dossier-view');
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
@@ -30562,6 +30566,49 @@ async function qrRappelQuotidien(){
   }catch(e){ console.warn('qrRappelQuotidien:', e); }
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(qrRappelQuotidien, 4000); });
+
+// ══════════════════════════════════════════════════════════════════
+// 📊 BARRE CA DU JOUR (accueil équipe, façon Phonilab)
+// Lecture seule. S'appuie sur renderCaisseJour() qui calcule déjà les
+// totaux du jour par catégorie (accessoires, neufs, occasion, quali).
+// ══════════════════════════════════════════════════════════════════
+function renderCaJourBar(){
+  var el = document.getElementById('zh-ca-jour-bar');
+  if(!el) return;
+  try{ if(typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
+  try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); }catch(e){}
+  var cats = window._caisseCategories || {};
+  var totJour = window._caisseJourTotaux || {};
+  var accNeuf = ((cats.accessoires||{}).total||0) + ((cats.neufs||{}).total||0);
+  var accNeufNb = ((cats.accessoires||{}).nb||0) + ((cats.neufs||{}).nb||0);
+  var smart = (cats.occasion||{}).total||0;
+  var smartNb = (cats.occasion||{}).nb||0;
+  var quali = totJour.quali||0;
+  var today = new Date().toISOString().slice(0,10);
+  var src = (window.repDossiers && window.repDossiers.length) ? window.repDossiers : (window.bonsDepot||[]);
+  var qualiNb = src.filter(function(d){
+    if(!d) return false;
+    var bq = d.bonusQR || (d.facture && d.facture.bonusQR);
+    var dt = ((d.facture && d.facture.date) || d.date || '').substring(0,10);
+    return bq && dt === today;
+  }).length;
+  var eur = function(n){ return (Math.round((n||0)*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €'; };
+  var seg = function(grad, ombre, emoji, label, valeur, sous){
+    return '<div style="flex:1;min-width:160px;border-radius:16px;padding:16px 18px;color:#fff;background:linear-gradient(135deg,'+grad+');box-shadow:0 4px 14px '+ombre+';">'+
+      '<div style="font-size:12px;font-weight:700;opacity:0.92;">'+emoji+' '+label+'</div>'+
+      '<div style="font-size:26px;font-weight:900;margin-top:4px;line-height:1;">'+valeur+'</div>'+
+      '<div style="font-size:11px;opacity:0.85;margin-top:3px;">'+sous+'</div>'+
+    '</div>';
+  };
+  el.innerHTML =
+    '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:12px;">📊 Chiffre d\'affaires du jour</div>'+
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;">'+
+      seg('#16a34a,#15803d','rgba(22,163,74,0.25)','🛍️','Accessoires & tél. neufs', eur(accNeuf), accNeufNb+' vente'+(accNeufNb>1?'s':'')) +
+      seg('#0891b2,#0e7490','rgba(8,145,178,0.25)','🛡️','QualiRépar', eur(quali), qualiNb+' dossier'+(qualiNb>1?'s':'')) +
+      seg('#2563eb,#1d4ed8','rgba(37,99,235,0.25)','📱','Vente smartphones', eur(smart), smartNb+' vente'+(smartNb>1?'s':'')) +
+    '</div>';
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(renderCaJourBar, 3000); });
 // ══════════════════════════════════════════════════════════════════
 
 
