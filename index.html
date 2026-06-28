@@ -8155,8 +8155,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="card-title">📋 Historique réparations</div>
           <div style="display:flex;align-items:center;gap:10px;">
             <input type="text" id="rep-hist-search" placeholder="🔍 Rechercher..." onclick="event.stopPropagation()" oninput="_debouncedRepHist()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:140px;">
-            <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="_repHistPage=1;renderRepHistorique()" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
-            <button class="btn btn-sm" onclick="event.stopPropagation();document.getElementById('rep-hist-date').value='';_repHistPage=1;renderRepHistorique();" style="font-size:11px;padding:6px 8px;" title="Voir tout">✕</button>
+            <span style="font-size:11px;color:var(--text-muted);" onclick="event.stopPropagation()">Du</span>
+            <input type="date" id="rep-hist-date" value="" onclick="event.stopPropagation()" onchange="_repHistPage=1;renderRepHistorique()" title="Date de début" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            <span style="font-size:11px;color:var(--text-muted);" onclick="event.stopPropagation()">au</span>
+            <input type="date" id="rep-hist-date-to" value="" onclick="event.stopPropagation()" onchange="_repHistPage=1;renderRepHistorique()" title="Date de fin" style="padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            <button class="btn btn-sm" onclick="event.stopPropagation();document.getElementById('rep-hist-date').value='';document.getElementById('rep-hist-date-to').value='';_repHistPage=1;renderRepHistorique();" style="font-size:11px;padding:6px 8px;" title="Voir tout">✕ Tout</button>
             <span id="rep-hist-toggle" style="font-size:18px;color:var(--text-muted);">▲</span>
           </div>
         </div>
@@ -21317,7 +21320,10 @@ function repLoadDossiers(){
   renderRepBentoWidgets();
   // Auto-charger historique du jour
   var histDate=document.getElementById('rep-hist-date');
-  if(histDate&&!histDate.value)histDate.value=new Date().toISOString().split('T')[0];
+  var histDateTo=document.getElementById('rep-hist-date-to');
+  var _auj=new Date().toISOString().split('T')[0];
+  if(histDate&&!histDate.value)histDate.value=_auj;
+  if(histDateTo&&!histDateTo.value)histDateTo.value=_auj;
   renderRepHistorique();
 }
 
@@ -21518,25 +21524,31 @@ function repHistChangePage(delta){
 }
 function renderRepHistorique(){
   var dateEl = document.getElementById('rep-hist-date');
+  var dateToEl = document.getElementById('rep-hist-date-to');
   var searchEl = document.getElementById('rep-hist-search');
   var today  = new Date().toISOString().split('T')[0];
-  var date   = dateEl ? dateEl.value : '';
+  var from   = dateEl ? dateEl.value : '';
+  var to     = dateToEl ? dateToEl.value : '';
   var search = searchEl ? searchEl.value.toLowerCase() : '';
 
-  // Si pas de date sélectionnée → tous les dossiers terminés (facture/qr/cloture)
-  // Si date sélectionnée → tous les dossiers de cette date
+  // Aucune date → tous les dossiers terminés (facture/qr/cloture).
+  // Plage de dates (Du / au) → TOUS les dossiers dont la date (dépôt ou facture)
+  // tombe dans l'intervalle (utile pour retrouver et nettoyer des dossiers de test).
   var statutsTermines = ['facture','qr','cloture'];
   var dossiers;
-  var modeAll = !date;
+  var modeAll = !from && !to;
   if(modeAll){
     dossiers = repDossiers.filter(function(d){
       return statutsTermines.includes(d.statut||'depot');
     });
   } else {
+    var lo = from || '0000-01-01';
+    var hi = to   || '9999-12-31';
+    var inRange = function(x){ return x && x>=lo && x<=hi; };
     dossiers = repDossiers.filter(function(d){
       var dateD = (d.date||'').substring(0,10);
       var dateF = d.facture ? (d.facture.date||'').substring(0,10) : '';
-      return dateD === date || dateF === date;
+      return inRange(dateD) || inRange(dateF);
     });
   }
 
@@ -21583,7 +21595,11 @@ function renderRepHistorique(){
 
   var statsDiv = document.getElementById('rep-hist-stats');
   if(statsDiv){
-    var dateLabel = modeAll ? 'Tous les dossiers' : new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    var _fmtD = function(x){ try{ return new Date(x+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return x; } };
+    var dateLabel = modeAll ? 'Tous les dossiers'
+      : (from && to ? _fmtD(from)+' → '+_fmtD(to)
+        : from ? 'À partir du '+_fmtD(from)
+        : 'Jusqu\'au '+_fmtD(to));
     statsDiv.innerHTML = [
       {l: modeAll ? '📋 Vue' : '📅 Date', v: dateLabel, c:'var(--text)'},
       {l:'📦 Dossiers',  v: nb,                     c:'var(--text)'},
@@ -21642,7 +21658,8 @@ function renderRepHistorique(){
           : (statutsTermines.includes(statut) ? '<button style="background:#f59e0b;color:#fff;border:none;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;" onclick="demanderAvisGoogle('+id+',\''+tel+'\',\''+prenom+'\')" title="Demander un avis Google">⭐</button>' : ''))+'</td>'+
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" style="font-size:11px;">📂</button>'+
-        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+'</td>'+
+        (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+
+        '<button class="btn btn-sm" onclick="repSupprimerDossierParId(\''+id+'\')" style="font-size:11px;margin-left:3px;color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer ce dossier">🗑️</button>'+'</td>'+
     '</tr>';
   }).join('');
 
@@ -21774,6 +21791,38 @@ async function repSupprimerDossier(){
   } catch(e){
     console.error('Erreur suppression dossier:', e);
     showNotif('Erreur lors de la suppression : '+e.message,'error');
+  }
+}
+
+// Suppression d'un dossier directement par son id (depuis l'historique / la recherche
+// par plage de dates). Confirmations renforcées si facture ou envoi QualiRépar présent.
+async function repSupprimerDossierParId(id){
+  var d = (Array.isArray(repDossiers)?repDossiers:[]).find(function(x){ return String(x.id)===String(id); })
+        || (Array.isArray(window.bonsDepot)?bonsDepot:[]).find(function(x){ return String(x.id)===String(id); });
+  if(!d){ showNotif&&showNotif('Dossier introuvable','error'); return; }
+  var num = d.numero || ('ID '+id);
+  var c = d.client||{};
+  var client = (c.nom? ((c.prenom||'')+' '+(c.nom||'')).trim() : 'inconnu');
+  if(!confirm('Supprimer le dossier '+num+' ('+client+') ?\n\nCette action est irréversible.')) return;
+  var qr = d.qrEnvoi||{};
+  var dejaEnvoye = !!(qr.ecologicId||qr.ecologicClaimId||qr.ecosystemServiceOrder|| (qr.confirme===true));
+  if(d.facture || dejaEnvoye){
+    if(!confirm('⚠️ ATTENTION : ce dossier a '+(d.facture?'une facture':'')+(d.facture&&dejaEnvoye?' et ':'')+(dejaEnvoye?'un envoi QualiRépar CONFIRMÉ':'')+'.\n\nLe supprimer ici ne l\'annule PAS chez l\'éco-organisme. Continuer ?')) return;
+  }
+  try{
+    await supaFetch('bons_depot','DELETE',null,'?id=eq.'+id);
+    try{ localStorage.removeItem('sp_facture_'+id); }catch(e){}
+    try{ localStorage.removeItem('sp_qrenvoi_'+id); }catch(e){}
+    bonsDepot = (window.bonsDepot||[]).filter(function(b){ return String(b.id)!==String(id); });
+    if(Array.isArray(repDossiers)) repDossiers = repDossiers.filter(function(b){ return String(b.id)!==String(id); });
+    saveBonsDepot();
+    if(typeof renderRepHistorique==='function') renderRepHistorique();
+    if(typeof renderRepListe==='function') renderRepListe();
+    if(typeof renderRepBentoWidgets==='function') renderRepBentoWidgets();
+    showNotif&&showNotif('Dossier '+num+' supprimé','success');
+  }catch(e){
+    console.error('Suppression dossier '+id+':',e);
+    showNotif&&showNotif('Erreur suppression : '+e.message,'error');
   }
 }
 
@@ -23877,14 +23926,30 @@ async function qrEnvoyerEcologicComplet(d){
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
     if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 3/3...</div>";
     var submitResp=await fetch(proxy+"/submitclaim?ClaimId="+claimId+ecoAuth,{method:"POST",headers:ecoHeaders,body:"{}"});var submitText=await submitResp.text();console.log("[Ecologic] Submit status:",submitResp.status,"body:",submitText.substring(0,300));
+    var submitJson={};try{submitJson=JSON.parse(submitText);}catch(e){}
+    // Soumission OK seulement si HTTP ok ET pas de message d'erreur renvoyé par Ecologic.
+    var submitOk = submitResp.ok && !submitJson.ResponseErrorMessage;
     if(!d.qrEnvoi)d.qrEnvoi={};
-    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;d.qrEnvoi.statut='Sent';d.qrEnvoi.date=today;
+    d.qrEnvoi.ecologicClaimId=claimId;d.qrEnvoi.ecologicId=claimId;d.qrEnvoi.ecologicDate=today;d.qrEnvoi.manquants=errs;
+    d.qrEnvoi.statut = submitOk ? 'Sent' : 'Pending';
+    d.qrEnvoi.confirme = !!submitOk;
+    if(submitOk){ delete d.qrEnvoi.confirmErreur; }
+    else { d.qrEnvoi.confirmErreur = 'Soumission Ecologic non aboutie (HTTP '+submitResp.status+(submitJson.ResponseErrorMessage?' : '+submitJson.ResponseErrorMessage:'')+')'; }
+    d.qrEnvoi.date=today;
     d.statut="cloture";
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     if(typeof repUpdateStatutBadge==="function")repUpdateStatutBadge();
-    if(errs.length>0){
-      // Dossier créé mais INCOMPLET côté Ecologic → bandeau bien visible, pas un petit texte.
+    if(!submitOk){
+      // Dossier créé mais SOUMISSION non aboutie → ne sera pas traité tant qu'il n'est pas soumis.
+      var msgS="&#9888;&#65039; <b>Dossier Ecologic créé mais NON soumis</b> — ClaimId "+claimId+
+        "<br>"+(d.qrEnvoi.confirmErreur||'')+
+        "<br>&#128073; Recliquez « Envoyer Ecologic » pour relancer la soumission."+
+        "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Portail Ecologic &rarr;</a>";
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:1.5px solid #FF9F0A;padding:14px;border-radius:8px;color:#92400e;'>"+msgS+"</div>";
+      showNotif&&showNotif("⚠️ Ecologic NON soumis ("+claimId+") — à relancer","error");
+    } else if(errs.length>0){
+      // Dossier soumis mais INCOMPLET côté Ecologic → bandeau bien visible, pas un petit texte.
       var msgW="&#9888;&#65039; <b>Dossier Ecologic INCOMPLET</b> — ClaimId "+claimId+
         "<br><span style='font-weight:600;'>À compléter avant remboursement :</span> "+errs.join(", ")+
         "<br><a href='https://app.e-reparateur.eco' target='_blank' style='color:#0d6efd;font-weight:bold;'>Ouvrir le portail Ecologic &rarr;</a>";
