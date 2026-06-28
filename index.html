@@ -22758,6 +22758,7 @@ function repValiderClient(){
   repSauvegarderDossier(); // ← persiste immédiatement dans bons_depot
   repApplyClientLock(true);
   showNotif('✅ Fiche client verrouillée','success');
+  repGoStep(3); // après Client → étape Devis
 }
 
 function repModifierClient(){
@@ -23107,7 +23108,7 @@ function repStep2Next(){
     return;
   }
   repSauvegarderDossier(); // persiste l'appareil/panne/devis
-  repGoStep(3);
+  repGoStep(1); // après Appareil/IMEI → étape Client
 }
 
 function repAutoFillStep4(){
@@ -23903,7 +23904,13 @@ async function qrEnvoyerEcosystemComplet(d){
     var r2=await ecoFetch('/reimbursement-claims/new_claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(claimPayload)});
     var j2Text=await r2.text();console.log('[Ecosystem] new-claim:',r2.status,j2Text.substring(0,300));
     var j2;try{j2=JSON.parse(j2Text);}catch(e){j2={raw:j2Text};}
-    if(!r2.ok)throw new Error('new-claim HTTP '+r2.status+': '+j2Text.substring(0,100));
+    if(!r2.ok){
+      var _ecoErr='Ecosystem refusé ('+r2.status+') : '+j2Text.substring(0,500);
+      if(typeof showNotif==='function') showNotif(_ecoErr,'error');
+      var _ecoEl=document.getElementById('rep-qr-envoi-statut');
+      if(_ecoEl) _ecoEl.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:#dc2626;font-size:12px;line-height:1.5;'>❌ "+_ecoErr+"</div>";
+      throw new Error(_ecoErr);
+    }
     var repairId=j2.ReimbursementClaimID||j2.reimbursementClaimId||j2.id||j2.claimId;
     // ③ Upload pièces jointes (facture + photo IMEI + devis signé)
     if(repairId){
