@@ -37,6 +37,35 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Mode dépôt S3 : le navigateur n'arrive pas toujours à PUT directement vers le
+  // bucket S3 d'Ecosystem (CORS / réseau). On reçoit {url, contentType, dataB64}
+  // et on effectue le PUT côté serveur (pas de CORS serveur→serveur).
+  if (req.method === 'POST' && req.query.s3put === '1') {
+    try {
+      const payload = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      const { url, contentType, dataB64 } = payload;
+      if (!url || !dataB64) {
+        return res.status(400).json({ ok: false, error: 'url et dataB64 requis' });
+      }
+      const buf = Buffer.from(dataB64, 'base64');
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 25000);
+      const put = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': contentType || 'application/octet-stream' },
+        body: buf,
+        signal: controller.signal,
+      });
+      clearTimeout(t);
+      const txt = await put.text().catch(() => '');
+      console.log('[proxy-ecosystem] s3put', put.status, (txt || '').substring(0, 200));
+      return res.status(200).json({ ok: put.ok, status: put.status, body: (txt || '').substring(0, 300) });
+    } catch (e) {
+      console.error('[proxy-ecosystem] s3put error', e.message);
+      return res.status(200).json({ ok: false, status: 0, error: e.message });
+    }
+  }
+
   // Mode debug: GET /api/proxy-ecosystem?debug=1&key=<DEBUG_TOKEN>
   if (req.query.debug === '1') {
     if (!debugAllowed(req)) return res.status(404).end();

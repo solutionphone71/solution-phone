@@ -23902,6 +23902,27 @@ async function qrEnvoyerEcologicComplet(d){
   }
 }
 
+// Dépose un fichier sur le S3 d'Ecosystem VIA le proxy (évite le blocage CORS
+// du PUT navigateur→S3). dataB64 = contenu en base64.
+async function ecoDeposerS3(url, contentType, dataB64){
+  var r = await fetchWithTimeout('/api/proxy-ecosystem?s3put=1', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ url:url, contentType:contentType, dataB64:dataB64 })
+  }, 30000);
+  var j = {}; try{ j = await r.json(); }catch(e){}
+  return { ok: !!j.ok, status: j.status||r.status, body: j.body||j.error||'' };
+}
+// Convertit un Blob en base64 (sans le préfixe data:).
+function ecoBlobToB64(blob){
+  return new Promise(function(res,rej){
+    var fr = new FileReader();
+    fr.onloadend = function(){ var s = String(fr.result||''); res(s.indexOf(',')>=0 ? s.slice(s.indexOf(',')+1) : s); };
+    fr.onerror = rej;
+    fr.readAsDataURL(blob);
+  });
+}
+
 async function qrEnvoyerEcosystemComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
@@ -23997,10 +24018,9 @@ async function qrEnvoyerEcosystemComplet(d){
         var uf1=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'facture.pdf',FileSizeInMB:Math.ceil(fb.length*0.75/1024/1024)||1,FileType:'invoice'})});
         var uf1j=await uf1.json();console.log('[Ecosystem] upload-file invoice:',uf1.status,JSON.stringify(uf1j).substring(0,200));
         if(!uf1.ok || !uf1j.url) throw new Error("URL d'upload facture refusée (HTTP "+uf1.status+")");
-        var pdfBytes=Uint8Array.from(atob(fb),function(c){return c.charCodeAt(0);});
-        var putR=await fetch(uf1j.url,{method:'PUT',body:pdfBytes,headers:{'Content-Type':'application/pdf'}});
-        console.log('[Ecosystem] S3 PUT facture:',putR.status);
-        if(!putR.ok) throw new Error('dépôt S3 facture échoué (HTTP '+putR.status+')');
+        var putR=await ecoDeposerS3(uf1j.url,'application/pdf',fb);
+        console.log('[Ecosystem] S3 PUT facture (via proxy):',putR.status,putR.body);
+        if(!putR.ok) throw new Error('dépôt facture échoué (HTTP '+putR.status+')');
         invoiceOk=true;
       }catch(ef){console.warn('[Ecosystem] Upload facture:',ef.message);uploadErrors.push('facture: '+ef.message);}
       // Photo IMEI / plaque signalétique (serial_tag) — vérifié de bout en bout
@@ -24011,9 +24031,10 @@ async function qrEnvoyerEcosystemComplet(d){
           var uf2=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'imei.jpg',FileSizeInMB:Math.ceil(ib.size/1024/1024)||1,FileType:'serial_tag'})});
           var uf2j=await uf2.json();console.log('[Ecosystem] upload-file serial_tag:',uf2.status,JSON.stringify(uf2j).substring(0,200));
           if(!uf2.ok || !uf2j.url) throw new Error("URL d'upload IMEI refusée (HTTP "+uf2.status+")");
-          var putR2=await fetch(uf2j.url,{method:'PUT',body:ib,headers:{'Content-Type':ib.type||'image/jpeg'}});
-          console.log('[Ecosystem] S3 PUT IMEI:',putR2.status);
-          if(!putR2.ok) throw new Error('dépôt S3 IMEI échoué (HTTP '+putR2.status+')');
+          var ibB64=await ecoBlobToB64(ib);
+          var putR2=await ecoDeposerS3(uf2j.url, ib.type||'image/jpeg', ibB64);
+          console.log('[Ecosystem] S3 PUT IMEI (via proxy):',putR2.status,putR2.body);
+          if(!putR2.ok) throw new Error('dépôt IMEI échoué (HTTP '+putR2.status+')');
           serialOk=true;
         }catch(ei){console.warn('[Ecosystem] Upload IMEI:',ei.message);uploadErrors.push('photo IMEI: '+ei.message);}
       }
@@ -24026,10 +24047,9 @@ async function qrEnvoyerEcosystemComplet(d){
           var uf3=await ecoFetch('/reimbursement-claims/'+repairId+'/upload-file',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({FileName:'devis_signe.pdf',FileSizeInMB:Math.ceil(dsb.length*0.75/1024/1024)||1,FileType:'claim_request'})});
           var uf3j=await uf3.json();console.log('[Ecosystem] upload-file claim_request:',uf3.status,JSON.stringify(uf3j).substring(0,200));
           if(!uf3.ok || !uf3j.url) throw new Error("URL d'upload devis refusée (HTTP "+uf3.status+")");
-          var pdfBytes3=Uint8Array.from(atob(dsb),function(c){return c.charCodeAt(0);});
-          var putR3=await fetch(uf3j.url,{method:'PUT',body:pdfBytes3,headers:{'Content-Type':'application/pdf'}});
-          console.log('[Ecosystem] S3 PUT devis signé:',putR3.status);
-          if(!putR3.ok) throw new Error('dépôt S3 devis échoué (HTTP '+putR3.status+')');
+          var putR3=await ecoDeposerS3(uf3j.url,'application/pdf',dsb);
+          console.log('[Ecosystem] S3 PUT devis signé (via proxy):',putR3.status,putR3.body);
+          if(!putR3.ok) throw new Error('dépôt devis échoué (HTTP '+putR3.status+')');
           claimReqOk=true;
         }catch(es){console.warn('[Ecosystem] Upload devis signé:',es.message);uploadErrors.push('devis signé: '+es.message);}
       }
