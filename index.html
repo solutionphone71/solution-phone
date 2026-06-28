@@ -8447,15 +8447,16 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div style="display:flex;flex-direction:column;gap:10px;">
                   <div class="form-group">
                     <label>Panne décrite par le client *</label>
-                    <!-- ⚡ Presets 1-clic — auto-fill panne + pièce + IRIS (prix manuel) -->
-                    <div class="rep-panne-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('ecran')"      style="padding:7px 14px;border:1.5px solid #ef4444;background:rgba(239,68,68,0.1);color:#ef4444;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📱 Écran cassé</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('batterie')"   style="padding:7px 14px;border:1.5px solid #16a34a;background:rgba(22,163,74,0.1);color:#16a34a;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔋 Batterie</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('connecteur')" style="padding:7px 14px;border:1.5px solid #f59e0b;background:rgba(245,158,11,0.1);color:#f59e0b;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔌 Connecteur</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('hp')"         style="padding:7px 14px;border:1.5px solid #2563eb;background:rgba(37,99,235,0.1);color:#2563eb;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">🔊 Haut-parleur</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('camera')"     style="padding:7px 14px;border:1.5px solid #7c3aed;background:rgba(124,58,237,0.1);color:#7c3aed;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">📷 Caméra</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('vitre')"      style="padding:7px 14px;border:1.5px solid #ec4899;background:rgba(236,72,153,0.1);color:#ec4899;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">💎 Vitre arrière</button>
-                      <button type="button" class="rep-chip" onclick="repApplyPreset('eau')"        style="padding:7px 14px;border:1.5px solid #06b6d4;background:rgba(6,182,212,0.1);color:#06b6d4;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">💧 Dégât des eaux</button>
+                    <!-- ⚡ Sélection panne — GROSSES ICÔNES (1 clic = panne + IRIS + pièce auto) -->
+                    <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);margin-bottom:8px;">Quelle panne ? <span style="font-weight:400;text-transform:none;">(1 clic, les codes se remplissent seuls)</span></div>
+                    <div class="rep-panne-chips" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:12px;">
+                      <button type="button" class="rep-chip rep-icone" data-preset="ecran" onclick="repApplyPreset('ecran');repMajIconePanne(this)"      style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #ef4444;background:rgba(239,68,68,0.08);color:#ef4444;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">📱</span>Écran cassé</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="batterie" onclick="repApplyPreset('batterie');repMajIconePanne(this)"   style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #16a34a;background:rgba(22,163,74,0.08);color:#16a34a;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">🔋</span>Batterie</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="connecteur" onclick="repApplyPreset('connecteur');repMajIconePanne(this)" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #f59e0b;background:rgba(245,158,11,0.08);color:#f59e0b;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">🔌</span>Charge</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="hp" onclick="repApplyPreset('hp');repMajIconePanne(this)"         style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">🔊</span>Son</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="camera" onclick="repApplyPreset('camera');repMajIconePanne(this)"     style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #7c3aed;background:rgba(124,58,237,0.08);color:#7c3aed;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">📷</span>Caméra</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="vitre" onclick="repApplyPreset('vitre');repMajIconePanne(this)"      style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #ec4899;background:rgba(236,72,153,0.08);color:#ec4899;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">💎</span>Vitre arrière</button>
+                      <button type="button" class="rep-chip rep-icone" data-preset="eau" onclick="repApplyPreset('eau');repMajIconePanne(this)"        style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px;border:2px solid #06b6d4;background:rgba(6,182,212,0.08);color:#06b6d4;border-radius:14px;font-size:13px;font-weight:800;cursor:pointer;transition:.15s;"><span style="font-size:34px;line-height:1;">💧</span>Dégât eaux</button>
                     </div>
                     <select id="dep-panne-select" onchange="repPanneSelect(this.value);repCheckEligibiliteDebounced();"
                       style="padding:9px 12px;background:rgba(0,0,0,0.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;width:100%;">
@@ -30615,6 +30616,14 @@ function renderCaJourBar(){
     '</div>';
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(renderCaJourBar, 3000); });
+
+// Surligne l'icône de panne sélectionnée (retour visuel employé)
+function repMajIconePanne(btn){
+  try{
+    document.querySelectorAll('.rep-icone').forEach(function(b){ b.style.outline=''; b.style.transform=''; b.style.boxShadow=''; });
+    if(btn){ btn.style.outline='3px solid currentColor'; btn.style.outlineOffset='2px'; btn.style.transform='translateY(-2px)'; btn.style.boxShadow='0 6px 16px rgba(0,0,0,0.12)'; }
+  }catch(e){}
+}
 // ══════════════════════════════════════════════════════════════════
 
 
