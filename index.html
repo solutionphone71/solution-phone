@@ -8256,11 +8256,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
         <!-- Stepper navigation -->
         <div style="display:flex;gap:0;margin-bottom:24px;border-radius:10px;overflow:hidden;border:1px solid var(--border);">
-          <button class="rep-step-btn" id="rep-step-btn-1" onclick="repGoStep(1)">
-            <span class="rep-step-num">1</span><span class="rep-step-label">Client</span>
-          </button>
           <button class="rep-step-btn" id="rep-step-btn-2" onclick="repGoStep(2)">
-            <span class="rep-step-num">2</span><span class="rep-step-label">Appareil</span>
+            <span class="rep-step-num">1</span><span class="rep-step-label">Appareil</span>
+          </button>
+          <button class="rep-step-btn" id="rep-step-btn-1" onclick="repGoStep(1)">
+            <span class="rep-step-num">2</span><span class="rep-step-label">Client</span>
           </button>
           <button class="rep-step-btn" id="rep-step-btn-3" onclick="repGoStep(3)">
             <span class="rep-step-num">3</span><span class="rep-step-label">Devis</span>
@@ -8316,10 +8316,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div id="rep-client-results" style="max-height:260px;overflow-y:auto;"></div>
             </div>
           </div>
-          <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+          <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;">
+            <button class="btn" onclick="repGoStep(2)">← Retour (Appareil)</button>
             <div style="display:flex;gap:10px;align-items:center;">
               <button class="btn" onclick="repSauvegarderClientManuel()" style="padding:12px 20px;font-size:15px;border-color:var(--green);color:var(--green);" title="Sauvegarder le client dans la base">💾 Enregistrer client</button>
-              <button class="btn btn-primary" onclick="repStep1Next()" style="padding:12px 28px;font-size:15px;">Suivant → Prise en charge</button>
+              <button class="btn btn-primary" onclick="repStep1Next()" style="padding:12px 28px;font-size:15px;">Suivant → Devis</button>
               <button class="btn" id="rep-btn-valider-client-bottom" onclick="repValiderClient()" style="padding:12px 20px;font-size:15px;background:var(--green);color:#fff;border-color:var(--green);">✅ Valider la fiche</button>
             </div>
           </div>
@@ -8435,8 +8436,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             </div>
           </div>
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
-            <button class="btn" onclick="repGoStep(1)">← Retour</button>
-            <button class="btn btn-primary" onclick="repStep2Next()" style="padding:12px 28px;font-size:15px;">Suivant → Devis</button>
+            <button class="btn" onclick="repShowListe()">← Liste</button>
+            <button class="btn btn-primary" onclick="repStep2Next()" style="padding:12px 28px;font-size:15px;">Suivant → Client</button>
           </div>
         </div>
 
@@ -8599,7 +8600,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
 
           <div style="margin-top:16px;display:flex;justify-content:space-between;">
-            <button class="btn" onclick="repGoStep(2)">← Retour</button>
+            <button class="btn" onclick="repGoStep(1)">← Retour</button>
             <div style="display:flex;gap:10px;">
               <div style="display:flex;gap:8px;">
                 <button class="btn" onclick="repImprimerDepot()" style="border-color:var(--blue);color:var(--blue);">📋 Devis A4</button>
@@ -22921,6 +22922,9 @@ function repGoStep(n){
   // Sauvegarder le step courant avant de changer (remplace l'autosave temps réel)
   if(repDossierCourant && typeof _repGoStepSave === 'function') _repGoStepSave();
   repCurrentStep = n;
+  // Ordre VISUEL du parcours : Appareil(2) → Client(1) → Devis(3) → Facturation(4) → Envoi(5)
+  var REP_ORDER = [2,1,3,4,5];
+  var posN = REP_ORDER.indexOf(n);
   [1,2,3,4,5].forEach(function(i){
     var s=document.getElementById('rep-step-'+i);
     var b=document.getElementById('rep-step-btn-'+i);
@@ -22928,7 +22932,7 @@ function repGoStep(n){
     if(b){
       b.classList.remove('active','done');
       if(i===n) b.classList.add('active');
-      else if(i<n) b.classList.add('done');
+      else if(REP_ORDER.indexOf(i) < posN) b.classList.add('done');
     }
   });
   // Recharger les champs client au retour sur le step 1
@@ -23135,7 +23139,7 @@ function repStep1Next(){
   repSauvegarderClientSupabase(repDossierCourant.client);
   repSauvegarderDossier(); // ← persiste adresse/cp/ville dans bons_depot Supabase
   repApplyClientLock(true); // verrouiller la fiche au passage au step suivant
-  repGoStep(2);
+  repGoStep(3); // après Client → étape Devis
 }
 
 
@@ -23700,9 +23704,9 @@ function qrAfficherErreurCorrection(erreur, organisme, statut){
     champsHtml = '<div style="margin:10px 0;"><b>Champs à corriger :</b><ul style="margin:6px 0 0 16px;font-size:13px;">'+listeChamps+'</ul></div>';
 
     var btnsEtape = '';
-    if(etape1.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(1)" style="margin-right:6px;">✏️ Aller au step 1 (Client)</button>';
-    if(etape2.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(2)" style="margin-right:6px;">✏️ Aller au step 2 (Appareil)</button>';
-    if(etape3.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(3)">✏️ Aller au step 3 (Devis/Panne)</button>';
+    if(etape2.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(2)" style="margin-right:6px;">✏️ Corriger l\'Appareil</button>';
+    if(etape1.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(1)" style="margin-right:6px;">✏️ Corriger la fiche Client</button>';
+    if(etape3.length) btnsEtape += '<button class="btn btn-sm" onclick="repGoStep(3)">✏️ Corriger le Devis/Panne</button>';
     champsHtml += '<div style="margin-top:10px;">'+btnsEtape+'</div>';
   }
 
