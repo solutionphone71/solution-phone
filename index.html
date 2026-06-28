@@ -24084,7 +24084,7 @@ async function qrEnvoyerEcosystemComplet(d){
         var cfR=await ecoFetch('/reimbursement-claims/'+repairId+'/confirm-claim',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}});
         var cfT=await cfR.text();console.log('[Ecosystem] confirm-claim:',cfR.status,cfT.substring(0,300));
         if(!cfR.ok){ return {ok:false,status:cfR.status,body:cfT}; }
-        var so='';try{var cfJ=JSON.parse(cfT);so=cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||'';}catch(pe){}
+        var so='';try{var cfJ=JSON.parse(cfT);so=cfJ.SapServiceOrder||cfJ.sapServiceOrder||cfJ.ServiceOrderNumber||cfJ.serviceOrderNumber||cfJ.ServiceOrder||cfJ.serviceOrder||cfJ.orderNumber||cfJ.ReimbursementClaimReference||'';}catch(pe){}
         return {ok:true,so:so,body:cfT};
       }
       try{
