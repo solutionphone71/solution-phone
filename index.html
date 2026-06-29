@@ -23743,8 +23743,16 @@ function repEnvoyerOrganisme(){
   var qr = d.qrEnvoi||{};
   var dejaAbouti = (!!qr.ecologicId || !!qr.ecologicClaimId || !!qr.ecosystemServiceOrder) && qr.confirme!==false;
   if(dejaAbouti){
-    showNotif('Ce dossier a déjà été envoyé et confirmé ! Utilisez "Forcer le renvoi" si nécessaire.','error');
-    return;
+    var _orgDeja = qrGetOrganisme((d.appareil||{}).marque||'');
+    if(_orgDeja === 'ecologic'){
+      // Un dossier Ecologic « validé » peut être resté INCOMPLET sur le portail.
+      // On autorise la recréation, mais on prévient : l'ancien claim doit avoir été
+      // ANNULÉ sur le portail Ecologic, sinon l'IMEI sera refusé (« déjà fait l'objet »).
+      if(!confirm('Ce dossier a déjà un envoi Ecologic (ClaimId '+(qr.ecologicClaimId||qr.ecologicId)+').\n\n« Renvoyer » va créer un NOUVEAU dossier Ecologic.\n\n⚠️ Important : l\'ancien dossier doit d\'abord avoir été ANNULÉ sur le portail Ecologic, sinon l\'IMEI sera refusé (« déjà fait l\'objet d\'une demande de soutien »).\n\nContinuer ?')) return;
+    } else {
+      showNotif('Ce dossier a déjà été envoyé et confirmé !','error');
+      return;
+    }
   }
 
   // ── PRÉ-VALIDATION COMPLÈTE avant envoi ──
@@ -23843,17 +23851,19 @@ function repMajBoutonsEnvoi(){
   var valide = qr.confirme===true;
 
   if(org === 'ecologic'){
-    // ECOLOGIC = 2 temps : Envoyer (crée + pièces) → on attend le retour → Valider (soumet).
+    // ECOLOGIC = 2 temps : Envoyer (crée + pièces) → Valider (soumet).
+    // « Renvoyer » reste TOUJOURS disponible : un dossier « validé » peut être
+    // resté « incomplet » côté Ecologic et devoir être recréé.
     var envoyeE = !!qr.ecologicClaimId;
     if(btnEnv){
-      if(valide){ btnEnv.style.display='none'; }
-      else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
-        btnEnv.innerHTML = envoyeE ? '🔄 Renvoyer à Ecologic' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecologic</span>'; }
+      btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
+      btnEnv.innerHTML = envoyeE ? '🔄 Renvoyer à Ecologic' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecologic</span>';
     }
     if(btnVal){
-      if(valide){ btnVal.style.display=''; btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
-      else if(envoyeE){ btnVal.style.display=''; btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML="✅ Valider l'envoi"; }
-      else { btnVal.style.display='none'; }
+      if(envoyeE){ btnVal.style.display='';
+        if(valide){ btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
+        else { btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML="✅ Valider l'envoi"; }
+      } else { btnVal.style.display='none'; }
     }
   } else {
     // ECOSYSTEM = 1 seul bouton (création + pièces + confirmation d'un coup). Si erreur → renvoyer.
