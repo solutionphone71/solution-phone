@@ -22301,10 +22301,11 @@ async function repGenererFacture(){
     if(!_marqueReconnue){
       console.warn('[QR] Marque non reconnue (probablement "Autre") :', _marqueRaw, '\u2192 pas d\'envoi auto');
       showNotif('\u26a0\ufe0f Marque "'+_marqueRaw+'" non \u00e9ligible QualiR\u00e9par \u2014 pas d\'envoi auto','warning');
-    } else if(_orgType === 'ecosystem' && typeof qrEnvoyerEcosystemComplet==='function'){
-      _kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecosystem ('+_marqueRaw+')...','info');qrEnvoyerEcosystemComplet(d).catch(function(e){console.warn(e);});});
-    } else if(_orgType === 'ecologic' && typeof qrEnvoyerEcologicComplet==='function'){
-      _kiwizDone.then(function(){showNotif('\u23f3 Envoi Ecologic ('+_marqueRaw+')...','info');qrEnvoyerEcologicComplet(d).catch(function(e){console.warn(e);});});
+    } else if(_orgType === 'ecosystem' || _orgType === 'ecologic'){
+      // \u26d4 Plus d'envoi AUTOMATIQUE ici : il faisait DOUBLON avec le bouton \u00ab Envoyer \u00bb
+      // de l'\u00e9tape Envoi \u2192 2 dossiers chez l'\u00e9co-organisme (cas Mhadi Andhum / Olivier Maure).
+      // L'envoi se fait d\u00e9sormais UNIQUEMENT via le bouton \u00ab Envoyer \u00e0 \u2026 \u00bb de l'\u00e9tape Envoi.
+      showNotif&&showNotif('\u2705 Facture g\u00e9n\u00e9r\u00e9e \u2014 allez \u00e0 l\'\u00e9tape Envoi puis cliquez \u00ab Envoyer \u00e0 '+(_orgType==='ecologic'?'Ecologic':'Ecosystem')+' \u00bb.','info');
     }
   }
 
