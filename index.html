@@ -8700,8 +8700,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   </div>
                   <div class="form-group"><label>Garantie</label>
                     <select id="r-garantie">
-                      <option value="3 mois">3 mois (QualiRépar)</option>
-                      <option value="6 mois">6 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
+                      <option value="6 mois" selected>6 mois (QualiRépar)</option>
+                      <option value="3 mois">3 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
                     </select></div>
                 </div>
               </div>
@@ -25590,30 +25590,33 @@ function repQRUpdateOrganisme(){
   var sel = document.getElementById('rep-qr-marque');
   if(!sel) return;
   var marque = sel.value;
+  var orgEl = document.getElementById('rep-qr-organisme');
+  var orgLabel = document.getElementById('rep-qr-btn-label');
+  if(!marque){ // pas de marque → pas d'organisme affiché (évite d'afficher l'ancien)
+    if(orgEl) orgEl.textContent = '—';
+    if(orgLabel) orgLabel.textContent = 'Organisme';
+    return;
+  }
   var type = qrGetOrganisme(marque);
   var label = type === 'ecosystem' ? 'Ecosystem' : 'Ecologic';
-  var orgLabel = document.getElementById('rep-qr-btn-label');
   if(orgLabel) orgLabel.textContent = label;
-  var orgEl = document.getElementById('rep-qr-organisme');
   if(orgEl) orgEl.textContent = label;
 }
 
 function repQRPopulateMarques(){
-  // Les marques sont déjà dans le HTML du select
-  // Auto-sélectionner la marque du dossier
+  // Synchronise TOUJOURS le sélecteur QualiRépar avec la marque du dossier courant.
+  // (Avant : si le select avait déjà une valeur — celle du dossier précédent — on
+  //  sortait sans rien faire → le bonus gardait l'ancienne marque. Corrigé.)
   if(!repDossierCourant) return;
   var marque = (repDossierCourant.appareil||{}).marque||'';
-  if(!marque) return;
   var sel = document.getElementById('rep-qr-marque');
-  if(!sel || sel.value) return;
-  // Chercher correspondance
+  if(!sel) return;
+  var matched = '';
   for(var i=0;i<sel.options.length;i++){
-    if(sel.options[i].value.toLowerCase() === marque.toLowerCase()){
-      sel.value = sel.options[i].value;
-      if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
-      break;
-    }
+    if(sel.options[i].value.toLowerCase() === marque.toLowerCase()){ matched = sel.options[i].value; break; }
   }
+  sel.value = matched; // vide si pas de correspondance (réinitialise l'ancienne marque)
+  if(typeof repQRUpdateOrganisme==='function') repQRUpdateOrganisme();
 }
 
 function repQRAutoPanne(){
