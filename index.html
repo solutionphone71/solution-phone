@@ -21668,6 +21668,7 @@ function renderRepHistorique(){
       '<td style="padding:8px;text-align:center;" onclick="event.stopPropagation()">'+
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" style="font-size:11px;">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+
+        (f?'<button class="btn btn-sm" onclick="repCorrigerModePaiement('+id+')" style="font-size:11px;margin-left:3px;" title="Corriger le mode de paiement">💳</button>':'')+
         '<button class="btn btn-sm" onclick="repSupprimerDossierParId(\''+id+'\')" style="font-size:11px;margin-left:3px;color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer ce dossier">🗑️</button>'+'</td>'+
     '</tr>';
   }).join('');
@@ -21801,6 +21802,63 @@ async function repSupprimerDossier(){
     console.error('Erreur suppression dossier:', e);
     showNotif('Erreur lors de la suppression : '+e.message,'error');
   }
+}
+
+// ── Corriger le mode de paiement d'une réparation déjà validée ──
+// Ex. on a saisi « Espèces » au lieu de « CB ». Déplace le montant encaissé du
+// mauvais mode vers le bon dans la caisse du jour, et met à jour la facture.
+function repCorrigerModePaiement(id){
+  var d = (Array.isArray(repDossiers)?repDossiers:[]).find(function(x){return String(x.id)===String(id);})
+        || (Array.isArray(window.bonsDepot)?bonsDepot:[]).find(function(x){return String(x.id)===String(id);});
+  if(!d || !d.facture){ showNotif&&showNotif('Pas de facture validée pour ce dossier','error'); return; }
+  var f = d.facture;
+  if(f.split && f.split.amount1 && f.split.amount2){
+    showNotif&&showNotif('Paiement séparé : corrigez via Caisse → la journée concernée','error');
+    return;
+  }
+  var MODES=[['CB','💳 CB','#16a34a'],['ESPECES','💵 Espèces','#d97706'],['CHEQUE','📄 Chèque','#2563eb'],['VIREMENT','🏦 Virement','#7c3aed']];
+  var cur=(f.mode||'CB').toUpperCase();
+  var ov=document.createElement('div');
+  ov.id='rep-mode-modal';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML='<div style="background:#fff;color:#111;border-radius:16px;padding:22px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);">'+
+    '<div style="font-size:16px;font-weight:800;margin-bottom:4px;">💳 Corriger le mode de paiement</div>'+
+    '<div style="font-size:12px;color:#777;margin-bottom:14px;">'+(f.numero||'')+' — mode actuel : <b>'+cur+'</b>. Choisis le bon mode :</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+    MODES.map(function(m){ var on=m[0]===cur; return '<button onclick="repAppliquerCorrectionMode('+id+',\''+m[0]+'\')" '+(on?'disabled':'')+' style="padding:16px 8px;border-radius:12px;border:2px solid '+m[2]+';background:'+(on?'#f1f5f9':m[2])+';color:'+(on?'#94a3b8':'#fff')+';font-size:15px;font-weight:800;cursor:'+(on?'default':'pointer')+';">'+m[1]+(on?' (actuel)':'')+'</button>'; }).join('')+
+    '</div>'+
+    '<button onclick="var e=document.getElementById(\'rep-mode-modal\');if(e)e.remove();" style="margin-top:14px;width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;background:#fff;color:#777;font-weight:700;cursor:pointer;">Annuler</button>'+
+  '</div>';
+  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+
+async function repAppliquerCorrectionMode(id, newMode){
+  var modal=document.getElementById('rep-mode-modal'); if(modal) modal.remove();
+  var d = (Array.isArray(repDossiers)?repDossiers:[]).find(function(x){return String(x.id)===String(id);})
+        || (Array.isArray(window.bonsDepot)?bonsDepot:[]).find(function(x){return String(x.id)===String(id);});
+  if(!d || !d.facture){ showNotif&&showNotif('Dossier introuvable','error'); return; }
+  var f=d.facture;
+  var oldMode=(f.mode||'CB').toUpperCase();
+  newMode=(newMode||'').toUpperCase();
+  if(!newMode || newMode===oldMode) return;
+  var bonus = f.bonusQR ? (f.piec?30:25) : 0;
+  var clientPaid = Math.round(((parseFloat(f.prix)||0)-bonus)*100)/100;
+  var dateF = f.date || d.date;
+  var idx = (Array.isArray(caisse)?caisse:[]).findIndex(function(c){return c.date===dateF;});
+  if(idx<0){ showNotif&&showNotif('Aucune caisse trouvée pour le '+fmtDate(dateF)+' — corrige via Caisse → journée','error'); return; }
+  if(!confirm('Déplacer '+clientPaid.toFixed(2)+' € de '+oldMode+' vers '+newMode+'\n(réparation '+(f.numero||'')+', '+fmtDate(dateF)+') ?')) return;
+  var key={'CB':'cb','ESPECES':'especes','CHEQUE':'cheque','VIREMENT':'virement'};
+  var entry=caisse[idx]; var ko=key[oldMode], kn=key[newMode];
+  if(ko) entry[ko]=Math.round(((entry[ko]||0)-clientPaid)*100)/100;
+  if(kn) entry[kn]=Math.round(((entry[kn]||0)+clientPaid)*100)/100;
+  try{ await saveCaisseRow(entry); }catch(e){ console.warn('saveCaisseRow',e); }
+  f.mode=newMode;
+  try{ await saveBonDepotSupabase(d); }catch(e){ console.warn('saveBonDepot',e); }
+  if(typeof renderCaisse==='function') renderCaisse();
+  if(typeof renderDashboard==='function') renderDashboard();
+  if(typeof renderRepHistorique==='function') renderRepHistorique();
+  showNotif&&showNotif('✅ Mode corrigé : '+oldMode+' → '+newMode+' ('+clientPaid.toFixed(2)+' €)','success');
 }
 
 // Suppression d'un dossier directement par son id (depuis l'historique / la recherche
