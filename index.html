@@ -11837,6 +11837,25 @@ async function envoyerFactureEmail(){
   }
 }
 
+// ── Envoi AUTOMATIQUE de la facture par email à la génération ──
+// Plus de popup bloquant : on envoie directement à l'email du client (obligatoire),
+// avec confirmation à l'écran. Si pas d'email valide → on ouvre le popup en secours.
+async function repAutoEnvoyerFactureEmail(d){
+  if(!d||!d.facture) return;
+  var c = d.client||{};
+  var email = (c.email||'').trim();
+  _envoiDossierCourant = d;
+  var emEl = document.getElementById('envoi-email-input'); if(emEl) emEl.value = email;
+  var smEl = document.getElementById('envoi-sms-input');   if(smEl) smEl.value = c.tel||'';
+  if(email && /.+@.+\..+/.test(email) && typeof envoyerFactureEmail==='function'){
+    showNotif&&showNotif('📧 Envoi de la facture à '+email+'…','info');
+    try{ await envoyerFactureEmail(); }catch(e){ console.warn('Auto email facture:',e); showNotif&&showNotif('⚠️ Email facture non envoyé — utilisez le bouton « Email facture »','error'); }
+  } else {
+    // Pas d'email valide → on ouvre le popup pour saisir/choisir
+    if(typeof repShowEnvoiFacture==='function') repShowEnvoiFacture(d);
+  }
+}
+
 // ── Envoi SMS facture ──
 async function envoyerFactureSMS(){
   var d   = _envoiDossierCourant;
@@ -22312,11 +22331,9 @@ async function repGenererFacture(){
     }
   }
 
-  // Imprimer la facture automatiquement
-  
-
-  // Afficher popup envoi
-  repShowEnvoiFacture(d);
+  // Envoi AUTOMATIQUE de la facture par email au client (plus de popup bloquant).
+  // Si pas d'email valide, repAutoEnvoyerFactureEmail ouvre le popup en secours.
+  repAutoEnvoyerFactureEmail(d);
   repUpdateDevisRecap();
   // Libérer le lock après 15s max (sécurité)
   setTimeout(function(){ repGenererFacture._running=false; }, 15000);
