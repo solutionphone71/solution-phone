@@ -11318,13 +11318,14 @@ function renderCaisseJour(){
   };
   var totJour={total:0,cb:0,especes:0,cheque:0,virement:0,quali:0,nb:txRep.length};
   txRep.forEach(function(tx){
-    totJour.total    += tx.montant;
-    totJour.quali    += tx.quali;
+    totJour.total    += tx.montant;          // CA = part client + bonus QualiRépar
+    totJour.quali    += tx.quali;            // bonus (remboursé par l'organisme)
+    var _clientPart = tx.montant - (tx.quali||0); // ce que le client a réellement payé
     var m = (tx.mode||'CB').toUpperCase();
-    if(m==='CB')       totJour.cb       += tx.montant;
-    if(m==='ESPECES')  totJour.especes  += tx.montant;
-    if(m==='CHEQUE')   totJour.cheque   += tx.montant;
-    if(m==='VIREMENT') totJour.virement += tx.montant;
+    if(m==='CB')       totJour.cb       += _clientPart;
+    if(m==='ESPECES')  totJour.especes  += _clientPart;
+    if(m==='CHEQUE')   totJour.cheque   += _clientPart;
+    if(m==='VIREMENT') totJour.virement += _clientPart;
   });
 
   // Afficher les totaux
@@ -12078,12 +12079,15 @@ async function alimenterCaisse(opts){
              quali:0, depotEsp:0, depotCheque:0, achatSmart:0};
   }
 
-  // Ajouter les montants
-  entry.ttc += ttc;
+  // ── MODÈLE : 'ttc' reçu = montant PAYÉ PAR LE CLIENT (prix saisi). Le bonus
+  //    QualiRépar est remboursé EN PLUS par l'éco-organisme. Donc :
+  //    CA (TTC) = ce que paie le client + bonus QualiRépar.
+  //    Le mode de paiement (CB/Espèces…) ne reçoit QUE la part client.
+  entry.ttc += (ttc + quali);     // CA inclut le QualiRépar
   if(quali > 0) entry.quali += quali;
 
   if(opts.split && opts.split.amount1 > 0 && opts.split.amount2 > 0){
-    // Paiement séparé : répartir sur 2 modes
+    // Paiement séparé : répartir la part CLIENT sur 2 modes
     var s = opts.split;
     var m1 = (s.mode1||'CB').toUpperCase();
     var m2 = (s.mode2||'ESPECES').toUpperCase();
@@ -12096,8 +12100,8 @@ async function alimenterCaisse(opts){
     if(m2 === 'CHEQUE')    entry.cheque   += s.amount2;
     if(m2 === 'VIREMENT')  entry.virement += s.amount2;
   } else {
-    // Paiement simple : tout sur un seul mode
-    var clientPaid = ttc - quali;
+    // Paiement simple : le client paie le PRIX SAISI (le bonus vient en plus)
+    var clientPaid = ttc;
     if(mode === 'CB')        entry.cb       += clientPaid;
     if(mode === 'ESPECES')   entry.especes  += clientPaid;
     if(mode === 'CHEQUE')    entry.cheque   += clientPaid;
@@ -31181,12 +31185,14 @@ function renderCaJourBar(){
       '<div style="font-size:11px;opacity:0.85;margin-top:3px;">'+sous+'</div>'+
     '</div>';
   };
+  var caRepa = totJour.total || 0;          // CA réparations & access. (QualiRépar INCLUS)
+  var caTotal = caRepa + smart;             // + smartphones occasion
   el.innerHTML =
     '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:12px;">📊 Chiffre d\'affaires du jour</div>'+
     '<div style="display:flex;gap:14px;flex-wrap:wrap;">'+
-      seg('#16a34a,#15803d','rgba(22,163,74,0.25)','🛍️','Accessoires & tél. neufs', eur(accNeuf), accNeufNb+' vente'+(accNeufNb>1?'s':'')) +
-      seg('#0891b2,#0e7490','rgba(8,145,178,0.25)','🛡️','QualiRépar', eur(quali), qualiNb+' dossier'+(qualiNb>1?'s':'')) +
-      seg('#2563eb,#1d4ed8','rgba(37,99,235,0.25)','📱','Vente smartphones', eur(smart), smartNb+' vente'+(smartNb>1?'s':'')) +
+      seg('#16a34a,#15803d','rgba(22,163,74,0.25)','🔧','Réparations & access.', eur(caRepa), (totJour.nb||0)+' répa'+((totJour.nb||0)>1?'s':'')+' · dont QR '+eur(quali)) +
+      seg('#2563eb,#1d4ed8','rgba(37,99,235,0.25)','📱','Smartphones occasion', eur(smart), smartNb+' vente'+(smartNb>1?'s':'')) +
+      seg('#0891b2,#0e7490','rgba(8,145,178,0.25)','💰','Total du jour', eur(caTotal), 'CA total (QualiRépar inclus)') +
     '</div>';
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(renderCaJourBar, 3000); });
