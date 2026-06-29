@@ -8857,6 +8857,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 </button>
                 <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center;">1) Envoyer (crée + pièces) · 2) Valider (confirme) · Remboursement sous 15 j ouvrés</div>
                 <div id="rep-qr-envoi-statut" style="margin-top:10px;"></div>
+                <div id="rep-qr-numero-dossier" style="margin-top:8px;"></div>
               </div>
             </div>
             <div class="card">
@@ -24007,6 +24008,19 @@ function repMajBoutonsEnvoi(){
       else { btnEnv.disabled=false; btnEnv.style.opacity='1';
         btnEnv.innerHTML = qr.ecosystemClaimId ? '🔄 &nbsp;RENVOYER À ECOSYSTEM' : '📤 &nbsp;ENVOYER À ECOSYSTEM'; }
     }
+  }
+
+  // ── N° d'ordre de service affiché EN PERMANENCE sous le bouton (visibilité) ──
+  var numEl = document.getElementById('rep-qr-numero-dossier');
+  if(numEl){
+    var _num = (org==='ecologic')
+      ? (qr.ecologicClaimId||qr.ecologicId||'')
+      : (qr.ecosystemServiceOrder||qr.ecosystemId||qr.ecosystemClaimId||'');
+    var _orgLbl = (org==='ecologic') ? 'Ecologic' : 'Ecosystem';
+    if(_num){
+      numEl.innerHTML = "<div style='background:rgba(52,211,153,0.08);border:1px solid rgba(22,163,74,0.35);border-radius:8px;padding:9px 12px;font-size:13px;color:#15803d;text-align:center;'>"
+        + "📄 N° dossier "+_orgLbl+" : <b style='font-family:monospace;font-size:15px;letter-spacing:.5px;'>"+_num+"</b></div>";
+    } else { numEl.innerHTML=''; }
   }
 }
 
