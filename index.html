@@ -21961,6 +21961,20 @@ function repGenererNumero(){
   return prefix + String(max+1).padStart(3,'0');
 }
 
+// N° de réparation (distinct du n° de facture) — demandé par les éco-organismes QualiRépar.
+// Format : SO-AAAA-NNNN. Stocké dans la facture (facture.numeroRepa).
+function repGenererNumeroRepa(){
+  var annee = new Date().getFullYear();
+  var prefix = 'SO-'+annee+'-';
+  var max = 0;
+  var arr = (Array.isArray(repDossiers)&&repDossiers.length) ? repDossiers : (window.bonsDepot||[]);
+  arr.forEach(function(d){
+    var n = d && d.facture && d.facture.numeroRepa;
+    if(n && (''+n).indexOf(prefix)===0){ var v=parseInt((''+n).replace(prefix,''))||0; if(v>max) max=v; }
+  });
+  return prefix + String(max+1).padStart(4,'0');
+}
+
 function repNewDossier(){
   try {
     // S'assurer que repDossiers est synchronisé
@@ -22261,6 +22275,7 @@ async function repGenererFacture(){
   // Sauvegarder dans le dossier
   d.facture = {
     numero: dossierN || d.numero,
+    numeroRepa: (d.facture && d.facture.numeroRepa) || repGenererNumeroRepa(), // n° réparation distinct (QualiRépar)
     date: new Date().toISOString().split('T')[0],
     ts: new Date().toISOString(),
     description: descFull,
@@ -22442,8 +22457,10 @@ function repImprimerFacture(d){
         '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil réparé</div>'+
         '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
           '<b>'+a.marque+' '+a.modele+'</b><br>'+
+          'Réf. Commerciale : '+(a.marque+' '+a.modele)+'<br>'+
           'IMEI : <b style="font-family:monospace;">'+(a.imei||'—')+'</b><br>'+
-          'N° dossier : '+f.numero+'<br>'+
+          'N° Facture : <b>'+f.numero+'</b><br>'+
+          'N° Réparation : <b>'+(f.numeroRepa||'—')+'</b><br>'+
           'Mode règlement : '+(f.split ? f.split.amount1.toFixed(2)+'€ '+f.split.mode1+' + '+f.split.amount2.toFixed(2)+'€ '+f.split.mode2 : f.mode)+
         '</div>'+
       '</div>'+
