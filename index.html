@@ -8301,6 +8301,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   </div>
                   <div class="form-group"><label>Prénom</label><input type="text" id="rep-prenom" placeholder="Jean"></div>
                 </div>
+                <div class="form-group"><label>Société <span style="font-size:11px;color:var(--text-muted);">(si client professionnel)</span></label><input type="text" id="rep-societe" placeholder="Nom de la société (optionnel)"></div>
                 <div class="form-group"><label>Téléphone *</label><input type="tel" id="rep-tel" placeholder="06 XX XX XX XX"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="rep-email" placeholder="client@gmail.com"></div>
                 <div class="form-group"><label>Adresse</label><input type="text" id="rep-adresse" placeholder="Adresse"></div>
@@ -22320,6 +22321,7 @@ function repImprimerFacture(d){
       '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
         '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
         '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
+          (c.societe?'<b>'+c.societe+'</b><br>':'')+
           '<b>'+(c.civilite||'')+' '+(c.prenom||'')+' '+c.nom+'</b><br>'+
           c.tel+'<br>'+(c.email||'')+'<br>'+(c.adresse||'')+(c.cp?' · '+c.cp:'')+' '+(c.ville||'')+
         '</div>'+
@@ -22838,7 +22840,7 @@ function repValiderClient(){
   }
   if(repDossierCourant && repCurrentStep === 1){
     var c = repDossierCourant.client || {};
-    ['nom','prenom','tel','email','adresse','cp','ville'].forEach(function(k){
+    ['nom','prenom','societe','tel','email','adresse','cp','ville'].forEach(function(k){
       var el = document.getElementById('rep-'+k); if(el) c[k] = el.value.trim();
     });
     var civ = document.getElementById('rep-civilite'); if(civ) c.civilite = civ.value;
@@ -22930,7 +22932,7 @@ function repGoStep(n){
   // Recharger les champs client au retour sur le step 1
   if(n===1 && repDossierCourant){
     var c = repDossierCourant.client||{};
-    ['civilite','nom','prenom','tel','email','adresse','cp','ville'].forEach(function(f){
+    ['civilite','nom','prenom','societe','tel','email','adresse','cp','ville'].forEach(function(f){
       var el=document.getElementById('rep-'+f); if(el) el.value=c[f]||'';
     });
     var clientRempli = !!(c.nom && c.tel);
@@ -23124,6 +23126,7 @@ function repStep1Next(){
   // Sauvegarder IMMÉDIATEMENT dans repDossierCourant (synchrone)
   repDossierCourant.client = {
     civilite: civilite, nom: nom, prenom: prenom,
+    societe: (document.getElementById('rep-societe')||{value:''}).value.trim(),
     tel: tel, email: email, adresse: adresse,
     cp: cp, ville: ville
   };
@@ -28091,6 +28094,7 @@ async function loadBonsDepot(){
           client: {
             nom:      x.client_nom||'',
             prenom:   x.client_prenom||'',
+            societe:  x.client_societe||'',
             tel:      x.client_tel||'',
             email:    x.client_email||'',
             civilite: x.client_civilite||'',
@@ -28133,7 +28137,7 @@ async function loadBonsDepot(){
 async function saveBonDepotSupabase(d){
   var data = {
     id: d.id, numero: d.numero, date: d.date,
-    client_nom: d.client.nom, client_prenom: d.client.prenom, client_civilite: d.client.civilite||'',
+    client_nom: d.client.nom, client_prenom: d.client.prenom, client_civilite: d.client.civilite||'', client_societe: d.client.societe||'',
     client_tel: d.client.tel, client_email: d.client.email||'',
     client_adresse: d.client.adresse||'', client_cp: d.client.cp||'', client_ville: d.client.ville||'',
     appareil_marque: d.appareil.marque, appareil_modele: d.appareil.modele,
