@@ -23987,6 +23987,7 @@ function repMajBoutonsEnvoi(){
       // pour que l'équipe voie clairement qu'il y a 2 étapes.
       btnVal.style.display=''; btnVal.style.fontSize='16px'; btnVal.style.padding='16px';
       btnVal.style.background='#16a34a'; btnVal.style.color='#fff'; btnVal.style.border='none';
+      btnVal.style.boxShadow=''; // halo « guidé » remis à zéro à chaque rendu (reposé après un pré-envoi OK)
       if(valide){ btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ &nbsp;Envoi final effectué'; }
       else if(envoyeE){ btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML='2️⃣ &nbsp;ENVOI FINAL &nbsp;<span style="font-weight:400;font-size:12px;">(valider l\'envoi)</span>'; }
       else { btnVal.disabled=true; btnVal.style.opacity='0.4'; btnVal.style.cursor='not-allowed'; btnVal.innerHTML='2️⃣ &nbsp;Envoi final &nbsp;<span style="font-weight:400;font-size:12px;">(faites d\'abord le pré-envoi)</span>'; }
@@ -24189,9 +24190,30 @@ async function qrEnvoyerEcologicComplet(d){
     if(typeof repSauvegarderDossierImmediatement==="function")repSauvegarderDossierImmediatement();
     if(typeof renderRepHistorique==="function")renderRepHistorique();
     if(typeof repUpdateStep5==="function")repUpdateStep5();
-    var _msgEnvE="&#9989; <b>Dossier envoy&eacute; chez Ecologic</b> (pi&egrave;ces jointes)."+(errs.length?"<br>&#9888;&#65039; &Agrave; compl&eacute;ter : "+errs.join(", "):"")+"<br><small>ClaimId: "+claimId+"</small><br>&#128073; Cliquez sur <b>&laquo; Valider l'envoi &raquo;</b> pour soumettre le dossier.";
-    if(el)el.innerHTML="<div style='background:rgba(10,132,255,0.08);border:1.5px solid #0a84ff;padding:12px;border-radius:8px;color:#0a5bd0;font-size:13px;line-height:1.55;'>"+_msgEnvE+"</div>";
-    showNotif&&showNotif("&#9989; Envoy&eacute; — cliquez Valider l'envoi","success");
+    // ── BANDEAU GUIDÉ (2 clics guidés) ──
+    var _btnFinal = document.getElementById('rep-qr-btn-valider');
+    if(errs.length === 0){
+      // Étape 1 OK → on guide clairement vers l'étape 2 (Envoi final)
+      if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.10);border:2px solid #16a34a;padding:14px;border-radius:10px;color:#15803d;font-size:14px;line-height:1.6;'>"
+        +"&#9989; <b>Étape 1 OK — Pré-envoi accepté par Ecologic</b><br>"
+        +"<small>Dossier N° "+claimId+" créé, pièces jointes déposées.</small><br>"
+        +"&#128071; <b>Étape 2 : cliquez « 2️⃣ ENVOI FINAL »</b> ci-dessous pour soumettre le dossier."
+        +"</div>";
+      if(_btnFinal){
+        _btnFinal.style.boxShadow='0 0 0 4px rgba(22,163,74,0.40)';
+        try{ _btnFinal.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+      }
+      showNotif&&showNotif("&#9989; Pré-envoi OK — cliquez « Envoi final »","success");
+    } else {
+      // Ecologic signale des points à corriger → on l'indique clairement
+      if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:2px solid #FF9F0A;padding:14px;border-radius:10px;color:#92400e;font-size:14px;line-height:1.6;'>"
+        +"&#9888;&#65039; <b>Pré-envoi : Ecologic signale des points à corriger</b><br>"
+        +"&#8226; "+errs.join("<br>&#8226; ")+"<br>"
+        +"<small>Dossier N° "+claimId+".</small><br>"
+        +"&#128073; Corrigez ces points, puis cliquez <b>« 🔄 Refaire le pré-envoi »</b>."
+        +"</div>";
+      showNotif&&showNotif("&#9888;&#65039; Ecologic : à corriger — "+errs.join(", "),"error");
+    }
   }catch(e){
     if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerOrganisme()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
     showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
