@@ -8287,7 +8287,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <button id="rep-btn-modifier-client" class="btn btn-sm" onclick="repModifierClient()" style="font-size:12px;padding:5px 12px;display:none;">✏️ Modifier</button>
                 </div>
               </div>
-              <div id="rep-client-locked-banner" style="display:none;padding:7px 12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:12px;color:#34d399;margin-bottom:6px;">🔒 Fiche client verrouillée — cliquez <b>✏️ Modifier</b> pour éditer</div>
+              <div id="rep-client-locked-banner" onclick="repModifierClient()" style="display:none;padding:9px 12px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.3);border-radius:8px;font-size:12px;color:#16a34a;margin-bottom:6px;cursor:pointer;">🔒 Fiche client verrouillée — 👉 <b>touchez ici pour corriger</b> (email, téléphone, adresse…)</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;">
                   <div class="form-group"><label>Civilité *</label>
@@ -22004,7 +22004,7 @@ function repImprimerTicket(){
     (bonusQR?'<p class="center" style="font-size:10px;">Bonus QualiRepar -'+(d.piec?'30':'25')+'.00 \u20ac inclus'+(d.piec?' — '+(d.pieceNom||'Pièce')+' (PIEC)':'')+'</p>':'')+
     '<p class="line"></p>'+
     '<p class="center" style="font-size:10px;">Hors garantie fabricant.</p>'+
-    '<p class="center" style="font-size:10px;">Garantie reparation 3 mois.</p>'+
+    '<p class="center" style="font-size:10px;">Garantie reparation 6 mois.</p>'+
     '<p class="line"></p>'+
     '<p class="bold">Signature client :</p>'+
     (d.signature?'<p><img src="'+d.signature+'" style="max-width:70mm;max-height:18mm;"></p>':
@@ -22137,7 +22137,7 @@ function repLoadFormFromDossier(){
     var rd=document.getElementById('r-description'); if(rd) rd.value=f.description||'';
     var rp=document.getElementById('r-prix'); if(rp) rp.value=f.prix||'';
     var rm=document.getElementById('r-mode'); if(rm) rm.value=f.mode||'CB';
-    var rg=document.getElementById('r-garantie'); if(rg) rg.value=f.garantie||'3 mois';
+    var rg=document.getElementById('r-garantie'); if(rg) rg.value=f.garantie||'6 mois';
     var rqr=document.getElementById('rep-qr-actif'); if(rqr){ rqr.checked=!!f.bonusQR; repToggleQR(); }
   }
   // Verrouiller les champs critiques si facture déjà générée (éviter modification post-facturation)
