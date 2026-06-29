@@ -11182,7 +11182,12 @@ function renderCaisseJour(){
     var prixClient = d.facture.prix || d.devis || 0;
     var prixReel = bonusQR ? prixClient + _qrBonus : prixClient;
     txJour.push({
-      heure:   d.facture.ts ? new Date(d.facture.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+      heure:   (function(){
+                 var _idNum = Number(d.id);
+                 var _ts = d.facture.ts ? new Date(d.facture.ts).getTime()
+                         : ((_idNum>1e12) ? _idNum : 0); // repli : l'id du dossier est un timestamp (Date.now)
+                 return _ts ? new Date(_ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--';
+               })(),
       date:    dateFacture,
       type:    'reparation',
       label:   '🔧',
