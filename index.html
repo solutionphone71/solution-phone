@@ -31061,10 +31061,13 @@ function renderCaJourBar(){
   var totJour = window._caisseJourTotaux || {};
   var accNeuf = ((cats.accessoires||{}).total||0) + ((cats.neufs||{}).total||0);
   var accNeufNb = ((cats.accessoires||{}).nb||0) + ((cats.neufs||{}).nb||0);
-  var smart = (cats.occasion||{}).total||0;
-  var smartNb = (cats.occasion||{}).nb||0;
   var quali = totJour.quali||0;
   var today = new Date().toISOString().slice(0,10);
+  // Vente smartphones occasion DU JOUR (cats.occasion est filtré sur le mois pour le Z
+  // de caisse → on recalcule ici uniquement les ventes du jour pour rester cohérent).
+  var smartArr = (window.phones||[]).filter(function(p){ return p && p.etat==='VENDU' && (p.dateVente||'').slice(0,10)===today; });
+  var smart = smartArr.reduce(function(s,p){ return s+(p.vente||0); }, 0);
+  var smartNb = smartArr.length;
   var src = (window.repDossiers && window.repDossiers.length) ? window.repDossiers : (window.bonsDepot||[]);
   var qualiNb = src.filter(function(d){
     if(!d) return false;
