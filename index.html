@@ -23908,11 +23908,29 @@ function repEnvoyerOrganisme(){
   var marque    = (d.appareil||{}).marque||'';
   var organisme = qrGetOrganisme(marque);
 
-  if(organisme === 'ecologic'){
-    repEnvoyerEcologic();
-  } else {
-    repEnvoyerEcosystem();
+  // ── VERROU ANTI DOUBLE-ENVOI ──
+  // Un double-clic (ou clic pendant l'envoi async) créait DEUX dossiers chez l'éco-organisme.
+  // On bloque tout nouvel envoi tant que le précédent n'est pas terminé, et on désactive le bouton.
+  if(repEnvoyerOrganisme._running){
+    showNotif&&showNotif('⏳ Envoi déjà en cours — patientez (évite un double envoi).','info');
+    return;
   }
+  repEnvoyerOrganisme._running = true;
+  var _btnEnv = document.getElementById('rep-qr-btn-envoyer');
+  if(_btnEnv){ _btnEnv.disabled = true; _btnEnv.style.opacity = '0.6'; _btnEnv.style.pointerEvents = 'none'; }
+  var _releaseEnvoi = function(){
+    repEnvoyerOrganisme._running = false;
+    if(_btnEnv){ _btnEnv.disabled = false; _btnEnv.style.opacity = '1'; _btnEnv.style.pointerEvents = ''; }
+  };
+  var _envoiPromise;
+  if(organisme === 'ecologic'){
+    _envoiPromise = repEnvoyerEcologic();
+  } else {
+    _envoiPromise = repEnvoyerEcosystem();
+  }
+  // Libère le verrou après la fin de l'envoi (+ petit délai anti-rebond), et garde-fou 45s.
+  Promise.resolve(_envoiPromise).catch(function(){}).finally(function(){ setTimeout(_releaseEnvoi, 2000); });
+  setTimeout(function(){ if(repEnvoyerOrganisme._running) _releaseEnvoi(); }, 45000);
 }
 
 // PHASE 2 — Valider (confirmer/soumettre) le dossier déjà envoyé, selon l'organisme.
@@ -24147,7 +24165,7 @@ async function qrEnvoyerEcologicComplet(d){
     if(el)el.innerHTML="<div style='background:rgba(10,132,255,0.08);border:1.5px solid #0a84ff;padding:12px;border-radius:8px;color:#0a5bd0;font-size:13px;line-height:1.55;'>"+_msgEnvE+"</div>";
     showNotif&&showNotif("&#9989; Envoy&eacute; — cliquez Valider l'envoi","success");
   }catch(e){
-    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerEcologic()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
+    if(el)el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+e.message+"<br><button onclick='repEnvoyerOrganisme()' class='btn' style='margin-top:8px'>Renvoyer</button></div>";
     showNotif&&showNotif("&#10060; Ecologic: "+e.message,"error");
   }
 }
