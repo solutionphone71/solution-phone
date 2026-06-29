@@ -21873,6 +21873,8 @@ function repNewDossier(){
     if(dossier) dossier.style.display='block';
     repGoStep(2); // démarrer sur « Appareil » (marque + IMEI) — parcours commence par le téléphone
     if(typeof renderRepMarqueTiles==='function') setTimeout(renderRepMarqueTiles, 60);
+    // Bonus QualiRépar par défaut = Pièce neuve (25 €). Le 30 € (PIEC) reste un choix explicite.
+    if(typeof repSetPiec==='function') setTimeout(function(){ repSetPiec(false); }, 90);
     repApplyClientLock(false); // nouveau dossier = champs déverrouillés
   } catch(e) {
     console.error('repNewDossier error:', e);
@@ -24024,6 +24026,10 @@ async function qrEnvoyerEcologicComplet(d){
     }catch(ef){console.warn("Facture NF525:",ef);}
     if(d.photoImeiUrl){try{var ir=await fetch(d.photoImeiUrl);var ib=await ir.blob();var ib64=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result.split(",")[1]);};fr.readAsDataURL(ib);});await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=IMEI&FileExtension=jpg&DocumentType=Nameplate"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:ib64})});}catch(e2){console.warn("IMEI:",e2);}}
     if(d.signature){try{var devisSignePdf=await repDevisSignePDFBase64(d);if(devisSignePdf){await fetch(proxy+"/AttachFile?ClaimId="+claimId+"&FileName=DevisSigne&FileExtension=pdf&DocumentType=ConsumerValidation"+ecoAuth,{method:"POST",headers:ecoHeaders,body:JSON.stringify({FileContent:devisSignePdf})});errs=errs.filter(function(e){return e!=="Signature";});}}catch(e2){console.warn("DevisSigné:",e2);}}
+    // Les erreurs « pièces jointes / plaque / validation conso » du CreateClaim sont
+    // résolues par les AttachFile qu'on vient de faire → on ne les affiche plus.
+    // On ne garde que les vrais points non résolus (ex. « Panne ou code IRIS »).
+    errs = errs.filter(function(e){ return !/pi[èe]ce|jointe|plaque|signal|validation|consommateur/i.test(e); });
     // PHASE 1 terminée : dossier Ecologic créé + pièces jointes. La soumission
     // (validation) se fait au 2e clic via « Valider » → qrValiderEcologic(d).
     if(!d.qrEnvoi)d.qrEnvoi={};
