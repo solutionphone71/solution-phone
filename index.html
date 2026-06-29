@@ -23763,6 +23763,7 @@ function repEnvoyerOrganisme(){
   if(!c.nom) manquants.push('Nom du client (Étape 1)');
   if(!c.prenom) manquants.push('Prénom du client (Étape 1)');
   if(!c.tel) manquants.push('Téléphone du client (Étape 1)');
+  if(!c.email || !/.+@.+\..+/.test((c.email||'').trim())) manquants.push('Email du client — OBLIGATOIRE pour QualiRépar (Étape 1)');
   if(!c.adresse) manquants.push('Adresse du client (Étape 1)');
   if(!c.cp || (c.cp||'').length < 5) manquants.push('Code postal du client (Étape 1)');
   if(!c.ville) manquants.push('Ville du client (Étape 1)');
@@ -23921,6 +23922,7 @@ async function qrEnvoyerEcologicComplet(d){
   // ── Pré-validation : bloquer si éléments obligatoires manquants ──
   var manquants=[];
   if(!(c.nom||'').trim()) manquants.push('Nom du client');
+  if(!(c.email||'').trim() || !/.+@.+\..+/.test((c.email||'').trim())) manquants.push('Email du client (obligatoire QualiRépar)');
   var _imeiClean=(a.imei||'').replace(/\s/g,'');
   if(!_imeiClean) manquants.push('IMEI');
   else if(_imeiClean.length!==15) manquants.push('IMEI à 15 chiffres (actuel : '+_imeiClean.length+')');
@@ -24137,6 +24139,7 @@ async function qrEnvoyerEcosystemComplet(d){
   // Pré-validation pièces jointes
   var _manq=[];
   if(!(c.nom||'').trim()) _manq.push('Nom du client');
+  if(!(c.email||'').trim() || !/.+@.+\..+/.test((c.email||'').trim())) _manq.push('Email du client (obligatoire QualiRépar)');
   if(!(a.imei||'').trim()) _manq.push('IMEI');
   if(!(a.marque||'').trim()) _manq.push('Marque');
   if(!d.photoImeiUrl) _manq.push('Photo IMEI / plaque signaletique');
