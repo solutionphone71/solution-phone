@@ -23972,27 +23972,34 @@ function repMajBoutonsEnvoi(){
   var valide = qr.confirme===true;
 
   if(org === 'ecologic'){
-    // ECOLOGIC = 2 temps : Envoyer (crée + pièces) → Valider (soumet).
-    // « Renvoyer » reste TOUJOURS disponible : un dossier « validé » peut être
-    // resté « incomplet » côté Ecologic et devoir être recréé.
+    // ECOLOGIC = 2 ÉTAPES bien visibles : 1) Pré-envoi (crée + pièces) → 2) Envoi final (soumet).
     var envoyeE = !!qr.ecologicClaimId;
     if(btnEnv){
       btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
-      btnEnv.innerHTML = envoyeE ? '🔄 Renvoyer à Ecologic' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecologic</span>';
+      btnEnv.style.fontSize='16px'; btnEnv.style.padding='16px'; btnEnv.style.fontWeight='800';
+      btnEnv.style.background='#0a84ff'; btnEnv.style.color='#fff'; btnEnv.style.border='none';
+      btnEnv.innerHTML = envoyeE
+        ? '🔄 Refaire le pré-envoi (Étape 1)'
+        : '1️⃣ &nbsp;PRÉ-ENVOI Ecologic &nbsp;<span style="font-weight:400;font-size:12px;">(prépare le dossier)</span>';
     }
     if(btnVal){
-      if(envoyeE){ btnVal.style.display='';
-        if(valide){ btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ Validé'; }
-        else { btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML="✅ Valider l'envoi"; }
-      } else { btnVal.style.display='none'; }
+      // L'étape 2 reste TOUJOURS visible (grisée tant que le pré-envoi n'est pas fait)
+      // pour que l'équipe voie clairement qu'il y a 2 étapes.
+      btnVal.style.display=''; btnVal.style.fontSize='16px'; btnVal.style.padding='16px';
+      btnVal.style.background='#16a34a'; btnVal.style.color='#fff'; btnVal.style.border='none';
+      if(valide){ btnVal.disabled=true; btnVal.style.opacity='0.6'; btnVal.innerHTML='✅ &nbsp;Envoi final effectué'; }
+      else if(envoyeE){ btnVal.disabled=false; btnVal.style.opacity='1'; btnVal.innerHTML='2️⃣ &nbsp;ENVOI FINAL &nbsp;<span style="font-weight:400;font-size:12px;">(valider l\'envoi)</span>'; }
+      else { btnVal.disabled=true; btnVal.style.opacity='0.4'; btnVal.style.cursor='not-allowed'; btnVal.innerHTML='2️⃣ &nbsp;Envoi final &nbsp;<span style="font-weight:400;font-size:12px;">(faites d\'abord le pré-envoi)</span>'; }
     }
   } else {
-    // ECOSYSTEM = 1 seul bouton (création + pièces + confirmation d'un coup). Si erreur → renvoyer.
+    // ECOSYSTEM = 1 SEUL GROS BOUTON (création + pièces + confirmation d'un coup).
     if(btnVal) btnVal.style.display='none';
     if(btnEnv){
-      if(valide){ btnEnv.style.display=''; btnEnv.disabled=true; btnEnv.style.opacity='0.6'; btnEnv.innerHTML='✅ Envoyé &amp; validé'; }
-      else { btnEnv.style.display=''; btnEnv.disabled=false; btnEnv.style.opacity='1';
-        btnEnv.innerHTML = qr.ecosystemClaimId ? '🔄 Renvoyer à Ecosystem' : '📤 Envoyer à <span id="rep-qr-btn-label">Ecosystem</span>'; }
+      btnEnv.style.display=''; btnEnv.style.fontSize='19px'; btnEnv.style.padding='22px'; btnEnv.style.fontWeight='900';
+      btnEnv.style.background='#16a34a'; btnEnv.style.color='#fff'; btnEnv.style.border='none';
+      if(valide){ btnEnv.disabled=true; btnEnv.style.opacity='0.6'; btnEnv.style.background='#16a34a'; btnEnv.innerHTML='✅ Envoyé &amp; validé'; }
+      else { btnEnv.disabled=false; btnEnv.style.opacity='1';
+        btnEnv.innerHTML = qr.ecosystemClaimId ? '🔄 &nbsp;RENVOYER À ECOSYSTEM' : '📤 &nbsp;ENVOYER À ECOSYSTEM'; }
     }
   }
 }
