@@ -17695,6 +17695,10 @@ function renderDashboard(){
   var dateEl = document.getElementById('dash-date');
   if(dateEl) dateEl.textContent = jours[today.getDay()]+' '+today.getDate()+' '+mois[today.getMonth()]+' '+today.getFullYear();
 
+  // Barre « Chiffre d'affaires du jour » — recalcul à chaque affichage du dashboard
+  // (avant elle n'était rendue qu'une fois au démarrage, avant le chargement des données → 0).
+  try{ if(typeof renderCaJourBar==='function') renderCaJourBar(); }catch(e){}
+
   var isEmploye = _userRole === 'employe';
   var moisCourant = getMoisActuel();
 
