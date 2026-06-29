@@ -8626,7 +8626,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                       <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Obligatoire pour Ecosystem/Ecologic</div>
                     </div>
                     <div class="form-group"><label>Réf. commerciale mobile</label>
-                      <input type="text" id="r-ref-mobile" placeholder="ex: ip11, s24u" oninput="repUpdateFacturePreview()">
+                      <input type="text" id="r-ref-mobile" placeholder="ex: ip11, s24u" oninput="if(window.repDossierCourant)repDossierCourant._refMobileManuelle=this.value;repUpdateFacturePreview()">
                       <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Modèle abrégé (ip = iPhone)</div>
                     </div>
                   </div>
@@ -25782,15 +25782,19 @@ function repGenereDossierInterne(){
 // Générer la Réf. mobile automatiquement selon marque + modèle
 function repGenereRefMobile(){
   var el = document.getElementById('r-ref-mobile');
-  if(!el || el.value) return;
+  if(!el) return;
   if(!repDossierCourant || !repDossierCourant.appareil) return;
   var marque = (repDossierCourant.appareil.marque||'').toLowerCase();
   var modele = (repDossierCourant.appareil.modele||'').toLowerCase().replace(/\s+/g,'');
+  if(!modele && !marque){ return; } // pas d'appareil saisi → on ne touche pas
   var prefix = {apple:'ip', samsung:'s', xiaomi:'mi', huawei:'hw', google:'px', oneplus:'op', oppo:'op', motorola:'moto', nokia:'nk', wiko:'wk', lg:'lg', sony:'sny'}[marque] || marque.substring(0,2);
   // Extraire numéro du modèle
   var num = modele.replace(/[a-z]/g,'').replace(/[^0-9]/g,'').substring(0,4);
-  if(num) el.value = prefix + num;
-  else el.value = prefix + modele.substring(0,6);
+  var gen = num ? (prefix + num) : (prefix + modele.substring(0,6));
+  // On REGÉNÈRE toujours depuis le modèle courant (évite de garder la réf du dossier
+  // précédent). Si l'employé a tapé une réf manuelle pour CE dossier, on la respecte.
+  if(el.value && el.value === (repDossierCourant._refMobileManuelle||'')) return;
+  el.value = gen;
 }
 
 // Checklist de conformité dossier
