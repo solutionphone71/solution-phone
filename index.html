@@ -21296,6 +21296,8 @@ function qrBadgeHTML(d){
   var hasEcosystem=!!(qr.ecosystemId||qr.ecosystemRepairId||qr.ecosystemClaimId);
   var org=hasEcologic?'\ud83d\udd35 Ecologic':(hasEcosystem?'\ud83d\udfe2 Ecosystem':'');
   function chip(txt,col,bg){ return '<span style="display:inline-block;padding:4px 11px;border-radius:999px;font-size:11px;font-weight:800;color:'+col+';background:'+bg+';white-space:nowrap;">'+txt+'</span>'; }
+  // Trait\u00e9 manuellement (corrig\u00e9/valid\u00e9 directement chez l'\u00e9co-organisme) \u2192 priorit\u00e9.
+  if(qr.traiteManuel===true) return chip('\u2705 Trait\u00e9 (manuel)'+(org?' \u00b7 '+org:''),'#1a7e3a','rgba(52,199,89,.14)');
   // Feu tricolore : non envoy\u00e9 / \u00e0 valider / \u00e0 corriger / valid\u00e9 / approuv\u00e9 / rembours\u00e9.
   if(!(hasEcologic||hasEcosystem)) return chip('\u26a0\ufe0f \u00c0 envoyer QR','#dc2626','rgba(220,38,38,.10)');
   var st=qr.statut||'Sent';
@@ -21669,6 +21671,7 @@ function renderRepHistorique(){
         '<button class="btn btn-sm" onclick="repOuvrirDossier('+id+')" style="font-size:11px;">📂</button>'+
         (f?'<button class="btn btn-sm" onclick="repImprimerFactureById('+id+')" style="font-size:11px;margin-left:3px;">🧾</button>':'')+
         (f?'<button class="btn btn-sm" onclick="repCorrigerModePaiement('+id+')" style="font-size:11px;margin-left:3px;" title="Corriger le mode de paiement">💳</button>':'')+
+        ((d.bonusQR && !((d.qrEnvoi||{}).traiteManuel || (d.qrEnvoi||{}).confirme===true || (d.qrEnvoi||{}).ecosystemServiceOrder || ['Approved','Paid'].indexOf((d.qrEnvoi||{}).statut)>=0)) ? '<button class="btn btn-sm" onclick="repMarquerTraiteManuel('+id+')" style="font-size:11px;margin-left:3px;color:#16a34a;border-color:#16a34a;" title="Marquer traité manuellement (déjà géré chez l\'éco-organisme)">✔️</button>' : '')+
         '<button class="btn btn-sm" onclick="repSupprimerDossierParId(\''+id+'\')" style="font-size:11px;margin-left:3px;color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer ce dossier">🗑️</button>'+'</td>'+
     '</tr>';
   }).join('');
@@ -21859,6 +21862,22 @@ async function repAppliquerCorrectionMode(id, newMode){
   if(typeof renderDashboard==='function') renderDashboard();
   if(typeof renderRepHistorique==='function') renderRepHistorique();
   showNotif&&showNotif('✅ Mode corrigé : '+oldMode+' → '+newMode+' ('+clientPaid.toFixed(2)+' €)','success');
+}
+
+// Marquer un dossier comme TRAITÉ MANUELLEMENT (corrigé/validé directement sur le
+// portail de l'éco-organisme). Le sort de « à corriger / à valider » → « Traité (manuel) ».
+async function repMarquerTraiteManuel(id){
+  var d = (Array.isArray(repDossiers)?repDossiers:[]).find(function(x){return String(x.id)===String(id);})
+        || (Array.isArray(window.bonsDepot)?bonsDepot:[]).find(function(x){return String(x.id)===String(id);});
+  if(!d){ showNotif&&showNotif('Dossier introuvable','error'); return; }
+  if(!confirm('Marquer ce dossier comme TRAITÉ manuellement (déjà géré chez l\'éco-organisme) ?\n\nIl passera en « Traité (manuel) » et sortira de « à corriger / à valider ».')) return;
+  var q = d.qrEnvoi||{};
+  d.qrEnvoi = Object.assign({}, q, {confirme:true, statut:'Sent', aValider:false, traiteManuel:true});
+  delete d.qrEnvoi.confirmErreur; delete d.qrEnvoi.manquants; delete d.qrEnvoi.rejectionReason;
+  try{ await saveBonDepotSupabase(d); }catch(e){ console.warn('saveBonDepot',e); }
+  if(typeof renderRepHistorique==='function') renderRepHistorique();
+  if(typeof renderRepBentoWidgets==='function') renderRepBentoWidgets();
+  showNotif&&showNotif('✅ Dossier marqué traité manuellement','success');
 }
 
 // Suppression d'un dossier directement par son id (depuis l'historique / la recherche
