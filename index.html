@@ -11182,7 +11182,7 @@ function renderCaisseJour(){
     var prixClient = d.facture.prix || d.devis || 0;
     var prixReel = bonusQR ? prixClient + _qrBonus : prixClient;
     txJour.push({
-      heure:   d.facture.date ? new Date(d.facture.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+      heure:   d.facture.ts ? new Date(d.facture.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
       date:    dateFacture,
       type:    'reparation',
       label:   '🔧',
@@ -11264,12 +11264,13 @@ function renderCaisseJour(){
   // Z SMARTPHONES = téléphones OCCASION — vue mensuelle (TVA sur marge)
   var moisFiltreSmart = zMois;
 
-  // Collecter TOUTES les ventes occasion du mois sélectionné (pas juste aujourd'hui)
+  // Ventes occasion : même période que le reste du Z (aujourd'hui si mois en cours,
+  // sinon tout le mois sélectionné) → cohérent avec les réparations.
   var txSmart = [];
   phones.forEach(function(p){
     if(p.etat !== 'VENDU') return;
     var dv = (p.dateVente||'').substring(0,10);
-    if(dv.substring(0,7) !== moisFiltreSmart) return;
+    if(!matchDate(p.dateVente)) return;
     var repInfo = '';
     var netEncaisse = p.vente || 0;
     if(p.repriseAmount && p.repriseAmount > 0){
@@ -11414,7 +11415,8 @@ function renderCaisseJour(){
   var smartTitre=document.querySelector('#caisse-z-smart-block > div:first-child');
   if(smartTitre){
     var moisNom=new Date(moisFiltreSmart+'-15').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
-    smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+moisNom+'</span>';
+    var _smartPer = isCurrentMonth ? "aujourd'hui" : moisNom;
+    smartTitre.innerHTML='📱 Z de Caisse — Smartphones Occasion · <span style="font-weight:400;font-size:13px;">'+_smartPer+'</span>';
   }
   var sr=document.getElementById('caisse-z-smart-recap');if(sr&&totSmart.nb>0){sr.style.color='#333';var repTxt=totSmart.reprises>0?' · Reprises : <b style="color:#c0392b;">-'+totSmart.reprises.toFixed(2)+' €</b> · Net encaissé : <b style="color:#8b5cf6;">'+totSmart.netEncaisse.toFixed(2)+' €</b>':'';sr.innerHTML='<b style="color:#1a1a2e;">'+totSmart.nb+' vente(s) smartphone</b> · Total ventes : <b style="color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</b>'+repTxt+' · CB : '+totSmart.cb.toFixed(2)+' € · Espèces : '+totSmart.especes.toFixed(2)+' € · Chèque : '+totSmart.cheque.toFixed(2)+' € · Virement : '+totSmart.virement.toFixed(2)+' €';}
   // Refresh bloc Clôture auto à chaque update caisse
@@ -22231,6 +22233,7 @@ async function repGenererFacture(){
   d.facture = {
     numero: dossierN || d.numero,
     date: new Date().toISOString().split('T')[0],
+    ts: new Date().toISOString(),
     description: descFull,
     descBase: descBase,
     prix: prix,
