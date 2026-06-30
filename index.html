@@ -22374,6 +22374,8 @@ async function repGenererFacture(){
   // Si pas d'email valide, repAutoEnvoyerFactureEmail ouvre le popup en secours.
   repAutoEnvoyerFactureEmail(d);
   repUpdateDevisRecap();
+  // Bascule DIRECTEMENT sur l'étape Envoi (plus besoin de cliquer « Suivant »).
+  setTimeout(function(){ try{ if(typeof repUpdateChecklist==='function') repUpdateChecklist(); if(typeof repGoStep==='function') repGoStep(5); }catch(_){} }, 350);
   // Libérer le lock après 15s max (sécurité)
   setTimeout(function(){ repGenererFacture._running=false; }, 15000);
 }
