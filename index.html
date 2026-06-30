@@ -6456,6 +6456,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
 
         </div>
+
+        <!-- SUIVI DU JOUR — accessoires + téléphones neufs -->
+        <div class="card" id="na-suivi-card" style="margin-top:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div style="font-weight:800;font-size:16px;">📋 Suivi du jour — Accessoires &amp; Téléphones neufs</div>
+            <div style="font-size:13px;color:var(--text-muted);">Total : <b id="na-suivi-total" style="color:var(--green);font-size:18px;">0,00 €</b></div>
+          </div>
+          <div id="na-suivi-liste" style="font-size:13px;overflow-x:auto;"></div>
+        </div>
       </div><!-- fin na-view-caisse -->
 
       <!-- ══ VUE VENTE DÉTAILLÉE ══ -->
@@ -10750,7 +10759,7 @@ function naShowTab(tab){
       b.style.fontWeight = t===tab ? '800' : '600';
     }
   });
-  if(tab==='caisse'){ naRenderGrille(); setTimeout(function(){ naSetMode('CB'); }, 50); }
+  if(tab==='caisse'){ naRenderGrille(); naRenderSuiviJour(); setTimeout(function(){ naSetMode('CB'); }, 50); }
 }
 
 function naFilterCat(cat){
@@ -10842,6 +10851,57 @@ function naViderPanier(){
   if(typeof naClearClient==='function') naClearClient();
   naRenderPanier();
   naRenderGrille();
+}
+
+// Suivi du jour : ventes accessoires (na_ventes) + téléphones neufs vendus aujourd'hui
+function naRenderSuiviJour(){
+  var box = document.getElementById('na-suivi-liste');
+  if(!box) return;
+  var today = new Date().toISOString().split('T')[0];
+  var items = [];
+  // Accessoires (relevés individuels en localStorage)
+  try{
+    var nv = JSON.parse(localStorage.getItem('na_ventes')||'[]');
+    nv.forEach(function(v){
+      if(((v.date||'').substring(0,10)) !== today) return;
+      items.push({
+        heure: v.date ? new Date(v.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
+        type:'🛍️ Accessoire', desc: v.desc||v.description||'Vente',
+        montant: Number(v.ttc||v.montant||0), mode: v.mode||'CB'
+      });
+    });
+  }catch(e){}
+  // Téléphones neufs vendus aujourd'hui
+  try{
+    (typeof phonesNeufs!=='undefined'?phonesNeufs:[]).forEach(function(p){
+      if(p.etat!=='VENDU') return;
+      if(((p.date_vente||'').substring(0,10)) !== today) return;
+      items.push({
+        heure:'--:--', type:'📱✨ Neuf',
+        desc:(p.modele||'')+(p.stockage?' '+p.stockage+'Go':'')+(p.imei?' — '+p.imei:''),
+        montant: Number(p.vente||0), mode: p.mode_vente||'CB'
+      });
+    });
+  }catch(e){}
+  items.sort(function(a,b){ return (b.heure||'').localeCompare(a.heure||''); });
+  var tot = items.reduce(function(s,i){ return s+i.montant; }, 0);
+  var totEl = document.getElementById('na-suivi-total');
+  if(totEl) totEl.textContent = tot.toFixed(2)+' €';
+  if(!items.length){
+    box.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:18px;">Aucune vente accessoire ou téléphone neuf aujourd\'hui</div>';
+    return;
+  }
+  var mc = {CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};
+  box.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:420px;">'+
+    items.map(function(it,i){
+      return '<tr style="border-bottom:1px solid var(--border);background:'+(i%2?'#f8fafc':'#fff')+';">'+
+        '<td style="padding:7px 8px;color:var(--text-muted);width:46px;">'+it.heure+'</td>'+
+        '<td style="padding:7px 8px;white-space:nowrap;">'+it.type+'</td>'+
+        '<td style="padding:7px 8px;">'+it.desc+'</td>'+
+        '<td style="padding:7px 8px;text-align:right;font-weight:700;">'+it.montant.toFixed(2)+' €</td>'+
+        '<td style="padding:7px 8px;text-align:center;"><span style="font-size:11px;background:'+(mc[(it.mode||'CB').toUpperCase()]||'#666')+';color:#fff;padding:2px 7px;border-radius:8px;">'+it.mode+'</span></td>'+
+      '</tr>';
+    }).join('')+'</table>';
 }
 
 function naRenderPanier(){
@@ -10964,6 +11024,25 @@ async function naValiderVente(){
 
   // Succès : mémoriser pour impression éventuelle
   _naDerniereVente = { num:num, items:_naPanier.slice(), totalTTC:totalTTC, mode:_naMode, client:_naClient };
+
+  // Enregistrer un relevé individuel de la vente → Z de caisse + suivi du jour
+  var _clNom = _naClient ? ((_naClient.prenom||'')+' '+(_naClient.nom||'')).trim() : '';
+  try{
+    var _nv = JSON.parse(localStorage.getItem('na_ventes')||'[]');
+    _nv.unshift({ id:Date.now(), numero:num, date:new Date().toISOString(),
+      type:'accessoire', desc:desc, description:desc,
+      ttc:totalTTC, montant:totalTTC, mode:_naMode, clientNom:_clNom });
+    localStorage.setItem('na_ventes', JSON.stringify(_nv));
+  }catch(e){ console.warn('na_ventes localStorage:', e); }
+  // Persistance base (best-effort, n'empêche pas la vente)
+  try{
+    if(typeof naSave==='function'){
+      naSave({ numero:num, date:new Date().toISOString().split('T')[0], type:'accessoire',
+        description:desc, clientNom:_clNom, clientAdresse:'', clientEmail:'',
+        prix:totalTTC, mode:_naMode });
+    }
+  }catch(e){}
+  if(typeof naRenderSuiviJour==='function') naRenderSuiviJour();
 
   // Écran de succès AVEC bouton impression (pas d'impression auto)
   naAfficherVenteSucces(totalTTC, _naMode);
@@ -11266,22 +11345,9 @@ function renderCaisseJour(){
     });
   });
 
-  // 2. Ventes smartphones OCCASION
-  phones.forEach(function(p){
-    if(p.etat !== 'VENDU') return;
-    if(!matchDate(p.dateVente)) return;
-    txJour.push({
-      heure:   '--:--',
-      date:    (p.dateVente||'').substring(0,10),
-      type:    'vente_occasion',
-      label:   '📱',
-      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(p.dateVente)+'</span> ')+'Vente occasion ' + p.modele + (p.stockage?' '+p.stockage+'Go':'') + (p.imei?' — IMEI '+p.imei:''),
-      montant: p.vente || 0,
-      achat:   p.achat || 0,
-      mode:    p.modeVente || 'CB',
-      quali:   0
-    });
-  });
+  // 2. Smartphones OCCASION → RETIRÉS du Z principal.
+  //    Ils n'apparaissent QUE dans le « Z de caisse Occasion » dédié (bloc plus bas,
+  //    construit à partir de txSmart). On ne les pousse plus dans txJour.
 
   // 3. Ventes smartphones NEUFS
   (phonesNeufs||[]).forEach(function(p){
