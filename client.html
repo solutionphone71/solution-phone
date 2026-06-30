@@ -539,11 +539,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
       <div class="fld"><label class="lbl">Email *</label><input class="inp" type="email" id="ncl-email" placeholder="exemple@gmail.com" inputmode="email" autocomplete="email" oninput="checkNcl()"></div>
     </div>
     <div class="row">
-      <div class="fld"><label class="lbl">Adresse <span style="color:var(--gray2);font-weight:400;">(optionnel)</span></label><input class="inp" type="text" id="ncl-adresse" placeholder="12 rue de la Paix"></div>
+      <div class="fld"><label class="lbl">Adresse *</label><input class="inp" type="text" id="ncl-adresse" placeholder="12 rue de la Paix" oninput="checkNcl()"></div>
     </div>
     <div class="row c2">
-      <div class="fld"><label class="lbl">Code postal</label><input class="inp" type="text" id="ncl-cp" placeholder="71000" inputmode="numeric"></div>
-      <div class="fld"><label class="lbl">Ville</label><input class="inp" type="text" id="ncl-ville" placeholder="Mâcon"></div>
+      <div class="fld"><label class="lbl">Code postal *</label><input class="inp" type="text" id="ncl-cp" placeholder="71000" inputmode="numeric" oninput="checkNcl()"></div>
+      <div class="fld"><label class="lbl">Ville *</label><input class="inp" type="text" id="ncl-ville" placeholder="Mâcon" oninput="checkNcl()"></div>
     </div>
   </div>
 
@@ -1015,8 +1015,9 @@ var _wheelAngle = 0;
 var _tapAlpha = 0.5;
 var _tapDir = 1;
 var _laserY = 0; // Scanneur laser QR
-var _ssColors = ['#FF3B30','#FF9500','#FFCC00','#34C759','#007AFF','#AF52DE','#FF2D55','#5AC8FA'];
+var _ssColors = ['#E60012','#FFC400','#E60012','#FFC400','#E60012','#FFC400','#E60012','#FFC400'];
 var _ssPrizes = ['Réduction','Étui','Câble','Verre','5 €','Surprise','Coque','Chance'];
+var _ssIcons  = ['\u{1F4B0}','\u{1F4F1}','\u{1F50C}','\u{1F6E1}','\u{1F4B6}','\u{1F381}','\u{1F4F1}','⭐'];
 
 function _ssLoadFonts() {
   // Inter is already loaded via stylesheet, no extra fonts needed
@@ -1099,12 +1100,12 @@ function _ssStart() {
     var titleY = H * 0.2;
     ctx.save();
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#E60012';
+    ctx.font = '900 ' + Math.round(H * 0.05) + 'px Inter,-apple-system,sans-serif';
+    ctx.fillText('🎁 GAGNEZ UN CADEAU !', cx, titleY);
     ctx.fillStyle = '#1d1d1f';
-    ctx.font = '900 ' + Math.round(H * 0.038) + 'px Inter,-apple-system,sans-serif';
-    ctx.fillText('Gagnez un cadeau !', cx, titleY);
-    ctx.fillStyle = '#6e6e73';
-    ctx.font = '500 ' + Math.round(H * 0.016) + 'px Inter,-apple-system,sans-serif';
-    ctx.fillText('Laissez un avis Google et tentez votre chance', cx, titleY + H * 0.04);
+    ctx.font = '700 ' + Math.round(H * 0.018) + 'px Inter,-apple-system,sans-serif';
+    ctx.fillText('Laissez un avis Google et tentez votre chance ⭐', cx, titleY + H * 0.048);
     ctx.restore();
 
     /* ══════════════════════════════
@@ -1125,10 +1126,10 @@ function _ssStart() {
     ctx.fill();
     ctx.restore();
 
-    // Anneau rouge subtil
+    // Anneau rouge vif
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,59,48,0.13)';
-    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#E60012';
+    ctx.lineWidth = 7;
     ctx.beginPath();
     ctx.arc(wCX, wCY, wR + 11, 0, Math.PI * 2);
     ctx.stroke();
@@ -1142,11 +1143,11 @@ function _ssStart() {
       var ly = wCY + Math.sin(la) * lrad;
       var lb = (li % 2 === Math.floor(_wheelAngle * 2) % 2) ? 1 : 0.3;
       ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,' + lb + ')';
-      ctx.shadowColor = 'rgba(255,59,48,' + (lb * 0.45) + ')';
-      ctx.shadowBlur = 5;
+      ctx.fillStyle = 'rgba(255,200,0,' + lb + ')';
+      ctx.shadowColor = 'rgba(230,0,18,' + (lb * 0.6) + ')';
+      ctx.shadowBlur = 7;
       ctx.beginPath();
-      ctx.arc(lx, ly, 3.5, 0, Math.PI * 2);
+      ctx.arc(lx, ly, 4.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -1184,18 +1185,23 @@ function _ssStart() {
     ctx.fill();
     ctx.restore();
 
-    // Textes prix
+    // Grosses icônes + labels
     for (var i = 0; i < N; i++) {
       ctx.save();
       ctx.translate(wCX, wCY);
       ctx.rotate(_wheelAngle + (i + 0.5) / N * Math.PI * 2);
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.3)';
-      ctx.shadowBlur = 3;
-      ctx.font = '700 ' + Math.round(wR * 0.12) + 'px Inter,-apple-system,sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(_ssPrizes[i], wR * 0.62, 0);
+      // Grosse icône emoji (vers l'extérieur)
+      ctx.font = Math.round(wR * 0.30) + 'px sans-serif';
+      ctx.fillText(_ssIcons[i], wR * 0.62, 0);
+      // Label (vers l'intérieur) — texte contrasté selon la couleur du segment
+      var onGold = (i % 2 === 1);
+      ctx.fillStyle = onGold ? '#7a1f00' : '#ffffff';
+      ctx.shadowColor = onGold ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.40)';
+      ctx.shadowBlur = 3;
+      ctx.font = '800 ' + Math.round(wR * 0.085) + 'px Inter,-apple-system,sans-serif';
+      ctx.fillText(_ssPrizes[i], wR * 0.34, 0);
       ctx.restore();
     }
 
@@ -2023,10 +2029,14 @@ function setCivNcl(v){
   var m=document.getElementById('ncl-civ-m'), mme=document.getElementById('ncl-civ-mme');
   if(m)   m.classList.toggle('sel', v==='M.');
   if(mme) mme.classList.toggle('sel', v==='Mme');
+  checkNcl();
 }
 function nclValid(){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
-  return !!(g('ncl-nom') && g('ncl-prenom') && g('ncl-tel') && /.+@.+\..+/.test(g('ncl-email')));
+  var civOk = (S.civNcl==='M.' || S.civNcl==='Mme');
+  // TOUT obligatoire sauf la société
+  return !!(civOk && g('ncl-nom') && g('ncl-prenom') && g('ncl-tel') &&
+            /.+@.+\..+/.test(g('ncl-email')) && g('ncl-adresse') && g('ncl-cp') && g('ncl-ville'));
 }
 function checkNcl(){
   var btn=document.getElementById('btn-next');
@@ -2038,8 +2048,11 @@ async function soumettreNouveauClient(){
   var civ=g('ncl-civ')||S.civNcl||'', nom=g('ncl-nom'), prenom=g('ncl-prenom'), soc=g('ncl-societe'),
       tel=g('ncl-tel'), email=g('ncl-email'), adr=g('ncl-adresse'), cp=g('ncl-cp'), ville=g('ncl-ville');
   civ = S.civNcl||'';
-  if(!nom||!prenom||!tel||!/.+@.+\..+/.test(email)){
-    alert('Merci de remplir Nom, Prénom, Téléphone et un Email valide.'); return;
+  if(civ!=='M.' && civ!=='Mme'){
+    alert('Merci de choisir M. ou Mme.'); return;
+  }
+  if(!nom||!prenom||!tel||!/.+@.+\..+/.test(email)||!adr||!cp||!ville){
+    alert('Merci de remplir tous les champs (seule la société est facultative) et un Email valide.'); return;
   }
   showLoading();
   var notes = (soc ? 'Société: '+soc+' · ' : '') + 'Saisi par le client (tablette)';
