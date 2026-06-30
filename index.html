@@ -1677,6 +1677,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
+      <!-- ═══ PERFORMANCE LIVE ═══ -->
+      <div id="dh-perf" style="margin-bottom:24px;"></div>
+
+      <!-- ═══ Z CAISSE RÉCENT + STOCK OCCASION ═══ -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;" id="dh-bottom-grid">
+        <div id="dh-zcaisse"></div>
+        <div id="dh-stock"></div>
+      </div>
+
       <!-- ⚡ ANCIEN LANCEUR CAISSE RAPIDE (masqué — fonctions conservées) -->
       <div style="display:none;">
         <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin-bottom:12px;">⚡ Caisse rapide</div>
@@ -31858,6 +31867,7 @@ function renderCaJourBar(){
       seg('#E10600,#a3000d','rgba(225,6,0,0.32)','','Total du jour', eur(caTotal), 'CA total (QualiRépar inclus)') +
     '</div>';
   try{ if(typeof renderFileAtelier==='function') renderFileAtelier(); }catch(e){}
+  try{ if(typeof renderDashHome==='function') renderDashHome(); }catch(e){}
 }
 
 function renderFileAtelier(){
@@ -31895,7 +31905,59 @@ function renderFileAtelier(){
       '</tr>';
     }).join('')+'</table>';
 }
-document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ renderCaJourBar(); try{renderFileAtelier();}catch(e){} }, 3000); });
+// Dashboard principal : Performance Live + Z caisse récent + Stock occasion (données réelles)
+function renderDashHome(){
+  var perf=document.getElementById('dh-perf'); if(!perf) return;
+  var C=(window.caisse||[]), P=(window.phones||[]);
+  var eur=function(n){ return (Math.round(Number(n)||0)).toLocaleString('fr-FR')+' €'; };
+  var today=new Date().toISOString().slice(0,10);
+  var y=new Date(); y.setDate(y.getDate()-1); var yest=y.toISOString().slice(0,10);
+  var mois=today.slice(0,7);
+  var lm=new Date(); lm.setMonth(lm.getMonth()-1); var moisDernier=lm.toISOString().slice(0,7);
+  var sumTtc=function(rows){ return rows.reduce(function(s,r){ return s+(Number(r.ttc)||0); },0); };
+  var caToday=sumTtc(C.filter(function(r){ return (r.date||'').slice(0,10)===today; }));
+  var caYest=sumTtc(C.filter(function(r){ return (r.date||'').slice(0,10)===yest; }));
+  var caMois=sumTtc(C.filter(function(r){ return (r.date||'').slice(0,7)===mois; }));
+  var caMD=sumTtc(C.filter(function(r){ return (r.date||'').slice(0,7)===moisDernier; }));
+  var evol=caMD>0?Math.round(((caMois-caMD)/caMD)*100):0;
+  var evolJour=caYest>0?Math.round(((caToday-caYest)/caYest)*100):0;
+  var _tileN=function(lbl,val,sub){ return '<div style="background:#0D0D0D;border:1px solid #1c1c1c;border-radius:16px;padding:14px 16px;"><div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div><div style="font-size:24px;font-weight:900;color:#fff;margin-top:3px;line-height:1;">'+val+'</div>'+(sub?'<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+sub+'</div>':'')+'</div>'; };
+  perf.innerHTML=
+    '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Performance Live</div>'+
+    '<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:13px;">'+
+      '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#E10600,#8f000c);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 14px 34px -12px rgba(225,6,0,0.65);">'+
+        '<div style="position:absolute;right:-25px;top:-25px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
+        '<div style="position:relative;"><div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.9;">CA du jour</div>'+
+        '<div style="font-size:40px;font-weight:900;line-height:1;margin:7px 0 4px;">'+eur(caToday)+'</div>'+
+        '<div style="display:inline-flex;font-size:12px;font-weight:700;background:rgba(255,255,255,0.18);padding:4px 11px;border-radius:18px;">'+(evolJour>=0?'▲ +':'▼ ')+evolJour+'% vs hier</div></div>'+
+      '</div>'+
+      _tileN('Hier', eur(caYest), '')+
+      _tileN('Ce mois', eur(caMois), '')+
+      _tileN('Évolution', (evol>=0?'+':'')+evol+'%', 'vs mois dernier '+eur(caMD))+
+    '</div>';
+  // Z de caisse récent
+  var z=document.getElementById('dh-zcaisse');
+  if(z){
+    var rows=C.slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); }).slice(0,5);
+    z.innerHTML='<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Z de caisse récent</div>'+
+      '<div style="background:#fff;border:1px solid #E8EAED;border-radius:16px;overflow:hidden;">'+
+      (rows.length?('<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        '<tr style="background:#FAFAFB;color:#6B7280;font-size:11px;text-transform:uppercase;"><td style="padding:8px 12px;">Date</td><td style="padding:8px 12px;text-align:right;">TTC</td><td style="padding:8px 12px;text-align:right;">Bonus QR</td></tr>'+
+        rows.map(function(r,i){ return '<tr style="border-top:1px solid #F1F2F4;"><td style="padding:10px 12px;color:#111;">'+(typeof fmtDate==='function'?fmtDate(r.date):r.date)+'</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:#111;">'+eur(r.ttc)+'</td><td style="padding:10px 12px;text-align:right;color:#16a34a;">'+((r.quali||0)>0?eur(r.quali):'—')+'</td></tr>'; }).join('')+
+      '</table>'):'<div style="padding:20px;text-align:center;color:#9CA3AF;">Aucune donnée</div>')+'</div>';
+  }
+  // Stock occasion (aperçu)
+  var st=document.getElementById('dh-stock');
+  if(st){
+    var dispo=P.filter(function(p){ return p && (p.etat==='DISPONIBLE'||!p.etat); }).slice(0,5);
+    st.innerHTML='<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Stock occasion · '+P.filter(function(p){return p&&p.etat==='DISPONIBLE';}).length+' dispo</div>'+
+      '<div style="background:#fff;border:1px solid #E8EAED;border-radius:16px;overflow:hidden;">'+
+      (dispo.length?('<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        dispo.map(function(p,i){ return '<tr style="border-top:'+(i?'1px solid #F1F2F4':'none')+';"><td style="padding:10px 12px;color:#111;font-weight:600;">'+(p.modele||'')+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="padding:10px 12px;color:#6B7280;">'+(p.grade||'')+'</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:#E10600;">'+eur(p.vente||p.prix||0)+'</td></tr>'; }).join('')+
+      '</table>'):'<div style="padding:20px;text-align:center;color:#9CA3AF;">Aucun smartphone en stock</div>')+'</div>';
+  }
+}
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ renderCaJourBar(); try{renderFileAtelier();}catch(e){} try{renderDashHome();}catch(e){} }, 3000); });
 
 // Tuiles de marques groupées par éco-organisme (départ du parcours QualiRépar)
 function repPickMarque(m){
