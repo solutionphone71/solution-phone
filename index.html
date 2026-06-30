@@ -11585,7 +11585,38 @@ function renderCaisseJour(){
   if(dtb){var mc2={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};dtb.innerHTML=txRep.map(function(tx,i){var mc=mc2[(tx.mode||'CB').toUpperCase()]||'#666';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#888;">'+tx.heure+'</td><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#1d1d1f;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucune réparation</td></tr>';}
   // ── Modes paiement + détail smartphones
   var smDiv=document.getElementById('caisse-z-smart-modes');
-  if(smDiv&&totSmart.nb>0){smDiv.innerHTML=[{l:'CB',v:totSmart.cb,c:'#2563eb'},{l:'Esp.',v:totSmart.especes,c:'#16a34a'},{l:'Chèque',v:totSmart.cheque,c:'#d97706'},{l:'Virement',v:totSmart.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:#f5f3ff;border:1px solid #d8d0f0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:#666;">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
+  if(smDiv){
+    if(totSmart.nb>0){
+      var _smMarge=txSmart.reduce(function(s,t){return s+((t.montant||0)-(t.achat||0));},0);
+      var _smMois=new Date(moisFiltreSmart+'-15').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      var _smTile=function(emoji,lbl,val,col,bg){
+        return '<div style="background:linear-gradient(160deg,#fff,'+bg+');border:1px solid '+col+'33;border-radius:16px;padding:12px 14px;box-shadow:0 5px 14px -9px '+col+'99;">'+
+          '<div style="display:flex;align-items:center;gap:8px;"><div style="width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,'+col+','+col+'cc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">'+emoji+'</div><div style="font-size:10px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.3px;">'+lbl+'</div></div>'+
+          '<div style="font-size:21px;font-weight:900;color:'+col+';margin-top:5px;line-height:1;">'+(val||0).toFixed(2)+' €</div>'+
+        '</div>';
+      };
+      smDiv.style.display='block';
+      smDiv.innerHTML=
+        '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;margin-bottom:12px;">'+
+          '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#8b5cf6,#5b21b6);border-radius:20px;padding:18px 20px;color:#fff;box-shadow:0 14px 34px -12px rgba(139,92,246,0.7);">'+
+            '<div style="position:absolute;right:-25px;top:-25px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
+            '<div style="position:relative;">'+
+              '<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.92;">📱 CA Occasion · '+_smMois+'</div>'+
+              '<div style="font-size:38px;font-weight:900;line-height:1;margin:7px 0 4px;text-shadow:0 2px 10px rgba(0,0,0,0.22);">'+totSmart.total.toFixed(2)+' €</div>'+
+              '<div style="display:inline-flex;gap:8px;font-size:11px;font-weight:700;background:rgba(255,255,255,0.18);padding:4px 11px;border-radius:18px;">'+totSmart.nb+' vente'+(totSmart.nb>1?'s':'')+' · net encaissé '+totSmart.netEncaisse.toFixed(2)+' €</div>'+
+            '</div>'+
+          '</div>'+
+          _smTile('💹','Marge dégagée',_smMarge,'#059669','#ecfdf5')+
+          _smTile('🔄','Reprises',totSmart.reprises,'#c0392b','#fff5f5')+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">'+
+          _smTile('💳','CB',totSmart.cb,'#2563eb','#eff6ff')+
+          _smTile('💵','Espèces',totSmart.especes,'#16a34a','#ecfdf5')+
+          _smTile('📄','Chèque',totSmart.cheque,'#d97706','#fffbeb')+
+          _smTile('🏦','Virement',totSmart.virement,'#8b5cf6','#f5f3ff')+
+        '</div>';
+    } else { smDiv.style.display='none'; smDiv.innerHTML=''; }
+  }
   var stb=document.getElementById('caisse-z-smart-tbody');
   if(stb&&txSmart.length>0){var mc3={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};var mg=0;stb.innerHTML=txSmart.map(function(tx,i){var mc=mc3[(tx.mode||'CB').toUpperCase()]||'#666';var ach=tx.achat||0;var m2=tx.montant-ach;mg+=m2;var repTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="color:#c0392b;font-weight:700;">-'+tx.repriseAmount.toFixed(2)+' €</span><br><span style="font-size:9px;color:#666;">'+tx.repriseModele+'</span>':'—';var netTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="font-weight:700;color:#8b5cf6;">'+tx.netEncaisse.toFixed(2)+' €</span>':tx.montant.toFixed(2)+' €';return '<tr style="background:'+(i%2===0?'#fff':'#f5f3ff')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc.replace(/ 🔄.*$/,'')+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:right;">'+repTxt+'</td><td style="padding:5px 6px;text-align:right;">'+netTxt+'</td><td style="padding:5px 6px;text-align:right;color:#666;">'+(ach>0?ach.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:right;color:#16a34a;font-weight:700;">'+(ach>0?m2.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#1d1d1f;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')+'<tr style="background:#ede9fe;color:#1a1a2e;font-weight:800;border-top:2px solid #8b5cf6;"><td style="padding:6px;color:#1a1a2e;">TOTAL</td><td style="padding:6px;text-align:right;color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</td><td style="padding:6px;text-align:right;color:#c0392b;">'+(totSmart.reprises>0?'-'+totSmart.reprises.toFixed(2)+' €':'—')+'</td><td style="padding:6px;text-align:right;color:#8b5cf6;font-weight:900;">'+totSmart.netEncaisse.toFixed(2)+' €</td><td></td><td style="padding:6px;text-align:right;color:#16a34a;">'+mg.toFixed(2)+' €</td><td></td></tr>';}
   transactions=txRep;window._caisseJourTotaux=totJour;window._smartJourTotaux=totSmart;window._txSmart=txSmart;
@@ -15532,14 +15563,22 @@ function renderBilan() {
   // KPI cards
   var mg=phones.filter(function(p){return p.etat==='VENDU';}).reduce(function(s,p){return s+(p.vente-p.achat);},0);
   var cardsEl = document.getElementById('analytics-cards');
-  if(cardsEl) cardsEl.innerHTML =
-    '<div class="stat-card"><div class="stat-label">CA TTC '+annee+'</div><div class="stat-value">'+totCA.toFixed(0)+' €</div></div>' +
-    '<div class="stat-card"><div class="stat-label">CA HT</div><div class="stat-value">'+(totCA/1.2).toFixed(0)+' €</div></div>' +
-    '<div class="stat-card"><div class="stat-label">TVA collectée</div><div class="stat-value">'+(totCA-totCA/1.2).toFixed(0)+' €</div></div>' +
-    '<div class="stat-card"><div class="stat-label">QualiRépar total</div><div class="stat-value" style="color:var(--green)">'+totQuali.toFixed(0)+' €</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Jours travaillés</div><div class="stat-value">'+totJours+'</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Marge smartphones</div><div class="stat-value" style="color:var(--green)">'+mg.toFixed(0)+' €</div></div>' +
-    '<div class="stat-card"><div class="stat-label">Moy/jour</div><div class="stat-value">'+(totJours>0?(totCA/totJours).toFixed(0):0)+' €</div></div>';
+  if(cardsEl){
+    var _ac=function(emoji,lbl,val,col,suffix){
+      return '<div style="background:linear-gradient(160deg,#ffffff,'+col+'14);border:1px solid '+col+'40;border-radius:18px;padding:16px;box-shadow:0 8px 22px -12px '+col+'99;">'+
+        '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;"><div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,'+col+','+col+'cc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;">'+emoji+'</div><div style="font-size:11px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.3px;line-height:1.15;">'+lbl+'</div></div>'+
+        '<div style="font-size:27px;font-weight:900;color:'+col+';line-height:1;">'+val+(suffix||'')+'</div>'+
+      '</div>';
+    };
+    cardsEl.innerHTML =
+      _ac('💰','CA TTC '+annee, totCA.toFixed(0), '#E60012',' €')+
+      _ac('📊','CA HT', (totCA/1.2).toFixed(0), '#1d1d1f',' €')+
+      _ac('🧾','TVA collectée', (totCA-totCA/1.2).toFixed(0), '#d97706',' €')+
+      _ac('🌱','QualiRépar', totQuali.toFixed(0), '#0d9488',' €')+
+      _ac('📈','Marge smartphones', mg.toFixed(0), '#059669',' €')+
+      _ac('📅','Jours travaillés', totJours, '#2563eb','')+
+      _ac('⚡','Moyenne / jour', (totJours>0?(totCA/totJours).toFixed(0):0), '#8b5cf6',' €');
+  }
 
   var labels = moisAll.map(function(m){return moisNoms[m].substring(0,3);});
   var gc='rgba(0,0,0,0.06)',tx='#64748b';
@@ -17604,6 +17643,12 @@ function renderComptable() {
   var parts = mois.split('-');
   var moisLabel = moisNoms[parts[1]] + ' ' + parts[0];
 
+  var _kpi = function(lbl,val,col){
+    return '<div style="background:linear-gradient(160deg,#ffffff,'+col+'14);border:1px solid '+col+'40;border-radius:16px;padding:14px 16px;box-shadow:0 6px 16px -10px '+col+'99;">'+
+      '<div style="font-size:11px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div>'+
+      '<div style="font-size:25px;font-weight:900;color:'+col+';margin-top:4px;line-height:1;">'+(val||0).toFixed(2)+' €</div>'+
+    '</div>';
+  };
   var html = '<div id="compta-print-zone">' +
     '<div style="background:rgba(0,0,0,0.04);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;">' +
     '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;">' +
@@ -17616,6 +17661,15 @@ function renderComptable() {
     '<div style="font-size:18px;font-weight:700;">RÉCAPITULATIF MENSUEL</div>' +
     '<div style="font-size:24px;font-weight:800;color:var(--red);">' + moisLabel + '</div>' +
     '</div>' +
+    '</div>' +
+
+    // KPI punchy
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-bottom:22px;">' +
+      _kpi('💰 CA TTC', totalTTC, '#E60012') +
+      _kpi('📊 CA HT', totalHT, '#1d1d1f') +
+      _kpi('🧾 TVA 20%', totalTVA, '#d97706') +
+      _kpi('🌱 QualiRépar', totalQuali, '#0d9488') +
+      _kpi('📈 Marge smartph.', margeSmartphones, '#059669') +
     '</div>' +
 
     // Section CA +
