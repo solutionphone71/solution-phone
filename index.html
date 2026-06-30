@@ -8524,7 +8524,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="card">
                 <div class="card-header"><div class="card-title">📱 Appareil</div></div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="display:grid;grid-template-columns:1fr;gap:14px;">
                     <div class="form-group"><label>Marque *</label>
                       <div id="rep-marque-tiles"></div>
                       <select id="dep-marque" onchange="repMajOrganismePhoto();if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();if(typeof renderRepMarqueTiles==='function')renderRepMarqueTiles();" style="margin-top:8px;">
@@ -8556,14 +8556,14 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                         </optgroup>
                       </select></div>
                     <div class="form-group" style="position:relative;">
-                      <label>Modèle *</label>
-                      <input type="text" id="dep-modele" placeholder="iPhone 13 Pro" oninput="repModeleAutocomplete(this.value)" onblur="setTimeout(function(){var b=document.getElementById('rep-modele-autocomplete');if(b)b.style.display='none';},250)">
+                      <label style="font-size:13px;font-weight:800;">📱 Modèle *</label>
+                      <input type="text" id="dep-modele" placeholder="iPhone 13 Pro" style="font-size:19px;padding:16px 16px;font-weight:700;border-radius:13px;" oninput="repModeleAutocomplete(this.value)" onblur="setTimeout(function(){var b=document.getElementById('rep-modele-autocomplete');if(b)b.style.display='none';},250)">
                       <div id="rep-modele-autocomplete" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;max-height:280px;overflow-y:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
                     </div>
                   </div>
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>IMEI / N° Série</label>
-                      <button onclick="repOCRImei()" title="Lire l'IMEI via la caméra" style="width:100%;padding:16px;margin-bottom:8px;font-size:16px;font-weight:800;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(37,99,235,0.28);">📷 Scanner l'IMEI (photo)</button>
+                      <button onclick="repOCRImei()" title="Lire l'IMEI via la caméra" style="width:100%;padding:16px;margin-bottom:8px;font-size:16px;font-weight:800;background:linear-gradient(135deg,#E10600,#a3000d);color:#fff;border:none;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(225,6,0,0.3);">📷 Scanner l'IMEI (photo)</button>
                       <div style="display:flex;gap:6px;align-items:center;">
                         <input type="text" id="dep-imei" placeholder="ou saisir : 352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();" maxlength="15" inputmode="numeric" style="flex:1;">
                       </div>
@@ -31978,16 +31978,13 @@ function renderRepMarqueTiles(){
   var sel=document.getElementById('dep-marque'); var cur=(sel&&sel.value||'').toLowerCase();
   var eco=[], ecosys=[];
   Object.keys(QR_BRAND_TYPE).forEach(function(b){ (QR_BRAND_TYPE[b]==='ecosystem'?ecosys:eco).push(b); });
-  function tile(b,color){
+  function tile(b){
     var on=(b.toLowerCase()===cur);
-    return '<button type="button" onclick="repPickMarque(\''+b+'\')" style="padding:13px 6px;border:2px solid '+color+';background:'+(on?color:'rgba(0,0,0,0.02)')+';color:'+(on?'#fff':color)+';border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;">'+b+'</button>';
+    return '<button type="button" onclick="repPickMarque(\''+b+'\')" style="padding:15px 8px;border:1.5px solid '+(on?'#E10600':'#E8EAED')+';background:'+(on?'#E10600':'#fff')+';color:'+(on?'#fff':'#111')+';border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;transition:.15s;box-shadow:'+(on?'0 6px 16px -8px rgba(225,6,0,0.6)':'none')+';">'+b+'</button>';
   }
-  cont.innerHTML=
-    '<button type="button" onclick="if(typeof openBrainChat===\'function\')openBrainChat()" style="width:100%;padding:11px;margin-bottom:12px;border:1.5px dashed #7c3aed;background:rgba(124,58,237,0.06);color:#7c3aed;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">🤖 Besoin d\'aide ? Demander à l\'assistant</button>'+
-    '<div style="font-size:11px;font-weight:800;color:#2563eb;margin:2px 0 6px;">🔵 Ecologic</div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px;margin-bottom:10px;">'+eco.map(function(b){return tile(b,'#2563eb');}).join('')+'</div>'+
-    '<div style="font-size:11px;font-weight:800;color:#16a34a;margin:2px 0 6px;">🟢 Ecosystem</div>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:8px;">'+ecosys.map(function(b){return tile(b,'#16a34a');}).join('')+'</div>';
+  var _hdr=function(t){ return '<div style="font-size:11px;font-weight:800;color:#6B7280;margin:2px 0 7px;text-transform:uppercase;letter-spacing:.6px;">'+t+'</div>'; };
+  var _grid=function(arr){ return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">'+arr.map(function(b){return tile(b);}).join('')+'</div>'; };
+  cont.innerHTML = _hdr('Ecologic') + _grid(eco) + _hdr('Ecosystem') + _grid(ecosys);
 }
 
 // Choix pièce neuve / reconditionnée (PIEC) via 2 gros boutons → bascule la case + recalcule le bonus
