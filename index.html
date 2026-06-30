@@ -11769,7 +11769,7 @@ async function envoyerFactureEmail(){
   var _emailPiec = !!(d.piec||(f&&f.piec));
   var _emailBonus = _emailPiec ? 30 : 25;
   var prixClient = f.prix||0;
-  var prixAffiche = bonusQR ? Math.max(0, prixClient - _emailBonus) : prixClient;
+  var prixAffiche = prixClient; // le client paie le prix saisi (bonus QualiRépar déjà appliqué / en plus)
 
   var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
     '<div style="background:#c0392b;padding:20px;text-align:center;">'+
@@ -11785,7 +11785,7 @@ async function envoyerFactureEmail(){
         'Appareil : '+(a.marque||'')+' '+(a.modele||'')+(a.imei?'<br>IMEI : '+a.imei:'')+'<br>'+
         'Réparation : '+(d.panne||f.description||'')+'<br>'+
         '<b style="font-size:18px;color:#c0392b;">Montant : '+prixAffiche.toFixed(2)+' € TTC</b>'+
-        (bonusQR?'<br><span style="color:#16a34a;font-size:12px;">✅ Bonus QualiRépar -'+_emailBonus+'€ déduit</span>':'')+
+        (bonusQR?'<br><span style="color:#16a34a;font-size:12px;">✅ Bonus QualiRépar de '+_emailBonus+'€ appliqué (montant déjà déduit)</span>':'')+
       '</div>'+
       '<div style="background:rgba(96,165,250,0.06);border-radius:6px;padding:10px;font-size:11px;color:#60a5fa;margin-top:16px;">'+
         '<b>🔒 NF525</b> · Facture certifiée conforme loi anti-fraude TVA · Art. 286 CGI'+
@@ -11856,7 +11856,7 @@ async function envoyerFactureSMS(){
   var bonusQR = !!(d.bonusQR||f.bonusQR);
   var _smsPiec = !!(d.piec||(f&&f.piec));
   var _smsBonus = _smsPiec ? 30 : 25;
-  var prixAffiche = bonusQR ? Math.max(0,(f.prix||0)-_smsBonus) : (f.prix||0);
+  var prixAffiche = (f.prix||0); // le client paie le prix saisi (bonus déjà appliqué)
 
   // Formater tel en international (+33...)
   var telIntl = tel;
