@@ -6408,6 +6408,15 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <span id="na-total-ttc" style="font-weight:900;font-size:22px;color:var(--primary);">0,00 €</span>
                 </div>
 
+                <!-- Client (optionnel) -->
+                <div style="margin-bottom:12px;position:relative;">
+                  <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">👤 Client (optionnel)</div>
+                  <input id="na-client-search" type="text" placeholder="🔍 Nom ou téléphone…" autocomplete="off" oninput="naSearchClient(this.value)"
+                    style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;box-sizing:border-box;">
+                  <div id="na-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;margin-top:4px;"></div>
+                  <div id="na-client-selected" style="display:none;margin-top:6px;font-size:12px;font-weight:700;color:#16a34a;"></div>
+                </div>
+
                 <!-- Mode paiement -->
                 <div style="margin-bottom:12px;">
                   <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">💳 Mode de paiement</div>
@@ -10151,11 +10160,14 @@ async function retryPendingPhones(){
 }
 
 async function saveCaisseRow(row) {
-  if(!supabaseReady) return;
-  var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart};
-  var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
-  if(ex&&ex.length>0){await supaFetch('caisse','PATCH',data,'?date=eq.'+row.date);}
-  else{await supaFetch('caisse','POST',data);}
+  if(!supabaseReady){ console.warn('saveCaisseRow: supabase non prêt'); return false; }
+  try{
+    var data={date:row.date,ttc:row.ttc,cb:row.cb,especes:row.especes,cheque:row.cheque,virement:row.virement,quali:row.quali,depot_esp:row.depotEsp,depot_cheque:row.depotCheque,achat_smart:row.achatSmart};
+    var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
+    if(ex&&ex.length>0){await supaFetch('caisse','PATCH',data,'?date=eq.'+row.date);}
+    else{await supaFetch('caisse','POST',data);}
+    return true;
+  }catch(e){ console.error('saveCaisseRow échec:', e); return false; }
 }
 
 
@@ -10689,6 +10701,43 @@ var NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){
 var _naPanier    = []; // [{article, qte}]
 var _naMode      = 'CB';
 var _naCatFilter = 'tous';
+var _naClient    = null; // client rattaché à la vente (optionnel)
+var _naClientTimer = null;
+
+function naSearchClient(q){
+  clearTimeout(_naClientTimer);
+  var res=document.getElementById('na-client-results');
+  var sel=document.getElementById('na-client-selected');
+  if(!q || q.trim().length<2){ if(res)res.style.display='none'; _naClient=null; if(sel)sel.style.display='none'; return; }
+  _naClientTimer=setTimeout(async function(){
+    try{
+      var query='?or=(nom.ilike.*'+encodeURIComponent(q.trim())+'*,tel.ilike.*'+encodeURIComponent(q.trim())+'*)&limit=6&order=nom.asc';
+      var data=await supaFetch('clients','GET',null,query);
+      if(!res) return;
+      if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML=data.map(function(c){
+        var nom=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        var ds=encodeURIComponent(JSON.stringify({id:c.id,nom:c.nom||'',prenom:c.prenom||'',tel:c.tel||'',civilite:c.civilite||''}));
+        return '<div onclick="naPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;">'+
+          '<b>'+nom+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
+      }).join('');
+      res.style.display='block';
+    }catch(e){ if(res)res.style.display='none'; }
+  },300);
+}
+function naPickClient(s){
+  try{ _naClient=JSON.parse(decodeURIComponent(s)); }catch(e){ _naClient=null; }
+  var res=document.getElementById('na-client-results'); if(res)res.style.display='none';
+  var inp=document.getElementById('na-client-search'); if(inp&&_naClient) inp.value=((_naClient.prenom||'')+' '+(_naClient.nom||'')).trim();
+  var sel=document.getElementById('na-client-selected');
+  if(sel&&_naClient){ sel.innerHTML='✅ Client : '+(((_naClient.prenom||'')+' '+(_naClient.nom||'')).trim())+' '+(_naClient.tel?'· '+_naClient.tel:'')+' <a onclick="naClearClient()" style="color:#dc2626;cursor:pointer;margin-left:6px;">✕ retirer</a>'; sel.style.display='block'; }
+}
+function naClearClient(){
+  _naClient=null;
+  var inp=document.getElementById('na-client-search'); if(inp)inp.value='';
+  var sel=document.getElementById('na-client-selected'); if(sel)sel.style.display='none';
+  var res=document.getElementById('na-client-results'); if(res)res.style.display='none';
+}
 
 function naShowTab(tab){
   ['caisse','form'].forEach(function(t){
@@ -10790,6 +10839,7 @@ function naRetireDuPanier(id){
 
 function naViderPanier(){
   _naPanier = [];
+  if(typeof naClearClient==='function') naClearClient();
   naRenderPanier();
   naRenderGrille();
 }
@@ -10876,33 +10926,81 @@ function naSetMode(mode){
   });
 }
 
-function naValiderVente(){
+var _naDerniereVente = null; // mémorise la dernière vente pour impression à la demande
+
+async function naValiderVente(){
   if(_naPanier.length===0){ showNotif('Panier vide','error'); return; }
   _naPanier.forEach(function(p){ if(typeof p.prix !== 'number') p.prix = p.article.prix; });
   var totalTTC = _naPanier.reduce(function(s,p){ return s+p.prix*p.qte; }, 0);
   var desc = _naPanier.map(function(p){ return p.qte+'× '+p.article.nom; }).join(', ');
   var num  = 'ACC-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(0,14);
+  var clientTxt = _naClient ? (' — '+((_naClient.prenom||'')+' '+(_naClient.nom||'')).trim()) : '';
 
-  if(!confirm('Valider la vente :\n'+desc+'\n\nTotal : '+totalTTC.toFixed(2)+' € — '+_naMode+' ?')) return;
+  if(!confirm('Valider la vente :\n'+desc+(clientTxt?'\nClient :'+clientTxt:'')+'\n\nTotal : '+totalTTC.toFixed(2)+' € — '+_naMode+' ?')) return;
 
-  // Enregistrer en caisse
-  caisseFromVente({
-    prixTTC: totalTTC,
-    mode: _naMode,
-    date: new Date().toISOString().split('T')[0],
-    description: 'Vente access. : '+desc
-  });
+  // Bloquer le bouton pendant la sauvegarde
+  var btn=document.getElementById('na-btn-valider');
+  var btnTxt = btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.style.opacity='0.6'; btn.textContent='⏳ Enregistrement...'; }
 
-  showNotif('✅ Vente enregistrée — '+totalTTC.toFixed(2)+' € ('+_naMode+') en caisse !','success');
+  // Enregistrer en caisse — ON ATTEND ET ON VÉRIFIE LE SUCCÈS
+  var ok=false;
+  try{
+    ok = await caisseFromVente({
+      prixTTC: totalTTC,
+      mode: _naMode,
+      date: new Date().toISOString().split('T')[0],
+      description: 'Vente access. : '+desc+clientTxt
+    });
+  }catch(e){ console.error('naValiderVente:', e); ok=false; }
 
-  // Imprimer ticket
-  naImprimerTicketAccess(num, desc, totalTTC, _naMode);
+  if(!ok){
+    // ÉCHEC : on NE vide PAS le panier, on alerte fort pour ne JAMAIS perdre la vente
+    if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.textContent=btnTxt||'✅ VALIDER LA VENTE'; }
+    alert('⚠️ La vente n\'a PAS pu être enregistrée en caisse (connexion ?).\n\nLe panier est conservé. Vérifie ta connexion et reclique sur VALIDER.');
+    showNotif('❌ Vente NON enregistrée — réessaie','error');
+    return;
+  }
 
-  // Vider le panier
+  // Succès : mémoriser pour impression éventuelle
+  _naDerniereVente = { num:num, items:_naPanier.slice(), totalTTC:totalTTC, mode:_naMode, client:_naClient };
+
+  // Écran de succès AVEC bouton impression (pas d'impression auto)
+  naAfficherVenteSucces(totalTTC, _naMode);
+
+  // Vider le panier (la vente est bien enregistrée)
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.textContent=btnTxt||'✅ VALIDER LA VENTE'; }
   naViderPanier();
 }
 
-function naImprimerTicketAccess(num, desc, totalTTC, mode){
+function naAfficherVenteSucces(totalTTC, mode){
+  naFermerVenteSucces();
+  var ov=document.createElement('div');
+  ov.id='na-vente-ok';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  ov.innerHTML='<div style="background:#fff;border-radius:18px;max-width:400px;width:100%;padding:30px 24px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.35);">'+
+    '<div style="font-size:52px;line-height:1;">✅</div>'+
+    '<div style="font-size:22px;font-weight:900;color:#16a34a;margin:8px 0 2px;">Vente enregistrée</div>'+
+    '<div style="font-size:17px;color:#475569;font-weight:700;">'+totalTTC.toFixed(2)+' € · '+mode+'</div>'+
+    '<div style="font-size:12px;color:#94a3b8;margin-top:4px;">C\'est dans la caisse du jour ✓</div>'+
+    '<div style="display:flex;gap:10px;margin-top:22px;">'+
+      '<button onclick="naImprimerDerniereVente()" style="flex:1;padding:15px;border:1.5px solid #cbd5e1;border-radius:12px;background:#f8fafc;font-weight:800;font-size:14px;cursor:pointer;">🖨️ Imprimer le ticket</button>'+
+      '<button onclick="naFermerVenteSucces()" style="flex:1;padding:15px;border:none;border-radius:12px;background:#16a34a;color:#fff;font-weight:900;font-size:15px;cursor:pointer;">✅ Terminé</button>'+
+    '</div>'+
+    '<div style="font-size:11px;color:#94a3b8;margin-top:10px;">Imprime seulement si le client le demande</div>'+
+  '</div>';
+  document.body.appendChild(ov);
+}
+function naFermerVenteSucces(){ var e=document.getElementById('na-vente-ok'); if(e) e.remove(); }
+function naImprimerDerniereVente(){
+  if(!_naDerniereVente){ showNotif('Aucune vente à imprimer','error'); return; }
+  var v=_naDerniereVente;
+  var desc=v.items.map(function(p){ return p.qte+'× '+p.article.nom; }).join(', ');
+  naImprimerTicketAccess(v.num, desc, v.totalTTC, v.mode, v.items);
+}
+
+function naImprimerTicketAccess(num, desc, totalTTC, mode, items){
+  var _items = (items && items.length) ? items : _naPanier;
   var ht  = (totalTTC/1.2).toFixed(2);
   var tva = (totalTTC - totalTTC/1.2).toFixed(2);
   var now = new Date();
@@ -10924,7 +11022,7 @@ function naImprimerTicketAccess(num, desc, totalTTC, mode){
   '<div class="center" style="font-size:10px;">N° '+num+'</div>'+
   '<div class="line"></div>';
 
-  _naPanier.forEach(function(p){
+  _items.forEach(function(p){
     var _prix = (typeof p.prix === 'number') ? p.prix : p.article.prix;
     html += '<div class="row"><span>'+p.article.emoji+' '+p.article.nom+(p.qte>1?' ×'+p.qte:'')+'</span><span>'+(_prix*p.qte).toFixed(2)+' €</span></div>';
   });
@@ -12132,13 +12230,14 @@ async function alimenterCaisse(opts){
   else { caisse.push(entry); caisse.sort(function(a,b){return a.date.localeCompare(b.date);}); }
 
   // Sauvegarder en Supabase
-  await saveCaisseRow(entry);
+  var _saved = await saveCaisseRow(entry);
 
   // Rafraîchir l'affichage si on est sur la page caisse
   if(document.getElementById('caisse-table')) renderCaisse();
   if(document.getElementById('dash-caisse'))  renderDashboard();
 
-  console.log('💰 Caisse alimentée :', today, ttc+'€', mode, opts.description||'');
+  console.log('💰 Caisse alimentée :', today, ttc+'€', mode, opts.description||'', '| sauvegardée:', _saved);
+  return _saved;
 }
 
 // Appelée quand une facture réparation est générée
