@@ -24300,17 +24300,16 @@ async function qrEnvoyerEcologicComplet(d){
     // ── BANDEAU GUIDÉ (2 clics guidés) ──
     var _btnFinal = document.getElementById('rep-qr-btn-valider');
     if(errs.length === 0){
-      // Étape 1 OK → on guide clairement vers l'étape 2 (Envoi final)
+      // Étape 1 OK SANS erreur → on enchaîne AUTOMATIQUEMENT l'envoi final (étape 2),
+      // car l'employé clique souvent le pré-envoi puis oublie de valider.
       if(el)el.innerHTML="<div style='background:rgba(52,211,153,0.10);border:2px solid #16a34a;padding:14px;border-radius:10px;color:#15803d;font-size:14px;line-height:1.6;'>"
         +"&#9989; <b>Étape 1 OK — Pré-envoi accepté par Ecologic</b><br>"
-        +"<small>Dossier N° "+claimId+" créé, pièces jointes déposées.</small><br>"
-        +"&#128071; <b>Étape 2 : cliquez « 2️⃣ ENVOI FINAL »</b> ci-dessous pour soumettre le dossier."
+        +"<small>Dossier N° "+claimId+".</small><br>"
+        +"&#9203; <b>Envoi final automatique en cours…</b>"
         +"</div>";
-      if(_btnFinal){
-        _btnFinal.style.boxShadow='0 0 0 4px rgba(22,163,74,0.40)';
-        try{ _btnFinal.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
-      }
-      showNotif&&showNotif("&#9989; Pré-envoi OK — cliquez « Envoi final »","success");
+      showNotif&&showNotif("&#9989; Pré-envoi OK — envoi final automatique…","success");
+      // Déclenche l'étape 2 toute seule (court délai pour laisser Ecologic enregistrer)
+      setTimeout(function(){ try{ if(typeof qrValiderEcologic==='function') qrValiderEcologic(d); }catch(_){} }, 800);
     } else {
       // Ecologic signale des points à corriger → on l'indique clairement
       if(el)el.innerHTML="<div style='background:rgba(255,159,10,0.12);border:2px solid #FF9F0A;padding:14px;border-radius:10px;color:#92400e;font-size:14px;line-height:1.6;'>"
