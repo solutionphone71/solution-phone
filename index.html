@@ -1134,6 +1134,17 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       #page-zahira-home .zh-agent-card-cta{ color:#E10600 !important; }
       #page-zahira-home .zh-agent-card-avatar-wrap::before{ border-color:#E10600 !important; }
       #page-zahira-home .zh-agent-card-badge{ background:#E10600 !important; color:#fff !important; }
+      /* Retirer le chat Zahira (remplacé par la barre de dialogue IA / mode Siri) */
+      #page-zahira-home .zh-chat-aside{ display:none !important; }
+      #page-zahira-home .zh-grid{ grid-template-columns:1fr !important; }
+      #page-zahira-home .zh-fab{ display:none !important; }
+      /* Équipe IA : compacte, sur une seule ligne (scroll horizontal si besoin) */
+      #page-zahira-home .zh-agents-showcase{ display:flex !important; flex-wrap:nowrap !important; gap:10px !important; overflow-x:auto !important; padding-bottom:4px; grid-template-columns:none !important; }
+      #page-zahira-home .zh-agent-card{ min-width:148px !important; flex:0 0 auto !important; padding:12px 14px !important; min-height:0 !important; }
+      #page-zahira-home .zh-agent-card-avatar,
+      #page-zahira-home .zh-agent-card-avatar-wrap{ width:40px !important; height:40px !important; }
+      #page-zahira-home .zh-agent-card-task,
+      #page-zahira-home .zh-agent-card-cta{ display:none !important; }
 
       /* ─── ZAHIRA CHAT ASIDE (à droite, full height) ─── */
       #page-zahira-home .zh-chat-aside {
@@ -7320,6 +7331,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div class="card">
           <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group" style="position:relative;"><label>🔍 Rechercher un client existant</label><input type="text" id="dv-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="devisClientSearch(this.value)"><div id="dv-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
             <div class="form-group"><label>Client *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="Adresse" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
@@ -7333,8 +7345,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <option value="3 mois">3 mois</option>
               </select>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="genererDevis()">📝 Générer le devis</button>
+              <button class="btn" onclick="envoyerDevisStandaloneEmail()" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
               <button class="btn" onclick="convertirDevisEnFacture()">🧾 → Facture répa</button>
             </div>
           </div>
@@ -17371,11 +17384,79 @@ function genererDevis() {
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
+  // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
+  try{
+    if(typeof supaFetch==='function'){
+      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
+        .then(function(){ showNotif('Devis '+num+' enregistré ✓','success'); })
+        .catch(function(e){ console.warn('save devis:',e); showNotif('Devis créé (sauvegarde base à vérifier)','info'); });
+    }
+  }catch(e){ console.warn('save devis:',e); }
   renderDevis();
   imprimerDevisData(dv);
-  ['dv-client','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix'].forEach(function(id){document.getElementById(id).value='';});
+  ['dv-client','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
+}
+
+// Recherche client (page Devis)
+var _dvSearchTimer=null;
+function devisClientSearch(q){
+  clearTimeout(_dvSearchTimer);
+  var res=document.getElementById('dv-client-results');
+  if(!q||q.trim().length<2){ if(res)res.style.display='none'; return; }
+  _dvSearchTimer=setTimeout(async function(){
+    try{
+      var query='?or=(nom.ilike.*'+encodeURIComponent(q.trim())+'*,tel.ilike.*'+encodeURIComponent(q.trim())+'*)&limit=6&order=nom.asc';
+      var data=await supaFetch('clients','GET',null,query);
+      if(!res) return;
+      if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML=data.map(function(c){
+        var nom=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        var ds=encodeURIComponent(JSON.stringify({nom:nom,adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||''}));
+        return '<div onclick="devisPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nom+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
+      }).join('');
+      res.style.display='block';
+    }catch(e){ if(res)res.style.display='none'; }
+  },300);
+}
+function devisPickClient(s){
+  var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
+  var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+  set('dv-client',c.nom); set('dv-adresse',c.adresse); set('dv-cp',c.cp); set('dv-ville',c.ville); set('dv-email',c.email);
+  var res=document.getElementById('dv-client-results'); if(res)res.style.display='none';
+  var inp=document.getElementById('dv-client-search'); if(inp)inp.value=c.nom||'';
+  if(typeof updateDevisPreview==='function') updateDevisPreview();
+}
+
+// Envoi du devis par mail (page Devis autonome — Brevo)
+async function envoyerDevisStandaloneEmail(){
+  var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
+  var client=g('dv-client'), presta=g('dv-prestation'), email=g('dv-email');
+  var prix=parseFloat(g('dv-prix'))||0, appareil=g('dv-appareil'), validite=g('dv-validite')||'30 jours';
+  if(!client||!presta||!prix){ showNotif&&showNotif('Client, prestation et prix requis','error'); return; }
+  if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email du client manquant ou invalide','error'); return; }
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  showNotif&&showNotif('📧 Envoi du devis à '+email+'…','info');
+  var html='<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
+    '<div style="background:#E10600;padding:20px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+    '<p style="color:#ffd9d9;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p></div>'+
+    '<div style="padding:24px;"><p>Bonjour '+client+',</p><p>Voici votre devis :</p>'+
+    '<div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #E10600;">'+
+      (appareil?'<b>Appareil :</b> '+appareil+'<br>':'')+
+      '<b>Prestation :</b> '+presta+'<br>'+
+      '<b style="font-size:18px;color:#E10600;">Montant : '+prix.toFixed(2)+' € TTC</b></div>'+
+    '<p style="color:#666;font-size:13px;">Ce devis est valable '+validite+'. Pour l\'accepter, répondez à cet email ou passez en boutique.</p>'+
+    '<p style="color:#666;font-size:12px;margin-top:16px;">À bientôt,<br><b>L\'équipe Solution Phone</b></p></div></div>';
+  try{
+    var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre devis Solution Phone',htmlContent:html};
+    var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok){ showNotif&&showNotif('✅ Devis envoyé à '+email,'success'); }
+    else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau envoi devis','error'); }
 }
 
 // Devis — même design que la facture réparation (repImprimerFacture)
