@@ -11468,27 +11468,37 @@ function renderCaisseJour(){
     // contrôle de cohérence : CA = CB + Espèces + Chèque + Virement + Bonus QR
     var _sommeCtrl = totJour.cb + totJour.especes + totJour.cheque + totJour.virement + totJour.quali;
     var _ecartCtrl = Math.round((_sommeCtrl - totJour.total)*100)/100;
-    var _tile = function(lbl, val, col, bg){
-      return '<div style="background:'+bg+';border:1.5px solid '+col+'40;border-radius:16px;padding:14px 16px;">'+
-        '<div style="font-size:11px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div>'+
-        '<div style="font-size:25px;font-weight:900;color:'+col+';margin-top:3px;line-height:1.1;">'+(val||0).toFixed(2)+' €</div>'+
+    var _tile = function(emoji, lbl, val, col, bg){
+      var pct = totJour.total>0 ? Math.max(0, Math.min(100, Math.round(((val||0)/totJour.total)*100))) : 0;
+      return '<div style="background:linear-gradient(160deg,#ffffff,'+bg+');border:1px solid '+col+'33;border-radius:18px;padding:15px 16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 6px 18px -10px '+col+'66;">'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          '<div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,'+col+','+col+'cc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 5px 12px -3px '+col+'99;">'+emoji+'</div>'+
+          '<div style="font-size:11px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.4px;line-height:1.15;">'+lbl+'</div>'+
+        '</div>'+
+        '<div style="font-size:27px;font-weight:900;color:'+col+';line-height:1;">'+(val||0).toFixed(2)+' €</div>'+
+        '<div style="height:7px;border-radius:7px;background:'+col+'22;overflow:hidden;"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,'+col+','+col+'aa);border-radius:7px;transition:width .5s ease;"></div></div>'+
+        '<div style="font-size:10px;font-weight:800;color:'+col+';opacity:.85;">'+pct+'% du CA</div>'+
       '</div>';
     };
     totDiv.style.display = 'block';
     totDiv.innerHTML =
-      '<div style="display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:12px;margin-bottom:12px;">'+
-        '<div style="background:linear-gradient(135deg,#E60012,#a3000d);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 12px 30px -10px rgba(230,0,18,0.65);">'+
-          '<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.92;">💰 '+(isCurrentMonth?'CA TTC du jour':'CA TTC '+moisLabel)+'</div>'+
-          '<div style="font-size:42px;font-weight:900;line-height:1.02;margin:6px 0 3px;">'+totJour.total.toFixed(2)+' €</div>'+
-          '<div style="font-size:12px;opacity:.9;">HT '+_ht.toFixed(2)+' € · '+totJour.nb+' transaction'+(totJour.nb>1?'s':'')+'</div>'+
+      '<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:13px;margin-bottom:13px;">'+
+        '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#E60012,#8f000c);border-radius:22px;padding:20px 24px;color:#fff;box-shadow:0 16px 38px -12px rgba(230,0,18,0.7);">'+
+          '<div style="position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
+          '<div style="position:absolute;right:20px;bottom:-40px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.07);"></div>'+
+          '<div style="position:relative;">'+
+            '<div style="font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.92;">💰 '+(isCurrentMonth?'CA TTC du jour':'CA TTC '+moisLabel)+'</div>'+
+            '<div style="font-size:46px;font-weight:900;line-height:1;margin:8px 0 4px;text-shadow:0 2px 12px rgba(0,0,0,0.25);">'+totJour.total.toFixed(2)+' €</div>'+
+            '<div style="display:inline-flex;gap:8px;align-items:center;font-size:12px;font-weight:700;background:rgba(255,255,255,0.18);padding:5px 12px;border-radius:20px;">HT '+_ht.toFixed(2)+' € · '+totJour.nb+' transaction'+(totJour.nb>1?'s':'')+'</div>'+
+          '</div>'+
         '</div>'+
-        _tile('💳 Carte bancaire', totJour.cb, '#2563eb', '#eff6ff')+
-        _tile('💵 Espèces', totJour.especes, '#16a34a', '#ecfdf5')+
+        _tile('💳', 'Carte bancaire', totJour.cb, '#2563eb', '#eff6ff')+
+        _tile('💵', 'Espèces', totJour.especes, '#16a34a', '#ecfdf5')+
       '</div>'+
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+
-        _tile('📄 Chèque', totJour.cheque, '#d97706', '#fffbeb')+
-        _tile('🏦 Virement', totJour.virement, '#8b5cf6', '#f5f3ff')+
-        _tile('🏷️ Bonus QualiRépar', totJour.quali, '#0d9488', '#f0fdfa')+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;">'+
+        _tile('📄', 'Chèque', totJour.cheque, '#d97706', '#fffbeb')+
+        _tile('🏦', 'Virement', totJour.virement, '#8b5cf6', '#f5f3ff')+
+        _tile('🏷️', 'Bonus QualiRépar', totJour.quali, '#0d9488', '#f0fdfa')+
       '</div>'+
       (Math.abs(_ecartCtrl) >= 0.01
         ? '<div style="margin-top:10px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:10px 14px;font-size:12px;font-weight:700;color:#b91c1c;">⚠️ Écart de cohérence '+_ecartCtrl.toFixed(2)+' € : CB+Espèces+Chèque+Virement+Bonus ('+_sommeCtrl.toFixed(2)+' €) ≠ CA du jour ('+totJour.total.toFixed(2)+' €). À vérifier.</div>'
@@ -11554,7 +11564,23 @@ function renderCaisseJour(){
   if(modesDiv){modesDiv.innerHTML=[{l:'CB',v:totJour.cb,c:'#2563eb'},{l:'Esp.',v:totJour.especes,c:'#16a34a'},{l:'Chèque',v:totJour.cheque,c:'#d97706'},{l:'Virement',v:totJour.virement,c:'#8b5cf6'}].map(function(m){return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:#666;">'+m.l+'</div><div style="font-weight:800;font-size:14px;color:'+m.c+';">'+m.v.toFixed(2)+' €</div></div>';}).join('');}
   // ── Ventilation par catégorie
   var catDiv=document.getElementById('caisse-z-categories');
-  if(catDiv){var cats=window._caisseCategories||{};catDiv.innerHTML=[{l:'🔧 Réparations',nb:(cats.reparations||{}).nb||0,v:(cats.reparations||{}).total||0,bg:'#fef2f2',bc:'#fecaca',c:'#c0392b'},{l:'🛍️ Accessoires',nb:(cats.accessoires||{}).nb||0,v:(cats.accessoires||{}).total||0,bg:'#eff6ff',bc:'#bfdbfe',c:'#2563eb'},{l:'📱 Tél. neufs',nb:(cats.neufs||{}).nb||0,v:(cats.neufs||{}).total||0,bg:'#ecfdf5',bc:'#a7f3d0',c:'#059669'}].map(function(c){return '<div style="background:'+c.bg+';border:1px solid '+c.bc+';border-radius:8px;padding:8px;text-align:center;"><div style="font-size:11px;color:'+c.c+';">'+c.l+'</div><div style="font-weight:800;font-size:14px;color:'+c.c+';">'+c.v.toFixed(2)+' €</div><div style="font-size:10px;color:var(--text-muted);">'+c.nb+' transaction'+(c.nb>1?'s':'')+'</div></div>';}).join('');}
+  if(catDiv){
+    var cats=window._caisseCategories||{};
+    var _ct=totJour.total||0;
+    catDiv.innerHTML=[
+      {l:'🔧 Réparations',nb:(cats.reparations||{}).nb||0,v:(cats.reparations||{}).total||0,bg:'#fff5f5',c:'#c0392b'},
+      {l:'🛍️ Accessoires',nb:(cats.accessoires||{}).nb||0,v:(cats.accessoires||{}).total||0,bg:'#eff6ff',c:'#2563eb'},
+      {l:'📱 Tél. neufs',nb:(cats.neufs||{}).nb||0,v:(cats.neufs||{}).total||0,bg:'#ecfdf5',c:'#059669'}
+    ].map(function(c){
+      var p=_ct>0?Math.round((c.v/_ct)*100):0;
+      return '<div style="background:linear-gradient(160deg,#fff,'+c.bg+');border:1px solid '+c.c+'33;border-radius:14px;padding:12px 14px;box-shadow:0 5px 14px -9px '+c.c+'99;">'+
+        '<div style="font-size:12px;font-weight:800;color:'+c.c+';">'+c.l+'</div>'+
+        '<div style="font-size:21px;font-weight:900;color:'+c.c+';margin:3px 0 7px;">'+c.v.toFixed(2)+' €</div>'+
+        '<div style="height:6px;border-radius:6px;background:'+c.c+'22;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:'+p+'%;background:linear-gradient(90deg,'+c.c+','+c.c+'aa);border-radius:6px;transition:width .5s ease;"></div></div>'+
+        '<div style="font-size:10px;font-weight:700;color:var(--text-muted);">'+c.nb+' transaction'+(c.nb>1?'s':'')+' · '+p+'% du CA</div>'+
+      '</div>';
+    }).join('');
+  }
   var dtb=document.getElementById('caisse-z-detail-tbody');
   if(dtb){var mc2={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};dtb.innerHTML=txRep.map(function(tx,i){var mc=mc2[(tx.mode||'CB').toUpperCase()]||'#666';return '<tr style="background:'+(i%2===0?'#fff':'#f8fafc')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#888;">'+tx.heure+'</td><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#1d1d1f;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')||'<tr><td colspan="4" style="padding:10px;text-align:center;color:#999;">Aucune réparation</td></tr>';}
   // ── Modes paiement + détail smartphones
