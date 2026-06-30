@@ -11461,25 +11461,38 @@ function renderCaisseJour(){
     if(m==='VIREMENT') totJour.virement += _clientPart;
   });
 
-  // Afficher les totaux
+  // Afficher les totaux — version PUNCHY (héros + tuiles colorées)
   var totDiv = document.getElementById('caisse-jour-totaux');
   if(totDiv){
-    var cards = [
-      {label:isCurrentMonth?'CA TTC du jour':'CA TTC '+moisLabel, value: totJour.total.toFixed(2)+' €', color:'var(--primary)', icon:'💰'},
-      {label:'CA HT', value: (totJour.total/1.2).toFixed(2)+' €', color:'var(--text)', icon:'📊'},
-      {label:'💳 CB', value: totJour.cb.toFixed(2)+' €', color:'var(--blue)', icon:''},
-      {label:'💵 Espèces', value: totJour.especes.toFixed(2)+' €', color:'var(--green)', icon:''},
-      {label:'📄 Chèque', value: totJour.cheque.toFixed(2)+' €', color:'var(--warning)', icon:''},
-      {label:'🏦 Virement', value: totJour.virement.toFixed(2)+' €', color:'#8b5cf6', icon:''},
-      {label:'🏷️ Bonus QR', value: totJour.quali.toFixed(2)+' €', color:'var(--green)', icon:''},
-      {label:'Nb transactions', value: totJour.nb, color:'var(--text-muted)', icon:'🧾'}
-    ];
-    totDiv.innerHTML = cards.map(function(c){
-      return '<div class="caisse-card" style="border-left:3px solid '+c.color+';">'+
-        '<div class="caisse-label">'+(c.icon?c.icon+' ':'')+c.label+'</div>'+
-        '<div class="caisse-value" style="color:'+c.color+';font-size:18px;">'+c.value+'</div>'+
+    var _ht = totJour.total/1.2;
+    // contrôle de cohérence : CA = CB + Espèces + Chèque + Virement + Bonus QR
+    var _sommeCtrl = totJour.cb + totJour.especes + totJour.cheque + totJour.virement + totJour.quali;
+    var _ecartCtrl = Math.round((_sommeCtrl - totJour.total)*100)/100;
+    var _tile = function(lbl, val, col, bg){
+      return '<div style="background:'+bg+';border:1.5px solid '+col+'40;border-radius:16px;padding:14px 16px;">'+
+        '<div style="font-size:11px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div>'+
+        '<div style="font-size:25px;font-weight:900;color:'+col+';margin-top:3px;line-height:1.1;">'+(val||0).toFixed(2)+' €</div>'+
       '</div>';
-    }).join('');
+    };
+    totDiv.style.display = 'block';
+    totDiv.innerHTML =
+      '<div style="display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:12px;margin-bottom:12px;">'+
+        '<div style="background:linear-gradient(135deg,#E60012,#a3000d);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 12px 30px -10px rgba(230,0,18,0.65);">'+
+          '<div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.92;">💰 '+(isCurrentMonth?'CA TTC du jour':'CA TTC '+moisLabel)+'</div>'+
+          '<div style="font-size:42px;font-weight:900;line-height:1.02;margin:6px 0 3px;">'+totJour.total.toFixed(2)+' €</div>'+
+          '<div style="font-size:12px;opacity:.9;">HT '+_ht.toFixed(2)+' € · '+totJour.nb+' transaction'+(totJour.nb>1?'s':'')+'</div>'+
+        '</div>'+
+        _tile('💳 Carte bancaire', totJour.cb, '#2563eb', '#eff6ff')+
+        _tile('💵 Espèces', totJour.especes, '#16a34a', '#ecfdf5')+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">'+
+        _tile('📄 Chèque', totJour.cheque, '#d97706', '#fffbeb')+
+        _tile('🏦 Virement', totJour.virement, '#8b5cf6', '#f5f3ff')+
+        _tile('🏷️ Bonus QualiRépar', totJour.quali, '#0d9488', '#f0fdfa')+
+      '</div>'+
+      (Math.abs(_ecartCtrl) >= 0.01
+        ? '<div style="margin-top:10px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:10px 14px;font-size:12px;font-weight:700;color:#b91c1c;">⚠️ Écart de cohérence '+_ecartCtrl.toFixed(2)+' € : CB+Espèces+Chèque+Virement+Bonus ('+_sommeCtrl.toFixed(2)+' €) ≠ CA du jour ('+totJour.total.toFixed(2)+' €). À vérifier.</div>'
+        : '<div style="margin-top:10px;background:#ecfdf5;border:1.5px solid #6ee7b7;border-radius:12px;padding:8px 14px;font-size:12px;font-weight:700;color:#047857;">✓ Caisse cohérente — paiements + bonus = CA du jour</div>');
   }
 
   // Afficher les transactions
