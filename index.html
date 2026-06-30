@@ -23439,11 +23439,19 @@ async function pcEnregistrerNouveauClient(){
     }
     // Confirmation + reset pour le client suivant
     var ov=document.getElementById('pcnc-overlay');
-    if(ov) ov.innerHTML='<div style="background:#fff;border-radius:20px;max-width:520px;width:100%;padding:48px 28px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.4);">'+
-      '<div style="font-size:64px;">🙏</div>'+
-      '<div style="font-size:26px;font-weight:900;color:#16a34a;margin:8px 0;">Merci '+(prenom||'')+' !</div>'+
-      '<div style="font-size:15px;color:#475569;line-height:1.6;">Vos informations sont enregistrées.<br>Veuillez remettre la tablette au comptoir.</div>'+
-      '<button onclick="var e=document.getElementById(\'pcnc-overlay\');if(e)e.remove();" style="margin-top:22px;padding:14px 28px;border:none;border-radius:12px;background:#0f172a;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">Nouveau client suivant</button>'+
+    var _rouletteUrl = 'https://app.solution-phone.fr/roulette.html';
+    var _qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&bgcolor=ffffff&color=1a1a1a&format=png&data='+encodeURIComponent(_rouletteUrl);
+    if(ov) ov.innerHTML='<div style="background:#fff;border-radius:20px;max-width:540px;width:100%;padding:40px 28px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.4);">'+
+      '<div style="font-size:56px;">🙏</div>'+
+      '<div style="font-size:26px;font-weight:900;color:#16a34a;margin:6px 0;">Merci '+(prenom||'')+' !</div>'+
+      '<div style="font-size:15px;color:#475569;line-height:1.5;">Vos informations sont enregistrées.</div>'+
+      '<div style="margin-top:22px;border:2px dashed #f59e0b;border-radius:16px;padding:20px;background:#fffbeb;">'+
+        '<div style="font-size:20px;font-weight:900;color:#b45309;">🎁 Tentez votre chance !</div>'+
+        '<div style="font-size:14px;color:#92400e;margin:6px 0 14px;line-height:1.5;">Scannez ce QR code avec l\'appareil photo de votre téléphone pour <b>jouer à la roulette</b> et nous laisser un avis ⭐</div>'+
+        '<img src="'+_qrSrc+'" alt="QR roulette" style="width:200px;height:200px;border-radius:10px;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.15);" crossorigin="anonymous">'+
+        '<div style="font-size:11px;color:#b45309;margin-top:8px;">Ouvrez l\'appareil photo → visez le QR code → touchez le lien</div>'+
+      '</div>'+
+      '<button onclick="var e=document.getElementById(\'pcnc-overlay\');if(e)e.remove();" style="margin-top:20px;padding:14px 28px;border:none;border-radius:12px;background:#0f172a;color:#fff;font-size:15px;font-weight:800;cursor:pointer;">✅ Terminé — client suivant</button>'+
     '</div>';
     if(typeof showNotif==='function') showNotif('👤 Client '+prenom+' '+nom+' enregistré','success');
   }catch(e){
