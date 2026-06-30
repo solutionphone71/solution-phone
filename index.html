@@ -769,6 +769,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     </div>
 
     <div class="nav-item active" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
+    <div class="nav-item" onclick="showPage('dashboard',this)" style="font-size:12px;opacity:0.7;padding-left:32px;"><span class="nav-icon">📊</span><span>Dashboard détaillé</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
@@ -1736,9 +1737,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="sub" id="zh-kpi-ca-trend">…</div>
             </div>
             <div class="zh-kpi-chip">
-              <div class="lbl">Avis</div>
+              <div class="lbl">CA Mois</div>
               <div class="val" id="zh-kpi-avis">—</div>
-              <div class="sub" id="zh-kpi-avis-trend">…</div>
+              <div class="sub" id="zh-kpi-avis-trend">ce mois</div>
             </div>
             <div class="zh-kpi-chip">
               <div class="lbl">Stock</div>
@@ -1746,9 +1747,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="sub">en stock</div>
             </div>
             <div class="zh-kpi-chip">
-              <div class="lbl">Queue IA</div>
-              <div class="val" id="zh-kpi-queue" style="color:#FF3B45;">—</div>
-              <div class="sub">à valider</div>
+              <div class="lbl">À l'atelier</div>
+              <div class="val" id="zh-kpi-queue">—</div>
+              <div class="sub">dossiers en cours</div>
             </div>
             <div class="zh-kpi-chip">
               <div class="lbl">QualiRépar</div>
@@ -1896,14 +1897,17 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         const lineAmount = c => Number(c.total_jour || c.total || c.montant || c.prix || 0) || 0;
         document.getElementById('zh-kpi-ca').textContent = zhEuro(caisseToday.reduce((s,c)=>s+lineAmount(c),0));
         document.getElementById('zh-kpi-ca-trend').textContent = caisseToday.length + ' transactions';
-        if (avis.length) {
-          const avg = (avis.reduce((s,a)=>s+Number(a.star_rating||0),0)/avis.length).toFixed(1).replace('.',',');
-          document.getElementById('zh-kpi-avis').textContent = avg + ' ★';
-          document.getElementById('zh-kpi-avis-trend').textContent = avis.length + ' avis';
-        } else { document.getElementById('zh-kpi-avis').textContent = '4,7 ★'; }
+        // CA Mois (remplace Avis)
+        var caMois = caisseMonth.reduce((s,c)=>s+Number(c.ttc||0),0);
+        document.getElementById('zh-kpi-avis').textContent = zhEuro(caMois);
+        document.getElementById('zh-kpi-avis-trend').textContent = 'ce mois';
         document.getElementById('zh-kpi-stock').textContent = phones.length;
-        document.getElementById('zh-kpi-queue').textContent = queue.length;
-        if (queue.length) document.getElementById('zh-kpi-queue').style.color = 'var(--zh-accent)';
+        // Dossiers en cours (remplace Queue IA)
+        try{
+          var _src=(window.repDossiers&&window.repDossiers.length)?window.repDossiers:(window.bonsDepot||[]);
+          var _enc=_src.filter(function(d){var st=(d&&d.statut||'').toString().toLowerCase();return st&&st!=='remis'&&st!=='livre'&&st!=='termine'&&st!=='terminé'&&st!=='annule';}).length;
+          document.getElementById('zh-kpi-queue').textContent=_enc;
+        }catch(e){ document.getElementById('zh-kpi-queue').textContent=queue.length||0; }
         const qrMonth = caisseMonth.filter(c=>/qualir[ée]par|bonus/i.test(JSON.stringify(c).toLowerCase())).reduce((s,c)=>s+lineAmount(c),0);
         document.getElementById('zh-kpi-qr').textContent = zhEuro(qrMonth);
         return { queue };
