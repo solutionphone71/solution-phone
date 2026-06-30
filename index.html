@@ -1477,6 +1477,93 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       #page-zahira-home .zh-short-name span { font-size: 11px; color: var(--zh-ink3); }
     </style>
 
+    <!-- ══════════ ZAHIRA · MODE SIRI (global) ══════════ -->
+    <style>
+      #zsiri-launch{position:fixed;right:24px;bottom:24px;width:62px;height:62px;border-radius:50%;border:none;cursor:pointer;z-index:9000;padding:0;background:radial-gradient(circle at 35% 30%,#ff6a6f,#E10600 55%,#7a0008);box-shadow:0 12px 32px -6px rgba(225,6,0,0.6),0 0 0 6px rgba(225,6,0,0.10);animation:zsiri-breathe 3.2s ease-in-out infinite;overflow:hidden;}
+      #zsiri-launch::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 70% 78%,rgba(255,255,255,0.55),transparent 45%);mix-blend-mode:screen;animation:zsiri-spin 6s linear infinite;}
+      #zsiri-launch b{position:relative;color:#fff;font-weight:900;font-size:22px;font-family:'Fraunces',Georgia,serif;line-height:62px;}
+      @keyframes zsiri-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+      @keyframes zsiri-spin{to{transform:rotate(360deg)}}
+      #zsiri-overlay{position:fixed;inset:0;z-index:9001;display:none;align-items:center;justify-content:center;background:rgba(8,8,10,0.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+      #zsiri-overlay.on{display:flex;}
+      .zsiri-card{width:min(92vw,560px);text-align:center;color:#fff;font-family:'Inter',-apple-system,sans-serif;padding:20px;}
+      .zsiri-orb{width:168px;height:168px;margin:0 auto 22px;position:relative;}
+      .zsiri-orb i{position:absolute;inset:0;border-radius:48% 52% 55% 45%/50% 48% 52% 50%;background:conic-gradient(from 0deg,#E10600,#ff5a8a,#ff9a3d,#E10600,#b1000e,#E10600);filter:blur(2px);box-shadow:0 0 70px -6px rgba(225,6,0,0.75);animation:zsiri-morph 5s ease-in-out infinite,zsiri-spin 9s linear infinite;}
+      .zsiri-orb i:nth-child(2){inset:18px;border-radius:52% 48% 45% 55%/48% 52% 50% 50%;background:conic-gradient(from 120deg,#fff,#ff5a8a,#E10600,#fff);opacity:.85;mix-blend-mode:screen;animation:zsiri-morph 4s ease-in-out infinite reverse,zsiri-spin 6s linear infinite reverse;}
+      .zsiri-orb i:nth-child(3){inset:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,rgba(255,255,255,0.12) 60%,transparent);opacity:.9;animation:zsiri-pulse 2.2s ease-in-out infinite;}
+      .zsiri-orb.think i{animation-duration:1.5s,3s;}
+      @keyframes zsiri-morph{0%,100%{border-radius:48% 52% 55% 45%/50% 48% 52% 50%}33%{border-radius:60% 40% 45% 55%/55% 60% 40% 45%}66%{border-radius:42% 58% 60% 40%/45% 42% 58% 55%}}
+      @keyframes zsiri-pulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.14);opacity:.55}}
+      .zsiri-title{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);}
+      .zsiri-reply{font-size:19px;line-height:1.5;font-weight:500;margin:14px auto 22px;min-height:30px;max-height:36vh;overflow:auto;max-width:520px;color:#f4f4f5;}
+      .zsiri-reply strong{color:#ff8088;}
+      .zsiri-bar{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:8px 8px 8px 16px;max-width:520px;margin:0 auto;}
+      .zsiri-bar input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:16px;}
+      .zsiri-bar input::placeholder{color:rgba(255,255,255,0.4);}
+      .zsiri-mic,.zsiri-send{width:42px;height:42px;border-radius:12px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+      .zsiri-mic{background:rgba(255,255,255,0.10);}
+      .zsiri-mic.rec{background:#E10600;animation:zsiri-breathe 1s infinite;}
+      .zsiri-send{background:#E10600;}
+      .zsiri-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px;}
+      .zsiri-chip{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);border-radius:20px;padding:7px 14px;font-size:13px;cursor:pointer;transition:.15s;}
+      .zsiri-chip:hover{background:rgba(225,6,0,0.28);border-color:#E10600;color:#fff;}
+      .zsiri-close{position:fixed;top:22px;right:24px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.10);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    </style>
+    <button id="zsiri-launch" type="button" onclick="zahiraSiriOpen()" aria-label="Demander à Zahira"><b>Z</b></button>
+    <div id="zsiri-overlay" onclick="if(event.target===this)zahiraSiriClose()">
+      <button class="zsiri-close" onclick="zahiraSiriClose()" aria-label="Fermer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="zsiri-card">
+        <div class="zsiri-orb" id="zsiri-orb"><i></i><i></i><i></i></div>
+        <div class="zsiri-title">Zahira · Assistante IA</div>
+        <div class="zsiri-reply" id="zsiri-reply">Bonjour Sébastien. Demandez-moi n'importe quoi sur votre atelier : chiffre du jour, dossiers QualiRépar, stock, idées de posts…</div>
+        <div class="zsiri-bar">
+          <input id="zsiri-input" type="text" placeholder="Demandez à Zahira…" autocomplete="off" onkeydown="if(event.key==='Enter')zahiraSiriAsk()">
+          <button class="zsiri-mic" id="zsiri-mic" onclick="zahiraSiriVoice()" aria-label="Dicter"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
+          <button class="zsiri-send" onclick="zahiraSiriAsk()" aria-label="Envoyer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        </div>
+        <div class="zsiri-chips" id="zsiri-chips">
+          <span class="zsiri-chip" onclick="zahiraSiriAsk('Quel est le chiffre d\'affaires du jour ?')">CA du jour</span>
+          <span class="zsiri-chip" onclick="zahiraSiriAsk('Quels dossiers QualiRépar sont à vérifier ?')">Dossiers QualiRépar</span>
+          <span class="zsiri-chip" onclick="zahiraSiriAsk('Donne-moi 3 idées de posts pour cette semaine')">Idées de posts</span>
+          <span class="zsiri-chip" onclick="zahiraSiriAsk('Fais le bilan de l\'équipe IA aujourd\'hui')">Bilan équipe</span>
+        </div>
+      </div>
+    </div>
+    <script>
+    (function(){
+      function $(id){return document.getElementById(id);}
+      window.zahiraSiriOpen=function(){ var o=$('zsiri-overlay'); if(o){o.classList.add('on'); setTimeout(function(){var i=$('zsiri-input'); if(i)i.focus();},90);} };
+      window.zahiraSiriClose=function(){ var o=$('zsiri-overlay'); if(o)o.classList.remove('on'); };
+      window.zahiraSiriAsk=async function(txt){
+        var inp=$('zsiri-input'); var msg=(typeof txt==='string'?txt:(inp?inp.value:'')).trim();
+        if(!msg) return; if(inp) inp.value='';
+        var reply=$('zsiri-reply'), orb=$('zsiri-orb');
+        if(orb) orb.classList.add('think');
+        if(reply) reply.innerHTML='<span style="opacity:.55">Zahira réfléchit…</span>';
+        try{
+          var r=await fetch('/api/brain/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,history:[]})});
+          var data=await r.json();
+          var t=(data&&data.reply)?data.reply:((data&&data.error)||'Pas de réponse.');
+          t=String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+          if(reply) reply.innerHTML=t;
+        }catch(e){ if(reply) reply.textContent='Erreur réseau — réessayez.'; }
+        if(orb) orb.classList.remove('think');
+      };
+      window.zahiraSiriVoice=function(){
+        var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+        if(!SR){ alert('La dictée vocale n\'est pas disponible sur ce navigateur (essayez Chrome).'); return; }
+        var mic=$('zsiri-mic'); var rec=new SR(); rec.lang='fr-FR'; rec.interimResults=false; rec.maxAlternatives=1;
+        if(mic) mic.classList.add('rec');
+        rec.onresult=function(e){ var t=e.results[0][0].transcript; var i=$('zsiri-input'); if(i)i.value=t; zahiraSiriAsk(t); };
+        rec.onend=function(){ if(mic) mic.classList.remove('rec'); };
+        rec.onerror=function(){ if(mic) mic.classList.remove('rec'); };
+        try{ rec.start(); }catch(e){}
+      };
+      document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var o=$('zsiri-overlay'); if(o&&o.classList.contains('on')) zahiraSiriClose(); } });
+    })();
+    </script>
+    <!-- ══════════ /ZAHIRA SIRI ══════════ -->
+
     <div class="page active" id="page-zahira-home">
 
       <!-- ⚡ LANCEUR CAISSE RAPIDE (accueil équipe) -->
