@@ -8578,6 +8578,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <div style="display:flex;gap:10px;">
               <div style="display:flex;gap:8px;">
                 <button class="btn" onclick="repImprimerDepot()" style="border-color:var(--blue);color:var(--blue);">📋 Devis A4</button>
+                <button class="btn" onclick="envoyerDevisEmail()" style="border-color:#8b5cf6;color:#8b5cf6;">📧 Devis par mail</button>
                 <button class="btn" onclick="repImprimerTicket()" style="border-color:var(--green);color:var(--green);">🎫 Ticket Epson</button>
               </div>
               <button class="btn btn-primary" onclick="repStep3Next()" style="padding:12px 28px;font-size:15px;">Suivant → Facture</button>
@@ -11836,6 +11837,52 @@ async function repAutoEnvoyerFactureEmail(d){
     // Pas d'email valide → on ouvre le popup pour saisir/choisir
     if(typeof repShowEnvoiFacture==='function') repShowEnvoiFacture(d);
   }
+}
+
+// ── Envoi du DEVIS par email au client (étape Devis) ──
+async function envoyerDevisEmail(){
+  var d = (typeof repDossierCourant!=='undefined') ? repDossierCourant : null;
+  if(!d){ showNotif&&showNotif('Aucun dossier ouvert','error'); return; }
+  var c = d.client||{}; var a = d.appareil||{};
+  var email = (c.email||(document.getElementById('rep-email')||{value:''}).value||'').trim();
+  if(!email || !/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email du client manquant ou invalide (étape Client)','error'); return; }
+  var key = localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
+  if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  var montant = parseFloat(d.devis || (document.getElementById('dep-devis')||{value:0}).value)||0;
+  var panne = d.panne || (document.getElementById('dep-panne')||{value:''}).value || '';
+  var bonusQR = !!((document.getElementById('rep-qr-actif')||{checked:false}).checked) || !!d.bonusQR;
+  var _piec = !!((document.getElementById('dep-piec')&&document.getElementById('dep-piec').checked) || d.piec);
+  var _bonus = _piec ? 30 : 25;
+  showNotif&&showNotif('📧 Envoi du devis à '+email+'…','info');
+  var html = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
+    '<div style="background:#2563eb;padding:20px;text-align:center;">'+
+      '<h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+      '<p style="color:#dbeafe;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p>'+
+    '</div>'+
+    '<div style="padding:24px;">'+
+      '<p>Bonjour '+(c.prenom||c.nom||'')+',</p>'+
+      '<p>Voici votre devis pour la réparation de votre appareil :</p>'+
+      '<div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #2563eb;">'+
+        '<b>Appareil :</b> '+(a.marque||'')+' '+(a.modele||'')+(a.imei?'<br><b>IMEI :</b> '+a.imei:'')+'<br>'+
+        '<b>Réparation :</b> '+(panne||'—')+'<br>'+
+        '<b style="font-size:18px;color:#2563eb;">Montant : '+montant.toFixed(2)+' € TTC</b>'+
+        (bonusQR?'<br><span style="color:#16a34a;font-size:12px;">✅ Bonus QualiRépar de '+_bonus+'€ déjà appliqué</span>':'')+
+      '</div>'+
+      '<p style="color:#666;font-size:13px;">Ce devis est valable 30 jours. Pour l\'accepter, répondez à cet email ou passez en boutique.</p>'+
+      '<p style="color:#666;font-size:12px;margin-top:16px;">À bientôt,<br><b>L\'équipe Solution Phone</b></p>'+
+    '</div>'+
+  '</div>';
+  try{
+    var _att=[];
+    try{ if(d.signature && typeof repDevisSignePDFBase64==='function'){ var _p=await repDevisSignePDFBase64(d); if(_p) _att=[{content:_p,name:'Devis_'+(d.numero||'')+'.pdf',type:'application/pdf'}]; } }catch(ep){ console.warn('Devis PDF:',ep); }
+    var sender = localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name   = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl = { sender:{name:name,email:sender}, to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}], subject:'Votre devis Solution Phone — '+(a.marque||'')+' '+(a.modele||''), htmlContent:html };
+    if(_att.length) pl.attachment=_att;
+    var res = await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok){ showNotif&&showNotif('✅ Devis envoyé par email à '+email,'success'); }
+    else { var er=null; try{er=await res.json();}catch(_){} showNotif&&showNotif('❌ Devis non envoyé'+(er&&er.message?' : '+er.message:''),'error'); }
+  }catch(e){ showNotif&&showNotif('⚠️ Erreur envoi devis','error'); }
 }
 
 // ── Envoi SMS facture ──
