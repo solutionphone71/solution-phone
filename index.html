@@ -8629,57 +8629,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                     <div class="form-group"><label>Prix TTC (€) *</label>
                       <input type="number" inputmode="decimal" id="r-prix" step="0.01" placeholder="ex: 89.90" oninput="repUpdateFacturePreview();"></div>
-                    <div class="form-group">
-                      <label style="font-weight:800;font-size:14px;color:var(--green);">💳 MODE DE PAIEMENT *</label>
-                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
-                        <button type="button" id="btn-mode-cb" onclick="repSetMode('CB')"
-                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid var(--green);background:var(--green);color:#fff;font-size:16px;font-weight:800;cursor:pointer;">
-                          💳 CB</button>
-                        <button type="button" id="btn-mode-especes" onclick="repSetMode('ESPECES')"
-                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
-                          💵 Espèces</button>
-                        <button type="button" id="btn-mode-cheque" onclick="repSetMode('CHEQUE')"
-                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
-                          📄 Chèque</button>
-                        <button type="button" id="btn-mode-virement" onclick="repSetMode('VIREMENT')"
-                          style="flex:1;padding:14px 8px;border-radius:10px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:16px;font-weight:800;cursor:pointer;">
-                          🏦 Virement</button>
-                      </div>
-                      <input type="hidden" id="r-mode" value="CB">
-                      <!-- Paiement séparé -->
-                      <div style="margin-top:8px;">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--text-muted);">
-                          <input type="checkbox" id="r-split-toggle" onchange="repToggleSplit()" style="width:16px;height:16px;accent-color:#8b5cf6;">
-                          <span>✂️ <b>Paiement séparé</b> (2 moyens de paiement)</span>
-                        </label>
-                      </div>
-                      <div id="r-split-wrap" style="display:none;margin-top:8px;background:rgba(139,92,246,0.06);border:1.5px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;">
-                        <div style="font-size:12px;font-weight:700;color:#8b5cf6;margin-bottom:8px;">✂️ Répartition du paiement</div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                          <div>
-                            <label style="font-size:11px;font-weight:700;">1er paiement</label>
-                            <select id="r-split-mode1" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
-                              <option value="CB">💳 CB</option><option value="ESPECES">💵 Espèces</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
-                            </select>
-                            <input type="number" id="r-split-amount1" step="0.01" placeholder="Montant €" oninput="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;">
-                          </div>
-                          <div>
-                            <label style="font-size:11px;font-weight:700;">2ème paiement</label>
-                            <select id="r-split-mode2" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
-                              <option value="ESPECES">💵 Espèces</option><option value="CB">💳 CB</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
-                            </select>
-                            <input type="number" id="r-split-amount2" step="0.01" placeholder="Reste €" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:rgba(0,0,0,0.04);" readonly>
-                          </div>
-                        </div>
-                        <div id="r-split-info" style="margin-top:6px;font-size:11px;color:var(--text-muted);"></div>
-                      </div>
-                    </div>
+                    <div class="form-group"><label>Garantie</label>
+                      <select id="r-garantie">
+                        <option value="6 mois" selected>6 mois (QualiRépar)</option>
+                        <option value="3 mois">3 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
+                      </select></div>
                   </div>
-                  <div class="form-group"><label>Garantie</label>
-                    <select id="r-garantie">
-                      <option value="6 mois" selected>6 mois (QualiRépar)</option>
-                      <option value="3 mois">3 mois</option><option value="1 an">1 an</option><option value="Aucune">Aucune</option>
-                    </select></div>
                 </div>
               </div>
 
@@ -8789,7 +8744,44 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 </div>
               </div>
 
-              <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:18px;font-size:16px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;">✅ Valider le paiement &amp; Générer la facture</button>
+              <!-- MODE DE PAIEMENT — gros boutons, à la fin (juste avant Valider) pour éviter les erreurs -->
+              <div style="border:2px solid var(--green);border-radius:16px;padding:18px;margin-bottom:14px;background:rgba(52,211,153,0.05);">
+                <label style="font-weight:900;font-size:18px;color:var(--green);display:block;text-align:center;margin-bottom:14px;">💳 MODE DE PAIEMENT</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <button type="button" id="btn-mode-cb" onclick="repSetMode('CB')" style="padding:24px 8px;border-radius:14px;border:2px solid var(--green);background:var(--green);color:#fff;font-size:21px;font-weight:900;cursor:pointer;">💳 CB</button>
+                  <button type="button" id="btn-mode-especes" onclick="repSetMode('ESPECES')" style="padding:24px 8px;border-radius:14px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:21px;font-weight:900;cursor:pointer;">💵 Espèces</button>
+                  <button type="button" id="btn-mode-cheque" onclick="repSetMode('CHEQUE')" style="padding:20px 8px;border-radius:14px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:18px;font-weight:900;cursor:pointer;">📄 Chèque</button>
+                  <button type="button" id="btn-mode-virement" onclick="repSetMode('VIREMENT')" style="padding:20px 8px;border-radius:14px;border:2px solid #ddd;background:#f8fafc;color:var(--text);font-size:18px;font-weight:900;cursor:pointer;">🏦 Virement</button>
+                </div>
+                <input type="hidden" id="r-mode" value="CB">
+                <div style="margin-top:12px;">
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-muted);">
+                    <input type="checkbox" id="r-split-toggle" onchange="repToggleSplit()" style="width:18px;height:18px;accent-color:#8b5cf6;">
+                    <span>✂️ <b>Paiement séparé</b> (2 moyens)</span>
+                  </label>
+                </div>
+                <div id="r-split-wrap" style="display:none;margin-top:8px;background:rgba(139,92,246,0.06);border:1.5px solid rgba(139,92,246,0.25);border-radius:10px;padding:12px;">
+                  <div style="font-size:12px;font-weight:700;color:#8b5cf6;margin-bottom:8px;">✂️ Répartition du paiement</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div>
+                      <label style="font-size:11px;font-weight:700;">1er paiement</label>
+                      <select id="r-split-mode1" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+                        <option value="CB">💳 CB</option><option value="ESPECES">💵 Espèces</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+                      </select>
+                      <input type="number" id="r-split-amount1" step="0.01" placeholder="Montant €" oninput="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;">
+                    </div>
+                    <div>
+                      <label style="font-size:11px;font-weight:700;">2ème paiement</label>
+                      <select id="r-split-mode2" onchange="repUpdateSplitCalc()" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:4px;">
+                        <option value="ESPECES">💵 Espèces</option><option value="CB">💳 CB</option><option value="CHEQUE">📄 Chèque</option><option value="VIREMENT">🏦 Virement</option>
+                      </select>
+                      <input type="number" id="r-split-amount2" step="0.01" placeholder="Reste €" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;background:rgba(0,0,0,0.04);" readonly>
+                    </div>
+                  </div>
+                  <div id="r-split-info" style="margin-top:6px;font-size:11px;color:var(--text-muted);"></div>
+                </div>
+              </div>
+              <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:24px;font-size:19px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;border-radius:14px;">✅ VALIDER LE PAIEMENT &amp; GÉNÉRER LA FACTURE</button>
             <div id="div-envoi-facture-cloture" style="display:none;margin-top:10px;"></div>
             </div>
 
