@@ -519,6 +519,34 @@ html,body{height:100%;width:100%;overflow:hidden;background:#f5f5f7;font-family:
     </div>
   </div>
 
+  <!-- ─── NOUVEAU CLIENT (écran unique, accès direct) ─── -->
+  <div class="scr" id="scr-nouveau">
+    <div class="scr-title">Bienvenue 👋</div>
+    <div class="scr-sub">Renseignez vos coordonnées — nous gardons votre fiche pour vos prochaines visites</div>
+    <div class="civ-row">
+      <button class="civ-btn" id="ncl-civ-m" onclick="setCivNcl('M.')">👨 M.</button>
+      <button class="civ-btn" id="ncl-civ-mme" onclick="setCivNcl('Mme')">👩 Mme</button>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Nom *</label><input class="inp" type="text" id="ncl-nom" placeholder="Dupont" autocomplete="family-name" oninput="checkNcl()"></div>
+      <div class="fld"><label class="lbl">Prénom *</label><input class="inp" type="text" id="ncl-prenom" placeholder="Jean" autocomplete="given-name" oninput="checkNcl()"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Société <span style="color:var(--gray2);font-weight:400;">(optionnel)</span></label><input class="inp" type="text" id="ncl-societe" placeholder="Nom de l'entreprise"></div>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Téléphone *</label><input class="inp" type="tel" id="ncl-tel" placeholder="06 XX XX XX XX" inputmode="tel" autocomplete="tel" oninput="checkNcl()"></div>
+      <div class="fld"><label class="lbl">Email *</label><input class="inp" type="email" id="ncl-email" placeholder="exemple@gmail.com" inputmode="email" autocomplete="email" oninput="checkNcl()"></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="lbl">Adresse <span style="color:var(--gray2);font-weight:400;">(optionnel)</span></label><input class="inp" type="text" id="ncl-adresse" placeholder="12 rue de la Paix"></div>
+    </div>
+    <div class="row c2">
+      <div class="fld"><label class="lbl">Code postal</label><input class="inp" type="text" id="ncl-cp" placeholder="71000" inputmode="numeric"></div>
+      <div class="fld"><label class="lbl">Ville</label><input class="inp" type="text" id="ncl-ville" placeholder="Mâcon"></div>
+    </div>
+  </div>
+
   <!-- ─── STEP 2A : IDENTITÉ RÉPARATION ─── -->
   <div class="scr" id="scr-id-rep">
     <div class="scr-title">Vos coordonnées</div>
@@ -1691,9 +1719,10 @@ const S = {
 const SCREENS_REP = ['scr-flux','scr-id-rep','scr-rep','scr-sig'];
 const SCREENS_ACC = ['scr-flux','scr-id-acc','scr-acc','scr-prix'];
 const SCREENS_CMD = ['scr-flux','scr-id-cmd','scr-cmd-detail','scr-cmd-confirm'];
+const SCREENS_NOUVEAU = ['scr-nouveau'];
 let curStep = 0; // index dans le tableau actif
 
-function activeStack(){ return S.flux === 'accessoire' ? SCREENS_ACC : S.flux === 'commande' ? SCREENS_CMD : SCREENS_REP; }
+function activeStack(){ return S.flux === 'nouveau' ? SCREENS_NOUVEAU : S.flux === 'accessoire' ? SCREENS_ACC : S.flux === 'commande' ? SCREENS_CMD : SCREENS_REP; }
 
 /* ══════════════════════════════════════
    SCREENSAVER — Roue animée + QR
@@ -1710,6 +1739,7 @@ function startApp() {
   const ss = document.getElementById('ss');
   ss.classList.add('out');
   setTimeout(() => { ss.style.display='none'; document.getElementById('app').style.display='flex'; }, 500);
+  S.flux = 'nouveau';   // accès direct au formulaire Nouveau client (plus de choix de parcours)
   goStep(0);
   resetSsTimer();
 }
@@ -1753,8 +1783,10 @@ function goStep(idx) {
     dot.className = 'dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
   });
 
-  // Header sub
-  document.getElementById('hdr-step').textContent = 'Étape '+(idx+1)+' sur '+stack.length;
+  // Header sub + points d'étapes (cachés si écran unique)
+  var dotsEl = document.getElementById('dots');
+  if (dotsEl) dotsEl.style.display = stack.length > 1 ? 'flex' : 'none';
+  document.getElementById('hdr-step').textContent = stack.length > 1 ? ('Étape '+(idx+1)+' sur '+stack.length) : 'Nouveau client';
 
   // Footer
   updateFooter(idx);
@@ -1780,6 +1812,13 @@ function updateFooter(idx) {
 
   // Screens where footer is managed differently
   if (id === 'scr-flux') { footer.classList.remove('show'); return; }
+  if (id === 'scr-nouveau') {
+    footer.classList.add('show');
+    btn.textContent = '✅ Valider mes informations';
+    btn.onclick = () => soumettreNouveauClient();
+    btn.disabled = !nclValid();
+    return;
+  }
   if (id === 'scr-sig') {
     footer.classList.add('show');
     btn.textContent = '✅ Valider le dépôt';
@@ -1974,6 +2013,84 @@ function buildRecapRep() {
   document.getElementById('recap-rep').innerHTML = rows.map(([k,v]) =>
     `<div class="recap-row"><span class="recap-k">${k}</span><span class="recap-v">${v}</span></div>`
   ).join('');
+}
+
+/* ══════════════════════════════════════
+   NOUVEAU CLIENT — saisie directe → table clients
+══════════════════════════════════════ */
+function setCivNcl(v){
+  S.civNcl = v;
+  var m=document.getElementById('ncl-civ-m'), mme=document.getElementById('ncl-civ-mme');
+  if(m)   m.classList.toggle('sel', v==='M.');
+  if(mme) mme.classList.toggle('sel', v==='Mme');
+}
+function nclValid(){
+  var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
+  return !!(g('ncl-nom') && g('ncl-prenom') && g('ncl-tel') && /.+@.+\..+/.test(g('ncl-email')));
+}
+function checkNcl(){
+  var btn=document.getElementById('btn-next');
+  if(btn) btn.disabled = !nclValid();
+  return nclValid();
+}
+async function soumettreNouveauClient(){
+  var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
+  var civ=g('ncl-civ')||S.civNcl||'', nom=g('ncl-nom'), prenom=g('ncl-prenom'), soc=g('ncl-societe'),
+      tel=g('ncl-tel'), email=g('ncl-email'), adr=g('ncl-adresse'), cp=g('ncl-cp'), ville=g('ncl-ville');
+  civ = S.civNcl||'';
+  if(!nom||!prenom||!tel||!/.+@.+\..+/.test(email)){
+    alert('Merci de remplir Nom, Prénom, Téléphone et un Email valide.'); return;
+  }
+  showLoading();
+  var notes = (soc ? 'Société: '+soc+' · ' : '') + 'Saisi par le client (tablette)';
+  var rec = { civilite:civ, nom:nom, prenom:prenom, tel:tel, email:email,
+              adresse:adr, cp:cp, ville:ville, notes:notes, date_creation:new Date().toISOString() };
+  try{
+    // Anti-doublon par téléphone : PATCH si existe, sinon POST
+    var q = '?tel=eq.'+encodeURIComponent(tel)+'&limit=1';
+    var existing = [];
+    try {
+      var rr = await fetch('/api/supabase?table=clients&query='+encodeURIComponent(q));
+      existing = await rr.json();
+    } catch(e){ existing = []; }
+    if(existing && existing.length){
+      await fetch('/api/supabase?table=clients&query='+encodeURIComponent('?id=eq.'+existing[0].id), {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify(rec)
+      });
+    } else {
+      await supaPost('clients', rec);
+    }
+    showSuccessNouveau(prenom);
+  }catch(e){
+    console.error('Erreur soumettreNouveauClient:', e);
+    goStep(curStep);
+    alert('Erreur réseau : ' + (e.message||e) + '\nVeuillez réessayer.');
+  }
+}
+function showSuccessNouveau(prenom){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on','vis');});
+  document.getElementById('footer').classList.remove('show');
+  var titleEl = document.querySelector('#scr-success .ok-title');
+  if(titleEl) titleEl.textContent = 'Merci '+(prenom||'')+' !';
+  var numWrap = document.querySelector('#scr-success .ok-num');
+  if(numWrap) numWrap.style.display = 'none';
+  var rouletteUrl = 'https://app.solution-phone.fr/roulette.html';
+  var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&bgcolor=ffffff&color=1a1a1a&format=png&data='+encodeURIComponent(rouletteUrl);
+  var sub = document.getElementById('ok-sub');
+  if(sub) sub.innerHTML =
+    'Vos informations sont bien enregistrées.'+
+    '<div style="margin:22px auto 0;max-width:360px;border:2px dashed #f59e0b;border-radius:16px;padding:20px;background:#fffbeb;">'+
+      '<div style="font-size:21px;font-weight:900;color:#b45309;">🎁 Tentez votre chance !</div>'+
+      '<div style="font-size:14px;color:#92400e;margin:6px 0 14px;line-height:1.5;">Scannez ce QR code avec l\'appareil photo de votre téléphone pour <b>jouer à la roulette</b> et nous laisser un avis ⭐</div>'+
+      '<img src="'+qrSrc+'" alt="QR roulette" style="width:200px;height:200px;border-radius:10px;border:4px solid #fff;box-shadow:0 4px 14px rgba(0,0,0,0.15);">'+
+      '<div style="font-size:11px;color:#b45309;margin-top:8px;">Ouvrez l\'appareil photo → visez le QR code → touchez le lien</div>'+
+    '</div>';
+  var rb = document.querySelector('#scr-success .btn-restart');
+  if(rb) rb.textContent = '✅ Client suivant';
+  var s = document.getElementById('scr-success');
+  s.classList.add('on'); requestAnimationFrame(function(){requestAnimationFrame(function(){s.classList.add('vis');});});
 }
 
 async function soumettre() {
@@ -2265,7 +2382,10 @@ function showSuccess(num, sub) {
 
 function restart(silent) {
   // Reset state
-  Object.assign(S,{flux:'',civ:'',nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',marque:'',modele:'',panne:'',prix:'0',dejaPaye:false,sigData:null,consent:false});
+  Object.assign(S,{flux:'nouveau',civ:'',civNcl:'',nom:'',prenom:'',tel:'',email:'',adresse:'',cp:'',ville:'',marque:'',modele:'',panne:'',prix:'0',dejaPaye:false,sigData:null,consent:false});
+  // Restaurer l'écran de succès (modifié par showSuccessNouveau)
+  var _numWrap=document.querySelector('#scr-success .ok-num'); if(_numWrap)_numWrap.style.display='';
+  var _okTitle=document.querySelector('#scr-success .ok-title'); if(_okTitle)_okTitle.textContent='Merci !';
   // Reset fields
   ['client-search-inp','client-search-inp-acc','client-search-inp-cmd'].forEach(function(id){
     var el=document.getElementById(id);if(el)el.value='';
@@ -2278,6 +2398,7 @@ function restart(silent) {
   });
   ['r-nom','r-prenom','r-tel','r-email','r-adresse','r-cp','r-ville','r-modele',
    'a-nom','a-prenom','a-tel','a-modele','autre-panne-inp','autre-acc-inp',
+   'ncl-nom','ncl-prenom','ncl-societe','ncl-tel','ncl-email','ncl-adresse','ncl-cp','ncl-ville',
    'cmd-nom-c','cmd-prenom-c','cmd-tel-c','cmd-email-c','cmd-modele-c','autre-cmd-inp'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
