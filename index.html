@@ -15193,7 +15193,19 @@ document.addEventListener('click', function(e){
 
 function renderFactures(){
   buildFactPhoneCache();
-  document.getElementById('factures-table').innerHTML=factures.map(function(f){var p=phones.find(function(x){return x.id===f.phoneId;});return'<tr><td><b>'+(f.numero||'')+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(f.clientNom||'—')+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmail('+f.id+')">📧</button></td></tr>';}).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune facture</td></tr>';
+  document.getElementById('factures-table').innerHTML=factures.map(function(f){var p=phones.find(function(x){return x.id===f.phoneId;});return'<tr><td><b>'+(f.numero||'')+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(f.clientNom||'—')+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button><button class="btn btn-sm btn-primary" onclick="envoyerEmail('+f.id+')">📧</button><button class="btn btn-sm" onclick="supprimerFacture('+f.id+')" style="border-color:#dc2626;color:#dc2626;" title="Supprimer">🗑️</button></td></tr>';}).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune facture</td></tr>';
+}
+function supprimerFacture(id){
+  var f=(window.factures||[]).find(function(x){return String(x.id)===String(id);});
+  var lbl=f?((f.numero||'')+' · '+(f.ttc||0)+' €'):'';
+  if(!confirm('Supprimer définitivement la facture '+lbl+' ?\n\n⚠️ Une facture certifiée ne se supprime normalement pas (un avoir est préférable). À n\'utiliser qu\'en cas d\'erreur de saisie / doublon.')) return;
+  var idx=(window.factures||[]).findIndex(function(x){return String(x.id)===String(id);});
+  if(idx>=0) factures.splice(idx,1);
+  if(document.getElementById('factures-table')) renderFactures();
+  if(typeof supabaseReady!=='undefined' && supabaseReady){
+    try{ supaFetch('factures','DELETE',null,'?id=eq.'+id).catch(function(e){console.warn('del facture',e);}); }catch(e){}
+  }
+  if(typeof showNotif==='function') showNotif('Facture '+(f?f.numero||'':'')+' supprimée','success');
 }
 
 // ============================================================
