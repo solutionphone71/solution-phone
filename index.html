@@ -21464,6 +21464,17 @@ function naReset(){
   if(card) card.style.display='none';
 }
 
+function naSupprimerVente(id){
+  var v=(naVentes||[]).find(function(x){return String(x.id)===String(id);});
+  if(!confirm('Supprimer cette vente '+(v?((v.numero||'')+' · '+(Number(v.prix)||0)+' €'):'')+' ?\n\nÀ utiliser en cas d\'erreur de saisie ou de doublon.')) return;
+  var idx=(naVentes||[]).findIndex(function(x){return String(x.id)===String(id);});
+  if(idx>=0) naVentes.splice(idx,1);
+  if(typeof naRender==='function') naRender();
+  if(typeof supabaseReady!=='undefined' && supabaseReady){ try{ supaFetch('ventes_neufs_access','DELETE',null,'?id=eq.'+id).catch(function(e){console.warn('del vente',e);}); }catch(e){} }
+  try{ var nv=JSON.parse(localStorage.getItem('na_ventes')||'[]').filter(function(x){return String(x.id)!==String(id);}); localStorage.setItem('na_ventes',JSON.stringify(nv)); }catch(e){}
+  if(typeof renderCaisse==='function' && document.getElementById('caisse-table')) renderCaisse();
+  if(typeof showNotif==='function') showNotif('Vente supprimée','success');
+}
 function naRender(){
   var search = (document.getElementById('na-search')||{value:''}).value.toLowerCase();
   var filtered = naVentes.filter(function(v){
@@ -21481,7 +21492,7 @@ function naRender(){
       '<td>'+v.clientNom+'</td>'+
       '<td><b>'+v.prix.toFixed(2)+' €</b></td>'+
       '<td>'+v.mode+'</td>'+
-      '<td><button class="btn btn-sm" onclick="naReimprimer('+v.id+')">🖨️</button></td>'+
+      '<td style="white-space:nowrap;"><button class="btn btn-sm" onclick="naReimprimer('+v.id+')">🖨️</button> <button class="btn btn-sm" onclick="naSupprimerVente('+v.id+')" style="color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer">🗑️</button></td>'+
       '</tr>';
   }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:16px;">Aucune vente</td></tr>';
   var total = filtered.reduce(function(s,v){return s+v.prix;},0);
