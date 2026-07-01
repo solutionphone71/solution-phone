@@ -16239,6 +16239,7 @@ function renderSalList() {
       '</div>' +
       '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">' +
         '<button class="btn btn-sm btn-primary" onclick="ouvrirModalPaie(' + i + ')">💰 Fiche de paie ' + (mois||'') + (paieValide?' ✅':'') + '</button>' +
+        '<button class="btn btn-sm" onclick="voirCongesAnnuel(' + i + ')" style="border-color:#5856D6;color:#5856D6;">📅 Congés de l\'année</button>' +
         '<button class="btn btn-sm" onclick="ouvrirModalSalarie(' + i + ')" style="border-color:var(--blue);color:var(--blue);">✏️ Modifier</button>' +
         '<button class="btn btn-sm" onclick="supprimerSalarie(' + i + ')" style="border-color:var(--red);color:var(--red);">🗑️</button>' +
       '</div>' +
@@ -16977,6 +16978,98 @@ async function supprimerCP(salIdx, cpIdx) {
   s.cpHistorique.splice(cpIdx, 1);
   await saveSalariesToSupabase();
   if (cpSupprime) syncCPVersPaie(s, cpSupprime.date.substring(0,7));
+}
+
+// ── VUE ANNUELLE DES CONGÉS PAR SALARIÉ ──
+var _caSalIdx=null, _caPeriodeAn=null;
+function voirCongesAnnuel(salIdx){
+  _caSalIdx=salIdx;
+  _caPeriodeAn = (typeof getDebutPeriodeRefCP==='function') ? getDebutPeriodeRefCP().getFullYear() : new Date().getFullYear();
+  _renderCongesAnnuel();
+}
+function _caChangePeriode(delta){ _caPeriodeAn += delta; _renderCongesAnnuel(); }
+function fermerCongesAnnuel(){ var e=document.getElementById('modal-conges-annuel'); if(e) e.remove(); }
+async function _caSupprimer(idx){
+  if(_caSalIdx==null) return;
+  if(!confirm('Supprimer ce jour de congé ?')) return;
+  try{ await supprimerCP(_caSalIdx, idx); }catch(e){ console.warn(e); }
+  try{ if(typeof renderSalaries==='function') renderSalaries(); }catch(e){}
+  _renderCongesAnnuel();
+}
+function _renderCongesAnnuel(){
+  var s=salaries[_caSalIdx]; if(!s) return;
+  var an=_caPeriodeAn;
+  var debut=new Date(an,5,1,0,0,0);          // 01/06/an
+  var fin=new Date(an+1,4,31,23,59,59);       // 31/05/(an+1)
+  var moisNoms=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var hist=(s.cpHistorique||[]).map(function(cp,idx){ return Object.assign({}, cp, {_idx:idx}); })
+    .filter(function(cp){ if(!cp.date) return false; var d=new Date(cp.date); return d>=debut && d<=fin; })
+    .sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var totalPris=hist.reduce(function(a,c){ return a+(parseFloat(c.jours)||0); },0);
+  // Acquis sur la période (via le grand livre)
+  var acquisPeriode=0;
+  try{
+    if(typeof genererLedgerCP==='function'){
+      var ledger=genererLedgerCP(s, fin);
+      ledger.forEach(function(l){ var p=l.mois.split('-'); var d=new Date(parseInt(p[0]),parseInt(p[1])-1,1); if(d>=debut && d<=fin) acquisPeriode+=(l.acquis||0); });
+    }
+  }catch(e){}
+  var soldeActuel = (typeof soldeCPAuto==='function') ? soldeCPAuto(s, new Date()) : null;
+  // Groupement par mois
+  var groups={}; hist.forEach(function(cp){ var ym=cp.date.substring(0,7); (groups[ym]=groups[ym]||[]).push(cp); });
+  var ymKeys=Object.keys(groups).sort();
+  var body;
+  if(!hist.length){
+    body='<div style="text-align:center;color:var(--text-muted);padding:28px;">Aucun jour de congé pris sur cette période.</div>';
+  } else {
+    body=ymKeys.map(function(ym){
+      var p=ym.split('-'); var titre=moisNoms[parseInt(p[1])-1]+' '+p[0];
+      var sub=groups[ym].reduce(function(a,c){ return a+(parseFloat(c.jours)||0); },0);
+      return '<div style="margin-bottom:14px;">'+
+        '<div style="font-weight:800;font-size:13px;color:#5856D6;margin-bottom:6px;">'+titre+' <span style="color:#111;">— '+sub+' j</span></div>'+
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
+        groups[ym].map(function(cp){
+          var d=new Date(cp.date); var jn=jours[d.getDay()];
+          return '<tr style="border-bottom:1px solid var(--border);">'+
+            '<td style="padding:6px 8px;white-space:nowrap;">'+jn+' '+formatDateFR(cp.date)+'</td>'+
+            '<td style="padding:6px 8px;font-weight:700;white-space:nowrap;">'+(parseFloat(cp.jours)||0)+' j</td>'+
+            '<td style="padding:6px 8px;color:var(--text-muted);">'+(cp.motif||'')+'</td>'+
+            '<td style="padding:6px 8px;text-align:right;"><button class="btn btn-sm" onclick="_caSupprimer('+cp._idx+')" style="border-color:var(--red);color:var(--red);padding:2px 8px;" title="Supprimer">🗑️</button></td>'+
+          '</tr>';
+        }).join('')+'</table>'+
+      '</div>';
+    }).join('');
+  }
+  var stat=function(lbl,val,col){ return '<div style="flex:1;min-width:120px;background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:12px 14px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div><div style="font-size:22px;font-weight:900;color:'+col+';margin-top:2px;">'+val+'</div></div>'; };
+  var html=
+    '<div style="background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,0.35);">'+
+      '<div style="position:sticky;top:0;background:#fff;padding:18px 20px 10px;border-bottom:1px solid var(--border);">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'+
+          '<div><div style="font-size:19px;font-weight:900;">📅 Congés — '+s.prenom+' '+(s.nom||'').toUpperCase()+'</div>'+
+          '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Période de référence</div></div>'+
+          '<button onclick="fermerCongesAnnuel()" style="background:#f1f5f9;border:none;border-radius:10px;width:34px;height:34px;font-size:18px;cursor:pointer;">✕</button>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0;">'+
+          '<button onclick="_caChangePeriode(-1)" style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800;">‹</button>'+
+          '<div style="font-weight:800;font-size:14px;">01/06/'+an+' → 31/05/'+(an+1)+'</div>'+
+          '<button onclick="_caChangePeriode(1)" style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800;">›</button>'+
+        '</div>'+
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;">'+
+          stat('Jours pris', totalPris+' j', '#5856D6')+
+          stat('Acquis période', (Math.round(acquisPeriode*100)/100)+' j', '#16a34a')+
+          (soldeActuel!=null?stat('Solde actuel', (Math.round(soldeActuel*100)/100)+' j', '#E10600'):'')+
+        '</div>'+
+      '</div>'+
+      '<div style="padding:16px 20px 22px;">'+body+'</div>'+
+    '</div>';
+  fermerCongesAnnuel();
+  var ov=document.createElement('div');
+  ov.id='modal-conges-annuel';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML=html;
+  ov.addEventListener('click', function(e){ if(e.target===ov) fermerCongesAnnuel(); });
+  document.body.appendChild(ov);
 }
 
 // Synchronise le cumul CP du mois vers la fiche de paie
