@@ -10735,6 +10735,9 @@ function showPage(id,el){
   if(id==='devis'){ if(typeof devisLoad==='function') devisLoad(); else renderDevis(); if(typeof attestLoad==='function') attestLoad(); }    if(id==='clients'){
     loadAllClients().then(function(){ renderClients(); });
     try{ if(typeof devisLoad==='function') devisLoad(); }catch(e){}
+    try{ if(typeof attestLoad==='function') attestLoad(); }catch(e){}
+    try{ if(typeof atelierLoad==='function') atelierLoad(); }catch(e){}
+    try{ if(typeof naLoad==='function' && (!window.naVentes||!window.naVentes.length)) naLoad(); }catch(e){}
     try{ if(typeof repLoadDossiers==='function' && (!window.repDossiers||!window.repDossiers.length)) repLoadDossiers(); }catch(e){}
   }
   if(id==='instagram'){renderInstagram();}
@@ -13674,9 +13677,31 @@ function showClientDetail(id) {
     if(cTel && dtel && dtel===cTel) return true;
     return d.clientNom && d.clientNom.toLowerCase().includes(cNom);
   });
+  // Ventes accessoires / téléphones neufs (base partagée)
+  var venteClient = (window.naVentes||[]).filter(function(v){
+    var vtel=String(v.clientTel||'').replace(/\s/g,'');
+    if(cTel && vtel && vtel===cTel) return true;
+    return v.clientNom && v.clientNom.toLowerCase().includes(cNom);
+  });
+  // Réparations atelier (informatique / trottinette / console)
+  var atelClient = (window.atelierList||[]).filter(function(a){
+    var atel=String(a.clientTel||'').replace(/\s/g,'');
+    if(cTel && atel && atel===cTel) return true;
+    var full=((a.clientPrenom||'')+' '+(a.clientNom||'')).toLowerCase().trim();
+    return cNom && (full.indexOf(cNom)>=0 || (a.clientNom||'').toLowerCase()===cNom);
+  });
+  // Attestations d'irréparabilité
+  var attClient = (window.attestList||[]).filter(function(a){
+    var atel=String(a.tel||'').replace(/\s/g,'');
+    if(cTel && atel && atel===cTel) return true;
+    var full=((a.prenom||'')+' '+(a.nom||'')).toLowerCase().trim();
+    return cNom && (full.indexOf(cNom)>=0 || (a.nom||'').toLowerCase()===cNom);
+  });
 
   var totalCA = facClient.reduce(function(s,f){return s+(f.ttc||0);},0) +
-                repClient.reduce(function(s,d){return s+((d.facture&&d.facture.prix)||d.devis||0);},0);
+                repClient.reduce(function(s,d){return s+((d.facture&&d.facture.prix)||d.devis||0);},0) +
+                venteClient.reduce(function(s,v){return s+(Number(v.prix)||0);},0) +
+                atelClient.reduce(function(s,a){return s+(Number(a.prixTTC)||0);},0);
 
   var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
     '<div>' +
@@ -13693,10 +13718,13 @@ function showClientDetail(id) {
     '</div>' +
     '</div>' +
 
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;">' +
     '<div class="caisse-card"><div class="caisse-label">CA total</div><div class="caisse-value" style="color:var(--green)">'+totalCA.toFixed(2)+' €</div></div>' +
-    '<div class="caisse-card"><div class="caisse-label">Factures</div><div class="caisse-value">'+facClient.length+'</div></div>' +
     '<div class="caisse-card"><div class="caisse-label">Réparations</div><div class="caisse-value">'+repClient.length+'</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Ventes</div><div class="caisse-value">'+venteClient.length+'</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Atelier</div><div class="caisse-value">'+atelClient.length+'</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Devis</div><div class="caisse-value">'+devClient.length+'</div></div>' +
+    '<div class="caisse-card"><div class="caisse-label">Attestations</div><div class="caisse-value">'+attClient.length+'</div></div>' +
     '</div>' +
 
     (c.notes?'<div style="padding:10px;background:#f8fafc;border-radius:8px;font-size:13px;margin-bottom:16px;color:var(--text-muted);">📝 '+c.notes+'</div>':'') +
@@ -13726,6 +13754,27 @@ function showClientDetail(id) {
     '<table><thead><tr><th>N°</th><th>Date</th><th>Prestation</th><th>Montant</th><th></th></tr></thead><tbody>' +
     devClient.map(function(d){
       return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+(d.prestation||'')+'</td><td><b>'+Number(d.prix||0).toFixed(2)+' €</b></td><td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="reprintDevis('+d.id+')">🖨️</button> <button class="btn btn-sm" title="Renvoyer par mail" onclick="renvoyerDevisData('+d.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button></td></tr>';
+    }).join('') + '</tbody></table>' : '') +
+
+    // Ventes accessoires / téléphones neufs — impression + renvoi mail
+    (venteClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">🛍️ Ventes accessoires / tél. neufs</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Article</th><th>Montant</th><th></th></tr></thead><tbody>' +
+    venteClient.map(function(v){
+      return '<tr><td><b>'+(v.numero||'')+'</b></td><td>'+fmtDate(v.date)+'</td><td>'+(v.description||v.desc||'')+'</td><td><b>'+Number(v.prix||0).toFixed(2)+' €</b></td><td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="ficheReimprimerVente('+v.id+')">🖨️</button> <button class="btn btn-sm" title="Renvoyer par mail" onclick="ficheMailVente('+v.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button></td></tr>';
+    }).join('') + '</tbody></table>' : '') +
+
+    // Réparations atelier — impression
+    (atelClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">🔧 Réparations atelier</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Catégorie / Prestation</th><th>Montant</th><th></th></tr></thead><tbody>' +
+    atelClient.map(function(a){
+      return '<tr><td><b>'+a.numero+'</b></td><td>'+fmtDate(a.date)+'</td><td>'+(a.categorie||'')+(a.prestation?' — '+a.prestation:'')+'</td><td><b>'+Number(a.prixTTC||0).toFixed(2)+' €</b></td><td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="cxReimprimerAtelier('+a.id+')">🖨️</button></td></tr>';
+    }).join('') + '</tbody></table>' : '') +
+
+    // Attestations d'irréparabilité — impression + renvoi mail
+    (attClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">🛡️ Attestations d\'irréparabilité</div>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Appareil</th><th></th></tr></thead><tbody>' +
+    attClient.map(function(a){
+      return '<tr><td><b>'+a.numero+'</b></td><td>'+fmtDate(a.date)+'</td><td>'+((a.marque||'')+' '+(a.modele||'')).trim()+'</td><td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="reprintAttest('+a.id+')">🖨️</button> <button class="btn btn-sm" title="Renvoyer par mail" onclick="envoyerAttestationMail('+a.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button></td></tr>';
     }).join('') + '</tbody></table>' : '');
 
   document.getElementById('client-detail-content').innerHTML = html;
@@ -13741,6 +13790,17 @@ async function envoyerEmailClient(id) {
   var c = clients.find(function(x){return x.id===id;});
   if(!c||!c.email){showNotif('Aucun email pour ce client','error');return;}
   showNotif('Email envoyé à '+c.email,'success');
+}
+
+// Réimpression / renvoi mail d'une vente (accessoire / tél. neuf) depuis la fiche client
+function ficheReimprimerVente(id){
+  var v=(window.naVentes||[]).find(function(x){return String(x.id)===String(id);}); if(!v) return;
+  var _g=(v.type==='telephone-neuf')?'2 ans (téléphone neuf)':(v.type==='telephone-reconditionne'?'1 an (reconditionné)':'6 mois');
+  try{ var html=buildA4HTML({type:'reparation',numero:v.numero,date:v.date,clientNom:v.clientNom||'',clientAdresse:v.clientAdresse||'',clientEmail:v.clientEmail||'',mode:v.mode||'CB',garantie:_g,lignes:[{desc:v.description||v.desc||'',qte:1,pu:Number(v.prix||0)}],total:Number(v.prix||0),isDevis:false}); ouvrirA4(html); }catch(e){ console.warn(e); }
+}
+function ficheMailVente(id){
+  var v=(window.naVentes||[]).find(function(x){return String(x.id)===String(id);}); if(!v) return;
+  if(typeof cxEnvoyerFactureMail==='function') cxEnvoyerFactureMail(v.numero, v.clientNom||'', v.clientEmail||'', v.description||v.desc||'', Number(v.prix||0));
 }
 
 // Pagination + recherche débouncée pour la liste clients (perf : grosse base)
