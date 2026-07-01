@@ -11653,7 +11653,12 @@ function renderCaisseJour(){
 
   // Trier par date si mois complet
   if(!isCurrentMonth) txJour.sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); });
-  var txRep=txJour.filter(function(tx){ return tx.type!=='vente_occasion'; });
+  // CA (chiffre d'affaires) = réparations + accessoires + tél. neufs UNIQUEMENT.
+  // Les ACHATS de stock (sortie de caisse) ne sont PAS du CA → exclus du total,
+  // suivis à part. (Corrige l'écart type « 819 vs 769 » = un achat cash mélangé au CA.)
+  var txRep=txJour.filter(function(tx){ return tx.type!=='vente_occasion' && tx.type!=='achat'; });
+  var txAchat=txJour.filter(function(tx){ return tx.type==='achat'; });
+  var totAchat=txAchat.reduce(function(s,tx){ return s+Math.abs(tx.montant||0); }, 0);
 
   // Ventilation par catégorie pour le Z Principal
   var catRep = txJour.filter(function(tx){ return tx.type==='reparation'; });
@@ -11760,7 +11765,8 @@ function renderCaisseJour(){
     zDiv.innerHTML = '<b style="color:#1a1a2e;">'+totJour.nb+' transaction(s)'+(isCurrentMonth?' (aujourd\'hui)':' — '+moisLabel)+'</b> · Total TTC : <b style="color:#1a1a2e;">'+totJour.total.toFixed(2)+' €</b> · '+
       'CB : '+totJour.cb.toFixed(2)+' € · Espèces : '+totJour.especes.toFixed(2)+' € · '+
       'Chèque : '+totJour.cheque.toFixed(2)+' € · Virement : '+totJour.virement.toFixed(2)+' €'+
-      (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '');
+      (totJour.quali > 0 ? ' · Bonus QR : '+totJour.quali.toFixed(2)+' €' : '')+
+      (totAchat > 0 ? ' · <span style="color:#b45309;">Achats stock (sortie caisse) : −'+totAchat.toFixed(2)+' €</span>' : '');
   }
 
   // Stocker pour le Z de caisse
