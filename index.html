@@ -16981,13 +16981,15 @@ async function supprimerCP(salIdx, cpIdx) {
 }
 
 // ── VUE ANNUELLE DES CONGÉS PAR SALARIÉ ──
-var _caSalIdx=null, _caPeriodeAn=null;
+var _caSalIdx=null, _caPeriodeAn=null, _caMode='civile';
 function voirCongesAnnuel(salIdx){
   _caSalIdx=salIdx;
-  _caPeriodeAn = (typeof getDebutPeriodeRefCP==='function') ? getDebutPeriodeRefCP().getFullYear() : new Date().getFullYear();
+  _caMode='civile';
+  _caPeriodeAn = new Date().getFullYear();
   _renderCongesAnnuel();
 }
 function _caChangePeriode(delta){ _caPeriodeAn += delta; _renderCongesAnnuel(); }
+function _caSetMode(m){ _caMode=m; _renderCongesAnnuel(); }
 function fermerCongesAnnuel(){ var e=document.getElementById('modal-conges-annuel'); if(e) e.remove(); }
 async function _caSupprimer(idx){
   if(_caSalIdx==null) return;
@@ -16999,8 +17001,10 @@ async function _caSupprimer(idx){
 function _renderCongesAnnuel(){
   var s=salaries[_caSalIdx]; if(!s) return;
   var an=_caPeriodeAn;
-  var debut=new Date(an,5,1,0,0,0);          // 01/06/an
-  var fin=new Date(an+1,4,31,23,59,59);       // 31/05/(an+1)
+  var civile=(_caMode!=='ref');
+  var debut = civile ? new Date(an,0,1,0,0,0)  : new Date(an,5,1,0,0,0);       // 01/01 ou 01/06
+  var fin   = civile ? new Date(an,11,31,23,59,59) : new Date(an+1,4,31,23,59,59); // 31/12 ou 31/05
+  var periodeLabel = civile ? ('Année '+an) : ('01/06/'+an+' → 31/05/'+(an+1));
   var moisNoms=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   var jours=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
   var hist=(s.cpHistorique||[]).map(function(cp,idx){ return Object.assign({}, cp, {_idx:idx}); })
@@ -17046,13 +17050,16 @@ function _renderCongesAnnuel(){
     '<div style="background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,0.35);">'+
       '<div style="position:sticky;top:0;background:#fff;padding:18px 20px 10px;border-bottom:1px solid var(--border);">'+
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'+
-          '<div><div style="font-size:19px;font-weight:900;">📅 Congés — '+s.prenom+' '+(s.nom||'').toUpperCase()+'</div>'+
-          '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Période de référence</div></div>'+
+          '<div><div style="font-size:19px;font-weight:900;">📅 Congés — '+s.prenom+' '+(s.nom||'').toUpperCase()+'</div></div>'+
           '<button onclick="fermerCongesAnnuel()" style="background:#f1f5f9;border:none;border-radius:10px;width:34px;height:34px;font-size:18px;cursor:pointer;">✕</button>'+
         '</div>'+
-        '<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0;">'+
+        '<div style="display:flex;justify-content:center;gap:6px;margin:8px 0;">'+
+          '<button onclick="_caSetMode(\'civile\')" style="border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700;font-size:12px;background:'+(civile?'#5856D6':'#f1f5f9')+';color:'+(civile?'#fff':'#333')+';">Année civile</button>'+
+          '<button onclick="_caSetMode(\'ref\')" style="border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:700;font-size:12px;background:'+(!civile?'#5856D6':'#f1f5f9')+';color:'+(!civile?'#fff':'#333')+';" title="Période légale d\'acquisition des congés">Période 01/06→31/05</button>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 10px;">'+
           '<button onclick="_caChangePeriode(-1)" style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800;">‹</button>'+
-          '<div style="font-weight:800;font-size:14px;">01/06/'+an+' → 31/05/'+(an+1)+'</div>'+
+          '<div style="font-weight:800;font-size:14px;">'+periodeLabel+'</div>'+
           '<button onclick="_caChangePeriode(1)" style="background:#f1f5f9;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:800;">›</button>'+
         '</div>'+
         '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;">'+
