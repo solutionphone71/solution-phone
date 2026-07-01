@@ -7567,6 +7567,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <select id="sal-mois-sel" onchange="renderSalaries()" style="background:rgba(0,0,0,0.06);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:12px;font-size:14px;font-family:inherit;"></select>
       <button class="btn btn-primary" onclick="ouvrirModalSalarie(null)" style="border-radius:12px;">➕ Nouveau salarié</button>
       <button class="btn" onclick="exportPayslipsPDF()" style="border-color:var(--blue);color:var(--blue);border-radius:12px;">🖨️ Tous les bulletins</button>
+      <button class="btn" onclick="document.getElementById('fp-bulk-input').click()" style="border-color:#0d9488;color:#0d9488;border-radius:12px;">📥 Importer fiches TESE (lot)</button>
+      <input type="file" id="fp-bulk-input" accept="application/pdf" multiple style="display:none;" onchange="fpBulkImport(this)">
       <button class="btn" onclick="exportRecapTESE()" style="border-color:#f39c12;color:#f39c12;border-radius:12px;">📋 Export CSV TESE</button>
       <a href="https://www.letese.urssaf.fr" target="_blank" class="btn" style="border-color:#00c853;color:#00c853;border-radius:12px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">🌐 Déclarer sur TESE</a>
     </div>
@@ -7655,6 +7657,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="form-group"><label>Nom</label><input type="text" id="sal-nom" placeholder="NOM"></div>
           <div class="form-group"><label>N° Sécu sociale</label><input type="text" id="sal-secu" placeholder="1 85 05 75 123 456 78"></div>
           <div class="form-group"><label>Matricule</label><input type="text" id="sal-matricule" placeholder="EMP001"></div>
+          <div class="form-group"><label>Email (envoi des fiches de paie)</label><input type="email" id="sal-email" placeholder="salarie@mail.com"></div>
           <div class="form-group"><label>Date d'entrée</label><input type="date" id="sal-entree"></div>
           <div class="form-group"><label>Type de contrat</label>
             <select id="sal-type">
@@ -16732,6 +16735,7 @@ function renderSalList() {
       '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">' +
         '<button class="btn btn-sm btn-primary" onclick="ouvrirModalPaie(' + i + ')">💰 Fiche de paie ' + (mois||'') + (paieValide?' ✅':'') + '</button>' +
         '<button class="btn btn-sm" onclick="voirCongesAnnuel(' + i + ')" style="border-color:#5856D6;color:#5856D6;">📅 Congés de l\'année</button>' +
+        '<button class="btn btn-sm" onclick="fpModal(' + i + ')" style="border-color:#0d9488;color:#0d9488;">💶 Fiches de paie</button>' +
         '<button class="btn btn-sm" onclick="ouvrirModalSalarie(' + i + ')" style="border-color:var(--blue);color:var(--blue);">✏️ Modifier</button>' +
         '<button class="btn btn-sm" onclick="supprimerSalarie(' + i + ')" style="border-color:var(--red);color:var(--red);">🗑️</button>' +
       '</div>' +
@@ -16874,6 +16878,7 @@ function ouvrirModalSalarie(idx) {
   document.getElementById('sal-nom').value           = s ? s.nom : '';
   document.getElementById('sal-secu').value          = s ? (s.secu||'') : '';
   document.getElementById('sal-matricule').value     = s ? (s.matricule||'') : '';
+  document.getElementById('sal-email').value         = s ? (s.email||'') : '';
   setAdresseFields('sal', s ? (s.adresse||'') : '');
   document.getElementById('sal-entree').value        = s ? (s.dateEntree||'') : '';
   document.getElementById('sal-type').value          = s ? (s.type||'cdi') : 'cdi';
@@ -16903,6 +16908,10 @@ async function sauvegarderSalarie() {
     nom:         nom,
     secu:        document.getElementById('sal-secu').value.trim(),
     matricule:   document.getElementById('sal-matricule').value.trim(),
+    email:       document.getElementById('sal-email').value.trim(),
+    cpHistorique: idx >= 0 ? (salaries[idx].cpHistorique || []) : [],
+    cpAncrage:   idx >= 0 ? salaries[idx].cpAncrage : undefined,
+    fichesPaie:  idx >= 0 ? (salaries[idx].fichesPaie || []) : [],
     adresse:     getAdresse('sal'),
     dateEntree:  document.getElementById('sal-entree').value,
     type:        document.getElementById('sal-type').value,
@@ -16921,6 +16930,125 @@ async function sauvegarderSalarie() {
   fermerModalSalarie();
   renderSalaries();
   showNotif('Salarié enregistré ✅','success');
+}
+
+/* ═══════════ FICHES DE PAIE — stockage base + envoi mail + import en lot ═══════════ */
+function _fpReadB64(file){
+  return new Promise(function(res,rej){
+    var r=new FileReader();
+    r.onload=function(){ var s=String(r.result||''); var i=s.indexOf('base64,'); res(i>=0?s.substring(i+7):s); };
+    r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+function _fpMoisLabel(m){ var n=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre']; var p=(m||'').split('-'); return p[1]?(n[parseInt(p[1])-1]+' '+p[0]):m; }
+function _fpGuessMois(fn){
+  fn=(fn||'').toLowerCase();
+  var m=fn.match(/(20\d{2})[-_ ]?(0[1-9]|1[0-2])/); if(m) return m[1]+'-'+m[2];
+  var m2=fn.match(/(0[1-9]|1[0-2])[-_ ]?(20\d{2})/); if(m2) return m2[2]+'-'+m2[1];
+  var mois={janvier:'01','fevrier':'02','février':'02',mars:'03',avril:'04',mai:'05',juin:'06',juillet:'07','aout':'08','août':'08',septembre:'09',octobre:'10',novembre:'11','decembre':'12','décembre':'12'};
+  for(var k in mois){ if(fn.indexOf(k)>=0){ var y=fn.match(/20\d{2}/); if(y) return y[0]+'-'+mois[k]; } }
+  return new Date().toISOString().slice(0,7);
+}
+var _fpSalIdx=null, _fpMois=null;
+function fpModal(salIdx){ _fpSalIdx=salIdx; _fpMois=(typeof getMoisActuel==='function'?getMoisActuel():new Date().toISOString().slice(0,7)); _fpRender(); fpChargerListe(); }
+function fpFermer(){ var e=document.getElementById('modal-fp'); if(e) e.remove(); }
+function _fpRender(rows){
+  var s=salaries[_fpSalIdx]; if(!s) return;
+  var opts=''; var d=new Date();
+  for(var i=0;i<15;i++){ var dd=new Date(d.getFullYear(),d.getMonth()-i,1); var m=dd.toISOString().slice(0,7); opts+='<option value="'+m+'"'+(m===_fpMois?' selected':'')+'>'+_fpMoisLabel(m)+'</option>'; }
+  var liste;
+  if(rows===undefined){ liste='<div style="color:var(--text-muted);padding:14px;">Chargement…</div>'; }
+  else if(!rows.length){ liste='<div style="color:var(--text-muted);padding:14px;">Aucune fiche de paie enregistrée.</div>'; }
+  else {
+    rows.sort(function(a,b){return String(b.mois||'').localeCompare(String(a.mois||''));});
+    liste='<table style="width:100%;border-collapse:collapse;font-size:13px;">'+rows.map(function(f){
+      return '<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;"><b>'+_fpMoisLabel(f.mois)+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(f.filename||'')+'</span></td>'+
+        '<td style="padding:8px;text-align:right;white-space:nowrap;"><button class="btn btn-sm" title="Télécharger" onclick="fpDownload('+f.id+')">⬇️</button> <button class="btn btn-sm" title="Envoyer par mail" onclick="fpMail('+f.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button> <button class="btn btn-sm" title="Supprimer" onclick="fpDelete('+f.id+')" style="border-color:var(--red);color:var(--red);">🗑️</button></td></tr>';
+    }).join('')+'</table>';
+  }
+  var html='<div style="background:#fff;border-radius:18px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,0.35);">'+
+    '<div style="position:sticky;top:0;background:#fff;padding:18px 20px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;">'+
+      '<div><div style="font-size:19px;font-weight:900;">💶 Fiches de paie — '+s.prenom+' '+(s.nom||'').toUpperCase()+'</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+(s.email?('✉️ '+s.email):'⚠️ Pas d\'email — ajoute-le via « Modifier »')+'</div></div>'+
+      '<button onclick="fpFermer()" style="background:#f1f5f9;border:none;border-radius:10px;width:34px;height:34px;font-size:18px;cursor:pointer;">✕</button>'+
+    '</div>'+
+    '<div style="padding:16px 20px;">'+
+      '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;">'+
+        '<div class="form-group" style="flex:1;min-width:140px;margin:0;"><label>Mois</label><select id="fp-mois" onchange="_fpMois=this.value">'+opts+'</select></div>'+
+        '<button class="btn btn-primary" onclick="document.getElementById(\'fp-file\').click()">➕ Ajouter le PDF</button>'+
+        '<input type="file" id="fp-file" accept="application/pdf" style="display:none;" onchange="fpUpload(this)">'+
+      '</div>'+liste+
+    '</div></div>';
+  fpFermer();
+  var ov=document.createElement('div'); ov.id='modal-fp';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:6000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  ov.innerHTML=html; ov.addEventListener('click',function(e){ if(e.target===ov) fpFermer(); });
+  document.body.appendChild(ov);
+}
+async function fpChargerListe(){
+  var s=salaries[_fpSalIdx]; if(!s) return;
+  try{
+    var q = s.matricule ? ('?matricule=eq.'+encodeURIComponent(s.matricule)+'&select=id,matricule,nom,prenom,mois,filename,created_at&order=mois.desc')
+                        : ('?nom=eq.'+encodeURIComponent(s.nom||'')+'&select=id,matricule,nom,prenom,mois,filename,created_at&order=mois.desc');
+    var rows=await supaFetch('fiches_paie','GET',null,q);
+    _fpRender(Array.isArray(rows)?rows:[]);
+  }catch(e){ _fpRender([]); }
+}
+async function fpUpload(input){
+  var s=salaries[_fpSalIdx]; if(!s||!input.files||!input.files[0]) return;
+  var file=input.files[0]; input.value='';
+  showNotif&&showNotif('⏳ Enregistrement de la fiche…','info');
+  try{
+    var b64=await _fpReadB64(file);
+    await supaFetch('fiches_paie','POST',{matricule:s.matricule||'',nom:s.nom||'',prenom:s.prenom||'',mois:_fpMois,filename:file.name,pdf:b64});
+    showNotif&&showNotif('✅ Fiche de paie '+_fpMoisLabel(_fpMois)+' enregistrée','success');
+    fpChargerListe();
+  }catch(e){ showNotif&&showNotif('Échec — vérifie que la table fiches_paie existe','error'); }
+}
+async function fpFetchPdf(id){ try{ var r=await supaFetch('fiches_paie','GET',null,'?id=eq.'+id+'&select=pdf,filename,mois,nom,prenom'); return (r&&r[0])||null; }catch(e){ return null; } }
+async function fpDownload(id){
+  var f=await fpFetchPdf(id); if(!f||!f.pdf){ showNotif&&showNotif('PDF introuvable','error'); return; }
+  var a=document.createElement('a'); a.href='data:application/pdf;base64,'+f.pdf; a.download=f.filename||('fiche_paie_'+f.mois+'.pdf'); document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+async function fpMail(id){
+  var s=salaries[_fpSalIdx];
+  var f=await fpFetchPdf(id); if(!f||!f.pdf){ showNotif&&showNotif('PDF introuvable','error'); return; }
+  var email=((s&&s.email)||'').trim(); if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du salarié :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } }
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  showNotif&&showNotif('📧 Envoi de la fiche de paie…','info');
+  var html='<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;"><div style="background:#0d9488;padding:20px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1></div><div style="padding:24px;"><p>Bonjour '+(f.prenom||'')+',</p><p>Veuillez trouver ci-joint votre bulletin de paie de <b>'+_fpMoisLabel(f.mois)+'</b>.</p><p style="color:#666;font-size:12px;margin-top:16px;">Cordialement,<br><b>Solution Phone</b></p></div></div>';
+  try{
+    var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:((f.prenom||'')+' '+(f.nom||'')).trim()}],subject:'Votre bulletin de paie — '+_fpMoisLabel(f.mois),htmlContent:html,attachment:[{content:f.pdf,name:(f.filename||('bulletin_'+f.mois+'.pdf'))}]};
+    var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok) showNotif&&showNotif('✅ Fiche de paie envoyée à '+email,'success'); else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,110),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau envoi','error'); }
+}
+async function fpDelete(id){
+  if(!confirm('Supprimer cette fiche de paie ?')) return;
+  try{ await supaFetch('fiches_paie','DELETE',null,'?id=eq.'+id); showNotif&&showNotif('Supprimée','success'); fpChargerListe(); }catch(e){ showNotif&&showNotif('Échec suppression','error'); }
+}
+async function fpBulkImport(input){
+  if(!input.files||!input.files.length) return;
+  var files=Array.prototype.slice.call(input.files); input.value='';
+  var ok=0, rate=[];
+  showNotif&&showNotif('⏳ Import de '+files.length+' fiche(s)…','info');
+  for(var i=0;i<files.length;i++){
+    var file=files[i]; var fnl=(file.name||'').toLowerCase();
+    var sal=salaries.find(function(s){
+      var nom=(s.nom||'').toLowerCase(), pre=(s.prenom||'').toLowerCase(), mat=(s.matricule||'').toLowerCase();
+      return (nom && fnl.indexOf(nom)>=0) || (mat && fnl.indexOf(mat)>=0) || (pre && nom && fnl.indexOf(pre)>=0 && fnl.indexOf(nom)>=0);
+    });
+    if(!sal){ rate.push(file.name); continue; }
+    try{
+      var b64=await _fpReadB64(file);
+      await supaFetch('fiches_paie','POST',{matricule:sal.matricule||'',nom:sal.nom||'',prenom:sal.prenom||'',mois:_fpGuessMois(file.name),filename:file.name,pdf:b64});
+      ok++;
+    }catch(e){ rate.push(file.name); }
+  }
+  showNotif&&showNotif('✅ '+ok+' fiche(s) importée(s)'+(rate.length?' · '+rate.length+' non reconnue(s)':''),'success');
+  if(rate.length){ alert('Fiches non rattachées (nom du salarié absent du nom de fichier) :\n\n'+rate.join('\n')+'\n\nRenomme-les avec le nom du salarié, ou ajoute-les depuis sa fiche « 💶 Fiches de paie ».'); }
 }
 
 async function supprimerSalarie(idx) {
