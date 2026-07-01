@@ -10487,7 +10487,7 @@ function showPage(id,el){
   }
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   if(el)el.classList.add('active');
-  if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); }
+  if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); if(typeof naLoad==='function'){ try{ naLoad().then(function(){ if(typeof renderCaisse==='function') renderCaisse(); }); }catch(e){} } }
   if(id==='analytics')renderAnalytics();
   if(id==='police')renderPolice();
   if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
@@ -11562,18 +11562,28 @@ function renderCaisseJour(){
     });
   });
 
-  // 4. Ventes accessoires
-  var naVentes = JSON.parse(localStorage.getItem('na_ventes')||'[]');
-  naVentes.forEach(function(v){
+  // 4. Ventes accessoires + tél. neufs (caisse rapide + formulaire) — BASE partagée + local, dédupliqués
+  var _naLocal = JSON.parse(localStorage.getItem('na_ventes')||'[]');
+  var _naDb = (window.naVentes||[]);
+  var _seen = {}; var _allNa = [];
+  _naDb.concat(_naLocal).forEach(function(v){
+    if(!v) return;
+    var k = (v.numero||'')+'|'+(v.date||'').substring(0,10)+'|'+(v.prix||v.ttc||v.montant||0);
+    if(_seen[k]) return; _seen[k]=1; _allNa.push(v);
+  });
+  _allNa.forEach(function(v){
     if(!v.date || !matchDate(v.date)) return;
+    var _t=(v.type||'').toString().toLowerCase();
+    var _isNeuf=(_t.indexOf('neuf')>=0 || _t.indexOf('recond')>=0);
+    var _mont=Number(v.prix||v.ttc||v.montant||0)||0;
     txJour.push({
       heure:   v.date ? new Date(v.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
       date:    (v.date||'').substring(0,10),
-      type:    'accessoire',
-      label:   '🛍️',
-      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(v.date)+'</span> ')+'Accessoires — ' + (v.desc||v.description||'vente'),
-      montant: v.ttc || v.montant || 0,
-      mode:    v.mode || 'CB',
+      type:    _isNeuf ? 'vente_neuf' : 'accessoire',
+      label:   _isNeuf ? '📱✨' : '🛍️',
+      desc:    (isCurrentMonth?'':'<span style="color:#888;font-size:11px;">'+fmtDate(v.date)+'</span> ')+(_isNeuf?'Tél. neuf — ':'Accessoires — ')+(v.desc||v.description||'vente'),
+      montant: _mont,
+      mode:    v.mode || v.mode_reglement || 'CB',
       quali:   0
     });
   });
