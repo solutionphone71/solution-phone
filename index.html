@@ -770,7 +770,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-item active" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
     <div class="nav-item" onclick="showPage('dashboard',this)" style="font-size:12px;opacity:0.7;padding-left:32px;"><span class="nav-icon">📊</span><span>Dashboard détaillé</span></div>
-    <div onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naShowTab==='function')naShowTab('caisse');" title="Ouvrir la caisse" style="margin:10px 14px 4px;cursor:pointer;background:linear-gradient(145deg,#ff2016,#c4000a);color:#fff;border-radius:15px;padding:15px 16px;box-shadow:0 6px 0 #8a000a, 0 12px 22px rgba(225,6,0,0.5);transform:translateY(-1px);transition:transform .1s ease, box-shadow .1s ease;display:flex;align-items:center;gap:11px;font-weight:900;font-size:15px;letter-spacing:.2px;" onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #8a000a,0 5px 12px rgba(225,6,0,0.45)'" onmouseup="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 0 #8a000a,0 12px 22px rgba(225,6,0,0.5)'" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(-1px)'"><span style="font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">🛒</span><span>Caisse rapide</span></div>
+    <div onclick="showPage('reparations',null);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);" title="Nouvelle réparation" style="margin:12px 14px 4px;cursor:pointer;background:linear-gradient(145deg,#ff2016,#c4000a);color:#fff;border-radius:15px;padding:15px 16px;box-shadow:0 6px 0 #8a000a, 0 12px 22px rgba(225,6,0,0.5);transform:translateY(-1px);transition:transform .1s ease, box-shadow .1s ease;display:flex;align-items:center;gap:11px;font-weight:900;font-size:15px;letter-spacing:.2px;" onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #8a000a,0 5px 12px rgba(225,6,0,0.45)'" onmouseup="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 0 #8a000a,0 12px 22px rgba(225,6,0,0.5)'" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(-1px)'"><span style="font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">🔧</span><span>Réparation</span></div>
+    <div onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naShowTab==='function')naShowTab('caisse');" title="Ouvrir la caisse" style="margin:8px 14px 4px;cursor:pointer;background:linear-gradient(145deg,#ff2016,#c4000a);color:#fff;border-radius:15px;padding:15px 16px;box-shadow:0 6px 0 #8a000a, 0 12px 22px rgba(225,6,0,0.5);transform:translateY(-1px);transition:transform .1s ease, box-shadow .1s ease;display:flex;align-items:center;gap:11px;font-weight:900;font-size:15px;letter-spacing:.2px;" onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #8a000a,0 5px 12px rgba(225,6,0,0.45)'" onmouseup="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 0 #8a000a,0 12px 22px rgba(225,6,0,0.5)'" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(-1px)'"><span style="font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">🛒</span><span>Caisse rapide</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
@@ -11171,11 +11172,11 @@ function naShowTab(tab){
     if(v) v.style.display = t===tab ? 'block' : 'none';
     if(b){
       if(t===tab){
-        b.style.background='#E10600'; b.style.color='#fff'; b.style.borderColor='#E10600';
-        b.style.boxShadow='0 6px 14px -6px rgba(225,6,0,0.6)'; b.style.fontWeight='800';
+        b.style.background='linear-gradient(145deg,#ff2016,#c4000a)'; b.style.color='#fff'; b.style.borderColor='#c4000a';
+        b.style.boxShadow='0 5px 0 #8a000a, 0 11px 20px -6px rgba(225,6,0,0.55)'; b.style.transform='translateY(-1px)'; b.style.fontWeight='800';
       } else {
         b.style.background='#fff'; b.style.color='#6B7280'; b.style.borderColor='#E8EAED';
-        b.style.boxShadow='none'; b.style.fontWeight='700';
+        b.style.boxShadow='none'; b.style.transform='none'; b.style.fontWeight='700';
       }
     }
   });
