@@ -6659,6 +6659,20 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div id="na-suivi-liste" style="font-size:13px;overflow-x:auto;"></div>
         </div>
+
+        <!-- CLÔTURE CB DU SOIR — rapprochement machine carte -->
+        <div class="card" id="cloture-cb-card" style="margin-top:18px;border-top:3px solid #E10600;">
+          <div style="font-weight:800;font-size:16px;margin-bottom:4px;">🔒 Clôture CB du soir</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Saisis le total encaissé sur la machine CB. L'appli compare avec ce que tu as déjà encaissé en carte aujourd'hui et crée automatiquement la facture accessoire manquante.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="flex:1;min-width:180px;">
+              <label>Total machine CB (€)</label>
+              <input type="text" inputmode="decimal" id="cloture-cb-machine" placeholder="ex : 1996" style="font-size:22px;font-weight:800;">
+            </div>
+            <button class="btn btn-primary" onclick="clotureCBAnalyser()">🔎 Analyser</button>
+          </div>
+          <div id="cloture-cb-result" style="margin-top:14px;"></div>
+        </div>
       </div><!-- fin na-view-caisse -->
 
       <!-- ══ VUE VENTE DÉTAILLÉE ══ -->
@@ -11218,6 +11232,93 @@ function naRenderSuiviJour(){
         '<td style="padding:7px 8px;text-align:center;"><span style="font-size:11px;background:'+(mc[(it.mode||'CB').toUpperCase()]||'#666')+';color:#fff;padding:2px 7px;border-radius:8px;">'+it.mode+'</span></td>'+
       '</tr>';
     }).join('')+'</table>';
+}
+
+// ═══════════ CLÔTURE CB DU SOIR (rapprochement machine carte) ═══════════
+// Calcule le total déjà encaissé en CB aujourd'hui dans l'appli (réparations part client
+// + accessoires + tél. neufs + occasions).
+function _cbAppAujourdhui(){
+  var today=new Date().toISOString().slice(0,10);
+  var detail={reparations:0,accessoires:0,neufs:0,occasion:0};
+  (window.repDossiers||[]).forEach(function(d){
+    var f=d&&d.facture; if(!f) return;
+    if(((f.date||d.date||'').slice(0,10))!==today) return;
+    if(((f.mode||'CB').toUpperCase())!=='CB') return;
+    detail.reparations += Number(f.prix||0)||0; // part client (bonus QR exclu)
+  });
+  var db=(window.naVentes||[]); var ls=[]; try{ ls=JSON.parse(localStorage.getItem('na_ventes')||'[]'); }catch(e){}
+  var seen={};
+  db.concat(ls).forEach(function(v){
+    if(!v) return;
+    var k=(v.numero||'')+'|'+((v.date||'').slice(0,10))+'|'+(v.prix||v.ttc||v.montant||0);
+    if(seen[k]) return; seen[k]=1;
+    if(((v.date||'').slice(0,10))!==today) return;
+    if(((v.mode||v.mode_reglement||'CB').toUpperCase())!=='CB') return;
+    var t=(v.type||'').toString().toLowerCase(); var mont=Number(v.prix||v.ttc||v.montant||0)||0;
+    if(t.indexOf('neuf')>=0||t.indexOf('recond')>=0) detail.neufs+=mont; else detail.accessoires+=mont;
+  });
+  (window.phones||[]).forEach(function(p){
+    if(!p||p.etat!=='VENDU') return;
+    if(((p.dateVente||'').slice(0,10))!==today) return;
+    if(((p.modeVente||'CB').toUpperCase())!=='CB') return;
+    detail.occasion += Math.max(0,(Number(p.vente)||0)-(Number(p.repriseAmount)||0));
+  });
+  var total=detail.reparations+detail.accessoires+detail.neufs+detail.occasion;
+  return {total:Math.round(total*100)/100, detail:detail};
+}
+
+async function clotureCBAnalyser(){
+  var box=document.getElementById('cloture-cb-result'); if(!box) return;
+  var machine=parseFloat(((document.getElementById('cloture-cb-machine')||{value:''}).value||'').replace(',','.'))||0;
+  if(machine<=0){ box.innerHTML='<div style="color:#dc2626;font-size:13px;">Saisis le total de la machine CB.</div>'; return; }
+  try{ if((!window.naVentes||!window.naVentes.length) && typeof naLoad==='function') await naLoad(); }catch(e){}
+  try{ if((!window.repDossiers||!window.repDossiers.length) && typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
+  var app=_cbAppAujourdhui();
+  var ecart=Math.round((machine-app.total)*100)/100;
+  var d=app.detail;
+  var head='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">'+
+    '<div style="flex:1;min-width:110px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">CB déjà en caisse</div><div style="font-size:20px;font-weight:900;">'+app.total.toFixed(2)+' €</div></div>'+
+    '<div style="flex:1;min-width:110px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Machine CB</div><div style="font-size:20px;font-weight:900;">'+machine.toFixed(2)+' €</div></div>'+
+    '<div style="flex:1;min-width:110px;background:'+(ecart>0?'#fff7ed':(ecart<0?'#fef2f2':'#ecfdf5'))+';border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Écart</div><div style="font-size:20px;font-weight:900;color:'+(ecart>0?'#b45309':(ecart<0?'#dc2626':'#16a34a'))+';">'+ecart.toFixed(2)+' €</div></div>'+
+  '</div>';
+  var lignes='<div style="font-size:12px;color:var(--text-muted);line-height:1.9;margin-bottom:8px;">Détail CB appli : Réparations (part client) <b>'+d.reparations.toFixed(2)+' €</b> · Accessoires <b>'+d.accessoires.toFixed(2)+' €</b> · Tél. neufs <b>'+d.neufs.toFixed(2)+' €</b> · Occasion <b>'+d.occasion.toFixed(2)+' €</b></div>';
+  var action='';
+  if(ecart>0.005){
+    action='<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;">'+
+      '<div style="font-size:13px;color:#9a3412;margin-bottom:8px;">Il manque <b>'+ecart.toFixed(2)+' €</b> d\'accessoires facturés mais pas encore encaissés dans l\'appli. Je crée une facture accessoire en CB de ce montant pour équilibrer la caisse.</div>'+
+      '<button class="btn btn-primary" onclick="clotureCBCreer('+ecart+')">✅ Créer la facture accessoire de '+ecart.toFixed(2)+' € (CB)</button>'+
+    '</div>';
+  } else if(ecart<-0.005){
+    action='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;font-size:13px;color:#b91c1c;">⚠️ La caisse appli ('+app.total.toFixed(2)+' €) est SUPÉRIEURE à la machine ('+machine.toFixed(2)+' €). À vérifier : une vente CB en trop, un mauvais mode de paiement, ou un encaissement en double. Je ne crée rien automatiquement.</div>';
+  } else {
+    action='<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:12px;font-size:13px;color:#047857;font-weight:700;">✓ Parfait — ta caisse CB correspond à la machine. Rien à ajouter.</div>';
+  }
+  box.innerHTML=head+lignes+action;
+}
+
+async function clotureCBCreer(ecart){
+  ecart=Math.round((parseFloat(ecart)||0)*100)/100;
+  if(ecart<=0) return;
+  if(!confirm('Créer une facture accessoire de '+ecart.toFixed(2)+' € en CB (régularisation clôture) ?')) return;
+  var ok=await creerVenteAccessoireRegul(ecart, 'CB');
+  if(ok===false){ showNotif&&showNotif('❌ Échec de l\'enregistrement — réessaie','error'); return; }
+  showNotif&&showNotif('✅ Facture accessoire de '+ecart.toFixed(2)+' € créée (CB)','success');
+  try{ if(typeof naRenderSuiviJour==='function') naRenderSuiviJour(); }catch(e){}
+  try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); }catch(e){}
+  clotureCBAnalyser(); // re-analyse → écart 0
+}
+
+async function creerVenteAccessoireRegul(montant, mode){
+  mode=mode||'CB';
+  var num='ACC-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(0,14);
+  var dateJ=new Date().toISOString().split('T')[0];
+  var desc='Accessoires du jour (régularisation clôture CB)';
+  var ok=true;
+  try{ ok=await caisseFromVente({prixTTC:montant, mode:mode, date:dateJ, description:desc}); }catch(e){ ok=false; }
+  try{ if(typeof naSave==='function') naSave({numero:num,date:dateJ,type:'accessoire',description:desc,clientNom:'',clientAdresse:'',clientEmail:'',prix:montant,mode:mode}); }catch(e){}
+  try{ var nv=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'accessoire',desc:desc,description:desc,ttc:montant,montant:montant,mode:mode,clientNom:''}); localStorage.setItem('na_ventes',JSON.stringify(nv)); }catch(e){}
+  try{ if(Array.isArray(window.naVentes)) window.naVentes.unshift({id:Date.now(),numero:num,date:dateJ,type:'accessoire',description:desc,clientNom:'',prix:montant,mode:mode}); }catch(e){}
+  return ok;
 }
 
 function naRenderPanier(){
