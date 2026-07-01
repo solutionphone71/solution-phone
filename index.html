@@ -31943,18 +31943,25 @@ function renderDashHome(){
   var evol=caMD>0?Math.round(((caMois-caMD)/caMD)*100):0;
   var evolJour=caYest>0?Math.round(((caToday-caYest)/caYest)*100):0;
   var _tileN=function(lbl,val,sub){ return '<div style="background:#0D0D0D;border:1px solid #1c1c1c;border-radius:16px;padding:14px 16px;"><div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div><div style="font-size:24px;font-weight:900;color:#fff;margin-top:3px;line-height:1;">'+val+'</div>'+(sub?'<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+sub+'</div>':'')+'</div>'; };
+  var _cats = window._caisseCategories || {};
+  var caRep  = (_cats.reparations||{}).total||0;
+  var caAcc  = (_cats.accessoires||{}).total||0;
+  var caNeuf = (_cats.neufs||{}).total||0;
+  var caTot  = caRep + caAcc + caNeuf;
+  var caOcc  = P.filter(function(p){ return p&&p.etat==='VENDU'&&(p.dateVente||'').slice(0,10)===today; }).reduce(function(s,p){ return s+(Number(p.vente)||0); },0);
   perf.innerHTML=
-    '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Performance Live</div>'+
-    '<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:13px;">'+
-      '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#E10600,#8f000c);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 14px 34px -12px rgba(225,6,0,0.65);">'+
-        '<div style="position:absolute;right:-25px;top:-25px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
-        '<div style="position:relative;"><div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.9;">CA du jour</div>'+
-        '<div style="font-size:40px;font-weight:900;line-height:1;margin:7px 0 4px;">'+eur(caToday)+'</div>'+
-        '<div style="display:inline-flex;font-size:12px;font-weight:700;background:rgba(255,255,255,0.18);padding:4px 11px;border-radius:18px;">'+(evolJour>=0?'▲ +':'▼ ')+evolJour+'% vs hier</div></div>'+
-      '</div>'+
-      _tileN('Hier', eur(caYest), '')+
-      _tileN('Ce mois', eur(caMois), '')+
-      _tileN('Évolution', (evol>=0?'+':'')+evol+'%', 'vs mois dernier '+eur(caMD))+
+    '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Performance Live · aujourd\'hui</div>'+
+    '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#E10600,#8f000c);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 14px 34px -12px rgba(225,6,0,0.65);margin-bottom:13px;">'+
+      '<div style="position:absolute;right:-25px;top:-25px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
+      '<div style="position:relative;"><div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.9;">CA Total du jour</div>'+
+      '<div style="font-size:42px;font-weight:900;line-height:1;margin:7px 0 4px;">'+eur(caTot)+'</div>'+
+      '<div style="display:inline-flex;font-size:12px;font-weight:700;background:rgba(255,255,255,0.18);padding:4px 11px;border-radius:18px;">Réparations + Accessoires + Tél. neufs · TVA 20%'+((evolJour||0)?' · '+(evolJour>=0?'▲ +':'▼ ')+evolJour+'% vs hier':'')+'</div></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;">'+
+      _tileN('🔧 Réparations', eur(caRep), 'QualiRépar inclus')+
+      _tileN('🛍️ Accessoires', eur(caAcc), '')+
+      _tileN('📱 Tél. neufs', eur(caNeuf), '')+
+      _tileN('♻️ Occasion', eur(caOcc), 'TVA sur marge')+
     '</div>';
   // Z de caisse récent
   var z=document.getElementById('dh-zcaisse');
