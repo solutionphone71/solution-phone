@@ -10487,7 +10487,7 @@ function showPage(id,el){
   }
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   if(el)el.classList.add('active');
-  if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); if(typeof naLoad==='function'){ try{ naLoad().then(function(){ if(typeof renderCaisse==='function') renderCaisse(); }); }catch(e){} } }
+  if(id==='caisse'){ window._caisseMoisFiltre=getMoisActuel(); caisseShowTab('jour'); renderCaisse(); initCaisseMoisSelect(); if(supabaseReady) initCaisseArchiveSelect(); if(typeof naLoad==='function'){ try{ naLoad().then(function(){ if(typeof renderCaisse==='function') renderCaisse(); if(typeof renderCaisseJour==='function') renderCaisseJour(); }); }catch(e){} } }
   if(id==='analytics')renderAnalytics();
   if(id==='police')renderPolice();
   if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
@@ -10955,7 +10955,7 @@ function naShowTab(tab){
       b.style.fontWeight = t===tab ? '800' : '600';
     }
   });
-  if(tab==='caisse'){ naRenderGrille(); naRenderSuiviJour(); setTimeout(function(){ naSetMode('CB'); }, 50); }
+  if(tab==='caisse'){ naRenderGrille(); naRenderSuiviJour(); try{ if(typeof naLoad==='function') naLoad().then(function(){ naRenderSuiviJour(); }); }catch(e){} setTimeout(function(){ naSetMode('CB'); }, 50); }
 }
 
 function naFilterCat(cat){
@@ -11055,19 +11055,30 @@ function naRenderSuiviJour(){
   if(!box) return;
   var today = new Date().toISOString().split('T')[0];
   var items = [];
-  // Accessoires (relevés individuels en localStorage)
+  // Ventes accessoires + tél. neufs — BASE PARTAGÉE (DB ventes_neufs_access via window.naVentes)
+  // fusionnée avec les relevés locaux (na_ventes), dédupliqués. => visible sur TOUS les postes.
   try{
-    var nv = JSON.parse(localStorage.getItem('na_ventes')||'[]');
-    nv.forEach(function(v){
+    var _db = (window.naVentes||[]);
+    var _ls = JSON.parse(localStorage.getItem('na_ventes')||'[]');
+    var _seen = {}, _all = [];
+    _db.concat(_ls).forEach(function(v){
+      if(!v) return;
+      var k = (v.numero||'')+'|'+((v.date||'').substring(0,10))+'|'+(v.prix||v.ttc||v.montant||0);
+      if(_seen[k]) return; _seen[k]=1; _all.push(v);
+    });
+    _all.forEach(function(v){
       if(((v.date||'').substring(0,10)) !== today) return;
+      var _t=(v.type||'').toString().toLowerCase();
+      var _isNeuf=(_t.indexOf('neuf')>=0 || _t.indexOf('recond')>=0);
       items.push({
         heure: v.date ? new Date(v.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
-        type:'🛍️ Accessoire', desc: v.desc||v.description||'Vente',
-        montant: Number(v.ttc||v.montant||0), mode: v.mode||'CB'
+        type: _isNeuf ? '📱✨ Neuf' : '🛍️ Accessoire',
+        desc: v.desc||v.description||'Vente',
+        montant: Number(v.prix||v.ttc||v.montant||0), mode: v.mode||v.mode_reglement||'CB'
       });
     });
   }catch(e){}
-  // Téléphones neufs vendus aujourd'hui
+  // Téléphones neufs du STOCK (phonesNeufs) vendus aujourd'hui
   try{
     (typeof phonesNeufs!=='undefined'?phonesNeufs:[]).forEach(function(p){
       if(p.etat!=='VENDU') return;
@@ -31857,6 +31868,9 @@ function renderCaJourBar(){
   var el = document.getElementById('zh-ca-jour-bar');
   if(!el) return;
   try{ if(typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
+  // S'assurer que les ventes rapides / tél. neufs (base partagée) sont chargées UNE fois,
+  // sinon le CA du jour et Performance Live les ignorent au 1er affichage.
+  try{ if(!window._naBootLoaded && typeof naLoad==='function'){ window._naBootLoaded=true; naLoad().then(function(){ try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); if(typeof renderDashHome==='function') renderDashHome(); }catch(e){} }); } }catch(e){}
   try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); }catch(e){}
   var cats = window._caisseCategories || {};
   var totJour = window._caisseJourTotaux || {};
