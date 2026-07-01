@@ -13702,6 +13702,7 @@ function showClientDetail(id) {
                 repClient.reduce(function(s,d){return s+((d.facture&&d.facture.prix)||d.devis||0);},0) +
                 venteClient.reduce(function(s,v){return s+(Number(v.prix)||0);},0) +
                 atelClient.reduce(function(s,a){return s+(Number(a.prixTTC)||0);},0);
+  window._ficheData={c:c,rep:repClient,vente:venteClient,atel:atelClient,dev:devClient,att:attClient,fac:facClient,ca:totalCA};
 
   var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
     '<div>' +
@@ -13712,9 +13713,10 @@ function showClientDetail(id) {
     '<div style="font-size:13px;color:var(--text-muted);">'+
       (c.cp?'<b>CP :</b> '+c.cp+' ':'')+(c.ville?'<b>Ville :</b> '+c.ville:'')+'</div>' +
     '</div>' +
-    '<div style="display:flex;gap:8px;">' +
-    '<button class="btn btn-sm btn-primary" onclick="envoyerEmailClient('+id+')">📧 Email</button>' +
-    '<button class="btn btn-sm" onclick="deleteClient('+id+')">🗑️</button>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+    '<button class="btn btn-sm btn-primary" onclick="imprimerFicheClient('+id+')">🖨️ Imprimer la fiche</button>' +
+    '<button class="btn btn-sm" onclick="envoyerSMSClient('+id+')" style="border-color:#8b5cf6;color:#8b5cf6;">📱 SMS</button>' +
+    '<button class="btn btn-sm" onclick="deleteClient('+id+')" style="border-color:var(--red);color:var(--red);">🗑️</button>' +
     '</div>' +
     '</div>' +
 
@@ -13801,6 +13803,71 @@ function ficheReimprimerVente(id){
 function ficheMailVente(id){
   var v=(window.naVentes||[]).find(function(x){return String(x.id)===String(id);}); if(!v) return;
   if(typeof cxEnvoyerFactureMail==='function') cxEnvoyerFactureMail(v.numero, v.clientNom||'', v.clientEmail||'', v.description||v.desc||'', Number(v.prix||0));
+}
+
+// Envoi d'un SMS libre au client (via Brevo)
+async function envoyerSMSClient(id){
+  var c=(clients||[]).find(function(x){return x.id===id;}); if(!c) return;
+  var tel=String(c.tel||'').replace(/\s/g,'');
+  if(tel.length<10){ tel=((prompt('Numéro de téléphone du client :')||'').replace(/\s/g,'')); if(tel.length<10){ showNotif&&showNotif('Numéro invalide','error'); return; } }
+  var nomC=((c.prenom||'')+' '+(c.nom||'')).trim();
+  var msg=(prompt('SMS à envoyer à '+nomC+' :','Bonjour, votre appareil est prêt chez Solution Phone Mâcon. À bientôt !')||'').trim();
+  if(!msg) return;
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  var telIntl=tel.charAt(0)==='0'?'+33'+tel.substring(1):(tel.charAt(0)==='+'?tel:'+33'+tel);
+  var name=(localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'SolPhone').substring(0,11).replace(/[^a-zA-Z0-9]/g,'')||'SolPhone';
+  showNotif&&showNotif('📱 Envoi du SMS…','info');
+  try{
+    var res=await fetch('/api/brevo?type=sms',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:name,recipient:telIntl,content:msg,type:'transactional'})});
+    if(res.ok){ showNotif&&showNotif('✅ SMS envoyé au '+tel,'success'); }
+    else { var t=await res.text(); showNotif&&showNotif('Échec SMS : '+t.substring(0,110),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau SMS','error'); }
+}
+
+// Impression / PDF de la fiche client complète (tout l'historique)
+function imprimerFicheClient(id){
+  var D=window._ficheData;
+  if(!D || !D.c || String(D.c.id)!==String(id)){ if(typeof showClientDetail==='function'){ showClientDetail(id); D=window._ficheData; } }
+  if(!D||!D.c) return;
+  var c=D.c;
+  var logo=typeof SP_LOGO!=='undefined'?SP_LOGO:'';
+  var eur=function(n){ return Number(n||0).toFixed(2)+' €'; };
+  var cli=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+  var tbl=function(titre, headers, rowsHtml){
+    if(!rowsHtml) return '';
+    return '<div style="margin-top:14px;"><div style="font-size:12px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">'+titre+'</div>'+
+      '<table style="width:100%;border-collapse:collapse;font-size:11px;">'+
+      '<thead><tr style="background:#f3f4f6;">'+headers.map(function(h){return '<th style="text-align:left;padding:5px 7px;border-bottom:1px solid #ddd;">'+h+'</th>';}).join('')+'</tr></thead>'+
+      '<tbody>'+rowsHtml+'</tbody></table></div>';
+  };
+  var td=function(v,extra){ return '<td style="padding:5px 7px;border-bottom:1px solid #eee;'+(extra||'')+'">'+v+'</td>'; };
+  var repRows=(D.rep||[]).map(function(d){ var f=d.facture||{}; var ap=(((d.appareil||{}).marque)||'')+' '+(((d.appareil||{}).modele)||''); return '<tr>'+td('<b>'+(f.numero||d.numero||'')+'</b>')+td(fmtDate(f.date||d.date))+td((ap.trim()||'—')+(d.panne?' — '+d.panne:''))+td('<b>'+eur((f.prix||d.devis||0))+'</b>','text-align:right;')+'</tr>'; }).join('');
+  var venteRows=(D.vente||[]).map(function(v){ return '<tr>'+td('<b>'+(v.numero||'')+'</b>')+td(fmtDate(v.date))+td(v.description||v.desc||'')+td('<b>'+eur(v.prix)+'</b>','text-align:right;')+'</tr>'; }).join('');
+  var atelRows=(D.atel||[]).map(function(a){ return '<tr>'+td('<b>'+a.numero+'</b>')+td(fmtDate(a.date))+td((a.categorie||'')+(a.prestation?' — '+a.prestation:''))+td('<b>'+eur(a.prixTTC)+'</b>','text-align:right;')+'</tr>'; }).join('');
+  var devRows=(D.dev||[]).map(function(d){ return '<tr>'+td('<b>'+d.numero+'</b>')+td(fmtDate(d.date))+td(d.prestation||'')+td('<b>'+eur(d.prix)+'</b>','text-align:right;')+'</tr>'; }).join('');
+  var attRows=(D.att||[]).map(function(a){ return '<tr>'+td('<b>'+a.numero+'</b>')+td(fmtDate(a.date))+td(((a.marque||'')+' '+(a.modele||'')).trim())+'</tr>'; }).join('');
+  var facRows=(D.fac||[]).map(function(f){ var p=(window.phones||[]).find(function(x){return x.id===f.phoneId;}); return '<tr>'+td('<b>'+f.numero+'</b>')+td(fmtDate(f.date))+td(p?p.modele:'—')+td('<b>'+eur(f.ttc)+'</b>','text-align:right;')+'</tr>'; }).join('');
+  var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Fiche client '+cli+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;color:#111;}.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;}@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}</style></head><body>'+
+    '<div class="no-print" style="display:flex;justify-content:space-between;padding:8px 16px;background:#f8f8f8;border-bottom:1px solid #eee;"><button onclick="window.close()" style="background:#6b7280;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-weight:700;cursor:pointer;">✕ Fermer</button><button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button></div>'+
+    '<div class="page">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:12px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+(logo?'<img src="'+logo+'" style="height:44px;">':'')+'<div><div style="font-size:16px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div><div style="font-size:10px;color:#777;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</div></div></div>'+
+      '<div style="text-align:right;"><div style="font-size:17px;font-weight:900;">FICHE CLIENT</div><div style="font-size:11px;color:#888;">'+new Date().toLocaleDateString('fr-FR')+'</div></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:12px;margin-bottom:6px;"><div style="flex:1;"><div style="font-size:16px;font-weight:800;">'+(cli||'—')+'</div>'+(c.tel?'<div style="font-size:12px;color:#555;">📞 '+c.tel+'</div>':'')+(c.email?'<div style="font-size:12px;color:#555;">✉️ '+c.email+'</div>':'')+((c.adresse||c.ville)?'<div style="font-size:12px;color:#555;">📍 '+(c.adresse||'')+' '+(c.cp||'')+' '+(c.ville||'')+'</div>':'')+'</div>'+
+      '<div style="text-align:right;"><div style="font-size:11px;color:#888;">CA total client</div><div style="font-size:22px;font-weight:900;color:#16a34a;">'+eur(D.ca)+'</div></div></div>'+
+    tbl('🔧 Réparations',['N°','Date','Appareil / Panne','Montant'],repRows)+
+    tbl('🛍️ Ventes accessoires / tél. neufs',['N°','Date','Article','Montant'],venteRows)+
+    tbl('🔧 Réparations atelier',['N°','Date','Catégorie / Prestation','Montant'],atelRows)+
+    tbl('📝 Devis',['N°','Date','Prestation','Montant'],devRows)+
+    tbl('🛡️ Attestations d\'irréparabilité',['N°','Date','Appareil'],attRows)+
+    tbl('🧾 Factures occasion',['N°','Date','Appareil','Montant'],facRows)+
+    '<div style="border-top:1px solid #eee;margin-top:16px;padding-top:8px;text-align:center;font-size:9px;color:#bbb;">SOLUTION PHONE · RCS Mâcon B 801 044 785 · contact@solution-phone.fr</div>'+
+    '</div></body></html>');
+  w.document.close();
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 500);
 }
 
 // Pagination + recherche débouncée pour la liste clients (perf : grosse base)
