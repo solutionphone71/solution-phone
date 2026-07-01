@@ -7429,6 +7429,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="genererAttestation()">🛡️ Générer l'attestation</button>
+            <button class="btn" onclick="genererAttestation(true)" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
           </div>
         </div>
       </div>
@@ -17851,7 +17852,7 @@ function _attCheckedValues(containerId){
   return out;
 }
 
-async function genererAttestation(){
+async function genererAttestation(sendMail){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
   var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email');
   var marque=g('att-marque'), modele=g('att-modele'), imei=g('att-imei'), dateAchat=g('att-dateachat');
@@ -17876,7 +17877,7 @@ async function genererAttestation(){
     }
   }catch(e){}
   renderAttest();
-  imprimerAttestationData(a);
+  if(sendMail){ await envoyerAttestationData(a); } else { imprimerAttestationData(a); }
   ['att-prenom','att-nom','att-tel','att-email','att-adresse','att-cp','att-ville','att-marque','att-modele','att-imei','att-dateachat','att-dommages-autre','att-diagnostic','att-cout','att-valeur','att-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['att-dommages','att-motifs'].forEach(function(c){var box=document.getElementById(c);if(box)box.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=false;});});
   showNotif('Attestation '+num+' créée !','success');
@@ -17891,10 +17892,54 @@ function renderAttest(){
     var motif=(a.motifs&&a.motifs[0])||'';
     return '<tr><td><b>'+a.numero+'</b></td><td>'+fmtDate(a.date)+'</td><td>'+cli+'</td><td>'+app+'</td><td style="font-size:11px;color:var(--text-muted);max-width:220px;">'+motif+'</td>'+
       '<td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer / PDF" onclick="reprintAttest('+a.id+')">🖨️</button> '+
+      '<button class="btn btn-sm" title="Envoyer par mail" onclick="envoyerAttestationMail('+a.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button> '+
       '<button class="btn btn-sm" title="Fiche client" onclick="_ouvrirFicheParClient(\''+String(a.tel||'').replace(/\\/g,'').replace(/'/g,"\\'")+'\',\''+String(cli).replace(/'/g,"\\'")+'\')">👤</button></td></tr>';
   }).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune attestation</td></tr>';
 }
 function reprintAttest(id){ var a=attestList.find(function(x){return String(x.id)===String(id);}); if(a) imprimerAttestationData(a); }
+function envoyerAttestationMail(id){ var a=attestList.find(function(x){return String(x.id)===String(id);}); if(a) envoyerAttestationData(a); }
+
+// Envoi de l'attestation par email (Brevo) — contenu complet dans le corps du mail
+async function envoyerAttestationData(a){
+  var email=(a.email||'').trim();
+  if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du destinataire (client) :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } a.email=email; _attestSaveLocal(); }
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  showNotif&&showNotif('📧 Envoi de l\'attestation à '+email+'…','info');
+  var cli=((a.prenom||'')+' '+(a.nom||'')).trim();
+  var domms=(a.dommages||[]).slice(); if(a.dommagesAutre) domms.push(a.dommagesAutre);
+  var dateStr=a.date?new Date(a.date).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR');
+  var liHtml=function(arr){ return (arr&&arr.length)?('<ul style="margin:6px 0 0 18px;padding:0;">'+arr.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>'):'—'; };
+  var eco='';
+  if((a.cout||0)>0 || (a.valeur||0)>0){
+    eco='<p style="font-size:13px;color:#444;">'+((a.cout||0)>0?'Coût estimé de réparation : <b>'+Number(a.cout).toFixed(2)+' € TTC</b>':'')+(((a.cout||0)>0&&(a.valeur||0)>0)?' · ':'')+((a.valeur||0)>0?'Valeur de l\'appareil : <b>'+Number(a.valeur).toFixed(2)+' €</b>':'')+'</p>';
+  }
+  var html='<div style="font-family:Arial,sans-serif;max-width:640px;margin:auto;">'+
+    '<div style="background:#E10600;padding:20px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+    '<p style="color:#ffd9d9;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p></div>'+
+    '<div style="padding:24px;">'+
+    '<h2 style="font-size:18px;margin:0 0 2px;">Attestation d\'irréparabilité</h2>'+
+    '<p style="color:#888;font-size:12px;margin:0 0 16px;">N° '+(a.numero||'')+' · '+dateStr+'</p>'+
+    '<p>Bonjour '+(a.prenom||a.nom||'')+',</p>'+
+    '<p>Veuillez trouver ci-dessous l\'attestation d\'irréparabilité de votre appareil, à transmettre à votre assurance.</p>'+
+    '<div style="background:#f8fafc;border-left:4px solid #E10600;border-radius:8px;padding:16px;margin:16px 0;font-size:13px;line-height:1.6;">'+
+      '<b>Client :</b> '+(cli||'—')+(a.tel?' · '+a.tel:'')+'<br>'+
+      '<b>Appareil :</b> '+((a.marque||'')+' '+(a.modele||'')).trim()+(a.imei?'<br><b>IMEI / N° série :</b> '+a.imei:'')+'<br>'+
+      '<b>Dommages constatés :</b>'+liHtml(domms)+
+      (a.diagnostic?'<br><b>Diagnostic :</b> '+a.diagnostic:'')+
+      '<br><b>Motif(s) d\'irréparabilité :</b>'+liHtml(a.motifs)+
+    '</div>'+eco+
+    '<p style="font-size:15px;font-weight:bold;color:#E10600;">En conséquence, l\'appareil est déclaré IRRÉPARABLE.</p>'+
+    '<p style="color:#666;font-size:12px;margin-top:16px;">Attestation établie pour faire valoir ce que de droit auprès de votre assurance.<br><b>Solution Phone</b> · SIREN 801 044 785 · contact@solution-phone.fr</p>'+
+    '</div></div>';
+  try{
+    var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:cli}],subject:'Attestation d\'irréparabilité '+(a.numero||'')+' — Solution Phone',htmlContent:html};
+    var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok){ showNotif&&showNotif('✅ Attestation envoyée à '+email,'success'); }
+    else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau envoi attestation','error'); }
+}
 
 function imprimerAttestationData(a){
   var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
