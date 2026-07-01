@@ -25,13 +25,21 @@
      ════════════════════════════════════════════════════════════════ -->
 <style id="solution-phone-light-override">
   /* ════════════════════════════════════════════════════════════════
-     SOLUTION PHONE · LIGHT THEME (23 juin 2026) — style "Mon Atelier"
-     Fond blanc, cartes blanches, texte foncé, accents conservés.
+     SOLUTION PHONE · DESIGN SYSTEM v5 (juillet 2026)
+     Noir / Blanc / Rouge — hiérarchie, ombres douces, micro-interactions.
      Posé en !important pour surcharger proprement les styles inline.
      ════════════════════════════════════════════════════════════════ */
   :root{
-    --sp-bg:#f5f5f7; --sp-surface:#ffffff; --sp-ink:#1d1d1f; --sp-ink-2:#6e6e73;
-    --sp-line:rgba(0,0,0,0.10); --sp-line-soft:rgba(0,0,0,0.06);
+    --sp-red:#E10600; --sp-red-deep:#B00007; --sp-red-soft:rgba(225,6,0,0.08);
+    --sp-bg:#F6F6F8; --sp-surface:#FFFFFF; --sp-ink:#111318; --sp-ink-2:#6B7280; --sp-ink-3:#9CA3AF;
+    --sp-line:rgba(17,19,24,0.09); --sp-line-soft:rgba(17,19,24,0.055);
+    --sp-sh-xs:0 1px 2px rgba(16,24,40,0.05);
+    --sp-sh-sm:0 1px 3px rgba(16,24,40,0.06),0 1px 2px rgba(16,24,40,0.04);
+    --sp-sh-md:0 6px 16px -6px rgba(16,24,40,0.10),0 2px 6px -2px rgba(16,24,40,0.05);
+    --sp-sh-lg:0 20px 45px -18px rgba(16,24,40,0.22);
+    --sp-sh-red:0 10px 24px -10px rgba(225,6,0,0.55);
+    --sp-r-sm:10px; --sp-r-md:14px; --sp-r-lg:18px; --sp-r-xl:22px;
+    --sp-ease:cubic-bezier(.32,.72,.24,1);
   }
   html, body, #app, .layout, .app-container, .main, main, .content, .main-content {
     background: var(--sp-bg) !important;
@@ -40,47 +48,74 @@
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
     font-weight: 500 !important;
+    -webkit-font-smoothing: antialiased;
   }
-  body::before {
-    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background:
-      radial-gradient(ellipse 50% 32% at 12% 4%, rgba(255,59,69,0.04), transparent 65%),
-      radial-gradient(ellipse 45% 30% at 95% 18%, rgba(10,132,255,0.03), transparent 65%);
-  }
+  ::selection{ background:rgba(225,6,0,0.14); }
+
+  /* ─── ACCESSIBILITÉ : focus visible ─── */
+  :focus-visible{ outline:2px solid rgba(225,6,0,0.55) !important; outline-offset:2px !important; }
 
   /* ─── SIDEBAR sombre premium (noir / blanc / rouge) ─── */
   .sidebar, aside.sidebar, nav.sidebar {
-    background: #0D0D0D !important;
+    background: linear-gradient(180deg,#0E0E10 0%,#0A0A0C 100%) !important;
     backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
     border-right: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow: none !important;
     color: #FFFFFF !important;
   }
-  .sidebar .sidebar-section, .sidebar .nav-section {
-    color: rgba(255,255,255,0.40) !important;
-    font-size: 11px !important; font-weight: 800 !important;
+  .sidebar .sidebar-section, .sidebar .nav-section, .sidebar .nav-group-label {
+    color: rgba(255,255,255,0.38) !important;
+    font-size: 10.5px !important; font-weight: 800 !important;
     letter-spacing: 0.12em !important; text-transform: uppercase !important;
-    padding: 16px 14px 8px !important;
+    padding: 18px 16px 6px !important; opacity: 1 !important;
   }
+  .sidebar .nav-sep { background: rgba(255,255,255,0.07) !important; }
   .sidebar .nav-item, .sidebar .sidebar-item {
     background: transparent !important;
-    color: rgba(255,255,255,0.72) !important;
-    font-weight: 600 !important; font-size: 14px !important;
-    border-radius: 12px !important; padding: 11px 14px !important;
-    margin: 3px 10px !important; border-left: none !important;
-    transition: all 0.15s !important;
+    color: rgba(255,255,255,0.70) !important;
+    font-weight: 600 !important; font-size: 13.5px !important;
+    border-radius: 11px !important; padding: 10px 13px !important;
+    margin: 2px 10px !important; border-left: none !important;
+    transition: background .16s var(--sp-ease), color .16s, transform .16s !important;
   }
-  .sidebar .nav-item:hover, .sidebar .sidebar-item:hover { background: rgba(255,255,255,0.08) !important; color:#fff !important; }
+  .sidebar .nav-item:hover, .sidebar .sidebar-item:hover {
+    background: rgba(255,255,255,0.07) !important; color:#fff !important; transform: translateX(2px);
+  }
   .sidebar .nav-item.active, .sidebar .sidebar-item.active {
-    background: #E10600 !important; color: #FFFFFF !important; font-weight: 700 !important; border-left: none !important;
-    box-shadow: 0 8px 18px -7px rgba(225,6,0,0.65) !important;
+    background: linear-gradient(135deg,#FF1F1A,#C4000A) !important;
+    color: #FFFFFF !important; font-weight: 700 !important; border-left: none !important;
+    box-shadow: 0 8px 18px -8px rgba(225,6,0,0.7), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    transform: none !important;
   }
-  /* 3 couleurs : on neutralise les accents colorés d'origine (desktop) */
   .sidebar .nav-item[onclick] { border-left-color: transparent !important; }
   .sidebar .nav-item[onclick*="zahira"] { background: transparent !important; }
-  .sidebar .nav-item.active[onclick*="zahira"] { background: #E10600 !important; }
-  .sidebar .nav-icon { margin-right: 11px !important; font-size: 17px !important; flex-shrink: 0 !important; }
+  .sidebar .nav-item.active[onclick*="zahira"] { background: linear-gradient(135deg,#FF1F1A,#C4000A) !important; }
+  .sidebar .nav-icon { margin-right: 10px !important; font-size: 16px !important; flex-shrink: 0 !important; }
   .sidebar h1, .sidebar h2, .sidebar .logo, .sidebar .brand, .sidebar .brand-name,
   .sidebar-logo, .sidebar-logo * { color: #FFFFFF !important; }
+  .sidebar .logo-t { color:#fff !important; text-shadow:none !important; }
+  .sidebar .logo-s { color: rgba(255,255,255,0.45) !important; }
+  /* CTA sidebar (Réparation / Caisse rapide) */
+  .sb-cta {
+    display:flex; align-items:center; gap:11px; cursor:pointer;
+    margin:10px 12px 4px; padding:13px 15px; border-radius:13px;
+    font-weight:800; font-size:14px; letter-spacing:.1px; color:#fff;
+    transition: transform .18s var(--sp-ease), box-shadow .18s var(--sp-ease), background .18s;
+    user-select:none;
+  }
+  .sb-cta svg { flex-shrink:0; }
+  .sb-cta:active { transform: scale(.97); }
+  .sb-cta-primary {
+    background: linear-gradient(135deg,#FF1F1A,#C4000A);
+    box-shadow: 0 10px 22px -10px rgba(225,6,0,0.75), inset 0 1px 0 rgba(255,255,255,0.22);
+  }
+  .sb-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -10px rgba(225,6,0,0.85), inset 0 1px 0 rgba(255,255,255,0.22); }
+  .sb-cta-ghost {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: none; margin-top:6px;
+  }
+  .sb-cta-ghost:hover { background: rgba(255,255,255,0.11); transform: translateY(-1px); }
   /* Menu mobile : conservé clair (inchangé) */
   .mob-menu-item, [class*="mob-menu-item"] { color: #3a3a3c !important; }
   .nav-icon, .mob-menu-icon { flex-shrink: 0 !important; }
@@ -89,64 +124,132 @@
   .page, [class*="page-"] { background: transparent !important; color: var(--sp-ink) !important; }
 
   /* ─── TYPOGRAPHIE ─── */
-  body, p, span, div, td, li, label, input, select, textarea, button { color: var(--sp-ink); }
   h1, h2, h3, h4, h5, h6, .page-title, .card-title, .widget-title {
     color: var(--sp-ink) !important; font-weight: 800 !important; letter-spacing: -0.02em !important;
   }
-  .page-title, h1 { font-size: 28px !important; }
+  .page-title, h1 { font-size: 27px !important; }
   .page-sub, .subtitle { color: var(--sp-ink-2) !important; }
-  body { font-weight: 500 !important; }
-  strong, b { font-weight: 800 !important; }
+  strong, b { font-weight: 700 !important; }
 
   /* ─── CARDS ─── */
   .card, .widget, .bento-card, .bw, [class*="bento"] {
     background: var(--sp-surface) !important;
     border: 1px solid var(--sp-line) !important;
     color: var(--sp-ink) !important;
+    border-radius: var(--sp-r-lg) !important;
     backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    box-shadow: var(--sp-sh-sm) !important;
   }
+  .card:hover { box-shadow: var(--sp-sh-md) !important; border-color: rgba(17,19,24,0.13) !important; transform:none !important; }
   .card-header { background: transparent !important; border-bottom: 1px solid var(--sp-line-soft) !important; }
   .card-title { color: var(--sp-ink) !important; }
+  .dash-card { border-radius: var(--sp-r-lg) !important; box-shadow: var(--sp-sh-xs) !important; }
+  .dash-card:hover { border-color: rgba(225,6,0,0.35) !important; box-shadow: var(--sp-sh-md) !important; transform: translateY(-2px) !important; }
+  .stat-card { border-radius: var(--sp-r-lg) !important; box-shadow: var(--sp-sh-xs) !important; }
+
+  /* ─── QUICK ACTIONS dashboard ─── */
+  .qa-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:13px; }
+  .qa-card {
+    cursor:pointer; border-radius:16px; padding:18px; position:relative;
+    transition: transform .18s var(--sp-ease), box-shadow .18s var(--sp-ease), border-color .18s;
+    user-select:none;
+  }
+  .qa-card:active { transform: scale(.98); }
+  .qa-hero {
+    background: linear-gradient(135deg,#FF1F1A 0%,#C4000A 100%);
+    color:#fff; box-shadow: 0 14px 30px -14px rgba(225,6,0,0.75), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  .qa-hero:hover { transform: translateY(-3px); box-shadow: 0 20px 38px -14px rgba(225,6,0,0.8), inset 0 1px 0 rgba(255,255,255,0.2); }
+  .qa-hero .qa-ico { background: rgba(255,255,255,0.16); color:#fff; }
+  .qa-hero .qa-title { color:#fff !important; }
+  .qa-hero .qa-sub { color: rgba(255,255,255,0.75) !important; }
+  .qa-white {
+    background:#fff; border:1px solid var(--sp-line); box-shadow: var(--sp-sh-xs);
+  }
+  .qa-white:hover { transform: translateY(-3px); border-color: rgba(225,6,0,0.3); box-shadow: var(--sp-sh-md); }
+  .qa-white .qa-ico { background: var(--sp-red-soft); color: var(--sp-red); }
+  .qa-white .qa-title { color: var(--sp-ink) !important; }
+  .qa-white .qa-sub { color: var(--sp-ink-2) !important; }
+  .qa-ghost {
+    background:transparent; border:1.5px dashed rgba(17,19,24,0.18); box-shadow:none;
+  }
+  .qa-ghost:hover { border-color: rgba(225,6,0,0.45); background: rgba(225,6,0,0.03); transform: translateY(-2px); }
+  .qa-ghost .qa-ico { background: rgba(17,19,24,0.05); color: var(--sp-ink-2); }
+  .qa-ghost .qa-title { color: var(--sp-ink) !important; }
+  .qa-ghost .qa-sub { color: var(--sp-ink-3) !important; }
+  .qa-ico {
+    width:42px; height:42px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qa-title { font-size:15px; font-weight:800; margin-top:13px; letter-spacing:-0.01em; }
+  .qa-sub { font-size:12px; margin-top:2px; font-weight:500; }
+
+  /* ─── KPI tiles (Performance live) ─── */
+  .kpi-tile {
+    background:#fff; border:1px solid var(--sp-line); border-radius:16px;
+    padding:15px 17px; box-shadow: var(--sp-sh-xs);
+    transition: transform .18s var(--sp-ease), box-shadow .18s var(--sp-ease);
+  }
+  .kpi-tile:hover { transform: translateY(-2px); box-shadow: var(--sp-sh-md); }
+  .kpi-tile .kpi-lbl { font-size:11px; font-weight:800; color:var(--sp-ink-2); text-transform:uppercase; letter-spacing:.06em; }
+  .kpi-tile .kpi-val { font-size:25px; font-weight:900; color:var(--sp-ink); margin-top:4px; line-height:1.05; letter-spacing:-0.02em; }
+  .kpi-tile .kpi-sub { font-size:11px; color:var(--sp-ink-3); margin-top:4px; font-weight:600; }
 
   /* ─── INPUTS ─── */
   input, select, textarea {
     background: var(--sp-surface) !important;
     color: var(--sp-ink) !important;
-    border: 1px solid rgba(0,0,0,0.14) !important;
+    border: 1px solid rgba(17,19,24,0.14) !important;
+    border-radius: var(--sp-r-sm) !important;
     font-weight: 500 !important;
+    transition: border-color .15s, box-shadow .15s !important;
   }
-  input::placeholder, textarea::placeholder { color: #aeaeb2 !important; }
-  input:focus, select:focus, textarea:focus { border-color: rgba(255,59,69,0.55) !important; outline: none !important; }
+  input::placeholder, textarea::placeholder { color: var(--sp-ink-3) !important; }
+  input:focus, select:focus, textarea:focus {
+    border-color: rgba(225,6,0,0.55) !important; outline: none !important;
+    box-shadow: 0 0 0 3px rgba(225,6,0,0.10) !important;
+  }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--sp-red) !important; box-shadow:none !important; }
 
   /* ─── BUTTONS ─── */
-  .btn, button.btn { font-weight: 700 !important; }
-  .btn-primary {
-    background: linear-gradient(135deg, #FF5560, #C8102E) !important;
-    color: #FFFFFF !important; border: none !important;
-    box-shadow: 0 4px 14px -4px rgba(255,59,69,0.35) !important;
+  .btn, button.btn {
+    font-weight: 700 !important; border-radius: var(--sp-r-sm) !important;
+    transition: transform .15s var(--sp-ease), box-shadow .15s var(--sp-ease), background .15s, border-color .15s !important;
   }
+  .btn:hover { transform: translateY(-1px); box-shadow: var(--sp-sh-sm) !important; }
+  .btn:active { transform: translateY(0) scale(.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, #FF1F1A, #C4000A) !important;
+    color: #FFFFFF !important; border: none !important;
+    box-shadow: 0 6px 16px -6px rgba(225,6,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+  }
+  .btn-primary:hover { box-shadow: 0 10px 22px -8px rgba(225,6,0,0.65), inset 0 1px 0 rgba(255,255,255,0.18) !important; }
   .btn-primary, .btn-primary * { color:#fff !important; }
 
   /* ─── TABLES ─── */
   table { background: transparent !important; color: var(--sp-ink) !important; }
-  th { color: var(--sp-ink-2) !important; border-bottom: 1px solid var(--sp-line) !important; }
+  th {
+    color: var(--sp-ink-2) !important; border-bottom: 1px solid var(--sp-line) !important;
+    background: #FAFAFB !important; font-weight: 700 !important;
+  }
   td { border-bottom: 1px solid var(--sp-line-soft) !important; color: var(--sp-ink) !important; }
-  tr:hover { background: rgba(0,0,0,0.03) !important; }
+  tr:hover { background: rgba(225,6,0,0.025) !important; }
+  tr:hover td { background: transparent !important; }
 
-  /* ─── SCROLLBARS claires ─── */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.04); }
-  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+  /* ─── SCROLLBARS ─── */
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(17,19,24,0.16); border-radius: 6px; border:2px solid transparent; background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(17,19,24,0.30); background-clip: padding-box; }
 
   /* ─── LIENS ─── */
-  a { color: #E0102E; }
-  a:hover { color: #C8102E; }
+  a { color: var(--sp-red); }
+  a:hover { color: var(--sp-red-deep); }
 
   /* ─── HEADER / TOP BAR ─── */
   #aria-omnibar-wrap, #aria-bar {
-    background: rgba(255,255,255,0.9) !important;
+    background: rgba(255,255,255,0.85) !important;
+    backdrop-filter: blur(14px) saturate(1.4) !important; -webkit-backdrop-filter: blur(14px) saturate(1.4) !important;
     border-bottom: 1px solid var(--sp-line) !important; color: var(--sp-ink) !important;
   }
   .app-header, header.app-header, [class*="header"] {
@@ -156,10 +259,18 @@
 
   /* ─── ALERTS ─── */
   .alert, .notice, .info-box {
-    background: #f1f1f4 !important; color: var(--sp-ink) !important; border-color: var(--sp-line) !important;
+    background: #F3F3F5 !important; color: var(--sp-ink) !important; border-color: var(--sp-line) !important;
+    border-radius: var(--sp-r-md) !important;
   }
 
-  /* ─── Force fond clair global (ex-#08080A) ─── */
+  /* ─── NOTIFICATIONS ─── */
+  .notif {
+    border-radius: var(--sp-r-md) !important;
+    box-shadow: var(--sp-sh-lg) !important;
+    backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important;
+  }
+
+  /* ─── Force fond clair global ─── */
   html, body, #app, .layout, .container, .wrapper, main,
   header, .header, .top-bar, .topbar, .app-header, .app-bar,
   .navbar, .nav-bar, .toolbar, .header-bar, .page-header,
@@ -168,12 +279,26 @@
   }
 
   /* ─── MODALES ─── */
-  .modal-backdrop, .overlay { background: rgba(0,0,0,0.45) !important; }
+  .modal-backdrop, .overlay, .modal-overlay {
+    background: rgba(10,10,12,0.45) !important;
+    backdrop-filter: blur(6px) !important; -webkit-backdrop-filter: blur(6px) !important;
+  }
   .modal, .modal-content, .dialog {
     background: var(--sp-surface) !important; color: var(--sp-ink) !important;
     border: 1px solid var(--sp-line) !important;
+    border-radius: var(--sp-r-xl) !important;
+    box-shadow: var(--sp-sh-lg) !important;
+  }
+  .modal-overlay.open .modal { animation: sp-modal-in .28s var(--sp-ease) both; }
+  @keyframes sp-modal-in {
+    from { opacity:0; transform: translateY(14px) scale(.97); }
+    to { opacity:1; transform: translateY(0) scale(1); }
   }
 
+  /* ─── MOUVEMENT RÉDUIT ─── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Solution Phone">
@@ -770,8 +895,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-item active" onclick="showPage('zahira-home',this);if(window.zhInit)zhInit();"><span class="nav-icon">🏠</span><span>Tableau de bord</span></div>
     <div class="nav-item" onclick="showPage('dashboard',this)" style="font-size:12px;opacity:0.7;padding-left:32px;"><span class="nav-icon">📊</span><span>Dashboard détaillé</span></div>
-    <div onclick="showPage('reparations',null);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);" title="Nouvelle réparation" style="margin:12px 14px 4px;cursor:pointer;background:linear-gradient(145deg,#ff2016,#c4000a);color:#fff;border-radius:15px;padding:15px 16px;box-shadow:0 6px 0 #8a000a, 0 12px 22px rgba(225,6,0,0.5);transform:translateY(-1px);transition:transform .1s ease, box-shadow .1s ease;display:flex;align-items:center;gap:11px;font-weight:900;font-size:15px;letter-spacing:.2px;" onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #8a000a,0 5px 12px rgba(225,6,0,0.45)'" onmouseup="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 0 #8a000a,0 12px 22px rgba(225,6,0,0.5)'" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(-1px)'"><span style="font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">🔧</span><span>Réparation</span></div>
-    <div onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naShowTab==='function')naShowTab('caisse');" title="Ouvrir la caisse" style="margin:8px 14px 4px;cursor:pointer;background:linear-gradient(145deg,#ff2016,#c4000a);color:#fff;border-radius:15px;padding:15px 16px;box-shadow:0 6px 0 #8a000a, 0 12px 22px rgba(225,6,0,0.5);transform:translateY(-1px);transition:transform .1s ease, box-shadow .1s ease;display:flex;align-items:center;gap:11px;font-weight:900;font-size:15px;letter-spacing:.2px;" onmousedown="this.style.transform='translateY(4px)';this.style.boxShadow='0 2px 0 #8a000a,0 5px 12px rgba(225,6,0,0.45)'" onmouseup="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 0 #8a000a,0 12px 22px rgba(225,6,0,0.5)'" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(-1px)'"><span style="font-size:22px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));">🛒</span><span>Caisse rapide</span></div>
+    <div onclick="showPage('reparations',null);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);" title="Nouvelle réparation" class="sb-cta sb-cta-primary"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span>Réparation</span></div>
+    <div onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naShowTab==='function')naShowTab('caisse');" title="Ouvrir la caisse" class="sb-cta sb-cta-ghost"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg><span>Caisse rapide</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
@@ -868,12 +993,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         min-height: calc(100vh - 0px);
         position: relative;
       }
-      #page-zahira-home::before {
-        content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
-        background:
-          radial-gradient(ellipse 50% 32% at 12% 4%, rgba(255,59,69,0.18), transparent 65%),
-          radial-gradient(ellipse 45% 30% at 95% 18%, rgba(10,132,255,0.10), transparent 65%);
-      }
+      #page-zahira-home::before { content: none; }
       #page-zahira-home .zh-grid {
         position: relative; z-index: 1;
         display: grid;
@@ -1627,43 +1747,43 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <!-- ═══ ACTIONS RAPIDES (premium 3 couleurs) ═══ -->
       <div style="margin-bottom:26px;">
         <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Actions rapides</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
-          <div onclick="showPage('reparations',null);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);" style="cursor:pointer;background:#E10600;color:#fff;border-radius:16px;padding:18px;box-shadow:0 12px 26px -12px rgba(225,6,0,0.6);transition:transform .15s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            <div style="font-size:16px;font-weight:800;margin-top:12px;">Nouvelle réparation</div>
-            <div style="font-size:12px;opacity:.88;margin-top:2px;">Créer un dossier</div>
+        <div class="qa-grid">
+          <div class="qa-card qa-hero" onclick="showPage('reparations',null);setTimeout(function(){if(typeof repNewDossier==='function')repNewDossier();},80);">
+            <div class="qa-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+            <div class="qa-title">Nouvelle réparation</div>
+            <div class="qa-sub">Créer un dossier</div>
           </div>
-          <div onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naRender==='function')naRender();if(typeof naShowTab==='function')naShowTab('caisse');" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600';this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 24px -14px rgba(0,0,0,0.25)'" onmouseout="this.style.borderColor='#1c1c1c';this.style.transform='none';this.style.boxShadow='none'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">Encaisser</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Caisse accessoires</div>
+          <div class="qa-card qa-white" onclick="showPage('neufs-access',null);if(typeof naLoad==='function')naLoad();if(typeof naRender==='function')naRender();if(typeof naShowTab==='function')naShowTab('caisse');">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+            <div class="qa-title">Encaisser</div>
+            <div class="qa-sub">Caisse accessoires</div>
           </div>
-          <div onclick="showPage('phones',null);" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600';this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 24px -14px rgba(0,0,0,0.25)'" onmouseout="this.style.borderColor='#1c1c1c';this.style.transform='none';this.style.boxShadow='none'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">Occasion</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Achat &amp; stock</div>
+          <div class="qa-card qa-white" onclick="showPage('phones',null);">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/></svg></div>
+            <div class="qa-title">Occasion</div>
+            <div class="qa-sub">Achat &amp; stock</div>
           </div>
-          <div onclick="_qrTab='ecologic';showPage('suivi-qr',null);" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600';this.style.transform='translateY(-3px)';this.style.boxShadow='0 10px 24px -14px rgba(0,0,0,0.25)'" onmouseout="this.style.borderColor='#1c1c1c';this.style.transform='none';this.style.boxShadow='none'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">QualiRépar</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Suivi &amp; dossiers</div>
+          <div class="qa-card qa-white" onclick="_qrTab='ecologic';showPage('suivi-qr',null);">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="qa-title">QualiRépar</div>
+            <div class="qa-sub">Suivi &amp; dossiers</div>
           </div>
-          <div onclick="var m=document.getElementById('zh-more-actions');m.style.display=(m.style.display==='grid'?'none':'grid');" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600'" onmouseout="this.style.borderColor='#1c1c1c'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">Plus d'actions</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Tél. neuf · Vente occasion</div>
+          <div class="qa-card qa-ghost" onclick="var m=document.getElementById('zh-more-actions');m.style.display=(m.style.display==='grid'?'none':'grid');">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></div>
+            <div class="qa-title">Plus d'actions</div>
+            <div class="qa-sub">Tél. neuf · Vente occasion</div>
           </div>
         </div>
-        <div id="zh-more-actions" style="display:none;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:14px;">
-          <div onclick="showPage('ventes-neufs',null);if(typeof renderVentesNeufs==='function')renderVentesNeufs();" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600'" onmouseout="this.style.borderColor='#1c1c1c'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><circle cx="12" cy="18" r="0.6"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">Téléphone neuf</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Vente tél. neufs</div>
+        <div id="zh-more-actions" class="qa-grid" style="display:none;margin-top:13px;">
+          <div class="qa-card qa-white" onclick="showPage('ventes-neufs',null);if(typeof renderVentesNeufs==='function')renderVentesNeufs();">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><circle cx="12" cy="18" r="0.6"/></svg></div>
+            <div class="qa-title">Téléphone neuf</div>
+            <div class="qa-sub">Vente tél. neufs</div>
           </div>
-          <div onclick="showPage('ventes-smart',null);if(typeof renderVentesSmartphones==='function')renderVentesSmartphones();" style="cursor:pointer;background:#E10600;color:#fff !important;border:1px solid #c4000a;border-radius:16px;padding:18px;transition:.15s;" onmouseover="this.style.borderColor='#E10600'" onmouseout="this.style.borderColor='#1c1c1c'">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-            <div style="font-size:15px;font-weight:800;margin-top:12px;">Vente occasion</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.6) !important;margin-top:2px;">Vendre un smartphone</div>
+          <div class="qa-card qa-white" onclick="showPage('ventes-smart',null);if(typeof renderVentesSmartphones==='function')renderVentesSmartphones();">
+            <div class="qa-ico"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
+            <div class="qa-title">Vente occasion</div>
+            <div class="qa-sub">Vendre un smartphone</div>
           </div>
         </div>
       </div>
@@ -8467,39 +8587,39 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;">
 
           <!-- Aujourd'hui -->
-          <div style="background:linear-gradient(135deg,#ffffff,#eaf2ff);border:1px solid rgba(96,165,250,0.2);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">⚡ Aujourd'hui</div>
-            <div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#60a5fa;margin:4px 0;">0</div>
-            <div style="font-size:10px;color:rgba(0,0,0,0.3);">réparations</div>
-            <div id="rep-w-today-ca" style="font-size:14px;font-weight:800;color:#fbbf24;margin-top:4px;">0€</div>
+          <div style="background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 2px rgba(16,24,40,0.05);">
+            <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:1px;">⚡ Aujourd'hui</div>
+            <div id="rep-w-today-nb" style="font-size:28px;font-weight:900;color:#2563EB;margin:4px 0;letter-spacing:-0.02em;">0</div>
+            <div style="font-size:10px;color:#9CA3AF;font-weight:600;">réparations</div>
+            <div id="rep-w-today-ca" style="font-size:14px;font-weight:800;color:#D97706;margin-top:4px;">0€</div>
           </div>
 
           <!-- En cours -->
-          <div style="background:linear-gradient(135deg,#ffffff,#ffffff);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">🔧 En cours</div>
-            <div id="rep-w-encours" style="font-size:28px;font-weight:900;color:#34d399;margin:4px 0;">0</div>
+          <div style="background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 2px rgba(16,24,40,0.05);">
+            <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:1px;">🔧 En cours</div>
+            <div id="rep-w-encours" style="font-size:28px;font-weight:900;color:#16A34A;margin:4px 0;letter-spacing:-0.02em;">0</div>
             <div id="rep-w-encours-sub" style="font-size:10px;color:rgba(0,0,0,0.3);">dossier ouvert</div>
           </div>
 
           <!-- Ecosystem envoyés -->
-          <div style="background:linear-gradient(135deg,#ffffff,#f3effe);border:1px solid rgba(167,139,250,0.2);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">🟣 Ecosystem</div>
-            <div id="rep-w-ecosystem" style="font-size:28px;font-weight:900;color:#a78bfa;margin:4px 0;">0</div>
+          <div style="background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 2px rgba(16,24,40,0.05);">
+            <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:1px;">🟣 Ecosystem</div>
+            <div id="rep-w-ecosystem" style="font-size:28px;font-weight:900;color:#7C3AED;margin:4px 0;letter-spacing:-0.02em;">0</div>
             <div style="font-size:10px;color:rgba(0,0,0,0.3);">dossiers envoyés</div>
           </div>
 
           <!-- Ecologic envoyés -->
-          <div style="background:linear-gradient(135deg,#ffffff,#ffffff);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">🟢 Ecologic</div>
-            <div id="rep-w-ecologic" style="font-size:28px;font-weight:900;color:#34d399;margin:4px 0;">0</div>
+          <div style="background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:14px;padding:14px;text-align:center;box-shadow:0 1px 2px rgba(16,24,40,0.05);">
+            <div style="font-size:10px;font-weight:800;color:#6B7280;text-transform:uppercase;letter-spacing:1px;">🟢 Ecologic</div>
+            <div id="rep-w-ecologic" style="font-size:28px;font-weight:900;color:#16A34A;margin:4px 0;letter-spacing:-0.02em;">0</div>
             <div style="font-size:10px;color:rgba(0,0,0,0.3);">dossiers envoyés</div>
           </div>
 
           <!-- Non envoyés (attention!) -->
-          <div id="rep-w-nonenvoye-card" style="background:linear-gradient(135deg,#ffffff,#fdecec);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:10px;color:rgba(0,0,0,0.4);text-transform:uppercase;letter-spacing:1px;">⚠️ Non envoyés</div>
-            <div id="rep-w-nonenvoye" style="font-size:28px;font-weight:900;color:#ef4444;margin:4px 0;">0</div>
-            <div style="font-size:10px;color:rgba(239,68,68,0.5);">à envoyer QR</div>
+          <div id="rep-w-nonenvoye-card" style="background:rgba(225,6,0,0.04);border:1px solid rgba(225,6,0,0.22);border-radius:14px;padding:14px;text-align:center;">
+            <div style="font-size:10px;font-weight:800;color:#B00007;text-transform:uppercase;letter-spacing:1px;">⚠️ Non envoyés</div>
+            <div id="rep-w-nonenvoye" style="font-size:28px;font-weight:900;color:#E10600;margin:4px 0;letter-spacing:-0.02em;">0</div>
+            <div style="font-size:10px;color:rgba(225,6,0,0.55);font-weight:600;">à envoyer QR</div>
           </div>
 
         </div>
@@ -33200,7 +33320,7 @@ function renderDashHome(){
   var caMD=sumTtc(C.filter(function(r){ return (r.date||'').slice(0,7)===moisDernier; }));
   var evol=caMD>0?Math.round(((caMois-caMD)/caMD)*100):0;
   var evolJour=caYest>0?Math.round(((caToday-caYest)/caYest)*100):0;
-  var _tileN=function(lbl,val,sub){ return '<div style="background:#0D0D0D;border:1px solid #1c1c1c;border-radius:16px;padding:14px 16px;"><div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:.4px;">'+lbl+'</div><div style="font-size:24px;font-weight:900;color:#fff;margin-top:3px;line-height:1;">'+val+'</div>'+(sub?'<div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:3px;">'+sub+'</div>':'')+'</div>'; };
+  var _tileN=function(lbl,val,sub){ return '<div class="kpi-tile"><div class="kpi-lbl">'+lbl+'</div><div class="kpi-val">'+val+'</div>'+(sub?'<div class="kpi-sub">'+sub+'</div>':'')+'</div>'; };
   var _cats = window._caisseCategories || {};
   var caRep  = (_cats.reparations||{}).total||0;
   var caAcc  = (_cats.accessoires||{}).total||0;
@@ -33209,11 +33329,12 @@ function renderDashHome(){
   var caOcc  = P.filter(function(p){ return p&&p.etat==='VENDU'&&(p.dateVente||'').slice(0,10)===today; }).reduce(function(s,p){ return s+(Number(p.vente)||0); },0);
   perf.innerHTML=
     '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;margin-bottom:12px;">Performance Live · aujourd\'hui</div>'+
-    '<div style="position:relative;overflow:hidden;background:linear-gradient(135deg,#E10600,#8f000c);border-radius:20px;padding:18px 22px;color:#fff;box-shadow:0 14px 34px -12px rgba(225,6,0,0.65);margin-bottom:13px;">'+
-      '<div style="position:absolute;right:-25px;top:-25px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.10);"></div>'+
-      '<div style="position:relative;"><div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;opacity:.9;">CA Total du jour</div>'+
-      '<div style="font-size:42px;font-weight:900;line-height:1;margin:7px 0 4px;">'+eur(caTot)+'</div>'+
-      '<div style="display:inline-flex;font-size:12px;font-weight:700;background:rgba(255,255,255,0.18);padding:4px 11px;border-radius:18px;">Réparations + Accessoires + Tél. neufs · TVA 20%'+((evolJour||0)?' · '+(evolJour>=0?'▲ +':'▼ ')+evolJour+'% vs hier':'')+'</div></div>'+
+    '<div style="position:relative;overflow:hidden;background:linear-gradient(120deg,#FF1F1A 0%,#D40009 45%,#8F000C 100%);border-radius:20px;padding:20px 24px;color:#fff;box-shadow:0 18px 40px -18px rgba(196,0,10,0.55),inset 0 1px 0 rgba(255,255,255,0.18);margin-bottom:13px;">'+
+      '<div style="position:absolute;right:-30px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.08);"></div>'+
+      '<div style="position:absolute;right:70px;bottom:-55px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.05);"></div>'+
+      '<div style="position:relative;"><div style="font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,0.85);">CA Total du jour</div>'+
+      '<div style="font-size:44px;font-weight:900;line-height:1;margin:8px 0 6px;color:#fff;letter-spacing:-0.02em;">'+eur(caTot)+'</div>'+
+      '<div style="display:inline-flex;font-size:12px;font-weight:700;color:#fff;background:rgba(255,255,255,0.16);backdrop-filter:blur(4px);padding:4px 11px;border-radius:18px;">Réparations + Accessoires + Tél. neufs · TVA 20%'+((evolJour||0)?' · '+(evolJour>=0?'▲ +':'▼ ')+evolJour+'% vs hier':'')+'</div></div>'+
     '</div>'+
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:13px;">'+
       _tileN('🔧 Réparations', eur(caRep), 'QualiRépar inclus')+
