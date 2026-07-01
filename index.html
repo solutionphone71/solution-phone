@@ -7334,7 +7334,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group" style="position:relative;"><label>🔍 Rechercher un client existant</label><input type="text" id="dv-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="devisClientSearch(this.value)"><div id="dv-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
-            <div class="form-group"><label>Client (Prénom Nom) *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div class="form-group"><label>Prénom</label><input type="text" id="dv-prenom" placeholder="ex: Jean" oninput="updateDevisPreview()"></div>
+              <div class="form-group"><label>Nom *</label><input type="text" id="dv-nom" placeholder="ex: Dupont" oninput="updateDevisPreview()"></div>
+            </div>
             <div class="form-group"><label>Téléphone *</label><input type="tel" id="dv-tel" placeholder="ex: 06 12 34 56 78" inputmode="tel"></div>
             <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="Adresse" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
@@ -17474,21 +17477,23 @@ function updateDevisPreview() {
 }
 
 async function genererDevis() {
-  var client=document.getElementById('dv-client').value.trim();
+  var prenom=(document.getElementById('dv-prenom')||{value:''}).value.trim();
+  var nom=(document.getElementById('dv-nom')||{value:''}).value.trim();
+  var client=(prenom+' '+nom).trim();
   var tel=(document.getElementById('dv-tel')||{value:''}).value.trim();
   var prestation=document.getElementById('dv-prestation').value.trim();
   var prix=parseFloat(document.getElementById('dv-prix').value);
-  if(!client||!prestation||!prix){showNotif('Client, prestation et prix requis','error');return;}
+  if(!nom||!prestation||!prix){showNotif('Nom, prestation et prix requis','error');return;}
   var num='DEV-'+new Date().getFullYear()+'-'+String(devisList.length+1).padStart(3,'0');
   var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
-    clientNom:client,clientTel:tel,clientAdresse:getAdresse('dv'),
+    clientNom:client,clientPrenom:prenom,clientNomSeul:nom,clientTel:tel,clientAdresse:getAdresse('dv'),
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
   _devisSaveLocal(); // persiste immédiatement (fiable, même sans table Supabase)
   // Créer / mettre à jour le client dans la base → il apparaît dans le suivi client (fiche)
-  try{ await devisUpsertClient(client, tel, dv.clientEmail, dv.clientAdresse); }catch(e){ console.warn('devis upsert client:',e); }
+  try{ await devisUpsertClient(prenom, nom, tel, dv.clientEmail, dv.clientAdresse); }catch(e){ console.warn('devis upsert client:',e); }
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
   try{
     if(typeof supaFetch==='function'){
@@ -17499,16 +17504,15 @@ async function genererDevis() {
   }catch(e){ console.warn('save devis:',e); }
   renderDevis();
   imprimerDevisData(dv);
-  ['dv-client','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dv-prenom','dv-nom','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
 }
 
 // Crée ou met à jour le client (dédup par téléphone puis email) — même logique que la réparation
-async function devisUpsertClient(fullName, tel, email, adresseComplete){
-  fullName=(fullName||'').trim(); if(!fullName || typeof supaFetch!=='function') return;
-  var parts=fullName.split(/\s+/), prenom='', nom=fullName;
-  if(parts.length>1){ prenom=parts[0]; nom=parts.slice(1).join(' '); }
+async function devisUpsertClient(prenom, nom, tel, email, adresseComplete){
+  prenom=(prenom||'').trim(); nom=(nom||'').trim();
+  if(!nom || typeof supaFetch!=='function') return;
   var rue=adresseComplete||'', cp='', ville='';
   var m=(adresseComplete||'').match(/^(.*?),?\s*(\d{4,5})\s+([^,]+?)\s*$/);
   if(m){ rue=(m[1]||'').replace(/,$/,'').trim(); cp=m[2]; ville=m[3].trim(); }
@@ -17545,9 +17549,9 @@ function devisClientSearch(q){
       if(!res) return;
       if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
       res.innerHTML=data.map(function(c){
-        var nom=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
-        var ds=encodeURIComponent(JSON.stringify({nom:nom,adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||'',tel:c.tel||''}));
-        return '<div onclick="devisPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nom+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
+        var nomAff=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        var ds=encodeURIComponent(JSON.stringify({prenom:c.prenom||'',nom:c.nom||'',adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||'',tel:c.tel||''}));
+        return '<div onclick="devisPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nomAff+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
       }).join('');
       res.style.display='block';
     }catch(e){ if(res)res.style.display='none'; }
@@ -17556,16 +17560,16 @@ function devisClientSearch(q){
 function devisPickClient(s){
   var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
   var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
-  set('dv-client',c.nom); set('dv-tel',c.tel); set('dv-adresse',c.adresse); set('dv-cp',c.cp); set('dv-ville',c.ville); set('dv-email',c.email);
+  set('dv-prenom',c.prenom); set('dv-nom',c.nom); set('dv-tel',c.tel); set('dv-adresse',c.adresse); set('dv-cp',c.cp); set('dv-ville',c.ville); set('dv-email',c.email);
   var res=document.getElementById('dv-client-results'); if(res)res.style.display='none';
-  var inp=document.getElementById('dv-client-search'); if(inp)inp.value=c.nom||'';
+  var inp=document.getElementById('dv-client-search'); if(inp)inp.value=((c.prenom||'')+' '+(c.nom||'')).trim();
   if(typeof updateDevisPreview==='function') updateDevisPreview();
 }
 
 // Envoi du devis par mail (page Devis autonome — Brevo)
 async function envoyerDevisStandaloneEmail(){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
-  var client=g('dv-client'), presta=g('dv-prestation'), email=g('dv-email');
+  var client=((g('dv-prenom')+' '+g('dv-nom')).trim()), presta=g('dv-prestation'), email=g('dv-email');
   var prix=parseFloat(g('dv-prix'))||0, appareil=g('dv-appareil'), validite=g('dv-validite')||'30 jours';
   if(!client||!presta||!prix){ showNotif&&showNotif('Client, prestation et prix requis','error'); return; }
   if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email du client manquant ou invalide','error'); return; }
@@ -17723,7 +17727,7 @@ function convertirDevisEnFacture() {
   if(!prestation||!prix){showNotif('Remplissez le devis avant','error');return;}
   // Copier dans la page réparations
   showPage('reparations',null);
-  document.getElementById('r-client-nom').value=document.getElementById('dv-client').value;
+  document.getElementById('r-client-nom').value=(((document.getElementById('dv-prenom')||{value:''}).value+' '+(document.getElementById('dv-nom')||{value:''}).value).trim());
   setAdresseFields('r-client', getAdresse('dv'));
   document.getElementById('r-client-email').value=document.getElementById('dv-email').value;
   document.getElementById('r-appareil').value=document.getElementById('dv-appareil').value;
