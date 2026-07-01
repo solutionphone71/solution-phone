@@ -7334,7 +7334,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div class="card-header"><div class="card-title">📝 Nouveau devis</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;">
             <div class="form-group" style="position:relative;"><label>🔍 Rechercher un client existant</label><input type="text" id="dv-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="devisClientSearch(this.value)"><div id="dv-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
-            <div class="form-group"><label>Client *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Client (Prénom Nom) *</label><input type="text" id="dv-client" placeholder="ex: Jean Dupont" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Téléphone *</label><input type="tel" id="dv-tel" placeholder="ex: 06 12 34 56 78" inputmode="tel"></div>
             <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="Adresse" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
             <div class="form-group"><label>Appareil</label><input type="text" id="dv-appareil" placeholder="ex: iPhone 13" oninput="updateDevisPreview()"></div>
@@ -10513,8 +10514,10 @@ function showPage(id,el){
   if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
-  if(id==='devis')renderDevis();    if(id==='clients'){
+  if(id==='devis'){ if(typeof devisLoad==='function') devisLoad(); else renderDevis(); }    if(id==='clients'){
     loadAllClients().then(function(){ renderClients(); });
+    try{ if(typeof devisLoad==='function') devisLoad(); }catch(e){}
+    try{ if(typeof repLoadDossiers==='function' && (!window.repDossiers||!window.repDossiers.length)) repLoadDossiers(); }catch(e){}
   }
   if(id==='instagram'){renderInstagram();}
   if(id==='ecrans'){loadEcransFromSupabase().then(function(){ renderEcrans(); });}
@@ -13176,21 +13179,28 @@ function showClientDetail(id) {
   var c = clients.find(function(x){return x.id===id;});
   if(!c) return;
 
-  // Historique factures
+  var cNom=(c.nom||'').toLowerCase();
+  var cTel=String(c.tel||'').replace(/\s/g,'');
+  // Historique factures (occasion / neuf)
   var facClient = factures.filter(function(f){
-    return f.clientNom && f.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+    return f.clientNom && f.clientNom.toLowerCase().includes(cNom);
   });
-  // Historique réparations
-  var repClient = reparations.filter(function(r){
-    return r.clientNom && r.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+  // Historique réparations — VRAIES données (dossiers réparation), match par téléphone puis nom
+  var repClient = (window.repDossiers||[]).filter(function(d){
+    var dc=d.client||{}; var dtel=String(dc.tel||'').replace(/\s/g,'');
+    if(cTel && dtel && dtel===cTel) return true;
+    var full=((dc.prenom||'')+' '+(dc.nom||'')).toLowerCase().trim();
+    return cNom && (full.indexOf(cNom)>=0 || (dc.nom||'').toLowerCase()===cNom);
   });
   // Historique devis
   var devClient = devisList.filter(function(d){
-    return d.clientNom && d.clientNom.toLowerCase().includes(c.nom.toLowerCase());
+    var dtel=String(d.clientTel||'').replace(/\s/g,'');
+    if(cTel && dtel && dtel===cTel) return true;
+    return d.clientNom && d.clientNom.toLowerCase().includes(cNom);
   });
 
-  var totalCA = facClient.reduce(function(s,f){return s+f.ttc;},0) +
-                repClient.reduce(function(s,r){return s+r.prix;},0);
+  var totalCA = facClient.reduce(function(s,f){return s+(f.ttc||0);},0) +
+                repClient.reduce(function(s,d){return s+((d.facture&&d.facture.prix)||d.devis||0);},0);
 
   var html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:8px;">' +
     '<div>' +
@@ -13223,18 +13233,23 @@ function showClientDetail(id) {
       return '<tr><td><b>'+f.numero+'</b></td><td>'+fmtDate(f.date)+'</td><td>'+(p?p.modele:'—')+'</td><td><b>'+f.ttc+' €</b></td><td><button class="btn btn-sm" onclick="reprintFacture('+f.id+')">🖨️</button></td></tr>';
     }).join('') + '</tbody></table>' : '') +
 
-    // Réparations
+    // Réparations (vrais dossiers) — impression + renvoi facture par mail
     (repClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">🔧 Réparations</div>' +
-    '<table><thead><tr><th>N°</th><th>Date</th><th>Réparation</th><th>Montant</th><th></th></tr></thead><tbody>' +
-    repClient.map(function(r){
-      return '<tr><td><b>'+r.numero+'</b></td><td>'+fmtDate(r.date)+'</td><td>'+r.description+'</td><td><b>'+r.prix.toFixed(2)+' €</b></td><td><button class="btn btn-sm" onclick="reprintRep('+r.id+')">🖨️</button></td></tr>';
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Appareil / Panne</th><th>Montant</th><th>Statut</th><th></th></tr></thead><tbody>' +
+    repClient.map(function(d){
+      var f=d.facture||{}; var ap=(((d.appareil||{}).marque)||'')+' '+(((d.appareil||{}).modele)||'');
+      var mnt=(f.prix||d.devis||0);
+      var acts = f.numero
+        ? '<button class="btn btn-sm" title="Imprimer la facture" onclick="repImprimerFactureById(\''+d.id+'\')">🖨️</button> <button class="btn btn-sm" title="Renvoyer la facture par mail" onclick="repRenvoyerFactureById(\''+d.id+'\')" style="border-color:#16a34a;color:#16a34a;">📧</button>'
+        : '<span style="color:#9CA3AF;font-size:11px;">en cours</span>';
+      return '<tr><td><b>'+(f.numero||d.numero||'')+'</b></td><td>'+fmtDate(f.date||d.date)+'</td><td>'+(ap.trim()||'—')+(d.panne?' — <span style="color:var(--text-muted);">'+d.panne+'</span>':'')+'</td><td><b>'+Number(mnt).toFixed(2)+' €</b></td><td style="font-size:11px;color:var(--text-muted);">'+(d.statut||'')+'</td><td style="white-space:nowrap;">'+acts+'</td></tr>';
     }).join('') + '</tbody></table>' : '') +
 
-    // Devis
+    // Devis — impression + renvoi par mail
     (devClient.length > 0 ? '<div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin:12px 0 8px;">📝 Devis</div>' +
-    '<table><thead><tr><th>N°</th><th>Date</th><th>Prestation</th><th>Montant</th></tr></thead><tbody>' +
+    '<table><thead><tr><th>N°</th><th>Date</th><th>Prestation</th><th>Montant</th><th></th></tr></thead><tbody>' +
     devClient.map(function(d){
-      return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+d.prestation+'</td><td><b>'+d.prix.toFixed(2)+' €</b></td></tr>';
+      return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+(d.prestation||'')+'</td><td><b>'+Number(d.prix||0).toFixed(2)+' €</b></td><td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="reprintDevis('+d.id+')">🖨️</button> <button class="btn btn-sm" title="Renvoyer par mail" onclick="renvoyerDevisData('+d.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button></td></tr>';
     }).join('') + '</tbody></table>' : '');
 
   document.getElementById('client-detail-content').innerHTML = html;
@@ -17419,31 +17434,62 @@ function updateDevisPreview() {
   document.getElementById('devis-preview-card').style.display='block';
 }
 
-function genererDevis() {
+async function genererDevis() {
   var client=document.getElementById('dv-client').value.trim();
+  var tel=(document.getElementById('dv-tel')||{value:''}).value.trim();
   var prestation=document.getElementById('dv-prestation').value.trim();
   var prix=parseFloat(document.getElementById('dv-prix').value);
   if(!client||!prestation||!prix){showNotif('Client, prestation et prix requis','error');return;}
   var num='DEV-'+new Date().getFullYear()+'-'+String(devisList.length+1).padStart(3,'0');
   var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
-    clientNom:client,clientAdresse:getAdresse('dv'),
+    clientNom:client,clientTel:tel,clientAdresse:getAdresse('dv'),
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
+  // Créer / mettre à jour le client dans la base → il apparaît dans le suivi client (fiche)
+  try{ await devisUpsertClient(client, tel, dv.clientEmail, dv.clientAdresse); }catch(e){ console.warn('devis upsert client:',e); }
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
   try{
     if(typeof supaFetch==='function'){
-      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
+      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
         .then(function(){ showNotif('Devis '+num+' enregistré ✓','success'); })
         .catch(function(e){ console.warn('save devis:',e); showNotif('Devis créé (sauvegarde base à vérifier)','info'); });
     }
   }catch(e){ console.warn('save devis:',e); }
   renderDevis();
   imprimerDevisData(dv);
-  ['dv-client','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dv-client','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
+}
+
+// Crée ou met à jour le client (dédup par téléphone puis email) — même logique que la réparation
+async function devisUpsertClient(fullName, tel, email, adresseComplete){
+  fullName=(fullName||'').trim(); if(!fullName || typeof supaFetch!=='function') return;
+  var parts=fullName.split(/\s+/), prenom='', nom=fullName;
+  if(parts.length>1){ prenom=parts[0]; nom=parts.slice(1).join(' '); }
+  var rue=adresseComplete||'', cp='', ville='';
+  var m=(adresseComplete||'').match(/^(.*?),?\s*(\d{4,5})\s+([^,]+?)\s*$/);
+  if(m){ rue=(m[1]||'').replace(/,$/,'').trim(); cp=m[2]; ville=m[3].trim(); }
+  var rec={ nom:nom, prenom:prenom, tel:tel||'', email:email||'', adresse:rue, cp:cp, ville:ville, date_creation:new Date().toISOString() };
+  // Ne pas écraser des champs existants avec du vide (PATCH n'inclut que le non-vide)
+  var patchRec={}; Object.keys(rec).forEach(function(k){ if(k!=='date_creation' && rec[k]!=='' && rec[k]!=null) patchRec[k]=rec[k]; });
+  var q = tel ? '?tel=eq.'+encodeURIComponent(tel)+'&limit=1' : (email ? '?email=eq.'+encodeURIComponent(email)+'&limit=1' : null);
+  try{
+    if(q){
+      var existing=await supaFetch('clients','GET',null,q);
+      if(existing && existing.length>0){
+        await supaFetch('clients','PATCH',patchRec,'?id=eq.'+existing[0].id);
+        var idx=(clients||[]).findIndex(function(x){return String(x.id)===String(existing[0].id);});
+        if(idx>=0) Object.assign(clients[idx], patchRec, {id:existing[0].id});
+        else if(Array.isArray(clients)) clients.push(Object.assign({id:existing[0].id}, rec));
+        return;
+      }
+    }
+    var res=await supaFetch('clients','POST',rec,'');
+    if(res && res[0] && Array.isArray(clients)) clients.push(res[0]);
+  }catch(e){ console.warn('devisUpsertClient:',e); }
 }
 
 // Recherche client (page Devis)
@@ -17460,7 +17506,7 @@ function devisClientSearch(q){
       if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
       res.innerHTML=data.map(function(c){
         var nom=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
-        var ds=encodeURIComponent(JSON.stringify({nom:nom,adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||''}));
+        var ds=encodeURIComponent(JSON.stringify({nom:nom,adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||'',tel:c.tel||''}));
         return '<div onclick="devisPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nom+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
       }).join('');
       res.style.display='block';
@@ -17470,7 +17516,7 @@ function devisClientSearch(q){
 function devisPickClient(s){
   var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
   var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
-  set('dv-client',c.nom); set('dv-adresse',c.adresse); set('dv-cp',c.cp); set('dv-ville',c.ville); set('dv-email',c.email);
+  set('dv-client',c.nom); set('dv-tel',c.tel); set('dv-adresse',c.adresse); set('dv-cp',c.cp); set('dv-ville',c.ville); set('dv-email',c.email);
   var res=document.getElementById('dv-client-results'); if(res)res.style.display='none';
   var inp=document.getElementById('dv-client-search'); if(inp)inp.value=c.nom||'';
   if(typeof updateDevisPreview==='function') updateDevisPreview();
@@ -17648,15 +17694,103 @@ function convertirDevisEnFacture() {
 }
 
 function renderDevis() {
-  document.getElementById('devis-table').innerHTML=devisList.map(function(d){
-    return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+d.clientNom+'</td><td>'+d.prestation+'</td><td><b>'+d.prix.toFixed(2)+' €</b></td><td>'+d.validite+'</td>' +
-    '<td style="display:flex;gap:4px;"><button class="btn btn-sm" onclick="reprintDevis('+d.id+')">🖨️</button></td></tr>';
+  var rows=(devisList||[]).slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+  document.getElementById('devis-table').innerHTML=rows.map(function(d){
+    return '<tr><td><b>'+d.numero+'</b></td><td>'+fmtDate(d.date)+'</td><td>'+(d.clientNom||'')+'</td><td>'+(d.prestation||'')+'</td><td><b>'+Number(d.prix||0).toFixed(2)+' €</b></td><td>'+(d.validite||'')+'</td>' +
+    '<td style="white-space:nowrap;">'+
+      '<button class="btn btn-sm" title="Imprimer" onclick="reprintDevis('+d.id+')">🖨️</button> '+
+      '<button class="btn btn-sm" title="Renvoyer par mail" onclick="renvoyerDevisData('+d.id+')" style="border-color:#16a34a;color:#16a34a;">📧</button> '+
+      '<button class="btn btn-sm" title="Fiche client (suivi)" onclick="ouvrirFicheClientDevis('+d.id+')">👤</button>'+
+    '</td></tr>';
   }).join('')||'<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-dim)">Aucun devis</td></tr>';
 }
 
+// Recharge les devis depuis la base → l'historique persiste (page Devis + fiche client)
+async function devisLoad(){
+  try{
+    if(typeof supaFetch==='function'){
+      var rows=await supaFetch('devis','GET',null,'?order=id.desc&limit=500');
+      if(Array.isArray(rows)){
+        devisList = rows.map(function(x){ return {
+          id: x.id!=null ? x.id : (Date.now()+Math.floor(Math.random()*1000)),
+          numero:x.numero, date:x.date,
+          clientNom:x.client_nom||'', clientTel:x.client_tel||'', clientAdresse:x.client_adresse||'', clientEmail:x.client_email||'',
+          appareil:x.appareil||'', prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
+        }; }).reverse();
+      }
+    }
+  }catch(e){ console.warn('devisLoad:',e); }
+  try{ renderDevis(); }catch(e){}
+}
+
 function reprintDevis(id) {
-  var d=devisList.find(function(x){return x.id===id;});if(!d)return;
+  var d=devisList.find(function(x){return String(x.id)===String(id);});if(!d)return;
   imprimerDevisData(d);
+}
+
+// Renvoyer un devis existant par email (Brevo) — depuis la liste ou la fiche client
+async function renvoyerDevisData(id){
+  var d=devisList.find(function(x){return String(x.id)===String(id);}); if(!d){ showNotif&&showNotif('Devis introuvable','error'); return; }
+  var email=(d.clientEmail||'').trim();
+  if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du client pour envoyer le devis :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } d.clientEmail=email; }
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  showNotif&&showNotif('📧 Envoi du devis à '+email+'…','info');
+  var appareil=d.appareil||'', presta=d.prestation||'', prix=Number(d.prix||0), validite=d.validite||'30 jours', client=d.clientNom||'';
+  var html='<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
+    '<div style="background:#E10600;padding:20px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+    '<p style="color:#ffd9d9;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p></div>'+
+    '<div style="padding:24px;"><p>Bonjour '+client+',</p><p>Voici votre devis :</p>'+
+    '<div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #E10600;">'+
+      (appareil?'<b>Appareil :</b> '+appareil+'<br>':'')+
+      '<b>Prestation :</b> '+presta+'<br>'+
+      '<b style="font-size:18px;color:#E10600;">Montant : '+prix.toFixed(2)+' € TTC</b></div>'+
+    '<p style="color:#666;font-size:13px;">Ce devis est valable '+validite+'. Pour l\'accepter, répondez à cet email ou passez en boutique.</p>'+
+    '<p style="color:#666;font-size:12px;margin-top:16px;">À bientôt,<br><b>L\'équipe Solution Phone</b></p></div></div>';
+  try{
+    var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre devis Solution Phone '+(d.numero||''),htmlContent:html};
+    var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok){ showNotif&&showNotif('✅ Devis renvoyé à '+email,'success'); }
+    else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau envoi devis','error'); }
+}
+
+// Ouvre la fiche client (suivi complet) à partir d'un devis
+function ouvrirFicheClientDevis(id){
+  var d=devisList.find(function(x){return String(x.id)===String(id);}); if(!d){ showNotif&&showNotif('Devis introuvable','error'); return; }
+  showPage('clients');
+  setTimeout(function(){ _ouvrirFicheParClient(d.clientTel||'', d.clientNom||''); }, 450);
+}
+async function _ouvrirFicheParClient(tel, nom){
+  var norm=function(s){ return String(s||'').replace(/\s/g,''); };
+  function findLocal(){
+    var c=null;
+    if(tel) c=(clients||[]).find(function(x){ return x.tel && norm(x.tel)===norm(tel); });
+    if(!c && nom){ var ln=nom.toLowerCase().trim(); c=(clients||[]).find(function(x){ var full=((x.prenom||'')+' '+(x.nom||'')).toLowerCase().trim(); return full===ln || (x.nom&&ln.indexOf((x.nom||'').toLowerCase())>=0); }); }
+    return c;
+  }
+  var c=findLocal();
+  if(!c && typeof supaFetch==='function'){
+    try{
+      var q = tel ? '?tel=eq.'+encodeURIComponent(tel)+'&limit=1' : '?nom=ilike.*'+encodeURIComponent((nom||'').split(/\s+/).slice(-1)[0]||nom)+'*&limit=1';
+      var rows=await supaFetch('clients','GET',null,q);
+      if(rows&&rows[0]){ if(Array.isArray(clients)&&!clients.find(function(x){return String(x.id)===String(rows[0].id);})) clients.push(rows[0]); c=rows[0]; }
+    }catch(e){}
+  }
+  if(c){ showClientDetail(c.id); var el=document.getElementById('client-detail-card'); if(el){ el.style.display='block'; el.scrollIntoView({behavior:'smooth',block:'start'}); } }
+  else showNotif&&showNotif('Client non trouvé dans la base','info');
+}
+
+// Renvoyer une facture RÉPARATION par email depuis un dossier (fiche client)
+function repRenvoyerFactureById(id){
+  var d=(window.repDossiers||[]).find(function(x){return String(x.id)===String(id);});
+  if(!d||!d.facture){ showNotif&&showNotif('Facture introuvable','error'); return; }
+  var email=((d.client&&d.client.email)||'').trim();
+  if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du client :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } d.client=d.client||{}; d.client.email=email; }
+  _envoiDossierCourant=d;
+  var el=document.getElementById('envoi-email-input'); if(el) el.value=email;
+  if(typeof envoyerFactureEmail==='function') envoyerFactureEmail();
 }
 
 var chartCompCA = null, chartCompQuali = null, chartCompPay = null, chartCompJours = null;
@@ -32026,6 +32160,8 @@ function renderDashHome(){
   }catch(e){}
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ renderCaJourBar(); try{renderFileAtelier();}catch(e){} try{renderDashHome();}catch(e){} }, 3000); });
+// Charger les devis au démarrage → disponibles dans la fiche client sans passer par la page Devis
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ try{ if(typeof devisLoad==='function') devisLoad(); }catch(e){} }, 3500); });
 
 // Tuiles de marques groupées par éco-organisme (départ du parcours QualiRépar)
 function repPickMarque(m){
