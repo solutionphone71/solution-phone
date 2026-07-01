@@ -6524,30 +6524,19 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     </div>
 
         <div class="page" id="page-neufs-access">
-      <div class="page-title">Accessoires</div>
+      <!-- En-tête premium -->
+      <div style="display:flex;align-items:center;gap:13px;margin-bottom:18px;">
+        <div style="width:46px;height:46px;border-radius:15px;background:linear-gradient(145deg,#ff2016,#c4000a);display:flex;align-items:center;justify-content:center;font-size:23px;box-shadow:0 8px 20px -6px rgba(225,6,0,0.6);filter:drop-shadow(0 1px 1px rgba(0,0,0,.2));">🛒</div>
+        <div><div style="font-size:23px;font-weight:900;color:#0D0D0D;line-height:1;letter-spacing:-.2px;">Caisse magasin</div><div style="font-size:12.5px;color:#6B7280;margin-top:4px;">Ventes · Réparations · Encaissements · Clôture</div></div>
+      </div>
 
-      <!-- Onglets -->
-      <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border);">
-        <button id="na-tab-caisse" onclick="naShowTab('caisse')"
-          style="padding:12px 24px;border:none;border-bottom:3px solid var(--primary);background:none;font-weight:800;color:var(--primary);cursor:pointer;font-size:15px;">
-          🛒 Caisse rapide
-        </button>
-        <button id="na-tab-neuf" onclick="naShowTab('neuf')"
-          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
-          📱 Téléphone neuf
-        </button>
-        <button id="na-tab-atelier" onclick="naShowTab('atelier')"
-          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
-          🔧 Atelier (info / trott. / console)
-        </button>
-        <button id="na-tab-recherche" onclick="naShowTab('recherche')"
-          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
-          🧾 Recherche client
-        </button>
-        <button id="na-tab-form" onclick="naShowTab('form')"
-          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
-          📝 Vente détaillée
-        </button>
+      <!-- Onglets (pastilles) -->
+      <div id="na-tabs" style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px;">
+        <button id="na-tab-caisse" onclick="naShowTab('caisse')" style="padding:11px 18px;border:1px solid #E10600;border-radius:13px;background:#E10600;color:#fff;font-weight:800;cursor:pointer;font-size:14px;box-shadow:0 6px 14px -6px rgba(225,6,0,0.6);transition:transform .1s,box-shadow .1s;" onmouseover="if(this.style.background!=='rgb(225, 6, 0)')this.style.borderColor='#E10600'" onmouseout="if(this.style.background!=='rgb(225, 6, 0)')this.style.borderColor='#E8EAED'">🛒 Vente rapide</button>
+        <button id="na-tab-neuf" onclick="naShowTab('neuf')" style="padding:11px 18px;border:1px solid #E8EAED;border-radius:13px;background:#fff;color:#6B7280;font-weight:700;cursor:pointer;font-size:14px;transition:transform .1s;">📱 Téléphone neuf</button>
+        <button id="na-tab-atelier" onclick="naShowTab('atelier')" style="padding:11px 18px;border:1px solid #E8EAED;border-radius:13px;background:#fff;color:#6B7280;font-weight:700;cursor:pointer;font-size:14px;transition:transform .1s;">🔧 Atelier</button>
+        <button id="na-tab-recherche" onclick="naShowTab('recherche')" style="padding:11px 18px;border:1px solid #E8EAED;border-radius:13px;background:#fff;color:#6B7280;font-weight:700;cursor:pointer;font-size:14px;transition:transform .1s;">🧾 Recherche client</button>
+        <button id="na-tab-form" onclick="naShowTab('form')" style="padding:11px 18px;border:1px solid #E8EAED;border-radius:13px;background:#fff;color:#6B7280;font-weight:700;cursor:pointer;font-size:14px;transition:transform .1s;">📝 Vente détaillée</button>
       </div>
 
       <!-- ══ VUE CAISSE RAPIDE ══ -->
@@ -11181,9 +11170,13 @@ function naShowTab(tab){
     var b = document.getElementById('na-tab-'+t);
     if(v) v.style.display = t===tab ? 'block' : 'none';
     if(b){
-      b.style.borderBottomColor = t===tab ? 'var(--primary)' : 'transparent';
-      b.style.color = t===tab ? 'var(--primary)' : 'var(--text-muted)';
-      b.style.fontWeight = t===tab ? '800' : '600';
+      if(t===tab){
+        b.style.background='#E10600'; b.style.color='#fff'; b.style.borderColor='#E10600';
+        b.style.boxShadow='0 6px 14px -6px rgba(225,6,0,0.6)'; b.style.fontWeight='800';
+      } else {
+        b.style.background='#fff'; b.style.color='#6B7280'; b.style.borderColor='#E8EAED';
+        b.style.boxShadow='none'; b.style.fontWeight='700';
+      }
     }
   });
   if(tab==='caisse'){ naRenderGrille(); naRenderSuiviJour(); try{ if(typeof naLoad==='function') naLoad().then(function(){ naRenderSuiviJour(); }); }catch(e){} setTimeout(function(){ naSetMode('CB'); }, 50); }
