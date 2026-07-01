@@ -11639,7 +11639,8 @@ function renderCaisseJour(){
     var dateFacture = (d.facture.date || d.date || '').substring(0,10);
     if(!matchDate(dateFacture)) return;
     idsVus[d.id] = true;
-    var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
+    // QualiRépar compté UNIQUEMENT si la photo IMEI est présente (le déclencheur) → pas de bonus fantôme
+    var bonusQR = !!(d.bonusQR || (d.facture && d.facture.bonusQR)) && !!d.photoImeiUrl;
     var _qrPiec = !!(d.piec||(d.facture&&d.facture.piec));
     var _qrBonus = _qrPiec ? 30 : 25;
     var prixClient = d.facture.prix || d.devis || 0;
@@ -22811,7 +22812,7 @@ function renderRepHistorique(){
   var totalTTC = 0, totalCB = 0, totalEsp = 0, totalCh = 0, totalVir = 0, totalQR = 0;
   dossiers.forEach(function(d){
     var f = d.facture;
-    var bonusQR = !!(d.bonusQR || (f && f.bonusQR));
+    var bonusQR = !!(d.bonusQR || (f && f.bonusQR)) && !!d.photoImeiUrl;
     var _hPiec = !!(d.piec||(f&&f.piec));
     var _hBonus = _hPiec ? 30 : 25;
     var prixClient = (f ? f.prix : 0) || d.devis || 0;
@@ -22820,10 +22821,12 @@ function renderRepHistorique(){
     totalTTC += prixReel;
     if(bonusQR) totalQR += _hBonus;
     var mode = f ? (f.mode||'CB').toUpperCase() : '';
-    if(mode==='CB') totalCB += prixReel;
-    else if(mode==='ESPECES') totalEsp += prixReel;
-    else if(mode==='CHEQUE') totalCh += prixReel;
-    else if(mode==='VIREMENT') totalVir += prixReel;
+    // Le mode de paiement ne reçoit QUE la part CLIENT (prixClient).
+    // Le bonus QualiRépar est remboursé par l'éco-organisme → compté à part (totalQR), jamais en CB/Espèces.
+    if(mode==='CB') totalCB += prixClient;
+    else if(mode==='ESPECES') totalEsp += prixClient;
+    else if(mode==='CHEQUE') totalCh += prixClient;
+    else if(mode==='VIREMENT') totalVir += prixClient;
   });
 
   var statsDiv = document.getElementById('rep-hist-stats');
@@ -22864,7 +22867,7 @@ function renderRepHistorique(){
 
   tbody.innerHTML = dossiersPaginated.map(function(d, i){
     var c = d.client||{}, a = d.appareil||{}, f = d.facture||null;
-    var bonusQR = !!(d.bonusQR || (f&&f.bonusQR));
+    var bonusQR = !!(d.bonusQR || (f&&f.bonusQR)) && !!d.photoImeiUrl;
     var _lPiec = !!(d.piec||(f&&f.piec));
     var _lBonus = _lPiec ? 30 : 25;
     var montant = f ? (f.prix||0) + (bonusQR?_lBonus:0) : (d.devis||0);
@@ -32502,7 +32505,7 @@ function renderCaJourBar(){
   var src = (window.repDossiers && window.repDossiers.length) ? window.repDossiers : (window.bonsDepot||[]);
   var qualiNb = src.filter(function(d){
     if(!d) return false;
-    var bq = d.bonusQR || (d.facture && d.facture.bonusQR);
+    var bq = (d.bonusQR || (d.facture && d.facture.bonusQR)) && !!d.photoImeiUrl;
     var dt = ((d.facture && d.facture.date) || d.date || '').substring(0,10);
     return bq && dt === today;
   }).length;
