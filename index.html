@@ -10365,6 +10365,40 @@ async function retryPendingPhones(){
   renderPhones();
 }
 
+// Aligne la ligne caisse stockée d'un jour sur le total recalculé des ventes (source unique).
+// Ne modifie QUE les champs CA (ttc, cb, especes, cheque, virement, quali) → dépôts/achats préservés.
+var _reconcileEnCours = {};
+async function reconcilierCaisseJour(dateStr, tot){
+  if(!dateStr || !tot || typeof supaFetch!=='function') return;
+  if(_reconcileEnCours[dateStr]) return; // évite les appels concurrents
+  // GARDE-FOU 1 : données chargées ? (sinon le recalcul serait partiel → risque d'effacer des ventes)
+  var repOk = Array.isArray(window.repDossiers) && window.repDossiers.length>0;
+  var naOk  = Array.isArray(window.naVentes);
+  if(!repOk || !naOk) return;
+  var r2=function(n){ return Math.round((Number(n)||0)*100)/100; };
+  var patch={ ttc:r2(tot.total), cb:r2(tot.cb), especes:r2(tot.especes), cheque:r2(tot.cheque), virement:r2(tot.virement), quali:r2(tot.quali) };
+  // GARDE-FOU 2 : ne jamais écraser une ligne existante non nulle par un total à 0 (données pas prêtes)
+  var cur=(caisse||[]).find(function(c){return c.date===dateStr;});
+  if(patch.ttc===0 && cur && (cur.ttc||0)>0) return;
+  // GARDE-FOU 3 : si déjà identique, rien à faire (pas de trafic inutile)
+  if(cur && r2(cur.ttc)===patch.ttc && r2(cur.cb)===patch.cb && r2(cur.especes)===patch.especes
+     && r2(cur.cheque)===patch.cheque && r2(cur.virement)===patch.virement && r2(cur.quali)===patch.quali) return;
+  _reconcileEnCours[dateStr]=true;
+  try{
+    var ex=await supaFetch('caisse','GET',null,'?date=eq.'+dateStr);
+    if(ex && ex.length>0){
+      await supaFetch('caisse','PATCH',patch,'?date=eq.'+dateStr); // PATCH partiel → dépôts/achats conservés
+    } else {
+      await supaFetch('caisse','POST',Object.assign({date:dateStr,depot_esp:0,depot_cheque:0,achat_smart:0}, patch));
+    }
+    var idx=(caisse||[]).findIndex(function(c){return c.date===dateStr;});
+    if(idx>=0) Object.assign(caisse[idx], patch);
+    else if(Array.isArray(caisse)) caisse.push(Object.assign({date:dateStr,depotEsp:0,depotCheque:0,achatSmart:0}, patch));
+    console.log('✓ Caisse '+dateStr+' synchronisée sur les ventes : TTC '+patch.ttc+' €');
+  }catch(e){ console.warn('reconcilierCaisseJour:',e); }
+  finally{ setTimeout(function(){ _reconcileEnCours[dateStr]=false; }, 1500); }
+}
+
 async function saveCaisseRow(row) {
   if(!supabaseReady){ console.warn('saveCaisseRow: supabase non prêt'); return false; }
   try{
@@ -11846,6 +11880,11 @@ function renderCaisseJour(){
   var stb=document.getElementById('caisse-z-smart-tbody');
   if(stb&&txSmart.length>0){var mc3={CB:'#2563eb',ESPECES:'#16a34a',CHEQUE:'#d97706',VIREMENT:'#8b5cf6'};var mg=0;stb.innerHTML=txSmart.map(function(tx,i){var mc=mc3[(tx.mode||'CB').toUpperCase()]||'#666';var ach=tx.achat||0;var m2=tx.montant-ach;mg+=m2;var repTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="color:#c0392b;font-weight:700;">-'+tx.repriseAmount.toFixed(2)+' €</span><br><span style="font-size:9px;color:#666;">'+tx.repriseModele+'</span>':'—';var netTxt=(tx.repriseAmount&&tx.repriseAmount>0)?'<span style="font-weight:700;color:#8b5cf6;">'+tx.netEncaisse.toFixed(2)+' €</span>':tx.montant.toFixed(2)+' €';return '<tr style="background:'+(i%2===0?'#fff':'#f5f3ff')+';color:#1a1a2e;border-bottom:1px solid #e5e7eb;"><td style="padding:5px 6px;color:#1a1a2e;">'+tx.desc.replace(/ 🔄.*$/,'')+'</td><td style="padding:5px 6px;text-align:right;font-weight:700;color:#1a1a2e;">'+tx.montant.toFixed(2)+' €</td><td style="padding:5px 6px;text-align:right;">'+repTxt+'</td><td style="padding:5px 6px;text-align:right;">'+netTxt+'</td><td style="padding:5px 6px;text-align:right;color:#666;">'+(ach>0?ach.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:right;color:#16a34a;font-weight:700;">'+(ach>0?m2.toFixed(2)+' €':'—')+'</td><td style="padding:5px 6px;text-align:center;"><span style="background:'+mc+';color:#1d1d1f;padding:2px 6px;border-radius:8px;font-size:11px;">'+tx.mode+'</span></td></tr>';}).join('')+'<tr style="background:#ede9fe;color:#1a1a2e;font-weight:800;border-top:2px solid #8b5cf6;"><td style="padding:6px;color:#1a1a2e;">TOTAL</td><td style="padding:6px;text-align:right;color:#1a1a2e;">'+totSmart.total.toFixed(2)+' €</td><td style="padding:6px;text-align:right;color:#c0392b;">'+(totSmart.reprises>0?'-'+totSmart.reprises.toFixed(2)+' €':'—')+'</td><td style="padding:6px;text-align:right;color:#8b5cf6;font-weight:900;">'+totSmart.netEncaisse.toFixed(2)+' €</td><td></td><td style="padding:6px;text-align:right;color:#16a34a;">'+mg.toFixed(2)+' €</td><td></td></tr>';}
   transactions=txRep;window._caisseJourTotaux=totJour;window._smartJourTotaux=totSmart;window._txSmart=txSmart;
+  // ── SYNCHRO AUTO (source de vérité unique) : on aligne la ligne « caisse » stockée
+  //    sur le total recalculé des ventes du jour, pour que Z du jour = Z mensuel = récap.
+  //    Garde-fous : uniquement aujourd'hui, données chargées, jamais mettre 0 par erreur,
+  //    et on ne touche PAS aux dépôts/achats saisis à la main (PATCH partiel).
+  if(isCurrentMonth){ try{ reconcilierCaisseJour(today, totJour); }catch(e){ console.warn('reconcile caisse:',e); } }
   var sb=document.getElementById('caisse-z-smart-block');if(sb)sb.style.display=totSmart.nb>0?'block':'none';
   // Titre du bloc smartphones avec le mois
   var smartTitre=document.querySelector('#caisse-z-smart-block > div:first-child');
