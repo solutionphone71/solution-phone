@@ -295,6 +295,41 @@
     to { opacity:1; transform: translateY(0) scale(1); }
   }
 
+  /* ─── ZAHIRA BAR (bandeau haut) ─── */
+  #zbar {
+    flex:1; display:flex; align-items:center; gap:10px; min-width:0;
+    background:#0D0D0D; border-radius:12px; height:40px; padding:0 5px 0 14px;
+    cursor:text; box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  #zbar .zbar-orb {
+    width:11px; height:11px; border-radius:50%; flex-shrink:0; cursor:pointer;
+    background:radial-gradient(circle at 35% 30%,#ff6a6f,#E10600 60%,#8f000c);
+    animation:zbar-pulse 3s ease-in-out infinite;
+  }
+  @keyframes zbar-pulse {
+    0%,100% { box-shadow:0 0 6px rgba(225,6,0,0.7); }
+    50% { box-shadow:0 0 14px rgba(225,6,0,1), 0 0 26px rgba(225,6,0,0.4); }
+  }
+  #aria-bar #zbar input, #aria-bar #zbar input:focus,
+  [data-theme="light"] #aria-omnibar-wrap #zbar input,
+  [data-theme="light"] #aria-omnibar-wrap #zbar input:focus {
+    flex:1; min-width:0;
+    background:transparent !important; border:none !important; box-shadow:none !important;
+    color:#fff !important; font-size:13px !important; font-weight:600 !important;
+    outline:none !important; padding:0 !important; border-radius:0 !important;
+  }
+  #aria-bar #zbar input::placeholder,
+  [data-theme="light"] #aria-omnibar-wrap #zbar input::placeholder { color:rgba(255,255,255,0.42) !important; }
+  #zbar .zbar-btn {
+    width:32px; height:32px; border-radius:9px; border:none; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    background:rgba(255,255,255,0.10); transition:background .15s, transform .15s;
+  }
+  #zbar .zbar-btn:hover { background:rgba(255,255,255,0.20); }
+  #zbar .zbar-btn:active { transform:scale(.93); }
+  #zbar .zbar-send { background:linear-gradient(135deg,#FF1F1A,#C4000A); }
+  #zbar .zbar-send:hover { background:linear-gradient(135deg,#ff3b30,#d40009); }
+
   /* ─── MOUVEMENT RÉDUIT ─── */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
@@ -874,7 +909,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 <div id="app">
 <!-- ═══ TOP BAR (Aria retiré · Zahira est désormais la home) ═══ -->
 <div id="aria-omnibar-wrap">
-  <div id="aria-bar" style="justify-content:flex-end;gap:10px;">
+  <div id="aria-bar" style="gap:10px;">
+    <div id="zbar" onclick="if(event.target===this)document.getElementById('zbar-input').focus();">
+      <span class="zbar-orb" onclick="zahiraSiriOpen()" title="Ouvrir Zahira"></span>
+      <input id="zbar-input" type="text" placeholder="Demandez à Zahira — CA du jour, dossiers QualiRépar, stock, idées de posts…" autocomplete="off" onkeydown="if(event.key==='Enter'){var v=this.value.trim();zahiraSiriOpen();if(v){zahiraSiriAsk(v);this.value='';}}">
+      <button class="zbar-btn" type="button" onclick="zahiraSiriOpen();zahiraSiriVoice();" title="Dicter"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></button>
+      <button class="zbar-btn zbar-send" type="button" onclick="var i=document.getElementById('zbar-input');var v=i?i.value.trim():'';zahiraSiriOpen();if(v){zahiraSiriAsk(v);i.value='';}" title="Envoyer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
     <a href="/home.html" id="zahira-back-btn" title="Retour à la home Zahira" style="background:rgba(255,59,69,0.15);color:#FF3B45;border:0.5px solid rgba(255,59,69,0.4);border-radius:12px;height:40px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;letter-spacing:0.02em;display:inline-flex;align-items:center;gap:8px;text-decoration:none;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       <span>Zahira</span>
@@ -1670,7 +1711,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       .zsiri-chip:hover{background:rgba(225,6,0,0.28);border-color:#E10600;color:#fff;}
       .zsiri-close{position:fixed;top:22px;right:24px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.10);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
     </style>
-    <button id="zsiri-launch" type="button" onclick="zahiraSiriOpen()" aria-label="Demander à Zahira"><b>Z</b></button>
     <div id="zsiri-overlay" onclick="if(event.target===this)zahiraSiriClose()">
       <button class="zsiri-close" onclick="zahiraSiriClose()" aria-label="Fermer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       <div class="zsiri-card">
@@ -1738,9 +1778,6 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <svg style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9CA3AF;" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" placeholder="Rechercher un client, un téléphone, un IMEI…" onkeydown="if(event.key==='Enter'){showPage('clients',null);}" style="width:100%;padding:11px 14px 11px 38px;border:1px solid #E8EAED;border-radius:12px;font-size:14px;background:#fff;color:#111;outline:none;box-sizing:border-box;">
           </div>
-          <button onclick="zahiraSiriOpen()" title="Demander à Zahira" style="display:flex;align-items:center;gap:8px;background:#0D0D0D;color:#fff;border:none;border-radius:12px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
-            <span style="width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff6a6f,#E10600);box-shadow:0 0 8px rgba(225,6,0,0.8);"></span>Zahira
-          </button>
         </div>
       </div>
 
