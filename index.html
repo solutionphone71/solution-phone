@@ -8817,7 +8817,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
                   <div style="margin-top:8px;background:rgba(22,163,74,0.08);border:2.5px solid #16a34a;border-radius:14px;padding:14px 16px;box-shadow:0 2px 10px rgba(22,163,74,0.15);">
                     <label id="dep-devis-label" style="display:block;font-size:15px;font-weight:900;color:#16a34a;text-transform:uppercase;letter-spacing:.03em;">💶 Prix TTC à facturer (€) <span style="color:var(--red);">*</span></label>
-                    <input type="number" inputmode="decimal" id="dep-devis" placeholder="ex : 90" step="0.01" oninput="if(typeof repTodoBannerDebounced==='function')repTodoBannerDebounced();" onchange="repAutoDecompose(this.value);repAutoSave();" onblur="repAutoDecompose(this.value);repAutoSave();" style="font-size:32px;font-weight:900;text-align:center;color:#0f5132;border:2px solid #16a34a;border-radius:12px;padding:14px;background:#fff;width:100%;margin-top:8px;box-sizing:border-box;">
+                    <input type="text" inputmode="decimal" pattern="[0-9.,]*" id="dep-devis" placeholder="ex : 90" oninput="depDevisHandler(this)" onblur="depDevisCommit(this)" style="font-size:32px;font-weight:900;text-align:center;color:#0f5132;border:2px solid #16a34a;border-radius:12px;padding:14px;background:#fff;width:100%;margin-top:8px;box-sizing:border-box;">
                     <div id="dep-devis-hint" style="font-size:12px;color:#166534;margin-top:8px;text-align:center;">💡 Tapez le prix payé par le client → MO et Pièces HT se calculent automatiquement ci-dessus</div>
                   </div>
                   <div class="form-group"><label>Observations technicien <span style="font-size:11px;color:var(--text-muted);">(non visible client)</span></label>
@@ -24116,7 +24116,7 @@ function repAutoSave(){
     code:    (document.getElementById('dep-code')||{value:''}).value.trim()
   };
   repDossierCourant.panne      = (document.getElementById('dep-panne')||{value:''}).value.trim();
-  repDossierCourant.devis      = parseFloat((document.getElementById('dep-devis')||{value:0}).value)||0;
+  repDossierCourant.devis      = parseFloat(String((document.getElementById('dep-devis')||{value:0}).value).replace(',','.'))||0;
   repDossierCourant.bonusQR    = !!(document.getElementById('rep-qr-actif') && document.getElementById('rep-qr-actif').checked);
   repDossierCourant.piec       = !!(document.getElementById('dep-piec') && document.getElementById('dep-piec').checked);
   repDossierCourant.pieceNom   = (document.getElementById('dep-piece')||{value:''}).value;
@@ -26557,6 +26557,27 @@ function repToggleQR(){
     repAutoDecompose(devisEl.value);
   }
   repAutoSave();
+}
+
+// ── Case verte « Prix TTC à facturer » (dep-devis) — anti-freeze iPad ──
+// On DIFFÈRE tout le travail : rien de lourd pendant la frappe (sinon iOS gèle).
+var _depDevisTimer=null;
+function _depDevisVal(el){ return (el&&el.value||'').toString().replace(',', '.'); }
+function depDevisHandler(el){
+  if(_depDevisTimer) clearTimeout(_depDevisTimer);
+  var v=_depDevisVal(el);
+  _depDevisTimer=setTimeout(function(){
+    try{ if(typeof repTodoBannerDebounced==='function') repTodoBannerDebounced(); }catch(e){}
+    try{ if(typeof repAutoDecompose==='function') repAutoDecompose(v); }catch(e){}
+  }, 600);
+}
+function depDevisCommit(el){
+  if(_depDevisTimer){ clearTimeout(_depDevisTimer); _depDevisTimer=null; }
+  var v=_depDevisVal(el);
+  if(el && el.value!==v) el.value=v; // normaliser virgule→point au blur (pas pendant la frappe)
+  try{ if(typeof repAutoDecompose==='function') repAutoDecompose(v); }catch(e){}
+  try{ if(typeof repAutoSave==='function') repAutoSave(); }catch(e){}
+  try{ if(typeof repTodoBanner==='function') repTodoBanner(); }catch(e){}
 }
 
 function repAutoDecompose(prixTTC){
