@@ -21420,6 +21420,10 @@ function naGenererFacture(){
   naVentes.unshift(vente);
   _naNumero++;
   naSave(vente);
+  // Alimente la caisse du jour → apparaît dans le Z de caisse + historique mensuel + clôture
+  try{ if(typeof caisseFromVente==='function') caisseFromVente({prixTTC:vente.prix, mode:vente.mode, date:vente.date, description:'Vente '+(vente.type||'')+' — '+(vente.description||'')}); }catch(e){ console.warn('caisse vente détaillée:',e); }
+  // relève individuelle pour le Z (comme le panier)
+  try{ var _nv=JSON.parse(localStorage.getItem('na_ventes')||'[]'); _nv.unshift({id:vente.id,numero:vente.numero,date:new Date().toISOString(),type:vente.type,desc:vente.description,description:vente.description,ttc:vente.prix,montant:vente.prix,mode:vente.mode,clientNom:vente.clientNom}); localStorage.setItem('na_ventes',JSON.stringify(_nv)); }catch(e){}
   naRender();
   // Garantie selon type : neuf 2 ans, reconditionné 1 an, accessoires 6 mois
   var _garantie = type==='telephone-neuf' ? '2 ans (téléphone neuf)' :
@@ -21471,6 +21475,8 @@ function naSupprimerVente(id){
   if(idx>=0) naVentes.splice(idx,1);
   if(typeof naRender==='function') naRender();
   if(typeof supabaseReady!=='undefined' && supabaseReady){ try{ supaFetch('ventes_neufs_access','DELETE',null,'?id=eq.'+id).catch(function(e){console.warn('del vente',e);}); }catch(e){} }
+  // Décrémente la caisse du jour (symétrique de l'ajout) pour garder le total juste
+  try{ if(v && typeof caisseFromVente==='function') caisseFromVente({prixTTC:-(Number(v.prix)||0), mode:v.mode, date:(v.date||'').substring(0,10), description:'Annulation vente '+(v.numero||'')}); }catch(e){}
   try{ var nv=JSON.parse(localStorage.getItem('na_ventes')||'[]').filter(function(x){return String(x.id)!==String(id);}); localStorage.setItem('na_ventes',JSON.stringify(nv)); }catch(e){}
   if(typeof renderCaisse==='function' && document.getElementById('caisse-table')) renderCaisse();
   if(typeof showNotif==='function') showNotif('Vente supprimée','success');
