@@ -6532,6 +6532,18 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           style="padding:12px 24px;border:none;border-bottom:3px solid var(--primary);background:none;font-weight:800;color:var(--primary);cursor:pointer;font-size:15px;">
           🛒 Caisse rapide
         </button>
+        <button id="na-tab-neuf" onclick="naShowTab('neuf')"
+          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
+          📱 Téléphone neuf
+        </button>
+        <button id="na-tab-atelier" onclick="naShowTab('atelier')"
+          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
+          🔧 Atelier (info / trott. / console)
+        </button>
+        <button id="na-tab-recherche" onclick="naShowTab('recherche')"
+          style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
+          🧾 Recherche client
+        </button>
         <button id="na-tab-form" onclick="naShowTab('form')"
           style="padding:12px 24px;border:none;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--text-muted);cursor:pointer;font-size:15px;">
           📝 Vente détaillée
@@ -6675,6 +6687,101 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <div id="cloture-cb-result" style="margin-top:14px;"></div>
         </div>
       </div><!-- fin na-view-caisse -->
+
+      <!-- ══ VUE TÉLÉPHONE NEUF (TVA 20 %) ══ -->
+      <div id="na-view-neuf" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+          <div class="card" style="border-top:3px solid #E10600;background:linear-gradient(180deg,#ffffff,#fff);">
+            <div style="font-weight:900;font-size:18px;margin-bottom:2px;">📱 Vente téléphone neuf</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Facture TVA 20 % · client enregistré · retrouvable dans sa fiche</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div class="form-group" style="position:relative;"><label>🔍 Client déjà en base</label><input type="text" id="neuf-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="cxClientSearch('neuf',this.value)"><div id="neuf-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Prénom</label><input type="text" id="neuf-prenom" placeholder="Jean"></div>
+                <div class="form-group"><label>Nom *</label><input type="text" id="neuf-nom" placeholder="Dupont"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Téléphone</label><input type="tel" id="neuf-tel" inputmode="tel" placeholder="06…"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="neuf-email" placeholder="client@mail.com"></div>
+              </div>
+              <div class="form-group"><label>Adresse</label><input type="text" id="neuf-adresse" placeholder="Adresse"></div>
+              <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+                <div class="form-group"><label>CP</label><input type="text" id="neuf-cp" maxlength="5" inputmode="numeric" placeholder="71000"></div>
+                <div class="form-group"><label>Ville</label><input type="text" id="neuf-ville" placeholder="Mâcon"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Modèle *</label><input type="text" id="neuf-modele" placeholder="iPhone 16 128 Go Noir"></div>
+                <div class="form-group"><label>IMEI</label><input type="text" id="neuf-imei" inputmode="numeric" placeholder="15 chiffres"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Prix TTC (€) *</label><input type="text" inputmode="decimal" id="neuf-prix" placeholder="ex : 899"></div>
+                <div class="form-group"><label>Règlement</label><select id="neuf-mode"><option value="CB">CB</option><option value="Espèces">Espèces</option><option value="Virement">Virement</option><option value="Chèque">Chèque</option></select></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;" onclick="cxGenerer('neuf',false)">🧾 Générer la facture</button>
+                <button class="btn" onclick="cxGenerer('neuf',true)" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-weight:800;font-size:15px;margin-bottom:10px;">📋 Ventes téléphones neufs du jour</div>
+            <div id="neuf-histo" style="font-size:13px;overflow-x:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VUE ATELIER — informatique / trottinette / console (TVA 20 %) ══ -->
+      <div id="na-view-atelier" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+          <div class="card" style="border-top:3px solid #0D0D0D;">
+            <div style="font-weight:900;font-size:18px;margin-bottom:2px;">🔧 Réparation atelier</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Informatique · Trottinette · Console · Autre — facture TVA 20 %, enregistrée et retrouvable par client</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div class="form-group" style="position:relative;"><label>🔍 Client déjà en base</label><input type="text" id="atel-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="cxClientSearch('atel',this.value)"><div id="atel-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Prénom</label><input type="text" id="atel-prenom" placeholder="Jean"></div>
+                <div class="form-group"><label>Nom *</label><input type="text" id="atel-nom" placeholder="Dupont"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Téléphone</label><input type="tel" id="atel-tel" inputmode="tel" placeholder="06…"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="atel-email" placeholder="client@mail.com"></div>
+              </div>
+              <div class="form-group"><label>Adresse</label><input type="text" id="atel-adresse" placeholder="Adresse"></div>
+              <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+                <div class="form-group"><label>CP</label><input type="text" id="atel-cp" maxlength="5" inputmode="numeric" placeholder="71000"></div>
+                <div class="form-group"><label>Ville</label><input type="text" id="atel-ville" placeholder="Mâcon"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Catégorie *</label><select id="atel-cat"><option value="Informatique / PC">Informatique / PC</option><option value="Trottinette">Trottinette</option><option value="Console">Console</option><option value="Autre">Autre</option></select></div>
+                <div class="form-group"><label>Appareil (marque / modèle)</label><input type="text" id="atel-appareil" placeholder="ex : PC Asus / Xiaomi M365 / PS5"></div>
+              </div>
+              <div class="form-group"><label>Prestation / panne *</label><input type="text" id="atel-presta" placeholder="ex : Remplacement écran, changement batterie…"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div class="form-group"><label>Prix TTC (€) *</label><input type="text" inputmode="decimal" id="atel-prix" placeholder="ex : 120"></div>
+                <div class="form-group"><label>Règlement</label><select id="atel-mode"><option value="CB">CB</option><option value="Espèces">Espèces</option><option value="Virement">Virement</option><option value="Chèque">Chèque</option></select></div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;" onclick="cxGenerer('atel',false)">🧾 Générer la facture</button>
+                <button class="btn" onclick="cxGenerer('atel',true)" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-weight:800;font-size:15px;margin-bottom:10px;">📋 Historique atelier</div>
+            <div id="atel-histo" style="font-size:13px;overflow-x:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ VUE RECHERCHE CLIENT ══ -->
+      <div id="na-view-recherche" style="display:none;">
+        <div class="card" style="border-top:3px solid #E10600;">
+          <div style="font-weight:900;font-size:18px;margin-bottom:2px;">🧾 Retrouver un client</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;">Tape un nom ou un téléphone → ouvre sa fiche avec toutes ses factures, réparations, devis et attestations.</div>
+          <input type="text" id="cx-recherche-input" placeholder="🔍 Nom ou téléphone du client…" autocomplete="off" oninput="cxRechercheClient(this.value)" style="width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:12px;font-size:16px;box-sizing:border-box;">
+          <div id="cx-recherche-results" style="margin-top:14px;"></div>
+        </div>
+      </div>
 
       <!-- ══ VUE VENTE DÉTAILLÉE ══ -->
       <div id="na-view-form" style="display:none;">
@@ -11069,7 +11176,7 @@ function naClearClient(){
 }
 
 function naShowTab(tab){
-  ['caisse','form'].forEach(function(t){
+  ['caisse','form','neuf','atelier','recherche'].forEach(function(t){
     var v = document.getElementById('na-view-'+t);
     var b = document.getElementById('na-tab-'+t);
     if(v) v.style.display = t===tab ? 'block' : 'none';
@@ -11080,6 +11187,167 @@ function naShowTab(tab){
     }
   });
   if(tab==='caisse'){ naRenderGrille(); naRenderSuiviJour(); try{ if(typeof naLoad==='function') naLoad().then(function(){ naRenderSuiviJour(); }); }catch(e){} setTimeout(function(){ naSetMode('CB'); }, 50); }
+  if(tab==='neuf'){ try{ if(typeof naLoad==='function') naLoad().then(function(){ cxRenderHisto('neuf'); }); else cxRenderHisto('neuf'); }catch(e){ cxRenderHisto('neuf'); } }
+  if(tab==='atelier'){ try{ if(typeof atelierLoad==='function') atelierLoad(); }catch(e){} }
+  if(tab==='recherche'){ setTimeout(function(){ var i=document.getElementById('cx-recherche-input'); if(i) i.focus(); }, 60); }
+}
+
+/* ═══════════ CAISSE — Onglets Téléphone neuf / Atelier / Recherche client ═══════════ */
+var _cxSearchTimer={};
+function cxClientSearch(prefix,q){
+  clearTimeout(_cxSearchTimer[prefix]);
+  var res=document.getElementById(prefix+'-client-results');
+  if(!q||q.trim().length<2){ if(res)res.style.display='none'; return; }
+  _cxSearchTimer[prefix]=setTimeout(async function(){
+    try{
+      var query='?or=(nom.ilike.*'+encodeURIComponent(q.trim())+'*,tel.ilike.*'+encodeURIComponent(q.trim())+'*)&limit=6&order=nom.asc';
+      var data=await supaFetch('clients','GET',null,query);
+      if(!res) return;
+      if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML=data.map(function(c){
+        var nomAff=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        var ds=encodeURIComponent(JSON.stringify({prenom:c.prenom||'',nom:c.nom||'',adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||'',tel:c.tel||''}));
+        return '<div onclick="cxPickClient(\''+prefix+'\',\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nomAff+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
+      }).join('');
+      res.style.display='block';
+    }catch(e){ if(res)res.style.display='none'; }
+  },300);
+}
+function cxPickClient(prefix,s){
+  var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
+  var set=function(id,v){var el=document.getElementById(prefix+'-'+id);if(el)el.value=v||'';};
+  set('prenom',c.prenom);set('nom',c.nom);set('tel',c.tel);set('email',c.email);set('adresse',c.adresse);set('cp',c.cp);set('ville',c.ville);
+  var res=document.getElementById(prefix+'-client-results'); if(res)res.style.display='none';
+  var inp=document.getElementById(prefix+'-client-search'); if(inp)inp.value=((c.prenom||'')+' '+(c.nom||'')).trim();
+}
+
+// Historique par onglet (neuf = ventes_neufs_access du jour ; atelier = factures_atelier)
+function cxRenderHisto(kind){
+  var today=new Date().toISOString().slice(0,10);
+  if(kind==='neuf'){
+    var box=document.getElementById('neuf-histo'); if(!box) return;
+    var db=(window.naVentes||[]); var ls=[]; try{ls=JSON.parse(localStorage.getItem('na_ventes')||'[]');}catch(e){}
+    var seen={}, items=[];
+    db.concat(ls).forEach(function(v){ if(!v)return; var k=(v.numero||'')+'|'+((v.date||'').slice(0,10))+'|'+(v.prix||v.ttc||v.montant||0); if(seen[k])return; seen[k]=1;
+      var t=(v.type||'').toString().toLowerCase(); if(t.indexOf('neuf')<0) return;
+      if(((v.date||'').slice(0,10))!==today) return;
+      items.push({num:v.numero,desc:v.desc||v.description,mont:Number(v.prix||v.ttc||v.montant||0)||0,mode:v.mode||v.mode_reglement||'CB',client:v.clientNom||''});
+    });
+    box.innerHTML = items.length ? ('<table style="width:100%;border-collapse:collapse;">'+items.map(function(it){return '<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;"><b>'+(it.desc||'')+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+it.client+'</span></td><td style="padding:6px 8px;text-align:right;font-weight:700;white-space:nowrap;">'+it.mont.toFixed(2)+' €</td><td style="padding:6px 8px;text-align:center;"><span style="font-size:11px;background:#eff6ff;color:#2563eb;padding:2px 7px;border-radius:8px;">'+it.mode+'</span></td></tr>';}).join('')+'</table>') : '<div style="text-align:center;color:var(--text-muted);padding:16px;">Aucune vente téléphone neuf aujourd\'hui</div>';
+  } else if(kind==='atel'){
+    var box2=document.getElementById('atel-histo'); if(!box2) return;
+    var rows=(atelierList||[]).slice().sort(function(a,b){return String(b.date||'').localeCompare(String(a.date||''));}).slice(0,30);
+    box2.innerHTML = rows.length ? ('<table style="width:100%;border-collapse:collapse;">'+rows.map(function(a){var cli=((a.clientPrenom||'')+' '+(a.clientNom||'')).trim();return '<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;"><b>'+a.numero+'</b><br><span style="font-size:11px;color:var(--text-muted);">'+(a.categorie||'')+' · '+cli+'</span></td><td style="padding:6px 8px;">'+(a.prestation||'')+'</td><td style="padding:6px 8px;text-align:right;font-weight:700;white-space:nowrap;">'+Number(a.prixTTC||0).toFixed(2)+' €</td><td style="padding:6px 8px;white-space:nowrap;"><button class="btn btn-sm" title="Imprimer" onclick="cxReimprimerAtelier('+a.id+')">🖨️</button> <button class="btn btn-sm" title="Fiche client" onclick="_ouvrirFicheParClient(\''+String(a.clientTel||'')+'\',\''+String(cli).replace(/'/g,"\\'")+'\')">👤</button></td></tr>';}).join('')+'</table>') : '<div style="text-align:center;color:var(--text-muted);padding:16px;">Aucune réparation atelier</div>';
+  }
+}
+
+// ── ATELIER : persistance (table factures_atelier + local) ──
+var atelierList=[];
+function _atelierSaveLocal(){ try{ localStorage.setItem('sp_atelier', JSON.stringify(atelierList||[])); }catch(e){} }
+async function atelierLoad(){
+  try{ var lsv=JSON.parse(localStorage.getItem('sp_atelier')||'[]'); if(Array.isArray(lsv)) atelierList=lsv; }catch(e){}
+  try{
+    if(typeof supaFetch==='function'){
+      var rows=await supaFetch('factures_atelier','GET',null,'?order=id.desc&limit=500');
+      if(Array.isArray(rows) && rows.length){
+        var mapped=rows.map(function(x){ return { id:x.id!=null?x.id:(Date.now()+Math.floor(Math.random()*1000)), numero:x.numero, date:x.date, categorie:x.categorie||'', appareil:x.appareil||'', prestation:x.prestation||'', prixTTC:Number(x.prix_ttc||0), mode:x.mode||'CB', clientPrenom:x.client_prenom||'', clientNom:x.client_nom||'', clientTel:x.client_tel||'', clientEmail:x.client_email||'', clientAdresse:x.client_adresse||'' }; });
+        var seen={}, merged=[]; mapped.concat(atelierList||[]).forEach(function(a){ var k=(a.numero||'')+'|'+(a.date||''); if(seen[k])return; seen[k]=1; merged.push(a); });
+        atelierList=merged; _atelierSaveLocal();
+      }
+    }
+  }catch(e){}
+  cxRenderHisto('atel');
+}
+function cxReimprimerAtelier(id){
+  var a=(atelierList||[]).find(function(x){return String(x.id)===String(id);}); if(!a) return;
+  var client=((a.clientPrenom||'')+' '+(a.clientNom||'')).trim();
+  var desc=(a.categorie||'')+' — '+(a.appareil?a.appareil+' — ':'')+(a.prestation||'');
+  try{ var html=buildA4HTML({type:'reparation',numero:a.numero,date:a.date,clientNom:client,clientAdresse:a.clientAdresse||'',clientEmail:a.clientEmail||'',mode:a.mode||'CB',garantie:'3 mois (réparation)',lignes:[{desc:desc,qte:1,pu:Number(a.prixTTC||0)}],total:Number(a.prixTTC||0),isDevis:false}); ouvrirA4(html); }catch(e){ console.warn(e); }
+}
+
+// ── Génération facture (neuf / atelier) — TVA 20 % ──
+async function cxGenerer(kind, sendMail){
+  var g=function(id){var e=document.getElementById(kind+'-'+id);return e?(''+e.value).trim():'';};
+  var prenom=g('prenom'), nom=g('nom'), tel=g('tel'), email=g('email');
+  var adresse=[g('adresse'), (g('cp')&&g('ville')?g('cp')+' '+g('ville'):g('cp')||g('ville'))].filter(Boolean).join(', ');
+  var prix=parseFloat((g('prix')||'').replace(',','.'))||0;
+  var mode=g('mode')||'CB';
+  var desc, cat='', appareil='', presta='', imei='';
+  if(kind==='neuf'){
+    var modele=g('modele'); imei=g('imei');
+    if(!nom||!modele||!prix){ showNotif&&showNotif('Nom, modèle et prix requis','error'); return; }
+    desc=modele+(imei?' — IMEI '+imei:'');
+  } else {
+    cat=g('cat'); appareil=g('appareil'); presta=g('presta');
+    if(!nom||!presta||!prix){ showNotif&&showNotif('Nom, prestation et prix requis','error'); return; }
+    desc=cat+(appareil?' — '+appareil:'')+' — '+presta;
+  }
+  var client=(prenom+' '+nom).trim();
+  var num=(kind==='neuf'?'NF-':'ATL-')+new Date().getFullYear()+'-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(8,14);
+  var dateJ=new Date().toISOString().split('T')[0];
+  try{ await devisUpsertClient(prenom, nom, tel, email, adresse); }catch(e){}
+  try{ await caisseFromVente({prixTTC:prix, mode:mode, date:dateJ, description:(kind==='neuf'?'Tél. neuf — ':'Atelier — ')+desc}); }catch(e){}
+  if(kind==='neuf'){
+    try{ if(typeof naSave==='function') naSave({numero:num,date:dateJ,type:'telephone-neuf',description:desc,clientNom:client,clientAdresse:adresse,clientEmail:email,prix:prix,mode:mode}); }catch(e){}
+    try{ if(Array.isArray(window.naVentes)) window.naVentes.unshift({id:Date.now(),numero:num,date:dateJ,type:'telephone-neuf',description:desc,clientNom:client,prix:prix,mode:mode}); }catch(e){}
+    try{ var nv=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'telephone-neuf',desc:desc,description:desc,ttc:prix,montant:prix,mode:mode,clientNom:client}); localStorage.setItem('na_ventes',JSON.stringify(nv)); }catch(e){}
+  } else {
+    var rec={id:Date.now(),numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prixTTC:prix,mode:mode,clientPrenom:prenom,clientNom:nom,clientTel:tel,clientEmail:email,clientAdresse:adresse};
+    atelierList.unshift(rec); _atelierSaveLocal();
+    try{ if(typeof supaFetch==='function'){ supaFetch('factures_atelier','POST',{numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prix_ttc:prix,mode:mode,client_prenom:prenom,client_nom:nom,client_tel:tel,client_email:email,client_adresse:adresse}).catch(function(){}); } }catch(e){}
+    try{ var nv2=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv2.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'accessoire',desc:'Atelier — '+desc,description:'Atelier — '+desc,ttc:prix,montant:prix,mode:mode,clientNom:client}); localStorage.setItem('na_ventes',JSON.stringify(nv2)); }catch(e){}
+  }
+  if(sendMail){
+    await cxEnvoyerFactureMail(num, client, email, desc, prix);
+  } else {
+    try{ var html=buildA4HTML({type:'reparation',numero:num,date:dateJ,clientNom:client,clientAdresse:adresse,clientEmail:email,mode:mode,garantie:(kind==='neuf'?'2 ans (téléphone neuf)':'3 mois (réparation atelier)'),lignes:[{desc:desc,qte:1,pu:prix}],total:prix,isDevis:false}); ouvrirA4(html); }catch(e){ console.warn(e); }
+  }
+  try{ if(typeof naRenderSuiviJour==='function') naRenderSuiviJour(); }catch(e){}
+  try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); }catch(e){}
+  cxRenderHisto(kind==='neuf'?'neuf':'atel');
+  showNotif&&showNotif('✅ Facture '+num+' créée','success');
+  ['prenom','nom','tel','email','adresse','cp','ville','modele','imei','appareil','presta','prix','client-search'].forEach(function(f){var el=document.getElementById(kind+'-'+f);if(el)el.value='';});
+}
+
+async function cxEnvoyerFactureMail(num, client, email, desc, prix){
+  if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du client :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } }
+  var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
+  showNotif&&showNotif('📧 Envoi de la facture à '+email+'…','info');
+  var html='<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
+    '<div style="background:#E10600;padding:20px;text-align:center;"><h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
+    '<p style="color:#ffd9d9;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p></div>'+
+    '<div style="padding:24px;"><p>Bonjour '+client+',</p><p>Voici votre facture :</p>'+
+    '<div style="background:#f8fafc;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #E10600;">'+
+      '<b>Facture N° '+num+'</b><br><b>Détail :</b> '+desc+'<br>'+
+      '<b style="font-size:18px;color:#E10600;">Montant : '+Number(prix).toFixed(2)+' € TTC</b></div>'+
+    '<p style="color:#666;font-size:12px;margin-top:16px;">Merci de votre confiance !<br><b>L\'équipe Solution Phone</b></p></div></div>';
+  try{
+    var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
+    var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre facture Solution Phone '+num,htmlContent:html};
+    var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
+    if(res.ok){ showNotif&&showNotif('✅ Facture envoyée à '+email,'success'); }
+    else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
+  }catch(e){ showNotif&&showNotif('Erreur réseau envoi facture','error'); }
+}
+
+// ── Recherche client (onglet) → ouvre la fiche complète ──
+var _cxRechTimer=null;
+function cxRechercheClient(q){
+  clearTimeout(_cxRechTimer);
+  var box=document.getElementById('cx-recherche-results'); if(!box) return;
+  if(!q||q.trim().length<2){ box.innerHTML=''; return; }
+  _cxRechTimer=setTimeout(async function(){
+    try{
+      var query='?or=(nom.ilike.*'+encodeURIComponent(q.trim())+'*,prenom.ilike.*'+encodeURIComponent(q.trim())+'*,tel.ilike.*'+encodeURIComponent(q.trim())+'*)&limit=12&order=nom.asc';
+      var data=await supaFetch('clients','GET',null,query);
+      if(!data||!data.length){ box.innerHTML='<div style="padding:14px;color:var(--text-muted);">Aucun client trouvé.</div>'; return; }
+      box.innerHTML='<div style="display:flex;flex-direction:column;gap:8px;">'+data.map(function(c){
+        var nomAff=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        return '<div onclick="_ouvrirFicheParClient(\''+String(c.tel||'')+'\',\''+String(nomAff).replace(/'/g,"\\'")+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;" onmouseover="this.style.background=\'#FAFAFB\'" onmouseout="this.style.background=\'#fff\'"><div><b>'+nomAff+'</b><div style="font-size:12px;color:var(--text-muted);">'+(c.tel||'')+(c.email?' · '+c.email:'')+'</div></div><span style="color:#E10600;font-weight:800;">Voir la fiche →</span></div>';
+      }).join('')+'</div>';
+    }catch(e){ box.innerHTML='<div style="padding:14px;color:#dc2626;">Erreur de recherche.</div>'; }
+  },300);
 }
 
 function naFilterCat(cat){
