@@ -7372,6 +7372,74 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <tbody id="devis-table"></tbody></table>
         </div>
       </div>
+
+      <!-- ═══ ATTESTATION D'IRRÉPARABILITÉ ═══ -->
+      <div class="card" style="margin-top:26px;border-top:3px solid #E10600;">
+        <div class="card-header"><div class="card-title">🛡️ Attestation d'irréparabilité <span style="font-size:12px;color:var(--text-muted);font-weight:500;">— document pour l'assurance</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="form-group" style="position:relative;"><label>🔍 Rechercher un client existant</label><input type="text" id="att-client-search" placeholder="Nom ou téléphone…" autocomplete="off" oninput="attestClientSearch(this.value)"><div id="att-client-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.15);max-height:210px;overflow:auto;"></div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group"><label>Prénom</label><input type="text" id="att-prenom" placeholder="ex: Jean"></div>
+            <div class="form-group"><label>Nom *</label><input type="text" id="att-nom" placeholder="ex: Dupont"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group"><label>Téléphone</label><input type="tel" id="att-tel" placeholder="06 12 34 56 78" inputmode="tel"></div>
+            <div class="form-group"><label>Email</label><input type="email" id="att-email" placeholder="client@gmail.com"></div>
+          </div>
+          <div class="form-group"><label>Adresse</label><input type="text" id="att-adresse" placeholder="Adresse"></div>
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;">
+            <div class="form-group"><label>Code postal</label><input type="text" id="att-cp" maxlength="5" placeholder="CP" inputmode="numeric"></div>
+            <div class="form-group"><label>Ville</label><input type="text" id="att-ville" placeholder="Ville"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group"><label>Marque *</label><input type="text" id="att-marque" placeholder="ex: Apple"></div>
+            <div class="form-group"><label>Modèle *</label><input type="text" id="att-modele" placeholder="ex: iPhone 12"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group"><label>IMEI / N° de série</label><input type="text" id="att-imei" placeholder="15 chiffres"></div>
+            <div class="form-group"><label>Date d'achat (si connue)</label><input type="date" id="att-dateachat"></div>
+          </div>
+          <div class="form-group"><label>🔧 Dommages constatés</label>
+            <div id="att-dommages" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;padding:6px 2px;">
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Écran cassé / HS"> Écran cassé / HS</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Vitre arrière cassée"> Vitre arrière cassée</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Oxydation / dégât des eaux"> Oxydation / dégât des eaux</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Carte mère HS"> Carte mère HS</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Ne s'allume plus"> Ne s'allume plus</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Batterie gonflée / HS"> Batterie gonflée / HS</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Connecteur de charge HS"> Connecteur de charge HS</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Choc / chute"> Choc / chute</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Appareil plié / châssis déformé"> Châssis plié / déformé</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:center;"><input type="checkbox" value="Appareil bloqué / verrouillé"> Bloqué / verrouillé</label>
+            </div>
+          </div>
+          <div class="form-group"><label>Précisions sur les dommages</label><input type="text" id="att-dommages-autre" placeholder="Détails complémentaires (facultatif)"></div>
+          <div class="form-group"><label>Diagnostic technique</label><textarea id="att-diagnostic" rows="2" placeholder="Constat du technicien (ex: après diagnostic, carte mère HS suite à oxydation, aucune remise sous tension possible)"></textarea></div>
+          <div class="form-group"><label>⚠️ Motif(s) d'irréparabilité *</label>
+            <div id="att-motifs" style="display:flex;flex-direction:column;gap:6px;padding:6px 2px;">
+              <label style="font-weight:400;display:flex;gap:6px;align-items:flex-start;"><input type="checkbox" value="Appareil techniquement irréparable"> Techniquement irréparable</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:flex-start;"><input type="checkbox" value="Pièces détachées indisponibles ou obsolètes"> Pièces détachées indisponibles / obsolètes</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:flex-start;"><input type="checkbox" value="Coût de réparation économiquement non viable (supérieur à la valeur de l'appareil)"> Coût de réparation économiquement non viable (&gt; valeur de l'appareil)</label>
+              <label style="font-weight:400;display:flex;gap:6px;align-items:flex-start;"><input type="checkbox" value="Réparation compromettant la sécurité ou l'intégrité des données"> Réparation compromettant la sécurité / les données</label>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="form-group"><label>Coût estimé de réparation (€)</label><input type="number" id="att-cout" step="0.01" placeholder="ex: 320"></div>
+            <div class="form-group"><label>Valeur de l'appareil (€)</label><input type="number" id="att-valeur" step="0.01" placeholder="ex: 250"></div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="genererAttestation()">🛡️ Générer l'attestation</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header"><div class="card-title">📋 Historique attestations</div></div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Appareil</th><th>Motif</th><th>Actions</th></tr></thead>
+          <tbody id="attest-table"></tbody></table>
+        </div>
+      </div>
     </div>
 
 
@@ -10551,7 +10619,7 @@ function showPage(id,el){
   if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
   if(id==='salaries'){ initSalMoisSel(); renderSalaries(); }
-  if(id==='devis'){ if(typeof devisLoad==='function') devisLoad(); else renderDevis(); }    if(id==='clients'){
+  if(id==='devis'){ if(typeof devisLoad==='function') devisLoad(); else renderDevis(); if(typeof attestLoad==='function') attestLoad(); }    if(id==='clients'){
     loadAllClients().then(function(){ renderClients(); });
     try{ if(typeof devisLoad==='function') devisLoad(); }catch(e){}
     try{ if(typeof repLoadDossiers==='function' && (!window.repDossiers||!window.repDossiers.length)) repLoadDossiers(); }catch(e){}
@@ -17720,6 +17788,194 @@ function imprimerDevisData(dv){
 }
 
 function imprimerDevis(){ var dv=devisList[devisList.length-1]; if(dv)imprimerDevisData(dv); }
+
+/* ═══════════ ATTESTATION D'IRRÉPARABILITÉ ═══════════ */
+var attestList = [];
+function _attestSaveLocal(){ try{ localStorage.setItem('sp_attestations', JSON.stringify(attestList||[])); }catch(e){} }
+
+async function attestLoad(){
+  try{ var ls=JSON.parse(localStorage.getItem('sp_attestations')||'[]'); if(Array.isArray(ls)) attestList=ls; }catch(e){}
+  try{
+    if(typeof supaFetch==='function'){
+      var rows=await supaFetch('attestations','GET',null,'?order=id.desc&limit=500');
+      if(Array.isArray(rows) && rows.length){
+        var mapped=rows.map(function(x){ return {
+          id: x.id!=null ? x.id : (Date.now()+Math.floor(Math.random()*1000)),
+          numero:x.numero, date:x.date,
+          prenom:x.client_prenom||'', nom:x.client_nom||'', tel:x.client_tel||'', email:x.client_email||'', adresse:x.client_adresse||'',
+          marque:x.appareil_marque||'', modele:x.appareil_modele||'', imei:x.imei||'', dateAchat:x.date_achat||'',
+          dommages:(x.dommages||'').split(' | ').filter(Boolean), dommagesAutre:'', diagnostic:x.diagnostic||'',
+          motifs:(x.motifs||'').split(' | ').filter(Boolean), cout:Number(x.cout_reparation||0), valeur:Number(x.valeur_appareil||0)
+        }; }).reverse();
+        var seen={}, merged=[];
+        mapped.concat(attestList||[]).forEach(function(a){ var k=(a.numero||'')+'|'+(a.date||''); if(seen[k])return; seen[k]=1; merged.push(a); });
+        merged.sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); });
+        attestList=merged; _attestSaveLocal();
+      }
+    }
+  }catch(e){ /* table absente → local uniquement */ }
+  try{ renderAttest(); }catch(e){}
+}
+
+var _attSearchTimer=null;
+function attestClientSearch(q){
+  clearTimeout(_attSearchTimer);
+  var res=document.getElementById('att-client-results');
+  if(!q||q.trim().length<2){ if(res)res.style.display='none'; return; }
+  _attSearchTimer=setTimeout(async function(){
+    try{
+      var query='?or=(nom.ilike.*'+encodeURIComponent(q.trim())+'*,tel.ilike.*'+encodeURIComponent(q.trim())+'*)&limit=6&order=nom.asc';
+      var data=await supaFetch('clients','GET',null,query);
+      if(!res) return;
+      if(!data||!data.length){ res.innerHTML='<div style="padding:10px 12px;font-size:13px;color:var(--text-muted);">Aucun client trouvé</div>'; res.style.display='block'; return; }
+      res.innerHTML=data.map(function(c){
+        var nomAff=((c.civilite?c.civilite+' ':'')+(c.prenom||'')+' '+(c.nom||'')).trim();
+        var ds=encodeURIComponent(JSON.stringify({prenom:c.prenom||'',nom:c.nom||'',adresse:c.adresse||'',cp:c.cp||'',ville:c.ville||'',email:c.email||'',tel:c.tel||''}));
+        return '<div onclick="attestPickClient(\''+ds+'\')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;"><b>'+nomAff+'</b> <span style="color:var(--text-muted);">'+(c.tel||'')+'</span></div>';
+      }).join('');
+      res.style.display='block';
+    }catch(e){ if(res)res.style.display='none'; }
+  },300);
+}
+function attestPickClient(s){
+  var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
+  var set=function(id,v){var el=document.getElementById(id);if(el)el.value=v||'';};
+  set('att-prenom',c.prenom); set('att-nom',c.nom); set('att-tel',c.tel); set('att-adresse',c.adresse); set('att-cp',c.cp); set('att-ville',c.ville); set('att-email',c.email);
+  var res=document.getElementById('att-client-results'); if(res)res.style.display='none';
+  var inp=document.getElementById('att-client-search'); if(inp)inp.value=((c.prenom||'')+' '+(c.nom||'')).trim();
+}
+
+function _attCheckedValues(containerId){
+  var out=[]; var box=document.getElementById(containerId); if(!box) return out;
+  box.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){ out.push(cb.value); });
+  return out;
+}
+
+async function genererAttestation(){
+  var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
+  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email');
+  var marque=g('att-marque'), modele=g('att-modele'), imei=g('att-imei'), dateAchat=g('att-dateachat');
+  var dommages=_attCheckedValues('att-dommages'), dommagesAutre=g('att-dommages-autre');
+  var diagnostic=g('att-diagnostic'), motifs=_attCheckedValues('att-motifs');
+  var cout=parseFloat(g('att-cout'))||0, valeur=parseFloat(g('att-valeur'))||0;
+  if(!nom||!marque||!modele){ showNotif('Nom, marque et modèle requis','error'); return; }
+  if(!motifs.length){ showNotif('Cochez au moins un motif d\'irréparabilité','error'); return; }
+  var num='ATT-'+new Date().getFullYear()+'-'+String(attestList.length+1).padStart(3,'0');
+  var a={ id:Date.now(), numero:num, date:new Date().toISOString().split('T')[0],
+    prenom:prenom, nom:nom, tel:tel, email:email, adresse:getAdresse('att'),
+    marque:marque, modele:modele, imei:imei, dateAchat:dateAchat,
+    dommages:dommages, dommagesAutre:dommagesAutre, diagnostic:diagnostic,
+    motifs:motifs, cout:cout, valeur:valeur };
+  attestList.push(a); _attestSaveLocal();
+  try{ await devisUpsertClient(prenom, nom, tel, email, a.adresse); }catch(e){ console.warn('attest upsert client:',e); }
+  try{
+    if(typeof supaFetch==='function'){
+      supaFetch('attestations','POST',{ numero:a.numero, date:a.date, client_prenom:prenom, client_nom:nom, client_tel:tel, client_email:email, client_adresse:a.adresse, appareil_marque:marque, appareil_modele:modele, imei:imei, date_achat:dateAchat||null, dommages:(dommages.concat(dommagesAutre?['Précisions: '+dommagesAutre]:[])).join(' | '), diagnostic:diagnostic, motifs:motifs.join(' | '), cout_reparation:cout, valeur_appareil:valeur })
+        .then(function(){ showNotif('Attestation '+num+' enregistrée ✓','success'); })
+        .catch(function(e){ console.warn('save attestation:',e); });
+    }
+  }catch(e){}
+  renderAttest();
+  imprimerAttestationData(a);
+  ['att-prenom','att-nom','att-tel','att-email','att-adresse','att-cp','att-ville','att-marque','att-modele','att-imei','att-dateachat','att-dommages-autre','att-diagnostic','att-cout','att-valeur','att-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['att-dommages','att-motifs'].forEach(function(c){var box=document.getElementById(c);if(box)box.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=false;});});
+  showNotif('Attestation '+num+' créée !','success');
+}
+
+function renderAttest(){
+  var tb=document.getElementById('attest-table'); if(!tb) return;
+  var rows=(attestList||[]).slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
+  tb.innerHTML=rows.map(function(a){
+    var cli=((a.prenom||'')+' '+(a.nom||'')).trim();
+    var app=((a.marque||'')+' '+(a.modele||'')).trim();
+    var motif=(a.motifs&&a.motifs[0])||'';
+    return '<tr><td><b>'+a.numero+'</b></td><td>'+fmtDate(a.date)+'</td><td>'+cli+'</td><td>'+app+'</td><td style="font-size:11px;color:var(--text-muted);max-width:220px;">'+motif+'</td>'+
+      '<td style="white-space:nowrap;"><button class="btn btn-sm" title="Imprimer / PDF" onclick="reprintAttest('+a.id+')">🖨️</button> '+
+      '<button class="btn btn-sm" title="Fiche client" onclick="_ouvrirFicheParClient(\''+String(a.tel||'').replace(/\\/g,'').replace(/'/g,"\\'")+'\',\''+String(cli).replace(/'/g,"\\'")+'\')">👤</button></td></tr>';
+  }).join('')||'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-dim)">Aucune attestation</td></tr>';
+}
+function reprintAttest(id){ var a=attestList.find(function(x){return String(x.id)===String(id);}); if(a) imprimerAttestationData(a); }
+
+function imprimerAttestationData(a){
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var _tampStr = (typeof SP_TAMPON !== 'undefined' ? SP_TAMPON : '') || '';
+  var dateStr = a.date ? new Date(a.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+  var achatStr = a.dateAchat ? new Date(a.dateAchat).toLocaleDateString('fr-FR') : '';
+  var adresseRaw = a.adresse || ''; var cp='', ville='', rue=adresseRaw;
+  if(adresseRaw){ var m=adresseRaw.match(/^(.*?),?\s*(\d{4,5})\s+([^,]+?)\s*$/); if(m){ rue=(m[1]||'').replace(/,$/,'').trim(); cp=m[2]; ville=m[3].trim(); } }
+  var cli=((a.prenom||'')+' '+(a.nom||'')).trim();
+  var domms=(a.dommages||[]).slice(); if(a.dommagesAutre) domms.push(a.dommagesAutre);
+  var li=function(arr){ return (arr&&arr.length)?('<ul style="margin:4px 0 0 18px;padding:0;">'+arr.map(function(x){return '<li style="margin:2px 0;">'+x+'</li>';}).join('')+'</ul>'):'<span style="color:#888;">—</span>'; };
+  var ecoLine='';
+  if(a.cout>0 || a.valeur>0){
+    ecoLine='<div style="margin-top:6px;font-size:11px;color:#444;">'+
+      (a.cout>0?'Coût estimé de la réparation : <b>'+a.cout.toFixed(2)+' € TTC</b>':'')+
+      (a.cout>0&&a.valeur>0?' · ':'')+
+      (a.valeur>0?'Valeur estimée de l\'appareil : <b>'+a.valeur.toFixed(2)+' €</b>':'')+
+      ((a.cout>0&&a.valeur>0&&a.cout>a.valeur)?' → réparation économiquement non viable.':'')+
+    '</div>';
+  }
+  var w=window.open('','_blank'); if(!w){ showNotif('Autorisez les popups','error'); return; }
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Attestation '+a.numero+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;color:#111;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;}'+
+    '@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}</style></head><body>'+
+    '<div class="no-print" style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:#f8f8f8;border-bottom:1px solid #eee;">'+
+      '<button onclick="window.close()" style="background:#6b7280;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">✕ Fermer</button>'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
+    '</div>'+
+    '<div class="page">'+
+    // EN-TÊTE
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:14px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+(logo?'<img src="'+logo+'" style="height:48px;">':'')+
+        '<div><div style="font-size:17px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+        '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · contact@solution-phone.fr<br>SIREN : 801 044 785 · TVA : FR10801044785</div></div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="font-size:18px;font-weight:900;line-height:1.1;">ATTESTATION<br>D\'IRRÉPARABILITÉ</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c0392b;margin-top:4px;">'+a.numero+'</div>'+
+        '<div style="font-size:11px;color:#888;">Date : '+dateStr+'</div>'+
+      '</div>'+
+    '</div>'+
+    // INTRO
+    '<p style="font-size:12px;line-height:1.6;margin-bottom:12px;">Je soussigné, représentant de la société <b>Solution Phone</b>, réparateur professionnel de téléphonie mobile, atteste avoir examiné dans notre atelier l\'appareil décrit ci-dessous, appartenant à&nbsp;:</p>'+
+    // CLIENT + APPAREIL
+    '<div style="display:flex;gap:10px;margin-bottom:12px;">'+
+      '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;"><b>'+(cli||'—')+'</b><br>'+(a.tel?'Tél : '+a.tel+'<br>':'')+(a.email?a.email+'<br>':'')+(rue||'')+(cp?'<br>'+cp+' '+ville:(ville?'<br>'+ville:''))+'</div>'+
+      '</div>'+
+      '<div style="flex:1;border:1.5px solid #333;border-radius:6px;overflow:hidden;">'+
+        '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;"><b>'+((a.marque||'')+' '+(a.modele||'')).trim()+'</b><br>'+(a.imei?'IMEI / N° série : '+a.imei+'<br>':'')+(achatStr?'Date d\'achat : '+achatStr:'')+'</div>'+
+      '</div>'+
+    '</div>'+
+    // DOMMAGES
+    '<div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;margin-bottom:10px;">'+
+      '<div style="font-size:11px;font-weight:800;color:#c0392b;text-transform:uppercase;margin-bottom:2px;">Dommages constatés</div>'+li(domms)+
+    '</div>'+
+    // DIAGNOSTIC
+    (a.diagnostic?'<div style="border:1px solid #ddd;border-radius:6px;padding:10px 12px;margin-bottom:10px;"><div style="font-size:11px;font-weight:800;color:#c0392b;text-transform:uppercase;margin-bottom:2px;">Diagnostic technique</div><div style="font-size:12px;line-height:1.5;">'+a.diagnostic+'</div></div>':'')+
+    // CONCLUSION
+    '<div style="border:2px solid #c0392b;border-radius:8px;padding:12px 14px;margin-bottom:14px;background:#fff5f5;">'+
+      '<div style="font-size:12px;font-weight:800;color:#c0392b;text-transform:uppercase;margin-bottom:4px;">Conclusion — Motif(s) d\'irréparabilité</div>'+
+      li(a.motifs)+ecoLine+
+      '<div style="margin-top:10px;font-size:13px;font-weight:900;color:#c0392b;">En conséquence, l\'appareil est déclaré IRRÉPARABLE.</div>'+
+    '</div>'+
+    '<p style="font-size:11px;color:#555;line-height:1.6;margin-bottom:20px;">La présente attestation est établie à la demande du client pour faire valoir ce que de droit, notamment auprès de sa compagnie d\'assurance. Fait à Mâcon, le '+dateStr+'.</p>'+
+    // SIGNATURE
+    '<div style="display:flex;justify-content:flex-end;">'+
+      '<div style="width:46%;text-align:center;border:1px solid #ddd;border-radius:6px;padding:10px;">'+
+        '<div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Cachet & signature — Solution Phone</div>'+
+        (_tampStr?'<img src="'+_tampStr+'" style="max-height:70px;max-width:200px;object-fit:contain;">':'<div style="height:60px;"></div>')+
+      '</div>'+
+    '</div>'+
+    // FOOTER
+    '<div style="border-top:1px solid #eee;margin-top:18px;padding-top:8px;text-align:center;font-size:9px;color:#bbb;">SOLUTION PHONE · RCS Mâcon B 801 044 785 · 21 Rue Gambetta 71000 Mâcon · contact@solution-phone.fr</div>'+
+    '</div></body></html>');
+  w.document.close();
+  setTimeout(function(){ try{ w.print(); }catch(e){} }, 500);
+}
 
 function convertirDevisEnFacture() {
   var prestation=document.getElementById('dv-prestation').value.trim();

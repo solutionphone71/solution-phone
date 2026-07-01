@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     'phones', 'clients', 'clients_en_attente', 'factures', 'factures_pdf', 'caisse', 'cloture_journee', 'depenses',
     'reports_mois', 'ecrans_prix', 'batteries_prix', 'prix_reparation_android',
     'settings', 'commandes', 'devis', 'reparations', 'neufs_accessoires',
-    'salaries', 'phonilab_import', 'police', 'phones_neufs',
+    'salaries', 'phonilab_import', 'police', 'phones_neufs', 'attestations',
     'bons_depot', 'bons_commande', 'historique_reparations', 'ventes_neufs_access',
     'calendrier_editorial', 'roulette_config', 'roulette_participations',
     'mobilax',
