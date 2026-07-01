@@ -590,6 +590,26 @@ select, input, textarea, button {
   border-radius:12px!important;
   transition:border-color .15s ease, box-shadow .15s ease!important;
 }
+
+/* ═══ ANIMATION D'APPARITION DES CARTES (entrée en cascade façon Apple) ═══ */
+@keyframes spCardIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+[data-theme="light"] .page.active .card,
+[data-theme="light"] .page.active .bw,
+[data-theme="light"] .page.active .widget{
+  animation:spCardIn .42s cubic-bezier(.2,.7,.2,1) backwards;
+}
+[data-theme="light"] .page.active .card:nth-of-type(2){ animation-delay:.05s; }
+[data-theme="light"] .page.active .card:nth-of-type(3){ animation-delay:.10s; }
+[data-theme="light"] .page.active .card:nth-of-type(4){ animation-delay:.15s; }
+[data-theme="light"] .page.active .card:nth-of-type(n+5){ animation-delay:.18s; }
+[data-theme="light"] .page.active .bw:nth-of-type(2){ animation-delay:.05s; }
+[data-theme="light"] .page.active .bw:nth-of-type(3){ animation-delay:.10s; }
+[data-theme="light"] .page.active .bw:nth-of-type(4){ animation-delay:.15s; }
+@media (prefers-reduced-motion: reduce){
+  [data-theme="light"] .page.active .card,
+  [data-theme="light"] .page.active .bw,
+  [data-theme="light"] .page.active .widget{ animation:none; }
+}
 [data-theme="light"] .rep-step-btn.done{background:rgba(40,167,69,0.08)!important;color:#28a745!important;}
 [data-theme="light"] .notif{
   background:#fff!important;border-color:rgba(0,0,0,0.08)!important;
