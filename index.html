@@ -17486,6 +17486,7 @@ async function genererDevis() {
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
+  _devisSaveLocal(); // persiste immédiatement (fiable, même sans table Supabase)
   // Créer / mettre à jour le client dans la base → il apparaît dans le suivi client (fiche)
   try{ await devisUpsertClient(client, tel, dv.clientEmail, dv.clientAdresse); }catch(e){ console.warn('devis upsert client:',e); }
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
@@ -17745,20 +17746,30 @@ function renderDevis() {
 }
 
 // Recharge les devis depuis la base → l'historique persiste (page Devis + fiche client)
+function _devisSaveLocal(){ try{ localStorage.setItem('sp_devis', JSON.stringify(devisList||[])); }catch(e){} }
+
 async function devisLoad(){
+  // 1) Source fiable immédiate : stockage local (persiste même si la table Supabase n'existe pas)
+  try{ var ls=JSON.parse(localStorage.getItem('sp_devis')||'[]'); if(Array.isArray(ls)) devisList=ls; }catch(e){}
+  // 2) Base partagée (si la table « devis » existe) → fusion par numéro (base prioritaire)
   try{
     if(typeof supaFetch==='function'){
       var rows=await supaFetch('devis','GET',null,'?order=id.desc&limit=500');
-      if(Array.isArray(rows)){
-        devisList = rows.map(function(x){ return {
+      if(Array.isArray(rows) && rows.length){
+        var mapped=rows.map(function(x){ return {
           id: x.id!=null ? x.id : (Date.now()+Math.floor(Math.random()*1000)),
           numero:x.numero, date:x.date,
           clientNom:x.client_nom||'', clientTel:x.client_tel||'', clientAdresse:x.client_adresse||'', clientEmail:x.client_email||'',
           appareil:x.appareil||'', prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
         }; }).reverse();
+        var seen={}, merged=[];
+        mapped.concat(devisList||[]).forEach(function(d){ var k=(d.numero||'')+'|'+(d.date||''); if(seen[k])return; seen[k]=1; merged.push(d); });
+        merged.sort(function(a,b){ return String(a.date||'').localeCompare(String(b.date||'')); });
+        devisList=merged;
+        _devisSaveLocal();
       }
     }
-  }catch(e){ console.warn('devisLoad:',e); }
+  }catch(e){ /* table absente → on reste sur le local, pas d'erreur bloquante */ }
   try{ renderDevis(); }catch(e){}
 }
 
