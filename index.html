@@ -349,6 +349,22 @@
 <link rel="stylesheet" href="./css/style.css?v=20260701-apple3d2">
 <link rel="stylesheet" href="./css/sp-futur-theme.css?v=20260701-apple3d2">
 <script>
+// ── Silence des logs de debug en PRODUCTION (audit juil. 2026) ──
+// Neutralise console.log/debug/info sur le domaine de prod uniquement.
+// console.warn et console.error sont CONSERVÉS (diagnostic incidents).
+// En localhost / preview Vercel, tous les logs restent actifs.
+(function(){
+  try {
+    var h = location.hostname || '';
+    var isProd = /(^|\.)solution-phone\.fr$/.test(h);
+    if (isProd) {
+      var noop = function(){};
+      console.log = noop; console.debug = noop; console.info = noop;
+    }
+  } catch(e){}
+})();
+</script>
+<script>
 // Force kill ALL service workers and caches on load
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(function(regs){

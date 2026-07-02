@@ -1,15 +1,23 @@
 // /api/supabase.js — Proxy Supabase pour Solution Phone
 // Protege la cle Supabase cote serveur (Vercel Serverless Function)
 
+import { checkAuth } from './_auth.js';
+
 const SUPA_URL = process.env.SUPABASE_URL;    // ex: https://kdvxcnjfrmvlnrymfyug.supabase.co
 const SUPA_KEY = process.env.SUPABASE_KEY;    // votre cle anon/service
 
 export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // ── Authentification & CORS restreint (audit sécurité juillet 2026) ──
+  // checkAuth pose les en-têtes CORS (origines Solution Phone uniquement) et
+  // autorise : front same-origin, cron Vercel, ou Bearer CRON_SECRET/APP_SECRET.
+  const authRes = checkAuth(req, res);
+  if (authRes.preflight) return res.status(204).end();
+  if (!authRes.ok) {
+    return res.status(403).json({ error: 'Accès refusé', reason: authRes.reason || 'origine non autorisée' });
+  }
+  // Méthodes autorisées (l'Allow-Origin est posé par checkAuth, sans wildcard)
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Prefer');
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Prefer, Authorization');
 
   // Extraire table et query depuis l'URL: /api/supabase?table=phones&query=?select=*
   const { table, query } = req.query;
