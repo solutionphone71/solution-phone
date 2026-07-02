@@ -20360,8 +20360,9 @@ function renderDashboard(){
 
   // ④ SANTÉ — Anneaux Apple Watch (animation)
   var objectifCA2=10000,objectifRep=50,objectifAcc=30;
-  var nbRepMois=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date&&r.date.startsWith(moisCourant);}).length;
-  var nbAccMois=(JSON.parse(localStorage.getItem('na_ventes')||'[]')).filter(function(v){return v.date&&v.date.startsWith(moisCourant);}).length;
+  // Compteurs via SPCA (source unique) → cohérents avec le récap comptable & le Z
+  var nbRepMois=_spMois.vitrine.reparations_nb;
+  var nbAccMois=_spMois.vitrine.accessoires_nb;
   // Anneaux : circumference = 2*PI*r
   var circCA=2*Math.PI*70; // ~440
   var circRep=2*Math.PI*55; // ~346
@@ -23799,13 +23800,14 @@ function renderRepBentoWidgets(){
   var moisCourant=getMoisActuel();
   var todayStr=new Date().toISOString().split('T')[0];
 
-  // CA réparations du mois (depuis caisse)
-  var caRepMois=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
-  var bonusQR=caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
+  // CA réparations du mois — via SPCA (uniquement les réparations, pas tout le registre)
+  var _spRep=(window.SPCA?SPCA.get('mois'):{vitrine:{reparations:0,quali:0,reparations_nb:0}});
+  var caRepMois=_spRep.vitrine.reparations;
+  var bonusQR=_spRep.vitrine.quali;
 
-  // Nb réparations du mois (dossiers facturés/clos ce mois)
+  // Nb réparations du mois (dossiers facturés ce mois — même source que SPCA)
   var repFactMois=repDossiers.filter(function(d){return d.facture&&d.facture.date&&d.facture.date.startsWith(moisCourant);});
-  var nbRepMois=repFactMois.length;
+  var nbRepMois=_spRep.vitrine.reparations_nb || repFactMois.length;
   var ticketMoyen=nbRepMois>0?(caRepMois/nbRepMois):0;
 
   // Widgets bento — Ecosystem / Ecologic / Non envoyés
