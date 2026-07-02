@@ -8009,6 +8009,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               '<div class="immo-actions">'+
                 '<button class="immo-paid-btn '+(paye?'yes':'no')+'" onclick="immoTogglePaie(\''+b.id+'\',\''+moisKey+'\')">'+(paye?'✅ '+MOIS[now.getMonth()]+' encaissé':'⏳ '+MOIS[now.getMonth()]+' en attente')+'</button>'+
                 '<button class="btn btn-sm" onclick="immoQuittance(\''+b.id+'\',\''+moisKey+'\')" title="Quittance">🧾</button>'+
+                '<button class="btn btn-sm" onclick="immoBail(\''+b.id+'\')" title="Générer le bail">📜</button>'+
                 '<button class="btn btn-sm" onclick="immoEdit(\''+b.id+'\')" title="Modifier">✏️</button>'+
               '</div>'+
             '</div></div>';
@@ -8079,8 +8080,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           '<div style="margin-top:70px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:8px;">Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant ci-dessus.</div>'+
         '</div>';
       }
-      function quittanceShell(inner){
-        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quittance de loyer</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#f4f4f4;}.page-q{width:210mm;min-height:280mm;margin:10px auto;background:#fff;padding:22mm 20mm;}@media print{body{background:#fff;}.page-q{margin:0;page-break-after:always;}.no-print{display:none!important;}}</style></head><body>'+
+      function quittanceShell(inner,titre){
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+(titre||'Quittance de loyer')+'</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#f4f4f4;}.page-q{width:210mm;min-height:280mm;margin:10px auto;background:#fff;padding:22mm 20mm;}@media print{body{background:#fff;}.page-q{margin:0;page-break-after:always;}.no-print{display:none!important;}}</style></head><body>'+
           '<div class="no-print" style="text-align:center;padding:12px;"><button onclick="window.print()" style="padding:10px 26px;background:#E10600;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">🖨️ Imprimer</button></div>'+inner+'</body></html>';
       }
       window.immoQuittance=function(id,mk){
@@ -8089,6 +8090,120 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
         w.document.write(quittanceShell(quittanceHTML(b,mk))); w.document.close();
       };
+      // ══════════ GÉNÉRATION DES BAUX (juillet 2026) ══════════
+      function bailData(id){ var d=immoLoad(); return (d.baux||{})[id]||{}; }
+      function bailSave(id,obj){ var d=immoLoad(); d.baux=d.baux||{}; d.baux[id]=obj; immoSave(d); }
+      function fmtFR(iso){ try{ return new Date(iso).toLocaleDateString('fr-FR'); }catch(e){ return iso||''; } }
+      function inp(id,label,val,ph,type){ return '<div class="form-group" style="margin-bottom:10px;"><label>'+label+'</label><input id="'+id+'" type="'+(type||'text')+'" value="'+esc(val==null?'':val)+'" placeholder="'+esc(ph||'')+'"></div>'; }
+      function val(id){ var e=document.getElementById(id); return e?e.value.trim():''; }
+      function num(id){ return parseFloat(String(val(id)).replace(',','.'))||0; }
+
+      window.immoBail=function(id){
+        var b=immoBiens().find(function(x){return x.id===id;}); if(!b) return;
+        var commercial=(id!=='replonges');
+        var d=bailData(id);
+        var ov=document.getElementById('immo-bail-modal');
+        if(!ov){ ov=document.createElement('div'); ov.id='immo-bail-modal'; ov.className='modal-overlay'; document.body.appendChild(ov); ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); }); }
+        var h='<div class="modal" style="max-width:680px;"><div class="modal-title">📜 '+(commercial?'Bail commercial':'Bail d\'habitation')+' — '+esc(b.adresse)+'</div>';
+        h+='<div style="font-size:12px;color:#6B7280;margin:-8px 0 16px;">Renseignez le formulaire puis générez le document. Les infos sont mémorisées pour la prochaine fois.</div>';
+        h+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#B00007;margin-bottom:8px;">Bailleur</div><div class="form-grid">';
+        h+=inp('bl-bailleur','Nom / dénomination',d.bailleur||b.bailleur);
+        h+=inp('bl-bailleur-adr','Adresse',d.bailleurAdr||b.bailleurAdr);
+        if(commercial){ h+=inp('bl-bailleur-siret','SIRET / RCS (si SCI)',d.bailleurSiret,'ex : 123 456 789 00012'); h+=inp('bl-bailleur-rep','Représenté par (gérant)',d.bailleurRep,'ex : Sébastien Cannard, gérant'); }
+        h+='</div>';
+        h+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#B00007;margin:14px 0 8px;">'+(commercial?'Preneur (locataire)':'Locataire')+'</div><div class="form-grid">';
+        if(commercial){
+          h+=inp('bl-preneur','Dénomination',d.preneur||b.locataire);
+          h+=inp('bl-preneur-forme','Forme juridique',d.preneurForme,'ex : SARL au capital de 5 000 €');
+          h+=inp('bl-preneur-rcs','SIREN / RCS',d.preneurRcs,'ex : RCS Mâcon 123 456 789');
+          h+=inp('bl-preneur-adr','Siège social',d.preneurAdr);
+          h+=inp('bl-preneur-rep','Représenté par',d.preneurRep,'ex : M. X, gérant');
+          h+=inp('bl-destination','Destination / activité autorisée',d.destination,'ex : vente et réparation de téléphonie');
+        } else {
+          h+=inp('bl-preneur','Nom et prénom du (des) locataire(s)',d.preneur||b.locataire);
+          h+=inp('bl-preneur-adr','Adresse actuelle (avant entrée)',d.preneurAdr);
+        }
+        h+='</div>';
+        h+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#B00007;margin:14px 0 8px;">Le bien &amp; les conditions</div><div class="form-grid">';
+        h+=inp('bl-surface','Surface (m²)',d.surface,'ex : 85');
+        if(!commercial){ h+=inp('bl-pieces','Nombre de pièces principales',d.pieces,'ex : 4'); h+=inp('bl-annexes','Annexes (garage, jardin…)',d.annexes,'ex : garage, jardin clos'); }
+        else { h+=inp('bl-descr','Description des locaux',d.descr,'ex : boutique en rez-de-chaussée + réserve'); }
+        h+=inp('bl-date-effet','Date de prise d\'effet',d.dateEffet||new Date().toISOString().slice(0,10),'','date');
+        h+=inp('bl-loyer','Loyer mensuel hors charges (€)',d.loyer||b.loyer||'');
+        h+=inp('bl-charges','Charges / provisions mensuelles (€)',d.charges||b.charges||'');
+        h+=inp('bl-depot','Dépôt de garantie (€)',d.depot,(commercial?'ex : 3 mois de loyer':'max. 1 mois de loyer HC'));
+        h+=inp('bl-indice','Trimestre de l\'indice de référence ('+(commercial?'ILC':'IRL')+')',d.indice,'ex : 1er trimestre 2026');
+        h+='</div>';
+        if(commercial){ h+='<label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-top:6px;cursor:pointer;"><input type="checkbox" id="bl-tva" style="width:16px;height:16px;accent-color:#E10600;" '+(d.tva?'checked':'')+'> Loyer soumis à TVA (option du bailleur, art. 260-2° CGI)</label>'; }
+        h+='<div style="display:flex;gap:10px;margin-top:18px;">'+
+          '<button class="btn btn-primary" style="flex:1;padding:13px;" onclick="immoBailGen(\''+id+'\')">📜 Générer le bail</button>'+
+          '<button class="btn" onclick="document.getElementById(\'immo-bail-modal\').classList.remove(\'open\')">Fermer</button></div>';
+        h+='<div style="font-size:10.5px;color:#9CA3AF;margin-top:12px;line-height:1.5;">⚖️ Modèle établi selon la réglementation en vigueur ('+(commercial?'articles L145-1 et s. du Code de commerce, loi Pinel 2014':'loi n°89-462 du 6 juillet 1989, contrat type décret n°2015-587')+'). À faire relire par un professionnel (notaire, avocat) avant signature.</div>';
+        h+='</div>';
+        ov.innerHTML=h; ov.classList.add('open');
+      };
+
+      window.immoBailGen=function(id){
+        var b=immoBiens().find(function(x){return x.id===id;}); if(!b) return;
+        var commercial=(id!=='replonges');
+        var d={ bailleur:val('bl-bailleur'), bailleurAdr:val('bl-bailleur-adr'), preneur:val('bl-preneur'), preneurAdr:val('bl-preneur-adr'),
+                surface:val('bl-surface'), dateEffet:val('bl-date-effet'), loyer:num('bl-loyer'), charges:num('bl-charges'), depot:val('bl-depot'), indice:val('bl-indice') };
+        if(commercial){ d.bailleurSiret=val('bl-bailleur-siret'); d.bailleurRep=val('bl-bailleur-rep'); d.preneurForme=val('bl-preneur-forme'); d.preneurRcs=val('bl-preneur-rcs'); d.preneurRep=val('bl-preneur-rep'); d.destination=val('bl-destination'); d.descr=val('bl-descr'); d.tva=!!(document.getElementById('bl-tva')||{}).checked; }
+        else { d.pieces=val('bl-pieces'); d.annexes=val('bl-annexes'); }
+        if(!d.bailleur||!d.preneur||!(d.loyer>0)){ showNotif&&showNotif('Bailleur, locataire et loyer sont obligatoires','error'); return; }
+        bailSave(id,d);
+        var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
+        w.document.write(quittanceShell(commercial?bailCommercialHTML(b,d):bailHabitationHTML(b,d), commercial?'Bail commercial':'Bail d\'habitation')); w.document.close();
+        document.getElementById('immo-bail-modal').classList.remove('open');
+      };
+
+      function art(n,titre,corps){ return '<h3 style="font-size:13px;margin:16px 0 6px;">Article '+n+' — '+titre+'</h3><p style="font-size:11.5px;line-height:1.65;text-align:justify;">'+corps+'</p>'; }
+      function bailHead(titre,sousTitre){ return '<div style="text-align:center;border-bottom:3px solid #E10600;padding-bottom:14px;margin-bottom:20px;"><div style="font-size:22px;font-weight:900;letter-spacing:1px;">'+titre+'</div><div style="font-size:11px;color:#666;margin-top:4px;">'+sousTitre+'</div></div>'; }
+      function bailSigs(vb,vp){ return '<table style="width:100%;margin-top:36px;font-size:11.5px;"><tr><td style="width:50%;vertical-align:top;"><b>LE BAILLEUR</b><br>'+vb+'<br><span style="color:#888;">Signature précédée de la mention<br>« Lu et approuvé » :</span><br><br><br><br></td><td style="vertical-align:top;"><b>LE '+vp+'</b><br><span style="color:#888;">Signature précédée de la mention<br>« Lu et approuvé » :</span><br><br><br><br></td></tr></table><div style="font-size:9.5px;color:#999;border-top:1px solid #eee;padding-top:8px;margin-top:16px;">Fait en deux exemplaires originaux, dont un remis à chaque partie. Chaque page doit être paraphée par les deux parties. Modèle à faire valider par un professionnel du droit avant signature.</div>'; }
+
+      function bailCommercialHTML(b,d){
+        var loyerAnnuel=(d.loyer*12), total=d.loyer+d.charges;
+        var h='<div class="page-q">'+bailHead('BAIL COMMERCIAL','Articles L145-1 et suivants du Code de commerce — durée 9 ans (« 3-6-9 »)');
+        h+='<p style="font-size:11.5px;line-height:1.65;"><b>ENTRE LES SOUSSIGNÉS :</b><br><b>'+esc(d.bailleur)+'</b>'+(d.bailleurSiret?', immatriculée sous le n° '+esc(d.bailleurSiret):'')+', demeurant/dont le siège est '+esc(d.bailleurAdr)+(d.bailleurRep?', représentée par '+esc(d.bailleurRep):'')+', ci-après dénommé « le Bailleur »,<br><b>ET</b><br><b>'+esc(d.preneur)+'</b>'+(d.preneurForme?', '+esc(d.preneurForme):'')+(d.preneurRcs?', immatriculée au '+esc(d.preneurRcs):'')+(d.preneurAdr?', dont le siège est '+esc(d.preneurAdr):'')+(d.preneurRep?', représentée par '+esc(d.preneurRep):'')+', ci-après dénommé « le Preneur »,<br><b>IL A ÉTÉ CONVENU CE QUI SUIT :</b></p>';
+        h+=art(1,'Désignation des locaux','Le Bailleur donne à bail au Preneur, qui accepte, les locaux commerciaux situés <b>'+esc(b.adresse)+', '+esc(b.ville)+'</b>'+(d.surface?', d\'une surface d\'environ <b>'+esc(d.surface)+' m²</b>':'')+(d.descr?', comprenant : '+esc(d.descr):'')+'. Le Preneur déclare bien connaître les lieux pour les avoir visités. Un état des lieux contradictoire sera établi lors de la prise de possession et lors de la restitution des locaux, conformément à l\'article L145-40-1 du Code de commerce.');
+        h+=art(2,'Destination','Les locaux sont loués à usage exclusif de : <b>'+esc(d.destination||'activité commerciale à préciser')+'</b>. Toute activité différente ou complémentaire devra faire l\'objet d\'une demande de déspécialisation dans les conditions des articles L145-47 et suivants du Code de commerce.');
+        h+=art(3,'Durée','Le présent bail est consenti pour une durée de <b>neuf (9) années entières et consécutives</b> à compter du <b>'+fmtFR(d.dateEffet)+'</b>. Conformément à l\'article L145-4 du Code de commerce, le Preneur aura la faculté de donner congé à l\'expiration de chaque période triennale, avec un préavis de six (6) mois, par lettre recommandée avec accusé de réception ou par acte extrajudiciaire.');
+        h+=art(4,'Loyer','Le bail est consenti moyennant un loyer annuel de <b>'+loyerAnnuel.toFixed(2)+' € hors taxes et hors charges</b>, soit <b>'+d.loyer.toFixed(2)+' € par mois</b>'+(d.tva?', majoré de la TVA au taux en vigueur, le Bailleur ayant opté pour l\'assujettissement à la TVA (article 260-2° du CGI)':'')+', payable mensuellement et d\'avance le 1er de chaque mois.');
+        h+=art(5,'Indexation','Le loyer sera révisé automatiquement chaque année à la date anniversaire du bail, en fonction de la variation de l\'<b>Indice des Loyers Commerciaux (ILC)</b> publié par l\'INSEE, l\'indice de référence étant celui du <b>'+esc(d.indice||'trimestre de la prise d\'effet')+'</b>. En application de la loi Pinel, la variation ne peut conduire à des augmentations supérieures à 10 % du loyer acquitté au cours de l\'année précédente. Les parties conservent par ailleurs la faculté de révision triennale légale (articles L145-37 et L145-38 du Code de commerce).');
+        h+=art(6,'Charges, impôts et taxes','Conformément à l\'article L145-40-2 du Code de commerce, un inventaire précis et limitatif des charges, impôts, taxes et redevances liés au bail est annexé au présent contrat, avec leur répartition entre Bailleur et Preneur. Ne peuvent être imputés au Preneur (article R145-35) : les grosses réparations de l\'article 606 du Code civil, les honoraires de gestion des loyers, les impôts dont le redevable légal est le Bailleur (hors taxe foncière et taxes liées à l\'usage du local, refacturables si prévu). Le Preneur versera une provision mensuelle sur charges de <b>'+d.charges.toFixed(2)+' €</b>, régularisée annuellement. Le montant total mensuel (loyer + provisions) s\'élève à <b>'+total.toFixed(2)+' €</b>.');
+        h+=art(7,'Dépôt de garantie','Le Preneur verse ce jour au Bailleur, qui le reconnaît, un dépôt de garantie de <b>'+esc(d.depot||'—')+'</b>, non productif d\'intérêts, restituable en fin de bail après restitution des clés et sous déduction des sommes dues.');
+        h+=art(8,'Entretien et réparations','Le Preneur prendra les locaux dans l\'état où ils se trouvent, les entretiendra en bon état de réparations locatives et d\'entretien courant (article 1754 du Code civil) et supportera les réparations autres que celles relevant de l\'article 606 du Code civil, lesquelles demeurent à la charge du Bailleur ainsi que, le cas échéant, les travaux de mise en conformité relevant du propriétaire.');
+        h+=art(9,'Travaux et améliorations','Le Preneur ne pourra effectuer de travaux touchant à la structure des locaux sans l\'accord écrit et préalable du Bailleur. Les aménagements et améliorations réalisés par le Preneur deviendront, en fin de bail, la propriété du Bailleur sans indemnité, sauf convention contraire.');
+        h+=art(10,'Cession — sous-location','Toute sous-location, totale ou partielle, est interdite sauf accord écrit du Bailleur. La cession du droit au bail est interdite sauf au profit de l\'acquéreur du fonds de commerce du Preneur (article L145-16 du Code de commerce), le Preneur restant garant solidaire du cessionnaire pendant trois ans (article L145-16-2).');
+        h+=art(11,'Assurances','Le Preneur s\'assurera contre les risques locatifs (incendie, explosion, dégâts des eaux, responsabilité civile professionnelle) auprès d\'une compagnie notoirement solvable et justifiera de cette assurance chaque année à première demande. Chaque partie renonce, et s\'engage à faire renoncer ses assureurs, à tout recours contre l\'autre au-delà des indemnités versées.');
+        h+=art(12,'Clause résolutoire','À défaut de paiement d\'un seul terme de loyer ou de charges à son échéance, ou d\'inexécution d\'une des conditions du bail, et un (1) mois après un commandement de payer ou une sommation d\'exécuter demeurés infructueux, le bail sera résilié de plein droit si bon semble au Bailleur, conformément à l\'article L145-41 du Code de commerce, sans préjudice de tous dommages et intérêts.');
+        h+=art(13,'Renouvellement — indemnité d\'éviction','Le Preneur bénéficie du droit au renouvellement du bail dans les conditions des articles L145-8 et suivants du Code de commerce. En cas de refus de renouvellement, le Bailleur devra, sauf motif grave et légitime, verser au Preneur une indemnité d\'éviction (article L145-14).');
+        h+=art(14,'Diagnostics et annexes','Sont annexés au présent bail : le diagnostic de performance énergétique (DPE), l\'état des risques et pollutions (ERP), le cas échéant le diagnostic amiante, l\'inventaire des charges (L145-40-2), l\'état récapitulatif des travaux des trois dernières années et le budget prévisionnel des travaux des trois années à venir, ainsi que l\'état des lieux d\'entrée.');
+        h+=art(15,'Élection de domicile — litiges','Pour l\'exécution des présentes, les parties font élection de domicile en leurs adresses respectives indiquées en tête. Tout litige relatif au présent bail sera de la compétence du tribunal dans le ressort duquel se situe l\'immeuble.');
+        h+='<p style="font-size:11.5px;margin-top:18px;">Fait à Mâcon, le '+new Date().toLocaleDateString('fr-FR')+'</p>'+bailSigs(esc(d.bailleur),'PRENEUR')+'</div>';
+        return h;
+      }
+
+      function bailHabitationHTML(b,d){
+        var total=d.loyer+d.charges;
+        var h='<div class="page-q">'+bailHead('CONTRAT DE LOCATION','Logement nu à usage de résidence principale — loi n°89-462 du 6 juillet 1989 · contrat type (décret n°2015-587 du 29 mai 2015)');
+        h+='<p style="font-size:11.5px;line-height:1.65;"><b>ENTRE LES SOUSSIGNÉS :</b><br><b>'+esc(d.bailleur)+'</b>, demeurant '+esc(d.bailleurAdr)+', ci-après dénommé « le Bailleur »,<br><b>ET</b><br><b>'+esc(d.preneur)+'</b>'+(d.preneurAdr?', demeurant actuellement '+esc(d.preneurAdr):'')+', ci-après dénommé « le Locataire »,<br><b>IL A ÉTÉ CONVENU CE QUI SUIT :</b></p>';
+        h+=art(1,'Objet du contrat — consistance du logement','Le Bailleur loue au Locataire, qui accepte, un logement à usage d\'habitation principale : <b>maison individuelle</b> située <b>'+esc(b.adresse)+', '+esc(b.ville)+'</b>, d\'une surface habitable de <b>'+esc(d.surface||'—')+' m²</b> (article R156-1 du CCH / loi Boutin)'+(d.pieces?', comprenant <b>'+esc(d.pieces)+' pièces principales</b>':'')+(d.annexes?', avec annexes : '+esc(d.annexes):'')+'. Modalités de chauffage et d\'eau chaude : individuelles. Le logement répond aux caractéristiques de décence du décret n°2002-120 du 30 janvier 2002.');
+        h+=art(2,'Durée','Le contrat est conclu pour une durée de <b>trois (3) ans</b> à compter du <b>'+fmtFR(d.dateEffet)+'</b> (bailleur personne physique). À défaut de congé donné dans les conditions de l\'article 15 de la loi du 6 juillet 1989, il est reconduit tacitement par périodes de trois ans aux mêmes conditions.');
+        h+=art(3,'Loyer','Le loyer mensuel est fixé à <b>'+d.loyer.toFixed(2)+' € hors charges</b>, payable mensuellement et d\'avance le 1er de chaque mois au domicile du Bailleur ou par virement.');
+        h+=art(4,'Révision du loyer','Le loyer sera révisé chaque année à la date anniversaire du contrat en fonction de la variation de l\'<b>Indice de Référence des Loyers (IRL)</b> publié par l\'INSEE, l\'indice de base étant celui du <b>'+esc(d.indice||'trimestre de signature')+'</b>. La révision non appliquée dans l\'année suivant sa date de prise d\'effet est réputée abandonnée pour l\'année écoulée (article 17-1).');
+        h+=art(5,'Charges récupérables','Le Locataire versera une <b>provision mensuelle sur charges de '+d.charges.toFixed(2)+' €</b>, avec régularisation au moins annuelle sur justificatifs, conformément au décret n°87-713 du 26 août 1987 fixant la liste des charges récupérables. Total mensuel (loyer + provisions) : <b>'+total.toFixed(2)+' €</b>.');
+        h+=art(6,'Dépôt de garantie','Le Locataire verse ce jour un dépôt de garantie de <b>'+esc(d.depot||d.loyer.toFixed(2)+' €')+'</b>, qui ne peut excéder un (1) mois de loyer hors charges (article 22). Il sera restitué dans un délai maximal d\'un mois après remise des clés si l\'état des lieux de sortie est conforme, deux mois dans le cas contraire, déduction faite des sommes justifiées restant dues.');
+        h+=art(7,'Obligations du Bailleur','Le Bailleur est tenu de délivrer un logement décent et en bon état d\'usage et de réparations, d\'assurer la jouissance paisible du logement, d\'entretenir les locaux en état de servir à l\'usage prévu et d\'y faire toutes les réparations autres que locatives (article 6 de la loi du 6 juillet 1989).');
+        h+=art(8,'Obligations du Locataire','Le Locataire est tenu de payer le loyer et les charges aux termes convenus, d\'user paisiblement du logement, de répondre des dégradations, de prendre à sa charge l\'entretien courant et les réparations locatives (décret n°87-712 du 26 août 1987), de s\'assurer contre les risques locatifs et d\'en justifier chaque année, et de laisser exécuter les travaux nécessaires (article 7). Il ne pourra ni céder le bail ni sous-louer sans accord écrit du Bailleur.');
+        h+=art(9,'Congés','Le Locataire peut donner congé à tout moment avec un préavis de <b>trois (3) mois</b> (réduit à un mois dans les cas prévus à l\'article 15-I : zone tendue, mutation, perte d\'emploi, état de santé, RSA/AAH…). Le Bailleur ne peut donner congé que pour l\'échéance du bail, avec un préavis de <b>six (6) mois</b>, et uniquement pour vendre, reprendre le logement pour l\'habiter (lui ou un proche) ou pour motif légitime et sérieux. Congés par lettre recommandée AR, acte d\'huissier ou remise en main propre contre récépissé.');
+        h+=art(10,'Clause résolutoire et clause de solidarité','Le présent contrat sera résilié de plein droit, après commandement demeuré infructueux (six semaines pour les impayés — loi du 27 juillet 2023), en cas de défaut de paiement du loyer, des charges ou du dépôt de garantie, de défaut d\'assurance ou de troubles de voisinage constatés par décision de justice. En cas de pluralité de locataires, ceux-ci sont tenus solidairement de l\'ensemble des obligations du bail.');
+        h+=art(11,'Honoraires','La présente location est conclue directement entre les parties, sans intermédiaire : néant.');
+        h+=art(12,'Annexes obligatoires','Sont annexés au présent contrat : la notice d\'information (arrêté du 29 mai 2015), le dossier de diagnostic technique — DPE, état des risques et pollutions (ERP), constat de risque d\'exposition au plomb (CREP) si le logement est antérieur à 1949, états des installations intérieures d\'électricité et de gaz si elles ont plus de 15 ans —, l\'état des lieux d\'entrée établi contradictoirement, et l\'attestation d\'assurance du Locataire.');
+        h+='<p style="font-size:11.5px;margin-top:18px;">Fait à Replonges, le '+new Date().toLocaleDateString('fr-FR')+'</p>'+bailSigs(esc(d.bailleur),'LOCATAIRE')+'</div>';
+        return h;
+      }
+
       window.immoQuittancesMois=function(){
         var now=new Date(), mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
         var biens=immoBiens().filter(function(b){return b.loyer>0;});
