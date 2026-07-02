@@ -870,6 +870,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <div class="mob-menu-item" onclick="showPageMobile('salaries','');closeMobileMenu()"><span class="mob-menu-icon">👷</span>Salariés & Paie TESE</div>
   <div class="mob-menu-item" onclick="showPageMobile('autopilot','');closeMobileMenu()"><span class="mob-menu-icon">◢</span>Autopilot</div>
   <div class="mob-menu-item" onclick="showPageMobile('params','');closeMobileMenu()"><span class="mob-menu-icon">⚙️</span>Paramètres API</div>
+  <div class="mob-menu-item" onclick="immoNavMobile()"><span class="mob-menu-icon">🏠</span>Immobilier (perso)</div>
   <div class="mob-menu-item" onclick="toggleTheme();closeMobileMenu()" id="mob-theme-btn"><span class="mob-menu-icon" id="mob-theme-icon">🌙</span><span id="mob-theme-label">Mode sombre</span></div>
 </div>
 
@@ -995,6 +996,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
     <div class="nav-item" id="nav-salaries" onclick="showPage('salaries',this)"><span class="nav-icon">👷</span><span>Salariés & Paie</span></div>
     <div class="nav-item" onclick="showPage('autopilot',this)"><span class="nav-icon">◢</span><span>Autopilot</span></div>
     <div class="nav-item" onclick="showPage('params',this)"><span class="nav-icon">⚙️</span><span>Paramètres API</span></div>
+    <div class="nav-group-label">Perso</div>
+    <div class="nav-item" onclick="immoNav(this)"><span class="nav-icon">🏠</span><span>Immobilier</span></div>
 
     <div class="nav-sep"></div>
     <div class="nav-item" onclick="openLiensRapides()" style="background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.15);border-radius:8px;margin:4px 8px;"><span class="nav-icon">🔗</span><span>Liens rapides</span></div>
@@ -7879,6 +7882,222 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
   <!-- ═══ PAGE DÉPENSES ═══ -->
 
   <!-- ═══ PAGE COMPARAISON ═══ -->
+
+    <!-- ══════════ ESPACE PERSO · IMMOBILIER (juillet 2026) ══════════ -->
+    <div class="page" id="page-immo">
+      <div id="immo-root"></div>
+    </div>
+
+    <style id="immo-css">
+      #page-immo .immo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:24px;}
+      #page-immo .immo-card{background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:18px;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,0.06);transition:transform .18s cubic-bezier(.32,.72,.24,1),box-shadow .18s;}
+      #page-immo .immo-card:hover{transform:translateY(-3px);box-shadow:0 12px 30px -14px rgba(16,24,40,0.18);}
+      #page-immo .immo-img{display:block;width:100%;height:160px;}
+      #page-immo .immo-body{padding:16px 18px 18px;}
+      #page-immo .immo-badge{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:20px;}
+      #page-immo .immo-badge.perso{background:rgba(225,6,0,0.08);color:#B00007;}
+      #page-immo .immo-badge.sci{background:rgba(17,19,24,0.85);color:#fff;}
+      #page-immo .immo-title{font-size:16px;font-weight:800;color:#111318;margin-top:10px;letter-spacing:-0.01em;}
+      #page-immo .immo-addr{font-size:12.5px;color:#6B7280;font-weight:600;margin-top:2px;}
+      #page-immo .immo-line{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:7px 0;border-bottom:1px solid rgba(17,19,24,0.055);}
+      #page-immo .immo-line:last-of-type{border-bottom:none;}
+      #page-immo .immo-line b{font-weight:800;}
+      #page-immo .immo-actions{display:flex;gap:8px;margin-top:12px;}
+      #page-immo .immo-paid-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:12.5px;font-weight:800;cursor:pointer;transition:.15s;}
+      #page-immo .immo-paid-btn.no{background:rgba(255,149,0,0.12);color:#B45309;}
+      #page-immo .immo-paid-btn.yes{background:rgba(22,163,74,0.12);color:#15803D;}
+      #page-immo table.immo-suivi{width:100%;border-collapse:collapse;font-size:12.5px;}
+      #page-immo table.immo-suivi th{padding:8px 10px;font-size:10.5px;}
+      #page-immo table.immo-suivi td{padding:7px 10px;}
+      #page-immo .immo-cell-btn{border:none;border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:800;cursor:pointer;transition:.12s;}
+      #page-immo .immo-cell-btn.paid{background:rgba(22,163,74,0.12);color:#15803D;}
+      #page-immo .immo-cell-btn.due{background:rgba(17,19,24,0.05);color:#9CA3AF;}
+      #page-immo .immo-lock-card{max-width:380px;margin:8vh auto;background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:22px;padding:36px;text-align:center;box-shadow:0 24px 60px -20px rgba(16,24,40,0.18);}
+      #page-immo .immo-lock-orb{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;background:radial-gradient(circle at 35% 30%,#ff6a6f,#E10600 60%,#8f000c);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 12px 30px -10px rgba(225,6,0,0.6);}
+      @keyframes immo-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+      #page-immo .shake{animation:immo-shake .4s ease;}
+    </style>
+
+    <script>
+    (function(){
+      var IMMO_CODE='1184', IMMO_LS='sp_immo_v1';
+      var MOIS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+      var DEFAUTS=[
+        {id:'herriot',  type:'Local commercial', adresse:'42 avenue Édouard Herriot', ville:'71000 Mâcon',    proprio:'Nom propre', bailleur:'Sébastien Cannard', bailleurAdr:'21 rue Gambetta, 71000 Mâcon', locataire:'', loyer:0, charges:0},
+        {id:'replonges',type:'Maison en location', adresse:'Impasse des Prés du Bourg', ville:'01750 Replonges', proprio:'Nom propre', bailleur:'Sébastien Cannard', bailleurAdr:'21 rue Gambetta, 71000 Mâcon', locataire:'', loyer:0, charges:0},
+        {id:'gambetta', type:'Local commercial', adresse:'21 rue Gambetta', ville:'71000 Mâcon',              proprio:'SCI Zimmo 71', bailleur:'SCI Zimmo 71', bailleurAdr:'21 rue Gambetta, 71000 Mâcon', locataire:'Solution Phone', loyer:0, charges:0}
+      ];
+      window._immoYear = new Date().getFullYear();
+
+      function immoLoad(){
+        var d={biens:{},paiements:{}};
+        try{ d=JSON.parse(localStorage.getItem(IMMO_LS))||d; }catch(e){}
+        d.biens=d.biens||{}; d.paiements=d.paiements||{};
+        return d;
+      }
+      function immoSave(d){ try{ localStorage.setItem(IMMO_LS,JSON.stringify(d)); }catch(e){} }
+      function immoBiens(){
+        var d=immoLoad();
+        return DEFAUTS.map(function(b){ var o=Object.assign({},b,d.biens[b.id]||{}); return o; });
+      }
+      function eur(n){ return (Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €'; }
+      function esc(t){ return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      // ── SVG des 3 biens ──
+      function immoSVG(id){
+        if(id==='herriot') return '<svg class="immo-img" viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="160" fill="#EAF1F7"/><rect y="122" width="400" height="38" fill="#D7DEE6"/><rect x="70" y="34" width="260" height="92" rx="4" fill="#F6F3EE" stroke="#C9CDD3"/><rect x="70" y="34" width="260" height="16" fill="#B9C2CC"/><g><path d="M80 62 h240 l-8 20 h-224 z" fill="#E10600"/><path d="M80 62 h240 l-8 20 h-224 z" fill="url(#hstr)" opacity=".25"/></g><defs><pattern id="hstr" width="24" height="20" patternUnits="userSpaceOnUse"><rect width="12" height="20" fill="#fff"/></pattern></defs><rect x="92" y="90" width="70" height="36" fill="#9FB6C9"/><rect x="238" y="90" width="70" height="36" fill="#9FB6C9"/><rect x="176" y="88" width="48" height="38" rx="2" fill="#5B6B7A"/><rect x="196" y="104" width="5" height="8" rx="2" fill="#E8EDF2"/><text x="200" y="46" text-anchor="middle" font-family="Arial" font-size="11" font-weight="900" fill="#fff" letter-spacing="2">42 AV. ÉDOUARD HERRIOT</text><circle cx="36" cy="96" r="16" fill="#7FA96B"/><rect x="33" y="106" width="6" height="20" fill="#8A6B4D"/></svg>';
+        if(id==='replonges') return '<svg class="immo-img" viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="160" fill="#E9F2E4"/><rect y="124" width="400" height="36" fill="#CFE0C4"/><path d="M120 78 L200 30 L280 78 Z" fill="#B0442E"/><rect x="132" y="78" width="136" height="48" fill="#F7F1E6" stroke="#D9CFC0"/><rect x="186" y="92" width="28" height="34" rx="2" fill="#6B4F35"/><rect x="146" y="90" width="26" height="22" fill="#9FB6C9" stroke="#fff" stroke-width="2"/><rect x="228" y="90" width="26" height="22" fill="#9FB6C9" stroke="#fff" stroke-width="2"/><rect x="238" y="44" width="14" height="26" fill="#8A6B4D"/><circle cx="318" cy="86" r="22" fill="#7FA96B"/><rect x="314" y="100" width="8" height="26" fill="#8A6B4D"/><circle cx="70" cy="94" r="16" fill="#8FBA78"/><rect x="67" y="104" width="6" height="22" fill="#8A6B4D"/><path d="M132 126 h136" stroke="#B8CBA8" stroke-width="3"/><text x="200" y="150" text-anchor="middle" font-family="Arial" font-size="10" font-weight="800" fill="#5F7551" letter-spacing="1.5">IMPASSE DES PRÉS DU BOURG · REPLONGES</text></svg>';
+        return '<svg class="immo-img" viewBox="0 0 400 160" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="160" fill="#EDEDF0"/><rect y="122" width="400" height="38" fill="#D8D8DD"/><rect x="60" y="24" width="280" height="102" rx="4" fill="#1A1A1E"/><rect x="60" y="24" width="280" height="30" fill="#0D0D0F"/><text x="200" y="44" text-anchor="middle" font-family="Arial" font-size="13" font-weight="900" fill="#fff" letter-spacing="2">SOLUTION <tspan fill="#FF3B30">PHONE</tspan></text><rect x="74" y="66" width="112" height="60" fill="#2A2A30"/><rect x="80" y="72" width="100" height="48" fill="#3D4550"/><rect x="214" y="66" width="112" height="60" fill="#2A2A30"/><rect x="220" y="72" width="100" height="48" fill="#3D4550"/><rect x="190" y="66" width="20" height="60" fill="#0D0D0F"/><rect x="198" y="92" width="4" height="10" rx="2" fill="#E8EDF2"/><rect x="118" y="84" width="24" height="26" rx="3" fill="#111" stroke="#5B6B7A"/><rect x="252" y="84" width="24" height="26" rx="3" fill="#111" stroke="#5B6B7A"/><rect x="300" y="12" width="88" height="22" rx="11" fill="#E10600"/><text x="344" y="27" text-anchor="middle" font-family="Arial" font-size="11" font-weight="900" fill="#fff" letter-spacing="1">ZIMMO 71</text><text x="200" y="150" text-anchor="middle" font-family="Arial" font-size="10" font-weight="800" fill="#6B7280" letter-spacing="1.5">21 RUE GAMBETTA · MÂCON</text></svg>';
+      }
+
+      // ── Navigation + verrou ──
+      window.immoNav=function(el){ showPage('immo',el); immoInit(); };
+      window.immoNavMobile=function(){ if(typeof showPageMobile==='function') showPageMobile('immo',''); if(typeof closeMobileMenu==='function') closeMobileMenu(); immoInit(); };
+      window.immoUnlock=function(){
+        var i=document.getElementById('immo-code');
+        if(i && i.value===IMMO_CODE){ sessionStorage.setItem('sp_immo_ok','1'); immoInit(); }
+        else { var c=document.getElementById('immo-lock-card'); if(c){ c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); } if(i)i.value=''; showNotif&&showNotif('Code incorrect','error'); }
+      };
+      window.immoLock=function(){ sessionStorage.removeItem('sp_immo_ok'); immoInit(); };
+
+      window.immoInit=function(){
+        var root=document.getElementById('immo-root'); if(!root) return;
+        if(sessionStorage.getItem('sp_immo_ok')!=='1'){
+          root.innerHTML='<div class="immo-lock-card" id="immo-lock-card">'+
+            '<div class="immo-lock-orb">🔒</div>'+
+            '<div style="font-size:19px;font-weight:800;color:#111318;">Espace perso</div>'+
+            '<div style="font-size:13px;color:#6B7280;margin:4px 0 20px;">Gestion immobilière — accès protégé</div>'+
+            '<input id="immo-code" type="password" inputmode="numeric" maxlength="6" placeholder="Code d\'accès" autocomplete="off" style="width:100%;padding:13px;text-align:center;font-size:20px;letter-spacing:8px;font-weight:800;" onkeydown="if(event.key===\'Enter\')immoUnlock()">'+
+            '<button class="btn btn-primary" style="width:100%;margin-top:12px;padding:13px;font-size:14px;" onclick="immoUnlock()">Déverrouiller</button>'+
+          '</div>';
+          setTimeout(function(){ var i=document.getElementById('immo-code'); if(i)i.focus(); },120);
+          return;
+        }
+        var biens=immoBiens(), d=immoLoad();
+        var now=new Date(), moisKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+        var attendu=biens.reduce(function(s,b){return s+(b.loyer||0)+(b.charges||0);},0);
+        var encMois=biens.reduce(function(s,b){ var p=(d.paiements[b.id]||{})[moisKey]; return s+(p&&p.paid?(b.loyer||0)+(b.charges||0):0);},0);
+        var encAn=0; biens.forEach(function(b){ var pm=d.paiements[b.id]||{}; for(var k in pm){ if(k.slice(0,4)==String(_immoYear)&&pm[k].paid) encAn+=(b.loyer||0)+(b.charges||0); } });
+
+        var h='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">'+
+          '<div><div class="page-title">🏠 Espace perso · Immobilier</div><div class="page-sub">3 biens · quittances &amp; suivi des loyers</div></div>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<button class="btn" onclick="immoQuittancesMois()">🧾 Quittances du mois</button>'+
+            '<button class="btn" onclick="immoLock()" title="Verrouiller">🔒</button>'+
+          '</div></div>';
+
+        h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px;margin-bottom:22px;">'+
+          '<div class="kpi-tile"><div class="kpi-lbl">Loyers mensuels attendus</div><div class="kpi-val">'+eur(attendu)+'</div><div class="kpi-sub">3 biens</div></div>'+
+          '<div class="kpi-tile"><div class="kpi-lbl">Encaissé — '+MOIS[now.getMonth()]+'</div><div class="kpi-val" style="color:'+(encMois>=attendu&&attendu>0?'#15803D':'#111318')+';">'+eur(encMois)+'</div><div class="kpi-sub">sur '+eur(attendu)+'</div></div>'+
+          '<div class="kpi-tile"><div class="kpi-lbl">Encaissé — '+_immoYear+'</div><div class="kpi-val">'+eur(encAn)+'</div><div class="kpi-sub">loyers + charges</div></div>'+
+        '</div>';
+
+        h+='<div class="immo-grid">';
+        biens.forEach(function(b){
+          var p=(d.paiements[b.id]||{})[moisKey], paye=!!(p&&p.paid);
+          h+='<div class="immo-card">'+immoSVG(b.id)+
+            '<div class="immo-body">'+
+              '<span class="immo-badge '+(b.proprio.indexOf('SCI')===0?'sci':'perso')+'">'+(b.proprio.indexOf('SCI')===0?'🏢 SCI Zimmo 71':'👤 Nom propre')+'</span>'+
+              '<div class="immo-title">'+esc(b.type)+'</div>'+
+              '<div class="immo-addr">'+esc(b.adresse)+' · '+esc(b.ville)+'</div>'+
+              '<div style="margin-top:12px;">'+
+                '<div class="immo-line"><span style="color:#6B7280;">Locataire</span><b>'+(esc(b.locataire)||'<span style="color:#C4C7CC;">à renseigner</span>')+'</b></div>'+
+                '<div class="immo-line"><span style="color:#6B7280;">Loyer</span><b>'+eur(b.loyer)+'</b></div>'+
+                '<div class="immo-line"><span style="color:#6B7280;">Charges</span><b>'+eur(b.charges)+'</b></div>'+
+                '<div class="immo-line"><span style="color:#6B7280;">Total mensuel</span><b style="color:#E10600;">'+eur((b.loyer||0)+(b.charges||0))+'</b></div>'+
+              '</div>'+
+              '<div class="immo-actions">'+
+                '<button class="immo-paid-btn '+(paye?'yes':'no')+'" onclick="immoTogglePaie(\''+b.id+'\',\''+moisKey+'\')">'+(paye?'✅ '+MOIS[now.getMonth()]+' encaissé':'⏳ '+MOIS[now.getMonth()]+' en attente')+'</button>'+
+                '<button class="btn btn-sm" onclick="immoQuittance(\''+b.id+'\',\''+moisKey+'\')" title="Quittance">🧾</button>'+
+                '<button class="btn btn-sm" onclick="immoEdit(\''+b.id+'\')" title="Modifier">✏️</button>'+
+              '</div>'+
+            '</div></div>';
+        });
+        h+='</div>';
+
+        // Suivi annuel
+        h+='<div class="card"><div class="card-header"><div class="card-title">📅 Suivi des loyers</div>'+
+          '<div style="display:flex;align-items:center;gap:10px;"><button class="btn btn-sm" onclick="_immoYear--;immoInit()">←</button><b style="font-size:15px;">'+_immoYear+'</b><button class="btn btn-sm" onclick="_immoYear++;immoInit()">→</button></div></div>'+
+          '<div style="overflow-x:auto;"><table class="immo-suivi"><tr><th style="text-align:left;">Mois</th>';
+        biens.forEach(function(b){ h+='<th style="text-align:center;">'+esc(b.adresse.split(' ').slice(-2).join(' '))+'</th>'; });
+        h+='<th style="text-align:right;">Total</th></tr>';
+        for(var m=0;m<12;m++){
+          var mk=_immoYear+'-'+String(m+1).padStart(2,'0');
+          var futur=(new Date(_immoYear,m,1)>now);
+          var tot=0;
+          h+='<tr><td style="font-weight:700;">'+MOIS[m]+'</td>';
+          biens.forEach(function(b){
+            var pp=(d.paiements[b.id]||{})[mk], ok=!!(pp&&pp.paid);
+            if(ok) tot+=(b.loyer||0)+(b.charges||0);
+            h+='<td style="text-align:center;">'+(futur?'<span style="color:#D5D7DB;">—</span>':
+              '<button class="immo-cell-btn '+(ok?'paid':'due')+'" onclick="immoTogglePaie(\''+b.id+'\',\''+mk+'\')" title="'+(ok?'Encaissé — cliquer pour annuler':'Marquer encaissé')+'">'+(ok?'✅ Payé':'· · ·')+'</button>'+
+              ' <button class="btn btn-sm" style="padding:4px 7px;font-size:11px;" onclick="immoQuittance(\''+b.id+'\',\''+mk+'\')" title="Quittance">🧾</button>')+'</td>';
+          });
+          h+='<td style="text-align:right;font-weight:800;'+(tot>0?'color:#15803D;':'color:#C4C7CC;')+'">'+(tot>0?eur(tot):'—')+'</td></tr>';
+        }
+        h+='</table></div></div>';
+        root.innerHTML=h;
+      };
+
+      window.immoTogglePaie=function(id,mk){
+        var d=immoLoad();
+        d.paiements[id]=d.paiements[id]||{};
+        var cur=d.paiements[id][mk];
+        if(cur&&cur.paid){ delete d.paiements[id][mk]; }
+        else { d.paiements[id][mk]={paid:true,date:new Date().toISOString().slice(0,10)}; }
+        immoSave(d); immoInit();
+      };
+
+      window.immoEdit=function(id){
+        var b=immoBiens().find(function(x){return x.id===id;}); if(!b) return;
+        var loc=prompt('Locataire ('+b.adresse+') :', b.locataire||''); if(loc===null) return;
+        var loy=prompt('Loyer mensuel hors charges (€) :', b.loyer||0); if(loy===null) return;
+        var chg=prompt('Charges mensuelles (€) :', b.charges||0); if(chg===null) return;
+        var d=immoLoad();
+        d.biens[id]=Object.assign({},d.biens[id]||{},{locataire:loc.trim(),loyer:parseFloat(String(loy).replace(',','.'))||0,charges:parseFloat(String(chg).replace(',','.'))||0});
+        immoSave(d); immoInit(); showNotif&&showNotif('Bien mis à jour','success');
+      };
+
+      function quittanceHTML(b,mk){
+        var y=parseInt(mk.slice(0,4)), m=parseInt(mk.slice(5,7))-1;
+        var dernier=new Date(y,m+1,0).getDate();
+        var total=(b.loyer||0)+(b.charges||0);
+        return '<div class="page-q">'+
+          '<div style="display:flex;justify-content:space-between;border-bottom:3px solid #E10600;padding-bottom:14px;margin-bottom:24px;">'+
+            '<div><div style="font-size:20px;font-weight:900;">QUITTANCE DE LOYER</div><div style="color:#666;font-size:13px;">'+MOIS[m]+' '+y+'</div></div>'+
+            '<div style="text-align:right;font-size:12px;color:#444;"><b>'+esc(b.bailleur)+'</b><br>'+esc(b.bailleurAdr)+'</div></div>'+
+          '<table style="width:100%;font-size:13px;margin-bottom:20px;"><tr>'+
+            '<td style="vertical-align:top;width:50%;"><b style="font-size:11px;color:#888;text-transform:uppercase;">Bailleur</b><br>'+esc(b.bailleur)+'<br>'+esc(b.bailleurAdr)+'</td>'+
+            '<td style="vertical-align:top;"><b style="font-size:11px;color:#888;text-transform:uppercase;">Locataire</b><br>'+esc(b.locataire||'________________')+'<br>'+esc(b.adresse)+', '+esc(b.ville)+'</td></tr></table>'+
+          '<p style="font-size:13px;line-height:1.7;">Je soussigné(e) <b>'+esc(b.bailleur)+'</b>, propriétaire du bien désigné ci-dessus ('+esc(b.type.toLowerCase())+' situé '+esc(b.adresse)+', '+esc(b.ville)+'), déclare avoir reçu de <b>'+esc(b.locataire||'________________')+'</b> la somme de <b>'+total.toFixed(2)+' €</b> au titre du paiement du loyer et des charges pour la période du 1er au '+dernier+' '+MOIS[m].toLowerCase()+' '+y+', et lui en donne quittance, sous réserve de tous mes droits.</p>'+
+          '<table style="width:60%;border-collapse:collapse;font-size:13px;margin:18px 0;">'+
+            '<tr><td style="padding:8px;border:1px solid #ddd;">Loyer</td><td style="padding:8px;border:1px solid #ddd;text-align:right;">'+(b.loyer||0).toFixed(2)+' €</td></tr>'+
+            '<tr><td style="padding:8px;border:1px solid #ddd;">Charges</td><td style="padding:8px;border:1px solid #ddd;text-align:right;">'+(b.charges||0).toFixed(2)+' €</td></tr>'+
+            '<tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">Total</td><td style="padding:8px;border:1px solid #ddd;text-align:right;font-weight:bold;">'+total.toFixed(2)+' €</td></tr></table>'+
+          '<p style="font-size:13px;margin-top:26px;">Fait à Mâcon, le '+new Date().toLocaleDateString('fr-FR')+'</p>'+
+          '<div style="margin-top:40px;font-size:12px;color:#666;">Signature du bailleur :</div>'+
+          '<div style="margin-top:70px;font-size:10px;color:#999;border-top:1px solid #eee;padding-top:8px;">Cette quittance annule tous les reçus qui auraient pu être établis précédemment en cas de paiement partiel du montant ci-dessus.</div>'+
+        '</div>';
+      }
+      function quittanceShell(inner){
+        return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Quittance de loyer</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;color:#1a1a1a;background:#f4f4f4;}.page-q{width:210mm;min-height:280mm;margin:10px auto;background:#fff;padding:22mm 20mm;}@media print{body{background:#fff;}.page-q{margin:0;page-break-after:always;}.no-print{display:none!important;}}</style></head><body>'+
+          '<div class="no-print" style="text-align:center;padding:12px;"><button onclick="window.print()" style="padding:10px 26px;background:#E10600;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:14px;">🖨️ Imprimer</button></div>'+inner+'</body></html>';
+      }
+      window.immoQuittance=function(id,mk){
+        var b=immoBiens().find(function(x){return x.id===id;}); if(!b) return;
+        if(!(b.loyer>0)){ showNotif&&showNotif('Renseignez d\'abord le loyer (✏️)','error'); return; }
+        var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
+        w.document.write(quittanceShell(quittanceHTML(b,mk))); w.document.close();
+      };
+      window.immoQuittancesMois=function(){
+        var now=new Date(), mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+        var biens=immoBiens().filter(function(b){return b.loyer>0;});
+        if(!biens.length){ showNotif&&showNotif('Renseignez d\'abord les loyers (✏️ sur chaque bien)','error'); return; }
+        var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
+        w.document.write(quittanceShell(biens.map(function(b){return quittanceHTML(b,mk);}).join(''))); w.document.close();
+      };
+    })();
+    </script>
 
   <div class="page" id="page-params">
     <div class="page-title">⚙️ Paramètres API</div>
