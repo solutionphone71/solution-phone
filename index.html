@@ -23419,6 +23419,9 @@ function _importOneCsvPhonilab(file, statusEl, fileIdx, fileTotal){
         var iFacture = fiExact(['facture']);
         var iPaie    = fiExact(['paiement']);
         var iTech    = fiExact(['technicien']);
+        // FIX juillet 2026 : capturer le MONTANT (présent dans le CSV, ignoré jusqu'ici)
+        // → sans lui, le « CA total client » de la fiche client restait à 0 pour les réparations importées.
+        var iMontant = fiExact(['montant ttc','montant','prix','total']);
         if(iNum === iDate) iNum = headers.indexOf('réparation');
 
         var newReps = []; var skipped = 0;
@@ -23445,6 +23448,7 @@ function _importOneCsvPhonilab(file, statusEl, fileIdx, fileTotal){
             facture:      (iFacture>=0?cols[iFacture]:'').replace(/"/g,'').trim(),
             paiement:     (iPaie>=0?cols[iPaie]:'').replace(/"/g,'').trim(),
             technicien:   (iTech>=0?cols[iTech]:'').replace(/"/g,'').trim(),
+            prix:         (iMontant>=0?(parseFloat(String(cols[iMontant]).replace(/["€\s]/g,'').replace(',','.'))||0):0),
             source:       'phonilab'
           });
         }
@@ -23559,7 +23563,8 @@ function getHistoriqueClient(nomOuTel){
     return {
       numero: r.numero, date_rep: r.date,
       client_nom: r.clientNom, modele: r.appareil,
-      statut: 'Terminé', paiement: r.mode||'—',
+      statut: 'termine', paiement: r.mode||'—',
+      prix: Number(r.prix)||0,
       source: 'app'
     };
   });
