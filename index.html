@@ -7238,9 +7238,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <div class="card z-white-block" style="border:2px solid var(--primary);">
           <div style="font-weight:700;font-size:15px;margin-bottom:4px;color:var(--primary);">🔒 Z de Caisse — Principal</div>
           <div style="font-size:11px;color:#666;margin-bottom:8px;">Réparations + Accessoires + Tél. neufs · TVA 20%</div>
-          <div id="caisse-z-recap" style="font-size:13px;color:#333;margin-bottom:10px;"></div>
-          <!-- Modes de paiement -->
-          <div id="caisse-z-modes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
+          <!-- recap + modes MASQUÉS (juil. 2026) : déjà présents dans le bloc Clôture, on évite le doublon. Calcul inchangé. -->
+          <div id="caisse-z-recap" style="display:none;font-size:13px;color:#333;margin-bottom:10px;"></div>
+          <!-- Modes de paiement (masqué — doublon avec la Clôture) -->
+          <div id="caisse-z-modes" style="display:none;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;"></div>
           <!-- Ventilation par catégorie -->
           <div id="caisse-z-categories" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;"></div>
           <!-- Détail transactions -->
@@ -20167,6 +20168,30 @@ function renderDashboard(){
       cards.appendChild(dashTile('🏷️','Bonus QR',bonusQRMois.toFixed(0)+' €','ce mois','#10b981','qualirepar'));
     }
   }
+
+  // ── Badge de cohérence : le CA vitrine affiché concorde-t-il avec le registre de caisse ? ──
+  try {
+    var _regBadge = document.getElementById('dash-coherence-badge');
+    if(!_regBadge){
+      _regBadge = document.createElement('div');
+      _regBadge.id = 'dash-coherence-badge';
+      _regBadge.style.cssText = 'margin:10px 0 4px;padding:9px 14px;border-radius:12px;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:8px;';
+      if(cards && cards.parentNode) cards.parentNode.insertBefore(_regBadge, cards.nextSibling);
+    }
+    // Registre de caisse (persisté) pour le mois : réparations + accessoires + neufs (vitrine, TVA 20 %)
+    var _regVitrine = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(Number(c.ttc)||0);},0);
+    // Valeur affichée (source unique SPCA)
+    var _liveVitrine = caRepaAccMois;
+    var _ecart = Math.round((_liveVitrine - _regVitrine)*100)/100;
+    if(Math.abs(_ecart) < 1){
+      _regBadge.style.background = '#ecfdf5'; _regBadge.style.color = '#15803d'; _regBadge.style.border = '1px solid #6ee7b7';
+      _regBadge.innerHTML = '✅ CA vitrine cohérent avec le registre de caisse';
+    } else {
+      // Écart affiché en NEUTRE (info, pas alarme) : peut simplement refléter un import de caisse en attente.
+      _regBadge.style.background = '#f8fafc'; _regBadge.style.color = '#475569'; _regBadge.style.border = '1px solid #cbd5e1';
+      _regBadge.innerHTML = 'ℹ️ CA calculé <b>'+_liveVitrine.toFixed(0)+' €</b> · registre de caisse <b>'+_regVitrine.toFixed(0)+' €</b> · écart '+Math.abs(_ecart).toFixed(0)+' € (info)';
+    }
+  } catch(e){}
 
   // ── Réparations récentes (classiques + bons de dépôt QualiRépar) ──
   var dashRep = document.getElementById('dash-reparations');
