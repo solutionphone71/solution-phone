@@ -218,13 +218,19 @@
   }
   .btn:hover { transform: translateY(-1px); box-shadow: var(--sp-sh-sm) !important; }
   .btn:active { transform: translateY(0) scale(.97); }
-  .btn-primary {
+  .btn-primary { color: #FFFFFF !important; border: none !important; }
+  /* Rouge maison uniquement si le bouton n'impose pas sa propre couleur (vert paiement, bleu, violet…) */
+  .btn-primary:not([style*="background"]) {
     background: linear-gradient(135deg, #FF1F1A, #C4000A) !important;
-    color: #FFFFFF !important; border: none !important;
     box-shadow: 0 6px 16px -6px rgba(225,6,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18) !important;
   }
-  .btn-primary:hover { box-shadow: 0 10px 22px -8px rgba(225,6,0,0.65), inset 0 1px 0 rgba(255,255,255,0.18) !important; }
+  .btn-primary:not([style*="background"]):hover { box-shadow: 0 10px 22px -8px rgba(225,6,0,0.65), inset 0 1px 0 rgba(255,255,255,0.18) !important; }
   .btn-primary, .btn-primary * { color:#fff !important; }
+  /* Boutons de validation paiement : vert premium assumé */
+  #btn-generer-facture, #btn-confirmer-vente {
+    background: linear-gradient(135deg, #22B357, #15803D) !important;
+    box-shadow: 0 8px 20px -8px rgba(22,163,74,0.55), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+  }
 
   /* ─── TABLES ─── */
   table { background: transparent !important; color: var(--sp-ink) !important; }
@@ -9340,6 +9346,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                   <div id="r-split-info" style="margin-top:6px;font-size:11px;color:var(--text-muted);"></div>
                 </div>
               </div>
+              <label id="rep-no-email-wrap" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:12px 14px;background:#fff;border:1px solid rgba(17,19,24,0.09);border-radius:12px;cursor:pointer;font-size:13px;font-weight:700;color:#6B7280;user-select:none;" title="La facture sera générée normalement, mais aucun email ne partira au client">
+                <input type="checkbox" id="rep-no-email" style="width:18px;height:18px;accent-color:#E10600;cursor:pointer;flex-shrink:0;">
+                <span>📵 Ne pas envoyer la facture par email au client</span>
+              </label>
               <button class="btn btn-primary" id="btn-generer-facture" onclick="repGenererFacture()" style="padding:24px;font-size:19px;font-weight:900;background:#16a34a;border-color:#16a34a;width:100%;letter-spacing:.5px;border-radius:14px;">✅ VALIDER LE PAIEMENT &amp; GÉNÉRER LA FACTURE</button>
             <div id="div-envoi-facture-cloture" style="display:none;margin-top:10px;"></div>
             </div>
@@ -24324,7 +24334,14 @@ async function repGenererFacture(){
 
   // Envoi AUTOMATIQUE de la facture par email au client (plus de popup bloquant).
   // Si pas d'email valide, repAutoEnvoyerFactureEmail ouvre le popup en secours.
-  repAutoEnvoyerFactureEmail(d);
+  // Sauf si la case « Ne pas envoyer le mail » est cochée (juillet 2026).
+  var _noEmailCb = document.getElementById('rep-no-email');
+  if(_noEmailCb && _noEmailCb.checked){
+    showNotif&&showNotif('📵 Facture générée — email NON envoyé (case cochée).','info');
+    _noEmailCb.checked = false; // réarmé pour le prochain dossier
+  } else {
+    repAutoEnvoyerFactureEmail(d);
+  }
   repUpdateDevisRecap();
   // Bascule DIRECTEMENT sur l'étape Envoi (plus besoin de cliquer « Suivant »).
   setTimeout(function(){ try{ if(typeof repUpdateChecklist==='function') repUpdateChecklist(); if(typeof repGoStep==='function') repGoStep(5); }catch(_){} }, 350);
