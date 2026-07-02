@@ -19722,19 +19722,22 @@ function renderComptable() {
   var phonesAchetes = phones.filter(function(p){return p.dateAchat && p.dateAchat.startsWith(mois);});
   var margeSmartphones = phonesVendus.reduce(function(s,p){return s+(p.vente-p.achat);},0);
 
-  // ── Ventilation par catégorie (reconstituée depuis les sources) ──
-  // Réparations: dossiers réparés ce mois
-  var repMois = (window.repDossiers||[]).filter(function(d){ return d.dateDepot && d.dateDepot.startsWith(mois) && d.statut==='Terminé'; });
-  var caRepMois = repMois.reduce(function(s,d){ return s+(Number(d.prix)||0); }, 0);
-  // Accessoires: ventes neufs/accessoires du mois
-  var naVentesMois = (JSON.parse(localStorage.getItem('na_ventes')||'[]')).filter(function(v){ return v.date && v.date.startsWith(mois); });
-  var caAccessMois = naVentesMois.reduce(function(s,v){ return s+(Number(v.total)||0); }, 0);
-  // Smartphones neufs: vendus ce mois
-  var neufsVendusMois = (window.phonesNeufs||[]).filter(function(p){ return p.etat==='VENDU' && p.date_vente && p.date_vente.startsWith(mois); });
-  var caNeufsVendusMois = neufsVendusMois.reduce(function(s,p){ return s+(Number(p.vente)||0); }, 0);
-  var margeNeufsMois = neufsVendusMois.reduce(function(s,p){ return s+(Number(p.vente)||0)-(Number(p.achat)||0); }, 0);
-  // Smartphones occasion: vendus ce mois (= phonesVendus déjà calculé)
-  var caOccasionMois = phonesVendus.reduce(function(s,p){ return s+(Number(p.vente)||0); }, 0);
+  // ── Ventilation par catégorie — via SPCA (source unique, cohérent avec le Z & le dashboard) ──
+  // FIX juillet 2026 : l'ancien calcul lisait des champs inexistants (d.dateDepot/d.statut/d.prix, v.total)
+  // → Réparations et Accessoires ressortaient à 0. On passe par SPCA qui applique les mêmes règles que le Z.
+  var _spC = (window.SPCA ? SPCA.get(mois) : {vitrine:{reparations:0,accessoires:0,neufs:0,reparations_nb:0,accessoires_nb:0,neufs_nb:0},occasion:{ca:0,marge:0,nb:0}});
+  var caRepMois        = _spC.vitrine.reparations;
+  var repMois          = { length: _spC.vitrine.reparations_nb };   // compat : .length utilisé dans le rendu
+  var naVentesMois     = { length: _spC.vitrine.accessoires_nb };
+  var caAccessMois     = _spC.vitrine.accessoires;
+  var neufsVendusMois  = { length: _spC.vitrine.neufs_nb };
+  var caNeufsVendusMois= _spC.vitrine.neufs;
+  // Marge tél. neufs : recalcul direct (SPCA ne track pas l'achat des neufs)
+  var margeNeufsMois = (window.phonesNeufs||[]).filter(function(p){ return p.etat==='VENDU' && p.date_vente && p.date_vente.startsWith(mois); }).reduce(function(s,p){ return s+(Number(p.vente)||0)-(Number(p.achat)||0); }, 0);
+  // Smartphones occasion (TVA marge) — dissocié
+  var caOccasionMois = _spC.occasion.ca;
+  // Base pour les pourcentages de la ventilation = somme des catégories (cohérence interne du tableau)
+  var _ventTotal = caRepMois + caAccessMois + caNeufsVendusMois + caOccasionMois;
 
   // Nom du mois
   var moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
@@ -19808,10 +19811,10 @@ function renderComptable() {
     '</div>' +
     '</div>' +
     '<table><thead><tr><th>Catégorie</th><th style="text-align:right;">CA TTC</th><th style="text-align:right;">Nb</th><th style="text-align:right;">% du CA</th></tr></thead><tbody>' +
-    '<tr><td>🔧 Réparations</td><td style="text-align:right;font-weight:700;color:#c0392b;">'+caRepMois.toFixed(2)+' €</td><td style="text-align:right;">'+repMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(totalTTC>0?(caRepMois/totalTTC*100).toFixed(1):'0')+'%</td></tr>' +
-    '<tr><td>🛍️ Accessoires</td><td style="text-align:right;font-weight:700;color:#2563eb;">'+caAccessMois.toFixed(2)+' €</td><td style="text-align:right;">'+naVentesMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(totalTTC>0?(caAccessMois/totalTTC*100).toFixed(1):'0')+'%</td></tr>' +
-    '<tr><td>📱✨ Tél. neufs (TVA 20%)</td><td style="text-align:right;font-weight:700;color:#059669;">'+caNeufsVendusMois.toFixed(2)+' €</td><td style="text-align:right;">'+neufsVendusMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(totalTTC>0?(caNeufsVendusMois/totalTTC*100).toFixed(1):'0')+'%</td></tr>' +
-    '<tr><td>📱 Occasion (TVA marge)</td><td style="text-align:right;font-weight:700;color:#8b5cf6;">'+caOccasionMois.toFixed(2)+' €</td><td style="text-align:right;">'+phonesVendus.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(totalTTC>0?(caOccasionMois/totalTTC*100).toFixed(1):'0')+'%</td></tr>' +
+    '<tr><td>🔧 Réparations</td><td style="text-align:right;font-weight:700;color:#c0392b;">'+caRepMois.toFixed(2)+' €</td><td style="text-align:right;">'+repMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(_ventTotal>0?(caRepMois/_ventTotal*100).toFixed(1):'0')+'%</td></tr>' +
+    '<tr><td>🛍️ Accessoires</td><td style="text-align:right;font-weight:700;color:#2563eb;">'+caAccessMois.toFixed(2)+' €</td><td style="text-align:right;">'+naVentesMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(_ventTotal>0?(caAccessMois/_ventTotal*100).toFixed(1):'0')+'%</td></tr>' +
+    '<tr><td>📱✨ Tél. neufs (TVA 20%)</td><td style="text-align:right;font-weight:700;color:#059669;">'+caNeufsVendusMois.toFixed(2)+' €</td><td style="text-align:right;">'+neufsVendusMois.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(_ventTotal>0?(caNeufsVendusMois/_ventTotal*100).toFixed(1):'0')+'%</td></tr>' +
+    '<tr><td>📱 Occasion (TVA marge)</td><td style="text-align:right;font-weight:700;color:#8b5cf6;">'+caOccasionMois.toFixed(2)+' €</td><td style="text-align:right;">'+phonesVendus.length+'</td><td style="text-align:right;color:var(--text-muted);">'+(_ventTotal>0?(caOccasionMois/_ventTotal*100).toFixed(1):'0')+'%</td></tr>' +
     '<tr style="background:rgba(0,0,0,0.04);border-top:2px solid var(--border);"><td style="font-weight:800;">TOTAL</td><td style="text-align:right;font-weight:800;color:var(--red);">'+(caRepMois+caAccessMois+caNeufsVendusMois+caOccasionMois).toFixed(2)+' €</td><td style="text-align:right;font-weight:700;">'+(repMois.length+naVentesMois.length+neufsVendusMois.length+phonesVendus.length)+'</td><td style="text-align:right;font-weight:700;">100%</td></tr>' +
     '</tbody></table>' +
     '</div>' +
@@ -33748,12 +33751,14 @@ window.SPCA = (function(){
       var d=new Date(); d.setMonth(d.getMonth()-1); var m=monthOf(d.toISOString().slice(0,10));
       return function(iso){ return monthOf(iso)===m; };
     }
+    // Mois arbitraire au format 'YYYY-MM' (ex : récap comptable d'un mois passé)
+    if(/^\d{4}-\d{2}$/.test(scope)){ return function(iso){ return monthOf(iso)===scope; }; }
     return function(){ return false; };
   }
 
   // ── VITRINE (TVA 20 %) : réparations facturées + accessoires + tél. neufs ──
   function computeVitrine(match){
-    var out={ reparations:0, accessoires:0, neufs:0, quali:0, total:0 };
+    var out={ reparations:0, accessoires:0, neufs:0, quali:0, total:0, reparations_nb:0, accessoires_nb:0, neufs_nb:0 };
     // 1. Réparations facturées (même règle que renderCaisseJour : bonus QR compté si photo IMEI présente)
     var R=(Array.isArray(window.repDossiers)&&window.repDossiers.length)?window.repDossiers:(Array.isArray(window.bonsDepot)?window.bonsDepot:[]);
     var vus={};
@@ -33768,6 +33773,7 @@ window.SPCA = (function(){
       var prixClient=n(d.facture.prix||d.devis);
       out.reparations += bonusQR ? prixClient+qrBonus : prixClient;
       out.quali       += bonusQR ? qrBonus : 0;
+      out.reparations_nb++;
     });
     // 2. Ventes accessoires + tél. neufs (base partagée na + local), dédupliquées
     var naLocal=[]; try{ naLocal=JSON.parse(localStorage.getItem('na_ventes')||'[]'); }catch(e){}
@@ -33780,13 +33786,13 @@ window.SPCA = (function(){
       var t=(v.type||'').toString().toLowerCase();
       var isNeuf=(t.indexOf('neuf')>=0||t.indexOf('recond')>=0);
       var mont=n(v.prix||v.ttc||v.montant);
-      if(isNeuf) out.neufs += mont; else out.accessoires += mont;
+      if(isNeuf){ out.neufs += mont; out.neufs_nb++; } else { out.accessoires += mont; out.accessoires_nb++; }
     });
     // 3. Ventes tél. neufs (stock dédié phonesNeufs)
     (window.phonesNeufs||[]).forEach(function(p){
       if(!p||p.etat!=='VENDU') return;
       if(!match(p.date_vente)) return;
-      out.neufs += n(p.vente);
+      out.neufs += n(p.vente); out.neufs_nb++;
     });
     out.total = out.reparations + out.accessoires + out.neufs;
     return out;
