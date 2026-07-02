@@ -8121,8 +8121,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           h+=inp('bl-preneur-rep','Représenté par',d.preneurRep,'ex : M. X, gérant');
           h+=inp('bl-destination','Destination / activité autorisée',d.destination,'ex : vente et réparation de téléphonie');
         } else {
-          h+=inp('bl-preneur','Nom et prénom du (des) locataire(s)',d.preneur||b.locataire);
+          h+=inp('bl-preneur','Locataire 1 — nom et prénom',d.preneur||b.locataire);
+          h+=inp('bl-preneur2','Locataire 2 — conjoint (nom et prénom)',d.preneur2,'ex : Mme Y, née Z');
           h+=inp('bl-preneur-adr','Adresse actuelle (avant entrée)',d.preneurAdr);
+          h+='<div class="form-group" style="margin-bottom:10px;"><label>Situation</label><select id="bl-situation"><option value="maries"'+(d.situation!=='autres'?' selected':'')+'>Mariés ensemble</option><option value="autres"'+(d.situation==='autres'?' selected':'')+'>Autre (concubins, pacsés…)</option></select></div>';
         }
         h+='</div>';
         h+='<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#B00007;margin:14px 0 8px;">Le bien &amp; les conditions</div><div class="form-grid">';
@@ -8150,7 +8152,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         var d={ bailleur:val('bl-bailleur'), bailleurAdr:val('bl-bailleur-adr'), preneur:val('bl-preneur'), preneurAdr:val('bl-preneur-adr'),
                 surface:val('bl-surface'), dateEffet:val('bl-date-effet'), loyer:num('bl-loyer'), charges:num('bl-charges'), depot:val('bl-depot'), indice:val('bl-indice') };
         if(commercial){ d.bailleurSiret=val('bl-bailleur-siret'); d.bailleurRep=val('bl-bailleur-rep'); d.preneurForme=val('bl-preneur-forme'); d.preneurRcs=val('bl-preneur-rcs'); d.preneurRep=val('bl-preneur-rep'); d.destination=val('bl-destination'); d.descr=val('bl-descr'); d.tva=!!(document.getElementById('bl-tva')||{}).checked; }
-        else { d.pieces=val('bl-pieces'); d.annexes=val('bl-annexes'); }
+        else { d.pieces=val('bl-pieces'); d.annexes=val('bl-annexes'); d.preneur2=val('bl-preneur2'); d.situation=val('bl-situation')||'maries'; }
         if(!d.bailleur||!d.preneur||!(d.loyer>0)){ showNotif&&showNotif('Bailleur, locataire et loyer sont obligatoires','error'); return; }
         bailSave(id,d);
         var w=window.open('','_blank'); if(!w){ showNotif&&showNotif('Autorisez les popups','error'); return; }
@@ -8188,7 +8190,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       function bailHabitationHTML(b,d){
         var total=d.loyer+d.charges;
         var h='<div class="page-q">'+bailHead('CONTRAT DE LOCATION','Logement nu à usage de résidence principale — loi n°89-462 du 6 juillet 1989 · contrat type (décret n°2015-587 du 29 mai 2015)');
-        h+='<p style="font-size:11.5px;line-height:1.65;"><b>ENTRE LES SOUSSIGNÉS :</b><br><b>'+esc(d.bailleur)+'</b>, demeurant '+esc(d.bailleurAdr)+', ci-après dénommé « le Bailleur »,<br><b>ET</b><br><b>'+esc(d.preneur)+'</b>'+(d.preneurAdr?', demeurant actuellement '+esc(d.preneurAdr):'')+', ci-après dénommé « le Locataire »,<br><b>IL A ÉTÉ CONVENU CE QUI SUIT :</b></p>';
+        var deux=!!(d.preneur2&&d.preneur2.trim());
+        var maries=(d.situation!=='autres');
+        var locLbl=deux?'les Locataires':'le Locataire';
+        h+='<p style="font-size:11.5px;line-height:1.65;"><b>ENTRE LES SOUSSIGNÉS :</b><br><b>'+esc(d.bailleur)+'</b>, demeurant '+esc(d.bailleurAdr)+', ci-après dénommé « le Bailleur »,<br><b>ET</b><br><b>'+esc(d.preneur)+'</b>'+(deux?' <b>et '+esc(d.preneur2)+'</b>'+(maries?', mariés ensemble':''):'')+(d.preneurAdr?', demeurant actuellement '+esc(d.preneurAdr):'')+', ci-après dénommé'+(deux?'s':'')+' « '+(deux?'les Locataires':'le Locataire')+' », pris conjointement et solidairement,<br><b>IL A ÉTÉ CONVENU CE QUI SUIT :</b></p>';
         h+=art(1,'Objet du contrat — consistance du logement','Le Bailleur loue au Locataire, qui accepte, un logement à usage d\'habitation principale : <b>maison individuelle</b> située <b>'+esc(b.adresse)+', '+esc(b.ville)+'</b>, d\'une surface habitable de <b>'+esc(d.surface||'—')+' m²</b> (article R156-1 du CCH / loi Boutin)'+(d.pieces?', comprenant <b>'+esc(d.pieces)+' pièces principales</b>':'')+(d.annexes?', avec annexes : '+esc(d.annexes):'')+'. Modalités de chauffage et d\'eau chaude : individuelles. Le logement répond aux caractéristiques de décence du décret n°2002-120 du 30 janvier 2002.');
         h+=art(2,'Durée','Le contrat est conclu pour une durée de <b>trois (3) ans</b> à compter du <b>'+fmtFR(d.dateEffet)+'</b> (bailleur personne physique). À défaut de congé donné dans les conditions de l\'article 15 de la loi du 6 juillet 1989, il est reconduit tacitement par périodes de trois ans aux mêmes conditions.');
         h+=art(3,'Loyer','Le loyer mensuel est fixé à <b>'+d.loyer.toFixed(2)+' € hors charges</b>, payable mensuellement et d\'avance le 1er de chaque mois au domicile du Bailleur ou par virement.');
@@ -8198,10 +8203,18 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         h+=art(7,'Obligations du Bailleur','Le Bailleur est tenu de délivrer un logement décent et en bon état d\'usage et de réparations, d\'assurer la jouissance paisible du logement, d\'entretenir les locaux en état de servir à l\'usage prévu et d\'y faire toutes les réparations autres que locatives (article 6 de la loi du 6 juillet 1989).');
         h+=art(8,'Obligations du Locataire','Le Locataire est tenu de payer le loyer et les charges aux termes convenus, d\'user paisiblement du logement, de répondre des dégradations, de prendre à sa charge l\'entretien courant et les réparations locatives (décret n°87-712 du 26 août 1987), de s\'assurer contre les risques locatifs et d\'en justifier chaque année, et de laisser exécuter les travaux nécessaires (article 7). Il ne pourra ni céder le bail ni sous-louer sans accord écrit du Bailleur.');
         h+=art(9,'Congés','Le Locataire peut donner congé à tout moment avec un préavis de <b>trois (3) mois</b> (réduit à un mois dans les cas prévus à l\'article 15-I : zone tendue, mutation, perte d\'emploi, état de santé, RSA/AAH…). Le Bailleur ne peut donner congé que pour l\'échéance du bail, avec un préavis de <b>six (6) mois</b>, et uniquement pour vendre, reprendre le logement pour l\'habiter (lui ou un proche) ou pour motif légitime et sérieux. Congés par lettre recommandée AR, acte d\'huissier ou remise en main propre contre récépissé.');
-        h+=art(10,'Clause résolutoire et clause de solidarité','Le présent contrat sera résilié de plein droit, après commandement demeuré infructueux (six semaines pour les impayés — loi du 27 juillet 2023), en cas de défaut de paiement du loyer, des charges ou du dépôt de garantie, de défaut d\'assurance ou de troubles de voisinage constatés par décision de justice. En cas de pluralité de locataires, ceux-ci sont tenus solidairement de l\'ensemble des obligations du bail.');
+        h+=art(10,'Clause résolutoire et clause de solidarité','Le présent contrat sera résilié de plein droit, après commandement demeuré infructueux (six semaines pour les impayés — loi du 27 juillet 2023), en cas de défaut de paiement du loyer, des charges ou du dépôt de garantie, de défaut d\'assurance ou de troubles de voisinage constatés par décision de justice. En cas de pluralité de locataires, ceux-ci sont tenus <b>conjointement et solidairement</b> de l\'ensemble des obligations du présent bail, notamment du paiement des loyers et charges. Lorsque les locataires sont mariés, ils sont en outre cotitulaires du bail de plein droit en application de l\'article 1751 du Code civil (le congé doit être notifié à chacun d\'eux), et solidairement tenus des dettes de loyer au titre de l\'article 220 du Code civil, cette cotitularité subsistant jusqu\'à transcription d\'un éventuel jugement de divorce.');
         h+=art(11,'Honoraires','La présente location est conclue directement entre les parties, sans intermédiaire : néant.');
         h+=art(12,'Annexes obligatoires','Sont annexés au présent contrat : la notice d\'information (arrêté du 29 mai 2015), le dossier de diagnostic technique — DPE, état des risques et pollutions (ERP), constat de risque d\'exposition au plomb (CREP) si le logement est antérieur à 1949, états des installations intérieures d\'électricité et de gaz si elles ont plus de 15 ans —, l\'état des lieux d\'entrée établi contradictoirement, et l\'attestation d\'assurance du Locataire.');
-        h+='<p style="font-size:11.5px;margin-top:18px;">Fait à Replonges, le '+new Date().toLocaleDateString('fr-FR')+'</p>'+bailSigs(esc(d.bailleur),'LOCATAIRE')+'</div>';
+        h+='<p style="font-size:11.5px;margin-top:18px;">Fait à Replonges, le '+new Date().toLocaleDateString('fr-FR')+', en '+(deux?'trois':'deux')+' exemplaires originaux.</p>';
+        if(deux){
+          h+='<table style="width:100%;margin-top:36px;font-size:11.5px;"><tr>'+
+            '<td style="width:33%;vertical-align:top;"><b>LE BAILLEUR</b><br>'+esc(d.bailleur)+'<br><span style="color:#888;">« Lu et approuvé » :</span><br><br><br><br></td>'+
+            '<td style="width:33%;vertical-align:top;"><b>LOCATAIRE 1</b><br>'+esc(d.preneur)+'<br><span style="color:#888;">« Lu et approuvé » :</span><br><br><br><br></td>'+
+            '<td style="vertical-align:top;"><b>LOCATAIRE 2</b><br>'+esc(d.preneur2)+'<br><span style="color:#888;">« Lu et approuvé » :</span><br><br><br><br></td></tr></table>'+
+            '<div style="font-size:9.5px;color:#999;border-top:1px solid #eee;padding-top:8px;margin-top:16px;">Fait en autant d\'exemplaires originaux que de parties, un exemplaire remis à chacune. Chaque page doit être paraphée par toutes les parties. Modèle à faire valider par un professionnel du droit avant signature.</div>';
+        } else { h+=bailSigs(esc(d.bailleur),'LOCATAIRE'); }
+        h+='</div>';
         return h;
       }
 
