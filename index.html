@@ -11291,7 +11291,9 @@ function showPage(id,el){
   if(id==='analytics')renderAnalytics();
   if(id==='police')renderPolice();
   if(id==='comptable'){ initComptaMoisSelect(); renderComptable(); }
-  if(id==='zahira-home'){ if(typeof renderCaJourBar==='function') setTimeout(renderCaJourBar, 300); }
+  if(id==='zahira-home'){ if(typeof renderCaJourBar==='function') setTimeout(renderCaJourBar, 300); if(typeof renderDashHome==='function') setTimeout(renderDashHome, 320); }
+  // Dashboard détaillé : re-render à chaque ouverture pour toujours afficher les chiffres à jour (audit juil. 2026)
+  if(id==='dashboard'){ if(typeof renderDashboard==='function') setTimeout(renderDashboard, 300); }
   if(id==='reparations'){
     var _dosView = document.getElementById('rep-dossier-view');
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
