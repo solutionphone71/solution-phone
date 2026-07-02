@@ -1938,19 +1938,19 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           <!-- KPIs strip horizontal -->
           <div class="zh-kpis-row">
             <div class="zh-kpi-chip">
-              <div class="lbl">Marge du mois</div>
+              <div class="lbl">Réparations du jour</div>
               <div class="val" id="zh-kpi-ca">—</div>
-              <div class="sub" id="zh-kpi-ca-trend">smartphones</div>
+              <div class="sub" id="zh-kpi-ca-trend">facturées aujourd'hui</div>
             </div>
             <div class="zh-kpi-chip">
-              <div class="lbl">Tél. vendus</div>
+              <div class="lbl">En atelier</div>
               <div class="val" id="zh-kpi-avis">—</div>
-              <div class="sub" id="zh-kpi-avis-trend">ce mois</div>
+              <div class="sub" id="zh-kpi-avis-trend">dossiers en cours</div>
             </div>
             <div class="zh-kpi-chip">
-              <div class="lbl">Réparations</div>
+              <div class="lbl">QR à envoyer</div>
               <div class="val" id="zh-kpi-stock">—</div>
-              <div class="sub">facturées ce mois</div>
+              <div class="sub">bonus en attente</div>
             </div>
             <div class="zh-kpi-chip">
               <div class="lbl">Valeur stock</div>
@@ -1958,9 +1958,9 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="sub">occasion dispo</div>
             </div>
             <div class="zh-kpi-chip">
-              <div class="lbl">QualiRépar</div>
+              <div class="lbl">Stock occasion</div>
               <div class="val" id="zh-kpi-qr">—</div>
-              <div class="sub">ce mois</div>
+              <div class="sub">tél. disponibles</div>
             </div>
           </div>
 
@@ -33977,19 +33977,29 @@ function renderDashHome(){
         dispo.map(function(p,i){ return '<tr style="border-top:'+(i?'1px solid #F1F2F4':'none')+';"><td style="padding:10px 12px;color:#111;font-weight:600;">'+(p.modele||'')+(p.stockage?' '+p.stockage+'Go':'')+'</td><td style="padding:10px 12px;color:#6B7280;">'+(p.grade||'')+'</td><td style="padding:10px 12px;text-align:right;font-weight:700;color:#E10600;">'+eur(p.vente||p.prix||0)+'</td></tr>'; }).join('')+
       '</table>'):'<div style="padding:20px;text-align:center;color:#9CA3AF;">Aucun smartphone en stock</div>')+'</div>';
   }
-  // 5 KPI business (Marge mois · Tél vendus · Réparations · Valeur stock)
+  // 5 KPI — vue « AUJOURD'HUI / opérationnel » (le mensuel reste sur le Dashboard détaillé)
   try{
-    var vendusM=P.filter(function(p){ return p&&p.etat==='VENDU'&&(p.dateVente||'').slice(0,7)===mois; });
-    var margeMois=vendusM.reduce(function(s,p){ return s+((Number(p.vente)||0)-(Number(p.achat)||0)); },0);
-    var stockVal=P.filter(function(p){ return p&&(p.etat==='DISPONIBLE'||!p.etat); }).reduce(function(s,p){ return s+(Number(p.achat)||0); },0);
+    var today=new Date().toISOString().slice(0,10);
+    var spJ=(window.SPCA?SPCA.get('jour'):{vitrine:{reparations_nb:0}});
     var Rsrc=(window.repDossiers&&window.repDossiers.length)?window.repDossiers:(window.bonsDepot||[]);
-    var repMois=Rsrc.filter(function(d){ return d&&d.facture&&((d.facture.date||d.date||'').slice(0,7)===mois); }).length;
+    // Réparations facturées aujourd'hui
+    var repJour=spJ.vitrine.reparations_nb;
+    // Dossiers en atelier (non clôturés)
+    var enAtelier=Rsrc.filter(function(d){ if(!d)return false; var st=(d.statut||'').toString().toLowerCase(); return st!=='remis'&&st!=='livre'&&st!=='livré'&&st!=='termine'&&st!=='terminé'&&st!=='annule'&&st!=='annulé'&&!(d.facture&&d.facture.numero); }).length;
+    // Bonus QualiRépar validés mais pas encore envoyés
+    var qrAEnvoyer=Rsrc.filter(function(d){ if(!d)return false; var b=!!(d.bonusQR||(d.facture&&d.facture.bonusQR)); if(!b)return false; var e=d.qrEnvoi||{}; return !(e.ecologicId||e.ecologicClaimId||e.ecosystemId||e.ecosystemRepairId); }).length;
+    // Snapshots stock occasion
+    var dispoArr=P.filter(function(p){ return p&&(p.etat==='DISPONIBLE'||!p.etat); });
+    var nbDispo=dispoArr.length;
+    var stockVal=dispoArr.reduce(function(s,p){ return s+(Number(p.achat)||0); },0);
     var setK=function(id,v){ var el=document.getElementById(id); if(el)el.textContent=v; };
-    setK('zh-kpi-ca', eur(margeMois));
-    setK('zh-kpi-ca-trend', vendusM.length+' tél. vendus');
-    setK('zh-kpi-avis', vendusM.length);
-    setK('zh-kpi-stock', repMois);
-    setK('zh-kpi-queue', eur(stockVal));
+    setK('zh-kpi-ca', repJour);              // Réparations du jour
+    setK('zh-kpi-ca-trend', 'facturées aujourd\'hui');
+    setK('zh-kpi-avis', enAtelier);          // En atelier
+    setK('zh-kpi-avis-trend', 'dossiers en cours');
+    setK('zh-kpi-stock', qrAEnvoyer);        // QR à envoyer
+    setK('zh-kpi-queue', eur(stockVal));     // Valeur stock
+    setK('zh-kpi-qr', nbDispo);              // Stock occasion (nb)
   }catch(e){}
 }
 document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ renderCaJourBar(); try{renderFileAtelier();}catch(e){} try{renderDashHome();}catch(e){} }, 3000); });
