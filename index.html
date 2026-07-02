@@ -37929,27 +37929,115 @@ window.iavRenderDecisions = async function(){
     var g = hr < 12 ? 'Bonjour' : hr < 18 ? 'Bon après-midi' : 'Bonsoir';
     document.querySelectorAll('.zah-greet').forEach(function(el){ el.textContent = g; });
   }
+  // ── Formatage € ──
+  function _eur(n){ return (Math.round(Number(n)||0)).toLocaleString('fr-FR')+' €'; }
+
+  // ── Briefing BUSINESS (juillet 2026) : 4 familles calculées depuis les données déjà chargées.
+  //    Argent (CA hier/aujourd'hui) · Atelier (réparations en cours/jour) · QualiRépar (bonus à envoyer) · Stock occasion.
+  function composeBusinessBriefing(){
+    try {
+      var C = Array.isArray(window.caisse) ? window.caisse : [];
+      var P = Array.isArray(window.phones) ? window.phones : [];
+      var R = (Array.isArray(window.repDossiers) && window.repDossiers.length) ? window.repDossiers
+            : (Array.isArray(window.bonsDepot) ? window.bonsDepot : []);
+      var today = new Date().toISOString().slice(0,10);
+      var y = new Date(); y.setDate(y.getDate()-1); var yest = y.toISOString().slice(0,10);
+      var sumTtc = function(rows){ return rows.reduce(function(s,r){ return s+(Number(r.ttc)||0); },0); };
+
+      // ── Argent ──
+      var cats = window._caisseCategories || {};
+      var caToday = (((cats.reparations||{}).total)||0) + (((cats.accessoires||{}).total)||0) + (((cats.neufs||{}).total)||0);
+      var caYest  = sumTtc(C.filter(function(r){ return (r.date||'').slice(0,10)===yest; }));
+
+      // ── Atelier ──
+      var repEnCours = R.filter(function(d){ return d && !(d.facture && d.facture.numero) && !d.cloture; }).length;
+      var repJour = R.filter(function(d){ var dt=((d.facture&&d.facture.date)||d.date||'').slice(0,10); return dt===today; }).length;
+
+      // ── QualiRépar : bonus validés mais pas encore envoyés à l'éco-organisme ──
+      var qrAEnvoyer = R.filter(function(d){
+        if(!d) return false;
+        var bonus = !!(d.bonusQR || (d.facture && d.facture.bonusQR));
+        if(!bonus) return false;
+        var e = d.qrEnvoi || {};
+        var envoye = !!(e.ecologicId || e.ecologicClaimId || e.ecosystemId || e.ecosystemRepairId);
+        return !envoye;
+      }).length;
+
+      // ── Stock occasion (dispo + qui dort > 60 j) ──
+      var dispo = P.filter(function(p){ return p && (p.etat==='DISPONIBLE' || !p.etat); });
+      var nbDispo = dispo.length;
+      var valStock = dispo.reduce(function(s,p){ return s+(Number(p.achat)||0); },0);
+      var seuil = new Date(); seuil.setDate(seuil.getDate()-60);
+      var dorment = dispo.filter(function(p){ var da=p.dateAchat?new Date(p.dateAchat):null; return da && da < seuil; }).length;
+
+      // ── Composition de la phrase ──
+      var parts = [];
+      // Argent
+      if(caToday>0){
+        var evo = caYest>0 ? Math.round(((caToday-caYest)/caYest)*100) : null;
+        parts.push('💶 <strong>'+_eur(caToday)+'</strong> encaissés aujourd\'hui'+(evo!==null?' <span style="color:'+(evo>=0?'#16a34a':'#dc2626')+';">('+(evo>=0?'+':'')+evo+'% vs hier)</span>':''));
+      } else if(caYest>0){
+        parts.push('💶 Hier : <strong>'+_eur(caYest)+'</strong> encaissés');
+      }
+      // Atelier
+      if(repEnCours>0) parts.push('🔧 <strong>'+repEnCours+'</strong> réparation'+(repEnCours>1?'s':'')+' en cours'+(repJour>0?' ('+repJour+' aujourd\'hui)':''));
+      // QualiRépar (le plus rentable à ne pas oublier)
+      if(qrAEnvoyer>0) parts.push('🟢 <strong style="color:#c0392b;">'+qrAEnvoyer+' bonus QualiRépar à envoyer</strong>');
+      // Stock
+      if(nbDispo>0){
+        var stockTxt = '📱 <strong>'+nbDispo+'</strong> occasion'+(nbDispo>1?'s':'')+' en stock ('+_eur(valStock)+')';
+        if(dorment>0) stockTxt += ' · <span style="color:#ea580c;">'+dorment+' dorment >60j</span>';
+        parts.push(stockTxt);
+      }
+      return parts;
+    } catch(e){ return null; }
+  }
+
   async function loadZahiraSummary(){
     setGreet();
-    try {
-      var r = await fetch('/api/supabase?table=agent_decisions&query=' + encodeURIComponent('?status=eq.pending_validation&select=id,agent_name,type'));
-      var data = await r.json();
-      if (!Array.isArray(data) || data.length === 0) {
-        setSummary('Tout est calme ce matin. L\'équipe surveille en arrière-plan, tu peux te concentrer sur la boutique.');
-        return;
-      }
-      var counts = {};
-      data.forEach(function(d){
-        var a = d.agent_name || 'autre';
-        counts[a] = (counts[a] || 0) + 1;
-      });
-      var parts = [];
-      if (counts.assya)  parts.push('<strong>' + counts.assya + ' post' + (counts.assya>1?'s':'') + '</strong> par Assya');
-      if (counts.yago)   parts.push('<strong>' + counts.yago + ' dossier' + (counts.yago>1?'s':'') + ' QualiRépar</strong> par Yago');
-      if (counts.anissa) parts.push('<strong>' + counts.anissa + ' alerte' + (counts.anissa>1?'s':'') + '</strong> Anissa');
-      if (counts.obiwan) parts.push('<strong>' + counts.obiwan + '</strong> Obiwan');
-      if (counts.chanel) parts.push('<strong>' + counts.chanel + '</strong> Chanel');
-      var txt = parts.length ? (parts.join(' · ') + '. <span class="hl">Validation 1-clic</span> sur l\'Autopilot.')
-                              : (data.length + ' propositions en attente.');
-      setSummary(txt);
+    // 1) Briefing business instantané depuis les données locales
+    var bizParts = composeBusinessBriefing();
+    // Si les données ne sont pas encore chargées, on réessaie une fois plus tard
+    if((!bizParts || !bizParts.length)){
+      setTimeout(function(){ var p2=composeBusinessBriefing(); if(p2 && p2.length){ renderBriefing(p2); tryAppendAgents(); } }, 3500);
     }
+    function renderBriefing(parts){
+      if(parts && parts.length){
+        setSummary('Voici ta journée :<br>' + parts.map(function(x){ return '• '+x; }).join('<br>'));
+      } else {
+        setSummary('Tout est calme pour l\'instant — pas encore d\'activité enregistrée aujourd\'hui.');
+      }
+    }
+    renderBriefing(bizParts);
+
+    // 2) Enrichissement : propositions des agents IA en attente (ajout, ne remplace pas)
+    async function tryAppendAgents(){
+      try {
+        var r = await fetch('/api/supabase?table=agent_decisions&query=' + encodeURIComponent('?status=eq.pending_validation&select=id,agent_name'));
+        var data = await r.json();
+        if (!Array.isArray(data) || data.length === 0) return;
+        var counts = {};
+        data.forEach(function(d){ var a=d.agent_name||'autre'; counts[a]=(counts[a]||0)+1; });
+        var ap = [];
+        if (counts.assya)  ap.push('<strong>'+counts.assya+' post'+(counts.assya>1?'s':'')+'</strong> Assya');
+        if (counts.yago)   ap.push('<strong>'+counts.yago+' dossier'+(counts.yago>1?'s':'')+' QR</strong> Yago');
+        if (counts.anissa) ap.push('<strong>'+counts.anissa+' alerte'+(counts.anissa>1?'s':'')+'</strong> Anissa');
+        if (counts.obiwan) ap.push('<strong>'+counts.obiwan+'</strong> Obiwan');
+        if (counts.chanel) ap.push('<strong>'+counts.chanel+'</strong> Chanel');
+        var extra = ap.length ? ('🤖 '+ap.join(' · ')+' — <span class="hl">validation 1-clic</span> sur l\'Autopilot.') : (data.length+' propositions IA en attente.');
+        var cur = document.getElementById('zah-summary');
+        if(cur){ cur.innerHTML += '<br>• ' + extra; }
+        var cur2 = document.getElementById('zah-summary-parcours');
+        if(cur2){ cur2.innerHTML += '<br>• ' + extra; }
+      } catch(e){ /* silencieux : le briefing business reste affiché */ }
+    }
+    tryAppendAgents();
+  }
+
+  // Chargement au démarrage + rafraîchissement quand on revient sur le dashboard
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(loadZahiraSummary, 1200); });
+  window.refreshZahiraBriefing = loadZahiraSummary;
+})();
+</script>
+</body>
+</html>
