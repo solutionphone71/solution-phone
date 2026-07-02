@@ -20315,15 +20315,13 @@ function renderDashboard(){
   var lastMoisStr=lastMonth.getFullYear()+'-'+String(lastMonth.getMonth()+1).padStart(2,'0');
   var jourDuMois=today.getDate();
   // CA ce mois jusqu'à aujourd'hui
-  var caMoisActuel=caTotal;
-  // CA mois dernier jusqu'au même jour
+  // Performance Live = VITRINE (TVA 20 %), cohérent avec la dissociation. L'occasion a sa propre tuile.
+  var caMoisActuel=caRepaAccMois;
+  // CA vitrine mois dernier jusqu'au même jour (registre de caisse = rép+acc+neufs, occasion non incluse)
   var caLastMois=caisse.filter(function(c){
     if(!c.date||!c.date.startsWith(lastMoisStr))return false;
     var jour=parseInt(c.date.split('-')[2]);return jour<=jourDuMois;
   }).reduce(function(s,c){return s+(c.ttc||0);},0);
-  // Ajouter smartphones vendus le mois dernier
-  var caSmartLast=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(lastMoisStr)&&parseInt(p.dateVente.split('-')[2])<=jourDuMois;}).reduce(function(s,p){return s+(p.vente||0);},0);
-  caLastMois+=caSmartLast;
   var perfDiff=caLastMois>0?((caMoisActuel-caLastMois)/caLastMois*100):0;
   var perfUp=perfDiff>=0;
   var moisNoms3=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -20383,7 +20381,7 @@ function renderDashboard(){
     scrollEl.innerHTML=stockDispo.length>0?stockDispo.map(function(p){
       var gradeColors={'A+':'#34d399','A':'#60a5fa','B':'#fbbf24','C':'#f87171'};
       var gc=gradeColors[p.grade]||'#888';
-      return '<div class="stock-card"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.modele+'</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;"><span style="background:'+gc+'22;color:'+gc+';padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;">'+(p.grade||'—')+'</span><span style="font-weight:800;font-size:13px;">'+p.vente+'€</span></div>'+(p.stockage?'<div style="font-size:10px;color:rgba(0,0,0,0.3);margin-top:4px;">'+p.stockage+' Go</div>':'')+'</div>';
+      return '<div class="stock-card"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.modele+'</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;"><span style="background:'+gc+'22;color:'+gc+';padding:2px 8px;border-radius:6px;font-size:11px;font-weight:800;">'+(p.grade||'—')+'</span><span style="font-weight:800;font-size:13px;">'+(function(){var pr=Number(p.vente||p.prix||p.prixVente||0);return pr>0?pr+'€':'—';})()+'</span></div>'+(p.stockage?'<div style="font-size:10px;color:rgba(0,0,0,0.3);margin-top:4px;">'+p.stockage+' Go</div>':'')+'</div>';
     }).join(''):'<div style="padding:10px;color:rgba(0,0,0,0.3);font-size:12px;">Aucun stock</div>';
   }
 
@@ -33863,15 +33861,11 @@ function renderCaJourBar(){
       '<div style="font-size:11px;color:rgba(255,255,255,0.82) !important;margin-top:3px;">'+sous+'</div>'+
     '</div>';
   };
-  var caRepa = totJour.total || 0;          // CA réparations & access. (QualiRépar INCLUS)
-  var caTotal = caRepa + smart;             // + smartphones occasion
-  el.innerHTML =
-    '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;margin-bottom:12px;">Chiffre d\'affaires du jour</div>'+
-    '<div style="display:flex;gap:14px;flex-wrap:wrap;">'+
-      seg('#E10600,#a3000d','rgba(225,6,0,0.30)','','Réparations & access.', eur(caRepa), (totJour.nb||0)+' répa'+((totJour.nb||0)>1?'s':'')+' · dont QR '+eur(quali)) +
-      seg('#1a1a1a,#0D0D0D','rgba(0,0,0,0.28)','','Smartphones occasion', eur(smart), smartNb+' vente'+(smartNb>1?'s':'')) +
-      seg('#E10600,#a3000d','rgba(225,6,0,0.32)','','Total du jour', eur(caTotal), 'CA total (QualiRépar inclus)') +
-    '</div>';
+  // « Chiffre d'affaires du jour » MASQUÉ (juil. 2026) : faisait doublon avec « Performance Live »
+  // ci-dessous (mêmes chiffres, dissociés) et affichait un total mixé vitrine+occasion trompeur.
+  // On conserve toute la mécanique de chargement des données de cette fonction.
+  el.innerHTML = '';
+  el.style.display = 'none';
   try{ if(typeof renderFileAtelier==='function') renderFileAtelier(); }catch(e){}
   try{ if(typeof renderDashHome==='function') renderDashHome(); }catch(e){}
 }
