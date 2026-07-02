@@ -20112,16 +20112,16 @@ function renderDashboard(){
       : '';
   }
 
-  // ── KPI — Dissocié Répa/Accessoires vs Smartphones ──
+  // ── KPI — via SPCA (source unique). Vitrine TVA 20 % et Occasion marge DISSOCIÉES. ──
   var dispo = phones.filter(function(p){return p.etat==='DISPONIBLE';}).length;
-  // Smartphones occasion : CA vente + marge (depuis phones array)
-  var smartVendusMois = phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente&&p.dateVente.startsWith(moisCourant);});
-  var caSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0);},0);
-  var mgSmartMois = smartVendusMois.reduce(function(s,p){return s+(p.vente||0)-(p.achat||0);},0);
-  // Caisse TTC = Phonilab (répa + accessoires + neufs). Smartphones occasion PAS dedans.
-  var caRepaAccMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.ttc||0);},0);
-  var bonusQRMois = caisse.filter(function(c){return c.date&&c.date.startsWith(moisCourant);}).reduce(function(s,c){return s+(c.quali||0);},0);
-  // Total = Phonilab + Smartphones occasion (prix vente)
+  var _spMois = (window.SPCA ? SPCA.get('mois') : {vitrine:{reparations:0,accessoires:0,neufs:0,quali:0,total:0},occasion:{ca:0,marge:0,nb:0}});
+  // Occasion (TVA sur marge) — tenue à part
+  var caSmartMois = _spMois.occasion.ca;
+  var mgSmartMois = _spMois.occasion.marge;
+  // Vitrine (TVA 20 %) = réparations + accessoires + tél. neufs
+  var caRepaAccMois = _spMois.vitrine.total;
+  var bonusQRMois   = _spMois.vitrine.quali;
+  // « Activité totale » = indicateur INDICATIF cumulant les 2 régimes (jamais présenté comme un CA unique)
   var caTotal = caRepaAccMois + caSmartMois;
   // Compat ancien var
   var caReparMois = caRepaAccMois;
@@ -20158,9 +20158,9 @@ function renderDashboard(){
       cards.appendChild(dashTile('📱','Stock dispo',dispo+' tél.','Smartphones','#6366f1','phones'));
       cards.appendChild(dashTile('💰','CA smartphones',caSmartMois.toFixed(0)+' €','Marge : '+mgSmartMois.toFixed(0)+' €','#3b82f6','ventes-smart'));
     } else {
-      cards.appendChild(dashTile('🔧','CA Répa / Access. / Neufs',caRepaAccMois.toFixed(0)+' €','dont QR : '+bonusQRMois.toFixed(0)+' €','#f59e0b','reparations'));
-      cards.appendChild(dashTile('📱','CA Smart. Occasion',caSmartMois.toFixed(0)+' €','Marge : '+mgSmartMois.toFixed(0)+' €','#3b82f6','ventes-smart'));
-      cards.appendChild(dashTile('💰','CA total du mois',caTotal.toFixed(0)+' €','','#ef4444',null));
+      cards.appendChild(dashTile('🔧','CA Vitrine · TVA 20%',caRepaAccMois.toFixed(0)+' €','Répa + Access. + Neufs · dont QR '+bonusQRMois.toFixed(0)+' €','#f59e0b','reparations'));
+      cards.appendChild(dashTile('📱','CA Occasion · TVA marge',caSmartMois.toFixed(0)+' €','Marge : '+mgSmartMois.toFixed(0)+' €','#3b82f6','ventes-smart'));
+      cards.appendChild(dashTile('📊','Activité totale du mois',caTotal.toFixed(0)+' €','Indicatif · 2 régimes TVA cumulés','#ef4444',null));
       cards.appendChild(dashTile('⚙️','Répa en cours',repEnCours+'','',repEnCours>0?'#ef4444':'#10b981','reparations'));
       cards.appendChild(dashTile('📦','Commandes',cmdEnAttente+' en attente',relances>0?'⏰ '+relances+' relance(s)':'','#8b5cf6','commandes'));
       cards.appendChild(dashTile('📱','Stock dispo',dispo+' tél.','Smartphones','#6366f1','phones'));
@@ -20317,7 +20317,7 @@ function renderDashboard(){
   // ② YESTERDAY'S FLASHBACK
   var hier=new Date(today);hier.setDate(today.getDate()-1);
   var hierStr=hier.toISOString().split('T')[0];
-  var caHier=caisse.filter(function(c){return c.date===hierStr;}).reduce(function(s,c){return s+(c.ttc||0);},0);
+  var caHier=(window.SPCA?SPCA.get('hier').vitrine.total:caisse.filter(function(c){return c.date===hierStr;}).reduce(function(s,c){return s+(c.ttc||0);},0));
   var repHier=(Array.isArray(reparations)?reparations:[]).filter(function(r){return r.date===hierStr;}).length;
   var ventesHier=phones.filter(function(p){return p.etat==='VENDU'&&p.dateVente===hierStr;}).length;
   var hc=document.getElementById('wg-hier-ca');if(hc)hc.textContent=caHier.toFixed(0)+' €';
@@ -33686,6 +33686,109 @@ document.addEventListener('DOMContentLoaded', function(){ setTimeout(qrRappelQuo
 // Lecture seule. S'appuie sur renderCaisseJour() qui calcule déjà les
 // totaux du jour par catégorie (accessoires, neufs, occasion, quali).
 // ══════════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════════
+// SPCA — SOURCE UNIQUE DU CHIFFRE D'AFFAIRES (audit juillet 2026)
+// ------------------------------------------------------------------
+// Un seul point de calcul pour tout l'app, afin que le CA affiché soit
+// IDENTIQUE partout (home, barre, dashboard détaillé, briefing).
+//
+// ⚠️ DEUX RÉGIMES STRICTEMENT DISSOCIÉS — jamais additionnés :
+//    • vitrine  = Réparations + Accessoires + Téléphones NEUFS  (TVA 20 %)
+//    • occasion = Smartphones d'occasion                        (TVA sur marge)
+//
+// SPCA.get(scope) où scope ∈ 'jour' | 'hier' | 'mois' | 'moisDernier'
+// Retourne : {
+//   vitrine:  { reparations, accessoires, neufs, quali, total },   // total = rép+acc+neufs (TVA 20 %)
+//   occasion: { ca, marge, nb },                                   // séparé, TVA marge
+//   scope, label
+// }
+// Le grand total « vitrine + occasion » n'est VOLONTAIREMENT pas fourni :
+// mélanger deux régimes de TVA fausse la lecture comptable.
+// ══════════════════════════════════════════════════════════════════
+window.SPCA = (function(){
+  function n(v){ return Number(v)||0; }
+  function today(){ return new Date().toISOString().slice(0,10); }
+  function yesterday(){ var d=new Date(); d.setDate(d.getDate()-1); return d.toISOString().slice(0,10); }
+  function monthOf(iso){ return (iso||'').slice(0,7); }
+
+  // Prédicat de correspondance selon le scope
+  function makeMatcher(scope){
+    if(scope==='jour'){ var t=today(); return function(iso){ return (iso||'').slice(0,10)===t; }; }
+    if(scope==='hier'){ var y=yesterday(); return function(iso){ return (iso||'').slice(0,10)===y; }; }
+    if(scope==='mois'){ var m=monthOf(today()); return function(iso){ return monthOf(iso)===m; }; }
+    if(scope==='moisDernier'){
+      var d=new Date(); d.setMonth(d.getMonth()-1); var m=monthOf(d.toISOString().slice(0,10));
+      return function(iso){ return monthOf(iso)===m; };
+    }
+    return function(){ return false; };
+  }
+
+  // ── VITRINE (TVA 20 %) : réparations facturées + accessoires + tél. neufs ──
+  function computeVitrine(match){
+    var out={ reparations:0, accessoires:0, neufs:0, quali:0, total:0 };
+    // 1. Réparations facturées (même règle que renderCaisseJour : bonus QR compté si photo IMEI présente)
+    var R=(Array.isArray(window.repDossiers)&&window.repDossiers.length)?window.repDossiers:(Array.isArray(window.bonsDepot)?window.bonsDepot:[]);
+    var vus={};
+    R.forEach(function(d){
+      if(!d||!d.facture) return;
+      if(vus[d.id]) return;
+      var dt=(d.facture.date||d.date||'').slice(0,10);
+      if(!match(dt)) return;
+      vus[d.id]=true;
+      var bonusQR=!!(d.bonusQR||(d.facture&&d.facture.bonusQR))&&!!d.photoImeiUrl;
+      var qrBonus=(!!(d.piec||(d.facture&&d.facture.piec)))?30:25;
+      var prixClient=n(d.facture.prix||d.devis);
+      out.reparations += bonusQR ? prixClient+qrBonus : prixClient;
+      out.quali       += bonusQR ? qrBonus : 0;
+    });
+    // 2. Ventes accessoires + tél. neufs (base partagée na + local), dédupliquées
+    var naLocal=[]; try{ naLocal=JSON.parse(localStorage.getItem('na_ventes')||'[]'); }catch(e){}
+    var naDb=(window.naVentes||[]); var seen={};
+    naDb.concat(naLocal).forEach(function(v){
+      if(!v||!v.date) return;
+      var k=(v.numero||'')+'|'+(v.date||'').slice(0,10)+'|'+n(v.prix||v.ttc||v.montant);
+      if(seen[k]) return; seen[k]=1;
+      if(!match(v.date)) return;
+      var t=(v.type||'').toString().toLowerCase();
+      var isNeuf=(t.indexOf('neuf')>=0||t.indexOf('recond')>=0);
+      var mont=n(v.prix||v.ttc||v.montant);
+      if(isNeuf) out.neufs += mont; else out.accessoires += mont;
+    });
+    // 3. Ventes tél. neufs (stock dédié phonesNeufs)
+    (window.phonesNeufs||[]).forEach(function(p){
+      if(!p||p.etat!=='VENDU') return;
+      if(!match(p.date_vente)) return;
+      out.neufs += n(p.vente);
+    });
+    out.total = out.reparations + out.accessoires + out.neufs;
+    return out;
+  }
+
+  // ── OCCASION (TVA sur marge) : smartphones vendus — TENU À PART ──
+  function computeOccasion(match){
+    var out={ ca:0, marge:0, nb:0 };
+    (window.phones||[]).forEach(function(p){
+      if(!p||p.etat!=='VENDU') return;
+      if(!match(p.dateVente)) return;
+      out.ca    += n(p.vente);
+      out.marge += n(p.vente)-n(p.achat);
+      out.nb    += 1;
+    });
+    return out;
+  }
+
+  var LABELS={ jour:"aujourd'hui", hier:'hier', mois:'ce mois', moisDernier:'le mois dernier' };
+
+  function get(scope){
+    scope=scope||'jour';
+    var match=makeMatcher(scope);
+    return { scope:scope, label:LABELS[scope]||scope, vitrine:computeVitrine(match), occasion:computeOccasion(match) };
+  }
+
+  return { get:get };
+})();
+
 function renderCaJourBar(){
   var el = document.getElementById('zh-ca-jour-bar');
   if(!el) return;
@@ -37944,10 +38047,13 @@ window.iavRenderDecisions = async function(){
       var y = new Date(); y.setDate(y.getDate()-1); var yest = y.toISOString().slice(0,10);
       var sumTtc = function(rows){ return rows.reduce(function(s,r){ return s+(Number(r.ttc)||0); },0); };
 
-      // ── Argent ──
+      // ── Argent ── (via SPCA = source unique · vitrine TVA 20 %, occasion tenue à part)
+      var _spJ = window.SPCA ? SPCA.get('jour') : null;
+      var _spH = window.SPCA ? SPCA.get('hier') : null;
       var cats = window._caisseCategories || {};
-      var caToday = (((cats.reparations||{}).total)||0) + (((cats.accessoires||{}).total)||0) + (((cats.neufs||{}).total)||0);
-      var caYest  = sumTtc(C.filter(function(r){ return (r.date||'').slice(0,10)===yest; }));
+      var caToday = _spJ ? _spJ.vitrine.total : ((((cats.reparations||{}).total)||0) + (((cats.accessoires||{}).total)||0) + (((cats.neufs||{}).total)||0));
+      var caYest  = _spH ? _spH.vitrine.total : sumTtc(C.filter(function(r){ return (r.date||'').slice(0,10)===yest; }));
+      var occToday = _spJ ? _spJ.occasion : {ca:0,marge:0,nb:0};
 
       // ── Atelier ──
       var repEnCours = R.filter(function(d){ return d && !(d.facture && d.facture.numero) && !d.cloture; }).length;
@@ -37972,12 +38078,16 @@ window.iavRenderDecisions = async function(){
 
       // ── Composition de la phrase ──
       var parts = [];
-      // Argent
+      // Argent — Vitrine (TVA 20 %)
       if(caToday>0){
         var evo = caYest>0 ? Math.round(((caToday-caYest)/caYest)*100) : null;
-        parts.push('💶 <strong>'+_eur(caToday)+'</strong> encaissés aujourd\'hui'+(evo!==null?' <span style="color:'+(evo>=0?'#16a34a':'#dc2626')+';">('+(evo>=0?'+':'')+evo+'% vs hier)</span>':''));
+        parts.push('💶 <strong>'+_eur(caToday)+'</strong> vitrine aujourd\'hui'+(evo!==null?' <span style="color:'+(evo>=0?'#16a34a':'#dc2626')+';">('+(evo>=0?'+':'')+evo+'% vs hier)</span>':''));
       } else if(caYest>0){
-        parts.push('💶 Hier : <strong>'+_eur(caYest)+'</strong> encaissés');
+        parts.push('💶 Hier : <strong>'+_eur(caYest)+'</strong> vitrine');
+      }
+      // Occasion (TVA marge) — affichée SÉPARÉMENT, jamais fondue dans la vitrine
+      if(occToday && occToday.ca>0){
+        parts.push('♻️ <strong>'+_eur(occToday.ca)+'</strong> occasion vendue'+(occToday.nb>1?' ('+occToday.nb+')':'')+' · marge '+_eur(occToday.marge));
       }
       // Atelier
       if(repEnCours>0) parts.push('🔧 <strong>'+repEnCours+'</strong> réparation'+(repEnCours>1?'s':'')+' en cours'+(repJour>0?' ('+repJour+' aujourd\'hui)':''));
