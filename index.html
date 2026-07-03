@@ -26776,6 +26776,13 @@ async function qrEnvoyerEcologicComplet(d){
     return;
   }
   var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey];
+  // ── TABLETTE UNIQUEMENT : remplacer les codes panne smartphone par ceux VALIDES pour la tablette ──
+  // (le référentiel Ecologic donne des codes panne propres à chaque produit). Smartphone : aucun changement.
+  if(_estTablette){
+    var _tIris = (typeof qrTabletIrisFor==='function') ? qrTabletIrisFor(qrPanneKey, irisData) : null;
+    if(_tIris){ irisData = _tIris; console.log('[Ecologic] TABLETTE → codes panne du référentiel tablette:', irisData.repair, irisData.symptom); }
+    else { console.warn('[Ecologic] TABLETTE : codes panne tablette non chargés — comportement inchangé (compléter la panne sur le portail).'); }
+  }
   console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
   // ── Alerte clé de contrôle IMEI (probable erreur de lecture OCR) ──
   if(!_estTablette && typeof imeiLuhnValid==='function' && !imeiLuhnValid(a.imei)){
@@ -32608,14 +32615,22 @@ async function qrGetEcologicBrandId(marque) {
   return '0'; // Marque inconnue → BrandId 0
 }
 
-// ── Référentiel des TYPES DE PRODUIT Ecologic (pour trouver le code tablette) ──
-// Calqué sur qrLoadEcologicBrands : appelle /printproducttypelist via le proxy Vercel.
+// ── Référentiel des TYPES DE PRODUIT Ecologic (pour trouver le code tablette + ses codes panne) ──
+// Utilise /printproducttypewithlabellist : renvoie aussi RepairCodes et IRISSymptoms par produit.
+var QR_ECOLOGIC_PRODUCTS_CACHE = [];
 async function qrLoadEcologicProducts() {
   try {
-    var r = await fetch(QR_ECOLOGIC_PROXY + '/printproducttypelist');
+    var r = await fetch(QR_ECOLOGIC_PROXY + '/printproducttypewithlabellist');
     var d = await r.json();
     if (d && d.ResponseData && Array.isArray(d.ResponseData)) {
-      return d.ResponseData.map(function(p){ return { id: p.ProductId, name: p.ProductName }; });
+      QR_ECOLOGIC_PRODUCTS_CACHE = d.ResponseData.map(function(p){
+        return {
+          id: p.ProductId, name: p.ProductName,
+          repairCodes: Array.isArray(p.RepairCodes) ? p.RepairCodes.map(function(x){ return {code:x.Code, label:x.Label}; }) : [],
+          symptoms:    Array.isArray(p.IRISSymtoms||p.IRISSymptoms) ? (p.IRISSymtoms||p.IRISSymptoms).map(function(x){ return {code:x.Code, label:x.Label}; }) : []
+        };
+      });
+      return QR_ECOLOGIC_PRODUCTS_CACHE.map(function(p){ return {id:p.id, name:p.name}; });
     }
   } catch(e){ console.warn('[QR] Référentiel produits Ecologic indisponible:', e.message); }
   return [];
@@ -32644,10 +32659,73 @@ async function paramsChargerProduitsEcologic() {
   }
   if(statut) statut.innerHTML = '<span style="color:#15803d;">✅ '+list.length+' produits chargés. Sélectionne la tablette dans la liste.</span>';
 }
-// Quand on choisit un produit dans le select → remplit le champ code
+// Mots-clés de libellé par type de panne (pour retrouver le bon code dans le référentiel tablette)
+var QR_PANNE_LABELS = {
+  'ecran-casse':      ['écran','ecran','vitre','cass','bris'],
+  'ecran-hors-casse': ['écran','ecran','affichage','tactile','lcd'],
+  'batterie':         ['batterie','accu'],
+  'haut-parleur':     ['haut-parleur','haut parleur','son','audio','enceinte'],
+  'micro':            ['micro'],
+  'connecteur':       ['connect','charge','port','prise'],
+  'camera':           ['camér','camer','photo','appareil photo','objectif'],
+  'bouton':           ['bouton','touche']
+};
+// Renvoie des codes panne VALIDES pour la tablette (issus du référentiel), ou null si introuvable.
+// smartphoneIris = codes smartphone (repli de correspondance par lettre IRIS).
+function qrTabletIrisFor(qrPanneKey, smartphoneIris){
+  var stored=null;
+  try{ stored = JSON.parse(localStorage.getItem('sp_ecologic_tablet_iris')||'null'); }catch(e){}
+  if(!stored || !Array.isArray(stored.repairCodes) || !stored.repairCodes.length) return null;
+  var kws = QR_PANNE_LABELS[qrPanneKey] || [];
+  var norm = function(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+  var kwsN = kws.map(norm);
+  // 1) code panne (RepairCode) : d'abord même lettre IRIS que le smartphone si présente, sinon par libellé
+  var repair = null;
+  if(smartphoneIris && smartphoneIris.repair){
+    var byCode = stored.repairCodes.find(function(x){ return (x.code||'')===smartphoneIris.repair; });
+    if(byCode) repair = byCode.code;
+  }
+  if(!repair){
+    var byLbl = stored.repairCodes.find(function(x){ var l=norm(x.label); return kwsN.some(function(k){ return l.indexOf(k)>=0; }); });
+    if(byLbl) repair = byLbl.code;
+  }
+  if(!repair) return null; // pas de correspondance fiable → on n'invente rien
+  // 2) symptôme : même lettre que smartphone si présent, sinon par libellé, sinon 1er de la liste
+  var symptom = '';
+  if(Array.isArray(stored.symptoms) && stored.symptoms.length){
+    if(smartphoneIris && smartphoneIris.symptom){
+      var sC = stored.symptoms.find(function(x){ return (x.code||'')===smartphoneIris.symptom; });
+      if(sC) symptom = sC.code;
+    }
+    if(!symptom){
+      var sL = stored.symptoms.find(function(x){ var l=norm(x.label); return kwsN.some(function(k){ return l.indexOf(k)>=0; }); });
+      symptom = sL ? sL.code : stored.symptoms[0].code;
+    }
+  }
+  // condition/def : valeurs génériques reprises du smartphone (non spécifiques au produit)
+  return {
+    repair: repair,
+    condition: (smartphoneIris&&smartphoneIris.condition)||'5',
+    symptom: symptom,
+    section: (smartphoneIris&&smartphoneIris.section)||'',
+    def: (smartphoneIris&&smartphoneIris.def)||'09',
+    symptome: repair
+  };
+}
+
+// Quand on choisit un produit dans le select → remplit le champ code + mémorise ses codes panne
 function paramsSelectTabletProduct(pid){
   var f = document.getElementById('params-ecologic-tablet-pid');
   if(f && pid) f.value = pid;
+  // Stocker les codes panne (RepairCodes) + symptômes de CE produit tablette pour l'envoi
+  try {
+    var prod = (QR_ECOLOGIC_PRODUCTS_CACHE||[]).find(function(p){ return p.id===pid; });
+    if(prod){
+      localStorage.setItem('sp_ecologic_tablet_iris', JSON.stringify({ repairCodes: prod.repairCodes||[], symptoms: prod.symptoms||[] }));
+      var st=document.getElementById('params-ecologic-tablet-status');
+      if(st) st.innerHTML = '<span style="color:#15803d;">✅ Tablette '+pid+' — '+((prod.repairCodes||[]).length)+' codes panne mémorisés.</span>';
+    }
+  } catch(e){}
 }
 
 
