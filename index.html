@@ -23771,7 +23771,11 @@ var repDossierCourant = null;
 var QR_SMARTPHONE_PRODUCT_ID = 'EEE.M6.060'; // référentiel Ecologic — téléphone portable
 function qrDossierEstTablette(d){
   d = d || repDossierCourant;
-  return !!(d && d.appareil && d.appareil.categorie === 'tablette');
+  if(d && d.appareil && d.appareil.categorie === 'tablette') return true;
+  // Source de vérité UI : le sélecteur, même si le dossier n'a pas encore mémorisé le type
+  var sel = document.getElementById('dep-type-appareil');
+  if(sel && sel.value === 'tablette') return true;
+  return false;
 }
 function qrEcologicTabletProductId(){
   try{ return (localStorage.getItem(PARAMS_KEYS.ecologicTabletProductId)||'').trim(); }catch(e){ return ''; }
