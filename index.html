@@ -8408,8 +8408,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div class="form-group">
             <label>Code produit Ecologic — Tablette</label>
-            <input type="text" id="params-ecologic-tablet-pid" placeholder="ex : EEE.M6.0xx (référentiel Ecologic)">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">À récupérer dans ton espace Ecologic (référentiel produits, catégorie tablette). Le smartphone est <b>EEE.M6.060</b>. Sans ce code, les envois tablette restent bloqués.</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="params-ecologic-tablet-pid" placeholder="ex : EEE.M6.0xx" style="flex:1;min-width:160px;">
+              <button type="button" class="btn btn-sm" onclick="paramsChargerProduitsEcologic()" style="white-space:nowrap;">📥 Charger la liste Ecologic</button>
+            </div>
+            <select id="params-ecologic-tablet-select" onchange="paramsSelectTabletProduct(this.value)" style="display:none;margin-top:8px;width:100%;padding:10px;"></select>
+            <div id="params-ecologic-tablet-status" style="font-size:11px;margin-top:4px;"></div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Clique « Charger la liste » (nécessite ton Token Ecologic enregistré), puis choisis la <b>tablette</b> — le code se remplit tout seul. Le smartphone est <b>EEE.M6.060</b>. Sans ce code, les envois tablette restent bloqués.</div>
           </div>
           <button class="btn btn-primary" style="background:var(--blue);border-color:var(--blue);width:100%;" onclick="paramsSaveEcologic()">💾 Enregistrer</button>
         </div>
@@ -32588,6 +32593,48 @@ async function qrGetEcologicBrandId(marque) {
     if (name2.toLowerCase().includes(key)) return String(ref[name2]);
   }
   return '0'; // Marque inconnue → BrandId 0
+}
+
+// ── Référentiel des TYPES DE PRODUIT Ecologic (pour trouver le code tablette) ──
+// Calqué sur qrLoadEcologicBrands : appelle /printproducttypelist via le proxy Vercel.
+async function qrLoadEcologicProducts() {
+  try {
+    var r = await fetch(QR_ECOLOGIC_PROXY + '/printproducttypelist');
+    var d = await r.json();
+    if (d && d.ResponseData && Array.isArray(d.ResponseData)) {
+      return d.ResponseData.map(function(p){ return { id: p.ProductId, name: p.ProductName }; });
+    }
+  } catch(e){ console.warn('[QR] Référentiel produits Ecologic indisponible:', e.message); }
+  return [];
+}
+
+// Bouton Paramètres : charge la liste des produits Ecologic et la met dans un <select>
+async function paramsChargerProduitsEcologic() {
+  var sel = document.getElementById('params-ecologic-tablet-select');
+  var statut = document.getElementById('params-ecologic-tablet-status');
+  if(statut) statut.textContent = '⏳ Chargement de la liste produits Ecologic…';
+  var list = await qrLoadEcologicProducts();
+  if(!list.length){
+    if(statut) statut.innerHTML = '<span style="color:#b45309;">⚠️ Liste indisponible. Vérifie ta clé Ecologic (Token) et réessaie.</span>';
+    return;
+  }
+  // Tri alpha + pré-sélection des produits ressemblant à « tablette »
+  list.sort(function(a,b){ return String(a.name||'').localeCompare(String(b.name||'')); });
+  if(sel){
+    sel.innerHTML = '<option value="">— Choisir le produit tablette —</option>' + list.map(function(p){
+      return '<option value="'+p.id+'">'+ (p.name||'') +' ('+p.id+')</option>';
+    }).join('');
+    sel.style.display = 'block';
+    // Pré-sélectionne automatiquement si un produit contient « tablet »
+    var t = list.find(function(p){ return /tablet/i.test(p.name||''); });
+    if(t){ sel.value = t.id; paramsSelectTabletProduct(t.id); }
+  }
+  if(statut) statut.innerHTML = '<span style="color:#15803d;">✅ '+list.length+' produits chargés. Sélectionne la tablette dans la liste.</span>';
+}
+// Quand on choisit un produit dans le select → remplit le champ code
+function paramsSelectTabletProduct(pid){
+  var f = document.getElementById('params-ecologic-tablet-pid');
+  if(f && pid) f.value = pid;
 }
 
 
