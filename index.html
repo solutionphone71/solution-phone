@@ -8406,6 +8406,11 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <label>Site ID Ecologic</label>
             <input type="text" id="params-ecologic-siteid" placeholder="f3f52871-5be0-4c26-9082-002479b9cf4e">
           </div>
+          <div class="form-group">
+            <label>Code produit Ecologic — Tablette</label>
+            <input type="text" id="params-ecologic-tablet-pid" placeholder="ex : EEE.M6.0xx (référentiel Ecologic)">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">À récupérer dans ton espace Ecologic (référentiel produits, catégorie tablette). Le smartphone est <b>EEE.M6.060</b>. Sans ce code, les envois tablette restent bloqués.</div>
+          </div>
           <button class="btn btn-primary" style="background:var(--blue);border-color:var(--blue);width:100%;" onclick="paramsSaveEcologic()">💾 Enregistrer</button>
         </div>
       </div>
@@ -9299,6 +9304,13 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="card">
                 <div class="card-header"><div class="card-title">📱 Appareil</div></div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="form-group"><label>Type d'appareil *</label>
+                    <select id="dep-type-appareil" onchange="repSetTypeAppareil(this.value)" style="font-size:16px;padding:12px;">
+                      <option value="smartphone">📱 Smartphone</option>
+                      <option value="tablette">📲 Tablette (iPad…)</option>
+                    </select>
+                    <div id="dep-tablette-hint" style="display:none;font-size:11px;color:#b45309;margin-top:4px;">Tablette : saisir le <b>numéro de série</b> (lettres autorisées). Envoi Ecologic possible seulement si le code produit tablette est renseigné dans Paramètres.</div>
+                  </div>
                   <div style="display:grid;grid-template-columns:1fr;gap:14px;">
                     <div class="form-group"><label>Marque *</label>
                       <div id="rep-marque-tiles"></div>
@@ -9340,7 +9352,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                     <div class="form-group"><label>IMEI / N° Série</label>
                       <button onclick="repOCRImei()" title="Lire l'IMEI via la caméra" style="width:100%;padding:16px;margin-bottom:8px;font-size:16px;font-weight:800;background:linear-gradient(135deg,#E10600,#a3000d);color:#fff;border:none;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(225,6,0,0.3);">📷 Scanner l'IMEI (photo)</button>
                       <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="dep-imei" placeholder="ou saisir : 352099..." oninput="this.value=this.value.replace(/\D/g,'');repCheckIMEI(this.value);repValidateIMEI(this.value);repAutoFillFromIMEI(this.value);if(typeof repCheckEligibiliteDebounced==='function')repCheckEligibiliteDebounced();" maxlength="15" inputmode="numeric" style="flex:1;">
+                        <input type="text" id="dep-imei" placeholder="ou saisir : 352099..." oninput="repImeiInput(this)" maxlength="20" style="flex:1;">
                       </div>
                       <div id="dep-photo-status" style="margin-top:6px;">
                         <div id="dep-photo-empty" style="font-size:12px;padding:7px 12px;border-radius:8px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.3);display:flex;align-items:center;gap:8px;">
@@ -22582,6 +22594,7 @@ var PARAMS_KEYS = {
   ecoPass:        'sp_eco_pass',
   ecologicToken:  'sp_ecologic_token',
   ecologicSiteId: 'sp_ecologic_siteid',
+  ecologicTabletProductId: 'sp_ecologic_tablet_pid',
   kiwizUser:      'sp_kiwiz_user',
   kiwizPass:      'sp_kiwiz_pass',
   kiwizSub:       'sp_kiwiz_sub',
@@ -22677,6 +22690,7 @@ function paramsLoad(skipSupabaseReload){
   el=document.getElementById('params-eco-pass');     if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecoPass)||'';
   el=document.getElementById('params-ecologic-token');  if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicToken)||'';
   el=document.getElementById('params-ecologic-siteid'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicSiteId)||'';
+  el=document.getElementById('params-ecologic-tablet-pid'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.ecologicTabletProductId)||'';
 
   // Claude API
   el=document.getElementById('params-claude-key');   if(el) el.value=localStorage.getItem(PARAMS_KEYS.claudeKey)||'';
@@ -22793,13 +22807,16 @@ function paramsSaveEcosystem(){
 function paramsSaveEcologic(){
   var token  = (document.getElementById('params-ecologic-token')||{value:''}).value.trim();
   var siteid = (document.getElementById('params-ecologic-siteid')||{value:''}).value.trim();
+  var tabletPid = (document.getElementById('params-ecologic-tablet-pid')||{value:''}).value.trim();
   if(!token){ showNotif('Entrez le Token Ecologic','error'); return; }
   localStorage.setItem(PARAMS_KEYS.ecologicToken, token);
   localStorage.setItem(PARAMS_KEYS.ecologicSiteId, siteid);
+  localStorage.setItem(PARAMS_KEYS.ecologicTabletProductId, tabletPid);
   // Sync Supabase
   if(typeof supaSettingSave === 'function') {
     supaSettingSave('ecologic_token', token);
     supaSettingSave('ecologic_siteid', siteid);
+    supaSettingSave('ecologic_tablet_pid', tabletPid);
   }
   showNotif('✅ Identifiants Ecologic enregistrés !','success');
   paramsUpdateStatus();
@@ -23741,6 +23758,52 @@ async function importReparationsPhonilab(input){
 
 // État du dossier courant
 var repDossierCourant = null;
+
+// ══════════════════════════════════════════════════════════════
+// SUPPORT TABLETTE (iPad) pour QualiRépar / Ecologic — juillet 2026
+// Smartphone = comportement d'origine (inchangé). Tablette = branche opt-in.
+// ══════════════════════════════════════════════════════════════
+var QR_SMARTPHONE_PRODUCT_ID = 'EEE.M6.060'; // référentiel Ecologic — téléphone portable
+function qrDossierEstTablette(d){
+  d = d || repDossierCourant;
+  return !!(d && d.appareil && d.appareil.categorie === 'tablette');
+}
+function qrEcologicTabletProductId(){
+  try{ return (localStorage.getItem(PARAMS_KEYS.ecologicTabletProductId)||'').trim(); }catch(e){ return ''; }
+}
+// Code produit Ecologic à envoyer selon le type d'appareil du dossier
+function qrEcologicProductIdFor(d){
+  if(qrDossierEstTablette(d)){
+    var pid = qrEcologicTabletProductId();
+    return pid || ''; // vide = non configuré → l'envoi sera bloqué proprement
+  }
+  return QR_SMARTPHONE_PRODUCT_ID;
+}
+// Le champ « IMEI / N° série » : chiffres seuls pour smartphone, alphanumérique pour tablette
+function repImeiInput(el){
+  if(!el) return;
+  if(qrDossierEstTablette()){
+    // Numéro de série : lettres + chiffres autorisés (iPad n'a pas d'IMEI)
+    el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  } else {
+    el.value = el.value.replace(/\D/g,''); // IMEI : chiffres uniquement (comportement d'origine)
+    try{ if(typeof repCheckIMEI==='function') repCheckIMEI(el.value); }catch(_){}
+    try{ if(typeof repValidateIMEI==='function') repValidateIMEI(el.value); }catch(_){}
+    try{ if(typeof repAutoFillFromIMEI==='function') repAutoFillFromIMEI(el.value); }catch(_){}
+  }
+  try{ if(typeof repCheckEligibiliteDebounced==='function') repCheckEligibiliteDebounced(); }catch(_){}
+}
+// Sélecteur Type d'appareil
+function repSetTypeAppareil(v){
+  if(repDossierCourant){ repDossierCourant.appareil = repDossierCourant.appareil||{}; repDossierCourant.appareil.categorie = v; }
+  var hint = document.getElementById('dep-tablette-hint');
+  if(hint) hint.style.display = (v==='tablette') ? 'block' : 'none';
+  var imei = document.getElementById('dep-imei');
+  if(imei){
+    if(v==='tablette'){ imei.setAttribute('inputmode','text'); imei.setAttribute('placeholder','N° de série (ex : DMPXXXXXXXX)'); }
+    else { imei.setAttribute('inputmode','numeric'); imei.setAttribute('placeholder','ou saisir : 352099...'); }
+  }
+}
 var repDossiers = [];  // cache local (= bonsDepot enrichis)
 var repCurrentStep = 1;
 
@@ -26634,9 +26697,16 @@ async function qrEnvoyerEcologicComplet(d){
   var manquants=[];
   if(!(c.nom||'').trim()) manquants.push('Nom du client');
   if(!(c.email||'').trim() || !/.+@.+\..+/.test((c.email||'').trim())) manquants.push('Email du client (obligatoire QualiRépar)');
+  var _estTablette=qrDossierEstTablette(d);
   var _imeiClean=(a.imei||'').replace(/\s/g,'');
-  if(!_imeiClean) manquants.push('IMEI');
-  else if(_imeiClean.length!==15) manquants.push('IMEI à 15 chiffres (actuel : '+_imeiClean.length+')');
+  if(_estTablette){
+    // Tablette (iPad) : numéro de série (alphanumérique), pas d'IMEI à 15 chiffres
+    if(!_imeiClean) manquants.push('Numéro de série de la tablette');
+    if(!qrEcologicTabletProductId()) manquants.push('Code produit Ecologic « Tablette » (à renseigner dans Paramètres → Ecologic)');
+  } else {
+    if(!_imeiClean) manquants.push('IMEI');
+    else if(_imeiClean.length!==15) manquants.push('IMEI à 15 chiffres (actuel : '+_imeiClean.length+')');
+  }
   if(!(a.marque||'').trim()) manquants.push('Marque');
   if(!(a.modele||'').trim()) manquants.push('Modele');
   if(!(d.panne||'').trim()&&!(a.typeRep||a.type||'').trim()) manquants.push('Type de reparation');
@@ -26691,7 +26761,7 @@ async function qrEnvoyerEcologicComplet(d){
   var irisData=PANNE_ECOLOGIC_MAP[qrPanneKey];
   console.log('[Ecologic] panne key:',qrPanneKey,'→ IRISRepair:',irisData.repair);
   // ── Alerte clé de contrôle IMEI (probable erreur de lecture OCR) ──
-  if(typeof imeiLuhnValid==='function' && !imeiLuhnValid(a.imei)){
+  if(!_estTablette && typeof imeiLuhnValid==='function' && !imeiLuhnValid(a.imei)){
     var okSend=window.confirm("⚠️ L'IMEI "+(a.imei||'')+" a une clé de contrôle invalide (un chiffre est peut-être mal lu sur la photo).\n\nVérifiez-le avant d'envoyer à Ecologic.\n\nEnvoyer quand même ?");
     if(!okSend){
       var elI=document.getElementById("rep-qr-envoi-statut");
@@ -26708,7 +26778,8 @@ async function qrEnvoyerEcologicComplet(d){
   var today=d.date || new Date().toISOString().split('T')[0];
   var ref=(d.facture&&d.facture.numero)||d.refFacture||d.numero||("QR-"+Date.now());
   // API Ecologic v1.4 (Avril 2024) : CreateClaim directement, sans CreateSupportRequest
-  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:"EEE.M6.060",BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSection:irisData.repair||"",IRISCondition:irisData.condition||"",IRISSymptom:irisData.symptom||"",IRISDefault:irisData.def||"",IRISRepair:irisData.repair||"",RepairCode:irisData.repair||"",FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
+  var _productId = qrEcologicProductIdFor(d) || QR_SMARTPHONE_PRODUCT_ID;
+  var body=JSON.stringify({Consumer:{Title:(c.civilite==="Mme"?1:3),LastName:c.nom||"Client",FirstName:c.prenom||"",Address1:c.adresse||"21 Rue Gambetta",Zip:c.cp||"71000",City:c.ville||"Macon",Country:"250",Phone:c.tel||"",Email:c.email||""},Product:{ProductId:_productId,BrandId:brandId,CommercialRef:a.modele||"",SerialNumber:a.imei||"",IRISSection:irisData.repair||"",IRISCondition:irisData.condition||"",IRISSymptom:irisData.symptom||"",IRISDefault:irisData.def||"",IRISRepair:irisData.repair||"",RepairCode:irisData.repair||"",FailureDescription:d.panne||"Reparation"},Quote:{LaborCost:{Amount:moHT,Currency:"EUR"},SparePartsCost:{Amount:pHT,Currency:"EUR"},TravelCost:{Amount:0,Currency:"EUR"},TotalAmountExclVAT:{Amount:ht,Currency:"EUR"},TotalAmountInclVAT:{Amount:ttc,Currency:"EUR"},SupportAmount:{Amount:25,Currency:"EUR"}}});
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Etape 1/3...</div>";
   console.log('[Ecologic] CreateClaim body:', body.substring(body.indexOf('Product'),body.indexOf('Quote')));
@@ -32585,7 +32656,10 @@ async function qrSendEcologic() {
   // ① Résoudre BrandId Ecologic
   qrSetAgoraBadge('\u23F3', 'Recherche marque\u2026', marque, '#f39c12');
   var brandId   = await qrGetEcologicBrandId(marque);
-  var productId = 'EEE.M6.060'; // Smartphone "Téléphone portable" (référentiel Ecologic à jour)
+  // Smartphone par défaut ; tablette si le parcours a marqué qrData.appareil.categorie==='tablette' ET code configuré
+  var productId = (qrData.appareil && qrData.appareil.categorie==='tablette' && qrEcologicTabletProductId())
+                    ? qrEcologicTabletProductId()
+                    : 'EEE.M6.060'; // référentiel Ecologic — téléphone portable
   // Mapping IRIS panne → codes Ecologic (même table que qrEnvoyerEcologicComplet)
   var PANNE_ECO_MAP={
     'ecran-casse':      {repair:'CAS', condition:'6', symptom:'E7',  section:'W10', def:'08'},
