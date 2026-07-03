@@ -25848,7 +25848,10 @@ function repStep2Next(){
   repAutoSave(); // lit tous les champs step 2
   var a=repDossierCourant.appareil;
   if(!a.marque||!a.modele){showNotif('⚠️ Marque et Modèle sont obligatoires','error');return;}
-  if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
+  if(qrDossierEstTablette()){
+    // Tablette (iPad) : numéro de série alphanumérique, pas d'IMEI à 15 chiffres
+    if(!(a.imei||'').trim()){showNotif('⚠️ Numéro de série de la tablette obligatoire','error');return;}
+  } else if(!a.imei || a.imei.replace(/\s/g,'').length !== 15){showNotif('⚠️ IMEI invalide — 15 chiffres requis','error');return;}
   // Couleur : non obligatoire (retiré à la demande)
   // Photo IMEI obligatoire (plaque signalétique)
   if(!repDossierCourant.photoImeiUrl){
@@ -26514,7 +26517,9 @@ function repEnvoyerOrganisme(){
   // Appareil
   if(!a.marque) manquants.push('Marque de l\'appareil (Étape 2)');
   if(!a.modele) manquants.push('Modèle de l\'appareil (Étape 2)');
-  if(!a.imei || (a.imei||'').replace(/\s/g,'').length !== 15) manquants.push('IMEI valide 15 chiffres (Étape 2)');
+  if(qrDossierEstTablette(d)){
+    if(!(a.imei||'').trim()) manquants.push('Numéro de série de la tablette (Étape 2)');
+  } else if(!a.imei || (a.imei||'').replace(/\s/g,'').length !== 15) manquants.push('IMEI valide 15 chiffres (Étape 2)');
   // Photo IMEI (pièce jointe obligatoire)
   if(!d.photoImeiUrl) manquants.push('Photo IMEI / plaque signalétique (Étape 2)');
   // Signature client (pièce jointe obligatoire)
