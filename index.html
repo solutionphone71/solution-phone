@@ -25539,7 +25539,9 @@ function repAutoSave(){
     modele:  (document.getElementById('dep-modele')||{value:''}).value.trim(),
     imei:    (document.getElementById('dep-imei')||{value:''}).value.trim(),
     couleur: (document.getElementById('dep-couleur')||{value:''}).value.trim(),
-    code:    (document.getElementById('dep-code')||{value:''}).value.trim()
+    code:    (document.getElementById('dep-code')||{value:''}).value.trim(),
+    // Préserver le type d'appareil (smartphone/tablette) choisi via le sélecteur
+    categorie: (document.getElementById('dep-type-appareil')||{value:'smartphone'}).value
   };
   repDossierCourant.panne      = (document.getElementById('dep-panne')||{value:''}).value.trim();
   repDossierCourant.devis      = parseFloat(String((document.getElementById('dep-devis')||{value:0}).value).replace(',','.'))||0;
