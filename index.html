@@ -25648,7 +25648,8 @@ function repUpdateStep5(){
   // Checklist pré-envoi
   if(qrRecap){
     var a = d.appareil||{};
-    var imeiOk  = a.imei && a.imei.replace(/\s/g,'').length === 15;
+    var _estTab = qrDossierEstTablette(d);
+    var imeiOk  = _estTab ? !!((a.imei||'').trim()) : (a.imei && a.imei.replace(/\s/g,'').length === 15);
     var panneOk = !!(d.panne && d.panne.trim());
     var devisOk = !!(d.devis && d.devis > 0);
     var photoOk = !!d.photoImeiUrl;
@@ -25669,7 +25670,7 @@ function repUpdateStep5(){
     qrRecap.innerHTML =
       '<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:'+orgColor+';">'
       +(organisme === 'Ecosystem' ? '🟢' : '🔵')+' Envoi vers '+organisme+'</div>'
-      +chk(imeiOk,  'IMEI valide (15 chiffres)'+(imeiOk?' — '+a.imei:''))
+      +chk(imeiOk,  (_estTab?'N° de série renseigné':'IMEI valide (15 chiffres)')+(imeiOk?' — '+a.imei:''))
       +chk(panneOk, 'Panne renseignée'+(panneOk?' — '+(d.panne.length>40?d.panne.substring(0,40)+'…':d.panne):''))
       +chk(devisOk, 'Devis saisi'+(devisOk?' — '+d.devis.toFixed(2)+' € TTC':''))
       +chk(photoOk, 'Photo IMEI / plaque signalétique')
@@ -27782,9 +27783,9 @@ function repQRVerdict(){
   // 2) Organisme
   var org=repQRFindOrganisme(marque);
   if(marque && !org) infos.push('Marque hors référentiel — organisme à confirmer');
-  // 3) IMEI clé de contrôle
-  if(imei && imei.length===15 && typeof imeiLuhnValid==='function' && !imeiLuhnValid(imei)){ problems.push('IMEI : clé de contrôle invalide (un chiffre est sûrement mal lu)'); blocking=true; }
-  if(imei && imei.length>0 && imei.length<15){ infos.push('IMEI incomplet ('+imei.length+'/15)'); }
+  // 3) IMEI clé de contrôle — ignoré pour les tablettes (n° de série alphanumérique, pas d'IMEI)
+  if((typeof qrDossierEstTablette!=='function' || !qrDossierEstTablette(window.repDossierCourant)) && imei && imei.length===15 && typeof imeiLuhnValid==='function' && !imeiLuhnValid(imei)){ problems.push('IMEI : clé de contrôle invalide (un chiffre est sûrement mal lu)'); blocking=true; }
+  if((typeof qrDossierEstTablette!=='function' || !qrDossierEstTablette(window.repDossierCourant)) && imei && imei.length>0 && imei.length<15){ infos.push('IMEI incomplet ('+imei.length+'/15)'); }
   // 4) Anti-doublon
   var dup=repQRDuplicateInfo(imei);
   if(dup){ problems.push('Cet IMEI a déjà eu un bonus il y a moins d\'un an (dossier '+dup.numero+') — risque de rejet'); blocking=true; }
@@ -27848,10 +27849,11 @@ function repTodoBanner(){
 function repQRReadiness(){
   var host=document.getElementById('rep-qr-readiness'); if(!host) return;
   var d=window.repDossierCourant||{}, a=d.appareil||{}, f=d.facture;
+  var _estTabR = (typeof qrDossierEstTablette==='function') && qrDossierEstTablette(d);
   var imei=(a.imei||'').replace(/\D/g,'');
-  var imeiOK=imei.length===15 && (typeof imeiLuhnValid!=='function'||imeiLuhnValid(imei));
+  var imeiOK = _estTabR ? !!((a.imei||'').trim()) : (imei.length===15 && (typeof imeiLuhnValid!=='function'||imeiLuhnValid(imei)));
   var checks=[
-    {ok:imeiOK, label:'IMEI valide (15 chiffres + clé de contrôle)'},
+    {ok:imeiOK, label:(_estTabR?'N° de série renseigné':'IMEI valide (15 chiffres + clé de contrôle)')},
     {ok:!!(d.panne||a.typeRep||a.type), label:'Panne renseignée'},
     {ok:!!d.photoImeiUrl, label:'Photo de la plaque IMEI'},
     {ok:!!d.signature, label:'Signature client'},
