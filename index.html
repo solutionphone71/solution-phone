@@ -11329,7 +11329,9 @@ function showPage(id,el){
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
       repLoadFormFromDossier();
     } else {
-      repLoadDossiers();
+      repLoadDossiers(); // affichage immédiat depuis le cache
+      // FIX multi-postes : recharge TOUS les dossiers (tous postes) depuis Supabase puis ré-affiche la liste
+      if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(function(){ try{ repLoadDossiers(); }catch(e){} }).catch(function(){}); }
     }
     // Auto-vérification des statuts QR en arrière-plan
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
@@ -11337,10 +11339,13 @@ function showPage(id,el){
     if(typeof renderRepMarqueTiles==='function') setTimeout(renderRepMarqueTiles, 250);
   }
   if(id==='suivi-qr'){
+    // FIX multi-postes (juil. 2026) : TOUJOURS rafraîchir depuis Supabase à l'ouverture, pas seulement si le cache est vide.
+    // Avant, une tablette qui avait déjà créé un dossier gardait son cache local et ne voyait jamais les dossiers des autres postes.
     var _qrShow=function(){ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else renderSuiviQR(); if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts(); };
-    if(typeof loadBonsDepot==='function' && (!window.bonsDepot || !window.bonsDepot.length)){
-      loadBonsDepot().then(_qrShow).catch(_qrShow);
-    } else { _qrShow(); }
+    _qrShow(); // affiche tout de suite ce qu'on a en cache
+    if(typeof loadBonsDepot==='function'){
+      loadBonsDepot().then(_qrShow).catch(function(){}); // puis recharge TOUS les dossiers (tous postes) depuis Supabase et ré-affiche
+    }
   }
   if(id==='params'){paramsLoad(); if(typeof backupRenderList==='function') backupRenderList(); if(typeof auditRender==='function') auditRender(); if(typeof iavLoad==='function') iavLoad(); if(typeof iavRenderDecisions==='function') iavRenderDecisions(); if(typeof briefingLoad==='function') briefingLoad(); if(typeof insightsLoad==='function') insightsLoad(); if(typeof vaRenderList==='function') vaRenderList(); if(typeof vtRenderList==='function') vtRenderList(); if(typeof aiBudgetLoad==='function') aiBudgetLoad();}
   if(id==='neufs-access'){naLoad();naRender();naShowTab('caisse');setTimeout(naRenderGrille,200);}
