@@ -1,6 +1,7 @@
 // Service Worker — Solution Phone — Mode hors-ligne
-// Bump de version (30/06/2026) : force le rafraîchissement du cache sur tous les postes.
-var CACHE_NAME = 'sp-cache-v6';
+// Bump de version (04/07/2026) : force le rafraîchissement du cache sur tous les postes
+// (fix sync multi-poste de la recherche — tablettes qui ne voyaient que leurs propres dossiers).
+var CACHE_NAME = 'sp-cache-v7';
 var URLS_TO_CACHE = [
   '/',
   '/index.html',
