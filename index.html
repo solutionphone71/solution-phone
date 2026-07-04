@@ -12133,7 +12133,8 @@ function naRenderSuiviJour(){
 
 // ═══════════ CLÔTURE CB DU SOIR (rapprochement machine carte) ═══════════
 // Calcule le total déjà encaissé en CB aujourd'hui dans l'appli (réparations part client
-// + accessoires + tél. neufs + occasions).
+// + accessoires + tél. neufs). Les smartphones OCCASION sont EXCLUS du total
+// (Z dissocié TVA marge — fix juil. 2026) : affichés pour info seulement.
 function _cbAppAujourdhui(){
   var today=new Date().toISOString().slice(0,10);
   var detail={reparations:0,accessoires:0,neufs:0,occasion:0};
@@ -12160,7 +12161,8 @@ function _cbAppAujourdhui(){
     if(((p.modeVente||'CB').toUpperCase())!=='CB') return;
     detail.occasion += Math.max(0,(Number(p.vente)||0)-(Number(p.repriseAmount)||0));
   });
-  var total=detail.reparations+detail.accessoires+detail.neufs+detail.occasion;
+  // Occasion volontairement EXCLU du total (Z séparé TVA marge)
+  var total=detail.reparations+detail.accessoires+detail.neufs;
   return {total:Math.round(total*100)/100, detail:detail};
 }
 
@@ -12178,7 +12180,7 @@ async function clotureCBAnalyser(){
     '<div style="flex:1;min-width:110px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Machine CB</div><div style="font-size:20px;font-weight:900;">'+machine.toFixed(2)+' €</div></div>'+
     '<div style="flex:1;min-width:110px;background:'+(ecart>0?'#fff7ed':(ecart<0?'#fef2f2':'#ecfdf5'))+';border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Écart</div><div style="font-size:20px;font-weight:900;color:'+(ecart>0?'#b45309':(ecart<0?'#dc2626':'#16a34a'))+';">'+ecart.toFixed(2)+' €</div></div>'+
   '</div>';
-  var lignes='<div style="font-size:12px;color:var(--text-muted);line-height:1.9;margin-bottom:8px;">Détail CB appli : Réparations (part client) <b>'+d.reparations.toFixed(2)+' €</b> · Accessoires <b>'+d.accessoires.toFixed(2)+' €</b> · Tél. neufs <b>'+d.neufs.toFixed(2)+' €</b> · Occasion <b>'+d.occasion.toFixed(2)+' €</b></div>';
+  var lignes='<div style="font-size:12px;color:var(--text-muted);line-height:1.9;margin-bottom:8px;">Détail CB appli : Réparations (part client) <b>'+d.reparations.toFixed(2)+' €</b> · Accessoires <b>'+d.accessoires.toFixed(2)+' €</b> · Tél. neufs <b>'+d.neufs.toFixed(2)+' €</b> · <span style="opacity:.7;">Occasion '+d.occasion.toFixed(2)+' € (non compté — Z séparé)</span></div>';
   var action='';
   if(ecart>0.005){
     action='<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;">'+
