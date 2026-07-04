@@ -24277,12 +24277,15 @@ function renderRepHistorique(){
   // Plage de dates (Du / au) → TOUS les dossiers dont la date (dépôt ou facture)
   // tombe dans l'intervalle (utile pour retrouver et nettoyer des dossiers de test).
   var statutsTermines = ['facture','qr','cloture'];
+  // Un dossier est "terminé" s'il a un statut terminé OU s'il porte déjà une facture.
+  // (FIX crash : si l'app plante après facturation, le statut peut rester "depot" alors que
+  //  la facture existe — le dossier était alors invisible dans l'historique.)
+  var estFacture = function(d){ return !!(d && d.facture && (Number(d.facture.prix)||Number(d.facture.prixFinal)||0) > 0); };
+  var estTermine = function(d){ return statutsTermines.includes(d.statut||'depot') || estFacture(d); };
   var dossiers;
   var modeAll = !from && !to;
   if(modeAll){
-    dossiers = repDossiers.filter(function(d){
-      return statutsTermines.includes(d.statut||'depot');
-    });
+    dossiers = repDossiers.filter(estTermine);
   } else {
     var lo = from || '0000-01-01';
     var hi = to   || '9999-12-31';
@@ -24365,7 +24368,7 @@ function renderRepHistorique(){
   if(!tbody) return;
 
   if(dossiers.length === 0){
-    var _totalTermines = repDossiers.filter(function(d){ return statutsTermines.includes(d.statut||'depot'); }).length;
+    var _totalTermines = repDossiers.filter(estTermine).length;
     var _hint = '';
     if((!modeAll || search) && _totalTermines>0){
       _hint = '<br><span style="font-size:12px;color:#d97706;">🔎 Un filtre est actif — '+_totalTermines+' dossier(s) masqué(s). Touchez « ✕ Tout » ci-dessus (ou 🔄 Synchroniser) pour tout afficher.</span>';
@@ -24470,6 +24473,8 @@ function renderRepListe(){
   var list = repDossiers.filter(function(d){
     if(!d) return false;
     if(!filtreStatuts.includes(d.statut||'depot')) return false;
+    // Déjà facturé (mais statut resté "depot" suite à un crash) → il appartient à l'historique, pas au "en cours"
+    if(d.facture && (Number(d.facture.prix)||Number(d.facture.prixFinal)||0) > 0) return false;
     var c = d.client||{}; var a = d.appareil||{};
     return !search ||
       ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
@@ -24643,6 +24648,7 @@ async function repSupprimerDossierParId(id){
     if(typeof renderRepHistorique==='function') renderRepHistorique();
     if(typeof renderRepListe==='function') renderRepListe();
     if(typeof renderRepBentoWidgets==='function') renderRepBentoWidgets();
+    if(typeof renderFileAtelier==='function') renderFileAtelier();
     showNotif&&showNotif('Dossier '+num+' supprimé','success');
   }catch(e){
     console.error('Suppression dossier '+id+':',e);
@@ -34363,7 +34369,9 @@ function renderFileAtelier(){
         '<td style="padding:12px 14px;color:#374151;">'+(cli||'—')+'</td>'+
         '<td style="padding:12px 14px;color:#374151;">'+(app||'—')+'</td>'+
         '<td style="padding:12px 14px;color:#6B7280;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+panne+'</td>'+
-        '<td style="padding:12px 14px;text-align:right;">'+badge(d.statut)+'</td>'+
+        '<td style="padding:12px 14px;text-align:right;white-space:nowrap;">'+badge(d.statut)+
+          ' <button onclick="event.stopPropagation();repSupprimerDossierParId(\''+String(d.id||'')+'\')" title="Supprimer ce dossier" style="margin-left:8px;background:#fff;border:1px solid #E5E7EB;color:#dc2626;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;">🗑️</button>'+
+        '</td>'+
       '</tr>';
     }).join('')+'</table>';
 }
