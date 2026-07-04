@@ -24659,15 +24659,124 @@ async function repSupprimerDossierParId(id){
 function repGenererNumero(){
   var annee = new Date().getFullYear();
   var prefix = 'REP-'+annee+'-';
-  var max = 0;
   if(!Array.isArray(repDossiers)) repDossiers = [];
-  repDossiers.forEach(function(d){
-    if(d.numero && d.numero.startsWith(prefix)){
-      var n = parseInt(d.numero.replace(prefix,''))||0;
+  var next = repScanMaxNumero(prefix) + 1;
+  repSetNumeroHwm(annee, next); // réserve le numéro : plus jamais réutilisé (même après suppression)
+  return prefix + String(next).padStart(3,'0');
+}
+
+// ══ FIX juillet 2026 — « numéro facture déjà utilisé » (Ecologic/Ecosystem) ══
+// Cause : le n° était max(dossiers chargés)+1. Un poste pas encore synchronisé
+// (liste vide au démarrage) repartait à REP-2026-001, numéro déjà consommé chez
+// l'éco-organisme → rejet. Parade : high-water mark (HWM) jamais décrémenté,
+// stocké en localStorage + table settings, et vérification serveur anti-doublon.
+function repScanMaxNumero(prefix){
+  var max = 0;
+  var scan = function(arr){ (Array.isArray(arr)?arr:[]).forEach(function(d){
+    if(d && d.numero && (''+d.numero).indexOf(prefix)===0){
+      var n = parseInt((''+d.numero).slice(prefix.length))||0;
       if(n > max) max = n;
     }
-  });
-  return prefix + String(max+1).padStart(3,'0');
+  });};
+  scan(window.repDossiers); scan(window.bonsDepot);
+  var annee = prefix.replace(/\D/g,'');
+  var hwm = 0;
+  try{ hwm = parseInt(localStorage.getItem('sp_rep_hwm_'+annee))||0; }catch(e){}
+  if((window._repNumeroHwm||0) > hwm) hwm = window._repNumeroHwm;
+  return Math.max(max, hwm);
+}
+function repSetNumeroHwm(annee, n){
+  if(!(n>0)) return;
+  var cur = window._repNumeroHwm||0;
+  try{ cur = Math.max(cur, parseInt(localStorage.getItem('sp_rep_hwm_'+annee))||0); }catch(e){}
+  if(n <= cur){ window._repNumeroHwm = cur; return; }
+  window._repNumeroHwm = n;
+  try{ localStorage.setItem('sp_rep_hwm_'+annee, String(n)); }catch(e){}
+  try{ if(typeof supaSettingSave==='function' && supabaseReady) supaSettingSave('rep_numero_hwm_'+annee, String(n)); }catch(e){}
+}
+// Recharge le HWM depuis le serveur (settings + max réel en base)
+async function repLoadNumeroHwm(){
+  var annee = new Date().getFullYear();
+  var prefix = 'REP-'+annee+'-';
+  try{
+    var res = await supaFetch('settings','GET',null,'?key=eq.rep_numero_hwm_'+annee);
+    if(res && res[0] && res[0].value) repSetNumeroHwm(annee, parseInt(res[0].value)||0);
+  }catch(e){}
+  try{
+    var rows = await supaFetch('bons_depot','GET',null,'?select=numero&order=id.desc&limit=1000');
+    var max = 0;
+    (rows||[]).forEach(function(r){ if(r && r.numero && r.numero.indexOf(prefix)===0){ var n=parseInt(r.numero.slice(prefix.length))||0; if(n>max)max=n; } });
+    if(max>0) repSetNumeroHwm(annee, max);
+  }catch(e){}
+}
+// Vérifie côté serveur que le n° du dossier n'est pas déjà porté par un AUTRE dossier.
+// Si doublon → nouveau numéro (jamais réutilisé), facture mise à jour, sauvegarde en base.
+async function repEnsureNumeroUnique(d){
+  if(!d || !d.numero || !supabaseReady) return d && d.numero;
+  try{
+    var q = '?select=id,numero&numero=eq.'+encodeURIComponent(d.numero)+'&id=neq.'+encodeURIComponent(d.id);
+    var dups = await supaFetch('bons_depot','GET',null,q);
+    if(!Array.isArray(dups) || dups.length===0) return d.numero;
+    await repLoadNumeroHwm(); // repartir du vrai max serveur avant d'attribuer
+    var ancien = d.numero;
+    var nouveau = repGenererNumero();
+    d.numero = nouveau;
+    if(d.facture && d.facture.numero===ancien) d.facture.numero = nouveau;
+    d.obs = ((d.obs||'')+' [Renuméroté '+ancien+' → '+nouveau+' : n° facture en doublon]').trim();
+    try{ await supaFetch('bons_depot','PATCH',{numero:nouveau, facture:d.facture||null, obs:d.obs},'?id=eq.'+encodeURIComponent(d.id)); }catch(e){ console.warn('PATCH renumérotation:',e); }
+    try{
+      if(window.repDossierCourant && String(repDossierCourant.id)===String(d.id)){
+        var elN = document.getElementById('rep-dossier-num'); if(elN) elN.textContent = nouveau;
+      }
+    }catch(e){}
+    console.log('[Numéro] Doublon détecté : '+ancien+' → '+nouveau);
+    showNotif && showNotif('⚠️ N° '+ancien+' déjà utilisé → dossier renuméroté '+nouveau, 'success');
+    return nouveau;
+  }catch(e){ console.warn('repEnsureNumeroUnique:', e); return d.numero; }
+}
+// Réparation auto au chargement : renumérote les dossiers en doublon de numéro
+// qui n'ont PAS d'envoi QualiRépar confirmé (les déjà-envoyés gardent leur n°).
+async function repFixDuplicateNumeros(){
+  if(window._repDedupDone) return; window._repDedupDone = true;
+  try{
+    var byNum = {};
+    (window.bonsDepot||[]).forEach(function(d){ if(d && d.numero){ (byNum[d.numero]=byNum[d.numero]||[]).push(d); } });
+    var groups = Object.keys(byNum).filter(function(k){ return byNum[k].length>1; });
+    if(!groups.length) return;
+    await repLoadNumeroHwm();
+    var sent = function(d){ var q=d.qrEnvoi||{}; return !!(q.ecologicClaimId||q.ecologicId||q.ecosystemId||q.ecosystemRepairId||q.ecosystemServiceOrder||q.confirme); };
+    var annee = new Date().getFullYear();
+    var numReset = 'REP-'+annee+'-001'; // artefact du bug « repart à 001 » : on renumérote TOUT le groupe
+    var nbFix = 0;
+    for(var g=0; g<groups.length; g++){
+      var arr = byNum[groups[g]].slice().sort(function(a,b){ return (a.id||0)-(b.id||0); });
+      var forceAll = (groups[g]===numReset);
+      var aucunEnvoye = !arr.some(sent);
+      for(var i=0; i<arr.length; i++){
+        var d = arr[i];
+        if(forceAll){ // dossiers issus du reset de numérotation : tous renumérotés
+          var ancienF = d.numero;
+          await repLoadNumeroHwm();
+          var nouveauF = repGenererNumero();
+          d.numero = nouveauF;
+          if(d.facture && d.facture.numero===ancienF) d.facture.numero = nouveauF;
+          d.obs = ((d.obs||'')+' [Renuméroté '+ancienF+' → '+nouveauF+' : reset numérotation]').trim();
+          try{ await supaFetch('bons_depot','PATCH',{numero:nouveauF, facture:d.facture||null, obs:d.obs},'?id=eq.'+encodeURIComponent(d.id)); }catch(e){ console.warn('PATCH renumérotation:',e); }
+          console.log('[Numéro] Reset 001 : '+ancienF+' → '+nouveauF);
+          nbFix++;
+          continue;
+        }
+        if(sent(d)) continue;                 // déjà chez l'éco-organisme : ne pas toucher
+        if(aucunEnvoye && i===0) continue;    // aucun envoyé → le plus ancien garde le n°
+        await repEnsureNumeroUnique(d);
+        nbFix++;
+      }
+    }
+    if(nbFix>0){
+      showNotif && showNotif('🔧 '+nbFix+' dossier(s) renuméroté(s) (n° facture en doublon) — vous pouvez renvoyer à Ecologic/Ecosystem', 'success');
+      if(typeof repLoadDossiers==='function') repLoadDossiers();
+    }
+  }catch(e){ console.warn('repFixDuplicateNumeros:', e); }
 }
 
 // N° de réparation (distinct du n° de facture) — demandé par les éco-organismes QualiRépar.
@@ -24979,7 +25088,10 @@ async function repGenererFacture(){
   // Lignes IRIS (les 3 lignes obligatoires = les 3 "coches" Phonilab)
   var irisLines = repGetIrisLinesForFacture();
 
-  if(!prix){ showNotif('Saisissez le prix TTC','error'); return; }
+  if(!prix){ showNotif('Saisissez le prix TTC','error'); repGenererFacture._running=false; return; }
+
+  // ── Anti-doublon : ce n° part chez Ecologic/Ecosystem comme n° de facture, il doit être unique ──
+  try{ await repEnsureNumeroUnique(d); }catch(e){ console.warn('Vérif unicité n°:', e); }
 
   // Sauvegarder dans le dossier
   d.facture = {
@@ -26936,6 +27048,11 @@ async function qrEnvoyerEcologicComplet(d){
   if(!d.signature) manquants.push('Signature du client');
   if(!d.facture) manquants.push('Facture non generee');
   if(manquants.length>0){var errMsg='Elements manquants :\n- '+manquants.join('\n- ');showNotif&&showNotif(errMsg,"error");var elV=document.getElementById("rep-qr-envoi-statut");if(elV)elV.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#10060; "+errMsg.replace(/\n/g,'<br>')+"</div>";return;}
+  // ── Anti-doublon n° facture avant envoi (Ecologic rejette « numéro facture déjà utilisé ») ──
+  var _qrDejaE=d.qrEnvoi||{};
+  if(!(_qrDejaE.ecologicClaimId||_qrDejaE.ecologicId||_qrDejaE.confirme)){
+    try{ await repEnsureNumeroUnique(d); }catch(e){ console.warn('Vérif unicité n° (Ecologic):', e); }
+  }
   var proxy=QR_ECOLOGIC_PROXY;var siteId=QR_ECOLOGIC_SITE_ID;
   // Auth gérée côté proxy Vercel (env var ECOLOGIC_API_KEY)
   var ecoHeaders={"Content-Type":"application/json"};
@@ -27175,6 +27292,11 @@ async function qrEnvoyerEcosystemComplet(d){
   if(!d.signature) _manq.push('Signature du client');
   if(!d.facture) _manq.push('Facture non generee');
   if(_manq.length>0){var _msg='Elements manquants :\n- '+_manq.join('\n- ');showNotif&&showNotif(_msg,"error");var _el=document.getElementById("rep-qr-envoi-statut");if(_el)_el.innerHTML="<div style='background:rgba(255,59,48,0.08);padding:12px;border-radius:8px;color:red;'>&#9940; "+_msg.replace(/\n/g,'<br>')+"</div>";return;}
+  // ── Anti-doublon n° facture avant envoi (même n° envoyé à Ecosystem qu'à Ecologic) ──
+  var _qrDejaS=d.qrEnvoi||{};
+  if(!(_qrDejaS.ecosystemId||_qrDejaS.ecosystemRepairId||_qrDejaS.ecosystemServiceOrder||_qrDejaS.confirme)){
+    try{ await repEnsureNumeroUnique(d); }catch(e){ console.warn('Vérif unicité n° (Ecosystem):', e); }
+  }
   var proxy=QR_ECOSYSTEM_PROXY;
   var el=document.getElementById("rep-qr-envoi-statut");
   if(el)el.innerHTML="<div style='color:blue'>&#9203; Login Ecosystem...</div>";
@@ -31255,6 +31377,12 @@ async function loadBonsDepot(){
   }
   renderBonsDepot();
   repLoadDossiers();
+  // ── FIX juil. 2026 : HWM numérotation + réparation des n° en doublon ──
+  try{
+    var _anneeHwm = new Date().getFullYear();
+    repSetNumeroHwm(_anneeHwm, repScanMaxNumero('REP-'+_anneeHwm+'-'));
+    setTimeout(function(){ repFixDuplicateNumeros(); }, 1500);
+  }catch(e){ console.warn('HWM init:', e); }
 }
 
 async function saveBonDepotSupabase(d){
