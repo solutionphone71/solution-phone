@@ -13425,7 +13425,7 @@ async function envoyerDevisEmail(){
   var _piec = !!((document.getElementById('dep-piec')&&document.getElementById('dep-piec').checked) || d.piec);
   var _bonus = _piec ? 30 : 25;
   showNotif&&showNotif('📧 Envoi du devis à '+email+'…','info');
-  var _dBanner = (localStorage.getItem(PARAMS_KEYS.emailBannerDevis)||'').trim();
+  var _dBanner = (localStorage.getItem(PARAMS_KEYS.emailBannerDevis)||'').trim() || 'https://app.solution-phone.fr/images/banniere-devis.jpg';
   var _dHeader = _dBanner
     ? '<a href="https://solution-phone.fr" style="text-decoration:none;"><img src="'+_dBanner+'" alt="Solution Phone — Votre devis" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></a>'
     : '<div style="background:#141414;padding:30px 24px 24px;text-align:center;">'+
@@ -19003,7 +19003,7 @@ async function envoyerDevisStandaloneEmail(){
   var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
   if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
   showNotif&&showNotif('📧 Envoi du devis à '+email+'…','info');
-  var _dBanner2=(localStorage.getItem(PARAMS_KEYS.emailBannerDevis)||'').trim();
+  var _dBanner2=(localStorage.getItem(PARAMS_KEYS.emailBannerDevis)||'').trim() || 'https://app.solution-phone.fr/images/banniere-devis.jpg';
   var _dHeader2=_dBanner2
     ? '<a href="https://solution-phone.fr" style="text-decoration:none;"><img src="'+_dBanner2+'" alt="Solution Phone — Votre devis" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></a>'
     : '<div style="background:#141414;padding:30px 24px 24px;text-align:center;">'+
