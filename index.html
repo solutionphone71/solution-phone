@@ -24061,12 +24061,10 @@ function repLoadDossiers(){
   renderRepListe();
   renderRepHistorique();
   renderRepBentoWidgets();
-  // Auto-charger historique du jour
-  var histDate=document.getElementById('rep-hist-date');
-  var histDateTo=document.getElementById('rep-hist-date-to');
-  var _auj=new Date().toISOString().split('T')[0];
-  if(histDate&&!histDate.value)histDate.value=_auj;
-  if(histDateTo&&!histDateTo.value)histDateTo.value=_auj;
+  // FIX visibilité multi-poste (juil. 2026) : ne PAS forcer le filtre date sur "aujourd'hui".
+  // Avant, l'historique se limitait au jour même → une tablette qui n'avait rien facturé
+  // aujourd'hui voyait un historique vide (et ne voyait que ses propres réparations du jour).
+  // Par défaut on affiche désormais TOUS les dossiers terminés (le filtre date reste dispo manuellement).
   renderRepHistorique();
 }
 
