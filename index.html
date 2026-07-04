@@ -13334,7 +13334,7 @@ async function envoyerFactureEmail(){
   var prixAffiche = prixClient; // le client paie le prix saisi (bonus QualiRépar déjà appliqué / en plus)
   var _googleUrl = ((typeof rlGoogleUrl!=='undefined' && rlGoogleUrl)||'').trim() || 'https://g.page/r/CbyQ_wiFpddjEBM/review';
 
-  var _bannerUrl = (localStorage.getItem(PARAMS_KEYS.emailBanner)||'').trim();
+  var _bannerUrl = (localStorage.getItem(PARAMS_KEYS.emailBanner)||'').trim() || 'https://app.solution-phone.fr/images/banniere-facture.jpg';
   var _headerHtml = _bannerUrl
     ? '<a href="https://solution-phone.fr" style="text-decoration:none;"><img src="'+_bannerUrl+'" alt="Solution Phone" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></a>'
     : '<div style="background:linear-gradient(135deg,#E10600,#8f000c);padding:26px 20px;text-align:center;">'+
