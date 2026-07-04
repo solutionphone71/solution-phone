@@ -7646,6 +7646,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div class="form-group"><label>Prénom</label><input type="text" id="dv-prenom" placeholder="ex: Jean" oninput="updateDevisPreview()"></div>
               <div class="form-group"><label>Nom *</label><input type="text" id="dv-nom" placeholder="ex: Dupont" oninput="updateDevisPreview()"></div>
             </div>
+            <div class="form-group"><label>Société <span style="color:#9CA3AF;font-weight:400;">(si professionnel)</span></label><input type="text" id="dv-societe" placeholder="ex: SARL Martin" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Téléphone *</label><input type="tel" id="dv-tel" placeholder="ex: 06 12 34 56 78" inputmode="tel"></div>
             <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="Adresse" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
@@ -7690,6 +7691,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <div class="form-group"><label>Prénom</label><input type="text" id="att-prenom" placeholder="ex: Jean"></div>
             <div class="form-group"><label>Nom *</label><input type="text" id="att-nom" placeholder="ex: Dupont"></div>
           </div>
+          <div class="form-group"><label>Société <span style="color:#9CA3AF;font-weight:400;">(si professionnel)</span></label><input type="text" id="att-societe" placeholder="ex: SARL Martin"></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <div class="form-group"><label>Téléphone</label><input type="tel" id="att-tel" placeholder="06 12 34 56 78" inputmode="tel"></div>
             <div class="form-group"><label>Email</label><input type="email" id="att-email" placeholder="client@gmail.com"></div>
@@ -18892,6 +18894,7 @@ async function genererDevis() {
   var num='DEV-'+new Date().getFullYear()+'-'+String(devisList.length+1).padStart(3,'0');
   var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
     clientNom:client,clientPrenom:prenom,clientNomSeul:nom,clientTel:tel,clientAdresse:getAdresse('dv'),
+    clientSociete:(document.getElementById('dv-societe')||{value:''}).value.trim(),
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
@@ -18902,14 +18905,14 @@ async function genererDevis() {
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
   try{
     if(typeof supaFetch==='function'){
-      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
+      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_societe:dv.clientSociete,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
         .then(function(){ showNotif('Devis '+num+' enregistré ✓','success'); })
         .catch(function(e){ console.warn('save devis:',e); showNotif('Devis créé (sauvegarde base à vérifier)','info'); });
     }
   }catch(e){ console.warn('save devis:',e); }
   renderDevis();
   imprimerDevisData(dv);
-  ['dv-prenom','dv-nom','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
 }
@@ -19054,6 +19057,7 @@ function imprimerDevisData(dv){
         '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
         '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
           '<b>'+(dv.clientNom||'')+'</b><br>'+
+          (dv.clientSociete?'<b>'+dv.clientSociete+'</b><br>':'')+
           (dv.clientEmail?dv.clientEmail+'<br>':'')+
           (rue||'')+(cp?'<br>'+cp+' '+ville:(ville?'<br>'+ville:''))+
         '</div>'+
@@ -19190,7 +19194,7 @@ function _attCheckedValues(containerId){
 
 async function genererAttestation(sendMail){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
-  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email');
+  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email'), societe=g('att-societe');
   var marque=g('att-marque'), modele=g('att-modele'), imei=g('att-imei'), dateAchat=g('att-dateachat');
   var dommages=_attCheckedValues('att-dommages'), dommagesAutre=g('att-dommages-autre');
   var diagnostic=g('att-diagnostic'), motifs=_attCheckedValues('att-motifs');
@@ -19199,7 +19203,7 @@ async function genererAttestation(sendMail){
   if(!motifs.length){ showNotif('Cochez au moins un motif d\'irréparabilité','error'); return; }
   var num='ATT-'+new Date().getFullYear()+'-'+String(attestList.length+1).padStart(3,'0');
   var a={ id:Date.now(), numero:num, date:new Date().toISOString().split('T')[0],
-    prenom:prenom, nom:nom, tel:tel, email:email, adresse:getAdresse('att'),
+    prenom:prenom, nom:nom, societe:societe, tel:tel, email:email, adresse:getAdresse('att'),
     marque:marque, modele:modele, imei:imei, dateAchat:dateAchat,
     dommages:dommages, dommagesAutre:dommagesAutre, diagnostic:diagnostic,
     motifs:motifs, cout:cout, valeur:valeur };
@@ -19207,14 +19211,14 @@ async function genererAttestation(sendMail){
   try{ await devisUpsertClient(prenom, nom, tel, email, a.adresse); }catch(e){ console.warn('attest upsert client:',e); }
   try{
     if(typeof supaFetch==='function'){
-      supaFetch('attestations','POST',{ numero:a.numero, date:a.date, client_prenom:prenom, client_nom:nom, client_tel:tel, client_email:email, client_adresse:a.adresse, appareil_marque:marque, appareil_modele:modele, imei:imei, date_achat:dateAchat||null, dommages:(dommages.concat(dommagesAutre?['Précisions: '+dommagesAutre]:[])).join(' | '), diagnostic:diagnostic, motifs:motifs.join(' | '), cout_reparation:cout, valeur_appareil:valeur })
+      supaFetch('attestations','POST',{ numero:a.numero, date:a.date, client_prenom:prenom, client_nom:nom, client_societe:societe, client_tel:tel, client_email:email, client_adresse:a.adresse, appareil_marque:marque, appareil_modele:modele, imei:imei, date_achat:dateAchat||null, dommages:(dommages.concat(dommagesAutre?['Précisions: '+dommagesAutre]:[])).join(' | '), diagnostic:diagnostic, motifs:motifs.join(' | '), cout_reparation:cout, valeur_appareil:valeur })
         .then(function(){ showNotif('Attestation '+num+' enregistrée ✓','success'); })
         .catch(function(e){ console.warn('save attestation:',e); });
     }
   }catch(e){}
   renderAttest();
   if(sendMail){ await envoyerAttestationData(a); } else { imprimerAttestationData(a); }
-  ['att-prenom','att-nom','att-tel','att-email','att-adresse','att-cp','att-ville','att-marque','att-modele','att-imei','att-dateachat','att-dommages-autre','att-diagnostic','att-cout','att-valeur','att-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['att-prenom','att-nom','att-societe','att-tel','att-email','att-adresse','att-cp','att-ville','att-marque','att-modele','att-imei','att-dateachat','att-dommages-autre','att-diagnostic','att-cout','att-valeur','att-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   ['att-dommages','att-motifs'].forEach(function(c){var box=document.getElementById(c);if(box)box.querySelectorAll('input[type=checkbox]').forEach(function(cb){cb.checked=false;});});
   showNotif('Attestation '+num+' créée !','success');
 }
@@ -19285,7 +19289,7 @@ async function envoyerAttestationData(a){
 // ══════════════════════════════════════════════════════════════
 function genererRapportExpertise(){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
-  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email');
+  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email'), societe=g('att-societe');
   var marque=g('att-marque'), modele=g('att-modele'), imei=g('att-imei'), dateAchat=g('att-dateachat');
   var dommages=_attCheckedValues('att-dommages'), dommagesAutre=g('att-dommages-autre');
   var diagnostic=g('att-diagnostic'), motifs=_attCheckedValues('att-motifs');
@@ -19293,7 +19297,7 @@ function genererRapportExpertise(){
   if(!nom||!marque||!modele){ showNotif('Nom, marque et modèle requis','error'); return; }
   var num='EXP-'+new Date().getFullYear()+'-'+String(((typeof attestList!=='undefined'?attestList.length:0)+1)).padStart(3,'0');
   var a={ numero:num, date:new Date().toISOString().split('T')[0],
-    prenom:prenom, nom:nom, tel:tel, email:email, adresse:getAdresse('att'),
+    prenom:prenom, nom:nom, societe:societe, tel:tel, email:email, adresse:getAdresse('att'),
     marque:marque, modele:modele, imei:imei, dateAchat:dateAchat,
     dommages:dommages, dommagesAutre:dommagesAutre, diagnostic:diagnostic,
     motifs:motifs, cout:cout, valeur:valeur };
@@ -19338,7 +19342,7 @@ function imprimerRapportExpertise(a){
     '</div>'+
     // CLIENT + APPAREIL
     '<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
-      row('Client', esc(cli))+ row('Téléphone / Email', esc((a.tel||'')+((a.tel&&a.email)?' · ':'')+(a.email||'')))+
+      row('Client', esc(cli))+ (a.societe?row('Société', esc(a.societe)):'')+ row('Téléphone / Email', esc((a.tel||'')+((a.tel&&a.email)?' · ':'')+(a.email||'')))+
       row('Appareil', esc((a.marque||'')+' '+(a.modele||'')))+
       row('IMEI / N° de série', esc(a.imei))+ row('Date d\'achat', achatStr)+
     '</table>'+
@@ -19419,7 +19423,7 @@ function imprimerAttestationData(a){
     '<div style="display:flex;gap:10px;margin-bottom:12px;">'+
       '<div style="flex:1;border:1.5px solid #c0392b;border-radius:6px;overflow:hidden;">'+
         '<div style="background:#c0392b;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">👤 Client</div>'+
-        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;"><b>'+(cli||'—')+'</b><br>'+(a.tel?'Tél : '+a.tel+'<br>':'')+(a.email?a.email+'<br>':'')+(rue||'')+(cp?'<br>'+cp+' '+ville:(ville?'<br>'+ville:''))+'</div>'+
+        '<div style="padding:8px 10px;font-size:12px;line-height:1.8;"><b>'+(cli||'—')+'</b><br>'+(a.societe?'<b>'+a.societe+'</b><br>':'')+(a.tel?'Tél : '+a.tel+'<br>':'')+(a.email?a.email+'<br>':'')+(rue||'')+(cp?'<br>'+cp+' '+ville:(ville?'<br>'+ville:''))+'</div>'+
       '</div>'+
       '<div style="flex:1;border:1.5px solid #333;border-radius:6px;overflow:hidden;">'+
         '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil</div>'+
