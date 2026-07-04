@@ -11341,6 +11341,8 @@ function showPage(id,el){
       repLoadDossiers(); // affichage immédiat depuis le cache
       // FIX multi-postes : recharge TOUS les dossiers (tous postes) depuis Supabase puis ré-affiche la liste
       if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(function(){ try{ repLoadDossiers(); }catch(e){} }).catch(function(){}); }
+      // FIX multi-postes : rafraîchir aussi l'historique (réparations terminées tous postes) pour la recherche
+      if(typeof loadHistoriqueReparations==='function'){ loadHistoriqueReparations().then(function(){ try{ renderRepHistorique(); }catch(e){} }).catch(function(){}); }
     }
     // Auto-vérification des statuts QR en arrière-plan
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
@@ -35416,6 +35418,14 @@ function spOpen(){
   spUpdate('');
   spRenderRecent();
   setTimeout(function(){document.getElementById('sp-bar').focus();},50);
+  // ── Sync multi-poste : rafraîchir les données depuis Supabase à l'ouverture ──
+  // Sur une tablette, le cache local ne contenait souvent que ses propres dossiers.
+  // On recharge TOUS les bons (tous postes) + l'historique, puis on relance la recherche live.
+  var _spRelance = function(){ try{ var b=document.getElementById('sp-bar'); if(b && b.value && b.value.trim().length>=2) spSearchLive(b.value); }catch(e){} };
+  try{
+    if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(_spRelance).catch(function(){}); }
+    if(typeof loadHistoriqueReparations==='function'){ loadHistoriqueReparations().then(_spRelance).catch(function(){}); }
+  }catch(e){}
 }
 
 function spClose(){
