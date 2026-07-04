@@ -24367,7 +24367,12 @@ function renderRepHistorique(){
   if(!tbody) return;
 
   if(dossiers.length === 0){
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">'+(modeAll?'Aucun dossier terminé':'Aucune réparation ce jour')+'</td></tr>';
+    var _totalTermines = repDossiers.filter(function(d){ return statutsTermines.includes(d.statut||'depot'); }).length;
+    var _hint = '';
+    if((!modeAll || search) && _totalTermines>0){
+      _hint = '<br><span style="font-size:12px;color:#d97706;">🔎 Un filtre est actif — '+_totalTermines+' dossier(s) masqué(s). Touchez « ✕ Tout » ci-dessus (ou 🔄 Synchroniser) pour tout afficher.</span>';
+    }
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text-muted);">'+(modeAll?'Aucun dossier terminé':'Aucune réparation ce jour')+_hint+'</td></tr>';
     return;
   }
 
@@ -31171,6 +31176,14 @@ async function spSyncNow(){
   try{ if(typeof syncHRepFromSupabase==='function'){ await syncHRepFromSupabase(); } else { await run('loadHistoriqueReparations','historique'); } }catch(e){ errors.push('historique'); console.warn('[sync] historique', e); }
   // Clients (tous postes)
   await run('loadAllClients','clients');
+  // Réinitialiser les filtres qui pourraient masquer les listes (cause fréquente d'un
+  // écran "vide" alors que les données sont bien chargées : un filtre date/recherche resté actif).
+  try{
+    ['rep-search','rep-hist-search','rep-hist-date','rep-hist-date-to'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    if(typeof _repHistPage!=='undefined') _repHistPage=1;
+  }catch(e){}
   // Rafraîchir l'affichage courant (selon la page ouverte)
   try{ if(typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
   try{ if(typeof renderRepHistorique==='function') renderRepHistorique(); }catch(e){}
