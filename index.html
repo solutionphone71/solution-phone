@@ -19304,74 +19304,128 @@ function genererRapportExpertise(){
   imprimerRapportExpertise(a);
 }
 function imprimerRapportExpertise(a){
-  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
   var tampon = (typeof SP_TAMPON !== 'undefined' ? SP_TAMPON : '') || '';
   var dateStr = a.date ? new Date(a.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
-  var achatStr = a.dateAchat ? new Date(a.dateAchat).toLocaleDateString('fr-FR') : '—';
   var cli=((a.prenom||'')+' '+(a.nom||'')).trim();
   var esc=function(s){ return (''+(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
   var domms=(a.dommages||[]).slice(); if(a.dommagesAutre) domms.push(a.dommagesAutre);
   var irreparable = (a.motifs && a.motifs.length>0);
   var nonViable = (a.cout>0 && a.valeur>0 && a.cout > a.valeur);
-  var liste=function(arr){ return (arr&&arr.length)?('<ul style="margin:6px 0 0 20px;padding:0;">'+arr.map(function(x){return '<li style="margin:3px 0;">'+esc(x)+'</li>';}).join('')+'</ul>'):'<span style="color:#888;">—</span>'; };
-  var row=function(l,v){ return '<tr><td style="padding:5px 8px;color:#555;width:38%;border-bottom:1px solid #eee;">'+l+'</td><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #eee;">'+(v||'—')+'</td></tr>'; };
-  var section=function(t){ return '<div style="font-size:12px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:1.5px solid #f0c9c4;padding-bottom:3px;">'+t+'</div>'; };
-  var concColor = irreparable ? '#c0392b' : '#16a34a';
-  var concTitre = irreparable ? 'APPAREIL DÉCLARÉ IRRÉPARABLE' : 'DIAGNOSTIC ÉTABLI';
+  var appareil = (esc((a.marque||'')+' '+(a.modele||''))).trim() || '—';
+  // Bandeau haut (noir + ligne rouge) façon rapport technique
+  var HEADER =
+    '<div style="background:#0D0D0D;color:#fff;padding:14px 18px 8px;">'+
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;">'+
+        '<div style="font-size:18px;font-weight:900;letter-spacing:.5px;">SOLUTION PHONE</div>'+
+        '<div style="font-size:10px;color:#cfcfcf;text-align:right;line-height:1.5;">21 Rue Gambetta · 71000 Mâcon<br>contact@solution-phone.fr · solution-phone.fr</div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px;">'+
+        '<div style="font-family:monospace;font-size:10px;color:#E10600;letter-spacing:1px;">// RAPPORT TECHNIQUE&nbsp;&nbsp;·&nbsp;&nbsp;QUALIREPAR&nbsp;&nbsp;·&nbsp;&nbsp;UNIT_01</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="height:3px;background:#E10600;"></div>';
+  var FOOTER =
+    '<div style="border-top:1px solid #e5e5e5;margin-top:26px;padding-top:8px;font-size:8.5px;color:#999;text-align:center;">'+
+      'SOLUTION PHONE SARL · SIRET 801 044 785 00021 · Réparateur labellisé QualiRépar (Bureau Veritas N°954, valide jusqu\'au 07/03/2027)'+
+    '</div>';
+  var lblRow=function(l,v){ return '<tr>'+
+    '<td style="width:34%;background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 10px;font-weight:700;font-size:11.5px;">'+l+'</td>'+
+    '<td style="border:1px solid #e0e0e0;padding:6px 10px;font-size:11.5px;">'+(v||'—')+'</td></tr>'; };
+  var secTitle=function(n,t){ return '<div style="font-size:13px;font-weight:900;color:#E10600;margin:18px 0 8px;">'+n+'. '+t+'</div>'; };
+  var constatBar=function(n,titre,desc){ return '<div style="background:#f2f2f2;border-left:3px solid #E10600;padding:6px 10px;font-weight:700;font-size:12px;margin-top:10px;">'+n+' — '+titre+'</div>'+
+    (desc?'<div style="font-size:11.5px;line-height:1.6;text-align:justify;padding:6px 2px 0;">'+desc+'</div>':''); };
+
+  // Constatations : une sous-section par dommage constaté
+  var constats='';
+  if(domms.length){
+    domms.forEach(function(d,i){ constats += constatBar('2.'+(i+1), esc(d), ''); });
+  } else {
+    constats = '<div style="font-size:11.5px;color:#888;">Aucun dommage précis coché — voir diagnostic technique ci-dessous.</div>';
+  }
+
+  var diagTxt = a.diagnostic ? esc(a.diagnostic)
+    : 'Examen visuel et fonctionnel de l\'appareil réalisé en atelier (tests d\'alimentation, d\'affichage, tactile et fonctions principales). '+
+      (irreparable
+        ? 'Les défauts constatés sont d\'origine strictement matérielle : aucune manipulation logicielle ne peut les corriger. La remise en fonctionnement nécessite le remplacement de la ou des pièces concernées.'
+        : 'Diagnostic établi sur la base des dommages constatés ci-dessus.');
+
+  var ecoTxt='';
+  if(a.cout>0 || a.valeur>0){
+    ecoTxt = '<div style="font-size:11.5px;line-height:1.6;margin-top:6px;">'+
+      (a.cout>0?'Coût estimé de la réparation : <b>'+a.cout.toFixed(2)+' € TTC</b>. ':'')+
+      (a.valeur>0?'Valeur estimée de l\'appareil : <b>'+a.valeur.toFixed(2)+' €</b>. ':'')+
+      (nonViable?'<span style="color:#E10600;font-weight:700;">La réparation est économiquement non viable (coût &gt; valeur).</span>':'')+
+    '</div>';
+  }
+
+  var conclusion = irreparable
+    ? 'Nous certifions, après examen en atelier, que l\'appareil <b>'+appareil+'</b> décrit ci-dessus est <b>hors service de manière définitive à la suite d\'un dommage matériel</b>'+(a.motifs&&a.motifs.length?' ('+a.motifs.map(esc).join(' ; ')+')':'')+'. L\'appareil est inutilisable en l\'état pour un usage normal. Ce constat est établi pour servir et valoir ce que de droit (assurance, garantie, dossier de prise en charge).'
+    : 'Le présent rapport rend compte de l\'examen et du diagnostic technique réalisés sur l\'appareil <b>'+appareil+'</b>. Il est établi à la demande du client pour servir et valoir ce que de droit.';
+
   var w=window.open('','_blank'); if(!w){ showNotif('Autorisez les popups','error'); return; }
-  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport d\'expertise '+a.numero+'</title>'+
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;color:#111;}'+
-    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;position:relative;}'+
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport d\'expertise '+esc(a.numero)+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1a1a1a;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:0 0 14mm;position:relative;}'+
+    '.pad{padding:0 16mm;}table{border-collapse:collapse;width:100%;}'+
     '@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}</style></head><body>'+
     '<div class="no-print" style="display:flex;justify-content:flex-end;gap:8px;padding:8px 16px;background:#f8f8f8;border-bottom:1px solid #ddd;">'+
       '<button onclick="window.close()" style="background:#6b7280;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Fermer</button>'+
-      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
+      '<button onclick="window.print()" style="background:#E10600;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
     '</div>'+
     '<div class="page">'+
-    // EN-TÊTE
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:14px;">'+
-      '<div style="display:flex;align-items:center;gap:10px;">'+(logo?'<img src="'+logo+'" style="height:48px;">':'')+
-        '<div><div style="font-size:17px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
-        '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · contact@solution-phone.fr<br>SIRET : 801044785 00021</div></div>'+
+    HEADER+
+    '<div class="pad" style="padding-top:16px;">'+
+      // TITRE
+      '<div style="text-align:center;margin-bottom:14px;">'+
+        '<div style="font-size:22px;font-weight:900;letter-spacing:.5px;">RAPPORT D\'EXPERTISE TECHNIQUE</div>'+
+        '<div style="font-size:12px;color:#666;margin-top:2px;">Constat technique — '+appareil+'</div>'+
       '</div>'+
-      '<div style="text-align:right;">'+
-        '<div style="font-size:17px;font-weight:900;line-height:1.15;">RAPPORT D\'EXPERTISE<br>&amp; DIAGNOSTIC</div>'+
-        '<div style="font-size:13px;font-weight:700;color:#c0392b;margin-top:4px;">'+esc(a.numero)+'</div>'+
-        '<div style="font-size:11px;color:#888;">Date : '+dateStr+'</div>'+
-      '</div>'+
-    '</div>'+
-    // CLIENT + APPAREIL
-    '<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
-      row('Client', esc(cli))+ (a.societe?row('Société', esc(a.societe)):'')+ row('Téléphone / Email', esc((a.tel||'')+((a.tel&&a.email)?' · ':'')+(a.email||'')))+
-      row('Appareil', esc((a.marque||'')+' '+(a.modele||'')))+
-      row('IMEI / N° de série', esc(a.imei))+ row('Date d\'achat', achatStr)+
-    '</table>'+
-    section('1. Symptômes & dommages constatés')+ liste(domms)+
-    section('2. Examen & diagnostic technique')+
-      '<div style="font-size:12px;line-height:1.6;text-align:justify;">'+(a.diagnostic?esc(a.diagnostic):'Examen visuel et fonctionnel de l\'appareil réalisé en atelier. Tests d\'alimentation, d\'affichage et des fonctions principales effectués.')+'</div>'+
-    section('3. Évaluation économique')+
-      '<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
-        row('Coût estimé de la réparation', a.cout>0?('<b>'+a.cout.toFixed(2)+' € TTC</b>'):'—')+
-        row('Valeur estimée de l\'appareil', a.valeur>0?('<b>'+a.valeur.toFixed(2)+' €</b>'):'—')+
-        (nonViable?'<tr><td colspan="2" style="padding:6px 8px;color:#c0392b;font-weight:700;">→ Coût de réparation supérieur à la valeur : réparation économiquement non viable.</td></tr>':'')+
+      // INFO DOSSIER (2x2)
+      '<table style="font-size:11.5px;margin-bottom:6px;">'+
+        '<tr>'+
+          '<td style="width:22%;background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 10px;font-weight:700;">Référence dossier :</td>'+
+          '<td style="width:28%;border:1px solid #e0e0e0;padding:6px 10px;">'+esc(a.numero)+'</td>'+
+          '<td style="width:22%;background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 10px;font-weight:700;">Date du constat :</td>'+
+          '<td style="border:1px solid #e0e0e0;padding:6px 10px;">'+dateStr+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 10px;font-weight:700;">Technicien :</td>'+
+          '<td style="border:1px solid #e0e0e0;padding:6px 10px;">Sébastien Cannard, gérant</td>'+
+          '<td style="background:#f5f5f5;border:1px solid #e0e0e0;padding:6px 10px;font-weight:700;">Lieu :</td>'+
+          '<td style="border:1px solid #e0e0e0;padding:6px 10px;">Atelier — 21 Rue Gambetta, Mâcon</td>'+
+        '</tr>'+
       '</table>'+
-    (irreparable? (section('4. Motif(s) d\'irréparabilité')+liste(a.motifs)) : '')+
-    // CONCLUSION
-    '<div style="margin-top:18px;border:2px solid '+concColor+';border-radius:10px;padding:14px 16px;background:'+(irreparable?'#fef2f2':'#ecfdf5')+';">'+
-      '<div style="font-size:13px;font-weight:900;color:'+concColor+';margin-bottom:4px;">CONCLUSION — '+concTitre+'</div>'+
-      '<div style="font-size:12px;line-height:1.6;color:#333;">'+
-        (irreparable
-          ? 'Après examen, l\'appareil <b>'+esc((a.marque||'')+' '+(a.modele||''))+'</b> est déclaré <b>techniquement et/ou économiquement irréparable</b> pour les motifs indiqués ci-dessus. Le présent rapport peut être remis à l\'assureur du client dans le cadre d\'une déclaration de sinistre.'
-          : 'Le présent rapport rend compte de l\'examen et du diagnostic technique réalisés sur l\'appareil <b>'+esc((a.marque||'')+' '+(a.modele||''))+'</b>. Il est établi à la demande du client pour valoir ce que de droit.')+
+      // 1. APPAREIL EXPERTISÉ (+ client)
+      secTitle('1','APPAREIL EXPERTISÉ')+
+      '<table>'+
+        lblRow('Client', esc(cli)+(a.societe?' — <b>'+esc(a.societe)+'</b>':''))+
+        lblRow('Contact', esc((a.tel||'')+((a.tel&&a.email)?' · ':'')+(a.email||'')))+
+        lblRow('Marque / Modèle', appareil)+
+        lblRow('IMEI / N° de série', esc(a.imei||'______________________________'))+
+        lblRow('État à la réception', esc(a.etatRecept||'Appareil examiné en atelier'))+
+      '</table>'+
+      // 2. CONSTATATIONS
+      secTitle('2','CONSTATATIONS TECHNIQUES')+
+      '<div style="font-size:11.5px;line-height:1.6;text-align:justify;">L\'examen de l\'appareil réalisé en atelier met en évidence les éléments suivants, constatés de manière permanente :</div>'+
+      constats+
+      // 3. DIAGNOSTIC
+      secTitle('3','DIAGNOSTIC')+
+      '<div style="font-size:11.5px;line-height:1.65;text-align:justify;">'+diagTxt+'</div>'+
+      ecoTxt+
+      // 4. CONCLUSION
+      secTitle('4','CONCLUSION')+
+      '<div style="font-size:11.5px;line-height:1.7;text-align:justify;">'+conclusion+'</div>'+
+      // SIGNATURE
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:30px;">'+
+        '<div style="font-size:11px;color:#444;">Fait à Mâcon, le '+dateStr+'</div>'+
+        '<div style="text-align:center;">'+
+          (tampon?'<img src="'+tampon+'" style="height:95px;opacity:.95;">':'<div style="width:160px;height:95px;border:1px dashed #ccc;border-radius:8px;"></div>')+
+          '<div style="font-size:11px;margin-top:2px;"><b>Cachet et signature</b><br>Sébastien Cannard — Gérant<br><span style="color:#888;">Solution Phone SARL</span></div>'+
+        '</div>'+
       '</div>'+
+      FOOTER+
     '</div>'+
-    // SIGNATURE / TAMPON
-    '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;">'+
-      '<div style="font-size:11px;color:#666;">Fait à Mâcon, le '+dateStr+'<br><br><b>Le technicien expert</b><br><span style="color:#999;">Solution Phone</span></div>'+
-      (tampon?'<img src="'+tampon+'" style="height:90px;opacity:.95;">':'<div style="width:150px;height:90px;border:1px dashed #ccc;border-radius:8px;"></div>')+
-    '</div>'+
-    '<div style="margin-top:24px;font-size:9px;color:#999;border-top:1px solid #eee;padding-top:8px;">Rapport établi par un professionnel de la réparation. Document non contractuel, remis à titre informatif au client / à son assureur.</div>'+
-    '</div><scr'+'ipt>window.onload=function(){};<\/scr'+'ipt></body></html>');
+    '</div></body></html>');
   w.document.close();
   showNotif&&showNotif('Rapport d\'expertise '+a.numero+' généré','success');
 }
