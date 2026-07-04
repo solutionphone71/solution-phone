@@ -7737,6 +7737,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="genererAttestation()">🛡️ Générer l'attestation</button>
+            <button class="btn" onclick="genererRapportExpertise()" style="border-color:#2563eb;color:#2563eb;">📋 Rapport d'expertise & diagnostic</button>
             <button class="btn" onclick="genererAttestation(true)" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
           </div>
         </div>
@@ -19274,6 +19275,101 @@ async function envoyerAttestationData(a){
     if(res.ok){ showNotif&&showNotif('✅ Attestation envoyée à '+email,'success'); }
     else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
   }catch(e){ showNotif&&showNotif('Erreur réseau envoi attestation','error'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RAPPORT D'EXPERTISE & DIAGNOSTIC (juillet 2026)
+// Réutilise le formulaire de l'attestation d'irréparabilité.
+// Contrairement à l'attestation (conclut "irréparable"), le rapport
+// documente l'examen et peut conclure réparable OU irréparable.
+// ══════════════════════════════════════════════════════════════
+function genererRapportExpertise(){
+  var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
+  var prenom=g('att-prenom'), nom=g('att-nom'), tel=g('att-tel'), email=g('att-email');
+  var marque=g('att-marque'), modele=g('att-modele'), imei=g('att-imei'), dateAchat=g('att-dateachat');
+  var dommages=_attCheckedValues('att-dommages'), dommagesAutre=g('att-dommages-autre');
+  var diagnostic=g('att-diagnostic'), motifs=_attCheckedValues('att-motifs');
+  var cout=parseFloat(g('att-cout'))||0, valeur=parseFloat(g('att-valeur'))||0;
+  if(!nom||!marque||!modele){ showNotif('Nom, marque et modèle requis','error'); return; }
+  var num='EXP-'+new Date().getFullYear()+'-'+String(((typeof attestList!=='undefined'?attestList.length:0)+1)).padStart(3,'0');
+  var a={ numero:num, date:new Date().toISOString().split('T')[0],
+    prenom:prenom, nom:nom, tel:tel, email:email, adresse:getAdresse('att'),
+    marque:marque, modele:modele, imei:imei, dateAchat:dateAchat,
+    dommages:dommages, dommagesAutre:dommagesAutre, diagnostic:diagnostic,
+    motifs:motifs, cout:cout, valeur:valeur };
+  imprimerRapportExpertise(a);
+}
+function imprimerRapportExpertise(a){
+  var logo = typeof SP_LOGO !== 'undefined' ? SP_LOGO : '';
+  var tampon = (typeof SP_TAMPON !== 'undefined' ? SP_TAMPON : '') || '';
+  var dateStr = a.date ? new Date(a.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+  var achatStr = a.dateAchat ? new Date(a.dateAchat).toLocaleDateString('fr-FR') : '—';
+  var cli=((a.prenom||'')+' '+(a.nom||'')).trim();
+  var esc=function(s){ return (''+(s==null?'':s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var domms=(a.dommages||[]).slice(); if(a.dommagesAutre) domms.push(a.dommagesAutre);
+  var irreparable = (a.motifs && a.motifs.length>0);
+  var nonViable = (a.cout>0 && a.valeur>0 && a.cout > a.valeur);
+  var liste=function(arr){ return (arr&&arr.length)?('<ul style="margin:6px 0 0 20px;padding:0;">'+arr.map(function(x){return '<li style="margin:3px 0;">'+esc(x)+'</li>';}).join('')+'</ul>'):'<span style="color:#888;">—</span>'; };
+  var row=function(l,v){ return '<tr><td style="padding:5px 8px;color:#555;width:38%;border-bottom:1px solid #eee;">'+l+'</td><td style="padding:5px 8px;font-weight:600;border-bottom:1px solid #eee;">'+(v||'—')+'</td></tr>'; };
+  var section=function(t){ return '<div style="font-size:12px;font-weight:800;color:#c0392b;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-bottom:1.5px solid #f0c9c4;padding-bottom:3px;">'+t+'</div>'; };
+  var concColor = irreparable ? '#c0392b' : '#16a34a';
+  var concTitre = irreparable ? 'APPAREIL DÉCLARÉ IRRÉPARABLE' : 'DIAGNOSTIC ÉTABLI';
+  var w=window.open('','_blank'); if(!w){ showNotif('Autorisez les popups','error'); return; }
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rapport d\'expertise '+a.numero+'</title>'+
+    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:12px;color:#111;}'+
+    '.page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm;position:relative;}'+
+    '@media print{.no-print{display:none!important;}@page{size:A4;margin:0;}}</style></head><body>'+
+    '<div class="no-print" style="display:flex;justify-content:flex-end;gap:8px;padding:8px 16px;background:#f8f8f8;border-bottom:1px solid #ddd;">'+
+      '<button onclick="window.close()" style="background:#6b7280;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">Fermer</button>'+
+      '<button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer;">🖨️ Imprimer / PDF</button>'+
+    '</div>'+
+    '<div class="page">'+
+    // EN-TÊTE
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #c0392b;padding-bottom:10px;margin-bottom:14px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+(logo?'<img src="'+logo+'" style="height:48px;">':'')+
+        '<div><div style="font-size:17px;font-weight:900;color:#c0392b;">SOLUTION PHONE</div>'+
+        '<div style="font-size:10px;color:#777;line-height:1.7;">21 Rue Gambetta · 71000 Mâcon<br>03 85 33 06 89 · contact@solution-phone.fr<br>SIRET : 801044785 00021</div></div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<div style="font-size:17px;font-weight:900;line-height:1.15;">RAPPORT D\'EXPERTISE<br>&amp; DIAGNOSTIC</div>'+
+        '<div style="font-size:13px;font-weight:700;color:#c0392b;margin-top:4px;">'+esc(a.numero)+'</div>'+
+        '<div style="font-size:11px;color:#888;">Date : '+dateStr+'</div>'+
+      '</div>'+
+    '</div>'+
+    // CLIENT + APPAREIL
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
+      row('Client', esc(cli))+ row('Téléphone / Email', esc((a.tel||'')+((a.tel&&a.email)?' · ':'')+(a.email||'')))+
+      row('Appareil', esc((a.marque||'')+' '+(a.modele||'')))+
+      row('IMEI / N° de série', esc(a.imei))+ row('Date d\'achat', achatStr)+
+    '</table>'+
+    section('1. Symptômes & dommages constatés')+ liste(domms)+
+    section('2. Examen & diagnostic technique')+
+      '<div style="font-size:12px;line-height:1.6;text-align:justify;">'+(a.diagnostic?esc(a.diagnostic):'Examen visuel et fonctionnel de l\'appareil réalisé en atelier. Tests d\'alimentation, d\'affichage et des fonctions principales effectués.')+'</div>'+
+    section('3. Évaluation économique')+
+      '<table style="width:100%;border-collapse:collapse;font-size:12px;">'+
+        row('Coût estimé de la réparation', a.cout>0?('<b>'+a.cout.toFixed(2)+' € TTC</b>'):'—')+
+        row('Valeur estimée de l\'appareil', a.valeur>0?('<b>'+a.valeur.toFixed(2)+' €</b>'):'—')+
+        (nonViable?'<tr><td colspan="2" style="padding:6px 8px;color:#c0392b;font-weight:700;">→ Coût de réparation supérieur à la valeur : réparation économiquement non viable.</td></tr>':'')+
+      '</table>'+
+    (irreparable? (section('4. Motif(s) d\'irréparabilité')+liste(a.motifs)) : '')+
+    // CONCLUSION
+    '<div style="margin-top:18px;border:2px solid '+concColor+';border-radius:10px;padding:14px 16px;background:'+(irreparable?'#fef2f2':'#ecfdf5')+';">'+
+      '<div style="font-size:13px;font-weight:900;color:'+concColor+';margin-bottom:4px;">CONCLUSION — '+concTitre+'</div>'+
+      '<div style="font-size:12px;line-height:1.6;color:#333;">'+
+        (irreparable
+          ? 'Après examen, l\'appareil <b>'+esc((a.marque||'')+' '+(a.modele||''))+'</b> est déclaré <b>techniquement et/ou économiquement irréparable</b> pour les motifs indiqués ci-dessus. Le présent rapport peut être remis à l\'assureur du client dans le cadre d\'une déclaration de sinistre.'
+          : 'Le présent rapport rend compte de l\'examen et du diagnostic technique réalisés sur l\'appareil <b>'+esc((a.marque||'')+' '+(a.modele||''))+'</b>. Il est établi à la demande du client pour valoir ce que de droit.')+
+      '</div>'+
+    '</div>'+
+    // SIGNATURE / TAMPON
+    '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:34px;">'+
+      '<div style="font-size:11px;color:#666;">Fait à Mâcon, le '+dateStr+'<br><br><b>Le technicien expert</b><br><span style="color:#999;">Solution Phone</span></div>'+
+      (tampon?'<img src="'+tampon+'" style="height:90px;opacity:.95;">':'<div style="width:150px;height:90px;border:1px dashed #ccc;border-radius:8px;"></div>')+
+    '</div>'+
+    '<div style="margin-top:24px;font-size:9px;color:#999;border-top:1px solid #eee;padding-top:8px;">Rapport établi par un professionnel de la réparation. Document non contractuel, remis à titre informatif au client / à son assureur.</div>'+
+    '</div><scr'+'ipt>window.onload=function(){};<\/scr'+'ipt></body></html>');
+  w.document.close();
+  showNotif&&showNotif('Rapport d\'expertise '+a.numero+' généré','success');
 }
 
 function imprimerAttestationData(a){
