@@ -8356,6 +8356,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <label>Nom expéditeur</label>
             <input type="text" id="params-brevo-sender-name" placeholder="Solution Phone Mâcon">
           </div>
+          <div class="form-group">
+            <label>🖼️ Bannière email — en-tête (URL image)</label>
+            <input type="text" id="params-email-banner" placeholder="https://... (image de bannière, 600px de large idéal)">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Colle l'URL de ta bannière (créée sur ChatGPT puis hébergée en ligne). Elle s'affichera en haut des emails de facture. Largeur idéale 600 px. Vide = en-tête rouge par défaut.</div>
+            <div id="params-email-banner-preview" style="margin-top:6px;"></div>
+          </div>
           <button class="btn btn-primary" style="background:#0284c7;border-color:#0284c7;width:100%;" onclick="paramsSaveBrevo()">💾 Enregistrer</button>
           <button class="btn btn-sm" onclick="paramsTestBrevo()" style="border-color:#0284c7;color:#0284c7;margin-top:8px;width:100%;">🧪 Tester l'envoi</button>
           <div id="params-brevo-status" style="margin-top:8px;font-size:12px;"></div>
@@ -13256,9 +13262,12 @@ function paramsSaveBrevo(){
   var sender = (document.getElementById('params-brevo-sender')||{value:''}).value.trim();
   var name   = (document.getElementById('params-brevo-sender-name')||{value:'Solution Phone'}).value.trim()||'Solution Phone';
   if(!key||!sender){ showNotif('Remplissez clé API et email expéditeur','error'); return; }
+  var banner = (document.getElementById('params-email-banner')||{value:''}).value.trim();
   localStorage.setItem(PARAMS_KEYS.brevoKey, key);
   localStorage.setItem(PARAMS_KEYS.brevoSender, sender);
   localStorage.setItem(PARAMS_KEYS.brevoSenderName, name);
+  localStorage.setItem(PARAMS_KEYS.emailBanner, banner);
+  if(typeof supaSettingSave === 'function') supaSettingSave('email_banner', banner);
   // Sync Supabase
   if(typeof supaSettingSave === 'function') {
     supaSettingSave('brevo_key', key);
@@ -13325,11 +13334,15 @@ async function envoyerFactureEmail(){
   var prixAffiche = prixClient; // le client paie le prix saisi (bonus QualiRépar déjà appliqué / en plus)
   var _googleUrl = ((typeof rlGoogleUrl!=='undefined' && rlGoogleUrl)||'').trim() || 'https://g.page/r/CbyQ_wiFpddjEBM/review';
 
-  var htmlEmail = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;">'+
-    '<div style="background:#c0392b;padding:20px;text-align:center;">'+
-      '<h1 style="color:#fff;margin:0;font-size:22px;">Solution Phone</h1>'+
-      '<p style="color:#ffcdd2;margin:4px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p>'+
-    '</div>'+
+  var _bannerUrl = (localStorage.getItem(PARAMS_KEYS.emailBanner)||'').trim();
+  var _headerHtml = _bannerUrl
+    ? '<a href="https://solution-phone.fr" style="text-decoration:none;"><img src="'+_bannerUrl+'" alt="Solution Phone" style="display:block;width:100%;max-width:600px;height:auto;border:0;"></a>'
+    : '<div style="background:linear-gradient(135deg,#E10600,#8f000c);padding:26px 20px;text-align:center;">'+
+        '<h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:.5px;">SOLUTION PHONE</h1>'+
+        '<p style="color:#ffd9d6;margin:6px 0 0;font-size:13px;">21 Rue Gambetta · 71000 Mâcon · 03 85 33 06 89</p>'+
+      '</div>';
+  var htmlEmail = '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;background:#ffffff;border:1px solid #eee;border-radius:0 0 12px 12px;overflow:hidden;">'+
+    _headerHtml+
     '<div style="padding:24px;">'+
       '<p>Bonjour '+(c.prenom||c.nom||'')+ ',</p>'+
       '<p>Votre réparation est terminée. Veuillez trouver ci-joint votre facture.</p>'+
@@ -22765,6 +22778,7 @@ var PARAMS_KEYS = {
   brevoKey:       'sp_brevo_key',
   brevoSender:    'sp_brevo_sender',
   brevoSenderName:'sp_brevo_sender_name',
+  emailBanner:    'sp_email_banner',
   claudeKey:   'sp_claude_key',
   claudeModel: 'sp_claude_model',
 };
@@ -22830,6 +22844,7 @@ function paramsLoad(skipSupabaseReload){
   el=document.getElementById('params-brevo-key');         if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
   el=document.getElementById('params-brevo-sender');      if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoSender)||'';
   el=document.getElementById('params-brevo-sender-name'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
+  el=document.getElementById('params-email-banner'); if(el){ el.value=localStorage.getItem(PARAMS_KEYS.emailBanner)||''; var pv=document.getElementById('params-email-banner-preview'); if(pv) pv.innerHTML = el.value ? '<img src="'+el.value+'" style="max-width:100%;border:1px solid var(--border);border-radius:8px;" onerror="this.style.display=\'none\'">' : ''; }
   el=document.getElementById('params-brevo-status');
   if(el) el.innerHTML = localStorage.getItem(PARAMS_KEYS.brevoKey) ? '<span style="color:var(--green);">✅ Email & SMS actifs</span>' : '<span style="color:var(--text-muted);">Non configuré</span>';
   el=document.getElementById('params-kiwiz-user'); if(el) el.value=localStorage.getItem(PARAMS_KEYS.kiwizUser)||'';
