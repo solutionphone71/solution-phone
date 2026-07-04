@@ -943,6 +943,8 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       <span>Zahira</span>
     </a>
+    <style>@keyframes spSyncSpin{to{transform:rotate(360deg)}} #sp-sync-btn.spinning{animation:spSyncSpin .8s linear infinite}</style>
+    <button id="sp-sync-btn" onclick="spSyncNow()" title="Synchroniser maintenant avec Supabase — récupère les réparations et clients de tous les postes (iPad, ordinateur)" style="background:rgba(0,0,0,0.05);color:#1d1d1f;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;width:40px;height:40px;font-size:18px;cursor:pointer;transition:all 0.2s;">🔄</button>
     <button id="brain-chat-btn" onclick="openBrainChat()" title="Chat rapide" style="background:rgba(0,0,0,0.05);color:#1d1d1f;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;width:40px;height:40px;font-size:18px;cursor:pointer;transition:all 0.2s;">🧠</button>
     <button id="ia-vacances-btn" onclick="toggleVacancesIA()" title="Mettre les agents IA en pause (stoppe la consommation de tokens)" style="background:rgba(0,0,0,0.05);color:#1d1d1f;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;height:40px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px;">🏖️ Vacances IA</button>
   </div>
@@ -9113,7 +9115,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         <!-- Actions rapides réparations -->
         <div style="display:flex;gap:8px;margin-bottom:14px;">
           <button class="btn btn-primary" onclick="repNewDossier()" style="flex:1;padding:12px;font-size:13px;font-weight:700;">🔧 Nouvelle réparation</button>
-          <button class="btn btn-sm" onclick="repLoadDossiers();renderRepListe();renderRepHistorique();" style="padding:12px;font-size:13px;">🔄</button>
+          <button class="btn btn-sm" onclick="spSyncNow()" title="Synchroniser avec Supabase (tous postes)" style="padding:12px;font-size:13px;">🔄 Synchroniser</button>
         </div>
       </div>
 
@@ -31152,6 +31154,38 @@ function supprimerCommandeWidget(id, ev){
 var bonsDepot = [];
 
 function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(bonsDepot)); }
+
+// ── Synchronisation manuelle (bouton 🔄 de la barre du haut) ──────────────
+// Force le rechargement depuis Supabase de TOUTES les données partagées entre postes
+// (réparations en cours + historique + clients), puis rafraîchit l'affichage courant.
+// Affiche un vrai retour : succès avec le nombre de dossiers, ou l'erreur si un poste est bloqué.
+async function spSyncNow(){
+  var btn = document.getElementById('sp-sync-btn');
+  if(btn){ btn.classList.add('spinning'); btn.style.pointerEvents='none'; }
+  if(typeof showNotif==='function') showNotif('🔄 Synchronisation avec Supabase…','info');
+  var errors = [];
+  async function run(fn, label){ try{ if(typeof window[fn]==='function') await window[fn](); }catch(e){ errors.push(label); console.warn('[sync] '+label, e); } }
+  // Réparations en cours (tous postes) — pas de cache, toujours frais
+  await run('loadBonsDepot','réparations');
+  // Historique terminé : on force la source Supabase (bypass du cache 5 min)
+  try{ if(typeof syncHRepFromSupabase==='function'){ await syncHRepFromSupabase(); } else { await run('loadHistoriqueReparations','historique'); } }catch(e){ errors.push('historique'); console.warn('[sync] historique', e); }
+  // Clients (tous postes)
+  await run('loadAllClients','clients');
+  // Rafraîchir l'affichage courant (selon la page ouverte)
+  try{ if(typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
+  try{ if(typeof renderRepHistorique==='function') renderRepHistorique(); }catch(e){}
+  try{ if(typeof renderBonsDepot==='function') renderBonsDepot(); }catch(e){}
+  try{ if(typeof qrShowTab==='function') qrShowTab(_qrTab||'ecologic'); else if(typeof renderSuiviQR==='function') renderSuiviQR(); }catch(e){}
+  try{ if(typeof renderClients==='function') renderClients(); }catch(e){}
+  try{ if(typeof renderDashboard==='function') renderDashboard(); }catch(e){}
+  if(btn){ btn.classList.remove('spinning'); btn.style.pointerEvents=''; }
+  if(errors.length){
+    if(typeof showNotif==='function') showNotif('⚠️ Sync incomplète — échec : '+errors.join(', ')+'. Vérifiez la connexion internet de cet iPad.','error');
+  } else {
+    var n = (window.bonsDepot||[]).length;
+    if(typeof showNotif==='function') showNotif('✅ Synchronisé — '+n+' réparations à jour (tous postes)','success');
+  }
+}
 
 async function loadBonsDepot(){
   try {
