@@ -24697,6 +24697,16 @@ function repGenererNumero(){
   return prefix + String(next).padStart(3,'0');
 }
 
+// Numéro PROVISOIRE à la création du dossier (affichage) — ne consomme RIEN.
+// Le numéro DÉFINITIF est réservé atomiquement à la validation du client
+// (repReserverNumero), ce qui évite les doublons entre deux tablettes.
+function repGenererNumeroProvisoire(){
+  var annee = new Date().getFullYear();
+  var prefix = 'REP-'+annee+'-';
+  if(!Array.isArray(repDossiers)) repDossiers = [];
+  return prefix + String(repScanMaxNumero(prefix)+1).padStart(3,'0');
+}
+
 // ══ FIX juillet 2026 — « numéro facture déjà utilisé » (Ecologic/Ecosystem) ══
 // Cause : le n° était max(dossiers chargés)+1. Un poste pas encore synchronisé
 // (liste vide au démarrage) repartait à REP-2026-001, numéro déjà consommé chez
@@ -24741,6 +24751,67 @@ async function repLoadNumeroHwm(){
     if(max>0) repSetNumeroHwm(annee, max);
   }catch(e){}
 }
+// ══ Réservation ATOMIQUE de numéro (juil. 2026 — 2 tablettes en même temps) ══
+// Le compteur vit dans la table settings (rep_numero_hwm_<année>). On incrémente
+// avec un verrou optimiste : PATCH conditionné à l'ancienne valeur (value=eq.N).
+// Si une autre tablette a réservé entre-temps, le PATCH ne modifie rien → retry.
+// Résultat : deux tablettes ne peuvent JAMAIS obtenir le même numéro.
+// Attribue le numéro DÉFINITIF au dossier courant (une seule fois, à la validation client)
+async function repAttribuerNumeroDefinitif(){
+  var d = window.repDossierCourant;
+  if(!d || d._numeroReserve || d.facture) return; // déjà réservé ou déjà facturé
+  try{
+    var numFinal = await repReserverNumero();
+    if(numFinal){
+      if(numFinal !== d.numero){
+        console.log('[Numéro] Provisoire '+d.numero+' → définitif '+numFinal);
+        d.numero = numFinal;
+        var elN = document.getElementById('rep-dossier-num');
+        if(elN) elN.textContent = numFinal + (d.date ? ' · '+fmtDate(d.date) : '');
+      }
+      d._numeroReserve = true;
+    }
+  }catch(e){ console.warn('repAttribuerNumeroDefinitif:', e); }
+}
+
+async function repReserverNumero(){
+  var annee = new Date().getFullYear();
+  var prefix = 'REP-'+annee+'-';
+  var key = 'rep_numero_hwm_'+annee;
+  if(!supabaseReady) return repGenererNumero(); // hors ligne : fallback local
+  for(var essai=0; essai<6; essai++){
+    try{
+      var rows = await supaFetch('settings','GET',null,'?key=eq.'+key);
+      var cur = (rows && rows[0]) ? (parseInt(rows[0].value)||0) : -1;
+      var next = Math.max(cur<0?0:cur, repScanMaxNumero(prefix)) + 1;
+      if(cur < 0){
+        // ligne compteur absente → la créer ; si l'autre tablette la crée en même temps, on retentera
+        try{ await supaFetch('settings','POST',{key:key, value:String(next)}); }catch(e){}
+        var verif = await supaFetch('settings','GET',null,'?key=eq.'+key);
+        if(verif && verif[0] && parseInt(verif[0].value)===next){
+          repSetNumeroHwm(annee, next);
+          return prefix + String(next).padStart(3,'0');
+        }
+        continue; // course perdue → relire et réessayer
+      }
+      // Verrou optimiste : ne passe que si la valeur n'a pas bougé depuis la lecture
+      var q = '?key=eq.'+key+'&value=eq.'+encodeURIComponent(rows[0].value);
+      var resp = await fetch('/api/supabase?table=settings&query='+encodeURIComponent(q), {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Prefer':'return=representation'},
+        body: JSON.stringify({value:String(next)})
+      });
+      var arr = []; try{ arr = JSON.parse(await resp.text()); }catch(e){}
+      if(Array.isArray(arr) && arr.length){
+        repSetNumeroHwm(annee, next);
+        console.log('[Numéro] Réservé atomiquement : '+prefix+String(next).padStart(3,'0'));
+        return prefix + String(next).padStart(3,'0');
+      }
+      // une autre tablette a pris ce numéro entre-temps → on boucle
+    }catch(e){ console.warn('repReserverNumero (essai '+essai+'):', e); }
+  }
+  return repGenererNumero(); // après 6 essais : fallback (filet repEnsureNumeroUnique ensuite)
+}
 // Vérifie côté serveur que le n° du dossier n'est pas déjà porté par un AUTRE dossier.
 // Si doublon → nouveau numéro (jamais réutilisé), facture mise à jour, sauvegarde en base.
 async function repEnsureNumeroUnique(d){
@@ -24749,9 +24820,8 @@ async function repEnsureNumeroUnique(d){
     var q = '?select=id,numero&numero=eq.'+encodeURIComponent(d.numero)+'&id=neq.'+encodeURIComponent(d.id);
     var dups = await supaFetch('bons_depot','GET',null,q);
     if(!Array.isArray(dups) || dups.length===0) return d.numero;
-    await repLoadNumeroHwm(); // repartir du vrai max serveur avant d'attribuer
     var ancien = d.numero;
-    var nouveau = repGenererNumero();
+    var nouveau = await repReserverNumero(); // réservation atomique (anti-course 2 tablettes)
     d.numero = nouveau;
     if(d.facture && d.facture.numero===ancien) d.facture.numero = nouveau;
     d.obs = ((d.obs||'')+' [Renuméroté '+ancien+' → '+nouveau+' : n° facture en doublon]').trim();
@@ -24788,8 +24858,7 @@ async function repFixDuplicateNumeros(){
         var d = arr[i];
         if(forceAll){ // dossiers issus du reset de numérotation : tous renumérotés
           var ancienF = d.numero;
-          await repLoadNumeroHwm();
-          var nouveauF = repGenererNumero();
+          var nouveauF = await repReserverNumero();
           d.numero = nouveauF;
           if(d.facture && d.facture.numero===ancienF) d.facture.numero = nouveauF;
           d.obs = ((d.obs||'')+' [Renuméroté '+ancienF+' → '+nouveauF+' : reset numérotation]').trim();
@@ -24831,7 +24900,7 @@ function repNewDossier(){
     if(!Array.isArray(repDossiers) || repDossiers.length === 0) repLoadDossiers();
     repDossierCourant = {
       id: Date.now(),
-      numero: repGenererNumero(),
+      numero: repGenererNumeroProvisoire(), // définitif réservé à la validation client
       date: new Date().toISOString().split('T')[0],
       statut: 'depot',
       client: {civilite:'M.'}, appareil: {}, panne:'', devis:0, moHT:0, piecesHT:0, piec:false, obs:'',
@@ -24930,6 +24999,7 @@ async function repOuvrirDossier(id){
   var rp=document.getElementById('page-reparations');
   if(rp&&!rp.classList.contains('active')){try{showPage('reparations',null);}catch(e){}}
   repDossierCourant = JSON.parse(JSON.stringify(d));
+  repDossierCourant._numeroReserve = true; // dossier existant en base : numéro déjà attribué
   // Sécuriser les propriétés manquantes
   if(!repDossierCourant.client) repDossierCourant.client = {};
   if(!repDossierCourant.appareil) repDossierCourant.appareil = {};
@@ -25824,7 +25894,7 @@ function repApplyClientLock(locked){
   if(repDossierCourant) repDossierCourant._clientLocked = locked;
 }
 
-function repValiderClient(){
+async function repValiderClient(){
   // Auto-créer un dossier si nécessaire
   if(!repDossierCourant){
     repNewDossier();
@@ -25839,6 +25909,7 @@ function repValiderClient(){
     var civ = document.getElementById('rep-civilite'); if(civ) c.civilite = civ.value;
     repDossierCourant.client = c;
   }
+  await repAttribuerNumeroDefinitif(); // réservation atomique (anti-doublon 2 tablettes)
   repSauvegarderDossier();
   // ── RÈGLE (juil. 2026) : dès que le client est validé, le dossier est écrit
   //    IMMÉDIATEMENT en Supabase (sans debounce). Si l'app plante ensuite,
@@ -26061,7 +26132,7 @@ function repUpdateStatutBadge(){
   badge.appendChild(span);
 }
 
-function repStep1Next(){
+async function repStep1Next(){
   // Fermer tout overlay mobile qui pourrait bloquer
   var ov = document.getElementById('mobile-menu-overlay');
   if(ov) ov.style.display = 'none';
@@ -26132,6 +26203,7 @@ function repStep1Next(){
   };
 
   repSauvegarderClientSupabase(repDossierCourant.client);
+  await repAttribuerNumeroDefinitif(); // réservation atomique (anti-doublon 2 tablettes)
   repSauvegarderDossier();
   // RÈGLE : client validé → dossier écrit immédiatement en Supabase (récupérable après crash)
   repSauvegarderDossierImmediatement();
