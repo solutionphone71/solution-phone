@@ -24895,6 +24895,8 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
+  // Charger la signature à la demande (la liste est allégée — fix freeze iPad)
+  if(!d.signature && d._sigNotLoaded){ try{ await repFetchSignature(d); }catch(e){} }
   var rp=document.getElementById('page-reparations');
   if(rp&&!rp.classList.contains('active')){try{showPage('reparations',null);}catch(e){}}
   repDossierCourant = JSON.parse(JSON.stringify(d));
@@ -26413,6 +26415,7 @@ function repSauvegarderDossierImmediatement(){
     facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi,
     photoImeiUrl: repDossierCourant.photoImeiUrl||null,
     signature: repDossierCourant.signature||null,
+    _sigNotLoaded: !!repDossierCourant._sigNotLoaded,
     moHT: repDossierCourant.moHT||null,
     piecesHT: repDossierCourant.piecesHT||null
   };
@@ -26453,6 +26456,7 @@ function repSauvegarderDossier(){
     facture: repDossierCourant.facture, qrEnvoi: repDossierCourant.qrEnvoi,
     photoImeiUrl: repDossierCourant.photoImeiUrl||null,
     signature: repDossierCourant.signature||null,
+    _sigNotLoaded: !!repDossierCourant._sigNotLoaded,
     moHT: repDossierCourant.moHT||null,
     piecesHT: repDossierCourant.piecesHT||null
   };
@@ -27027,6 +27031,8 @@ function repEnvoyerSMSFactureCloture(){
 async function qrEnvoyerEcologicComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
+  // Signature à la demande (liste allégée — fix freeze iPad)
+  if(!d.signature && d._sigNotLoaded){ try{ await repFetchSignature(d); }catch(e){} }
   // ── Pré-validation : bloquer si éléments obligatoires manquants ──
   var manquants=[];
   if(!(c.nom||'').trim()) manquants.push('Nom du client');
@@ -27284,6 +27290,8 @@ function ecoBlobToB64(blob){
 async function qrEnvoyerEcosystemComplet(d){
   if(!d){showNotif&&showNotif("Aucun dossier","error");return;}
   var c=d.client||{};var a=d.appareil||{};
+  // Signature à la demande (liste allégée — fix freeze iPad)
+  if(!d.signature && d._sigNotLoaded){ try{ await repFetchSignature(d); }catch(e){} }
   // Pré-validation pièces jointes
   var _manq=[];
   if(!(c.nom||'').trim()) _manq.push('Nom du client');
@@ -31286,7 +31294,36 @@ function supprimerCommandeWidget(id, ev){
 
 var bonsDepot = [];
 
-function saveBonsDepot(){ localStorage.setItem('sp_bons_depot', JSON.stringify(bonsDepot)); }
+function saveBonsDepot(){
+  // FIX freeze iPad : cache local SANS les signatures base64 (quota localStorage 5 Mo
+  // + JSON.stringify de plusieurs Mo à chaque sauvegarde = gel de l'interface).
+  try{
+    var light = (bonsDepot||[]).map(function(d){
+      if(!d || !d.signature) return d;
+      var c = Object.assign({}, d); c.signature = null; c._sigNotLoaded = true;
+      return c;
+    });
+    localStorage.setItem('sp_bons_depot', JSON.stringify(light));
+  }catch(e){ console.warn('saveBonsDepot (cache local):', e.message); }
+}
+
+// ── Signature à la demande (fix freeze iPad juil. 2026) ──
+// La liste des dossiers est chargée SANS les signatures. On récupère la signature
+// d'un dossier uniquement au moment où on en a besoin (ouverture / envoi QualiRépar).
+async function repFetchSignature(d){
+  if(!d) return null;
+  if(d.signature){ d._sigNotLoaded = false; return d.signature; }
+  try{
+    var r = await supaFetch('bons_depot','GET',null,'?select=signature&id=eq.'+encodeURIComponent(d.id));
+    d.signature = (r && r[0] && r[0].signature) || null;
+    d._sigNotLoaded = false;
+    [window.repDossiers, window.bonsDepot].forEach(function(arr){
+      (Array.isArray(arr)?arr:[]).forEach(function(x){ if(x && String(x.id)===String(d.id)){ x.signature = d.signature; x._sigNotLoaded = false; } });
+    });
+    if(window.repDossierCourant && String(repDossierCourant.id)===String(d.id)){ repDossierCourant.signature = d.signature; repDossierCourant._sigNotLoaded = false; }
+  }catch(e){ console.warn('repFetchSignature:', e); }
+  return d.signature;
+}
 
 // ── Synchronisation manuelle (bouton 🔄 de la barre du haut) ──────────────
 // Force le rechargement depuis Supabase de TOUTES les données partagées entre postes
@@ -31330,7 +31367,11 @@ async function spSyncNow(){
 
 async function loadBonsDepot(){
   try {
-    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc&select=*');
+    // FIX freeze iPad (juil. 2026) : ne PAS charger les signatures (base64 lourds,
+    // plusieurs Mo pour 130+ dossiers → saturation mémoire Safari iPad).
+    // La signature d'un dossier est chargée à la demande via repFetchSignature().
+    var _cols = 'id,numero,date,statut,facture,qr_envoi,client_nom,client_prenom,client_societe,client_tel,client_email,client_civilite,client_adresse,client_cp,client_ville,appareil_marque,appareil_modele,appareil_imei,appareil_imei2,appareil_couleur,appareil_code,etat,etat_autre,accessoires,panne,devis,date_retour,obs,photo_imei_url,bonus_qr,mo_ht,pieces_ht';
+    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc&select='+_cols);
     if(res && res.length >= 0){
       bonsDepot = res.map(function(x){
         return {
@@ -31364,7 +31405,7 @@ async function loadBonsDepot(){
           dateRetour: x.date_retour||'',
           obs: x.obs||'',
           photoImeiUrl: x.photo_imei_url||null,
-          signature: x.signature||null,
+          signature: x.signature||null, _sigNotLoaded: !x.signature, // signature chargée à la demande
           bonusQR: !!x.bonus_qr,
           moHT: x.mo_ht||null,
           piecesHT: x.pieces_ht||null
@@ -31409,8 +31450,10 @@ async function saveBonDepotSupabase(d){
     facture: d.facture||null,
     qr_envoi: d.qrEnvoi||null
   };
+  // Signature non chargée (liste allégée) → ne PAS écraser la signature déjà en base
+  if(!d.signature && d._sigNotLoaded) delete data.signature;
   try {
-    var ex = await supaFetch('bons_depot','GET',null,'?id=eq.'+d.id);
+    var ex = await supaFetch('bons_depot','GET',null,'?select=id&id=eq.'+d.id);
     if(ex && ex.length > 0){ await supaFetch('bons_depot','PATCH',data,'?id=eq.'+d.id); }
     else { await supaFetch('bons_depot','POST',data); }
   } catch(e){ console.log('Erreur save bon depot',e); }
