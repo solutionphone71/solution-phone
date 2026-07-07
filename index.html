@@ -1865,14 +1865,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
-      <!-- ═══ FILE ATELIER ═══ -->
+      <!-- ═══ FILE ATELIER (résumé — la liste complète vit dans Réparations) ═══ -->
       <div style="margin-bottom:26px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#6B7280;">File atelier · dossiers en cours</div>
-          <span onclick="showPage('reparations',null)" style="font-size:13px;color:#E10600;font-weight:700;cursor:pointer;">Voir tout →</span>
-        </div>
-        <div style="background:#fff;border:1px solid #E8EAED;border-radius:16px;overflow:hidden;">
-          <div id="dash-file-atelier-body"><div style="padding:22px;text-align:center;color:#9CA3AF;font-size:14px;">Chargement…</div></div>
+        <div style="background:#fff;border:1px solid #E8EAED;border-radius:16px;overflow:hidden;cursor:pointer;" onclick="showPage('reparations',null)">
+          <div id="dash-file-atelier-body" style="padding:16px 18px;color:#9CA3AF;font-size:14px;">Chargement…</div>
         </div>
       </div>
 
@@ -9123,7 +9119,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
       <div id="rep-liste-view">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📂 Dossiers en cours</div>
+            <div class="card-title">🗂️ File atelier — dossiers en cours</div>
             <input type="text" id="rep-search" placeholder="🔍 Client ou appareil..." style="padding:7px 11px;background:rgba(0,0,0,0.06);border:1px solid var(--border);border-radius:8px;font-size:13px;width:200px;" oninput="_debouncedRepListe()">
           </div>
           <div style="overflow-x:auto;">
@@ -34662,42 +34658,29 @@ function renderCaJourBar(){
   try{ if(typeof renderDashHome==='function') renderDashHome(); }catch(e){}
 }
 
+// File atelier (juil. 2026) : la liste complète vit dans Réparations → « File atelier —
+// dossiers en cours ». Sur le tableau de bord, on n'affiche qu'un RÉSUMÉ cliquable.
 function renderFileAtelier(){
   var body=document.getElementById('dash-file-atelier-body'); if(!body) return;
   var src=(window.repDossiers&&window.repDossiers.length)?window.repDossiers:(window.bonsDepot||[]);
-  // Même règle que la page Réparations (repEstEnCours) : un dossier facturé ou déjà
-  // envoyé QualiRépar n'est PLUS « en cours », même si son statut est resté « depot ».
   var enCours=(src||[]).filter(function(d){
     return (typeof repEstEnCours==='function') ? repEstEnCours(d) : !!d;
   });
-  enCours.sort(function(a,b){ return String(b&&(b.date||b.id)||'').localeCompare(String(a&&(a.date||a.id)||'')); });
-  enCours=enCours.slice(0,8);
-  if(!enCours.length){ body.innerHTML='<div style="padding:22px;text-align:center;color:#9CA3AF;font-size:14px;">Aucun dossier en cours</div>'; return; }
-  function badge(st){
-    var s=(st||'').toString().toLowerCase();
-    var col='#6B7280', bg='#F3F4F6', lib=(st||'En cours');
-    if(s.indexOf('depot')>=0){ col='#E10600'; bg='rgba(225,6,0,0.08)'; lib='En atelier'; }
-    else if(s.indexOf('attente')>=0||s.indexOf('commander')>=0||s.indexOf('piece')>=0||s.indexOf('pièce')>=0){ col='#6B7280'; bg='#F3F4F6'; lib='En attente'; }
-    else if(s.indexOf('pret')>=0||s.indexOf('prêt')>=0){ col='#0D0D0D'; bg='#EAEAEA'; lib='Prêt'; }
-    else if(s.indexOf('diag')>=0){ col='#6B7280'; bg='#F3F4F6'; lib='Diagnostic'; }
-    return '<span style="font-size:11px;font-weight:700;color:'+col+';background:'+bg+';padding:3px 10px;border-radius:20px;white-space:nowrap;">'+lib+'</span>';
+  if(!enCours.length){
+    body.innerHTML='<div style="display:flex;align-items:center;gap:10px;color:#9CA3AF;font-size:14px;">🗂️ <b style="color:#374151;">File atelier</b> — aucun dossier en cours</div>';
+    return;
   }
-  body.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:13px;">'+
-    enCours.map(function(d,i){
-      var cli=d.client?((d.client.prenom||'')+' '+(d.client.nom||'')).trim():'';
-      var app=d.appareil?((d.appareil.marque||'')+' '+(d.appareil.modele||'')).trim():((d.marque||'')+' '+(d.modele||'')).trim();
-      var num=d.numero||d.numeroRepa||('#'+(d.id||''));
-      var panne=(d.panne||'').toString();
-      return '<tr onclick="showPage(\'reparations\',null)" onmouseover="this.style.background=\'#FAFAFB\'" onmouseout="this.style.background=\'\'" style="border-top:'+(i?'1px solid #F1F2F4':'none')+';cursor:pointer;">'+
-        '<td style="padding:12px 14px;font-weight:700;color:#111;white-space:nowrap;">'+num+'</td>'+
-        '<td style="padding:12px 14px;color:#374151;">'+(cli||'—')+'</td>'+
-        '<td style="padding:12px 14px;color:#374151;">'+(app||'—')+'</td>'+
-        '<td style="padding:12px 14px;color:#6B7280;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+panne+'</td>'+
-        '<td style="padding:12px 14px;text-align:right;white-space:nowrap;">'+badge(d.statut)+
-          ' <button onclick="event.stopPropagation();repSupprimerDossierParId(\''+String(d.id||'')+'\')" title="Supprimer ce dossier" style="margin-left:8px;background:#fff;border:1px solid #E5E7EB;color:#dc2626;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;">🗑️</button>'+
-        '</td>'+
-      '</tr>';
-    }).join('')+'</table>';
+  enCours.sort(function(a,b){ return String(b&&(b.date||b.id)||'').localeCompare(String(a&&(a.date||a.id)||'')); });
+  var apercu = enCours.slice(0,3).map(function(d){
+    var cli=d.client?((d.client.prenom||'')+' '+(d.client.nom||'')).trim():'';
+    return '<span style="background:#F3F4F6;color:#374151;padding:4px 10px;border-radius:999px;font-size:12px;white-space:nowrap;">'+(d.numero||'')+(cli?' · '+cli:'')+'</span>';
+  }).join(' ');
+  body.innerHTML=
+    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">'+
+      '<div style="font-size:14px;color:#111;">🗂️ <b>File atelier : '+enCours.length+' dossier'+(enCours.length>1?'s':'')+' en cours</b></div>'+
+      apercu+(enCours.length>3?'<span style="color:#9CA3AF;font-size:12px;">+'+(enCours.length-3)+'</span>':'')+
+      '<span style="margin-left:auto;color:#E10600;font-weight:700;font-size:13px;white-space:nowrap;">Ouvrir Réparations →</span>'+
+    '</div>';
 }
 // Dashboard principal : Performance Live + Z caisse récent + Stock occasion (données réelles)
 function renderDashHome(){
