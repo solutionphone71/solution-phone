@@ -10982,6 +10982,18 @@ function initRealtime() {
   if(window._syncInterval) clearInterval(window._syncInterval);
   window._syncInterval = setInterval(async function() {
     if (!supabaseReady || _syncDirty) return;
+    if (document.hidden) return; // app en arrière-plan : ne rien faire (économie iPad)
+    // ── Réparations (juil. 2026) : synchro auto entre postes/tablettes ──
+    // On rafraîchit les dossiers SAUF si un dossier est ouvert en édition sur ce poste
+    // (pour ne pas écraser la saisie en cours).
+    try{
+      var _v = document.getElementById('rep-dossier-view');
+      var _enEdition = !!(window.repDossierCourant && _v && _v.style.display !== 'none');
+      if(!_enEdition && typeof loadBonsDepot === 'function'){
+        await loadBonsDepot();
+        try{ if(typeof renderFileAtelier === 'function') renderFileAtelier(); }catch(e2){}
+      }
+    }catch(e){ console.warn('[sync auto] bons_depot:', e); }
     try {
       var c = await supaFetch('caisse','GET',null,'?order=date.asc');
       if (c) {
