@@ -24278,6 +24278,13 @@ function renderRepHistorique(){
   // Aucune date → tous les dossiers terminés (facture/qr/cloture).
   // Plage de dates (Du / au) → TOUS les dossiers dont la date (dépôt ou facture)
   // tombe dans l'intervalle (utile pour retrouver et nettoyer des dossiers de test).
+  // Si un filtre date remonte au-delà des 60 jours chargés → charger tout automatiquement
+  if(window._bonsDepotPartial && (from || to)){
+    var _lim60 = new Date(Date.now() - 60*86400000).toISOString().slice(0,10);
+    if((from && from < _lim60) || (to && to < _lim60)){
+      if(typeof repChargerToutHistorique === 'function') repChargerToutHistorique();
+    }
+  }
   var statutsTermines = ['facture','qr','cloture'];
   // Un dossier est "terminé" s'il a un statut terminé OU s'il porte déjà une facture.
   // (FIX crash : si l'app plante après facturation, le statut peut rester "depot" alors que
@@ -24420,21 +24427,33 @@ function renderRepHistorique(){
   }).join('');
 
   // Barre de pagination
+  var _fullBtn = window._bonsDepotPartial
+    ? '<button onclick="repChargerToutHistorique()" style="padding:6px 14px;border:1px dashed var(--border);border-radius:8px;background:transparent;cursor:pointer;font-size:12px;color:var(--text-muted);">📥 Tout charger (+ de 60 jours)</button>'
+    : '';
+  var pagDiv = document.getElementById('rep-hist-pagination');
+  if(!pagDiv){
+    pagDiv = document.createElement('div');
+    pagDiv.id = 'rep-hist-pagination';
+    tbody.parentElement.parentElement.appendChild(pagDiv);
+  }
+  pagDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap;';
   if(totalPages > 1){
-    var pagDiv = document.getElementById('rep-hist-pagination');
-    if(!pagDiv){
-      pagDiv = document.createElement('div');
-      pagDiv.id = 'rep-hist-pagination';
-      tbody.parentElement.parentElement.appendChild(pagDiv);
-    }
-    pagDiv.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:12px;padding:12px 0;';
     pagDiv.innerHTML = '<button onclick="repHistChangePage(-1)" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700;'+ (_repHistPage<=1?'opacity:0.4;pointer-events:none;':'') +'">&laquo; Préc.</button>'+
       '<span style="font-size:13px;color:var(--text-muted);">Page '+_repHistPage+' / '+totalPages+' ('+totalDossiers+' dossiers)</span>'+
-      '<button onclick="repHistChangePage(1)" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700;'+ (_repHistPage>=totalPages?'opacity:0.4;pointer-events:none;':'') +'">Suiv. &raquo;</button>';
+      '<button onclick="repHistChangePage(1)" style="padding:6px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-weight:700;'+ (_repHistPage>=totalPages?'opacity:0.4;pointer-events:none;':'') +'">Suiv. &raquo;</button>'+_fullBtn;
   } else {
-    var pagDiv = document.getElementById('rep-hist-pagination');
-    if(pagDiv) pagDiv.innerHTML = '';
+    pagDiv.innerHTML = _fullBtn;
   }
+}
+
+// Charge TOUS les dossiers (y compris clôturés > 60 jours) — à la demande depuis l'Historique
+async function repChargerToutHistorique(){
+  showNotif && showNotif('📥 Chargement de tout l\'historique…','info');
+  try{
+    await loadBonsDepot(true);
+    repLoadDossiers();
+    showNotif && showNotif('✅ Historique complet chargé ('+(window.bonsDepot||[]).length+' dossiers)','success');
+  }catch(e){ showNotif && showNotif('❌ Échec du chargement complet : '+e.message,'error'); }
 }
 
 
@@ -31365,13 +31384,23 @@ async function spSyncNow(){
   }
 }
 
-async function loadBonsDepot(){
+async function loadBonsDepot(full){
   try {
     // FIX freeze iPad (juil. 2026) : ne PAS charger les signatures (base64 lourds,
     // plusieurs Mo pour 130+ dossiers → saturation mémoire Safari iPad).
     // La signature d'un dossier est chargée à la demande via repFetchSignature().
     var _cols = 'id,numero,date,statut,facture,qr_envoi,client_nom,client_prenom,client_societe,client_tel,client_email,client_civilite,client_adresse,client_cp,client_ville,appareil_marque,appareil_modele,appareil_imei,appareil_imei2,appareil_couleur,appareil_code,etat,etat_autre,accessoires,panne,devis,date_retour,obs,photo_imei_url,bonus_qr,mo_ht,pieces_ht';
-    var res = await supaFetch('bons_depot','GET',null,'?order=id.desc&select='+_cols);
+    var _q = '?order=id.desc&select='+_cols;
+    // Par défaut : uniquement les dossiers récents (60 j) + TOUS les dossiers en cours
+    // (non clôturés, quelle que soit leur date). L'Historique propose « Tout charger ».
+    if(full === true){
+      window._bonsDepotPartial = false;
+    } else {
+      var _d60 = new Date(Date.now() - 60*86400000).toISOString().slice(0,10);
+      _q += '&or=(statut.neq.cloture,date.gte.'+_d60+')';
+      window._bonsDepotPartial = true;
+    }
+    var res = await supaFetch('bons_depot','GET',null,_q);
     if(res && res.length >= 0){
       bonsDepot = res.map(function(x){
         return {
