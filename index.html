@@ -25839,7 +25839,11 @@ function repValiderClient(){
     var civ = document.getElementById('rep-civilite'); if(civ) c.civilite = civ.value;
     repDossierCourant.client = c;
   }
-  repSauvegarderDossier(); // ← persiste immédiatement dans bons_depot
+  repSauvegarderDossier();
+  // ── RÈGLE (juil. 2026) : dès que le client est validé, le dossier est écrit
+  //    IMMÉDIATEMENT en Supabase (sans debounce). Si l'app plante ensuite,
+  //    le dossier réapparaît dans la File atelier / Réparations et on reprend là. ──
+  repSauvegarderDossierImmediatement();
   repApplyClientLock(true);
   showNotif('✅ Fiche client verrouillée','success');
   repGoStep(3); // après Client → étape Devis
@@ -26128,7 +26132,9 @@ function repStep1Next(){
   };
 
   repSauvegarderClientSupabase(repDossierCourant.client);
-  repSauvegarderDossier(); // ← persiste adresse/cp/ville dans bons_depot Supabase
+  repSauvegarderDossier();
+  // RÈGLE : client validé → dossier écrit immédiatement en Supabase (récupérable après crash)
+  repSauvegarderDossierImmediatement();
   repApplyClientLock(true); // verrouiller la fiche au passage au step suivant
   repGoStep(3); // après Client → étape Devis
 }
