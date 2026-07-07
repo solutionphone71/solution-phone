@@ -24485,17 +24485,28 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   } catch(e) { alert('Erreur : ' + e.message); }
 }
 
+// ══ Règle UNIQUE « dossier en cours » (juil. 2026) ══
+// Partagée entre la page Réparations ET la File atelier du tableau de bord,
+// pour que les deux affichent exactement les mêmes dossiers.
+function repEstEnCours(d){
+  if(!d) return false;
+  var st = (d.statut||'depot').toString().toLowerCase();
+  if(st !== 'depot' && st !== 'devis') return false;
+  // Facture déjà générée (statut resté « depot » après un crash) → terminé, pas en cours
+  if(d.facture && (Number(d.facture.prix)||Number(d.facture.prixFinal)||0) > 0) return false;
+  // Envoi QualiRépar déjà effectué → dossier terminé
+  var q = d.qrEnvoi||{};
+  if(q.ecologicClaimId||q.ecologicId||q.ecosystemId||q.ecosystemRepairId||q.ecosystemServiceOrder||q.confirme) return false;
+  return true;
+}
+
 function renderRepListe(){
   var search = (document.getElementById('rep-search')||{value:''}).value.toLowerCase();
   var tbody = document.getElementById('rep-liste-table');
   if(!tbody) return;
-  var filtreStatuts = ['depot','devis'];
 
   var list = repDossiers.filter(function(d){
-    if(!d) return false;
-    if(!filtreStatuts.includes(d.statut||'depot')) return false;
-    // Déjà facturé (mais statut resté "depot" suite à un crash) → il appartient à l'historique, pas au "en cours"
-    if(d.facture && (Number(d.facture.prix)||Number(d.facture.prixFinal)||0) > 0) return false;
+    if(!repEstEnCours(d)) return false;
     var c = d.client||{}; var a = d.appareil||{};
     return !search ||
       ((c.nom||'')+' '+(c.prenom||'')).toLowerCase().includes(search) ||
@@ -31440,6 +31451,27 @@ async function loadBonsDepot(full){
           piecesHT: x.pieces_ht||null
         };
       });
+      // ── Auto-réparation statuts (juil. 2026) : un dossier facturé ou déjà envoyé
+      //    QualiRépar dont le statut est resté « depot » (crash) est clôturé en base,
+      //    pour que TOUS les postes le sortent de la File atelier définitivement. ──
+      try{
+        var _aFixer = bonsDepot.filter(function(d){
+          if(!d) return false;
+          var st=(d.statut||'depot').toLowerCase();
+          if(st!=='depot' && st!=='devis') return false;
+          var fOk = d.facture && (Number(d.facture.prix)||Number(d.facture.prixFinal)||0) > 0;
+          var q = d.qrEnvoi||{};
+          var qOk = !!(q.ecologicClaimId||q.ecologicId||q.ecosystemId||q.ecosystemRepairId||q.ecosystemServiceOrder||q.confirme);
+          return fOk || qOk;
+        });
+        _aFixer.forEach(function(d){
+          d.statut = 'cloture';
+          supaFetch('bons_depot','PATCH',{statut:'cloture'},'?id=eq.'+encodeURIComponent(d.id))
+            .then(function(){ console.log('[Auto-fix] '+d.numero+' : depot→cloture (facturé/envoyé)'); })
+            .catch(function(e){ console.warn('[Auto-fix statut]', e); });
+        });
+        if(_aFixer.length) console.log('[Auto-fix] '+_aFixer.length+' dossier(s) facturé(s)/envoyé(s) sortis de la file atelier');
+      }catch(e){ console.warn('Auto-fix statuts:', e); }
       saveBonsDepot(); // cache local en fallback
     }
   } catch(e){
@@ -34543,10 +34575,10 @@ function renderCaJourBar(){
 function renderFileAtelier(){
   var body=document.getElementById('dash-file-atelier-body'); if(!body) return;
   var src=(window.repDossiers&&window.repDossiers.length)?window.repDossiers:(window.bonsDepot||[]);
+  // Même règle que la page Réparations (repEstEnCours) : un dossier facturé ou déjà
+  // envoyé QualiRépar n'est PLUS « en cours », même si son statut est resté « depot ».
   var enCours=(src||[]).filter(function(d){
-    if(!d) return false;
-    var st=(d.statut||'').toString().toLowerCase();
-    return st!=='remis' && st!=='livre' && st!=='livré' && st!=='termine' && st!=='terminé' && st!=='annule' && st!=='annulé';
+    return (typeof repEstEnCours==='function') ? repEstEnCours(d) : !!d;
   });
   enCours.sort(function(a,b){ return String(b&&(b.date||b.id)||'').localeCompare(String(a&&(a.date||a.id)||'')); });
   enCours=enCours.slice(0,8);
