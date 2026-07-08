@@ -7670,6 +7670,16 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               <div id="dv-imei-status" style="font-size:11px;margin-top:3px;"></div>
             </div>
             <div class="form-group"><label>Prestation *</label><input type="text" id="dv-prestation" placeholder="ex: Remplacement écran" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Dommages constatés <span style="color:#9CA3AF;font-weight:400;">(constat pour l'assurance)</span></label>
+              <textarea id="dv-constat" rows="2" placeholder="ex : Écran brisé suite à une chute, angle supérieur droit enfoncé, tactile inopérant…"></textarea>
+            </div>
+            <div class="form-group">
+              <label>📷 Photos de la casse <span style="color:#9CA3AF;font-weight:400;">(preuve pour l'assurance — jusqu'à 4, horodatées)</span></label>
+              <label class="btn" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;border-color:#2563eb;color:#2563eb;width:fit-content;">📸 Prendre / ajouter des photos
+                <input type="file" accept="image/*" multiple style="display:none;" onchange="dvAjouterPhotos(this)">
+              </label>
+              <div id="dv-photos-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+            </div>
             <div class="form-group"><label>Prix TTC (€) *</label><input type="text" inputmode="decimal" id="dv-prix" placeholder="ex : 89,90" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Validité</label>
               <select id="dv-validite">
@@ -19065,6 +19075,61 @@ function updateDevisPreview() {
   document.getElementById('devis-preview-card').style.display='block';
 }
 
+// ══ Photos de la casse (devis assurance — juil. 2026) ══
+// Compressées puis stockées dans Supabase Storage (même bucket que les photos IMEI)
+// → visibles sur tous les postes, jointes au PDF et au devis imprimé, horodatées.
+var _dvPhotos = [];
+function dvCompressFile(file){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var MAX=1400, w=img.width, h=img.height;
+        if(Math.max(w,h)>MAX){ var k=MAX/Math.max(w,h); w=Math.round(w*k); h=Math.round(h*k); }
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',0.82));
+      };
+      img.onerror=reject; img.src=r.result;
+    };
+    r.onerror=reject; r.readAsDataURL(file);
+  });
+}
+async function dvAjouterPhotos(input){
+  var files=Array.prototype.slice.call(input.files||[]);
+  input.value='';
+  for(var i=0;i<files.length;i++){
+    if(_dvPhotos.length>=4){ showNotif('Maximum 4 photos par devis','error'); break; }
+    try{
+      showNotif('📷 Photo '+(_dvPhotos.length+1)+' — envoi…','info');
+      var dataUrl=await dvCompressFile(files[i]);
+      var b64=dataUrl.split(',')[1];
+      var bs=atob(b64); var arr=new Uint8Array(bs.length);
+      for(var j=0;j<bs.length;j++) arr[j]=bs.charCodeAt(j);
+      var fileName='DEVIS_casse_'+Date.now()+'_'+i+'.jpg';
+      var url=null;
+      try{
+        var res=await fetch('/api/supabase-storage?bucket=imei-photos&fileName='+encodeURIComponent(fileName),{method:'POST',headers:{'Content-Type':'image/jpeg'},body:new Blob([arr],{type:'image/jpeg'})});
+        if(res.ok){ var d=await res.json(); url=d.url; }
+      }catch(eu){}
+      if(!url){ url=dataUrl; showNotif('⚠️ Photo gardée en local (upload en ligne échoué)','error'); }
+      _dvPhotos.push({url:url, ts:new Date().toISOString()});
+    }catch(e){ console.warn('photo devis:',e); showNotif('❌ Photo non ajoutée','error'); }
+  }
+  dvRenderPhotos();
+  showNotif('✅ '+_dvPhotos.length+' photo(s) prête(s) pour le devis','success');
+}
+function dvRenderPhotos(){
+  var g=document.getElementById('dv-photos-grid'); if(!g) return;
+  g.innerHTML=_dvPhotos.map(function(p,i){
+    return '<div style="position:relative;">'+
+      '<img src="'+p.url+'" style="width:74px;height:74px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">'+
+      '<button onclick="_dvPhotos.splice('+i+',1);dvRenderPhotos()" title="Retirer" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:11px;cursor:pointer;line-height:1;">✕</button>'+
+    '</div>';
+  }).join('');
+}
+
 // Validation IMEI en direct sur la page Devis (audit juil. 2026)
 function devisValidateIMEI(val){
   var st=document.getElementById('dv-imei-status'); if(!st) return;
@@ -19101,6 +19166,8 @@ async function genererDevis() {
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
     imei:((document.getElementById('dv-imei')||{value:''}).value||'').trim(),
+    constat:((document.getElementById('dv-constat')||{value:''}).value||'').trim(),
+    photos:_dvPhotos.slice(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
   _devisSaveLocal(); // persiste immédiatement (fiable, même sans table Supabase)
@@ -19109,7 +19176,7 @@ async function genererDevis() {
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
   try{
     if(typeof supaFetch==='function'){
-      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_societe:dv.clientSociete,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,imei:dv.imei||'',prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
+      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_societe:dv.clientSociete,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,imei:dv.imei||'',constat:dv.constat||'',photos:JSON.stringify(dv.photos||[]),prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
         .then(function(){ showNotif('Devis '+num+' enregistré ✓','success'); })
         .catch(function(e){ console.warn('save devis:',e); showNotif('Devis créé (sauvegarde base à vérifier)','info'); });
     }
@@ -19122,8 +19189,9 @@ async function genererDevis() {
   } else {
     showNotif('ℹ️ Pas d\'email client — devis non envoyé par mail','info');
   }
-  ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-imei','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-imei','dv-constat','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var _stI=document.getElementById('dv-imei-status'); if(_stI)_stI.innerHTML='';
+  _dvPhotos=[]; if(typeof dvRenderPhotos==='function') dvRenderPhotos();
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
 }
@@ -19165,16 +19233,51 @@ async function devisToPDFBase64(dv){
   if(dv.imei){ pdf.text('IMEI / N° série : '+dv.imei,lm,y); y+=6; }
   var lines=pdf.splitTextToSize('Prestation : '+(dv.prestation||'—'), rm-lm);
   pdf.text(lines,lm,y); y+=lines.length*5+8;
+  // Constat des dommages (assurance)
+  if(dv.constat){
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.setTextColor(197,48,48);
+    pdf.text('CONSTAT DES DOMMAGES',lm,y); y+=6;
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.setTextColor(0,0,0);
+    var cl=pdf.splitTextToSize(dv.constat, rm-lm);
+    pdf.text(cl,lm,y); y+=cl.length*5+6;
+  }
   pdf.setDrawColor(220,220,220); pdf.setLineWidth(0.3); pdf.line(lm,y,rm,y); y+=8;
+  pdf.setTextColor(0,0,0); pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
   pdf.text('Total HT : '+ht.toFixed(2)+' €      TVA 20% : '+tva.toFixed(2)+' €',lm,y); y+=9;
   pdf.setFont('helvetica','bold'); pdf.setFontSize(15); pdf.setTextColor(225,6,0);
   pdf.text('TOTAL TTC : '+prix.toFixed(2)+' €',lm,y); y+=14;
-  // Mentions
-  pdf.setTextColor(90,90,90); pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+  // Attestation réparateur (assurance)
+  pdf.setTextColor(60,60,60); pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5);
+  var att=pdf.splitTextToSize('Le soussigné, SOLUTION PHONE (SIREN 801 044 785 — RCS Mâcon), réparateur professionnel agréé QualiRépar, atteste avoir personnellement constaté en boutique les dommages décrits'+((dv.photos||[]).length?' et photographiés en annexe':'')+' sur l\'appareil identifié ci-dessus, et certifie que le montant du présent devis correspond au coût réel de la remise en état. Document établi à la demande du client en vue d\'être produit auprès de sa compagnie d\'assurance. Fait à Mâcon, le '+new Date(dv.date||Date.now()).toLocaleDateString('fr-FR')+'.', rm-lm);
+  pdf.text(att,lm,y); y+=att.length*4+8;
+  pdf.setTextColor(90,90,90); pdf.setFontSize(9);
   pdf.text('Devis valable '+(dv.validite||'30 jours')+'. Pour l\'accepter : répondez à cet email ou passez en boutique.',lm,y); y+=5;
   pdf.text('Bon pour accord (date + signature) : _____________________________',lm,y+6);
   pdf.setFontSize(7.5); pdf.setTextColor(140,140,140);
   pdf.text('SOLUTION PHONE · SIREN 801 044 785 · TVA FR10801044785 · RCS Mâcon B 801 044 785 · www.solution-phone.fr',lm,285);
+  // ── Annexe photos de la casse (horodatées) ──
+  var _ph=(dv.photos||[]).slice(0,4);
+  if(_ph.length){
+    async function _toDataURL(u){
+      if(/^data:/.test(u)) return u;
+      var b=await (await fetch(u)).blob();
+      return await new Promise(function(res,rej){ var fr=new FileReader(); fr.onload=function(){res(fr.result);}; fr.onerror=rej; fr.readAsDataURL(b); });
+    }
+    pdf.addPage();
+    pdf.setFillColor(20,20,20); pdf.rect(0,0,W,20,'F');
+    pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(12);
+    pdf.text('ANNEXE — PHOTOGRAPHIES DES DOMMAGES · Devis '+(dv.numero||''),lm,13);
+    var slots=[[lm,30],[112,30],[lm,155],[112,155]];
+    for(var pi=0; pi<_ph.length; pi++){
+      try{
+        var _p=_ph[pi], _u=(_p&&_p.url)||_p, _ts=(_p&&_p.ts)?new Date(_p.ts).toLocaleString('fr-FR'):'';
+        var du=await _toDataURL(_u);
+        pdf.addImage(du,'JPEG',slots[pi][0],slots[pi][1],78,104,undefined,'MEDIUM');
+        pdf.setTextColor(90,90,90); pdf.setFont('helvetica','normal'); pdf.setFontSize(8);
+        pdf.text('Photo '+(pi+1)+(_ts?' — prise le '+_ts:''),slots[pi][0],slots[pi][1]+110);
+      }catch(epi){ console.warn('photo PDF devis:',epi); }
+    }
+  }
   return pdf.output('datauristring').split(',')[1];
 }
 
@@ -19388,10 +19491,30 @@ function imprimerDevisData(dv){
         '</tr>'+
       '</tfoot>'+
     '</table>'+
+    // ── CONSTAT DES DOMMAGES + PHOTOS (dossier assurance — juil. 2026) ──
+    ((dv.constat||((dv.photos||[]).length))?
+      '<div style="border:1.5px solid #c53030;border-radius:6px;overflow:hidden;margin-bottom:10px;">'+
+        '<div style="background:#c53030;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">🔍 Constat des dommages — document pour assurance</div>'+
+        '<div style="padding:8px 10px;font-size:11px;line-height:1.7;">'+
+          (dv.constat?'<b>Dommages constatés :</b> '+dv.constat+'<br>':'')+
+          ((dv.photos||[]).length?
+            '<b>Photographies de l\'appareil ('+dv.photos.length+') — prises en boutique :</b>'+
+            '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">'+
+              dv.photos.map(function(p){
+                var _u=(p&&p.url)||p; var _t=(p&&p.ts)?new Date(p.ts).toLocaleString('fr-FR'):'';
+                return '<div style="text-align:center;"><img src="'+_u+'" style="width:44mm;height:44mm;object-fit:cover;border:1px solid #ccc;border-radius:4px;">'+(_t?'<div style="font-size:8px;color:#888;">📅 '+_t+'</div>':'')+'</div>';
+              }).join('')+
+            '</div>':'')+
+          '<div style="margin-top:8px;font-size:10px;color:#555;">Le soussigné, <b>SOLUTION PHONE</b> (SIREN 801 044 785 — RCS Mâcon), réparateur professionnel agréé QualiRépar, '+
+          'atteste avoir personnellement constaté en boutique les dommages décrits et photographiés ci-dessus sur l\'appareil identifié '+(dv.imei?'(IMEI '+dv.imei+') ':'')+
+          'et certifie que le montant du présent devis correspond au coût réel de la remise en état. Fait à Mâcon, le '+dateStr+'.</div>'+
+        '</div>'+
+      '</div>':'')+
     // MENTIONS DEVIS
     '<div style="background:#f0fff4;border:1px solid #9ae6b4;border-radius:6px;padding:8px 12px;font-size:10px;color:#34d399;line-height:1.6;margin-bottom:10px;">'+
       '<b>Validité du devis :</b> '+(dv.validite||'15 jours')+' à compter de la date d\'émission. Au-delà, les prix peuvent être revus.<br>'+
-      '<b>Garantie commerciale :</b> 6 mois sur la pièce remplacée et la main-d\'œuvre (hors casse, oxydation, usure normale). Pour accepter ce devis, retournez-le daté et signé avec la mention « Bon pour accord ».'+
+      '<b>Garantie commerciale :</b> 6 mois sur la pièce remplacée et la main-d\'œuvre (hors casse, oxydation, usure normale). Pour accepter ce devis, retournez-le daté et signé avec la mention « Bon pour accord ».<br>'+
+      '<b>Assurance :</b> document établi à la demande du client en vue d\'être produit auprès de sa compagnie d\'assurance (art. 1353 C. civ. — preuve par production de pièces).'+
     '</div>'+
     // SIGNATURES — Cachet boutique + Acceptation client
     '<div style="display:flex;gap:10px;margin-top:14px;">'+
@@ -19844,7 +19967,9 @@ async function devisLoad(){
           id: x.id!=null ? x.id : (Date.now()+Math.floor(Math.random()*1000)),
           numero:x.numero, date:x.date,
           clientNom:x.client_nom||'', clientTel:x.client_tel||'', clientAdresse:x.client_adresse||'', clientEmail:x.client_email||'',
-          appareil:x.appareil||'', imei:x.imei||'', prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
+          appareil:x.appareil||'', imei:x.imei||'', constat:x.constat||'',
+          photos:(function(){ try{ var p=typeof x.photos==='string'?JSON.parse(x.photos):x.photos; return Array.isArray(p)?p:[]; }catch(e){ return []; } })(),
+          prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
         }; }).reverse();
         var seen={}, merged=[];
         mapped.concat(devisList||[]).forEach(function(d){ var k=(d.numero||'')+'|'+(d.date||''); if(seen[k])return; seen[k]=1; merged.push(d); });
