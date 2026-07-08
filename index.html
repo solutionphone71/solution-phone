@@ -7675,10 +7675,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
               </select>
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="genererDevis()">📝 Générer le devis</button>
-              <button class="btn" onclick="envoyerDevisStandaloneEmail()" style="border-color:#16a34a;color:#16a34a;">📧 Envoyer par mail</button>
+              <button class="btn btn-primary" onclick="genererDevis()" style="flex:1;">📝 Générer &amp; envoyer le devis</button>
               <button class="btn" onclick="convertirDevisEnFacture()">🧾 → Facture répa</button>
             </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Le devis (PDF joint) est envoyé automatiquement par email si l'email du client est renseigné.</div>
           </div>
         </div>
         <div class="card" id="devis-preview-card" style="display:none;">
@@ -13596,7 +13596,21 @@ async function envoyerDevisEmail(){
   '</div>';
   try{
     var _att=[];
-    try{ if(d.signature && typeof repDevisSignePDFBase64==='function'){ var _p=await repDevisSignePDFBase64(d); if(_p) _att=[{content:_p,name:'Devis_'+(d.numero||'')+'.pdf',type:'application/pdf'}]; } }catch(ep){ console.warn('Devis PDF:',ep); }
+    // Devis PDF — TOUJOURS joint (fix juil. 2026 : avant, aucune pièce jointe sans signature)
+    try{
+      if(typeof devisToPDFBase64==='function'){
+        var _pdfDev = await devisToPDFBase64({
+          numero:(d.numero||''), date:d.date||new Date().toISOString().slice(0,10),
+          clientNom:((c.civilite||'')+' '+(c.prenom||'')+' '+(c.nom||'')).trim(), clientSociete:c.societe||'',
+          clientTel:c.tel||'', clientAdresse:[c.adresse,(c.cp&&c.ville?c.cp+' '+c.ville:c.cp||c.ville)].filter(Boolean).join(', '),
+          clientEmail:email, appareil:((a.marque||'')+' '+(a.modele||'')).trim()+(a.imei?' — IMEI '+a.imei:''),
+          prestation:panne||'Réparation', prix:montant, validite:'30 jours'
+        });
+        if(_pdfDev) _att.push({content:_pdfDev, name:'Devis_'+(d.numero||'SolutionPhone')+'.pdf', type:'application/pdf'});
+      }
+    }catch(ep0){ console.warn('Devis PDF:', ep0); }
+    // Attestation signée en plus, si le client a signé
+    try{ if(d.signature && typeof repDevisSignePDFBase64==='function'){ var _p=await repDevisSignePDFBase64(d); if(_p) _att.push({content:_p,name:'Devis_signe_'+(d.numero||'')+'.pdf',type:'application/pdf'}); } }catch(ep){ console.warn('Devis signé PDF:',ep); }
     var sender = localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
     var name   = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
     var pl = { sender:{name:name,email:sender}, to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}], subject:'Votre devis Solution Phone — '+(a.marque||'')+' '+(a.modele||''), htmlContent:html };
@@ -19076,9 +19090,64 @@ async function genererDevis() {
   }catch(e){ console.warn('save devis:',e); }
   renderDevis();
   imprimerDevisData(dv);
+  // ── Envoi automatique par email (PDF joint) si l'email du client est renseigné ──
+  if(dv.clientEmail && /.+@.+\..+/.test(dv.clientEmail)){
+    try{ await envoyerDevisStandaloneEmail(dv); }catch(e){ console.warn('envoi devis:', e); }
+  } else {
+    showNotif('ℹ️ Pas d\'email client — devis non envoyé par mail','info');
+  }
   ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
+}
+
+// ── PDF A4 du devis (jsPDF) — pièce jointe des emails de devis ──
+// Fix juil. 2026 : le client ne recevait AUCUNE pièce jointe (le mail partait sans PDF).
+async function devisToPDFBase64(dv){
+  if(!window.jspdf){
+    await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  }
+  var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210, lm=20, rm=W-20, y;
+  var prix=Number(dv.prix)||0, ht=Math.round(prix/1.2*100)/100, tva=Math.round((prix-ht)*100)/100;
+  // En-tête
+  pdf.setFillColor(20,20,20); pdf.rect(0,0,W,26,'F');
+  pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(16);
+  pdf.text('SOLUTION PHONE',lm,12);
+  pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
+  pdf.text('21 Rue Gambetta, 71000 Mâcon · 03 85 33 06 89 · contact@solution-phone.fr',lm,18);
+  pdf.setTextColor(255,80,70); pdf.setFont('helvetica','bold'); pdf.setFontSize(20);
+  pdf.text('DEVIS', rm, 13, {align:'right'});
+  pdf.setTextColor(255,255,255); pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+  pdf.text((dv.numero||'')+' · '+new Date(dv.date||Date.now()).toLocaleDateString('fr-FR'), rm, 20, {align:'right'});
+  // Client
+  y=40;
+  pdf.setTextColor(0,0,0); pdf.setFont('helvetica','bold'); pdf.setFontSize(11);
+  pdf.text('CLIENT',lm,y); y+=6;
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
+  var nomC=((dv.clientSociete? dv.clientSociete+' — ':'')+(dv.clientNom||'')).trim();
+  if(nomC){ pdf.text(nomC,lm,y); y+=5; }
+  if(dv.clientAdresse){ pdf.text(String(dv.clientAdresse),lm,y); y+=5; }
+  if(dv.clientTel){ pdf.text('Tél : '+dv.clientTel,lm,y); y+=5; }
+  if(dv.clientEmail){ pdf.text('Email : '+dv.clientEmail,lm,y); y+=5; }
+  y+=5; pdf.setDrawColor(225,6,0); pdf.setLineWidth(0.6); pdf.line(lm,y,rm,y); y+=10;
+  // Détail
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.text('DÉTAIL DE LA PRESTATION',lm,y); y+=7;
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
+  if(dv.appareil){ pdf.text('Appareil : '+dv.appareil,lm,y); y+=6; }
+  var lines=pdf.splitTextToSize('Prestation : '+(dv.prestation||'—'), rm-lm);
+  pdf.text(lines,lm,y); y+=lines.length*5+8;
+  pdf.setDrawColor(220,220,220); pdf.setLineWidth(0.3); pdf.line(lm,y,rm,y); y+=8;
+  pdf.text('Total HT : '+ht.toFixed(2)+' €      TVA 20% : '+tva.toFixed(2)+' €',lm,y); y+=9;
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(15); pdf.setTextColor(225,6,0);
+  pdf.text('TOTAL TTC : '+prix.toFixed(2)+' €',lm,y); y+=14;
+  // Mentions
+  pdf.setTextColor(90,90,90); pdf.setFont('helvetica','normal'); pdf.setFontSize(9);
+  pdf.text('Devis valable '+(dv.validite||'30 jours')+'. Pour l\'accepter : répondez à cet email ou passez en boutique.',lm,y); y+=5;
+  pdf.text('Bon pour accord (date + signature) : _____________________________',lm,y+6);
+  pdf.setFontSize(7.5); pdf.setTextColor(140,140,140);
+  pdf.text('SOLUTION PHONE · SIREN 801 044 785 · TVA FR10801044785 · RCS Mâcon B 801 044 785 · www.solution-phone.fr',lm,285);
+  return pdf.output('datauristring').split(',')[1];
 }
 
 // Crée ou met à jour le client (dédup par téléphone puis email) — même logique que la réparation
@@ -19139,10 +19208,18 @@ function devisPickClient(s){
 }
 
 // Envoi du devis par mail (page Devis autonome — Brevo)
-async function envoyerDevisStandaloneEmail(){
+// Accepte un objet devis (dv) OU lit les champs du formulaire (legacy).
+async function envoyerDevisStandaloneEmail(dv){
   var g=function(id){var e=document.getElementById(id);return e?(''+e.value).trim():'';};
-  var client=((g('dv-prenom')+' '+g('dv-nom')).trim()), presta=g('dv-prestation'), email=g('dv-email');
-  var prix=parseFloat(g('dv-prix'))||0, appareil=g('dv-appareil'), validite=g('dv-validite')||'30 jours';
+  var client, presta, email, prix, appareil, validite;
+  if(dv && typeof dv==='object'){
+    client=dv.clientNom||''; presta=dv.prestation||''; email=dv.clientEmail||'';
+    prix=Number(dv.prix)||0; appareil=dv.appareil||''; validite=dv.validite||'30 jours';
+  } else {
+    dv=null;
+    client=((g('dv-prenom')+' '+g('dv-nom')).trim()); presta=g('dv-prestation'); email=g('dv-email');
+    prix=parseFloat(g('dv-prix'))||0; appareil=g('dv-appareil'); validite=g('dv-validite')||'30 jours';
+  }
   if(!client||!presta||!prix){ showNotif&&showNotif('Client, prestation et prix requis','error'); return; }
   if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email du client manquant ou invalide','error'); return; }
   var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||'';
@@ -19167,11 +19244,22 @@ async function envoyerDevisStandaloneEmail(){
     '<p style="color:#666;font-size:13px;">Ce devis est valable '+validite+'. Pour l\'accepter, répondez à cet email ou passez en boutique.</p>'+
     '<p style="color:#666;font-size:12px;margin-top:16px;">À bientôt,<br><b>L\'équipe Solution Phone</b></p></div></div>';
   try{
+    // ── Pièce jointe PDF (fix juil. 2026 : le mail partait sans PDF !) ──
+    var _att=[];
+    try{
+      var _dvPdf = dv || {numero:'DEV-'+new Date().getFullYear(), date:new Date().toISOString().slice(0,10),
+        clientNom:client, clientSociete:g('dv-societe'), clientTel:g('dv-tel'),
+        clientAdresse:(typeof getAdresse==='function'?getAdresse('dv'):''), clientEmail:email,
+        appareil:appareil, prestation:presta, prix:prix, validite:validite};
+      var _pdfB64 = await devisToPDFBase64(_dvPdf);
+      if(_pdfB64) _att=[{content:_pdfB64, name:'Devis_'+(_dvPdf.numero||'SolutionPhone')+'.pdf', type:'application/pdf'}];
+    }catch(ep){ console.warn('PDF devis:', ep); }
     var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
     var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
-    var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre devis Solution Phone',htmlContent:html};
+    var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre devis Solution Phone'+(dv&&dv.numero?' — '+dv.numero:''),htmlContent:html};
+    if(_att.length) pl.attachment=_att;
     var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
-    if(res.ok){ showNotif&&showNotif('✅ Devis envoyé à '+email,'success'); }
+    if(res.ok){ showNotif&&showNotif('✅ Devis envoyé à '+email+' (PDF joint)','success'); }
     else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
   }catch(e){ showNotif&&showNotif('Erreur réseau envoi devis','error'); }
 }
