@@ -10985,6 +10985,8 @@ function initRealtime() {
   window._syncInterval = setInterval(async function() {
     if (!supabaseReady || _syncDirty) return;
     if (document.hidden) return; // app en arrière-plan : ne rien faire (économie iPad)
+    // Catalogue Caisse rapide partagé : récupérer les prix modifiés sur un autre poste
+    try{ if(typeof naCatalogueLoad==='function') naCatalogueLoad(); }catch(e){}
     // ── Réparations (juil. 2026) : synchro auto entre postes/tablettes ──
     // On rafraîchit les dossiers SAUF si un dossier est ouvert en édition sur ce poste
     // (pour ne pas écraser la saisie en cours).
@@ -11106,6 +11108,7 @@ async function loadFromSupabase() {
     });
     supabaseReady=true;
     initRealtime();
+    try{ if(typeof naCatalogueLoad==='function') naCatalogueLoad(); }catch(e){} // prix caisse rapide partagés
     showNotif('✅ Connecté','success');
     // Charger les bons de commande depuis Supabase
     loadBonsCommande();
@@ -11771,6 +11774,68 @@ var NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){
     nomSauve  !== null ? {nom: nomSauve} : {}
   );
 });
+
+// ══ Catalogue Caisse rapide PARTAGÉ (juil. 2026) ══
+// Les prix modifiés, noms, articles masqués et articles ajoutés sont sauvegardés
+// dans Supabase (settings.na_catalogue) → identiques sur PC + tablettes.
+// localStorage ne sert plus que de cache hors-ligne.
+function naCatalogueBuild(){
+  var cfg = {prix:{}, noms:{}, hidden:[], customs:[]};
+  (NA_ARTICLES||[]).forEach(function(a){
+    if(!a) return;
+    if(String(a.id).indexOf('custom-')===0){
+      cfg.customs.push({id:a.id, nom:a.nom, prix:a.prix, cat:a.cat, emoji:a.emoji, couleur:a.couleur});
+      return;
+    }
+    var def = NA_ARTICLES_DEFAULT.find(function(d){ return d.id===a.id; });
+    if(def){
+      if(Number(a.prix)!==Number(def.prix)) cfg.prix[a.id]=Number(a.prix);
+      if(a.nom!==def.nom) cfg.noms[a.id]=a.nom;
+    }
+    try{ if(localStorage.getItem('na_hidden_'+a.id)==='1') cfg.hidden.push(a.id); }catch(e){}
+  });
+  return cfg;
+}
+function naCatalogueApply(cfg){
+  if(!cfg) return;
+  try{
+    NA_ARTICLES_DEFAULT.forEach(function(a){
+      localStorage.removeItem('na_prix_'+a.id);
+      localStorage.removeItem('na_nom_'+a.id);
+      localStorage.removeItem('na_hidden_'+a.id);
+    });
+    Object.keys(cfg.prix||{}).forEach(function(id){ localStorage.setItem('na_prix_'+id, String(cfg.prix[id])); });
+    Object.keys(cfg.noms||{}).forEach(function(id){ localStorage.setItem('na_nom_'+id, cfg.noms[id]); });
+    (cfg.hidden||[]).forEach(function(id){ localStorage.setItem('na_hidden_'+id, '1'); });
+  }catch(e){}
+  NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){
+    var o = Object.assign({}, a);
+    if(cfg.prix && cfg.prix[a.id]!=null) o.prix = Number(cfg.prix[a.id]);
+    if(cfg.noms && cfg.noms[a.id]) o.nom = cfg.noms[a.id];
+    return o;
+  });
+  (cfg.customs||[]).forEach(function(c){ if(c && c.id) NA_ARTICLES.push(Object.assign({}, c)); });
+  try{ if(document.getElementById('na-grille')) naRenderGrille(); }catch(e){}
+}
+function naCatalogueSave(){
+  var cfg = naCatalogueBuild();
+  var json = JSON.stringify(cfg);
+  try{ localStorage.setItem('na_catalogue', json); }catch(e){}
+  try{ if(typeof supaSettingSave==='function' && supabaseReady) supaSettingSave('na_catalogue', json); }catch(e){}
+}
+async function naCatalogueLoad(){
+  try{
+    if(document.getElementById('modal-na-config')) return; // édition des prix en cours sur ce poste
+    var rows = await supaFetch('settings','GET',null,'?key=eq.na_catalogue');
+    if(rows && rows[0] && rows[0].value){
+      var cfg = JSON.parse(rows[0].value);
+      naCatalogueApply(cfg);
+      try{ localStorage.setItem('na_catalogue', rows[0].value); }catch(e){}
+    }
+  }catch(e){ console.warn('naCatalogueLoad:', e); }
+}
+// Cache hors-ligne : appliquer immédiatement la dernière config connue
+try{ var _naCfgCache = JSON.parse(localStorage.getItem('na_catalogue')||'null'); if(_naCfgCache) naCatalogueApply(_naCfgCache); }catch(e){}
 
 var _naPanier    = []; // [{article, qte}]
 var _naMode      = 'CB';
@@ -12526,8 +12591,9 @@ function naSavePrix(){
   });
   var m = document.getElementById('modal-na-config');
   if(m) m.remove();
+  naCatalogueSave(); // ← partagé Supabase : PC + tablettes voient les mêmes prix
   naRenderGrille();
-  showNotif('✅ Prix et articles mis à jour !','success');
+  showNotif('✅ Prix et articles mis à jour (tous postes) !','success');
 }
 
 function naResetPrix(){
@@ -12539,8 +12605,9 @@ function naResetPrix(){
   });
   // Recharger
   NA_ARTICLES = NA_ARTICLES_DEFAULT.map(function(a){ return Object.assign({},a); });
+  naCatalogueSave(); // propager le reset à tous les postes
   naRenderGrille();
-  showNotif('Prix remis par défaut','success');
+  showNotif('Prix remis par défaut (tous postes)','success');
 }
 
 function naShowAddArticle(){
@@ -12558,8 +12625,9 @@ function naShowAddArticle(){
     emoji:emojis[cat]||'🏷️',
     couleur:'#64748b'
   });
+  naCatalogueSave(); // avant : l'article ajouté disparaissait au rechargement !
   naRenderGrille();
-  showNotif('✅ Article "'+nom+'" ajouté','success');
+  showNotif('✅ Article "'+nom+'" ajouté (tous postes)','success');
 }
 
 // ═══════════════════════════════════════════════════════════
