@@ -6883,6 +6883,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div class="form-group"><label>Prénom</label><input type="text" id="neuf-prenom" placeholder="Jean"></div>
                 <div class="form-group"><label>Nom *</label><input type="text" id="neuf-nom" placeholder="Dupont"></div>
               </div>
+              <div class="form-group"><label>Société <span style="font-size:11px;color:var(--text-muted);">(si professionnel)</span></label><input type="text" id="neuf-societe" placeholder="Nom de la société"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div class="form-group"><label>Téléphone</label><input type="tel" id="neuf-tel" inputmode="tel" placeholder="06…"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="neuf-email" placeholder="client@mail.com"></div>
@@ -6925,6 +6926,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
                 <div class="form-group"><label>Prénom</label><input type="text" id="atel-prenom" placeholder="Jean"></div>
                 <div class="form-group"><label>Nom *</label><input type="text" id="atel-nom" placeholder="Dupont"></div>
               </div>
+              <div class="form-group"><label>Société <span style="font-size:11px;color:var(--text-muted);">(si professionnel)</span></label><input type="text" id="atel-societe" placeholder="Nom de la société"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div class="form-group"><label>Téléphone</label><input type="tel" id="atel-tel" inputmode="tel" placeholder="06…"></div>
                 <div class="form-group"><label>Email</label><input type="email" id="atel-email" placeholder="client@mail.com"></div>
@@ -6995,6 +6997,10 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <div class="form-group">
               <label>Client *</label>
               <input type="text" id="na-client" placeholder="ex: Jean Dupont" oninput="naUpdatePreview()">
+            </div>
+            <div class="form-group">
+              <label>Société <span style="font-size:11px;color:var(--text-muted);">(si professionnel)</span></label>
+              <input type="text" id="na-societe" placeholder="Nom de la société" oninput="naUpdatePreview()">
             </div>
             <div class="form-group">
               <label>Adresse client</label>
@@ -11852,7 +11858,7 @@ function cxClientSearch(prefix,q){
 function cxPickClient(prefix,s){
   var c={}; try{ c=JSON.parse(decodeURIComponent(s)); }catch(e){}
   var set=function(id,v){var el=document.getElementById(prefix+'-'+id);if(el)el.value=v||'';};
-  set('prenom',c.prenom);set('nom',c.nom);set('tel',c.tel);set('email',c.email);set('adresse',c.adresse);set('cp',c.cp);set('ville',c.ville);
+  set('prenom',c.prenom);set('nom',c.nom);set('societe',c.societe);set('tel',c.tel);set('email',c.email);set('adresse',c.adresse);set('cp',c.cp);set('ville',c.ville);
   var res=document.getElementById(prefix+'-client-results'); if(res)res.style.display='none';
   var inp=document.getElementById(prefix+'-client-search'); if(inp)inp.value=((c.prenom||'')+' '+(c.nom||'')).trim();
 }
@@ -11904,7 +11910,7 @@ function cxReimprimerAtelier(id){
 // ── Génération facture (neuf / atelier) — TVA 20 % ──
 async function cxGenerer(kind, sendMail){
   var g=function(id){var e=document.getElementById(kind+'-'+id);return e?(''+e.value).trim():'';};
-  var prenom=g('prenom'), nom=g('nom'), tel=g('tel'), email=g('email');
+  var prenom=g('prenom'), nom=g('nom'), tel=g('tel'), email=g('email'), societe=g('societe');
   var adresse=[g('adresse'), (g('cp')&&g('ville')?g('cp')+' '+g('ville'):g('cp')||g('ville'))].filter(Boolean).join(', ');
   var prix=parseFloat((g('prix')||'').replace(',','.'))||0;
   var mode=g('mode')||'CB';
@@ -11919,9 +11925,10 @@ async function cxGenerer(kind, sendMail){
     desc=cat+(appareil?' — '+appareil:'')+' — '+presta;
   }
   var client=(prenom+' '+nom).trim();
+  if(societe) client = societe + ' — ' + client; // la société apparaît sur la facture
   var num=(kind==='neuf'?'NF-':'ATL-')+new Date().getFullYear()+'-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(8,14);
   var dateJ=new Date().toISOString().split('T')[0];
-  try{ await devisUpsertClient(prenom, nom, tel, email, adresse); }catch(e){}
+  try{ await devisUpsertClient(prenom, nom, tel, email, adresse, societe); }catch(e){}
   try{ await caisseFromVente({prixTTC:prix, mode:mode, date:dateJ, description:(kind==='neuf'?'Tél. neuf — ':'Atelier — ')+desc}); }catch(e){}
   if(kind==='neuf'){
     try{ if(typeof naSave==='function') naSave({numero:num,date:dateJ,type:'telephone-neuf',description:desc,clientNom:client,clientAdresse:adresse,clientEmail:email,prix:prix,mode:mode}); }catch(e){}
@@ -11930,7 +11937,7 @@ async function cxGenerer(kind, sendMail){
   } else {
     var rec={id:Date.now(),numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prixTTC:prix,mode:mode,clientPrenom:prenom,clientNom:nom,clientTel:tel,clientEmail:email,clientAdresse:adresse};
     atelierList.unshift(rec); _atelierSaveLocal();
-    try{ if(typeof supaFetch==='function'){ supaFetch('factures_atelier','POST',{numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prix_ttc:prix,mode:mode,client_prenom:prenom,client_nom:nom,client_tel:tel,client_email:email,client_adresse:adresse}).catch(function(){}); } }catch(e){}
+    try{ if(typeof supaFetch==='function'){ supaFetch('factures_atelier','POST',{numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prix_ttc:prix,mode:mode,client_prenom:prenom,client_nom:nom,client_societe:societe||'',client_tel:tel,client_email:email,client_adresse:adresse}).catch(function(){}); } }catch(e){}
     try{ var nv2=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv2.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'accessoire',desc:'Atelier — '+desc,description:'Atelier — '+desc,ttc:prix,montant:prix,mode:mode,clientNom:client}); localStorage.setItem('na_ventes',JSON.stringify(nv2)); }catch(e){}
   }
   if(sendMail){
@@ -11942,7 +11949,7 @@ async function cxGenerer(kind, sendMail){
   try{ if(typeof renderCaisseJour==='function') renderCaisseJour(); }catch(e){}
   cxRenderHisto(kind==='neuf'?'neuf':'atel');
   showNotif&&showNotif('✅ Facture '+num+' créée','success');
-  ['prenom','nom','tel','email','adresse','cp','ville','modele','imei','appareil','presta','prix','client-search'].forEach(function(f){var el=document.getElementById(kind+'-'+f);if(el)el.value='';});
+  ['prenom','nom','societe','tel','email','adresse','cp','ville','modele','imei','appareil','presta','prix','client-search'].forEach(function(f){var el=document.getElementById(kind+'-'+f);if(el)el.value='';});
 }
 
 async function cxEnvoyerFactureMail(num, client, email, desc, prix){
@@ -18951,13 +18958,13 @@ async function genererDevis() {
 }
 
 // Crée ou met à jour le client (dédup par téléphone puis email) — même logique que la réparation
-async function devisUpsertClient(prenom, nom, tel, email, adresseComplete){
+async function devisUpsertClient(prenom, nom, tel, email, adresseComplete, societe){
   prenom=(prenom||'').trim(); nom=(nom||'').trim();
   if(!nom || typeof supaFetch!=='function') return;
   var rue=adresseComplete||'', cp='', ville='';
   var m=(adresseComplete||'').match(/^(.*?),?\s*(\d{4,5})\s+([^,]+?)\s*$/);
   if(m){ rue=(m[1]||'').replace(/,$/,'').trim(); cp=m[2]; ville=m[3].trim(); }
-  var rec={ nom:nom, prenom:prenom, tel:tel||'', email:email||'', adresse:rue, cp:cp, ville:ville, date_creation:new Date().toISOString() };
+  var rec={ nom:nom, prenom:prenom, societe:(societe||'').trim(), tel:tel||'', email:email||'', adresse:rue, cp:cp, ville:ville, date_creation:new Date().toISOString() };
   // Ne pas écraser des champs existants avec du vide (PATCH n'inclut que le non-vide)
   var patchRec={}; Object.keys(rec).forEach(function(k){ if(k!=='date_creation' && rec[k]!=='' && rec[k]!=null) patchRec[k]=rec[k]; });
   var q = tel ? '?tel=eq.'+encodeURIComponent(tel)+'&limit=1' : (email ? '?email=eq.'+encodeURIComponent(email)+'&limit=1' : null);
@@ -23448,6 +23455,12 @@ function naGetAdresse(){
   return [a, cp&&v?cp+' '+v:cp||v].filter(Boolean).join(', ');
 }
 
+function naGetClientNom(){
+  var client = (document.getElementById('na-client')||{value:''}).value.trim();
+  var societe = (document.getElementById('na-societe')||{value:''}).value.trim();
+  return societe ? (societe + ' — ' + client).replace(/ — $/,'') : client;
+}
+
 function naUpdatePreview(){
   var desc = document.getElementById('na-description').value.trim();
   var client = document.getElementById('na-client').value.trim();
@@ -23465,7 +23478,7 @@ function naUpdatePreview(){
   if(content){
     content.innerHTML = buildA4HTML({
       type:'reparation', numero:num, date:new Date().toISOString().split('T')[0],
-      clientNom:client, clientAdresse:adresse, clientEmail:'',
+      clientNom:naGetClientNom(), clientAdresse:adresse, clientEmail:'',
       mode:mode, garantie:'',
       lignes:[{desc:desc,qte:1,pu:prix}],
       total:prix, isDevis:false
@@ -23483,7 +23496,7 @@ function naGenererFacture(){
   var date = new Date().toISOString().split('T')[0];
   var vente = {
     id:Date.now(), numero:num, date:date, type:type,
-    description:desc, clientNom:client,
+    description:desc, clientNom:naGetClientNom(),
     clientAdresse:naGetAdresse(),
     clientEmail:document.getElementById('na-email').value.trim(),
     prix:prix, mode:document.getElementById('na-mode').value
@@ -23524,7 +23537,7 @@ function naImprimer(){
   var h = buildA4HTML({
     type:'reparation', numero:'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0'),
     date:new Date().toISOString().split('T')[0],
-    clientNom:client, clientAdresse:naGetAdresse(), clientEmail:'',
+    clientNom:naGetClientNom(), clientAdresse:naGetAdresse(), clientEmail:'',
     mode:document.getElementById('na-mode').value, garantie:_g,
     lignes:[{desc:desc,qte:1,pu:prix}], total:prix, isDevis:false
   });
@@ -23532,7 +23545,7 @@ function naImprimer(){
 }
 
 function naReset(){
-  ['na-type','na-description','na-client','na-adresse','na-cp','na-ville','na-email','na-prix'].forEach(function(id){
+  ['na-type','na-description','na-client','na-societe','na-adresse','na-cp','na-ville','na-email','na-prix'].forEach(function(id){
     var el = document.getElementById(id); if(el) el.value='';
   });
   var card = document.getElementById('na-preview-card');
