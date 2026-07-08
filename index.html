@@ -7665,8 +7665,12 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
             <div class="form-group"><label>Adresse</label><input type="text" id="dv-adresse" placeholder="Adresse" oninput="updateDevisPreview()"></div><div style="display:grid;grid-template-columns:120px 1fr;gap:8px;"><div class="form-group"><label>Code postal</label><input type="text" id="dv-cp" maxlength="5" placeholder="CP" inputmode="numeric" oninput="updateDevisPreview()"></div><div class="form-group"><label>Ville</label><input type="text" id="dv-ville" placeholder="Ville" oninput="updateDevisPreview()"></div></div>
             <div class="form-group"><label>Email</label><input type="email" id="dv-email" placeholder="ex: client@gmail.com"></div>
             <div class="form-group"><label>Appareil</label><input type="text" id="dv-appareil" placeholder="ex: iPhone 13" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>IMEI / N° série <span style="color:#9CA3AF;font-weight:400;">(recommandé — *#06# sur l'appareil)</span></label>
+              <input type="text" id="dv-imei" placeholder="15 chiffres" inputmode="numeric" oninput="devisValidateIMEI(this.value);updateDevisPreview()">
+              <div id="dv-imei-status" style="font-size:11px;margin-top:3px;"></div>
+            </div>
             <div class="form-group"><label>Prestation *</label><input type="text" id="dv-prestation" placeholder="ex: Remplacement écran" oninput="updateDevisPreview()"></div>
-            <div class="form-group"><label>Prix TTC (€) *</label><input type="number" id="dv-prix" step="0.01" oninput="updateDevisPreview()"></div>
+            <div class="form-group"><label>Prix TTC (€) *</label><input type="text" inputmode="decimal" id="dv-prix" placeholder="ex : 89,90" oninput="updateDevisPreview()"></div>
             <div class="form-group"><label>Validité</label>
               <select id="dv-validite">
                 <option value="15 jours">15 jours</option>
@@ -19051,7 +19055,7 @@ function printBilan() {
 // ===== DEVIS =====
 function updateDevisPreview() {
   var prestation = document.getElementById('dv-prestation').value;
-  var prix = parseFloat(document.getElementById('dv-prix').value)||0;
+  var prix = parseFloat(String(document.getElementById('dv-prix').value||'').replace(',','.'))||0;
   if(!prestation||!prix){document.getElementById('devis-preview-card').style.display='none';return;}
   document.getElementById('devis-preview-content').innerHTML=
     '<div style="text-align:center;padding:30px;color:#888;font-size:13px;">'+
@@ -19061,20 +19065,42 @@ function updateDevisPreview() {
   document.getElementById('devis-preview-card').style.display='block';
 }
 
+// Validation IMEI en direct sur la page Devis (audit juil. 2026)
+function devisValidateIMEI(val){
+  var st=document.getElementById('dv-imei-status'); if(!st) return;
+  var imei=(val||'').replace(/\s/g,'');
+  if(!imei){ st.innerHTML=''; return; }
+  if(!/^\d+$/.test(imei)){ st.innerHTML='<span style="color:var(--text-muted);">N° de série (lettres acceptées)</span>'; return; }
+  if(imei.length<15){ st.innerHTML='<span style="color:#d97706;">⚠️ '+imei.length+'/15 chiffres</span>'; return; }
+  if(imei.length>15){ st.innerHTML='<span style="color:#dc2626;">⚠️ Trop long ('+imei.length+' chiffres)</span>'; return; }
+  st.innerHTML = (typeof imeiLuhnValid==='function' && imeiLuhnValid(imei))
+    ? '<span style="color:#16a34a;">✓ IMEI valide</span>'
+    : '<span style="color:#d97706;">⚠️ Clé de contrôle douteuse — vérifiez la saisie</span>';
+}
+
 async function genererDevis() {
   var prenom=(document.getElementById('dv-prenom')||{value:''}).value.trim();
   var nom=(document.getElementById('dv-nom')||{value:''}).value.trim();
   var client=(prenom+' '+nom).trim();
   var tel=(document.getElementById('dv-tel')||{value:''}).value.trim();
   var prestation=document.getElementById('dv-prestation').value.trim();
-  var prix=parseFloat(document.getElementById('dv-prix').value);
+  var prix=parseFloat(String(document.getElementById('dv-prix').value||'').replace(',','.'));
   if(!nom||!prestation||!prix){showNotif('Nom, prestation et prix requis','error');return;}
-  var num='DEV-'+new Date().getFullYear()+'-'+String(devisList.length+1).padStart(3,'0');
+  if(!tel || tel.replace(/\D/g,'').length<10){ showNotif('⚠️ Téléphone du client requis (10 chiffres)','error'); var _elT=document.getElementById('dv-tel'); if(_elT){_elT.style.border='2px solid red';_elT.focus();} return; }
+  // Numérotation robuste (audit juil. 2026) : max existant + 1 — plus de doublons
+  // après suppression ou entre postes (avant : longueur de la liste + 1)
+  var _anDv=new Date().getFullYear(), _maxDv=0;
+  (devisList||[]).forEach(function(x){
+    var m=String(x&&x.numero||'').match(/^DEV-(\d{4})-(\d+)$/);
+    if(m && parseInt(m[1])===_anDv){ var n=parseInt(m[2])||0; if(n>_maxDv)_maxDv=n; }
+  });
+  var num='DEV-'+_anDv+'-'+String(_maxDv+1).padStart(3,'0');
   var dv={id:Date.now(),numero:num,date:new Date().toISOString().split('T')[0],
     clientNom:client,clientPrenom:prenom,clientNomSeul:nom,clientTel:tel,clientAdresse:getAdresse('dv'),
     clientSociete:(document.getElementById('dv-societe')||{value:''}).value.trim(),
     clientEmail:document.getElementById('dv-email').value.trim(),
     appareil:document.getElementById('dv-appareil').value.trim(),
+    imei:((document.getElementById('dv-imei')||{value:''}).value||'').trim(),
     prestation:prestation,prix:prix,validite:document.getElementById('dv-validite').value};
   devisList.push(dv);
   _devisSaveLocal(); // persiste immédiatement (fiable, même sans table Supabase)
@@ -19083,7 +19109,7 @@ async function genererDevis() {
   // Sauvegarde Supabase (le proxy retire les colonnes inconnues automatiquement)
   try{
     if(typeof supaFetch==='function'){
-      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_societe:dv.clientSociete,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
+      supaFetch('devis','POST',{numero:dv.numero,date:dv.date,client_nom:dv.clientNom,client_societe:dv.clientSociete,client_tel:dv.clientTel,client_adresse:dv.clientAdresse,client_email:dv.clientEmail,appareil:dv.appareil,imei:dv.imei||'',prestation:dv.prestation,prix_ttc:dv.prix,prix:dv.prix,validite:dv.validite})
         .then(function(){ showNotif('Devis '+num+' enregistré ✓','success'); })
         .catch(function(e){ console.warn('save devis:',e); showNotif('Devis créé (sauvegarde base à vérifier)','info'); });
     }
@@ -19096,7 +19122,8 @@ async function genererDevis() {
   } else {
     showNotif('ℹ️ Pas d\'email client — devis non envoyé par mail','info');
   }
-  ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dv-prenom','dv-nom','dv-societe','dv-tel','dv-adresse','dv-cp','dv-ville','dv-email','dv-appareil','dv-imei','dv-prestation','dv-prix','dv-client-search'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var _stI=document.getElementById('dv-imei-status'); if(_stI)_stI.innerHTML='';
   document.getElementById('devis-preview-card').style.display='none';
   showNotif('Devis '+num+' créé !','success');
 }
@@ -19135,6 +19162,7 @@ async function devisToPDFBase64(dv){
   pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.text('DÉTAIL DE LA PRESTATION',lm,y); y+=7;
   pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
   if(dv.appareil){ pdf.text('Appareil : '+dv.appareil,lm,y); y+=6; }
+  if(dv.imei){ pdf.text('IMEI / N° série : '+dv.imei,lm,y); y+=6; }
   var lines=pdf.splitTextToSize('Prestation : '+(dv.prestation||'—'), rm-lm);
   pdf.text(lines,lm,y); y+=lines.length*5+8;
   pdf.setDrawColor(220,220,220); pdf.setLineWidth(0.3); pdf.line(lm,y,rm,y); y+=8;
@@ -19218,7 +19246,7 @@ async function envoyerDevisStandaloneEmail(dv){
   } else {
     dv=null;
     client=((g('dv-prenom')+' '+g('dv-nom')).trim()); presta=g('dv-prestation'); email=g('dv-email');
-    prix=parseFloat(g('dv-prix'))||0; appareil=g('dv-appareil'); validite=g('dv-validite')||'30 jours';
+    prix=parseFloat(String(g('dv-prix')).replace(',','.'))||0; appareil=g('dv-appareil'); validite=g('dv-validite')||'30 jours';
   }
   if(!client||!presta||!prix){ showNotif&&showNotif('Client, prestation et prix requis','error'); return; }
   if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email du client manquant ou invalide','error'); return; }
@@ -19250,7 +19278,7 @@ async function envoyerDevisStandaloneEmail(dv){
       var _dvPdf = dv || {numero:'DEV-'+new Date().getFullYear(), date:new Date().toISOString().slice(0,10),
         clientNom:client, clientSociete:g('dv-societe'), clientTel:g('dv-tel'),
         clientAdresse:(typeof getAdresse==='function'?getAdresse('dv'):''), clientEmail:email,
-        appareil:appareil, prestation:presta, prix:prix, validite:validite};
+        appareil:appareil, imei:g('dv-imei'), prestation:presta, prix:prix, validite:validite};
       var _pdfB64 = await devisToPDFBase64(_dvPdf);
       if(_pdfB64) _att=[{content:_pdfB64, name:'Devis_'+(_dvPdf.numero||'SolutionPhone')+'.pdf', type:'application/pdf'}];
     }catch(ep){ console.warn('PDF devis:', ep); }
@@ -19326,6 +19354,7 @@ function imprimerDevisData(dv){
         '<div style="background:#333;padding:5px 10px;font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;">📱 Appareil concerné</div>'+
         '<div style="padding:8px 10px;font-size:12px;line-height:1.8;">'+
           '<b>'+(dv.appareil||'—')+'</b><br>'+
+          (dv.imei?'IMEI : <b>'+dv.imei+'</b><br>':'')+
           'N° devis : '+dv.numero+'<br>'+
           'Validité : '+(dv.validite||'15 jours')+
         '</div>'+
@@ -19344,7 +19373,7 @@ function imprimerDevisData(dv){
       '<tbody>'+
         '<tr>'+
           '<td><b>'+(dv.prestation||'')+'</b>'+
-            (dv.appareil?'<br><span style="font-size:10px;color:#666;">'+dv.appareil+'</span>':'')+'</td>'+
+            (dv.appareil?'<br><span style="font-size:10px;color:#666;">'+dv.appareil+(dv.imei?' — IMEI '+dv.imei:'')+'</span>':'')+'</td>'+
           '<td style="text-align:right;">'+ht.toFixed(2)+' €</td>'+
           '<td style="text-align:center;">1</td>'+
           '<td style="text-align:right;">'+ht.toFixed(2)+' €</td>'+
@@ -19773,7 +19802,7 @@ function imprimerAttestationData(a){
 
 function convertirDevisEnFacture() {
   var prestation=document.getElementById('dv-prestation').value.trim();
-  var prix=parseFloat(document.getElementById('dv-prix').value);
+  var prix=parseFloat(String(document.getElementById('dv-prix').value||'').replace(',','.'));
   if(!prestation||!prix){showNotif('Remplissez le devis avant','error');return;}
   // Copier dans la page réparations
   showPage('reparations',null);
@@ -19781,6 +19810,7 @@ function convertirDevisEnFacture() {
   setAdresseFields('r-client', getAdresse('dv'));
   document.getElementById('r-client-email').value=document.getElementById('dv-email').value;
   document.getElementById('r-appareil').value=document.getElementById('dv-appareil').value;
+  var _rImei=document.getElementById('r-imei'); if(_rImei)_rImei.value=((document.getElementById('dv-imei')||{value:''}).value||'').trim();
   document.getElementById('r-description').value=prestation;
   document.getElementById('r-prix').value=prix;
   updateRepPreview();
@@ -19814,7 +19844,7 @@ async function devisLoad(){
           id: x.id!=null ? x.id : (Date.now()+Math.floor(Math.random()*1000)),
           numero:x.numero, date:x.date,
           clientNom:x.client_nom||'', clientTel:x.client_tel||'', clientAdresse:x.client_adresse||'', clientEmail:x.client_email||'',
-          appareil:x.appareil||'', prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
+          appareil:x.appareil||'', imei:x.imei||'', prestation:x.prestation||'', prix:Number(x.prix_ttc||x.prix||0), validite:x.validite||''
         }; }).reverse();
         var seen={}, merged=[];
         mapped.concat(devisList||[]).forEach(function(d){ var k=(d.numero||'')+'|'+(d.date||''); if(seen[k])return; seen[k]=1; merged.push(d); });
