@@ -11258,7 +11258,12 @@ async function saveCaisseRow(row) {
     var ex=await supaFetch('caisse','GET',null,'?date=eq.'+row.date);
     if(ex&&ex.length>0){await supaFetch('caisse','PATCH',data,'?date=eq.'+row.date);}
     else{await supaFetch('caisse','POST',data);}
-    return true;
+    // VÉRIFICATION réelle (fix juil. 2026) : supaFetch avale les erreurs réseau,
+    // on relit donc la ligne pour confirmer que l'écriture a bien eu lieu.
+    var verif=await supaFetch('caisse','GET',null,'?select=ttc&date=eq.'+row.date);
+    var okV = !!(verif && verif[0] && Math.abs(Number(verif[0].ttc)-Number(row.ttc))<0.005);
+    if(!okV) console.error('saveCaisseRow: écriture NON confirmée pour', row.date);
+    return okV;
   }catch(e){ console.error('saveCaisseRow échec:', e); return false; }
 }
 
@@ -11992,6 +11997,24 @@ async function atelierLoad(){
       }
     }
   }catch(e){}
+  // ── FIX juil. 2026 : fusionner aussi les ventes atelier de la base PARTAGÉE
+  //    (ventes_neufs_access, type='atelier') → historique visible sur tous les postes ──
+  try{
+    if(typeof supaFetch==='function'){
+      var va=await supaFetch('ventes_neufs_access','GET',null,'?type=eq.atelier&order=id.desc&limit=300');
+      if(Array.isArray(va) && va.length){
+        var mapped2=va.map(function(x){
+          return { id:'va-'+x.id, numero:x.numero, date:x.date, categorie:'', appareil:'',
+            prestation:(x.description||'').replace(/^Atelier — /,''), prixTTC:Number(x.prix_ttc||0),
+            mode:x.mode_reglement||'CB', clientPrenom:'', clientNom:x.client_nom||'', clientTel:'',
+            clientEmail:x.client_email||'', clientAdresse:x.client_adresse||'' };
+        });
+        var seen2={}, merged2=[];
+        mapped2.concat(atelierList||[]).forEach(function(a){ var k=(a.numero||'')+'|'+(a.date||''); if(seen2[k])return; seen2[k]=1; merged2.push(a); });
+        atelierList=merged2; _atelierSaveLocal();
+      }
+    }
+  }catch(e){}
   cxRenderHisto('atel');
 }
 function cxReimprimerAtelier(id){
@@ -12023,7 +12046,15 @@ async function cxGenerer(kind, sendMail){
   var num=(kind==='neuf'?'NF-':'ATL-')+new Date().getFullYear()+'-'+new Date().toISOString().replace(/[-:T.Z]/g,'').substring(8,14);
   var dateJ=new Date().toISOString().split('T')[0];
   try{ await devisUpsertClient(prenom, nom, tel, email, adresse, societe); }catch(e){}
-  try{ await caisseFromVente({prixTTC:prix, mode:mode, date:dateJ, description:(kind==='neuf'?'Tél. neuf — ':'Atelier — ')+desc}); }catch(e){}
+  // ── Caisse (Z) : on VÉRIFIE le succès — sinon on BLOQUE au lieu d'échouer en
+  //    silence (fix juil. 2026 : une facture atelier de 450 € était passée à la trappe) ──
+  var _okCaisse=false;
+  try{ _okCaisse = await caisseFromVente({prixTTC:prix, mode:mode, date:dateJ, description:(kind==='neuf'?'Tél. neuf — ':'Atelier — ')+desc}); }catch(e){ console.error('cxGenerer caisse:', e); _okCaisse=false; }
+  if(!_okCaisse){
+    alert('⚠️ La facture n\'a PAS pu être enregistrée en caisse (connexion ?).\n\nRien n\'a été validé — le formulaire est conservé. Vérifie la connexion et reclique.');
+    showNotif&&showNotif('❌ Facture NON enregistrée — réessaie','error');
+    return;
+  }
   if(kind==='neuf'){
     try{ if(typeof naSave==='function') naSave({numero:num,date:dateJ,type:'telephone-neuf',description:desc,clientNom:client,clientAdresse:adresse,clientEmail:email,prix:prix,mode:mode}); }catch(e){}
     try{ if(Array.isArray(window.naVentes)) window.naVentes.unshift({id:Date.now(),numero:num,date:dateJ,type:'telephone-neuf',description:desc,clientNom:client,prix:prix,mode:mode}); }catch(e){}
@@ -12031,8 +12062,12 @@ async function cxGenerer(kind, sendMail){
   } else {
     var rec={id:Date.now(),numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prixTTC:prix,mode:mode,clientPrenom:prenom,clientNom:nom,clientTel:tel,clientEmail:email,clientAdresse:adresse};
     atelierList.unshift(rec); _atelierSaveLocal();
-    try{ if(typeof supaFetch==='function'){ supaFetch('factures_atelier','POST',{numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prix_ttc:prix,mode:mode,client_prenom:prenom,client_nom:nom,client_societe:societe||'',client_tel:tel,client_email:email,client_adresse:adresse}).catch(function(){}); } }catch(e){}
-    try{ var nv2=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv2.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'accessoire',desc:'Atelier — '+desc,description:'Atelier — '+desc,ttc:prix,montant:prix,mode:mode,clientNom:client}); localStorage.setItem('na_ventes',JSON.stringify(nv2)); }catch(e){}
+    // ── FIX juil. 2026 : sauvegarde PARTAGÉE dans ventes_neufs_access (type 'atelier')
+    //    → visible sur tous les postes (la table factures_atelier est bloquée par RLS). ──
+    try{ if(typeof naSave==='function') naSave({numero:num,date:dateJ,type:'atelier',description:'Atelier — '+desc,clientNom:client,clientAdresse:adresse,clientEmail:email,prix:prix,mode:mode}); }catch(e){}
+    try{ if(Array.isArray(window.naVentes)) window.naVentes.unshift({id:Date.now(),numero:num,date:dateJ,type:'atelier',description:'Atelier — '+desc,clientNom:client,prix:prix,mode:mode}); }catch(e){}
+    try{ if(typeof supaFetch==='function'){ supaFetch('factures_atelier','POST',{numero:num,date:dateJ,categorie:cat,appareil:appareil,prestation:presta,prix_ttc:prix,mode:mode,client_prenom:prenom,client_nom:nom,client_societe:societe||'',client_tel:tel,client_email:email,client_adresse:adresse}).catch(function(e){ console.warn('[Atelier] factures_atelier refusé (RLS — exécuter sql/fix-rls-factures-atelier.sql) :', e); }); } }catch(e){}
+    try{ var nv2=JSON.parse(localStorage.getItem('na_ventes')||'[]'); nv2.unshift({id:Date.now(),numero:num,date:new Date().toISOString(),type:'atelier',desc:'Atelier — '+desc,description:'Atelier — '+desc,ttc:prix,montant:prix,mode:mode,clientNom:client}); localStorage.setItem('na_ventes',JSON.stringify(nv2)); }catch(e){}
   }
   if(sendMail){
     await cxEnvoyerFactureMail(num, client, email, desc, prix);
@@ -12232,9 +12267,10 @@ function naRenderSuiviJour(){
       if(((v.date||'').substring(0,10)) !== today) return;
       var _t=(v.type||'').toString().toLowerCase();
       var _isNeuf=(_t.indexOf('neuf')>=0 || _t.indexOf('recond')>=0);
+      var _isAtel=(_t.indexOf('atelier')>=0);
       items.push({
         heure: v.date ? new Date(v.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '--:--',
-        type: _isNeuf ? '📱✨ Neuf' : '🛍️ Accessoire',
+        type: _isNeuf ? '📱✨ Neuf' : (_isAtel ? '🔧 Atelier' : '🛍️ Accessoire'),
         desc: v.desc||v.description||'Vente',
         montant: Number(v.prix||v.ttc||v.montant||0), mode: v.mode||v.mode_reglement||'CB'
       });
@@ -13838,7 +13874,10 @@ async function alimenterCaisse(opts){
   // split = { mode1, amount1, mode2, amount2 } (optionnel — paiement séparé)
   var today = opts.date || new Date().toISOString().split('T')[0];
   var ttc   = parseFloat(opts.ttc) || 0;
-  var mode  = (opts.mode || 'CB').toUpperCase();
+  // FIX juil. 2026 : normaliser les accents — « Espèces »/« Chèque » (menus déroulants)
+  // donnaient ESPÈCES/CHÈQUE qui ne matchaient JAMAIS → colonne de paiement jamais créditée.
+  var _normMode = function(m){ return (m||'CB').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+  var mode  = _normMode(opts.mode);
   var quali = parseFloat(opts.quali) || 0;
 
   // Chercher l'entrée caisse du jour
@@ -13861,8 +13900,8 @@ async function alimenterCaisse(opts){
   if(opts.split && opts.split.amount1 > 0 && opts.split.amount2 > 0){
     // Paiement séparé : répartir la part CLIENT sur 2 modes
     var s = opts.split;
-    var m1 = (s.mode1||'CB').toUpperCase();
-    var m2 = (s.mode2||'ESPECES').toUpperCase();
+    var m1 = _normMode(s.mode1||'CB');
+    var m2 = _normMode(s.mode2||'ESPECES');
     if(m1 === 'CB')        entry.cb       += s.amount1;
     if(m1 === 'ESPECES')   entry.especes  += s.amount1;
     if(m1 === 'CHEQUE')    entry.cheque   += s.amount1;
@@ -23853,11 +23892,11 @@ function naUpdatePreview(){
   }
 }
 
-function naGenererFacture(){
+async function naGenererFacture(){
   var desc = document.getElementById('na-description').value.trim();
   var client = document.getElementById('na-client').value.trim();
   var type = document.getElementById('na-type').value;
-  var prix = parseFloat(document.getElementById('na-prix').value)||0;
+  var prix = parseFloat(String(document.getElementById('na-prix').value||'').replace(',','.'))||0;
   if(!desc||!client||!type||!prix){ showNotif('Remplissez les champs obligatoires *','error'); return; }
   var num = 'ACC-'+new Date().getFullYear()+'-'+String(_naNumero).padStart(3,'0');
   var date = new Date().toISOString().split('T')[0];
@@ -23868,11 +23907,17 @@ function naGenererFacture(){
     clientEmail:document.getElementById('na-email').value.trim(),
     prix:prix, mode:document.getElementById('na-mode').value
   };
+  // ── Caisse D'ABORD, avec vérification (fix juil. 2026 : échec silencieux avant) ──
+  var _okC=false;
+  try{ _okC = await caisseFromVente({prixTTC:vente.prix, mode:vente.mode, date:vente.date, description:'Vente '+(vente.type||'')+' — '+(vente.description||'')}); }catch(e){ console.warn('caisse vente détaillée:',e); _okC=false; }
+  if(!_okC){
+    alert('⚠️ La vente n\'a PAS pu être enregistrée en caisse (connexion ?).\n\nLe formulaire est conservé — vérifie la connexion et reclique.');
+    showNotif('❌ Vente NON enregistrée — réessaie','error');
+    return;
+  }
   naVentes.unshift(vente);
   _naNumero++;
   naSave(vente);
-  // Alimente la caisse du jour → apparaît dans le Z de caisse + historique mensuel + clôture
-  try{ if(typeof caisseFromVente==='function') caisseFromVente({prixTTC:vente.prix, mode:vente.mode, date:vente.date, description:'Vente '+(vente.type||'')+' — '+(vente.description||'')}); }catch(e){ console.warn('caisse vente détaillée:',e); }
   // relève individuelle pour le Z (comme le panier)
   try{ var _nv=JSON.parse(localStorage.getItem('na_ventes')||'[]'); _nv.unshift({id:vente.id,numero:vente.numero,date:new Date().toISOString(),type:vente.type,desc:vente.description,description:vente.description,ttc:vente.prix,montant:vente.prix,mode:vente.mode,clientNom:vente.clientNom}); localStorage.setItem('na_ventes',JSON.stringify(_nv)); }catch(e){}
   naRender();
