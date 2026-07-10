@@ -32024,6 +32024,9 @@ function repVerifierBrouillon(){
       try{ localStorage.removeItem('sp_dossier_draft'); localStorage.removeItem('sp_last_dossier_id'); }catch(e){}
       b.remove();
     };
+    // Discret : disparaît tout seul après 20 s (le dossier reste dans la File atelier
+    // avec le badge rouge — aucune info n'est perdue)
+    setTimeout(function(){ try{ if(document.body.contains(b)) b.remove(); }catch(e){} }, 20000);
     document.getElementById('sp-draft-go').onclick=function(){
       b.remove();
       try{
