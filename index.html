@@ -11409,19 +11409,15 @@ function showPage(id,el){
   // Dashboard détaillé : re-render à chaque ouverture pour toujours afficher les chiffres à jour (audit juil. 2026)
   if(id==='dashboard'){ if(typeof renderDashboard==='function') setTimeout(renderDashboard, 300); }
   if(id==='reparations'){
-    var _dosView = document.getElementById('rep-dossier-view');
-    if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
-      repLoadFormFromDossier();
-    } else {
-      // Zéro perte v2 : sans dossier en cours d'édition, on arrive TOUJOURS sur la
-      // File atelier (liste) — plus de vue dossier fantôme qui masque la liste.
-      try{ if(typeof repShowListe==='function') repShowListe(); }catch(e){}
-      repLoadDossiers(); // affichage immédiat depuis le cache
-      // FIX multi-postes : recharge TOUS les dossiers (tous postes) depuis Supabase puis ré-affiche la liste
-      if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(function(){ try{ repLoadDossiers(); }catch(e){} }).catch(function(){}); }
-      // FIX multi-postes : rafraîchir aussi l'historique (réparations terminées tous postes) pour la recherche
-      if(typeof loadHistoriqueReparations==='function'){ loadHistoriqueReparations().then(function(){ try{ renderRepHistorique(); }catch(e){} }).catch(function(){}); }
-    }
+    // ── Zéro perte v2 : le clic sur « Réparation » affiche TOUJOURS la File atelier
+    //    seule (liste propre, dossier masqué). Tout dossier en cours est déjà
+    //    sauvegardé en base : on le rouvre en un clic depuis la liste. ──
+    try{ if(typeof repShowListe==='function') repShowListe(); }catch(e){}
+    repLoadDossiers(); // affichage immédiat depuis le cache
+    // FIX multi-postes : recharge TOUS les dossiers (tous postes) depuis Supabase puis ré-affiche la liste
+    if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(function(){ try{ repLoadDossiers(); }catch(e){} }).catch(function(){}); }
+    // FIX multi-postes : rafraîchir aussi l'historique (réparations terminées tous postes) pour la recherche
+    if(typeof loadHistoriqueReparations==='function'){ loadHistoriqueReparations().then(function(){ try{ renderRepHistorique(); }catch(e){} }).catch(function(){}); }
     // Auto-vérification des statuts QR en arrière-plan
     if(typeof qrAutoCheckStatuts==='function') qrAutoCheckStatuts();
     // Tuiles de marques (départ parcours QualiRépar)
