@@ -26456,6 +26456,11 @@ function repAutoSave(){
   repDossierCourant.accessoires= getDepotAccessoires();
   repDossierCourant.etatAutre  = (document.getElementById('dep-etat-autre')||{value:''}).value.trim();
   repDossierCourant.accAutre   = (document.getElementById('dep-acc-autre-txt')||{value:''}).value.trim();
+  // ── ZÉRO PERTE (juil. 2026) : brouillon continu sur l'appareil ──
+  // Chaque frappe est archivée localement : si Safari plante à N'IMPORTE quelle
+  // étape (même avant la validation du client), le dossier est proposé à la
+  // reprise au prochain démarrage (repVerifierBrouillon).
+  try{ localStorage.setItem('sp_dossier_draft', JSON.stringify(repDossierCourant)); }catch(e){}
   // Rafraîchir le récap step 3 si visible
   if(repCurrentStep===3) repUpdateDevisRecap();
 }
@@ -28212,6 +28217,7 @@ function repCloturerDossier(){
   var d = repDossierCourant;
   d.statut='cloture';
   d.dateCloture = new Date().toISOString();
+  try{ localStorage.removeItem('sp_dossier_draft'); }catch(e){} // dossier terminé → brouillon purgé
   repSauvegarderDossier();
   // Rafraîchir tout
   repLoadDossiers();
@@ -29118,7 +29124,12 @@ function repSigSave(){
   var ok   = document.getElementById('rep-sig-ok');
   if(hint) hint.style.display='none';
   if(ok)   ok.style.display='block';
-  if(repDossierCourant) repDossierCourant.signature = _repSigData;
+  if(repDossierCourant){
+    repDossierCourant.signature = _repSigData;
+    // ZÉRO PERTE : signature archivée immédiatement (brouillon local + base)
+    try{ localStorage.setItem('sp_dossier_draft', JSON.stringify(repDossierCourant)); }catch(e){}
+    try{ if(typeof repSauvegarderDossier==='function') repSauvegarderDossier(); }catch(e){}
+  }
 }
 
 function repClearSig(){
@@ -31896,6 +31907,47 @@ function saveBonsDepot(){
   }catch(e){ console.warn('saveBonsDepot (cache local):', e.message); }
 }
 
+// ══ ZÉRO PERTE (juil. 2026) — bouée de récupération après plantage ══
+// Au démarrage, si un brouillon de dossier non terminé existe (archivé à chaque
+// frappe par repAutoSave), on propose de le reprendre exactement où il en était :
+// client, appareil, panne, prix, signature — rien ne se perd, même avant la
+// validation du client.
+function repVerifierBrouillon(){
+  if(window._repDraftChecked) return; window._repDraftChecked = true;
+  try{
+    var raw = localStorage.getItem('sp_dossier_draft'); if(!raw) return;
+    var d = JSON.parse(raw); if(!d || !d.id) return;
+    // Brouillon obsolète : dossier déjà facturé ou clôturé
+    var enBase = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(d.id); });
+    var fini = (d.facture && d.facture.numero) || (enBase && (enBase.statut==='cloture' || (enBase.facture && enBase.facture.numero)));
+    if(fini){ localStorage.removeItem('sp_dossier_draft'); return; }
+    // Le brouillon n'apporte rien de plus que la base → rien à faire
+    var plus = !enBase
+      || (!!d.signature && !enBase.signature && enBase._sigNotLoaded!==true)
+      || ((Number(d.devis)||0) > 0 && !(Number(enBase.devis)||0))
+      || ((d.panne||'') && !(enBase.panne||''));
+    if(!plus) return;
+    var nomC = (((d.client&&d.client.prenom)||'')+' '+((d.client&&d.client.nom)||'')).trim();
+    if(confirm('🛟 Un dossier NON TERMINÉ a été retrouvé après un plantage :\n\n'+(d.numero||'')+(nomC?' — '+nomC:'')+((d.appareil&&d.appareil.modele)?' — '+d.appareil.marque+' '+d.appareil.modele:'')+'\n\nLe reprendre là où vous en étiez ?')){
+      repDossierCourant = d;
+      // Sécuriser tout de suite en base (le brouillon devient un vrai dossier)
+      try{ repSauvegarderDossier(); repSauvegarderDossierImmediatement(); }catch(e){}
+      try{
+        showPage('reparations', null);
+        repLoadFormFromDossier();
+        var t=document.getElementById('rep-dossier-titre'); if(t) t.textContent = nomC || 'Dossier repris';
+        var n=document.getElementById('rep-dossier-num'); if(n) n.textContent = (d.numero||'')+(d.date?' · '+fmtDate(d.date):'');
+        if(typeof repUpdateStatutBadge==='function') repUpdateStatutBadge();
+        var lv=document.getElementById('rep-liste-view'), dv2=document.getElementById('rep-dossier-view');
+        if(lv) lv.style.display='none'; if(dv2) dv2.style.display='block';
+      }catch(e){ console.warn('reprise brouillon:', e); }
+      showNotif && showNotif('🛟 Dossier repris — rien n\'a été perdu', 'success');
+    } else {
+      localStorage.removeItem('sp_dossier_draft');
+    }
+  }catch(e){ console.warn('repVerifierBrouillon:', e); }
+}
+
 // ── Signature à la demande (fix freeze iPad juil. 2026) ──
 // La liste des dossiers est chargée SANS les signatures. On récupère la signature
 // d'un dossier uniquement au moment où on en a besoin (ouverture / envoi QualiRépar).
@@ -32046,6 +32098,8 @@ async function loadBonsDepot(full){
     repSetNumeroHwm(_anneeHwm, repScanMaxNumero('REP-'+_anneeHwm+'-'));
     setTimeout(function(){ repFixDuplicateNumeros(); }, 1500);
   }catch(e){ console.warn('HWM init:', e); }
+  // ZÉRO PERTE : proposer la reprise d'un dossier non terminé après plantage
+  try{ setTimeout(function(){ if(typeof repVerifierBrouillon==='function') repVerifierBrouillon(); }, 900); }catch(e){}
 }
 
 async function saveBonDepotSupabase(d){
