@@ -1865,12 +1865,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
         </div>
       </div>
 
-      <!-- ═══ FILE ATELIER (résumé — la liste complète vit dans Réparations) ═══ -->
-      <div style="margin-bottom:26px;">
-        <div style="background:#fff;border:1px solid #E8EAED;border-radius:16px;overflow:hidden;cursor:pointer;" onclick="showPage('reparations',null)">
-          <div id="dash-file-atelier-body" style="padding:16px 18px;color:#9CA3AF;font-size:14px;">Chargement…</div>
-        </div>
-      </div>
+      <!-- File atelier : déplacée intégralement dans la page Réparations (juil. 2026) -->
 
       <!-- ═══ PERFORMANCE LIVE ═══ -->
       <div id="dh-perf" style="margin-bottom:24px;"></div>
@@ -25454,8 +25449,31 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
-  // Charger la signature à la demande (la liste est allégée — fix freeze iPad)
-  if(!d.signature && d._sigNotLoaded){ try{ await repFetchSignature(d); }catch(e){} }
+  // FIX juil. 2026 : ouverture INSTANTANÉE — la signature se charge en arrière-plan.
+  // (Avant, on attendait le réseau avant d'afficher → « le dossier ne s'ouvre pas »
+  // sur iPad quand la connexion traînait.)
+  if(!d.signature && d._sigNotLoaded){
+    repFetchSignature(d).then(function(sig){
+      if(!sig) return;
+      if(!window.repDossierCourant || String(repDossierCourant.id)!==String(d.id)) return;
+      repDossierCourant.signature = sig; repDossierCourant._sigNotLoaded = false;
+      try{
+        var canvas=document.getElementById('rep-sig-canvas');
+        if(canvas){
+          var img=new Image();
+          img.onload=function(){
+            canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+            var ok=document.getElementById('rep-sig-ok'); var hint=document.getElementById('rep-sig-hint');
+            if(ok)ok.style.display='block'; if(hint)hint.style.display='none';
+            _repSigData=sig;
+          };
+          img.src=sig;
+        }
+        if(typeof repUpdateChecklist==='function') repUpdateChecklist();
+        if(typeof repTodoBanner==='function') repTodoBanner();
+      }catch(e){}
+    }).catch(function(){});
+  }
   var rp=document.getElementById('page-reparations');
   if(rp&&!rp.classList.contains('active')){try{showPage('reparations',null);}catch(e){}}
   repDossierCourant = JSON.parse(JSON.stringify(d));
