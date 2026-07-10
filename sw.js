@@ -1,7 +1,8 @@
 // Service Worker — Solution Phone — Mode hors-ligne
-// Bump de version (04/07/2026) : force le rafraîchissement du cache sur tous les postes
-// (fix sync multi-poste de la recherche — tablettes qui ne voyaient que leurs propres dossiers).
-var CACHE_NAME = 'sp-cache-v7';
+// v8 (10/07/2026) : les navigations chargent TOUJOURS la version fraîche du réseau
+// (cache:'reload' → contourne le cache disque du navigateur qui servait une vieille
+// copie de l'app pendant plusieurs minutes/heures après chaque déploiement).
+var CACHE_NAME = 'sp-cache-v8';
 var URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -41,9 +42,15 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // Pages HTML et assets : Network First, fallback cache
+  // Pages HTML et assets : Network First, fallback cache.
+  // Pour les NAVIGATIONS (ouverture/rechargement de l'app) : cache:'reload'
+  // → on ignore le cache disque du navigateur et on prend la version du serveur.
+  var req = e.request;
+  if (e.request.mode === 'navigate' || (e.request.destination === 'document')) {
+    req = new Request(e.request.url, { cache: 'reload', credentials: 'same-origin' });
+  }
   e.respondWith(
-    fetch(e.request).then(function(response) {
+    fetch(req).then(function(response) {
       var responseClone = response.clone();
       caches.open(CACHE_NAME).then(function(cache) {
         cache.put(e.request, responseClone);
