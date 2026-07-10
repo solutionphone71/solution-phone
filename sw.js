@@ -1,4 +1,5 @@
 // Service Worker — Solution Phone — Mode hors-ligne
+// Build 2026-07-10-23h — redéploiement forcé
 // v8 (10/07/2026) : les navigations chargent TOUJOURS la version fraîche du réseau
 // (cache:'reload' → contourne le cache disque du navigateur qui servait une vieille
 // copie de l'app pendant plusieurs minutes/heures après chaque déploiement).
