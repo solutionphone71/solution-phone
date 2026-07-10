@@ -966,7 +966,7 @@ div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]{
 
     <div class="nav-sep"></div>
     <div class="nav-group-label">QualiRépar</div>
-    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparation</span></div>
+    <div class="nav-item" onclick="showPage('reparations',this)"><span class="nav-icon">🔧</span><span>Réparation</span><span id="nav-rep-badge" style="display:none;margin-left:auto;background:#E10600;color:#fff;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;"></span></div>
     <div class="nav-item" onclick="showPage('devis',this)"><span class="nav-icon">📝</span><span>Devis</span></div>
     <div class="nav-item" onclick="showPage('clients',this)"><span class="nav-icon">👥</span><span>Clients</span></div>
     <div class="nav-item" onclick="_qrTab='ecologic';showPage('suivi-qr',this);"><span class="nav-icon">🔵</span><span>Ecologic</span></div>
@@ -24517,6 +24517,7 @@ function repLoadDossiers(){
   renderRepListe();
   renderRepHistorique();
   renderRepBentoWidgets();
+  if(typeof repMajBadgeAtelier==='function') repMajBadgeAtelier(); // badge rouge menu + rappel € en jeu
   // ══ SELF-HEAL File atelier (juil. 2026) ══
   // Ne JAMAIS laisser la liste invisible sans dossier légitimement ouvert :
   // certains vieux états (onglet ancien, crash, vue fantôme) laissaient
@@ -24956,6 +24957,42 @@ async function demanderAvisGoogle(dossierId, telephone, prenom) {
   } catch(e) { alert('Erreur : ' + e.message); }
 }
 
+// ══ ZÉRO PERTE — dossiers « à risque » (juil. 2026) ══
+// Un dossier à risque = en cours, avec du contenu (client ou appareil), et plus
+// vieux que 4 h sans facture → réparation probablement rendue sans encaissement
+// ni bonus QualiRépar = ARGENT PERDU. On les rend impossibles à ignorer.
+function repDossiersARisque(){
+  var seuil = Date.now() - 4*3600*1000;
+  return (window.repDossiers||[]).filter(function(d){
+    if(!d || typeof repEstEnCours!=='function' || !repEstEnCours(d)) return false;
+    var contenu = ((d.client&&d.client.nom)||'') || ((d.appareil&&d.appareil.modele)||'');
+    if(!contenu) return false;
+    var ts = Number(d.id)||0;
+    return ts>0 && ts < seuil;
+  });
+}
+function repMajBadgeAtelier(){
+  try{
+    var aRisque = repDossiersARisque();
+    var badge = document.getElementById('nav-rep-badge');
+    if(badge){
+      if(aRisque.length){ badge.textContent = aRisque.length; badge.style.display='inline-block'; }
+      else badge.style.display='none';
+    }
+    // Rappel quotidien chiffré (1 fois par jour et par poste)
+    if(aRisque.length){
+      var cle = 'sp_rappel_atelier_' + new Date().toISOString().slice(0,10);
+      if(!localStorage.getItem(cle)){
+        localStorage.setItem(cle, '1');
+        var enJeu = aRisque.reduce(function(s,d){ return s + (Number(d.devis)||0) + (d.bonusQR ? (d.piec?30:25) : 0); }, 0);
+        setTimeout(function(){
+          showNotif && showNotif('💸 '+aRisque.length+' réparation(s) commencée(s) jamais facturée(s)'+(enJeu>0?' — ~'+enJeu.toFixed(0)+' € en jeu':'')+' → File atelier (menu Réparation)', 'error');
+        }, 2500);
+      }
+    }
+  }catch(e){ console.warn('repMajBadgeAtelier:', e); }
+}
+
 // ══ Règle UNIQUE « dossier en cours » (juil. 2026) ══
 // Partagée entre la page Réparations ET la File atelier du tableau de bord,
 // pour que les deux affichent exactement les mêmes dossiers.
@@ -24997,8 +25034,12 @@ function renderRepListe(){
         : '<span style="background:rgba(255,59,48,0.08);color:#dc2626;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700;">\u26a0\ufe0f QR</span>';
     }
     var id = String(d.id);
-    return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;">'+
-      '<td><b>'+(d.numero||'')+'</b></td>'+
+    // Ancienneté : un dossier en cours depuis plus de 4 h = risque d'oubli (argent perdu)
+    var _ageH = (Date.now() - (Number(d.id)||Date.now())) / 3600000;
+    var _vieux = _ageH > 4;
+    var _ageTxt = _ageH >= 48 ? Math.floor(_ageH/24)+' j' : (_ageH >= 1 ? Math.floor(_ageH)+' h' : '');
+    return '<tr onclick="repOuvrirDossier('+id+')" style="cursor:pointer;'+(_vieux?'background:rgba(255,159,10,0.10);':'')+'">'+
+      '<td><b>'+(d.numero||'')+'</b>'+(_vieux&&_ageTxt?'<br><span style="font-size:10px;color:#b45309;font-weight:800;">⏰ '+_ageTxt+'</span>':'')+'</td>'+
       '<td>'+fmtDate(d.date)+'</td>'+
       '<td>'+((c.prenom?c.prenom+' ':'')+c.nom)+'</td>'+
       '<td>'+(a.marque||'')+' '+(a.modele||'')+'</td>'+
