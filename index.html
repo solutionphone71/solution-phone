@@ -26520,9 +26520,19 @@ function repAutoSave(){
   repDossierCourant.accessoires= getDepotAccessoires();
   repDossierCourant.etatAutre  = (document.getElementById('dep-etat-autre')||{value:''}).value.trim();
   repDossierCourant.accAutre   = (document.getElementById('dep-acc-autre-txt')||{value:''}).value.trim();
-  // ── ZÉRO PERTE v2 (juil. 2026) ──
-  // 1) Brouillon local à chaque frappe (filet hors-ligne)
-  try{ localStorage.setItem('sp_dossier_draft', JSON.stringify(repDossierCourant)); }catch(e){}
+  // ── ZÉRO PERTE v2.1 (fix plantage iPad saisie prix / Suivant) ──
+  // 1) Brouillon local ALLÉGÉ et DIFFÉRÉ (1,2 s) : plus d'écriture disque synchrone
+  //    à chaque frappe, et sans la signature (déjà sécurisée en base par repSigSave).
+  try{
+    clearTimeout(window._repDraftTimer);
+    window._repDraftTimer = setTimeout(function(){
+      try{
+        if(!window.repDossierCourant) return;
+        var light = Object.assign({}, repDossierCourant, {signature:null});
+        localStorage.setItem('sp_dossier_draft', JSON.stringify(light));
+      }catch(e){}
+    }, 1200);
+  }catch(e){}
   // 2) Autosauvegarde CONTINUE en base (debounce 2,5 s) — la base est la source de vérité
   try{
     clearTimeout(window._repAutoPersistTimer);
@@ -29195,8 +29205,8 @@ function repSigSave(){
   if(ok)   ok.style.display='block';
   if(repDossierCourant){
     repDossierCourant.signature = _repSigData;
-    // ZÉRO PERTE : signature archivée immédiatement (brouillon local + base)
-    try{ localStorage.setItem('sp_dossier_draft', JSON.stringify(repDossierCourant)); }catch(e){}
+    // ZÉRO PERTE : signature archivée en BASE (asynchrone — pas d'écriture disque
+    // synchrone du brouillon complet : c'était un des déclencheurs de gel iPad)
     try{ if(typeof repSauvegarderDossier==='function') repSauvegarderDossier(); }catch(e){}
   }
 }
