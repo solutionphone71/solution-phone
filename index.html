@@ -24517,6 +24517,23 @@ function repLoadDossiers(){
   renderRepListe();
   renderRepHistorique();
   renderRepBentoWidgets();
+  // ══ SELF-HEAL File atelier (juil. 2026) ══
+  // Ne JAMAIS laisser la liste invisible sans dossier légitimement ouvert :
+  // certains vieux états (onglet ancien, crash, vue fantôme) laissaient
+  // rep-liste-view en display:none → « la File atelier a disparu ».
+  // Ce contrôle tourne à CHAQUE chargement de données (boot, sync 90 s, menu).
+  try{
+    var _pgSH = document.getElementById('page-reparations');
+    var _lvSH = document.getElementById('rep-liste-view');
+    var _dvSH = document.getElementById('rep-dossier-view');
+    if(_pgSH && _pgSH.classList.contains('active') && _lvSH && _dvSH){
+      var _dossierLegit = (_dvSH.style.display !== 'none') && window.repDossierCourant && repDossierCourant.id;
+      if(!_dossierLegit){
+        if(_lvSH.style.display === 'none') _lvSH.style.display = 'block';
+        if(_dvSH.style.display !== 'none') _dvSH.style.display = 'none';
+      }
+    }
+  }catch(e){}
   // FIX visibilité multi-poste (juil. 2026) : ne PAS forcer le filtre date sur "aujourd'hui".
   // Avant, l'historique se limitait au jour même → une tablette qui n'avait rien facturé
   // aujourd'hui voyait un historique vide (et ne voyait que ses propres réparations du jour).
