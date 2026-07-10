@@ -11413,6 +11413,9 @@ function showPage(id,el){
     if(window.repDossierCourant && _dosView && _dosView.style.display !== 'none'){
       repLoadFormFromDossier();
     } else {
+      // Zéro perte v2 : sans dossier en cours d'édition, on arrive TOUJOURS sur la
+      // File atelier (liste) — plus de vue dossier fantôme qui masque la liste.
+      try{ if(typeof repShowListe==='function') repShowListe(); }catch(e){}
       repLoadDossiers(); // affichage immédiat depuis le cache
       // FIX multi-postes : recharge TOUS les dossiers (tous postes) depuis Supabase puis ré-affiche la liste
       if(typeof loadBonsDepot==='function'){ loadBonsDepot().then(function(){ try{ repLoadDossiers(); }catch(e){} }).catch(function(){}); }
@@ -25363,6 +25366,12 @@ function repNewDossier(){
       facture: null, qrEnvoi: null, signature: null, photoImeiUrl: null
     };
     repClearForm();
+    // ══ ZÉRO PERTE v2 (juil. 2026) : le dossier EXISTE en base dès sa création ══
+    // → un plantage à n'importe quelle étape le laisse dans la File atelier,
+    //   récupérable depuis n'importe quel poste. (Les coquilles vides abandonnées
+    //   sont auto-purgées après 24 h par repPurgerDossiersVides.)
+    try{ localStorage.setItem('sp_last_dossier_id', String(repDossierCourant.id)); }catch(e){}
+    try{ repSauvegarderDossier(); repSauvegarderDossierImmediatement(); }catch(e){ console.warn('persist création:', e); }
     var titre = document.getElementById('rep-dossier-titre');
     if(titre) titre.textContent = 'Nouveau dossier';
     var num = document.getElementById('rep-dossier-num');
@@ -25449,6 +25458,7 @@ async function repOuvrirDossier(id){
   }
   var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
   if(!d) { showNotif && showNotif('Dossier introuvable', 'error'); return; }
+  try{ localStorage.setItem('sp_last_dossier_id', String(d.id)); }catch(e){} // reprise après plantage
   // FIX juil. 2026 : ouverture INSTANTANÉE — la signature se charge en arrière-plan.
   // (Avant, on attendait le réseau avant d'afficher → « le dossier ne s'ouvre pas »
   // sur iPad quand la connexion traînait.)
@@ -26456,11 +26466,16 @@ function repAutoSave(){
   repDossierCourant.accessoires= getDepotAccessoires();
   repDossierCourant.etatAutre  = (document.getElementById('dep-etat-autre')||{value:''}).value.trim();
   repDossierCourant.accAutre   = (document.getElementById('dep-acc-autre-txt')||{value:''}).value.trim();
-  // ── ZÉRO PERTE (juil. 2026) : brouillon continu sur l'appareil ──
-  // Chaque frappe est archivée localement : si Safari plante à N'IMPORTE quelle
-  // étape (même avant la validation du client), le dossier est proposé à la
-  // reprise au prochain démarrage (repVerifierBrouillon).
+  // ── ZÉRO PERTE v2 (juil. 2026) ──
+  // 1) Brouillon local à chaque frappe (filet hors-ligne)
   try{ localStorage.setItem('sp_dossier_draft', JSON.stringify(repDossierCourant)); }catch(e){}
+  // 2) Autosauvegarde CONTINUE en base (debounce 2,5 s) — la base est la source de vérité
+  try{
+    clearTimeout(window._repAutoPersistTimer);
+    window._repAutoPersistTimer = setTimeout(function(){
+      try{ if(window.repDossierCourant && typeof repSauvegarderDossier==='function') repSauvegarderDossier(); }catch(e){}
+    }, 2500);
+  }catch(e){}
   // Rafraîchir le récap step 3 si visible
   if(repCurrentStep===3) repUpdateDevisRecap();
 }
@@ -28217,7 +28232,7 @@ function repCloturerDossier(){
   var d = repDossierCourant;
   d.statut='cloture';
   d.dateCloture = new Date().toISOString();
-  try{ localStorage.removeItem('sp_dossier_draft'); }catch(e){} // dossier terminé → brouillon purgé
+  try{ localStorage.removeItem('sp_dossier_draft'); localStorage.removeItem('sp_last_dossier_id'); }catch(e){} // dossier terminé → reprise inutile
   repSauvegarderDossier();
   // Rafraîchir tout
   repLoadDossiers();
@@ -31915,36 +31930,64 @@ function saveBonsDepot(){
 function repVerifierBrouillon(){
   if(window._repDraftChecked) return; window._repDraftChecked = true;
   try{
-    var raw = localStorage.getItem('sp_dossier_draft'); if(!raw) return;
-    var d = JSON.parse(raw); if(!d || !d.id) return;
-    // Brouillon obsolète : dossier déjà facturé ou clôturé
-    var enBase = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(d.id); });
-    var fini = (d.facture && d.facture.numero) || (enBase && (enBase.statut==='cloture' || (enBase.facture && enBase.facture.numero)));
-    if(fini){ localStorage.removeItem('sp_dossier_draft'); return; }
-    // Le brouillon n'apporte rien de plus que la base → rien à faire
-    var plus = !enBase
-      || (!!d.signature && !enBase.signature && enBase._sigNotLoaded!==true)
-      || ((Number(d.devis)||0) > 0 && !(Number(enBase.devis)||0))
-      || ((d.panne||'') && !(enBase.panne||''));
-    if(!plus) return;
-    var nomC = (((d.client&&d.client.prenom)||'')+' '+((d.client&&d.client.nom)||'')).trim();
-    if(confirm('🛟 Un dossier NON TERMINÉ a été retrouvé après un plantage :\n\n'+(d.numero||'')+(nomC?' — '+nomC:'')+((d.appareil&&d.appareil.modele)?' — '+d.appareil.marque+' '+d.appareil.modele:'')+'\n\nLe reprendre là où vous en étiez ?')){
-      repDossierCourant = d;
-      // Sécuriser tout de suite en base (le brouillon devient un vrai dossier)
-      try{ repSauvegarderDossier(); repSauvegarderDossierImmediatement(); }catch(e){}
-      try{
-        showPage('reparations', null);
-        repLoadFormFromDossier();
-        var t=document.getElementById('rep-dossier-titre'); if(t) t.textContent = nomC || 'Dossier repris';
-        var n=document.getElementById('rep-dossier-num'); if(n) n.textContent = (d.numero||'')+(d.date?' · '+fmtDate(d.date):'');
-        if(typeof repUpdateStatutBadge==='function') repUpdateStatutBadge();
-        var lv=document.getElementById('rep-liste-view'), dv2=document.getElementById('rep-dossier-view');
-        if(lv) lv.style.display='none'; if(dv2) dv2.style.display='block';
-      }catch(e){ console.warn('reprise brouillon:', e); }
-      showNotif && showNotif('🛟 Dossier repris — rien n\'a été perdu', 'success');
-    } else {
-      localStorage.removeItem('sp_dossier_draft');
+    // v2 : la BASE est la source de vérité (le dossier y est dès sa création).
+    var d = null, fromDraft = false;
+    // Cas rare (plantage HORS-LIGNE) : brouillon local jamais arrivé en base
+    try{
+      var raw = localStorage.getItem('sp_dossier_draft');
+      if(raw){
+        var dr = JSON.parse(raw);
+        if(dr && dr.id && !(dr.facture && dr.facture.numero)){
+          var enBase = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(dr.id); });
+          if(!enBase){ d = dr; fromDraft = true; }
+          else localStorage.removeItem('sp_dossier_draft'); // déjà en base → brouillon inutile
+        } else { localStorage.removeItem('sp_dossier_draft'); }
+      }
+    }catch(e){}
+    // Cas normal : dernier dossier ouvert sur CE poste, encore en cours, récent (48 h)
+    if(!d){
+      var lastId = localStorage.getItem('sp_last_dossier_id');
+      if(lastId){
+        var d2 = (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(lastId); });
+        var recent = d2 && (Date.now() - (Number(d2.id)||0)) < 48*3600*1000;
+        var contenu = d2 && (((d2.client&&d2.client.nom)||'') || ((d2.appareil&&d2.appareil.modele)||''));
+        if(d2 && recent && contenu && typeof repEstEnCours==='function' && repEstEnCours(d2)) d = d2;
+      }
     }
+    if(!d) return;
+    var nomC = (((d.client&&d.client.prenom)||'')+' '+((d.client&&d.client.nom)||'')).trim();
+    // BANNIÈRE non bloquante (le confirm() au démarrage figeait l'app sur iPad)
+    var old=document.getElementById('sp-draft-banner'); if(old) old.remove();
+    var b=document.createElement('div');
+    b.id='sp-draft-banner';
+    b.style.cssText='position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:9000;background:#0f172a;color:#fff;padding:14px 18px;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.4);display:flex;gap:12px;align-items:center;max-width:94vw;';
+    b.innerHTML='<div style="font-size:14px;line-height:1.4;">🛟 <b>Dossier non terminé retrouvé</b><br>'+
+      '<span style="font-size:12px;color:#cbd5e1;">'+(d.numero||'')+(nomC?' — '+nomC:'')+((d.appareil&&d.appareil.modele)?' — '+(d.appareil.marque||'')+' '+d.appareil.modele:'')+'</span></div>'+
+      '<button id="sp-draft-go" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:800;font-size:14px;cursor:pointer;white-space:nowrap;">▶ Reprendre</button>'+
+      '<button id="sp-draft-no" style="background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;padding:11px 12px;font-size:13px;cursor:pointer;">Ignorer</button>';
+    document.body.appendChild(b);
+    document.getElementById('sp-draft-no').onclick=function(){
+      try{ localStorage.removeItem('sp_dossier_draft'); localStorage.removeItem('sp_last_dossier_id'); }catch(e){}
+      b.remove();
+    };
+    document.getElementById('sp-draft-go').onclick=function(){
+      b.remove();
+      try{
+        if(fromDraft){
+          // brouillon hors-ligne : on l'insère d'abord dans les listes + base
+          repDossierCourant = JSON.parse(JSON.stringify(d));
+          repSauvegarderDossier();
+          repSauvegarderDossierImmediatement();
+        }
+        showPage('reparations', null);
+        // Ouverture par le circuit STANDARD (fiable) une fois la page affichée
+        setTimeout(function(){ try{ repOuvrirDossier(d.id); }catch(e){} }, 300);
+        showNotif && showNotif('🛟 Dossier repris — rien n\'a été perdu', 'success');
+      }catch(e){
+        console.warn('reprise:', e);
+        showNotif && showNotif('Le dossier '+(d.numero||'')+' est dans la File atelier (page Réparations)', 'info');
+      }
+    };
   }catch(e){ console.warn('repVerifierBrouillon:', e); }
 }
 
@@ -32083,6 +32126,28 @@ async function loadBonsDepot(full){
         });
         if(_aFixer.length) console.log('[Auto-fix] '+_aFixer.length+' dossier(s) facturé(s)/envoyé(s) sortis de la file atelier');
       }catch(e){ console.warn('Auto-fix statuts:', e); }
+      // ── Auto-purge (zéro perte v2) : coquilles VIDES > 24 h (créées puis abandonnées
+      //    sans client, sans appareil, sans contenu) → supprimées, la File atelier reste propre ──
+      try{
+        var _cutV = Date.now() - 24*3600*1000;
+        var _vides = bonsDepot.filter(function(dd){
+          if(!dd) return false;
+          if((dd.statut||'depot')!=='depot') return false;
+          if(((dd.client&&dd.client.nom)||'')!=='') return false;
+          if(((dd.appareil&&dd.appareil.modele)||'')!=='') return false;
+          if((dd.panne||'')!=='' || dd.facture || dd.qrEnvoi || dd.signature || dd.photoImeiUrl) return false;
+          var _ts = Number(dd.id)||0; // id = Date.now() à la création
+          return _ts > 0 && _ts < _cutV;
+        });
+        if(_vides.length){
+          var _vIds = _vides.map(function(x){ return String(x.id); });
+          _vides.forEach(function(dd){
+            supaFetch('bons_depot','DELETE',null,'?id=eq.'+encodeURIComponent(dd.id)).catch(function(){});
+          });
+          bonsDepot = bonsDepot.filter(function(x){ return _vIds.indexOf(String(x.id))<0; });
+          console.log('[Purge] '+_vides.length+' dossier(s) vide(s) abandonné(s) supprimé(s)');
+        }
+      }catch(e){ console.warn('Purge dossiers vides:', e); }
       saveBonsDepot(); // cache local en fallback
     }
   } catch(e){
