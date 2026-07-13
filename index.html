@@ -25473,12 +25473,11 @@ function repNewDossier(){
       facture: null, qrEnvoi: null, signature: null, photoImeiUrl: null
     };
     repClearForm();
-    // ══ ZÉRO PERTE v2 (juil. 2026) : le dossier EXISTE en base dès sa création ══
-    // → un plantage à n'importe quelle étape le laisse dans la File atelier,
-    //   récupérable depuis n'importe quel poste. (Les coquilles vides abandonnées
-    //   sont auto-purgées après 24 h par repPurgerDossiersVides.)
+    // ══ RÈGLE 13/07/2026 : PAS d'écriture en base à la création ══
+    // Le dossier ne part en base qu'à la validation de l'étape Appareil (photo IMEI)
+    // ou du Client — avant ça il vit en brouillon local (zéro perte conservé, mais
+    // plus JAMAIS de réparations vides qui polluent la File atelier).
     try{ localStorage.setItem('sp_last_dossier_id', String(repDossierCourant.id)); }catch(e){}
-    try{ repSauvegarderDossier(); repSauvegarderDossierImmediatement(); }catch(e){ console.warn('persist création:', e); }
     var titre = document.getElementById('rep-dossier-titre');
     if(titre) titre.textContent = 'Nouveau dossier';
     var num = document.getElementById('rep-dossier-num');
@@ -26903,7 +26902,11 @@ function repStep2Next(){
     showNotif('⚠️ Photo IMEI / plaque signalétique obligatoire — utilisez le bouton 📷 OCR','error');
     return;
   }
-  repSauvegarderDossier(); // persiste l'appareil/panne/devis
+  // ── RÈGLE 13/07/2026 : l'étape Appareil est validée (marque+modèle+IMEI+photo)
+  //    → le dossier entre en base MAINTENANT (première écriture). ──
+  repDossierCourant._etapeAppareilOK = true;
+  repSauvegarderDossier();               // persiste l'appareil/panne/devis
+  repSauvegarderDossierImmediatement();  // écriture base immédiate (zéro perte)
   repGoStep(1); // après Appareil/IMEI → étape Client
 }
 
@@ -27126,6 +27129,11 @@ function repSauvegarderSupabaseDebounced(depot){
 // Sauvegarde IMMÉDIATE (sans debounce) — pour statuts critiques comme la facturation
 function repSauvegarderDossierImmediatement(){
   if(!repDossierCourant) return;
+  // RÈGLE 13/07/2026 : mêmes conditions que repSauvegarderDossier (pas de vides en base)
+  if(!repDossierCourant._numeroReserve && !repDossierCourant._etapeAppareilOK){
+    var _dejaEnBase2 = (window.bonsDepot||[]).some(function(b){ return String(b.id)===String(repDossierCourant.id); });
+    if(!_dejaEnBase2) return;
+  }
   var depot = {
     id: repDossierCourant.id, numero: repDossierCourant.numero,
     date: repDossierCourant.date, statut: repDossierCourant.statut,
@@ -27161,6 +27169,12 @@ function repSauvegarderDossierImmediatement(){
 
 function repSauvegarderDossier(){
   if(!repDossierCourant) return;
+  // ── RÈGLE 13/07/2026 : pas de base avant l'étape Appareil validée (photo IMEI)
+  //    ou le client créé — l'avant reste un brouillon local (repAutoSave). ──
+  if(!repDossierCourant._numeroReserve && !repDossierCourant._etapeAppareilOK){
+    var _dejaEnBase = (window.bonsDepot||[]).some(function(b){ return String(b.id)===String(repDossierCourant.id); });
+    if(!_dejaEnBase) return;
+  }
 
   var idx = repDossiers.findIndex(function(d){ return String(d.id)===String(repDossierCourant.id); });
   if(idx>=0){ repDossiers[idx]=JSON.parse(JSON.stringify(repDossierCourant)); }
@@ -28659,6 +28673,8 @@ async function repOCRImei(){
         photoUrl = await uploaderPhotoIMEI(base64Full, compressedUrl);
         if(photoUrl && repDossierCourant){
           repDossierCourant.photoImeiUrl = photoUrl;
+          // RÈGLE 13/07/2026 : photo IMEI prise = contenu précieux → le dossier entre en base
+          repDossierCourant._etapeAppareilOK = true;
           repSauvegarderDossier(); // localStorage + debounce Supabase
           // Sauvegarde Supabase immédiate pour la photo (sans debounce)
           var depotAvecPhoto = Object.assign({}, repDossierCourant);
@@ -32249,7 +32265,7 @@ async function loadBonsDepot(full){
       // ── Auto-purge (zéro perte v2) : coquilles VIDES > 24 h (créées puis abandonnées
       //    sans client, sans appareil, sans contenu) → supprimées, la File atelier reste propre ──
       try{
-        var _cutV = Date.now() - 24*3600*1000;
+        var _cutV = Date.now() - 2*3600*1000; // 2 h (13/07 : nettoie aussi les vides du jour)
         var _vides = bonsDepot.filter(function(dd){
           if(!dd) return false;
           if((dd.statut||'depot')!=='depot') return false;
@@ -32327,8 +32343,10 @@ async function saveBonDepotSupabase(d){
 }
 
 // Sauvegarder le dossier en cours avant de quitter la page
+// RÈGLE 13/07/2026 : seulement s'il a passé l'étape Appareil ou Client (pas de vides)
 window.addEventListener('beforeunload', function(){
-  if(typeof repDossierCourant !== 'undefined' && repDossierCourant && repDossierCourant.id){
+  if(typeof repDossierCourant !== 'undefined' && repDossierCourant && repDossierCourant.id
+     && (repDossierCourant._numeroReserve || repDossierCourant._etapeAppareilOK)){
     try { saveBonDepotSupabase(repDossierCourant); } catch(e){}
   }
   try { saveBonsDepot(); } catch(e){}
