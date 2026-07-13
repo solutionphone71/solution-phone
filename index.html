@@ -12102,6 +12102,47 @@ async function cxGenerer(kind, sendMail){
   ['prenom','nom','societe','tel','email','adresse','cp','ville','modele','imei','appareil','presta','prix','client-search'].forEach(function(f){var el=document.getElementById(kind+'-'+f);if(el)el.value='';});
 }
 
+// ── PDF facture simple (caisse rapide neuf/atelier) — pièce jointe email ──
+// Fix juil. 2026 : ces emails partaient SANS facture PDF.
+async function factureSimpleToPDFBase64(o){
+  if(!window.jspdf){
+    await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  }
+  var pdf=new window.jspdf.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var W=210, lm=20, rm=W-20, y;
+  var prix=Number(o.prix)||0, ht=Math.round(prix/1.2*100)/100, tva=Math.round((prix-ht)*100)/100;
+  pdf.setFillColor(225,6,0); pdf.rect(0,0,W,26,'F');
+  pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(16);
+  pdf.text('SOLUTION PHONE',lm,12);
+  pdf.setFontSize(8.5); pdf.setFont('helvetica','normal');
+  pdf.text('21 Rue Gambetta, 71000 Mâcon · 03 85 33 06 89 · contact@solution-phone.fr',lm,18);
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(20);
+  pdf.text('FACTURE', rm, 13, {align:'right'});
+  pdf.setFontSize(9); pdf.setFont('helvetica','normal');
+  pdf.text((o.numero||'')+' · '+new Date(o.date||Date.now()).toLocaleDateString('fr-FR'), rm, 20, {align:'right'});
+  y=40;
+  pdf.setTextColor(0,0,0); pdf.setFont('helvetica','bold'); pdf.setFontSize(11);
+  pdf.text('CLIENT',lm,y); y+=6;
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
+  if(o.clientNom){ pdf.text(String(o.clientNom),lm,y); y+=5; }
+  if(o.clientAdresse){ pdf.text(String(o.clientAdresse),lm,y); y+=5; }
+  if(o.clientEmail){ pdf.text(String(o.clientEmail),lm,y); y+=5; }
+  y+=5; pdf.setDrawColor(225,6,0); pdf.setLineWidth(0.6); pdf.line(lm,y,rm,y); y+=10;
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(11); pdf.text('DÉTAIL',lm,y); y+=7;
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(10);
+  var lignes=pdf.splitTextToSize(String(o.desc||'Prestation'), rm-lm);
+  pdf.text(lignes,lm,y); y+=lignes.length*5+4;
+  if(o.mode){ pdf.text('Règlement : '+o.mode,lm,y); y+=6; }
+  if(o.garantie){ pdf.text('Garantie : '+o.garantie,lm,y); y+=6; }
+  y+=2; pdf.setDrawColor(220,220,220); pdf.setLineWidth(0.3); pdf.line(lm,y,rm,y); y+=8;
+  pdf.text('Total HT : '+ht.toFixed(2)+' €      TVA 20% : '+tva.toFixed(2)+' €',lm,y); y+=9;
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(15); pdf.setTextColor(225,6,0);
+  pdf.text('TOTAL TTC : '+prix.toFixed(2)+' €',lm,y);
+  pdf.setFontSize(7.5); pdf.setTextColor(140,140,140); pdf.setFont('helvetica','normal');
+  pdf.text('SOLUTION PHONE · SIREN 801 044 785 · TVA FR10801044785 · RCS Mâcon B 801 044 785 · www.solution-phone.fr',lm,285);
+  return pdf.output('datauristring').split(',')[1];
+}
+
 async function cxEnvoyerFactureMail(num, client, email, desc, prix){
   if(!/.+@.+\..+/.test(email)){ email=(prompt('Email du client :')||'').trim(); if(!/.+@.+\..+/.test(email)){ showNotif&&showNotif('Email invalide','error'); return; } }
   var key=localStorage.getItem(PARAMS_KEYS.brevoKey)||''; if(!key){ showNotif&&showNotif('Configurez Brevo dans Paramètres','error'); return; }
@@ -12115,11 +12156,19 @@ async function cxEnvoyerFactureMail(num, client, email, desc, prix){
       '<b style="font-size:18px;color:#E10600;">Montant : '+Number(prix).toFixed(2)+' € TTC</b></div>'+
     '<p style="color:#666;font-size:12px;margin-top:16px;">Merci de votre confiance !<br><b>L\'équipe Solution Phone</b></p></div></div>';
   try{
+    // ── Facture PDF jointe (fix juil. 2026 : ces emails partaient sans pièce jointe) ──
+    var _att=[];
+    try{
+      var _pdfB=await factureSimpleToPDFBase64({numero:num, date:new Date().toISOString().slice(0,10), clientNom:client, clientEmail:email, desc:desc, prix:prix});
+      if(_pdfB) _att=[{content:_pdfB, name:'Facture_'+num+'.pdf', type:'application/pdf'}];
+    }catch(ep){ console.warn('PDF facture caisse:', ep); }
+    if(!_att.length){ showNotif&&showNotif('⚠️ PDF non généré — l\'email partira SANS la facture jointe','error'); }
     var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
     var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
     var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre facture Solution Phone '+num,htmlContent:html};
+    if(_att.length) pl.attachment=_att;
     var res=await fetch('/api/brevo?type=email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pl)});
-    if(res.ok){ showNotif&&showNotif('✅ Facture envoyée à '+email,'success'); }
+    if(res.ok){ showNotif&&showNotif('✅ Facture envoyée à '+email+(_att.length?' (PDF joint)':''),'success'); }
     else { var t=await res.text(); showNotif&&showNotif('Échec envoi : '+t.substring(0,120),'error'); }
   }catch(e){ showNotif&&showNotif('Erreur réseau envoi facture','error'); }
 }
@@ -13585,6 +13634,8 @@ async function envoyerFactureEmail(){
   try {
     var _att=[];
     if(typeof repFactureToPDFBase64==='function'){try{var _pdf=await repFactureToPDFBase64(d);if(_pdf)_att=[{content:_pdf,name:'Facture_'+f.numero+'.pdf',type:'application/pdf'}];}catch(ep){console.warn('PDF:',ep);}}
+    // Alerte visible si le PDF n'a pas pu \u00eatre g\u00e9n\u00e9r\u00e9 (fix juil. 2026 : avant, silencieux)
+    if(!_att.length){ showNotif&&showNotif('\u26a0\ufe0f Facture PDF non g\u00e9n\u00e9r\u00e9e \u2014 email envoy\u00e9 SANS pi\u00e8ce jointe','error'); }
     var _pl={sender:{name:name,email:sender},to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}],subject:'Votre facture Solution Phone \u2014 '+f.numero+' \u2014 '+prixAffiche.toFixed(2)+'\u20ac',htmlContent:htmlEmail};
     if(_att.length>0)_pl.attachment=_att;
     var res = await fetch('/api/brevo?type=email', {
@@ -13682,6 +13733,7 @@ async function envoyerDevisEmail(){
     }catch(ep0){ console.warn('Devis PDF:', ep0); }
     // Attestation signée en plus, si le client a signé
     try{ if(d.signature && typeof repDevisSignePDFBase64==='function'){ var _p=await repDevisSignePDFBase64(d); if(_p) _att.push({content:_p,name:'Devis_signe_'+(d.numero||'')+'.pdf',type:'application/pdf'}); } }catch(ep){ console.warn('Devis signé PDF:',ep); }
+    if(!_att.length){ showNotif&&showNotif('⚠️ Devis PDF non généré — email envoyé SANS pièce jointe','error'); }
     var sender = localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
     var name   = localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
     var pl = { sender:{name:name,email:sender}, to:[{email:email,name:(c.prenom||'')+' '+(c.nom||'')}], subject:'Votre devis Solution Phone — '+(a.marque||'')+' '+(a.modele||''), htmlContent:html };
@@ -19445,6 +19497,7 @@ async function envoyerDevisStandaloneEmail(dv){
       var _pdfB64 = await devisToPDFBase64(_dvPdf);
       if(_pdfB64) _att=[{content:_pdfB64, name:'Devis_'+(_dvPdf.numero||'SolutionPhone')+'.pdf', type:'application/pdf'}];
     }catch(ep){ console.warn('PDF devis:', ep); }
+    if(!_att.length){ showNotif&&showNotif('⚠️ Devis PDF non généré — email envoyé SANS pièce jointe','error'); }
     var sender=localStorage.getItem(PARAMS_KEYS.brevoSender)||'contact@solution-phone.fr';
     var name=localStorage.getItem(PARAMS_KEYS.brevoSenderName)||'Solution Phone Mâcon';
     var pl={sender:{name:name,email:sender},to:[{email:email,name:client}],subject:'Votre devis Solution Phone'+(dv&&dv.numero?' — '+dv.numero:''),htmlContent:html};
