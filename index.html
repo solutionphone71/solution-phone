@@ -15053,6 +15053,32 @@ function voirClientDetail(id){
           }
         }
       });
+      // ── FIX 15/07/2026 : rapatrier aussi les dossiers atelier de CE client
+      //    au-delà des 60 jours chargés en mémoire (fiche client complète) ──
+      try{
+        var _qBd = c.tel
+          ? '?select=id,numero,date,statut,client_nom,client_prenom,client_tel,client_email,appareil_marque,appareil_modele,appareil_imei,facture,qr_envoi&client_tel=eq.'+encodeURIComponent(c.tel)+'&limit=100'
+          : '?select=id,numero,date,statut,client_nom,client_prenom,client_tel,client_email,appareil_marque,appareil_modele,appareil_imei,facture,qr_envoi&client_nom=ilike.*'+encodeURIComponent(c.nom||'')+'*&limit=100';
+        supaFetch('bons_depot','GET',null,_qBd).then(function(rows){
+          if(!Array.isArray(rows) || !rows.length) return;
+          var ajoutes = 0;
+          rows.forEach(function(x){
+            if((window.bonsDepot||[]).some(function(b){ return String(b.id)===String(x.id); })) return;
+            bonsDepot.push({
+              id:x.id, numero:x.numero, date:x.date, statut:x.statut||'depot',
+              facture:x.facture||null, qrEnvoi:x.qr_envoi||null,
+              client:{nom:x.client_nom||'', prenom:x.client_prenom||'', tel:x.client_tel||'', email:x.client_email||''},
+              appareil:{marque:x.appareil_marque||'', modele:x.appareil_modele||'', imei:x.appareil_imei||''},
+              etat:[], accessoires:[], panne:'', devis:0, signature:null, _sigNotLoaded:true
+            });
+            ajoutes++;
+          });
+          if(ajoutes > 0 && selectedClientId === id){
+            var card2 = document.getElementById('client-detail-card');
+            if(card2 && card2.style.display !== 'none') voirClientDetail(id);
+          }
+        }).catch(function(){});
+      }catch(e){}
     }, 80);
   }
 
@@ -24327,7 +24353,38 @@ function getHistoriqueClient(nomOuTel){
       source: 'app'
     };
   });
-  return hist.concat(appReps).sort(function(a,b){
+  // ── FIX 15/07/2026 : chercher AUSSI dans les dossiers du parcours réparation
+  //    (bons_depot) — c'est là que vivent toutes les factures récentes ! Avant,
+  //    une facture faite via le parcours QualiRépar n'apparaissait jamais dans
+  //    la fiche client. ──
+  var appDossiers = (window.bonsDepot||[]).filter(function(d){
+    if(!d || !d.client) return false;
+    var nomLow = (((d.client.prenom||'')+' '+(d.client.nom||''))).toLowerCase();
+    var telDigits = (d.client.tel||'').replace(/\D/g,'');
+    if(qDigits.length >= 4 && telDigits.indexOf(qDigits) >= 0) return true;
+    if(tokens.length > 0 && tokens.every(function(t){ return nomLow.indexOf(t) >= 0; })) return true;
+    return false;
+  }).map(function(d){
+    var f = d.facture || null;
+    return {
+      numero: (f && f.numero) || d.numero,
+      date_rep: (f && f.date) || d.date,
+      client_nom: ((d.client.prenom||'')+' '+(d.client.nom||'')).trim(),
+      modele: (((d.appareil&&d.appareil.marque)||'')+' '+((d.appareil&&d.appareil.modele)||'')).trim(),
+      statut: f ? 'termine' : 'en cours',
+      paiement: (f && f.mode) || '—',
+      prix: Number(f && f.prix) || 0,
+      source: 'atelier',
+      dossierId: d.id
+    };
+  });
+  // Déduplication par numéro (un dossier peut déjà exister dans l'historique importé)
+  var _seenNum = {};
+  var tout = hist.concat(appReps).concat(appDossiers).filter(function(r){
+    var k = (r.numero||'') + '|' + ((r.date_rep||'').substring(0,10));
+    if(_seenNum[k]) return false; _seenNum[k] = true; return true;
+  });
+  return tout.sort(function(a,b){
     return (b.date_rep||'').localeCompare(a.date_rep||'');
   });
 }
