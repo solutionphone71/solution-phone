@@ -11767,7 +11767,7 @@ function renderFacturesSearch(){
       ? '<span style="background:rgba(255,59,48,0.08);color:#c0392b;padding:2px 6px;border-radius:10px;font-size:11px;">🔧 Réparation</span>'
       : '<span style="background:rgba(52,211,153,0.06);color:#16a34a;padding:2px 6px;border-radius:10px;font-size:11px;">📱 Vente</span>';
     var actions = tx.type==='reparation' && tx.dossier
-      ? '<button onclick="repOuvrirDossierFromCaisse('+JSON.stringify(String(tx.dossier.id))+')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">\u{1F4C4} Voir</button> <button onclick="repSupprimerDossierParId('+JSON.stringify(String(tx.dossier.id))+');setTimeout(renderFacturesSearch,600);" class="btn btn-sm" style="font-size:11px;padding:3px 8px;color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer cette facture/dossier">\u{1F5D1}️</button>'
+      ? '<button onclick="repOuvrirDossierFromCaisse(\''+String(tx.dossier.id)+'\')" class="btn btn-sm" style="font-size:11px;padding:3px 8px;">\u{1F4C4} Voir</button> <button onclick="repSupprimerDossierParId(\''+String(tx.dossier.id)+'\');setTimeout(renderFacturesSearch,600);" class="btn btn-sm" style="font-size:11px;padding:3px 8px;color:#fff;background:#dc2626;border-color:#dc2626;" title="Supprimer cette facture/dossier">\u{1F5D1}️</button>'
       : '';
     if(tx.kiwizRef) actions += ' <span style="font-size:10px;color:#60a5fa;" title="Certifié NF525">🔒</span>';
     return '<tr style="background:'+bg+';border-bottom:1px solid var(--border);">'+
@@ -15160,7 +15160,7 @@ function voirClientDetail(id){
         actions = (r.statut==='termine'
           ? '<button class="btn btn-sm" onclick="repImprimerFactureById(\''+String(r.dossierId)+'\')" title="Réimprimer la facture">🖨️</button> '
           : '')+
-          '<button class="btn btn-sm" onclick="ficheOuvrirDossierAtelier('+JSON.stringify(String(r.dossierId))+')" title="Ouvrir le dossier">📂</button>';
+          '<button class="btn btn-sm" onclick="ficheOuvrirDossierAtelier(\''+String(r.dossierId)+'\')" title="Ouvrir le dossier">📂</button>';
       } else if(r.source==='app'){
         actions = '<button class="btn btn-sm" onclick="ficheReimprimerApp(\''+String(r.numero||'').replace(/[\\']/g,'')+'\')" title="Réimprimer la facture">🖨️</button>';
       }
