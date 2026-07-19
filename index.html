@@ -15144,19 +15144,33 @@ function voirClientDetail(id){
     var table = document.createElement('table');
     table.style.width='100%';
     var thead = document.createElement('thead');
-    thead.innerHTML = '<tr><th>N°</th><th>Date</th><th>Appareil</th><th>Statut</th><th>Paiement</th><th>Source</th></tr>';
+    thead.innerHTML = '<tr><th>N°</th><th>Date</th><th>Appareil</th><th>Statut</th><th>Paiement</th><th>Source</th><th>Actions</th></tr>';
     table.appendChild(thead);
     var tbody = document.createElement('tbody');
     hist.forEach(function(r){
       var tr = document.createElement('tr');
       var dateStr = (r.date_rep||'').substring(0,10);
       var statusColor = r.statut && r.statut.includes('ermin') ? 'var(--green)' : 'var(--warning)';
+      var srcLabel = r.source==='atelier' ? 'Atelier' : (r.source==='app' ? 'App' : 'Phonilab');
+      var srcBg = r.source==='atelier' ? '#fef3c7' : (r.source==='app' ? '#e0f2fe' : '#f0fdf4');
+      var srcCol = r.source==='atelier' ? '#92400e' : (r.source==='app' ? '#0369a1' : '#166534');
+      // ── FIX 17/07 : boutons Réimprimer / Ouvrir (avant : aucune action possible) ──
+      var actions = '—';
+      if(r.source==='atelier' && r.dossierId){
+        actions = (r.statut==='termine'
+          ? '<button class="btn btn-sm" onclick="repImprimerFactureById(\''+String(r.dossierId)+'\')" title="Réimprimer la facture">🖨️</button> '
+          : '')+
+          '<button class="btn btn-sm" onclick="ficheOuvrirDossierAtelier('+JSON.stringify(String(r.dossierId))+')" title="Ouvrir le dossier">📂</button>';
+      } else if(r.source==='app'){
+        actions = '<button class="btn btn-sm" onclick="ficheReimprimerApp(\''+String(r.numero||'').replace(/[\\']/g,'')+'\')" title="Réimprimer la facture">🖨️</button>';
+      }
       tr.innerHTML = '<td><b>'+(r.numero||'—')+'</b></td>'+
         '<td style="font-size:12px;color:var(--text-muted);">'+dateStr+'</td>'+
         '<td><b>'+(r.modele||r.appareil||'—')+'</b></td>'+
         '<td style="font-size:12px;color:'+statusColor+';">'+(r.statut||'—')+'</td>'+
         '<td style="font-size:12px;">'+(r.paiement||'—')+'</td>'+
-        '<td><span style="font-size:11px;padding:2px 6px;border-radius:10px;background:'+(r.source==='app'?'#e0f2fe':'#f0fdf4')+';color:'+(r.source==='app'?'#0369a1':'#166534')+';">'+(r.source==='app'?'App':'Phonilab')+'</span></td>';
+        '<td><span style="font-size:11px;padding:2px 6px;border-radius:10px;background:'+srcBg+';color:'+srcCol+';">'+srcLabel+'</span></td>'+
+        '<td style="white-space:nowrap;">'+actions+'</td>';
       tbody.appendChild(tr);
     });
     table.appendChild(tbody);
@@ -24378,10 +24392,13 @@ function getHistoriqueClient(nomOuTel){
       dossierId: d.id
     };
   });
-  // Déduplication par numéro (un dossier peut déjà exister dans l'historique importé)
+  // Déduplication par numéro — PRIORITÉ aux dossiers de l'APP (atelier) sur
+  // l'historique importé : une réparation faite avec l'app garde son badge
+  // « Atelier » et ses boutons Réimprimer/Ouvrir (fix 17/07 : elle apparaissait
+  // « Phonilab » sans action quand elle existait aussi dans l'historique).
   var _seenNum = {};
-  var tout = hist.concat(appReps).concat(appDossiers).filter(function(r){
-    var k = (r.numero||'') + '|' + ((r.date_rep||'').substring(0,10));
+  var tout = appDossiers.concat(appReps).concat(hist).filter(function(r){
+    var k = r.numero ? String(r.numero) : ((r.client_nom||'')+'|'+((r.date_rep||'').substring(0,10))+'|'+(r.prix||0));
     if(_seenNum[k]) return false; _seenNum[k] = true; return true;
   });
   return tout.sort(function(a,b){
@@ -25720,7 +25737,7 @@ function repLoadFormFromDossier(){
     }
   }
 
-  ['civilite','nom','prenom','tel','email','adresse','cp','ville'].forEach(function(f){
+  ['civilite','nom','prenom','societe','tel','email','adresse','cp','ville'].forEach(function(f){
     var el=document.getElementById('rep-'+f); if(el) el.value=c[f]||'';
   });
   // Step 2 — appareil
@@ -25972,8 +25989,23 @@ async function repGenererFacture(){
 }
 
 function repImprimerFactureById(id){
-  var d = repDossiers.find(function(x){ return String(x.id)===String(id); });
+  var d = repDossiers.find(function(x){ return String(x.id)===String(id); })
+       || (window.bonsDepot||[]).find(function(x){ return String(x.id)===String(id); }); // fiche client (dossiers rapatriés)
   if(d) repImprimerFacture(d);
+  else showNotif && showNotif('Dossier introuvable — synchronisez puis réessayez','error');
+}
+
+// Réimpression depuis la fiche client — anciennes factures réparation (tableau « reparations »)
+function ficheReimprimerApp(numero){
+  var r = (window.reparations||[]).find(function(x){ return String(x.numero)===String(numero); });
+  if(r && typeof imprimerRepData==='function') imprimerRepData(r);
+  else showNotif && showNotif('Facture introuvable dans cette session','error');
+}
+// Ouvrir un dossier atelier depuis la fiche client (même s'il vient d'être rapatrié)
+function ficheOuvrirDossierAtelier(id){
+  try{ if(typeof repLoadDossiers==='function') repLoadDossiers(); }catch(e){}
+  showPage('reparations', null);
+  setTimeout(function(){ repOuvrirDossier(id); }, 250);
 }
 
 function repImprimerFacture(d){
@@ -26623,6 +26655,7 @@ function repAutoSave(){
       civilite: (document.getElementById('rep-civilite')||{value:''}).value || prev.civilite || 'M.',
       nom:      getV('rep-nom')     || prev.nom     || '',
       prenom:   getV('rep-prenom')  || prev.prenom  || '',
+      societe:  getV('rep-societe') || prev.societe || '', // FIX 15/07 : la société était effacée par l'autosave → absente de la facture
       tel:      getV('rep-tel')     || prev.tel     || '',
       email:    getV('rep-email')   || prev.email   || '',
       adresse:  getV('rep-adresse') || prev.adresse || '',
